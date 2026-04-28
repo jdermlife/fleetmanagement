@@ -13,12 +13,7 @@ const initialForm = {
 }
 
 
-interface VehicleRegistryProps {
-  canManage: boolean
-}
-
-
-function VehicleRegistry({ canManage }: VehicleRegistryProps) {
+function VehicleRegistry() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [form, setForm] = useState(initialForm)
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null)
@@ -142,7 +137,6 @@ function VehicleRegistry({ canManage }: VehicleRegistryProps) {
           ) : (
             <VehicleList
               vehicles={vehicles}
-              canManage={canManage}
               onEdit={handleEdit}
               onDelete={handleDelete}
               busyVehicleId={busyVehicleId}
@@ -152,54 +146,50 @@ function VehicleRegistry({ canManage }: VehicleRegistryProps) {
 
         <div>
           <h3>{editingVehicleId === null ? 'Add A Vehicle' : 'Edit Vehicle'}</h3>
-          {canManage ? (
-            <form onSubmit={handleSubmit}>
-              <label>
-                Make
-                <input
-                  type="text"
-                  value={form.make}
-                  onChange={(event) => setForm((current) => ({ ...current, make: event.target.value }))}
-                  placeholder="Toyota"
-                  required
-                />
-              </label>
-              <label>
-                Model
-                <input
-                  type="text"
-                  value={form.model}
-                  onChange={(event) => setForm((current) => ({ ...current, model: event.target.value }))}
-                  placeholder="Hilux"
-                  required
-                />
-              </label>
-              <label>
-                Year
-                <input
-                  type="number"
-                  value={form.year}
-                  onChange={(event) => setForm((current) => ({ ...current, year: event.target.value }))}
-                  min="1900"
-                  max="2100"
-                  placeholder="2024"
-                  required
-                />
-              </label>
-              <div className="form-actions">
-                <button type="submit" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : editingVehicleId === null ? 'Add Vehicle' : 'Save Changes'}
+          <form onSubmit={handleSubmit}>
+            <label>
+              Make
+              <input
+                type="text"
+                value={form.make}
+                onChange={(event) => setForm((current) => ({ ...current, make: event.target.value }))}
+                placeholder="Toyota"
+                required
+              />
+            </label>
+            <label>
+              Model
+              <input
+                type="text"
+                value={form.model}
+                onChange={(event) => setForm((current) => ({ ...current, model: event.target.value }))}
+                placeholder="Hilux"
+                required
+              />
+            </label>
+            <label>
+              Year
+              <input
+                type="number"
+                value={form.year}
+                onChange={(event) => setForm((current) => ({ ...current, year: event.target.value }))}
+                min="1900"
+                max="2100"
+                placeholder="2024"
+                required
+              />
+            </label>
+            <div className="form-actions">
+              <button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : editingVehicleId === null ? 'Add Vehicle' : 'Save Changes'}
+              </button>
+              {editingVehicleId !== null ? (
+                <button type="button" onClick={resetForm}>
+                  Cancel Edit
                 </button>
-                {editingVehicleId !== null ? (
-                  <button type="button" onClick={resetForm}>
-                    Cancel Edit
-                  </button>
-                ) : null}
-              </div>
-            </form>
-          ) : (
-            <p className="empty-state">Your role has read-only access to the vehicle registry.</p>
-          )}
+              ) : null}
+            </div>
+          </form>
         </div>
       </div>
 

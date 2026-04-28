@@ -1,24 +1,3 @@
-export type UserRole = 'admin' | 'manager' | 'viewer'
-
-export interface AuthUser {
-  id: number
-  username: string
-  role: UserRole
-  isActive: boolean
-  mfaEnabled: boolean
-  deactivatedAt: string | null
-  createdAt: string
-}
-
-export interface AuthResponse {
-  token: string
-  user: AuthUser
-}
-
-export interface BootstrapStatus {
-  requiresBootstrap: boolean
-}
-
 export interface Vehicle {
   id: number
   make: string
@@ -59,16 +38,6 @@ export interface NewFuelLog {
   abnormalRefill: boolean
 }
 
-export interface UserAccount {
-  id: number
-  username: string
-  role: UserRole
-  isActive: boolean
-  mfaEnabled: boolean
-  deactivatedAt: string | null
-  createdAt: string
-}
-
 export interface AuditLog {
   id: number
   action: string
@@ -77,17 +46,5 @@ export interface AuditLog {
   details: string
   createdAt: string
   actorUsername: string | null
-  actorRole: UserRole | null
-}
-
-export interface MfaRecoveryRequest {
-  id: number
-  userId: number
-  username: string
-  role: UserRole
-  status: 'pending' | 'approved' | 'rejected'
-  reason: string
-  requestedAt: string
-  processedAt: string | null
-  processedByUsername: string | null
+  actorRole: string | null
 }

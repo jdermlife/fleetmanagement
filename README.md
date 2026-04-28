@@ -1,42 +1,12 @@
 # Fleet Management System
 
-This repository now contains a small internal-use fleet management baseline with:
+This repository contains a lightweight fleet management baseline with:
 
-- token-based authentication and role-based access control
-- one-time bootstrap for the first administrator account
-- self-service password change plus admin password reset and user deactivation
-- TOTP-based multi-factor authentication with in-app enrollment and login challenge
-- one-time backup codes plus admin-assisted MFA recovery for locked-out users
-- self-service MFA recovery requests that admins can approve or reject in-app
-- persistent vehicle and fuel log CRUD backed by SQLite
-- audit logging for security and mutation events
-- a React frontend that supports login, user creation, and editable fleet records
-
-## Roles
-
-- `admin`: full access, including user creation, password resets, user deactivation/reactivation, and audit logs
-- `manager`: create, update, and delete vehicles and fuel logs
-- `viewer`: read-only access to fleet data and credit scoring
-
-## First Run
-
-### Option 1: one-time bootstrap in the UI
-
-1. Start the backend and frontend.
-2. Open the frontend.
-3. Create the first admin account from the bootstrap screen.
-
-### Option 2: environment-seeded admin
-
-Set these environment variables before starting the backend:
-
-- `FMS_ADMIN_USERNAME`
-- `FMS_ADMIN_PASSWORD`
-- `FMS_ADMIN_ROLE` (defaults to `admin`)
-- `FMS_TOKEN_TTL_HOURS` (defaults to `12`)
-- `FMS_MFA_ISSUER` (defaults to `Fleet Management System`)
-
-An example file is included in [.env.example](</C:/Users/Jorge/Documents/fleet/fms/.env.example:1>).
+- public-access vehicle and fuel log CRUD
+- recent audit history for data mutations
+- persistent SQLite storage for core records
+- a React frontend for managing fleet records without sign-in
+- a simple credit scoring form backed by the API
 
 ## Setup
 
@@ -56,11 +26,25 @@ Production entrypoint:
 
 1. Navigate to `frontend`
 2. Install dependencies with `npm install`
-3. Start the app with `npm run dev`
+3. Set `VITE_API_URL` if your backend is not running on `http://localhost:5000`
+4. Start the app with `npm run dev`
 
 The frontend runs on `http://localhost:5173`.
 
-For production builds, set `VITE_API_URL` to the deployed backend URL before running `npm run build`.
+An example environment file is included in [.env.example](</C:/Users/Jorge/Documents/fleet/fms/.env.example:1>).
+
+## API Surface
+
+- `GET /vehicles`
+- `POST /vehicles`
+- `PUT /vehicles/:id`
+- `DELETE /vehicles/:id`
+- `GET /fuel-logs`
+- `POST /fuel-logs`
+- `PUT /fuel-logs/:id`
+- `DELETE /fuel-logs/:id`
+- `GET /audit-logs`
+- `POST /credit-score`
 
 ## Verification
 
@@ -70,8 +54,7 @@ For production builds, set `VITE_API_URL` to the deployed backend URL before run
 
 ## Remaining Limits
 
+- The fleet pages beyond vehicle registry, fuel management, audit trail, and credit scoring are still static placeholders.
 - SQLite is fine for small internal deployments but should be replaced for higher concurrency or multi-instance deployments.
-- There is no email-based recovery flow.
-- MFA recovery depends on backup codes or an admin approving a recovery request; there is no automated out-of-band identity proofing.
+- There is no authentication or role-based access control in this build.
 - Frontend automated component tests are still not included.
-- User lifecycle still has limits: there is no rename or hard-delete flow for accounts.

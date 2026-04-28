@@ -17,12 +17,7 @@ const initialForm = {
 }
 
 
-interface FuelManagementProps {
-  canManage: boolean
-}
-
-
-function FuelManagement({ canManage }: FuelManagementProps) {
+function FuelManagement() {
   const [form, setForm] = useState(initialForm)
   const [logs, setLogs] = useState<FuelLog[]>([])
   const [editingLogId, setEditingLogId] = useState<number | null>(null)
@@ -175,99 +170,95 @@ function FuelManagement({ canManage }: FuelManagementProps) {
 
         <div className="fuel-form">
           <h3>{editingLogId === null ? 'Log Fuel Entry' : 'Edit Fuel Entry'}</h3>
-          {canManage ? (
-            <form onSubmit={handleSubmit}>
-              <label>
-                Date
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
-                  required
-                />
-              </label>
-              <label>
-                Vehicle
-                <input
-                  type="text"
-                  value={form.vehicle}
-                  onChange={(event) => setForm((current) => ({ ...current, vehicle: event.target.value }))}
-                  placeholder="Vehicle ID or plate"
-                  required
-                />
-              </label>
-              <label>
-                Fuel Card
-                <input
-                  type="text"
-                  value={form.fuelCard}
-                  onChange={(event) => setForm((current) => ({ ...current, fuelCard: event.target.value }))}
-                  placeholder="Card number or name"
-                  required
-                />
-              </label>
-              <label>
-                Liters
-                <input
-                  type="number"
-                  value={form.liters}
-                  onChange={(event) => setForm((current) => ({ ...current, liters: event.target.value }))}
-                  placeholder="Liters filled"
-                  min="0"
-                  step="0.1"
-                  required
-                />
-              </label>
-              <label>
-                Amount ($)
-                <input
-                  type="number"
-                  value={form.amount}
-                  onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-                  placeholder="Total cost"
-                  min="0"
-                  step="0.01"
-                  required
-                />
-              </label>
-              <label>
-                Notes
-                <textarea
-                  value={form.notes}
-                  onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
-                  placeholder="Optional notes"
-                />
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={form.theftSuspected}
-                  onChange={(event) => setForm((current) => ({ ...current, theftSuspected: event.target.checked }))}
-                />
-                Theft suspected
-              </label>
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={form.abnormalRefill}
-                  onChange={(event) => setForm((current) => ({ ...current, abnormalRefill: event.target.checked }))}
-                />
-                Abnormal refill alert
-              </label>
-              <div className="form-actions">
-                <button type="submit" disabled={isSaving}>
-                  {isSaving ? 'Saving...' : editingLogId === null ? 'Save Fuel Log' : 'Save Changes'}
+          <form onSubmit={handleSubmit}>
+            <label>
+              Date
+              <input
+                type="date"
+                value={form.date}
+                onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
+                required
+              />
+            </label>
+            <label>
+              Vehicle
+              <input
+                type="text"
+                value={form.vehicle}
+                onChange={(event) => setForm((current) => ({ ...current, vehicle: event.target.value }))}
+                placeholder="Vehicle ID or plate"
+                required
+              />
+            </label>
+            <label>
+              Fuel Card
+              <input
+                type="text"
+                value={form.fuelCard}
+                onChange={(event) => setForm((current) => ({ ...current, fuelCard: event.target.value }))}
+                placeholder="Card number or name"
+                required
+              />
+            </label>
+            <label>
+              Liters
+              <input
+                type="number"
+                value={form.liters}
+                onChange={(event) => setForm((current) => ({ ...current, liters: event.target.value }))}
+                placeholder="Liters filled"
+                min="0"
+                step="0.1"
+                required
+              />
+            </label>
+            <label>
+              Amount ($)
+              <input
+                type="number"
+                value={form.amount}
+                onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
+                placeholder="Total cost"
+                min="0"
+                step="0.01"
+                required
+              />
+            </label>
+            <label>
+              Notes
+              <textarea
+                value={form.notes}
+                onChange={(event) => setForm((current) => ({ ...current, notes: event.target.value }))}
+                placeholder="Optional notes"
+              />
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={form.theftSuspected}
+                onChange={(event) => setForm((current) => ({ ...current, theftSuspected: event.target.checked }))}
+              />
+              Theft suspected
+            </label>
+            <label className="checkbox-label">
+              <input
+                type="checkbox"
+                checked={form.abnormalRefill}
+                onChange={(event) => setForm((current) => ({ ...current, abnormalRefill: event.target.checked }))}
+              />
+              Abnormal refill alert
+            </label>
+            <div className="form-actions">
+              <button type="submit" disabled={isSaving}>
+                {isSaving ? 'Saving...' : editingLogId === null ? 'Save Fuel Log' : 'Save Changes'}
+              </button>
+              {editingLogId !== null ? (
+                <button type="button" onClick={resetForm}>
+                  Cancel Edit
                 </button>
-                {editingLogId !== null ? (
-                  <button type="button" onClick={resetForm}>
-                    Cancel Edit
-                  </button>
-                ) : null}
-              </div>
-            </form>
-          ) : (
-            <p className="empty-state">Your role has read-only access to fuel management.</p>
-          )}
+              ) : null}
+            </div>
+          </form>
         </div>
       </div>
 
@@ -291,7 +282,7 @@ function FuelManagement({ canManage }: FuelManagementProps) {
                   <th>Theft</th>
                   <th>Abnormal</th>
                   <th>Updated</th>
-                  {canManage ? <th>Actions</th> : null}
+                  <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -305,21 +296,19 @@ function FuelManagement({ canManage }: FuelManagementProps) {
                     <td>{log.theftSuspected ? 'Yes' : 'No'}</td>
                     <td>{log.abnormalRefill ? 'Yes' : 'No'}</td>
                     <td>{log.updatedAt}</td>
-                    {canManage ? (
-                      <td className="actions-cell">
-                        <button type="button" onClick={() => startEdit(log)}>
-                          Edit
-                        </button>
-                        <button
-                          type="button"
-                          className="button-danger"
-                          onClick={() => handleDelete(log)}
-                          disabled={busyLogId === log.id}
-                        >
-                          {busyLogId === log.id ? 'Deleting...' : 'Delete'}
-                        </button>
-                      </td>
-                    ) : null}
+                    <td className="actions-cell">
+                      <button type="button" onClick={() => startEdit(log)}>
+                        Edit
+                      </button>
+                      <button
+                        type="button"
+                        className="button-danger"
+                        onClick={() => handleDelete(log)}
+                        disabled={busyLogId === log.id}
+                      >
+                        {busyLogId === log.id ? 'Deleting...' : 'Delete'}
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>

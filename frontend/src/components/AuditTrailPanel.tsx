@@ -30,7 +30,7 @@ function AuditTrailPanel() {
   return (
     <div>
       <h2>Audit Trail</h2>
-      <p>Recent security and data mutation events across the application.</p>
+      <p>Recent data mutation events across the application.</p>
       {isLoading ? (
         <p>Loading audit history...</p>
       ) : auditLogs.length === 0 ? (

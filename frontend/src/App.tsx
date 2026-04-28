@@ -1,11 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
-
-import { api, clearAuthToken, getErrorMessage, getStoredAuthToken } from './api'
-import type { AuthResponse, AuthUser, BootstrapStatus } from './types'
-import AccountSecurityPanel from './components/AccountSecurityPanel'
-import AccessControlPanel from './components/AccessControlPanel'
 import AuditTrailPanel from './components/AuditTrailPanel'
-import AuthPanel from './components/AuthPanel'
 import CreditScoring from './components/CreditScoring'
 import FuelManagement from './components/FuelManagement'
 import VehicleRegistry from './components/VehicleRegistry'
@@ -51,126 +44,27 @@ const productPages: FleetPage[] = [
   { id: 'analytics-bi', title: 'Analytics / BI Page', description: 'Get advanced fleet intelligence.', features: ['Predictive maintenance', 'Driver ranking', 'Cost forecasting'] },
   { id: 'ai-command-center', title: 'AI Command Center', description: 'Use AI for automation and recommendations.', features: ['Chat assistant', 'Anomaly detection', 'Recommendations', 'Auto scheduling'] },
   { id: 'settings-configuration', title: 'Settings / Configuration', description: 'Control system settings and workflows.', features: ['Branches', 'Units', 'Workflow setup', 'Thresholds'] },
-  { id: 'user-role-management', title: 'User & Role Management', description: 'Configure security and access.', features: ['RBAC', 'Permissions', 'MFA', 'Audit logs'] },
   { id: 'api-integration-center', title: 'API / Integration Center', description: 'Connect the fleet system with external tools.', features: ['ERP', 'SAP', 'GPS devices', 'HRIS', 'Fuel cards'] },
-  { id: 'audit-trail', title: 'Audit Trail Page', description: 'Review all system changes and events.', features: ['Who changed what', 'When it happened', 'Detailed logs'] },
+  { id: 'audit-trail', title: 'Audit Trail Page', description: 'Review all system changes and events.', features: ['What changed', 'When it happened', 'Detailed logs'] },
   { id: 'mobile-app-sync', title: 'Mobile App Sync Page', description: 'Sync field user apps and offline workflow.', features: ['Driver app sync', 'Offline mode', 'Proof-of-delivery uploads'] },
 ]
 
 
 function App() {
-  const [currentUser, setCurrentUser] = useState<AuthUser | null>(null)
-  const [bootstrapRequired, setBootstrapRequired] = useState(false)
-  const [isLoadingSession, setIsLoadingSession] = useState(true)
-  const [sessionError, setSessionError] = useState('')
-
-  const canManage = currentUser?.role === 'admin' || currentUser?.role === 'manager'
-  const isAdmin = currentUser?.role === 'admin'
-
-  const visiblePages = useMemo(() => {
-    if (isAdmin) {
-      return productPages
-    }
-
-    return productPages.filter((page) => page.id !== 'audit-trail' && page.id !== 'user-role-management')
-  }, [isAdmin])
-
-  useEffect(() => {
-    void initializeSession()
-  }, [])
-
-  async function initializeSession() {
-    setIsLoadingSession(true)
-    setSessionError('')
-
-    try {
-      const bootstrapResponse = await api.get<BootstrapStatus>('/auth/bootstrap-status')
-      setBootstrapRequired(bootstrapResponse.data.requiresBootstrap)
-
-      const storedToken = getStoredAuthToken()
-      if (!storedToken || bootstrapResponse.data.requiresBootstrap) {
-        if (bootstrapResponse.data.requiresBootstrap) {
-          clearAuthToken()
-          setCurrentUser(null)
-        }
-        return
-      }
-
-      const meResponse = await api.get<AuthUser>('/auth/me')
-      setCurrentUser(meResponse.data)
-    } catch (error: unknown) {
-      clearAuthToken()
-      setCurrentUser(null)
-      setSessionError(getErrorMessage(error, 'Unable to reach the backend right now.'))
-    } finally {
-      setIsLoadingSession(false)
-    }
-  }
-
-  async function handleLogout() {
-    try {
-      await api.post('/auth/logout')
-    } catch {
-      // Clear local state even if the token is already invalid.
-    } finally {
-      clearAuthToken()
-      setCurrentUser(null)
-      setBootstrapRequired(false)
-      await initializeSession()
-    }
-  }
-
-  function handleAuthenticated(response: AuthResponse) {
-    setCurrentUser(response.user)
-    setBootstrapRequired(false)
-    setSessionError('')
-  }
-
-  function handleCurrentUserUpdated(user: AuthUser) {
-    setCurrentUser(user)
-  }
-
-  if (isLoadingSession) {
-    return (
-      <div className="standalone-card">
-        <h1>Fleet Management System</h1>
-        <p>Checking session state...</p>
-      </div>
-    )
-  }
-
-  if (!currentUser) {
-    return (
-      <div className="standalone-card">
-        <h1>Fleet Management System</h1>
-        <p>This baseline now includes authentication, roles, and audit-backed CRUD for the core modules.</p>
-        <AuthPanel bootstrapRequired={bootstrapRequired} onAuthenticated={handleAuthenticated} />
-        {sessionError ? <p className="status-message status-error">{sessionError}</p> : null}
-      </div>
-    )
-  }
-
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <h2>Fleet Pages</h2>
+        <p>No sign-in required.</p>
         <div className="sidebar-link-group">
           <a href="#vehicle-master">Vehicle Registry</a>
           <a href="#fuel-management">Fuel Management</a>
           <a href="#credit-scoring">Credit Scoring</a>
-          <a href="#account-security">Account Security</a>
-          {isAdmin ? <a href="#user-role-management">Access Control</a> : null}
-        </div>
-        <div className="session-card">
-          <strong>{currentUser.username}</strong>
-          <span>{currentUser.role}</span>
-          <button type="button" onClick={handleLogout}>
-            Sign Out
-          </button>
+          <a href="#audit-trail">Audit Trail</a>
         </div>
         <nav>
           <ul>
-            {visiblePages.map((page) => (
+            {productPages.map((page) => (
               <li key={page.id}>
                 <a href={`#${page.id}`}>{page.title}</a>
               </li>
@@ -186,22 +80,18 @@ function App() {
         <div className="container">
           <h1>Fleet Management System</h1>
           <p className="intro">
-            Signed in as <strong>{currentUser.username}</strong> with <strong>{currentUser.role}</strong> access.
-            Vehicles, fuel logs, and security operations now run against the backend with persistent storage and audit history.
+            This build now opens directly into the fleet workspace without authentication. Vehicles, fuel logs,
+            credit scoring, and audit history are available immediately against the backend API.
           </p>
 
-          {visiblePages.map((page) => (
+          {productPages.map((page) => (
             <section id={page.id} key={page.id} className="card">
-              {renderPageContent(page.id, canManage, isAdmin, currentUser.id)}
+              {renderPageContent(page.id)}
             </section>
           ))}
 
           <section id="credit-scoring" className="card">
             <CreditScoring />
-          </section>
-
-          <section id="account-security" className="card">
-            <AccountSecurityPanel currentUser={currentUser} onUserUpdated={handleCurrentUserUpdated} />
           </section>
         </div>
       </main>
@@ -210,20 +100,16 @@ function App() {
 }
 
 
-function renderPageContent(pageId: string, canManage: boolean, isAdmin: boolean, currentUserId: number) {
+function renderPageContent(pageId: string) {
   if (pageId === 'vehicle-master') {
-    return <VehicleRegistry canManage={canManage} />
+    return <VehicleRegistry />
   }
 
   if (pageId === 'fuel-management') {
-    return <FuelManagement canManage={canManage} />
+    return <FuelManagement />
   }
 
-  if (pageId === 'user-role-management' && isAdmin) {
-    return <AccessControlPanel currentUserId={currentUserId} />
-  }
-
-  if (pageId === 'audit-trail' && isAdmin) {
+  if (pageId === 'audit-trail') {
     return <AuditTrailPanel />
   }
 

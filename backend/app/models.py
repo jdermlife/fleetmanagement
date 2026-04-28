@@ -29,49 +29,6 @@ CREATE TABLE IF NOT EXISTS fuel_logs (
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
-CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    username TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
-    role TEXT NOT NULL CHECK (role IN ('admin', 'manager', 'viewer')),
-    is_active INTEGER NOT NULL DEFAULT 1,
-    mfa_secret TEXT,
-    mfa_enabled INTEGER NOT NULL DEFAULT 0,
-    deactivated_at TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE TABLE IF NOT EXISTS auth_tokens (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    token_hash TEXT NOT NULL UNIQUE,
-    created_at TEXT NOT NULL,
-    expires_at TEXT NOT NULL,
-    revoked_at TEXT,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS mfa_backup_codes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    code_hash TEXT NOT NULL,
-    used_at TEXT,
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
-);
-
-CREATE TABLE IF NOT EXISTS mfa_recovery_requests (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    user_id INTEGER NOT NULL,
-    reason TEXT NOT NULL DEFAULT '',
-    status TEXT NOT NULL CHECK (status IN ('pending', 'approved', 'rejected')) DEFAULT 'pending',
-    requested_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    processed_at TEXT,
-    processed_by_user_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
-    FOREIGN KEY (processed_by_user_id) REFERENCES users(id) ON DELETE SET NULL
-);
-
 CREATE TABLE IF NOT EXISTS audit_logs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     actor_user_id INTEGER,
@@ -79,8 +36,7 @@ CREATE TABLE IF NOT EXISTS audit_logs (
     entity_type TEXT NOT NULL,
     entity_id INTEGER,
     details TEXT NOT NULL DEFAULT '',
-    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (actor_user_id) REFERENCES users(id) ON DELETE SET NULL
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 """
 
@@ -112,30 +68,6 @@ def init_db(database_path: str | Path) -> None:
                 column_name="updated_at",
                 definition="TEXT",
                 backfill_expression="CURRENT_TIMESTAMP",
-            )
-            ensure_column(
-                connection,
-                table_name="users",
-                column_name="is_active",
-                definition="INTEGER NOT NULL DEFAULT 1",
-            )
-            ensure_column(
-                connection,
-                table_name="users",
-                column_name="mfa_secret",
-                definition="TEXT",
-            )
-            ensure_column(
-                connection,
-                table_name="users",
-                column_name="mfa_enabled",
-                definition="INTEGER NOT NULL DEFAULT 0",
-            )
-            ensure_column(
-                connection,
-                table_name="users",
-                column_name="deactivated_at",
-                definition="TEXT",
             )
             _migrate_legacy_vehicle_table(connection)
             _seed_vehicles(connection)
@@ -190,18 +122,6 @@ def row_to_fuel_log(row: sqlite3.Row) -> dict[str, int | float | str | bool]:
     }
 
 
-def row_to_user(row: sqlite3.Row) -> dict[str, int | str]:
-    return {
-        "id": row["id"],
-        "username": row["username"],
-        "role": row["role"],
-        "isActive": bool(row["is_active"]),
-        "mfaEnabled": bool(row["mfa_enabled"]),
-        "deactivatedAt": row["deactivated_at"],
-        "createdAt": row["created_at"],
-    }
-
-
 def row_to_audit_log(row: sqlite3.Row) -> dict[str, int | str | None]:
     return {
         "id": row["id"],
@@ -212,20 +132,6 @@ def row_to_audit_log(row: sqlite3.Row) -> dict[str, int | str | None]:
         "createdAt": row["created_at"],
         "actorUsername": row["actor_username"],
         "actorRole": row["actor_role"],
-    }
-
-
-def row_to_mfa_recovery_request(row: sqlite3.Row) -> dict[str, int | str | None]:
-    return {
-        "id": row["id"],
-        "userId": row["user_id"],
-        "username": row["username"],
-        "role": row["role"],
-        "status": row["status"],
-        "reason": row["reason"],
-        "requestedAt": row["requested_at"],
-        "processedAt": row["processed_at"],
-        "processedByUsername": row["processed_by_username"],
     }
 
 
