@@ -1,0 +1,319 @@
+/* Corporate Gold Theme */
+
+:root {
+  --primary-gold: #ffd700;
+  --secondary-gold: #daa520;
+  --dark-gold: #b8860b;
+  --light-gold: #fff8dc;
+  --background: #ffffff;
+  --panel: #fffef4;
+  --text: #333333;
+  --danger: #b42318;
+  --success: #0f766e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: Arial, sans-serif;
+  background-color: var(--background);
+  color: var(--text);
+  margin: 0;
+  padding: 0;
+  line-height: 1.6;
+}
+
+.app-shell {
+  display: flex;
+  min-height: 100vh;
+}
+
+.standalone-card {
+  max-width: 720px;
+  margin: 48px auto;
+  padding: 24px;
+}
+
+.sidebar {
+  width: 280px;
+  background-color: var(--dark-gold);
+  color: #ffffff;
+  padding: 24px;
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
+  min-height: 100vh;
+}
+
+.sidebar h2 {
+  margin-top: 0;
+  color: var(--light-gold);
+}
+
+.sidebar-link-group {
+  display: grid;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.sidebar-link-group a {
+  display: inline-block;
+  background-color: var(--primary-gold);
+  color: #222;
+  padding: 10px 14px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.sidebar-link-group a:hover,
+.sidebar-link-group a:focus {
+  background-color: var(--light-gold);
+  color: var(--dark-gold);
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.sidebar li {
+  margin-bottom: 10px;
+}
+
+.sidebar a {
+  color: #ffffff;
+  text-decoration: none;
+  font-size: 0.95rem;
+}
+
+.sidebar nav a:hover,
+.sidebar nav a:focus {
+  color: var(--primary-gold);
+}
+
+.session-card {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 18px;
+  padding: 12px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+}
+
+.session-card button {
+  width: 100%;
+}
+
+.content {
+  flex: 1;
+  padding: 24px;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.intro {
+  margin-bottom: 20px;
+  color: var(--text);
+}
+
+.card,
+.standalone-card {
+  background-color: rgba(255, 248, 220, 0.95);
+  border: 1px solid var(--secondary-gold);
+  border-radius: 8px;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12);
+}
+
+.card {
+  padding: 20px;
+  margin: 16px 0;
+}
+
+.card h2,
+.card h3,
+.standalone-card h1 {
+  margin-top: 0;
+}
+
+button {
+  background-color: var(--primary-gold);
+  color: var(--text);
+  border: 2px solid var(--secondary-gold);
+  padding: 10px 20px;
+  font-size: 16px;
+  cursor: pointer;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+}
+
+button:hover {
+  background-color: var(--secondary-gold);
+}
+
+button:disabled {
+  cursor: wait;
+  opacity: 0.7;
+}
+
+.button-danger {
+  background-color: #ffe0dc;
+  border-color: #d92d20;
+  color: #7a271a;
+}
+
+.button-danger:hover {
+  background-color: #fecdc7;
+}
+
+input,
+select,
+textarea {
+  border: 1px solid var(--secondary-gold);
+  padding: 8px;
+  border-radius: 4px;
+  font-size: 14px;
+  width: 100%;
+}
+
+textarea {
+  min-height: 100px;
+}
+
+label {
+  display: block;
+  margin-bottom: 12px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+
+.checkbox-label input {
+  width: auto;
+}
+
+.vehicle-grid,
+.access-grid,
+.fuel-management .fuel-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+
+.stack-panel {
+  display: grid;
+  gap: 20px;
+}
+
+.backup-code-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.backup-code {
+  display: inline-block;
+  padding: 10px 12px;
+  background: #fffef4;
+  border: 1px dashed var(--secondary-gold);
+  border-radius: 6px;
+  text-align: center;
+}
+
+.table-wrap {
+  overflow-x: auto;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+thead {
+  background-color: rgba(218, 165, 32, 0.15);
+}
+
+th,
+td {
+  padding: 12px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  text-align: left;
+  vertical-align: top;
+}
+
+th {
+  color: var(--dark-gold);
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.fuel-management .fuel-summary,
+.fuel-management .fuel-form,
+.auth-panel {
+  background: var(--panel);
+}
+
+.empty-state {
+  margin: 0;
+  color: #6b7280;
+}
+
+.status-message {
+  margin: 12px 0 0;
+  font-weight: 600;
+}
+
+.status-error {
+  color: var(--danger);
+}
+
+.status-success {
+  color: var(--success);
+}
+
+.form-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    position: static;
+    min-height: auto;
+  }
+
+  .vehicle-grid,
+  .access-grid,
+  .fuel-management .fuel-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .content {
+    padding: 16px;
+  }
+}
