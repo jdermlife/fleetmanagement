@@ -3,7 +3,8 @@ import DashboardSnapshot from './components/DashboardSnapshot'
 import AuditTrailPanel from './components/AuditTrailPanel'
 import CreditScoring from './components/CreditScoring'
 import FuelManagement from './components/FuelManagement'
-import VehicleRegistry from './components/VehicleRegistry'
+import VehicleDetailPage from './components/VehicleDetailPage'
+import VehicleMasterPage from './components/VehicleMasterPage'
 
 
 type FleetPage = {
@@ -57,11 +58,12 @@ function App() {
   return (
     <div className="app-shell">
       <aside className="sidebar">
-        <h2>Fleet Pages</h2>
+        <h2>The Best Car and Fleet Rental</h2>
         <p>Demo Version. Access Rights Integrated in Actual</p>
         <div className="sidebar-link-group">
           <a href="#lending-scorecard">Lending Scorecard</a>
           <a href="#vehicle-master">Vehicle Registry</a>
+          <a href="#vehicle-detail">Vehicle Detail</a>
           <a href="#fuel-management">Fuel Management</a>
           <a href="#credit-scoring">Credit Scoring</a>
           <a href="#audit-trail">Audit Trail</a>
@@ -114,7 +116,11 @@ function renderPageContent(pageId: string) {
   }
 
   if (pageId === 'vehicle-master') {
-    return <VehicleRegistry />
+    return <VehicleMasterPage />
+  }
+
+  if (pageId === 'vehicle-detail') {
+    return <VehicleDetailPage />
   }
 
   if (pageId === 'fuel-management') {

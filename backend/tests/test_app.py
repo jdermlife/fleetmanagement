@@ -32,10 +32,13 @@ class FleetManagementAppTests(unittest.TestCase):
 
     def test_health_and_public_vehicle_listing(self) -> None:
         health_response = self.client.get("/health")
+        database_response = self.client.get("/database/status")
         vehicles_response = self.client.get("/vehicles")
 
         self.assertEqual(health_response.status_code, 200)
         self.assertEqual(health_response.get_json()["status"], "ok")
+        self.assertEqual(database_response.status_code, 200)
+        self.assertEqual(database_response.get_json()["engine"], "sqlite")
         self.assertEqual(vehicles_response.status_code, 200)
         self.assertEqual(len(vehicles_response.get_json()), 2)
 

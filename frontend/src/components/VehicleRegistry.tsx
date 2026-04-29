@@ -12,8 +12,11 @@ const initialForm = {
   year: '',
 }
 
+interface VehicleRegistryProps {
+  storageLabel?: string
+}
 
-function VehicleRegistry() {
+function VehicleRegistry({ storageLabel = 'These records come from the backend API.' }: VehicleRegistryProps) {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
   const [form, setForm] = useState(initialForm)
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null)
@@ -131,7 +134,7 @@ function VehicleRegistry() {
       <div className="card vehicle-grid">
         <div>
           <h3>Current Fleet</h3>
-          <p>These records come from the backend API and persist in SQLite.</p>
+          <p>{storageLabel}</p>
           {isLoading ? (
             <p>Loading vehicles...</p>
           ) : (

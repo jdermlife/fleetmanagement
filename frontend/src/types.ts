@@ -13,6 +13,15 @@ export interface NewVehicle {
   year: number
 }
 
+export interface DatabaseStatus {
+  engine: string
+  connected: boolean
+  database: string | null
+  host: string | null
+  port: number | null
+  source: string
+}
+
 export interface FuelLog {
   id: number
   date: string

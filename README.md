@@ -3,6 +3,7 @@
 This repository contains a lightweight fleet management baseline with:
 
 - public-access vehicle and fuel log CRUD
+- a dedicated Vehicle Master Page ready for PostgreSQL-backed storage
 - recent audit history for data mutations
 - persistent SQLite storage for core records
 - a React frontend for managing fleet records without sign-in
@@ -17,6 +18,11 @@ This repository contains a lightweight fleet management baseline with:
 3. Start the API with `python app/main.py`
 
 The backend runs on `http://localhost:5000`.
+
+To connect Vehicle Master to PostgreSQL, set `DATABASE_URL` before starting the backend.
+Example:
+
+- `postgresql://postgres:password@localhost:5432/fleetmanagement`
 
 Production entrypoint:
 
@@ -35,6 +41,7 @@ An example environment file is included in [.env.example](</C:/Users/Jorge/Docum
 
 ## API Surface
 
+- `GET /database/status`
 - `GET /vehicles`
 - `POST /vehicles`
 - `PUT /vehicles/:id`

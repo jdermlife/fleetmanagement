@@ -2,15 +2,32 @@ from __future__ import annotations
 
 from contextlib import closing
 from datetime import datetime, timezone
+import os
 from pathlib import Path
 
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 try:
-    from .models import get_connection, init_db, row_to_audit_log, row_to_fuel_log, row_to_vehicle
+    from .models import (
+        get_connection,
+        get_database_status,
+        init_db,
+        resolve_database_config,
+        row_to_audit_log,
+        row_to_fuel_log,
+        row_to_vehicle,
+    )
 except ImportError:
-    from models import get_connection, init_db, row_to_audit_log, row_to_fuel_log, row_to_vehicle
+    from models import (
+        get_connection,
+        get_database_status,
+        init_db,
+        resolve_database_config,
+        row_to_audit_log,
+        row_to_fuel_log,
+        row_to_vehicle,
+    )
 
 
 BASE_DIR = Path(__file__).resolve().parent
@@ -20,20 +37,35 @@ DEFAULT_DATABASE_PATH = BASE_DIR / "fms.db"
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
     app = Flask(__name__)
     CORS(app)
-    app.config.from_mapping(DATABASE_PATH=str(DEFAULT_DATABASE_PATH))
+    app.config.from_mapping(
+        DATABASE_PATH=str(DEFAULT_DATABASE_PATH),
+        DATABASE_URL=os.getenv("DATABASE_URL", "").strip() or None,
+    )
 
     if test_config:
         app.config.update(test_config)
 
-    init_db(app.config["DATABASE_PATH"])
+    database_config = resolve_database_config(
+        database_url=app.config.get("DATABASE_URL"),
+        database_path=app.config.get("DATABASE_PATH"),
+    )
+    app.config["DATABASE_CONFIG"] = database_config
+    init_db(database_config)
 
     @app.get("/health")
     def health_check():
         return jsonify({"status": "ok"})
 
+    @app.get("/database/status")
+    def database_status():
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            connection.execute("SELECT 1")
+
+        return jsonify(get_database_status(app.config["DATABASE_CONFIG"]))
+
     @app.get("/audit-logs")
     def list_audit_logs():
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             audit_logs = connection.execute(
                 """
                 SELECT audit_logs.id, audit_logs.action, audit_logs.entity_type, audit_logs.entity_id,
@@ -48,7 +80,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.get("/vehicles")
     def get_vehicles():
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             vehicles = connection.execute(
                 """
                 SELECT id, make, model, year, created_at, updated_at
@@ -65,12 +97,13 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         if error:
             return jsonify({"error": error}), 400
 
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             with connection:
-                cursor = connection.execute(
+                vehicle = connection.execute(
                     """
                     INSERT INTO vehicles (make, model, year, updated_at)
                     VALUES (?, ?, ?, ?)
+                    RETURNING id, make, model, year, created_at, updated_at
                     """,
                     (
                         vehicle_data["make"],
@@ -78,14 +111,6 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                         vehicle_data["year"],
                         _utcnow_iso(),
                     ),
-                )
-                vehicle = connection.execute(
-                    """
-                    SELECT id, make, model, year, created_at, updated_at
-                    FROM vehicles
-                    WHERE id = ?
-                    """,
-                    (cursor.lastrowid,),
                 ).fetchone()
                 _log_audit_event(
                     connection,
@@ -104,7 +129,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         if error:
             return jsonify({"error": error}), 400
 
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             existing_vehicle = connection.execute(
                 "SELECT id FROM vehicles WHERE id = ?",
                 (vehicle_id,),
@@ -147,7 +172,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.delete("/vehicles/<int:vehicle_id>")
     def delete_vehicle(vehicle_id: int):
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             vehicle = connection.execute(
                 """
                 SELECT id, make, model, year, created_at, updated_at
@@ -173,7 +198,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.get("/fuel-logs")
     def get_fuel_logs():
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             logs = connection.execute(
                 """
                 SELECT id, date, vehicle, fuel_card, liters, amount, notes,
@@ -191,15 +216,17 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         if error:
             return jsonify({"error": error}), 400
 
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             with connection:
-                cursor = connection.execute(
+                fuel_log = connection.execute(
                     """
                     INSERT INTO fuel_logs (
                         date, vehicle, fuel_card, liters, amount, notes,
                         theft_suspected, abnormal_refill, updated_at
                     )
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id, date, vehicle, fuel_card, liters, amount, notes,
+                              theft_suspected, abnormal_refill, created_at, updated_at
                     """,
                     (
                         fuel_log_data["date"],
@@ -212,15 +239,6 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                         int(fuel_log_data["abnormal_refill"]),
                         _utcnow_iso(),
                     ),
-                )
-                fuel_log = connection.execute(
-                    """
-                    SELECT id, date, vehicle, fuel_card, liters, amount, notes,
-                           theft_suspected, abnormal_refill, created_at, updated_at
-                    FROM fuel_logs
-                    WHERE id = ?
-                    """,
-                    (cursor.lastrowid,),
                 ).fetchone()
                 _log_audit_event(
                     connection,
@@ -239,7 +257,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         if error:
             return jsonify({"error": error}), 400
 
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             existing_log = connection.execute(
                 "SELECT id FROM fuel_logs WHERE id = ?",
                 (fuel_log_id,),
@@ -289,7 +307,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.delete("/fuel-logs/<int:fuel_log_id>")
     def delete_fuel_log(fuel_log_id: int):
-        with closing(get_connection(app.config["DATABASE_PATH"])) as connection:
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
             fuel_log = connection.execute(
                 """
                 SELECT id, date, vehicle, fuel_card, liters, amount, notes,
