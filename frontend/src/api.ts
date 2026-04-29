@@ -22,7 +22,7 @@ export function getErrorMessage(error: unknown, fallback: string) {
     }
 
     if (!error.response) {
-      return `Unable to reach the backend at ${DEFAULT_API_BASE_URL}. Start the API and try again.`
+      return 'Unable to reach the backend right now.'
     }
   }
 

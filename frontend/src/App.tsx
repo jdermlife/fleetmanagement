@@ -1,3 +1,5 @@
+import LendingScorecard from './components/LendingScorecard'
+import DashboardSnapshot from './components/DashboardSnapshot'
 import AuditTrailPanel from './components/AuditTrailPanel'
 import CreditScoring from './components/CreditScoring'
 import FuelManagement from './components/FuelManagement'
@@ -14,6 +16,7 @@ type FleetPage = {
 
 const productPages: FleetPage[] = [
   { id: 'dashboard', title: 'Dashboard', description: 'Executive overview of fleet operations.', features: ['KPI cards', 'Active vehicles', 'Vehicle availability', 'Alerts', 'Fuel usage', 'Cost summary', 'Utilization graphs', 'Map overview'] },
+  { id: 'lending-scorecard', title: 'Lending Scorecard', description: 'Interactive credit scorecard with weighted computation.', features: ['Weighted sections', 'Risk grading', 'Critical override', 'Relationship manager notes'] },
   { id: 'vehicle-master', title: 'Vehicle Master Page', description: 'Central registry of all vehicles.', features: ['Add/edit/delete vehicles', 'Plate number', 'VIN', 'Make/model', 'Registration', 'Ownership', 'Status', 'Photos', 'Assigned branch'] },
   { id: 'vehicle-detail', title: 'Vehicle Detail Page', description: 'Full vehicle record with history and documents.', features: ['Maintenance history', 'Mileage logs', 'Insurance details', 'Fuel records', 'GPS history', 'Attached documents'] },
   { id: 'driver-management', title: 'Driver Management', description: 'Manage drivers and operators.', features: ['Driver profiles', 'Licenses', 'Certifications', 'Shifts', 'Assigned vehicles', 'Incident records'] },
@@ -55,8 +58,9 @@ function App() {
     <div className="app-shell">
       <aside className="sidebar">
         <h2>Fleet Pages</h2>
-        <p>No sign-in required.</p>
+        <p>Demo Version. Access Rights Integrated in Actual</p>
         <div className="sidebar-link-group">
+          <a href="#lending-scorecard">Lending Scorecard</a>
           <a href="#vehicle-master">Vehicle Registry</a>
           <a href="#fuel-management">Fuel Management</a>
           <a href="#credit-scoring">Credit Scoring</a>
@@ -101,6 +105,14 @@ function App() {
 
 
 function renderPageContent(pageId: string) {
+  if (pageId === 'dashboard') {
+    return <DashboardSnapshot />
+  }
+
+  if (pageId === 'lending-scorecard') {
+    return <LendingScorecard />
+  }
+
   if (pageId === 'vehicle-master') {
     return <VehicleRegistry />
   }
