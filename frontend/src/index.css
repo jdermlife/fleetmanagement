@@ -377,6 +377,291 @@ body {
   margin: 0;
 }
 
+.lease-scorecard-page {
+  display: grid;
+  gap: 18px;
+}
+
+.lease-scorecard-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.lease-scorecard-header p {
+  margin-bottom: 0;
+  max-width: 760px;
+}
+
+.lease-scorecard-grid,
+.lease-scorecard-workspace {
+  display: grid;
+  gap: 18px;
+}
+
+.lease-scorecard-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.lease-scorecard-workspace {
+  grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr);
+  align-items: start;
+}
+
+.lease-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92));
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  border-radius: 16px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.lease-scorecard-list {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.lease-scorecard-note {
+  margin: 0;
+  color: #5b6472;
+}
+
+.lease-scorecard-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lease-scorecard-preview {
+  padding: 14px;
+  border-radius: 12px;
+  background: rgba(255, 215, 0, 0.14);
+  display: grid;
+  gap: 4px;
+}
+
+.lease-scorecard-preview strong {
+  font-size: 1.4rem;
+}
+
+.lease-scorecard-form .form-actions,
+.lease-scorecard-preview {
+  grid-column: 1 / -1;
+}
+
+.lease-side-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.lease-result-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.lease-result-grid span {
+  display: block;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.lease-result-grid strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.lease-result-summary {
+  grid-column: 1 / -1;
+}
+
+.lease-result-summary p {
+  margin: 6px 0 0;
+}
+
+.live-gps-page {
+  display: grid;
+  gap: 18px;
+}
+
+.live-gps-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.live-gps-header p {
+  margin-bottom: 0;
+  max-width: 760px;
+}
+
+.live-gps-grid,
+.live-gps-detail-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.live-gps-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92));
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  border-radius: 16px;
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.live-gps-card-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: center;
+}
+
+.live-gps-map-card {
+  overflow: hidden;
+}
+
+.live-gps-map {
+  position: relative;
+  min-height: 320px;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.18), transparent 20%),
+    radial-gradient(circle at 72% 50%, rgba(37, 99, 235, 0.18), transparent 18%),
+    linear-gradient(135deg, #1f2937, #334155 42%, #0f766e 100%);
+  overflow: hidden;
+}
+
+.live-gps-map::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+  background-size: 44px 44px;
+}
+
+.gps-map-overlay {
+  position: absolute;
+  left: 18px;
+  bottom: 18px;
+  padding: 12px 14px;
+  border-radius: 14px;
+  background: rgba(15, 23, 42, 0.68);
+  color: #f8fafc;
+  display: grid;
+  gap: 4px;
+}
+
+.gps-marker {
+  position: absolute;
+  width: 42px;
+  height: 42px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  color: #fff;
+  cursor: pointer;
+  box-shadow: 0 12px 20px rgba(15, 23, 42, 0.35);
+}
+
+.gps-marker-moving {
+  background: #16a34a;
+}
+
+.gps-marker-idle {
+  background: #2563eb;
+}
+
+.gps-marker-stopped {
+  background: #c2410c;
+}
+
+.gps-marker-selected {
+  transform: scale(1.08);
+  outline: 3px solid rgba(255, 255, 255, 0.45);
+}
+
+.gps-status-badge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.gps-status-moving {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.gps-status-idle {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.gps-status-stopped {
+  background: #ffedd5;
+  color: #c2410c;
+}
+
+.gps-row-selected {
+  background: rgba(255, 215, 0, 0.12);
+}
+
+.live-gps-detail-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.live-gps-detail-list span {
+  display: block;
+  color: #6b7280;
+  font-size: 0.85rem;
+}
+
+.live-gps-detail-list strong {
+  display: block;
+  margin-top: 4px;
+}
+
+.maintenance-page {
+  display: grid;
+  gap: 18px;
+}
+
+.maintenance-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+}
+
+.maintenance-header p {
+  margin-bottom: 0;
+  max-width: 760px;
+}
+
+.maintenance-grid {
+  display: grid;
+  gap: 18px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.maintenance-notes-field {
+  grid-column: 1 / -1;
+}
+
 .vehicle-detail-page {
   display: grid;
   gap: 18px;
@@ -869,6 +1154,13 @@ th {
   .vehicle-detail-panels,
   .vehicle-detail-columns,
   .vehicle-profile-grid,
+  .lease-scorecard-grid,
+  .lease-scorecard-workspace,
+  .lease-scorecard-form,
+  .live-gps-grid,
+  .live-gps-detail-grid,
+  .live-gps-detail-list,
+  .maintenance-grid,
   .scorecard-meta,
   .scorecard-legend,
   .scorecard-grid {
@@ -882,6 +1174,9 @@ th {
   .dashboard-header,
   .vehicle-master-header,
   .vehicle-detail-header,
+  .lease-scorecard-header,
+  .live-gps-header,
+  .maintenance-header,
   .scorecard-header,
   .scorecard-section-header {
     flex-direction: column;
@@ -896,6 +1191,10 @@ th {
   }
 
   .scorecard-outcome-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lease-result-grid {
     grid-template-columns: 1fr;
   }
 }

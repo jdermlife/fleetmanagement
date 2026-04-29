@@ -113,6 +113,90 @@ class FleetManagementAppTests(unittest.TestCase):
         self.assertEqual(valid_response.status_code, 200)
         self.assertEqual(valid_response.get_json()["score"], 75.0)
 
+    def test_lease_scorecard_is_scored_and_saved(self) -> None:
+        create_response = self.client.post(
+            "/lease-scorecards",
+            json={
+                "customerName": "Maria Santos",
+                "companyName": "Santos Logistics",
+                "vehicleType": "SUV",
+                "vehicleValue": 1800000,
+                "downPayment": 300000,
+                "requestedAmount": 1500000,
+                "monthlyIncome": 220000,
+                "existingDebt": 25000,
+                "leaseTermMonths": 48,
+                "creditScore": 730,
+                "yearsInBusiness": 6,
+                "employmentYears": 0,
+            },
+        )
+        list_response = self.client.get("/lease-scorecards")
+
+        self.assertEqual(create_response.status_code, 201)
+        created = create_response.get_json()
+        self.assertEqual(created["customerName"], "Maria Santos")
+        self.assertEqual(created["riskGrade"], "A")
+        self.assertEqual(created["decision"], "Approve")
+        self.assertGreater(created["finalScore"], 85)
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()[0]["customerName"], "Maria Santos")
+
+    def test_driver_management_scorecard_is_scored_and_saved(self) -> None:
+        create_response = self.client.post(
+            "/driver-management-scorecards",
+            json={
+                "driverName": "Roberto Cruz",
+                "licenseClass": "Professional",
+                "yearsDriving": 8,
+                "employmentYears": 5,
+                "incidentsLast3Years": 0,
+                "violationsLast3Years": 1,
+                "trainingHours": 24,
+                "onTimeRate": 97,
+                "customerRating": 4.7,
+                "fatigueEvents": 0,
+            },
+        )
+        list_response = self.client.get("/driver-management-scorecards")
+
+        self.assertEqual(create_response.status_code, 201)
+        created = create_response.get_json()
+        self.assertEqual(created["driverName"], "Roberto Cruz")
+        self.assertEqual(created["riskGrade"], "B")
+        self.assertEqual(created["recommendation"], "Priority Assignment")
+        self.assertGreater(created["finalScore"], 85)
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()[0]["driverName"], "Roberto Cruz")
+
+    def test_maintenance_record_is_saved(self) -> None:
+        vehicles_response = self.client.get("/vehicles")
+        vehicle = vehicles_response.get_json()[0]
+
+        create_response = self.client.post(
+            "/maintenance-records",
+            json={
+                "vehicleId": vehicle["id"],
+                "vehicleLabel": f"{vehicle['make']} {vehicle['model']} ({vehicle['year']})",
+                "maintenanceType": "Preventive Service",
+                "serviceDate": "2026-04-29",
+                "nextServiceDate": "2026-07-29",
+                "odometerKm": 45210,
+                "vendor": "FleetCare Garage",
+                "estimatedCost": 8500,
+                "status": "Scheduled",
+                "notes": "Quarterly preventive maintenance booking.",
+            },
+        )
+        list_response = self.client.get("/maintenance-records")
+
+        self.assertEqual(create_response.status_code, 201)
+        created = create_response.get_json()
+        self.assertEqual(created["maintenanceType"], "Preventive Service")
+        self.assertEqual(created["status"], "Scheduled")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()[0]["vehicleLabel"], f"{vehicle['make']} {vehicle['model']} ({vehicle['year']})")
+
 
 if __name__ == "__main__":
     unittest.main()
