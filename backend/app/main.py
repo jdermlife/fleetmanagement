@@ -47,7 +47,11 @@ except ImportError:
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_DATABASE_PATH = BASE_DIR / "fleet_mgmt_db.db"
+# PostgreSQL (Neon) is the primary database - no SQLite fallback
+DEFAULT_DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
+)
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
@@ -67,16 +71,23 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     )
     
     app.config.from_mapping(
-        DATABASE_PATH=str(DEFAULT_DATABASE_PATH),
-        DATABASE_URL="postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+        DATABASE_URL=DEFAULT_DATABASE_URL,
     )
 
     if test_config:
         app.config.update(test_config)
 
+    # PostgreSQL is required - no fallback to SQLite
+    database_url = app.config.get("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is required. "
+            "PostgreSQL (Neon) is the only supported database engine."
+        )
+    
     database_config = resolve_database_config(
-        database_url=app.config.get("DATABASE_URL"),
-        database_path=app.config.get("DATABASE_PATH"),
+        database_url=database_url,
+        database_path=None,  # No SQLite fallback
     )
     app.config["DATABASE_CONFIG"] = database_config
     init_db(database_config)

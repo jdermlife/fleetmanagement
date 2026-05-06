@@ -356,26 +356,43 @@ class DatabaseConnection:
 
 
 def resolve_database_config(database_url: str | None, database_path: str | Path | None) -> DatabaseConfig:
-    if database_url:
-        parsed = urlparse(database_url)
-        if not parsed.scheme.startswith("postgres"):
-            raise ValueError("DATABASE_URL must use a PostgreSQL scheme such as postgresql:// (Neon compatible)")
-
-        return DatabaseConfig(
-            engine="postgresql",
-            url=database_url,
-            host=parsed.hostname,
-            port=parsed.port,
-            name=(parsed.path or "").lstrip("/") or "fleet_mgmt_db",
+    """
+    Resolve database configuration from environment variables.
+    
+    PostgreSQL (via DATABASE_URL) is the only supported database engine.
+    SQLite fallback has been removed.
+    
+    Args:
+        database_url: PostgreSQL connection URL (e.g., postgresql://...)
+        database_path: Unused - kept for backward compatibility only
+        
+    Returns:
+        DatabaseConfig with PostgreSQL settings
+        
+    Raises:
+        ValueError: If DATABASE_URL is not provided or has invalid format
+    """
+    if not database_url:
+        raise ValueError(
+            "DATABASE_URL environment variable is required. "
+            "PostgreSQL (Neon compatible) is the only supported database engine. "
+            "SQLite fallback has been removed. "
+            "Set DATABASE_URL to a PostgreSQL connection string."
+        )
+    
+    parsed = urlparse(database_url)
+    if not parsed.scheme.startswith("postgres"):
+        raise ValueError(
+            "DATABASE_URL must use a PostgreSQL scheme such as postgresql:// or postgresql+psycopg:// "
+            "(Neon compatible). SQLite is no longer supported."
         )
 
-    if database_path is None:
-        raise ValueError("A SQLite database path is required when DATABASE_URL is not set.")
-
     return DatabaseConfig(
-        engine="sqlite", 
-        path=str(database_path), 
-        name="fleet_mgmt_db",
+        engine="postgresql",
+        url=database_url,
+        host=parsed.hostname,
+        port=parsed.port,
+        name=(parsed.path or "").lstrip("/") or "fleet_mgmt_db",
     )
 
 
