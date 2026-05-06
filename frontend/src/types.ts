@@ -179,3 +179,30 @@ export interface AuditLog {
   actorUsername: string | null
   actorRole: string | null
 }
+
+export interface GpsTrackingRecord {
+  id: number
+  vehicleId: number | null
+  vehicleLabel: string
+  latitude: number
+  longitude: number
+  speedKph: number
+  heading: string
+  status: string
+  routeLabel: string
+  geofence: string
+  recordedAt: string
+  createdAt: string
+}
+
+export interface GpsTrackingSubmission {
+  vehicleId: number | null
+  vehicleLabel: string
+  latitude: number
+  longitude: number
+  speedKph: number
+  heading: string
+  status: string
+  routeLabel: string
+  geofence: string
+}

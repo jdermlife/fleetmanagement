@@ -20,6 +20,7 @@ try:
         row_to_driver,
         row_to_driver_management_scorecard,
         row_to_fuel_log,
+        row_to_gps_tracking,
         row_to_insurance_record,
         row_to_lease_scorecard,
         row_to_maintenance_record,
@@ -37,6 +38,7 @@ except ImportError:
         row_to_driver,
         row_to_driver_management_scorecard,
         row_to_fuel_log,
+        row_to_gps_tracking,
         row_to_insurance_record,
         row_to_lease_scorecard,
         row_to_maintenance_record,
@@ -50,7 +52,20 @@ DEFAULT_DATABASE_PATH = BASE_DIR / "fleet_mgmt_db.db"
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
     app = Flask(__name__)
-    CORS(app)
+    
+    # Configure CORS to allow frontend connections
+    CORS(
+        app,
+        resources={
+            r"/*": {
+                "origins": ["http://localhost:5173", "http://localhost:3000", "http://localhost:5000"],
+                "methods": ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+                "allow_headers": ["Content-Type", "Authorization"],
+                "supports_credentials": True,
+            }
+        },
+    )
+    
     app.config.from_mapping(
         DATABASE_PATH=str(DEFAULT_DATABASE_PATH),
         DATABASE_URL="postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
@@ -68,7 +83,23 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
     @app.get("/health")
     def health_check():
-        return jsonify({"status": "ok"})
+        try:
+            # Test database connection
+            with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+                connection.execute("SELECT 1")
+            
+            return jsonify({
+                "status": "ok",
+                "version": "1.0",
+                "database": "connected",
+                "timestamp": _utcnow_iso(),
+            })
+        except Exception as e:
+            return jsonify({
+                "status": "error",
+                "error": str(e),
+                "timestamp": _utcnow_iso(),
+            }), 500
 
     @app.get("/database/status")
     def database_status():
@@ -686,6 +717,63 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
         return jsonify(row_to_insurance_record(row)), 201
 
+    @app.get("/gps-tracking")
+    def list_gps_tracking():
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, vehicle_id, vehicle_label, latitude, longitude, speed_kph, heading,
+                       status, route_label, geofence, recorded_at, created_at
+                FROM gps_tracking
+                ORDER BY recorded_at DESC, id DESC
+                LIMIT 100
+                """
+            ).fetchall()
+
+        return jsonify([row_to_gps_tracking(row) for row in rows])
+
+    @app.post("/gps-tracking")
+    def create_gps_tracking():
+        data = _get_json_payload()
+        payload, error = _parse_gps_tracking_payload(data)
+        if error:
+            return jsonify({"error": error}), 400
+
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            with connection:
+                row = connection.execute(
+                    """
+                    INSERT INTO gps_tracking (
+                        vehicle_id, vehicle_label, latitude, longitude, speed_kph, heading,
+                        status, route_label, geofence, recorded_at
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id, vehicle_id, vehicle_label, latitude, longitude, speed_kph, heading,
+                              status, route_label, geofence, recorded_at, created_at
+                    """,
+                    (
+                        payload["vehicle_id"],
+                        payload["vehicle_label"],
+                        payload["latitude"],
+                        payload["longitude"],
+                        payload["speed_kph"],
+                        payload["heading"],
+                        payload["status"],
+                        payload["route_label"],
+                        payload["geofence"],
+                        payload["recorded_at"],
+                    ),
+                ).fetchone()
+                _log_audit_event(
+                    connection,
+                    action="gps-tracking.create",
+                    entity_type="gps-tracking",
+                    entity_id=row["id"],
+                    details=f"Recorded GPS tracking for {payload['vehicle_label']} at {payload['latitude']}, {payload['longitude']}.",
+                )
+
+        return jsonify(row_to_gps_tracking(row)), 201
+
     return app
 
 
@@ -1041,6 +1129,68 @@ def _parse_insurance_record_payload(
             "status": status,
             "contact_person": contact_person,
             "notes": notes,
+        },
+        None,
+    )
+
+
+def _parse_gps_tracking_payload(data: dict[str, object]) -> tuple[dict[str, object], str | None]:
+    vehicle_id_raw = data.get("vehicleId")
+    vehicle_label = str(data.get("vehicleLabel", "")).strip()
+    heading = str(data.get("heading", "")).strip()
+    status = str(data.get("status", "")).strip()
+    route_label = str(data.get("routeLabel", "")).strip()
+    geofence = str(data.get("geofence", "")).strip()
+    recorded_at = str(data.get("recordedAt", "")).strip()
+
+    if not vehicle_label:
+        return {}, "Vehicle is required."
+    if not status:
+        return {}, "Status is required."
+
+    try:
+        latitude = float(data.get("latitude", 0))
+        longitude = float(data.get("longitude", 0))
+        speed_kph = float(data.get("speedKph", 0))
+    except (TypeError, ValueError):
+        return {}, "Latitude, longitude, and speed must be numeric."
+
+    # Basic coordinate validation
+    if latitude < -90 or latitude > 90:
+        return {}, "Latitude must be between -90 and 90."
+    if longitude < -180 or longitude > 180:
+        return {}, "Longitude must be between -180 and 180."
+    if speed_kph < 0:
+        return {}, "Speed cannot be negative."
+
+    # Validate recorded_at timestamp if provided
+    if recorded_at:
+        try:
+            datetime.fromisoformat(recorded_at.replace('Z', '+00:00'))
+        except ValueError:
+            return {}, "Recorded at must be a valid ISO timestamp."
+    else:
+        recorded_at = _utcnow_iso()
+
+    vehicle_id = None
+    if vehicle_id_raw not in (None, ""):
+        try:
+            vehicle_id = int(vehicle_id_raw)
+        except (TypeError, ValueError):
+            return {}, "Vehicle id must be numeric when provided."
+
+    return (
+        {
+            "vehicle_id": vehicle_id,
+            "vehicle_label": vehicle_label,
+            "latitude": latitude,
+            "longitude": longitude,
+            "speed_kph": speed_kph,
+            "heading": heading,
+            "status": status,
+            "route_label": route_label,
+            "geofence": geofence,
+            "recorded_at": recorded_at,
         },
         None,
     )

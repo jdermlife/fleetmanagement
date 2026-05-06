@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
+import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../api'
-import type { LiveGpsVehicleStatus, Vehicle } from '../types'
+import type { GpsTrackingRecord, GpsTrackingSubmission, Vehicle } from '../types'
 
 
 const routePresets = [
@@ -14,44 +15,96 @@ const routePresets = [
 
 function LiveGpsTrackingPage() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([])
+  const [gpsRecords, setGpsRecords] = useState<GpsTrackingRecord[]>([])
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isSaving, setIsSaving] = useState(false)
+  const [successMessage, setSuccessMessage] = useState('')
 
   useEffect(() => {
-    void loadVehicles()
+    void loadData()
   }, [])
 
-  async function loadVehicles() {
+  async function loadData() {
     setIsLoading(true)
     setError('')
 
     try {
-      const response = await api.get<Vehicle[]>('/vehicles')
-      setVehicles(response.data)
-      setSelectedVehicleId(response.data[0]?.id ?? null)
+      const [vehiclesResponse, gpsResponse] = await Promise.all([
+        api.get<Vehicle[]>('/vehicles'),
+        api.get<GpsTrackingRecord[]>('/gps-tracking'),
+      ])
+      setVehicles(vehiclesResponse.data)
+      setGpsRecords(gpsResponse.data)
+      setSelectedVehicleId(vehiclesResponse.data[0]?.id ?? null)
     } catch (loadError: unknown) {
-      setError(getErrorMessage(loadError, 'Unable to load GPS vehicle information right now.'))
+      setError(getErrorMessage(loadError, 'Unable to load GPS tracking data right now.'))
     } finally {
       setIsLoading(false)
     }
   }
 
-  const liveVehicles = useMemo<LiveGpsVehicleStatus[]>(
+  const liveVehicles = useMemo<GpsTrackingRecord[]>(
     () =>
       vehicles.map((vehicle, index) => {
+        // Try to find existing GPS record for this vehicle
+        const existingRecord = gpsRecords.find(record => record.vehicleId === vehicle.id)
+        if (existingRecord) {
+          return existingRecord
+        }
+
+        // Fall back to preset data for demo purposes
         const preset = routePresets[index % routePresets.length]
         return {
-          ...vehicle,
-          ...preset,
+          id: -index - 1, // Temporary negative ID for mock data
+          vehicleId: vehicle.id,
+          vehicleLabel: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
+          latitude: preset.latitude,
+          longitude: preset.longitude,
+          speedKph: preset.speedKph,
+          heading: preset.heading,
           status: preset.speedKph === 0 ? 'idle' : preset.speedKph < 15 ? 'stopped' : 'moving',
-          lastUpdateLabel: index % 2 === 0 ? 'Updated 20s ago' : 'Updated 1m ago',
+          routeLabel: preset.routeLabel,
+          geofence: preset.geofence,
+          recordedAt: new Date().toISOString(),
+          createdAt: new Date().toISOString(),
         }
       }),
-    [vehicles],
+    [vehicles, gpsRecords],
   )
 
   const selectedVehicle = liveVehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null
+
+  async function handleAddGpsRecord(vehicle: Vehicle) {
+    const preset = routePresets[Math.floor(Math.random() * routePresets.length)]
+    
+    const payload: GpsTrackingSubmission = {
+      vehicleId: vehicle.id,
+      vehicleLabel: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
+      latitude: preset.latitude + (Math.random() - 0.5) * 0.01, // Add some random variation
+      longitude: preset.longitude + (Math.random() - 0.5) * 0.01,
+      speedKph: preset.speedKph,
+      heading: preset.heading,
+      status: preset.speedKph === 0 ? 'idle' : preset.speedKph < 15 ? 'stopped' : 'moving',
+      routeLabel: preset.routeLabel,
+      geofence: preset.geofence,
+    }
+
+    setIsSaving(true)
+    setError('')
+    setSuccessMessage('')
+
+    try {
+      const response = await api.post<GpsTrackingRecord>('/gps-tracking', payload)
+      setGpsRecords((current) => [response.data, ...current])
+      setSuccessMessage('GPS tracking record added successfully.')
+    } catch (saveError: unknown) {
+      setError(getErrorMessage(saveError, 'Unable to save GPS tracking record.'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="live-gps-page">
@@ -59,11 +112,11 @@ function LiveGpsTrackingPage() {
         <div>
           <h2>Live GPS Tracking</h2>
           <p>
-            Real-time style tracking page for the current fleet. It uses the saved vehicle master records and presents
-            a live monitoring board with map-style markers, route labels, and movement status.
+            Real-time GPS tracking for the fleet. Records are stored in the backend database and can be
+            retrieved for route analysis, geofencing alerts, and fleet monitoring.
           </p>
         </div>
-        <button type="button" onClick={() => void loadVehicles()} disabled={isLoading}>
+        <button type="button" onClick={() => void loadData()} disabled={isLoading}>
           {isLoading ? 'Refreshing...' : 'Refresh Tracking'}
         </button>
       </div>
@@ -86,7 +139,7 @@ function LiveGpsTrackingPage() {
                 }}
                 onClick={() => setSelectedVehicleId(vehicle.id)}
               >
-                <span>{vehicle.make.slice(0, 1)}</span>
+                <span>{vehicle.vehicleLabel.split(' ')[0].slice(0, 1)}</span>
               </button>
             ))}
             <div className="gps-map-overlay">
@@ -110,6 +163,7 @@ function LiveGpsTrackingPage() {
                     <th>Speed</th>
                     <th>Route</th>
                     <th>Last Update</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -119,13 +173,26 @@ function LiveGpsTrackingPage() {
                       className={selectedVehicleId === vehicle.id ? 'gps-row-selected' : ''}
                       onClick={() => setSelectedVehicleId(vehicle.id)}
                     >
-                      <td>{vehicle.make} {vehicle.model}</td>
+                      <td>{vehicle.vehicleLabel}</td>
                       <td>
                         <span className={`gps-status-badge gps-status-${vehicle.status}`}>{vehicle.status}</span>
                       </td>
                       <td>{vehicle.speedKph} km/h</td>
                       <td>{vehicle.routeLabel}</td>
-                      <td>{vehicle.lastUpdateLabel}</td>
+                      <td>{vehicle.recordedAt ? new Date(vehicle.recordedAt).toLocaleTimeString() : 'N/A'}</td>
+                      <td>
+                        <button 
+                          type="button" 
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const vehicleData = vehicles.find(v => v.id === vehicle.vehicleId)
+                            if (vehicleData) void handleAddGpsRecord(vehicleData)
+                          }}
+                          disabled={isSaving}
+                        >
+                          Update GPS
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -142,7 +209,7 @@ function LiveGpsTrackingPage() {
             <div className="live-gps-detail-list">
               <div>
                 <span>Vehicle</span>
-                <strong>{selectedVehicle.make} {selectedVehicle.model}</strong>
+                <strong>{selectedVehicle.vehicleLabel}</strong>
               </div>
               <div>
                 <span>Status</span>
@@ -161,19 +228,39 @@ function LiveGpsTrackingPage() {
                 <strong>{selectedVehicle.geofence}</strong>
               </div>
               <div>
-                <span>Updated</span>
-                <strong>{selectedVehicle.lastUpdateLabel}</strong>
+                <span>Recorded At</span>
+                <strong>{selectedVehicle.recordedAt ? new Date(selectedVehicle.recordedAt).toLocaleString() : 'N/A'}</strong>
               </div>
             </div>
           </article>
 
           <article className="live-gps-card">
-            <h3>Tracking Alerts</h3>
-            <ul className="lease-scorecard-list">
-              <li>Speed threshold alert activates above 80 km/h.</li>
-              <li>Unauthorized movement alert triggers when a stopped unit changes geofence after hours.</li>
-              <li>Route replay and telematics streams can later be sourced from PostgreSQL-linked tracking tables.</li>
-            </ul>
+            <h3>GPS Tracking History</h3>
+            <div className="table-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Time</th>
+                    <th>Status</th>
+                    <th>Speed</th>
+                    <th>Location</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {gpsRecords
+                    .filter(record => record.vehicleId === selectedVehicle.vehicleId)
+                    .slice(0, 10)
+                    .map((record) => (
+                      <tr key={record.id}>
+                        <td>{new Date(record.recordedAt).toLocaleString()}</td>
+                        <td>{record.status}</td>
+                        <td>{record.speedKph} km/h</td>
+                        <td>{record.latitude.toFixed(4)}, {record.longitude.toFixed(4)}</td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
           </article>
         </div>
       ) : (
@@ -181,6 +268,7 @@ function LiveGpsTrackingPage() {
       )}
 
       {error ? <p className="status-message status-error">{error}</p> : null}
+      {successMessage ? <p className="status-message status-success">{successMessage}</p> : null}
     </div>
   )
 }
