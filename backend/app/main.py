@@ -45,7 +45,7 @@ except ImportError:
 
 
 BASE_DIR = Path(__file__).resolve().parent
-DEFAULT_DATABASE_PATH = BASE_DIR / "fms.db"
+DEFAULT_DATABASE_PATH = BASE_DIR / "fleet_mgmt_db.db"
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
