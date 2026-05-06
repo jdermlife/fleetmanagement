@@ -92,6 +92,20 @@ export interface DriverManagementScorecardRecord extends DriverManagementScoreca
   createdAt: string
 }
 
+export interface DriverRegistrationSubmission {
+  firstName: string
+  lastName: string
+  licenseNumber: string
+  phone: string
+  email: string
+  status: string
+}
+
+export interface DriverRegistrationRecord extends DriverRegistrationSubmission {
+  id: number
+  createdAt: string
+}
+
 export interface MaintenanceRecordSubmission {
   vehicleId: number | null
   vehicleLabel: string
@@ -106,6 +120,26 @@ export interface MaintenanceRecordSubmission {
 }
 
 export interface MaintenanceRecord extends MaintenanceRecordSubmission {
+  id: number
+  createdAt: string
+}
+
+export interface InsuranceRecordSubmission {
+  vehicleId: number | null
+  vehicleLabel: string
+  provider: string
+  policyNumber: string
+  coverageType: string
+  premiumAmount: number
+  insuredValue: number
+  startDate: string
+  endDate: string
+  status: string
+  contactPerson: string
+  notes: string
+}
+
+export interface InsuranceRecord extends InsuranceRecordSubmission {
   id: number
   createdAt: string
 }

@@ -169,6 +169,30 @@ class FleetManagementAppTests(unittest.TestCase):
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.get_json()[0]["driverName"], "Roberto Cruz")
 
+    def test_driver_registration_is_saved(self) -> None:
+        create_response = self.client.post(
+            "/drivers",
+            json={
+                "firstName": "Liza",
+                "lastName": "Martinez",
+                "licenseNumber": "LIC-2026-771",
+                "phone": "+639171234567",
+                "email": "liza.martinez@example.com",
+                "status": "Active",
+            },
+        )
+        list_response = self.client.get("/drivers")
+
+        self.assertEqual(create_response.status_code, 201)
+        created = create_response.get_json()
+        self.assertEqual(created["firstName"], "Liza")
+        self.assertEqual(created["lastName"], "Martinez")
+        self.assertEqual(created["licenseNumber"], "LIC-2026-771")
+        self.assertEqual(created["status"], "Active")
+        self.assertIn("createdAt", created)
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()[0]["firstName"], "Liza")
+
     def test_maintenance_record_is_saved(self) -> None:
         vehicles_response = self.client.get("/vehicles")
         vehicle = vehicles_response.get_json()[0]
@@ -194,6 +218,37 @@ class FleetManagementAppTests(unittest.TestCase):
         created = create_response.get_json()
         self.assertEqual(created["maintenanceType"], "Preventive Service")
         self.assertEqual(created["status"], "Scheduled")
+        self.assertEqual(list_response.status_code, 200)
+        self.assertEqual(list_response.get_json()[0]["vehicleLabel"], f"{vehicle['make']} {vehicle['model']} ({vehicle['year']})")
+
+    def test_insurance_record_is_saved(self) -> None:
+        vehicles_response = self.client.get("/vehicles")
+        vehicle = vehicles_response.get_json()[0]
+
+        create_response = self.client.post(
+            "/insurance-records",
+            json={
+                "vehicleId": vehicle["id"],
+                "vehicleLabel": f"{vehicle['make']} {vehicle['model']} ({vehicle['year']})",
+                "provider": "SecureDrive Insurance",
+                "policyNumber": "SDI-2026-4481",
+                "coverageType": "Comprehensive",
+                "premiumAmount": 24500,
+                "insuredValue": 1250000,
+                "startDate": "2026-05-01",
+                "endDate": "2027-04-30",
+                "status": "Active",
+                "contactPerson": "Anna Reyes",
+                "notes": "Bundled coverage with roadside assistance.",
+            },
+        )
+        list_response = self.client.get("/insurance-records")
+
+        self.assertEqual(create_response.status_code, 201)
+        created = create_response.get_json()
+        self.assertEqual(created["provider"], "SecureDrive Insurance")
+        self.assertEqual(created["policyNumber"], "SDI-2026-4481")
+        self.assertEqual(created["status"], "Active")
         self.assertEqual(list_response.status_code, 200)
         self.assertEqual(list_response.get_json()[0]["vehicleLabel"], f"{vehicle['make']} {vehicle['model']} ({vehicle['year']})")
 

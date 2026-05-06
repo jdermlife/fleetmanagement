@@ -17,8 +17,10 @@ try:
         init_db,
         resolve_database_config,
         row_to_audit_log,
+        row_to_driver,
         row_to_driver_management_scorecard,
         row_to_fuel_log,
+        row_to_insurance_record,
         row_to_lease_scorecard,
         row_to_maintenance_record,
         row_to_vehicle,
@@ -32,8 +34,10 @@ except ImportError:
         init_db,
         resolve_database_config,
         row_to_audit_log,
+        row_to_driver,
         row_to_driver_management_scorecard,
         row_to_fuel_log,
+        row_to_insurance_record,
         row_to_lease_scorecard,
         row_to_maintenance_record,
         row_to_vehicle,
@@ -99,6 +103,56 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
                 """
             ).fetchall()
         return jsonify([row_to_vehicle(vehicle) for vehicle in vehicles])
+
+    @app.get("/drivers")
+    def list_drivers():
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, first_name, last_name, license_number, phone, email, status, created_at
+                FROM drivers
+                ORDER BY id DESC
+                LIMIT 50
+                """
+            ).fetchall()
+
+        return jsonify([row_to_driver(row) for row in rows])
+
+    @app.post("/drivers")
+    def create_driver():
+        data = _get_json_payload()
+        payload, error = _parse_driver_payload(data)
+        if error:
+            return jsonify({"error": error}), 400
+
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            with connection:
+                row = connection.execute(
+                    """
+                    INSERT INTO drivers (
+                        first_name, last_name, license_number, phone, email, status
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?)
+                    RETURNING id, first_name, last_name, license_number, phone, email, status, created_at
+                    """,
+                    (
+                        payload["first_name"],
+                        payload["last_name"],
+                        payload["license_number"],
+                        payload["phone"],
+                        payload["email"],
+                        payload["status"],
+                    ),
+                ).fetchone()
+                _log_audit_event(
+                    connection,
+                    action="driver.create",
+                    entity_type="driver",
+                    entity_id=row["id"],
+                    details=f"Registered driver {payload['first_name']} {payload['last_name']}.",
+                )
+
+        return jsonify(row_to_driver(row)), 201
 
     @app.post("/vehicles")
     def create_vehicle():
@@ -571,6 +625,67 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
 
         return jsonify(row_to_maintenance_record(row)), 201
 
+    @app.get("/insurance-records")
+    def list_insurance_records():
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            rows = connection.execute(
+                """
+                SELECT id, vehicle_id, vehicle_label, provider, policy_number, coverage_type,
+                       premium_amount, insured_value, start_date, end_date, status, contact_person,
+                       notes, created_at
+                FROM insurance_records
+                ORDER BY end_date ASC, id DESC
+                LIMIT 50
+                """
+            ).fetchall()
+
+        return jsonify([row_to_insurance_record(row) for row in rows])
+
+    @app.post("/insurance-records")
+    def create_insurance_record():
+        data = _get_json_payload()
+        payload, error = _parse_insurance_record_payload(data)
+        if error:
+            return jsonify({"error": error}), 400
+
+        with closing(get_connection(app.config["DATABASE_CONFIG"])) as connection:
+            with connection:
+                row = connection.execute(
+                    """
+                    INSERT INTO insurance_records (
+                        vehicle_id, vehicle_label, provider, policy_number, coverage_type,
+                        premium_amount, insured_value, start_date, end_date, status, contact_person, notes
+                    )
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    RETURNING id, vehicle_id, vehicle_label, provider, policy_number, coverage_type,
+                              premium_amount, insured_value, start_date, end_date, status, contact_person,
+                              notes, created_at
+                    """,
+                    (
+                        payload["vehicle_id"],
+                        payload["vehicle_label"],
+                        payload["provider"],
+                        payload["policy_number"],
+                        payload["coverage_type"],
+                        payload["premium_amount"],
+                        payload["insured_value"],
+                        payload["start_date"],
+                        payload["end_date"],
+                        payload["status"],
+                        payload["contact_person"],
+                        payload["notes"],
+                    ),
+                ).fetchone()
+                _log_audit_event(
+                    connection,
+                    action="insurance-record.create",
+                    entity_type="insurance-record",
+                    entity_id=row["id"],
+                    details=f"Saved insurance record for {payload['vehicle_label']} under policy {payload['policy_number']}.",
+                )
+
+        return jsonify(row_to_insurance_record(row)), 201
+
     return app
 
 
@@ -755,6 +870,42 @@ def _parse_driver_management_scorecard_payload(
     )
 
 
+def _parse_driver_payload(data: dict[str, object]) -> tuple[dict[str, str], str | None]:
+    first_name = str(data.get("firstName", "")).strip()
+    last_name = str(data.get("lastName", "")).strip()
+    license_number = str(data.get("licenseNumber", "")).strip()
+    phone = str(data.get("phone", "")).strip()
+    email = str(data.get("email", "")).strip()
+    status = str(data.get("status", "")).strip()
+
+    if not first_name:
+        return {}, "First name is required."
+    if not last_name:
+        return {}, "Last name is required."
+    if not license_number:
+        return {}, "License number is required."
+    if not phone:
+        return {}, "Phone number is required."
+    if not email:
+        return {}, "Email is required."
+    if "@" not in email or "." not in email:
+        return {}, "Email must be a valid address."
+    if not status:
+        return {}, "Status is required."
+
+    return (
+        {
+            "first_name": first_name,
+            "last_name": last_name,
+            "license_number": license_number,
+            "phone": phone,
+            "email": email,
+            "status": status,
+        },
+        None,
+    )
+
+
 def _parse_maintenance_record_payload(
     data: dict[str, object],
 ) -> tuple[dict[str, object], str | None]:
@@ -814,6 +965,81 @@ def _parse_maintenance_record_payload(
             "vendor": vendor,
             "estimated_cost": estimated_cost,
             "status": status,
+            "notes": notes,
+        },
+        None,
+    )
+
+
+def _parse_insurance_record_payload(
+    data: dict[str, object],
+) -> tuple[dict[str, object], str | None]:
+    vehicle_id_raw = data.get("vehicleId")
+    vehicle_label = str(data.get("vehicleLabel", "")).strip()
+    provider = str(data.get("provider", "")).strip()
+    policy_number = str(data.get("policyNumber", "")).strip()
+    coverage_type = str(data.get("coverageType", "")).strip()
+    start_date = str(data.get("startDate", "")).strip()
+    end_date = str(data.get("endDate", "")).strip()
+    status = str(data.get("status", "")).strip()
+    contact_person = str(data.get("contactPerson", "")).strip()
+    notes = str(data.get("notes", "")).strip()
+
+    if not vehicle_label:
+        return {}, "Vehicle is required."
+    if not provider:
+        return {}, "Provider is required."
+    if not policy_number:
+        return {}, "Policy number is required."
+    if not coverage_type:
+        return {}, "Coverage type is required."
+    if not status:
+        return {}, "Status is required."
+
+    try:
+        start_dt = datetime.strptime(start_date, "%Y-%m-%d")
+    except ValueError:
+        return {}, "Start date must use YYYY-MM-DD format."
+
+    try:
+        end_dt = datetime.strptime(end_date, "%Y-%m-%d")
+    except ValueError:
+        return {}, "End date must use YYYY-MM-DD format."
+
+    if end_dt < start_dt:
+        return {}, "End date must be on or after the start date."
+
+    try:
+        premium_amount = float(data.get("premiumAmount", 0))
+        insured_value = float(data.get("insuredValue", 0))
+    except (TypeError, ValueError):
+        return {}, "Premium amount and insured value must be numeric."
+
+    if premium_amount < 0:
+        return {}, "Premium amount cannot be negative."
+    if insured_value <= 0:
+        return {}, "Insured value must be greater than zero."
+
+    vehicle_id = None
+    if vehicle_id_raw not in (None, ""):
+        try:
+            vehicle_id = int(vehicle_id_raw)
+        except (TypeError, ValueError):
+            return {}, "Vehicle id must be numeric when provided."
+
+    return (
+        {
+            "vehicle_id": vehicle_id,
+            "vehicle_label": vehicle_label,
+            "provider": provider,
+            "policy_number": policy_number,
+            "coverage_type": coverage_type,
+            "premium_amount": premium_amount,
+            "insured_value": insured_value,
+            "start_date": start_date,
+            "end_date": end_date,
+            "status": status,
+            "contact_person": contact_person,
             "notes": notes,
         },
         None,

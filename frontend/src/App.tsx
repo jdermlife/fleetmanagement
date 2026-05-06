@@ -1,4 +1,6 @@
 import DriverManagementScorecardPage from './components/DriverManagementScorecardPage'
+import DriverRegistrationPage from './components/DriverRegistrationPage'
+import InsuranceManagementPage from './components/InsuranceManagementPage'
 import LiveGpsTrackingPage from './components/LiveGpsTrackingPage'
 import LendingScorecard from './components/LendingScorecard'
 import LeaseScorecardPage from './components/LeaseScorecardPage'
@@ -18,6 +20,27 @@ type FleetPage = {
   features: string[]
 }
 
+type SidebarLink = {
+  id: string
+  label: string
+}
+
+const sidebarLinkPages: SidebarLink[] = [
+  { id: 'dashboard', label: 'Dashboard Snapshot' },
+  { id: 'lending-scorecard', label: 'Lending Scorecard' },
+  { id: 'lease-scorecard', label: 'Lease Scorecard' },
+  { id: 'driver-management', label: 'Driver Management Scorecard' },
+  { id: 'driver-registration', label: 'Driver Registration' },
+  { id: 'vehicle-master', label: 'Vehicle Master Page' },
+  { id: 'vehicle-detail', label: 'Vehicle Detail Page' },
+  { id: 'live-gps', label: 'Live GPS Tracking' },
+  { id: 'maintenance-management', label: 'Maintenance Management' },
+  { id: 'insurance-management', label: 'Insurance Management' },
+  { id: 'fuel-management', label: 'Fuel Management' },
+  { id: 'credit-scoring', label: 'Credit Scoring' },
+  { id: 'audit-trail', label: 'Audit Trail Page' },
+]
+
 
 const productPages: FleetPage[] = [
   { id: 'dashboard', title: 'Dashboard', description: 'Executive overview of fleet operations.', features: ['KPI cards', 'Active vehicles', 'Vehicle availability', 'Alerts', 'Fuel usage', 'Cost summary', 'Utilization graphs', 'Map overview'] },
@@ -26,6 +49,7 @@ const productPages: FleetPage[] = [
   { id: 'vehicle-master', title: 'Vehicle Master Page', description: 'Central registry of all vehicles.', features: ['Add/edit/delete vehicles', 'Plate number', 'VIN', 'Make/model', 'Registration', 'Ownership', 'Status', 'Photos', 'Assigned branch'] },
   { id: 'vehicle-detail', title: 'Vehicle Detail Page', description: 'Full vehicle record with history and documents.', features: ['Maintenance history', 'Mileage logs', 'Insurance details', 'Fuel records', 'GPS history', 'Attached documents'] },
   { id: 'driver-management', title: 'Driver Management', description: 'Manage drivers and operators.', features: ['Driver profiles', 'Licenses', 'Certifications', 'Shifts', 'Assigned vehicles', 'Incident records'] },
+  { id: 'driver-registration', title: 'Driver Registration', description: 'Register new drivers and store contact, license, and status details.', features: ['Add driver profiles', 'License number tracking', 'Phone and email contact', 'Status management', 'Database-backed storage'] },
   { id: 'driver-detail', title: 'Driver Detail Page', description: 'Individual driver performance and records.', features: ['Driving score', 'Attendance', 'License expiry', 'Penalties', 'Completed trips'] },
   { id: 'dispatch-scheduling', title: 'Dispatch / Trip Scheduling', description: 'Plan trips and allocate resources efficiently.', features: ['Assign driver+vehicle', 'Route planning', 'Trip calendar', 'ETA', 'Priority scheduling'] },
   { id: 'live-gps', title: 'Live GPS Tracking', description: 'Monitor vehicles in real time.', features: ['Live map', 'Speed tracking', 'Route replay', 'Geofencing', 'Stop detection', 'Unauthorized movement alerts'] },
@@ -66,17 +90,11 @@ function App() {
         <h2>The Best Car and Fleet Rental</h2>
         <p>Demo Version. Access Rights Integrated in Actual</p>
         <div className="sidebar-link-group">
-          <a href="#dashboard">Dashboard Snapshot</a>
-          <a href="#lending-scorecard">Lending Scorecard</a>
-          <a href="#lease-scorecard">Lease Scorecard</a>
-          <a href="#driver-management">Driver Management Scorecard</a>
-          <a href="#vehicle-master">Vehicle Master Page</a>
-          <a href="#vehicle-detail">Vehicle Detail Page</a>
-          <a href="#live-gps">Live GPS Tracking</a>
-          <a href="#maintenance-management">Maintenance Management</a>
-          <a href="#fuel-management">Fuel Management</a>
-          <a href="#credit-scoring">Credit Scoring</a>
-          <a href="#audit-trail">Audit Trail Page</a>
+          {sidebarLinkPages.map((page) => (
+            <a href={`#${page.id}`} key={page.id}>
+              {page.label}
+            </a>
+          ))}
         </div>
         <nav>
           <ul>
@@ -141,12 +159,20 @@ function renderPageContent(pageId: string) {
     return <DriverManagementScorecardPage />
   }
 
+  if (pageId === 'driver-registration') {
+    return <DriverRegistrationPage />
+  }
+
   if (pageId === 'live-gps') {
     return <LiveGpsTrackingPage />
   }
 
   if (pageId === 'maintenance-management') {
     return <MaintenanceManagementPage />
+  }
+
+  if (pageId === 'insurance-management') {
+    return <InsuranceManagementPage />
   }
 
   if (pageId === 'fuel-management') {
