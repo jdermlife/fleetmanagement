@@ -53,7 +53,7 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
     CORS(app)
     app.config.from_mapping(
         DATABASE_PATH=str(DEFAULT_DATABASE_PATH),
-        DATABASE_URL=os.getenv("DATABASE_URL", "").strip() or None,
+        DATABASE_URL="postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
     )
 
     if test_config:
