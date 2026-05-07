@@ -26,3 +26,5 @@ frontend/.run-*.log
 frontend/.run-*.err.log
 
 *.log
+
+.vercel
