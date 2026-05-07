@@ -12,11 +12,13 @@ from urllib.parse import urlparse
 from app.models import init_db, resolve_database_config
 
 def main():
-    # Neon PostgreSQL connection string (default if env var not set)
-    database_url = os.getenv(
-        "DATABASE_URL",
-        "postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
-    )
+    # Neon PostgreSQL connection string (REQUIRED)
+    database_url = os.getenv("DATABASE_URL")
+    if not database_url:
+        raise RuntimeError(
+            "DATABASE_URL environment variable is required. "
+            "Get your Neon connection string from https://console.neon.tech"
+        )
 
     # Resolve database configuration
     config = resolve_database_config(database_url, None)
