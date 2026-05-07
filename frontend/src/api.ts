@@ -101,3 +101,32 @@ export async function checkBackendHealth(): Promise<boolean> {
 export function getApiBaseUrl(): string {
   return DEFAULT_API_BASE_URL
 }
+// src/api.ts
+const API_BASE = import.meta.env.VITE_API_URL || '/api'
+
+async function handleResponse<T>(res: Response): Promise<{ data: T }> {
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: `HTTP ${res.status}` }))
+    throw new Error(err.error || 'Request failed')
+  }
+  return { data: await res.json() as T }
+}
+
+export const api = {
+  async get<T>(url: string) {
+    return handleResponse<T>(await fetch(`${API_BASE}${url}`))
+  },
+  async post<T>(url: string, body: unknown) {
+    return handleResponse<T>(
+      await fetch(`${API_BASE}${url}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      })
+    )
+  }
+}
+
+export function getErrorMessage(error: unknown, fallback: string): string {
+  return error instanceof Error ? error.message : fallback
+}

@@ -205,4 +205,16 @@ export interface GpsTrackingSubmission {
   status: string
   routeLabel: string
   geofence: string
+}export interface DriverRegistrationSubmission {
+  firstName: string
+  lastName: string
+  licenseNumber: string
+  phone: string
+  email: string
+  status: string
+}
+
+export interface DriverRegistrationRecord extends DriverRegistrationSubmission {
+  id: number
+  createdAt: string
 }
