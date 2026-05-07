@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Database setup script for the Fleet Management System.
 
@@ -7,10 +8,11 @@ PostgreSQL (Neon) is the only supported database engine.
 """
 
 import os
+from urllib.parse import urlparse
 from app.models import init_db, resolve_database_config
 
 def main():
-    # PostgreSQL is required - use environment variable or default Neon URL
+    # Neon PostgreSQL connection string (default if env var not set)
     database_url = os.getenv(
         "DATABASE_URL",
         "postgresql://neondb_owner:npg_dk2jBpcHxl5h@ep-curly-fog-aqoz9uli-pooler.c-8.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require"
@@ -22,13 +24,14 @@ def main():
     # Initialize the database
     init_db(config)
 
-    print("Database 'fleet_mgmt_db' initialized successfully.")
+    print("Database initialized successfully.")
     print(f"Database engine: {config.engine}")
     if config.engine == "postgresql":
-        print(f"Database host: {config.host}")
-        print(f"Database port: {config.port or 5432}")
-        print(f"Database name: {config.name}")
-        print(f"Connection: {config.url}")
+        parsed = urlparse(database_url)
+        print(f"Database host: {parsed.hostname}")
+        print(f"Database port: {parsed.port or 5432}")
+        print(f"Database name: {parsed.path.lstrip('/')}")
+        print(f"Connection: {database_url}")
     else:
         raise RuntimeError("Only PostgreSQL is supported. SQLite fallback is disabled.")
 
