@@ -12,3 +12,540 @@ Press CTRL+C to quit
 127.0.0.1 - - [08/May/2026 08:11:13] "GET /favicon.ico HTTP/1.1" 404 -
 127.0.0.1 - - [08/May/2026 08:11:37] "GET /vehicles HTTP/1.1" 200 -
 127.0.0.1 - - [08/May/2026 08:11:37] "GET /favicon.ico HTTP/1.1" 404 -
+127.0.0.1 - - [08/May/2026 08:14:57] "GET /lease-scorecards HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 460, in list_lease_scorecards
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "lease_scorecards" does not exist
+LINE 7:                 FROM lease_scorecards
+                             ^
+127.0.0.1 - - [08/May/2026 08:14:57] "GET /driver-management-scorecards HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 542, in list_driver_management_scorecards
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "driver_management_scorecards" does not exist
+LINE 7:                 FROM driver_management_scorecards
+                             ^
+127.0.0.1 - - [08/May/2026 08:14:57] "GET /gps-tracking HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 737, in list_gps_tracking
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "vehicle_label" does not exist
+LINE 2:                 SELECT id, vehicle_id, vehicle_label, latitu...
+                                               ^
+127.0.0.1 - - [08/May/2026 08:14:58] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:14:58] "GET /drivers HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:14:58] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:14:59] "GET /fuel-logs HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 311, in get_fuel_logs
+    logs = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "date" does not exist
+LINE 2:                 SELECT id, date, vehicle, fuel_card, liters,...
+                                   ^
+127.0.0.1 - - [08/May/2026 08:14:59] "GET /maintenance-records HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 619, in list_maintenance_records
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "maintenance_records" does not exist
+LINE 4:                 FROM maintenance_records
+                             ^
+127.0.0.1 - - [08/May/2026 08:14:59] "GET /insurance-records HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 676, in list_insurance_records
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "insurance_records" does not exist
+LINE 5:                 FROM insurance_records
+                             ^
+127.0.0.1 - - [08/May/2026 08:15:00] "GET /audit-logs HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 128, in list_audit_logs
+    audit_logs = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column audit_logs.entity_type does not exist
+LINE 2: ...         SELECT audit_logs.id, audit_logs.action, audit_logs...
+                                                             ^
+127.0.0.1 - - [08/May/2026 08:15:00] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:00] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:01] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:01] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:02] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:02] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:03] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:03] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:29] "GET /drivers HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:29] "GET /driver-management-scorecards HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 542, in list_driver_management_scorecards
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "driver_management_scorecards" does not exist
+LINE 7:                 FROM driver_management_scorecards
+                             ^
+127.0.0.1 - - [08/May/2026 08:15:29] "GET /lease-scorecards HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 460, in list_lease_scorecards
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "lease_scorecards" does not exist
+LINE 7:                 FROM lease_scorecards
+                             ^
+127.0.0.1 - - [08/May/2026 08:15:30] "GET /gps-tracking HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 737, in list_gps_tracking
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "vehicle_label" does not exist
+LINE 2:                 SELECT id, vehicle_id, vehicle_label, latitu...
+                                               ^
+127.0.0.1 - - [08/May/2026 08:15:30] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:30] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:31] "GET /maintenance-records HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 619, in list_maintenance_records
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "maintenance_records" does not exist
+LINE 4:                 FROM maintenance_records
+                             ^
+127.0.0.1 - - [08/May/2026 08:15:32] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:32] "GET /insurance-records HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 676, in list_insurance_records
+    rows = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedTable: relation "insurance_records" does not exist
+LINE 5:                 FROM insurance_records
+                             ^
+127.0.0.1 - - [08/May/2026 08:15:32] "GET /audit-logs HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 128, in list_audit_logs
+    audit_logs = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column audit_logs.entity_type does not exist
+LINE 2: ...         SELECT audit_logs.id, audit_logs.action, audit_logs...
+                                                             ^
+127.0.0.1 - - [08/May/2026 08:15:32] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:32] "GET /fuel-logs HTTP/1.1" 500 -
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2213, in __call__
+    return self.wsgi_app(environ, start_response)
+           ~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2193, in wsgi_app
+    response = self.handle_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 2190, in wsgi_app
+    response = self.full_dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1486, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask_cors\extension.py", line 176, in wrapped_function
+    return cors_after_request(app.make_response(f(*args, **kwargs)))
+                                                ~^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1484, in full_dispatch_request
+    rv = self.dispatch_request()
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\flask\app.py", line 1469, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 311, in get_fuel_logs
+    logs = connection.execute(
+    
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\models.py", line 341, in execute
+    return self.raw_connection.execute(_normalize_query(query, self.engine), params or ())
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\.venv\Lib\site-packages\psycopg\connection.py", line 300, in execute
+    raise ex.with_traceback(None)
+psycopg.errors.UndefinedColumn: column "date" does not exist
+LINE 2:                 SELECT id, date, vehicle, fuel_card, liters,...
+                                   ^
+127.0.0.1 - - [08/May/2026 08:15:34] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:34] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:34] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:34] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:36] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:36] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:36] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:38] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:38] "GET /database/status HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:39] "GET /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:15:56] "OPTIONS /vehicles HTTP/1.1" 200 -
+127.0.0.1 - - [08/May/2026 08:16:00] "OPTIONS /vehicles HTTP/1.1" 200 -
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\app\\models.py', reloading
+ * Restarting with stat
+<frozen runpy>:128: RuntimeWarning: 'app.main' found in sys.modules after import of package 'app', but prior to execution of 'app.main'; this may result in unpredictable behaviour
+ * Tip: There are .env or .flaskenv files present. Do "pip install python-dotenv" to use them.
+ * Debugger is active!
+ * Debugger PIN: 120-257-394
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\app\\main.py', reloading
+ * Restarting with stat
+<frozen runpy>:128: RuntimeWarning: 'app.main' found in sys.modules after import of package 'app', but prior to execution of 'app.main'; this may result in unpredictable behaviour
+ * Tip: There are .env or .flaskenv files present. Do "pip install python-dotenv" to use them.
+ * Debugger is active!
+ * Debugger PIN: 120-257-394
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\app\\main.py', reloading
+ * Restarting with stat
+<frozen runpy>:128: RuntimeWarning: 'app.main' found in sys.modules after import of package 'app', but prior to execution of 'app.main'; this may result in unpredictable behaviour
+ * Tip: There are .env or .flaskenv files present. Do "pip install python-dotenv" to use them.
+ * Debugger is active!
+ * Debugger PIN: 120-257-394
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\app\\main.py', reloading
+ * Restarting with stat
+<frozen runpy>:128: RuntimeWarning: 'app.main' found in sys.modules after import of package 'app', but prior to execution of 'app.main'; this may result in unpredictable behaviour
+ * Tip: There are .env or .flaskenv files present. Do "pip install python-dotenv" to use them.
+ * Debugger is active!
+ * Debugger PIN: 120-257-394
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\security\\rate_limit.py', reloading
+ * Restarting with stat
+<frozen runpy>:128: RuntimeWarning: 'app.main' found in sys.modules after import of package 'app', but prior to execution of 'app.main'; this may result in unpredictable behaviour
+ * Tip: There are .env or .flaskenv files present. Do "pip install python-dotenv" to use them.
+ * Debugger is active!
+ * Debugger PIN: 120-257-394
+ * Detected change in 'C:\\Users\\Jorge\\Documents\\fleet\\fms\\backend\\app\\main.py', reloading
+ * Restarting with stat
+Traceback (most recent call last):
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 30, in <module>
+    from ..security.routes import register_auth_routes
+ImportError: attempted relative import beyond top-level package
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "<frozen runpy>", line 189, in _run_module_as_main
+  File "<frozen runpy>", line 112, in _get_module_details
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\__init__.py", line 1, in <module>
+    from .main import app, create_app
+  File "C:\Users\Jorge\Documents\fleet\fms\backend\app\main.py", line 32, in <module>
+    from driver_scorecard import DriverScorecardInput, compute_driver_scorecard
+ModuleNotFoundError: No module named 'driver_scorecard'

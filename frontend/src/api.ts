@@ -10,6 +10,39 @@ export const api = axios.create({
   },
 })
 
+let authToken: string | null = null
+
+export function setAuthToken(token: string | null) {
+  authToken = token
+  if (token) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+  } else {
+    delete api.defaults.headers.common['Authorization']
+  }
+  if (typeof window !== 'undefined') {
+    if (token) {
+      localStorage.setItem('auth_token', token)
+    } else {
+      localStorage.removeItem('auth_token')
+    }
+  }
+}
+
+export function getAuthToken(): string | null {
+  if (typeof window !== 'undefined' && !authToken) {
+    authToken = localStorage.getItem('auth_token')
+  }
+  return authToken
+}
+
+// Initialize token from storage on load
+if (typeof window !== 'undefined') {
+  const storedToken = localStorage.getItem('auth_token')
+  if (storedToken) {
+    setAuthToken(storedToken)
+  }
+}
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
@@ -100,4 +133,51 @@ export async function checkBackendHealth(): Promise<boolean> {
  */
 export function getApiBaseUrl(): string {
   return DEFAULT_API_BASE_URL
+}
+
+// Auth API calls
+export interface LoginRequest {
+  username: string
+  password: string
+}
+
+export interface LoginResponse {
+  token: string
+  user: {
+    id: number
+    username: string
+    email: string
+    role: string
+    isActive: boolean
+    createdAt: string
+    updatedAt: string
+    lastLoginAt: string | null
+  }
+}
+
+export interface RegisterRequest {
+  username: string
+  email: string
+  password: string
+}
+
+export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  const response = await api.post<LoginResponse>('/auth/login', credentials)
+  setAuthToken(response.data.token)
+  return response.data
+}
+
+export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
+  const response = await api.post<LoginResponse['user']>('/auth/register', data)
+  return response.data
+}
+
+export async function logout(): Promise<void> {
+  setAuthToken(null)
+}
+
+export async function refreshAuthToken(): Promise<string> {
+  const response = await api.post<{ token: string }>('/auth/refresh')
+  setAuthToken(response.data.token)
+  return response.data.token
 }

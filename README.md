@@ -1,13 +1,16 @@
 # Fleet Management System
 
-This repository contains a lightweight fleet management baseline with:
+Production-grade fleet management platform with enterprise security features.
 
-- public-access vehicle and fuel log CRUD
-- a dedicated Vehicle Master Page ready for PostgreSQL-backed storage
-- recent audit history for data mutations
-- persistent SQLite storage for core records
-- a React frontend for managing fleet records without sign-in
-- a simple credit scoring form backed by the API
+## Features
+
+- JWT authentication with PBKDF2 password hashing
+- Role-based access control (RBAC) with granular permissions
+- PostgreSQL database with connection pooling
+- Audit logging for compliance
+- Rate limiting protection
+- Security headers (HSTS, CSP, X-Frame-Options)
+- OpenAPI/Swagger documentation
 
 ## Setup
 
@@ -25,40 +28,26 @@ This repository contains a lightweight fleet management baseline with:
    - **Windows**: `venv\Scripts\activate`
    - **macOS/Linux**: `source venv/bin/activate`
 4. Install dependencies: `pip install -r requirements.txt`
-5. Set `DATABASE_URL` environment variable (optional - uses Neon by default):
+5. Set environment variables:
    ```bash
    # Windows PowerShell:
    $env:DATABASE_URL = "postgresql://user:password@host:5432/database"
+   $env:SECRET_KEY = "your-32-char-secret-key"
    
    # macOS/Linux:
    export DATABASE_URL="postgresql://user:password@host:5432/database"
-   
-   # Or create backend/.env.local:
-   DATABASE_URL=postgresql://user:password@host:5432/database
+   export SECRET_KEY="your-32-char-secret-key"
    ```
-6. Initialize the database (optional - auto-initialized on first run):
-   ```bash
-   python setup_db.py
-   ```
+6. Initialize the database: `python setup_db.py`
 7. Start the API: `python -m app.main`
 
 The backend runs on `http://localhost:5000`.
-
-**Database Engine**: PostgreSQL only (no SQLite fallback)
-- **Default**: Neon PostgreSQL (cloud-hosted)
-- **Override**: Set `DATABASE_URL` to any PostgreSQL-compatible database
-- Examples:
-  - Local: `postgresql://user:password@localhost:5432/fleet`
-  - Supabase: `postgresql://user:password@db.supabase.co:5432/postgres`
-  - Railway: `postgresql://user:password@railway.internal:5432/railway`
-
-Production entrypoint: `backend/wsgi.py`
 
 ### Frontend
 
 1. Navigate to `frontend`
 2. Install dependencies: `npm install`
-3. Create a `.env.local` file (copy from `.env.example`):
+3. Create a `.env.local` file:
    ```
    VITE_API_URL=http://localhost:5000
    ```
@@ -66,87 +55,58 @@ Production entrypoint: `backend/wsgi.py`
 
 The frontend runs on `http://localhost:5173`.
 
-### Running Both Together
+## Authentication
 
-**Terminal 1 (Backend):**
+Protected endpoints require a JWT token in the Authorization header:
+
 ```bash
-cd backend
-source venv/bin/activate  # or venv\Scripts\activate on Windows
-python -m app.main
+curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 ```
 
-**Terminal 2 (Frontend):**
-```bash
-cd frontend
-npm run dev
-```
+### Default Roles
 
-Visit `http://localhost:5173` in your browser. The frontend will automatically connect to `http://localhost:5000`.
+- **Admin**: Full access to all resources
+- **Manager**: Read/write vehicles, fuel logs, drivers, scorecards, audit logs
+- **Driver**: Read-only access to vehicles and fuel logs
+- **Viewer**: Read-only access to vehicles and fuel logs
 
-### Troubleshooting Connection Issues
+## API Endpoints
 
-If the frontend cannot connect to the backend:
+### Authentication
+- `POST /auth/login` - Authenticate user
+- `POST /auth/logout` - Logout user
+- `POST /auth/register` - Register new user
+- `POST /auth/refresh` - Refresh JWT token
 
-1. **Check backend is running**: Visit `http://localhost:5000/health` in your browser
-   - Should return: `{"status": "ok", "database": "connected", ...}`
-   
-2. **Check DATABASE_URL is set**: 
-   - Backend requires `DATABASE_URL` environment variable
-   - Verify it's set before starting the backend:
-     ```bash
-     # Windows: $env:DATABASE_URL
-     # macOS/Linux: echo $DATABASE_URL
-     ```
-   - If not set, the default Neon PostgreSQL URL is used
-   
-3. **Check database connection**:
-   - Verify PostgreSQL database is accessible at the URL
-   - Test connection: `psql <DATABASE_URL>`
-   - Check firewall/network rules
-   
-4. **Check CORS**: The backend allows requests from:
-   - `http://localhost:5173` (Vite default)
-   - `http://localhost:3000` (Create React App default)
-   - `http://localhost:5000` (same server)
-   
-5. **Check frontend configuration**:
-   - Verify `VITE_API_URL` in `frontend/.env.local`:
-     ```
-     VITE_API_URL=http://localhost:5000
-     ```
-   
-6. **Browser console**: Open DevTools (F12) and check for error messages
-   - Look for CORS errors or connection refused messages
-   - Check `[API]` logs showing request/response activity
-   
-7. **Backend logs**: Check console output for database connection errors
-   - PostgreSQL connection failures
-   - Missing DATABASE_URL environment variable
-   - Authentication issues
-
-## API Surface
-
-- `GET /database/status`
-- `GET /vehicles`
-- `POST /vehicles`
-- `PUT /vehicles/:id`
-- `DELETE /vehicles/:id`
-- `GET /fuel-logs`
-- `POST /fuel-logs`
-- `PUT /fuel-logs/:id`
-- `DELETE /fuel-logs/:id`
-- `GET /audit-logs`
-- `POST /credit-score`
+### Core API
+- `GET /health` - Health check
+- `GET /database/status` - Database connection status
+- `GET /vehicles` - List vehicles
+- `POST /vehicles` - Create vehicle
+- `GET /fuel-logs` - List fuel logs
+- `GET /audit-logs` - List audit trail
+- `POST /credit-score` - Calculate credit score
 
 ## Verification
 
-- Backend tests: `..\\.venv\\Scripts\\python.exe -m unittest discover -s tests -v`
+- Backend tests: `python -m unittest discover -s tests -v`
 - Frontend lint: `npm run lint`
 - Frontend build: `npm run build`
 
-## Remaining Limits
+## Environment Variables
 
-- The fleet pages beyond vehicle registry, fuel management, audit trail, and credit scoring are still static placeholders.
-- SQLite is fine for small internal deployments but should be replaced for higher concurrency or multi-instance deployments.
-- There is no authentication or role-based access control in this build.
-- Frontend automated component tests are still not included.
+| Variable | Description | Default |
+|----------|-------------|---------|
+| DATABASE_URL | PostgreSQL connection string | Required |
+| SECRET_KEY | JWT signing key (32+ chars) | Auto-generated |
+| TOKEN_EXPIRY_HOURS | JWT expiration time | 24 |
+| RATE_LIMIT_REQUESTS | Max requests per window | 100 |
+| RATE_LIMIT_WINDOW | Rate limit window (seconds) | 60 |
+
+## Security Notes
+
+- All passwords are hashed with PBKDF2 (100,000 iterations)
+- JWT tokens expire after 24 hours by default
+- Rate limiting: 100 requests per 60 seconds per IP
+- Security headers applied to all responses
+- Audit logging captures all data mutations

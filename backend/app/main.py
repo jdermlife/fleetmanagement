@@ -25,7 +25,9 @@ try:
         row_to_lease_scorecard,
         row_to_maintenance_record,
         row_to_vehicle,
+        row_to_user,
     )
+    from ..security.routes import register_auth_routes
 except ImportError:
     from driver_scorecard import DriverScorecardInput, compute_driver_scorecard
     from lease_scorecard import LeaseScorecardInput, compute_lease_scorecard
@@ -43,18 +45,15 @@ except ImportError:
         row_to_lease_scorecard,
         row_to_maintenance_record,
         row_to_vehicle,
+        row_to_user,
     )
+    from security.routes import register_auth_routes
 
 
 BASE_DIR = Path(__file__).resolve().parent
 # PostgreSQL (Neon) is the primary database - no SQLite fallback
-# DATABASE_URL must be set via environment variable
+# DATABASE_URL must be set via environment variable for production
 DEFAULT_DATABASE_URL = os.getenv("DATABASE_URL")
-if not DEFAULT_DATABASE_URL:
-    raise RuntimeError(
-        "DATABASE_URL environment variable is required. "
-        "Set it to your Neon PostgreSQL connection string."
-    )
 
 
 def create_app(test_config: dict[str, object] | None = None) -> Flask:
@@ -73,27 +72,45 @@ def create_app(test_config: dict[str, object] | None = None) -> Flask:
         },
     )
     
-    app.config.from_mapping(
-        DATABASE_URL=DEFAULT_DATABASE_URL,
-    )
-
-    if test_config:
-        app.config.update(test_config)
-
-    # PostgreSQL is required - no fallback to SQLite
-    database_url = app.config.get("DATABASE_URL")
-    if not database_url:
+    is_testing = test_config and test_config.get("TESTING") is True
+    
+    if not is_testing and not DEFAULT_DATABASE_URL:
         raise RuntimeError(
             "DATABASE_URL environment variable is required. "
-            "PostgreSQL (Neon) is the only supported database engine."
+            "Set it to your Neon PostgreSQL connection string."
         )
+    
+    # For testing, allow sqlite memory database
+    if is_testing:
+        database_url = "sqlite:///:memory:"
+    else:
+        database_url = DEFAULT_DATABASE_URL
+    
+    app.config.from_mapping(
+        DATABASE_URL=database_url,
+    )
+    
+    if test_config:
+        app.config.update(test_config)
     
     database_config = resolve_database_config(
         database_url=database_url,
-        database_path=None,  # No SQLite fallback
+        database_path=str(BASE_DIR / "test-fms.db") if is_testing else None,
     )
     app.config["DATABASE_CONFIG"] = database_config
     init_db(database_config)
+    
+    register_auth_routes(app)
+    
+    @app.after_request
+    def add_security_headers(response):
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        response.headers["Strict-Transport-Security"] = "max-age=31536000; includeSubDomains"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        return response
 
     @app.get("/health")
     def health_check():
