@@ -77,9 +77,29 @@ export const CreditScoreForm: React.FC = () => {
     }
   };
 
-  const sectionStyle = { marginBottom: '20px', padding: '15px', border: '1px solid #e0e0e0', borderRadius: '8px', background: '#fafafa' };
-  const inputStyle = { width: '100%', padding: '8px', marginBottom: '8px', borderRadius: '4px', border: '1px solid #ccc', boxSizing: 'border-box' };
-  const labelStyle = { display: 'block', marginBottom: '4px', fontWeight: '500', fontSize: '14px' };
+  const sectionStyle: React.CSSProperties = {
+    marginBottom: '20px',
+    padding: '15px',
+    border: '1px solid #e0e0e0',
+    borderRadius: '8px',
+    background: '#fafafa'
+  };
+
+  const inputStyle: React.CSSProperties = {
+    width: '100%',
+    padding: '8px',
+    marginBottom: '8px',
+    borderRadius: '4px',
+    border: '1px solid #ccc',
+    boxSizing: 'border-box'
+  };
+
+  const labelStyle: React.CSSProperties = {
+    display: 'block',
+    marginBottom: '4px',
+    fontWeight: '500',
+    fontSize: '14px'
+  };
 
   return (
     <form onSubmit={handleSubmit} style={{ maxWidth: '900px', margin: '0 auto', padding: '20px', fontFamily: 'system-ui, sans-serif' }}>
