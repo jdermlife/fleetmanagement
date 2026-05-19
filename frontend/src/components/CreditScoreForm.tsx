@@ -49,7 +49,7 @@ export const CreditScoreForm: React.FC = () => {
 
   // Update helpers
   const updateBorrower = (idx: number, field: keyof BorrowerInput, val: any) => {
-    const updated = [...borrowers];
+    const updated: any[] = [...borrowers];
     updated[idx][field] = val;
     if (field === 'is_primary' && val === true) {
       updated.forEach((b, i) => i !== idx && (b.is_primary = false));
@@ -58,7 +58,7 @@ export const CreditScoreForm: React.FC = () => {
   };
 
   const updateProperty = (idx: number, field: keyof PropertyInput, val: any) => {
-    const updated = [...properties];
+    const updated: any[] = [...properties];
     updated[idx][field] = val;
     setProperties(updated);
   };
