@@ -49,6 +49,8 @@ body {
   top: 0;
   align-self: flex-start;
   min-height: 100vh;
+
+  z-index: 9999;
 }
 
 .sidebar h2 {
@@ -1191,9 +1193,13 @@ th {
     grid-template-columns: 1fr;
   }
 
-  .content {
-    padding: 16px;
-  }
+.content {
+  flex: 1;
+  padding: 24px;
+
+  position: relative;
+  z-index: 1;
+}
 
   .dashboard-header,
   .vehicle-master-header,
