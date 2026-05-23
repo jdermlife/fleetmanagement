@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 
-import { api, getErrorMessage } from '../api'
-import type { DatabaseStatus, Vehicle } from '../types'
+import { api, getErrorMessage } from '../../api'
+import type { DatabaseStatus, Vehicle } from '../../types'
 
 
 function VehicleDetailPage() {

@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { api, getErrorMessage } from '../api'
-import type { DriverRegistrationRecord, DriverRegistrationSubmission } from '../types'
+import { api, getErrorMessage } from '../../api'
+import type { DriverRegistrationRecord, DriverRegistrationSubmission } from '../../types'
 
 const initialForm: DriverRegistrationSubmission = {
   firstName: '',

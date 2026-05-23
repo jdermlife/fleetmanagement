@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { api, getErrorMessage } from '../api'
+import { api, getErrorMessage } from '../../api'
 import type {
   DatabaseStatus,
   DriverManagementScorecardRecord,
   DriverManagementScorecardSubmission,
-} from '../types'
+} from '../../types'
 
 
 const initialForm: DriverManagementScorecardSubmission = {

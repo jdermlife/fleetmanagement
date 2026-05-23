@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 
-import { api, getErrorMessage } from '../api'
-import type { AuditLog } from '../types'
+import { api, getErrorMessage } from '../../api'
+import type { AuditLog } from '../../types'
 
 
 function AuditTrailPanel() {

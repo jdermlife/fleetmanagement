@@ -1,8 +1,8 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { api, getErrorMessage } from '../api'
-import type { DatabaseStatus, InsuranceRecord, InsuranceRecordSubmission, Vehicle } from '../types'
+import { api, getErrorMessage } from '../../api'
+import type { DatabaseStatus, InsuranceRecord, InsuranceRecordSubmission, Vehicle } from '../../types'
 
 
 const initialForm: InsuranceRecordSubmission = {

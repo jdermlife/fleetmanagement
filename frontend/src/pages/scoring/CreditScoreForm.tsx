@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { CreditApi } from '../services/creditApi';
+import { CreditApi } from '../../services/creditApi';
 
 // ✅ 1. DEFINE TYPES (Kept inline to avoid import errors)
 type BorrowerInput = {

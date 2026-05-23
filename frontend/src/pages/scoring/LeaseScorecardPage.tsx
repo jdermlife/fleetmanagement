@@ -1,8 +1,8 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 
-import { api, getErrorMessage } from '../api'
-import type { DatabaseStatus, LeaseScorecardRecord, LeaseScorecardSubmission } from '../types'
+import { api, getErrorMessage } from '../../api'
+import type { DatabaseStatus, LeaseScorecardRecord, LeaseScorecardSubmission } from '../../types'
 
 
 const initialForm: LeaseScorecardSubmission = {
