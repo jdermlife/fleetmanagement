@@ -13,6 +13,9 @@ import type {
 } from '../../types'
 
 function AuditTrailPanel() {
+  console.log(
+    'SAFE AUDIT PANEL LOADED',
+  )
   /*
   |--------------------------------------------------------------------------
   | STATE
