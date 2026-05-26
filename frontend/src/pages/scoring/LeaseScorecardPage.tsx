@@ -41,14 +41,29 @@ function LeaseScorecardPage() {
 
     try {
       const [databaseResponse, recordsResponse] = await Promise.all([
-        api.get<DatabaseStatus>('/database/status'),
-        api.get<LeaseScorecardRecord[]>('/lease-scorecards'),
-      ])
-      setDatabaseStatus(databaseResponse.data)
-      setRecentRecords(recordsResponse.data)
-      if (recordsResponse.data[0]) {
-        setSavedRecord(recordsResponse.data[0])
-      }
+  api.get<DatabaseStatus>('/database/status'),
+  api.get('/lease-scorecards'),
+])
+
+console.log('LEASE SCORECARD API:', recordsResponse.data)
+
+const scorecardData =
+  recordsResponse.data?.data ||
+  recordsResponse.data?.records ||
+  recordsResponse.data ||
+  []
+
+const safeRecords = Array.isArray(scorecardData)
+  ? scorecardData
+  : []
+
+setDatabaseStatus(databaseResponse.data)
+
+setRecentRecords(safeRecords)
+
+if (safeRecords[0]) {
+  setSavedRecord(safeRecords[0])
+}
     } catch (loadError: unknown) {
       setError(getErrorMessage(loadError, 'Unable to load lease scorecard data right now.'))
     } finally {
@@ -70,7 +85,15 @@ function LeaseScorecardPage() {
     try {
       const response = await api.post<LeaseScorecardRecord>('/lease-scorecards', form)
       setSavedRecord(response.data)
-      setRecentRecords((current) => [response.data, ...current.filter((record) => record.id !== response.data.id)].slice(0, 20))
+      setRecentRecords((current) => [
+  response.data,
+  ...(Array.isArray(current)
+    ? current.filter(
+        (record) =>
+          record.id !== response.data.id
+      )
+    : []),
+].slice(0, 20))
       setSuccessMessage('Lease scorecard saved successfully.')
     } catch (saveError: unknown) {
       setError(getErrorMessage(saveError, 'Lease scorecard could not be saved.'))
@@ -341,7 +364,9 @@ function LeaseScorecardPage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {recentRecords.map((record) => (
+                    {(Array.isArray(recentRecords)
+  ? recentRecords
+  : []).map((record) => (
                       <tr key={record.id}>
                         <td>{record.customerName}</td>
                         <td>{record.finalScore.toFixed(2)}</td>

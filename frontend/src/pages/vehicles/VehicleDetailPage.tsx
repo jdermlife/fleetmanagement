@@ -20,13 +20,26 @@ function VehicleDetailPage() {
     setError('')
 
     try {
-      const [vehiclesResponse, databaseResponse] = await Promise.all([
-        api.get<Vehicle[]>('/vehicles'),
-        api.get<DatabaseStatus>('/database/status'),
-      ])
-      setVehicles(vehiclesResponse.data)
-      setDatabaseStatus(databaseResponse.data)
-      setSelectedVehicleId(vehiclesResponse.data[0]?.id ?? null)
+    const [vehiclesResponse, databaseResponse] = await Promise.all([
+  api.get('/vehicles'),
+  api.get<DatabaseStatus>('/database/status'),
+])
+
+console.log('VEHICLES API:', vehiclesResponse.data)
+
+const vehiclesData =
+  vehiclesResponse.data?.data ||
+  vehiclesResponse.data?.vehicles ||
+  vehiclesResponse.data ||
+  []
+
+const safeVehicles = Array.isArray(vehiclesData)
+  ? vehiclesData
+  : []
+
+setVehicles(safeVehicles)
+setDatabaseStatus(databaseResponse.data)
+setSelectedVehicleId(safeVehicles[0]?.id ?? null)
     } catch (loadError: unknown) {
       setError(getErrorMessage(loadError, 'Unable to load vehicle detail information right now.'))
     } finally {
