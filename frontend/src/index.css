@@ -28,7 +28,7 @@ body {
 }
 
 /* ========================
-   LAYOUT & SIDEBAR (LOCKED + DROPDOWN)
+   LAYOUT & SIDEBAR (LOCKED + BUTTON-TRIGGER DROPDOWN)
    ======================== */
 .app-shell {
   display: flex;
@@ -36,7 +36,7 @@ body {
   width: 100%;
 }
 
-/* Permanently locked icon-only sidebar */
+/* Permanently locked 64px sidebar */
 .sidebar {
   width: 64px;
   min-width: 64px;
@@ -55,10 +55,11 @@ body {
   flex-direction: column;
   align-items: center;
   gap: 8px;
-  transition: none;
+  /* Disable hover/click on the entire sidebar strip */
+  pointer-events: none;
 }
 
-/* Menu icon trigger */
+/* Menu trigger button (pure CSS) */
 .sidebar::before {
   content: '☰';
   font-size: 1.6rem;
@@ -68,17 +69,23 @@ body {
   width: 44px;
   height: 44px;
   border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
   cursor: pointer;
-  background: rgba(255,255,255,0.1);
-  transition: background 0.2s;
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  /* Re-enable hover/click ONLY on the button */
+  pointer-events: auto;
+  transition: background 0.2s, transform 0.2s;
 }
 
-.sidebar:hover::before,
-.sidebar:focus-within::before {
-  background: rgba(255,255,255,0.25);
+.sidebar::before:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: translateX(-50%) scale(1.05);
 }
 
-/* Hide internal content by default */
+/* Hide all internal content by default */
 .sidebar h2,
 .sidebar-link-group,
 .sidebar ul,
@@ -88,16 +95,14 @@ body {
   display: none;
 }
 
-/* DROPDOWN MENU - Appears on hover/focus */
+/* DROPDOWN MENU - Appears ONLY when the trigger button is hovered */
 .sidebar:hover .sidebar-link-group,
-.sidebar:focus-within .sidebar-link-group,
-.sidebar:hover ul,
-.sidebar:focus-within ul {
+.sidebar:hover ul {
   display: flex;
   flex-direction: column;
   gap: 6px;
   position: absolute;
-  top: 56px;
+  top: 68px;
   left: 64px;
   width: 220px;
   background: var(--dark-gold);
@@ -105,7 +110,7 @@ body {
   padding: 12px;
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   z-index: 10000;
-  pointer-events: auto;
+  pointer-events: auto; /* Keeps dropdown open while hovering it */
   animation: dropIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
@@ -137,15 +142,15 @@ body {
   color: #222;
 }
 
-/* Keep session card in dropdown */
-.sidebar:hover .session-card,
-.sidebar:focus-within .session-card {
+/* Session card inside dropdown */
+.sidebar:hover .session-card {
   display: grid;
   margin-top: 8px;
   padding: 10px;
   background: rgba(255, 255, 255, 0.15);
   border-radius: 8px;
   gap: 8px;
+  pointer-events: auto;
 }
 
 .session-card button {
@@ -157,6 +162,10 @@ body {
   border-radius: 6px;
   font-weight: 600;
   cursor: pointer;
+  transition: background 0.2s;
+}
+.session-card button:hover {
+  background: #fff;
 }
 
 .sidebar h2 {
@@ -827,7 +836,7 @@ th { color: var(--dark-gold); }
 @media (max-width: 960px) {
   .app-shell { flex-direction: column; }
   
-  /* Restore full sidebar on mobile, disable dropdown */
+  /* Disable button-hover dropdown on mobile. Restore standard full-width sidebar */
   .sidebar {
     width: 100% !important;
     min-width: 100% !important;
@@ -838,6 +847,7 @@ th { color: var(--dark-gold); }
     overflow: visible !important;
     flex-direction: column !important;
     align-items: stretch !important;
+    pointer-events: auto !important; /* Restore interactivity */
   }
   
   .sidebar::before { display: none !important; }
@@ -849,9 +859,7 @@ th { color: var(--dark-gold); }
   }
 
   .sidebar:hover .sidebar-link-group,
-  .sidebar:focus-within .sidebar-link-group,
-  .sidebar:hover ul,
-  .sidebar:focus-within ul {
+  .sidebar:hover ul {
     position: static !important;
     left: auto !important;
     top: auto !important;
