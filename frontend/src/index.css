@@ -38,8 +38,7 @@ body {
   margin: 48px auto;
   padding: 24px;
 }
-
-offcanvas sidebar {
+sidebar {
   width: 280px;
   background-color: var(--dark-gold);
   color: #ffffff;
@@ -64,18 +63,18 @@ offcanvas sidebar {
  
 
 
-offcanvas sidebar h2 {
+sidebar h2 {
   margin-top: 0;
   color: var(--light-gold);
 }
 
-offcanvas sidebar-link-group {
+ sidebar-link-group {
   display: grid;
   gap: 10px;
   margin-bottom: 18px;
 }
 
-offcanvas sidebar-link-group a {
+ sidebar-link-group a {
   display: inline-block;
   background-color: var(--primary-gold);
   color: #222;
@@ -85,30 +84,30 @@ offcanvas sidebar-link-group a {
   font-weight: 700;
 }
 
-offcanvas sidebar-link-group a:hover,
-offcanvas sidebar-link-group a:focus {
+ sidebar-link-group a:hover,
+sidebar-link-group a:focus {
   background-color: var(--light-gold);
   color: var(--dark-gold);
 }
 
-offcanvas sidebar ul {
+sidebar ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-offcanvas sidebar li {
+sidebar li {
   margin-bottom: 10px;
 }
 
-offcanvas sidebar a {
+sidebar a {
   color: #ffffff;
   text-decoration: none;
   font-size: 0.95rem;
 }
 
-offcanvas sidebar nav a:hover,
-offcanvas sidebar nav a:focus {
+sidebar nav a:hover,
+sidebar nav a:focus {
   color: var(--primary-gold);
 }
 
@@ -1171,7 +1170,7 @@ th {
     flex-direction: column;
   }
 
-  offcanvas sidebar {
+  sidebar {
     width: 100%;
     position: static;
     min-height: auto;
