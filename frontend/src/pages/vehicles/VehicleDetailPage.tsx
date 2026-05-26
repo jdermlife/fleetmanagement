@@ -82,10 +82,18 @@ const selectedVehicle = useMemo(
             <select
               value={selectedVehicleId ?? ''}
               onChange={(event) => setSelectedVehicleId(Number(event.target.value))}
-              disabled={vehicles.length === 0}
+              disabled={
+              (Array.isArray(vehicles)
+               ? vehicles
+              : []).length === 0
+}
             >
               {vehicles.length === 0 ? <option value="">No vehicles found</option> : null}
-              {vehicles.map((vehicle) => (
+             {(
+              Array.isArray(vehicles)
+              ? vehicles
+                : []
+                ).map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>
                   {vehicle.make} {vehicle.model} ({vehicle.year})
                 </option>

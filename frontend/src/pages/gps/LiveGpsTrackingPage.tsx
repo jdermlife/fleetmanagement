@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 
 import { api, getErrorMessage } from '../../api'
-import type { GpsTrackingRecord, GpsTrackingSubmission, Vehicle } from '../../types'
+
+import type {
+  GpsTrackingRecord,
+  Vehicle,
+} from '../../types'
 
 const routePresets = [
   {
@@ -39,13 +43,23 @@ const routePresets = [
 ]
 
 function LiveGpsTrackingPage() {
-  const [vehicles, setVehicles] = useState<Vehicle[]>([])
-  const [gpsRecords, setGpsRecords] = useState<GpsTrackingRecord[]>([])
-  const [selectedVehicleId, setSelectedVehicleId] = useState<number | null>(null)
-  const [error, setError] = useState('')
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
-  const [successMessage, setSuccessMessage] = useState('')
+  const [vehicles, setVehicles] =
+    useState<Vehicle[]>([])
+
+  const [gpsRecords, setGpsRecords] =
+    useState<GpsTrackingRecord[]>([])
+
+  const [selectedVehicleId, setSelectedVehicleId] =
+    useState<number | null>(null)
+
+  const [error, setError] =
+    useState('')
+
+  const [isLoading, setIsLoading] =
+    useState(true)
+
+  const [successMessage] =
+    useState('')
 
   useEffect(() => {
     void loadData()
@@ -53,43 +67,55 @@ function LiveGpsTrackingPage() {
 
   async function loadData() {
     setIsLoading(true)
+
     setError('')
 
     try {
-      const [vehiclesResponse, gpsResponse] = await Promise.all([
-        api.get('/vehicles'),
-        api.get('/gps-tracking'),
-      ])
+      const [vehiclesResponse, gpsResponse] =
+        await Promise.all([
+          api.get('/vehicles'),
+          api.get('/gps-tracking'),
+        ])
 
-      console.log('VEHICLES API:', vehiclesResponse.data)
-      console.log('GPS API:', gpsResponse.data)
+      console.log(
+        'VEHICLES API:',
+        vehiclesResponse.data,
+      )
 
-      // SAFE VEHICLES
+      console.log(
+        'GPS API:',
+        gpsResponse.data,
+      )
+
       const vehiclesData =
         vehiclesResponse.data?.data ||
         vehiclesResponse.data?.vehicles ||
         vehiclesResponse.data ||
         []
 
-      const safeVehicles = Array.isArray(vehiclesData)
-        ? vehiclesData
-        : []
+      const safeVehicles =
+        Array.isArray(vehiclesData)
+          ? vehiclesData
+          : []
 
-      // SAFE GPS
       const gpsData =
         gpsResponse.data?.data ||
         gpsResponse.data?.gps_tracking ||
         gpsResponse.data ||
         []
 
-      const safeGpsData = Array.isArray(gpsData)
-        ? gpsData
-        : []
+      const safeGpsData =
+        Array.isArray(gpsData)
+          ? gpsData
+          : []
 
       setVehicles(safeVehicles)
+
       setGpsRecords(safeGpsData)
 
-      setSelectedVehicleId(safeVehicles[0]?.id ?? null)
+      setSelectedVehicleId(
+        safeVehicles[0]?.id ?? null,
+      )
     } catch (loadError: unknown) {
       setError(
         getErrorMessage(
@@ -102,163 +128,158 @@ function LiveGpsTrackingPage() {
     }
   }
 
-  const liveVehicles = useMemo<GpsTrackingRecord[]>(
-    () =>
-      (Array.isArray(vehicles) ? vehicles : []).map((vehicle, index) => {
-        const existingRecord = (Array.isArray(gpsRecords)
-          ? gpsRecords
-          : []
-        ).find((record) => record.vehicleId === vehicle.id)
+  const liveVehicles =
+    useMemo<GpsTrackingRecord[]>(
+      () =>
+        (
+          Array.isArray(vehicles)
+            ? vehicles
+            : []
+        ).map((vehicle, index) => {
+          const existingRecord =
+            (
+              Array.isArray(gpsRecords)
+                ? gpsRecords
+                : []
+            ).find(
+              (record) =>
+                record.vehicleId ===
+                vehicle.id,
+            )
 
-        if (existingRecord) {
-          return existingRecord
-        }
+          if (existingRecord) {
+            return existingRecord
+          }
 
-        const preset = routePresets[index % routePresets.length]
+          const preset =
+            routePresets[
+              index %
+                routePresets.length
+            ]
 
-        return {
-          id: -index - 1,
-          vehicleId: vehicle.id,
-          vehicleLabel: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
-          latitude: preset.latitude,
-          longitude: preset.longitude,
-          speedKph: preset.speedKph,
-          heading: preset.heading,
-          status:
-            preset.speedKph === 0
-              ? 'idle'
-              : preset.speedKph < 15
-              ? 'stopped'
-              : 'moving',
-          routeLabel: preset.routeLabel,
-          geofence: preset.geofence,
-          recordedAt: new Date().toISOString(),
-          createdAt: new Date().toISOString(),
-        }
-      }),
-    [vehicles, gpsRecords],
-  )
+          return {
+            id: -index - 1,
+            vehicleId: vehicle.id,
+            vehicleLabel: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
+            latitude: preset.latitude,
+            longitude: preset.longitude,
+            speedKph: preset.speedKph,
+            heading: preset.heading,
+            status:
+              preset.speedKph === 0
+                ? 'idle'
+                : preset.speedKph < 15
+                ? 'stopped'
+                : 'moving',
+            routeLabel:
+              preset.routeLabel,
+            geofence:
+              preset.geofence,
+            recordedAt:
+              new Date().toISOString(),
+            createdAt:
+              new Date().toISOString(),
+          }
+        }),
+      [vehicles, gpsRecords],
+    )
 
   const selectedVehicle =
-    (Array.isArray(liveVehicles) ? liveVehicles : []).find(
-      (vehicle) => vehicle.id === selectedVehicleId,
+    (
+      Array.isArray(liveVehicles)
+        ? liveVehicles
+        : []
+    ).find(
+      (vehicle) =>
+        vehicle.id ===
+        selectedVehicleId,
     ) ?? null
-
-  async function handleAddGpsRecord(vehicle: Vehicle) {
-    const preset =
-      routePresets[Math.floor(Math.random() * routePresets.length)]
-
-    const payload: GpsTrackingSubmission = {
-      vehicleId: vehicle.id,
-      vehicleLabel: `${vehicle.make} ${vehicle.model} (${vehicle.year})`,
-      latitude: preset.latitude + (Math.random() - 0.5) * 0.01,
-      longitude: preset.longitude + (Math.random() - 0.5) * 0.01,
-      speedKph: preset.speedKph,
-      heading: preset.heading,
-      status:
-        preset.speedKph === 0
-          ? 'idle'
-          : preset.speedKph < 15
-          ? 'stopped'
-          : 'moving',
-      routeLabel: preset.routeLabel,
-      geofence: preset.geofence,
-    }
-
-    setIsSaving(true)
-    setError('')
-    setSuccessMessage('')
-
-    try {
-      const response = await api.post<GpsTrackingRecord>(
-        '/gps-tracking',
-        payload,
-      )
-
-      console.log('GPS SAVE API:', response.data)
-
-      setGpsRecords((current) => [
-        response.data,
-        ...(Array.isArray(current) ? current : []),
-      ])
-
-      setSuccessMessage('GPS tracking record added successfully.')
-    } catch (saveError: unknown) {
-      setError(
-        getErrorMessage(
-          saveError,
-          'Unable to save GPS tracking record.',
-        ),
-      )
-    } finally {
-      setIsSaving(false)
-    }
-  }
 
   return (
     <div className="live-gps-page">
       <div className="live-gps-header">
         <div>
-          <h2>Live GPS Tracking</h2>
+          <h2>
+            Live GPS Tracking
+          </h2>
+
           <p>
-            Real-time GPS tracking for the fleet. Records are stored in the
-            backend database and can be retrieved for route analysis,
-            geofencing alerts, and fleet monitoring.
+            Real-time GPS
+            tracking for the
+            fleet.
           </p>
         </div>
 
         <button
           type="button"
-          onClick={() => void loadData()}
+          onClick={() =>
+            void loadData()
+          }
           disabled={isLoading}
         >
-          {isLoading ? 'Refreshing...' : 'Refresh Tracking'}
+          {isLoading
+            ? 'Refreshing...'
+            : 'Refresh Tracking'}
         </button>
       </div>
 
       <div className="live-gps-grid">
         <article className="live-gps-card live-gps-map-card">
           <div className="live-gps-card-header">
-            <h3>Live Map Board</h3>
-            <span>{liveVehicles.length} active units</span>
+            <h3>
+              Live Map Board
+            </h3>
+
+            <span>
+              {
+                liveVehicles.length
+              }{' '}
+              active units
+            </span>
           </div>
 
           <div className="live-gps-map">
-            {(Array.isArray(liveVehicles) ? liveVehicles : []).map(
-              (vehicle) => (
-                <button
-                  key={vehicle.id}
-                  type="button"
-                  className={`gps-marker gps-marker-${vehicle.status} ${
-                    selectedVehicleId === vehicle.id
-                      ? 'gps-marker-selected'
-                      : ''
-                  }`}
-                  style={{
-                    left: `${24 + (vehicle.id * 13) % 68}%`,
-                    top: `${20 + (vehicle.id * 17) % 56}%`,
-                  }}
-                  onClick={() => setSelectedVehicleId(vehicle.id)}
-                >
-                  <span>
-                    {vehicle.vehicleLabel
-                      .split(' ')[0]
-                      .slice(0, 1)}
-                  </span>
-                </button>
-              ),
-            )}
-
-            <div className="gps-map-overlay">
-              <span>Metro Tracking Grid</span>
-              <strong>Live Vehicle Positions</strong>
-            </div>
+            {(
+              Array.isArray(
+                liveVehicles,
+              )
+                ? liveVehicles
+                : []
+            ).map((vehicle) => (
+              <button
+                key={vehicle.id}
+                type="button"
+                className={`gps-marker gps-marker-${vehicle.status}`}
+                onClick={() =>
+                  setSelectedVehicleId(
+                    vehicle.id,
+                  )
+                }
+              >
+                <span>
+                  {vehicle.vehicleLabel
+                    .split(' ')[0]
+                    .slice(0, 1)}
+                </span>
+              </button>
+            ))}
           </div>
         </article>
       </div>
 
+      {selectedVehicle ? (
+        <div>
+          Selected Vehicle:{' '}
+          {
+            selectedVehicle.vehicleLabel
+          }
+        </div>
+      ) : null}
+
       {error ? (
-        <p className="status-message status-error">{error}</p>
+        <p className="status-message status-error">
+          {error}
+        </p>
       ) : null}
 
       {successMessage ? (
