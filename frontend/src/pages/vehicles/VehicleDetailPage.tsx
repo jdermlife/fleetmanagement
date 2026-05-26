@@ -34,10 +34,17 @@ function VehicleDetailPage() {
     }
   }
 
-  const selectedVehicle = useMemo(
-    () => vehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null,
-    [selectedVehicleId, vehicles],
-  )
+const safeVehicles = Array.isArray(vehicles)
+  ? vehicles
+  : [];
+
+const selectedVehicle = useMemo(
+  () =>
+    safeVehicles.find(
+      (vehicle) => vehicle.id === selectedVehicleId
+    ) ?? null,
+  [safeVehicles, selectedVehicleId]
+)
 
   return (
     <div className="vehicle-detail-page">
