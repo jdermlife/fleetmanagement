@@ -1,16 +1,9 @@
-/* Corporate Gold Theme */
 
 :root {
---primary-bluegreen: #0ea5a4;
---secondary-bluegreen: #0891b2;
---dark-bluegreen: #0f172a;
-  --sidebar-bg: #0f172a;
-  --card-bg: #ffffff;
-  --card-border: #cbd5e1;
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --hover-accent: #14b8a6;
---light-bluegreen: #ecfeff;
+  --primary-gold: #ffd700;
+  --secondary-gold: #daa520;
+  --dark-gold: #b8860b;
+  --light-gold: #fff8dc;
   --background: #ffffff;
   --panel: #fffef4;
   --text: #333333;
@@ -48,7 +41,7 @@ body {
 
 .sidebar {
   width: 280px;
-background: #0f172a;
+  background-color: var(--dark-gold);
   color: #ffffff;
   padding: 24px;
   position: sticky;
@@ -179,21 +172,6 @@ background: #0f172a;
 .snapshot-kpi small {
   color: rgba(31, 41, 55, 0.82);
 }
-
-.snapshot-kpi-bluegreen {
-  background: linear-gradient(
-    135deg,
-    #0ea5a4,
-    #0891b2
-  );
-
-  color: white;
-  border: 1px solid #14b8a6;
-  box-shadow: 0 10px 25px rgba(14,165,164,0.25);
-}
-
-
-
 
 .snapshot-kpi strong {
   font-size: 2rem;
@@ -1039,8 +1017,8 @@ background: #0f172a;
 }
 
 button {
-background-color: var(--primary-bluegreen);
-  color: var(--dark-bluegreen);
+  background-color: var(--primary-gold);
+  color: var(--text);
   border: 2px solid var(--secondary-gold);
   padding: 10px 20px;
   font-size: 16px;
@@ -1050,8 +1028,7 @@ background-color: var(--primary-bluegreen);
 }
 
 button:hover {
-  background: #134e4a;
-
+  background-color: var(--secondary-gold);
 }
 
 button:disabled {
