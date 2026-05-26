@@ -28,7 +28,7 @@ body {
 }
 
 /* ========================
-   LAYOUT & SIDEBAR
+   LAYOUT & SIDEBAR (LOCKED + DROPDOWN)
    ======================== */
 .app-shell {
   display: flex;
@@ -36,7 +36,7 @@ body {
   width: 100%;
 }
 
-/* Icon-only collapsed sidebar (expands on hover/focus) */
+/* Permanently locked icon-only sidebar */
 .sidebar {
   width: 64px;
   min-width: 64px;
@@ -44,20 +44,41 @@ body {
   height: 100vh;
   background-color: var(--dark-gold);
   color: #ffffff;
-  padding: 16px 8px;
+  padding: 16px 0;
   position: sticky;
   top: 0;
   align-self: flex-start;
   flex-shrink: 0;
   z-index: 9999;
   overflow: visible;
-  transition: none;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
+  transition: none;
 }
-/* Hide all text/layout elements permanently */
+
+/* Menu icon trigger */
+.sidebar::before {
+  content: '☰';
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  cursor: pointer;
+  background: rgba(255,255,255,0.1);
+  transition: background 0.2s;
+}
+
+.sidebar:hover::before,
+.sidebar:focus-within::before {
+  background: rgba(255,255,255,0.25);
+}
+
+/* Hide internal content by default */
 .sidebar h2,
 .sidebar-link-group,
 .sidebar ul,
@@ -66,65 +87,76 @@ body {
 .session-card {
   display: none;
 }
-/* Persistent menu icon for collapsed state */
-.sidebar::before {
-  content: '☰';
-  font-size: 1.5rem;
-  opacity: 0.85;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  flex-shrink: 0;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-}
 
-.sidebar:hover,
-.sidebar:focus-within {
-  width: 280px;
-  min-width: 280px;
-  max-width: 280px;
-  padding: 24px;
-  align-items: stretch;
-}
-
-.sidebar:hover::before,
-.sidebar:focus-within::before {
-  opacity: 0;
-}
-
-/* Hide content when collapsed */
-.sidebar h2,
-.sidebar-link-group,
-.sidebar ul,
-.sidebar li,
-.sidebar a,
-.session-card {
-  opacity: 0;
-  visibility: hidden;
-  white-space: nowrap;
-  pointer-events: none;
-  transition: opacity 0.25s ease, visibility 0.25s ease;
-}
-
-/* Reveal content when expanded */
-.sidebar:hover h2,
+/* DROPDOWN MENU - Appears on hover/focus */
 .sidebar:hover .sidebar-link-group,
-.sidebar:hover .sidebar ul,
-.sidebar:hover .sidebar li,
-.sidebar:hover .sidebar a,
-.sidebar:hover .session-card,
-.sidebar:focus-within h2,
 .sidebar:focus-within .sidebar-link-group,
-.sidebar:focus-within .sidebar ul,
-.sidebar:focus-within .sidebar li,
-.sidebar:focus-within .sidebar a,
-.sidebar:focus-within .session-card {
-  opacity: 1;
-  visibility: visible;
+.sidebar:hover ul,
+.sidebar:focus-within ul {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  position: absolute;
+  top: 56px;
+  left: 64px;
+  width: 220px;
+  background: var(--dark-gold);
+  border-radius: 0 12px 12px 12px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  z-index: 10000;
   pointer-events: auto;
-  transition-delay: 0.1s;
+  animation: dropIn 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@keyframes dropIn {
+  from { opacity: 0; transform: translateY(-8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Dropdown link styling */
+.sidebar-link-group a,
+.sidebar ul a {
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  transition: background 0.2s, color 0.2s;
+}
+
+.sidebar-link-group a:hover,
+.sidebar-link-group a:focus,
+.sidebar ul a:hover,
+.sidebar ul a:focus {
+  background: var(--primary-gold);
+  color: #222;
+}
+
+/* Keep session card in dropdown */
+.sidebar:hover .session-card,
+.sidebar:focus-within .session-card {
+  display: grid;
+  margin-top: 8px;
+  padding: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 8px;
+  gap: 8px;
+}
+
+.session-card button {
+  width: 100%;
+  background: var(--light-gold);
+  color: var(--dark-gold);
+  border: none;
+  padding: 8px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
 .sidebar h2 {
@@ -175,48 +207,7 @@ body {
   color: var(--primary-gold);
 }
 
-.sidebar nav a {
-  /* keep existing styles above, then add: */
-  &::after {
-    content: attr(aria-label); /* or use data-tooltip if you prefer */
-    position: absolute;
-    left: 60px;
-    top: 50%;
-    transform: translateY(-50%) translateX(-4px);
-    background: #1f2937;
-    color: #fff;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    white-space: nowrap;
-    opacity: 0;
-    pointer-events: none;
-    transition: opacity 0.2s, transform 0.2s;
-  }
-  
-  &:hover::after {
-    opacity: 1;
-    transform: translateY(-50%) translateX(0);
-  }
-}
-
-
-
-
-.session-card {
-  display: grid;
-  gap: 8px;
-  margin-bottom: 18px;
-  padding: 12px;
-  background: rgba(255, 255, 255, 0.12);
-  border-radius: 8px;
-}
-
-.session-card button {
-  width: 100%;
-}
-
-/* Flexible content area (replaces rigid calc() widths) */
+/* Flexible content area */
 .content {
   flex: 1;
   min-width: 0;
@@ -836,23 +827,40 @@ th { color: var(--dark-gold); }
 @media (max-width: 960px) {
   .app-shell { flex-direction: column; }
   
+  /* Restore full sidebar on mobile, disable dropdown */
   .sidebar {
     width: 100% !important;
     min-width: 100% !important;
     max-width: 100% !important;
     height: auto !important;
     position: static !important;
-    padding: 24px !important;
+    padding: 16px !important;
     overflow: visible !important;
+    flex-direction: column !important;
     align-items: stretch !important;
   }
   
   .sidebar::before { display: none !important; }
   .sidebar h2, .sidebar-link-group, .sidebar ul, .sidebar li, .sidebar a, .session-card {
+    display: block !important;
     opacity: 1 !important;
     visibility: visible !important;
     pointer-events: auto !important;
-    white-space: normal !important;
+  }
+
+  .sidebar:hover .sidebar-link-group,
+  .sidebar:focus-within .sidebar-link-group,
+  .sidebar:hover ul,
+  .sidebar:focus-within ul {
+    position: static !important;
+    left: auto !important;
+    top: auto !important;
+    width: auto !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    animation: none !important;
   }
 
   .content {
