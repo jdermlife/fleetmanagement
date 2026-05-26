@@ -50,16 +50,22 @@ body {
   align-self: flex-start;
   flex-shrink: 0;
   z-index: 9999;
-  overflow: hidden;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              padding 0.35s cubic-bezier(0.4, 0, 0.2, 1),
-              align-items 0.25s ease;
+  overflow: visible;
+  transition: none;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
 }
-
+/* Hide all text/layout elements permanently */
+.sidebar h2,
+.sidebar-link-group,
+.sidebar ul,
+.sidebar li,
+.sidebar a,
+.session-card {
+  display: none;
+}
 /* Persistent menu icon for collapsed state */
 .sidebar::before {
   content: '☰';
@@ -168,6 +174,34 @@ body {
 .sidebar nav a:focus {
   color: var(--primary-gold);
 }
+
+.sidebar nav a {
+  /* keep existing styles above, then add: */
+  &::after {
+    content: attr(aria-label); /* or use data-tooltip if you prefer */
+    position: absolute;
+    left: 60px;
+    top: 50%;
+    transform: translateY(-50%) translateX(-4px);
+    background: #1f2937;
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+  
+  &:hover::after {
+    opacity: 1;
+    transform: translateY(-50%) translateX(0);
+  }
+}
+
+
+
 
 .session-card {
   display: grid;
