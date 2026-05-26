@@ -1,3 +1,4 @@
+/* Corporate Gold Theme */
 
 :root {
   --primary-gold: #ffd700;
@@ -38,7 +39,8 @@ body {
   margin: 48px auto;
   padding: 24px;
 }
-sidebar {
+
+.sidebar {
   width: 280px;
   background-color: var(--dark-gold);
   color: #ffffff;
@@ -63,18 +65,18 @@ sidebar {
  
 
 
-sidebar h2 {
+.sidebar h2 {
   margin-top: 0;
   color: var(--light-gold);
 }
 
- sidebar-link-group {
+.sidebar-link-group {
   display: grid;
   gap: 10px;
   margin-bottom: 18px;
 }
 
- sidebar-link-group a {
+.sidebar-link-group a {
   display: inline-block;
   background-color: var(--primary-gold);
   color: #222;
@@ -84,30 +86,30 @@ sidebar h2 {
   font-weight: 700;
 }
 
- sidebar-link-group a:hover,
-sidebar-link-group a:focus {
+.sidebar-link-group a:hover,
+.sidebar-link-group a:focus {
   background-color: var(--light-gold);
   color: var(--dark-gold);
 }
 
-sidebar ul {
+.sidebar ul {
   list-style: none;
   padding: 0;
   margin: 0;
 }
 
-sidebar li {
+.sidebar li {
   margin-bottom: 10px;
 }
 
-sidebar a {
+.sidebar a {
   color: #ffffff;
   text-decoration: none;
   font-size: 0.95rem;
 }
 
-sidebar nav a:hover,
-sidebar nav a:focus {
+.sidebar nav a:hover,
+.sidebar nav a:focus {
   color: var(--primary-gold);
 }
 
@@ -1170,7 +1172,7 @@ th {
     flex-direction: column;
   }
 
-  sidebar {
+  .sidebar {
     width: 100%;
     position: static;
     min-height: auto;
