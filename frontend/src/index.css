@@ -1372,9 +1372,7 @@ th {
     min-width: 720px;
   }
 } 
-  .app-shell {
-    flex-direction: column;
-  }
+
 
   .sidebar {
     width: 100%;
