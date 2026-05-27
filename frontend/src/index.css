@@ -21,7 +21,7 @@ body {
 }
 
 /* ========================
-   LAYOUT & PURE CSS TOGGLE
+   PURE CSS TOGGLE (FIXED: NO DOUBLE DROPDOWN)
    ======================== */
 .app-shell {
   display: flex;
@@ -31,7 +31,7 @@ body {
   position: relative;
 }
 
-/* Hidden state controller */
+/* Hidden checkbox (state controller) */
 .nav-toggle {
   position: absolute;
   opacity: 0;
@@ -54,14 +54,13 @@ body {
   flex-shrink: 0;
   margin: 10px 24px 10px 0;
   align-self: flex-start;
-  z-index: 10001;
 }
 .nav-trigger:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
 }
 
-/* Topbar */
+/* Topbar Container */
 .sidebar {
   width: 100%;
   min-height: 64px;
@@ -78,42 +77,53 @@ body {
   overflow: visible;
 }
 
-/* ✅ HIDE ALL DROPDOWN ITEMS BY DEFAULT */
-.sidebar-link-group,
-.sidebar ul,
-.session-card {
-  display: none;
-}
-
-/* ✅ CONTINUOUS DROPDOWN (Single Panel, Zero Overlap) */
-.nav-toggle:checked ~ .sidebar {
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: auto;
-  padding-bottom: 12px;
-}
-
-.nav-toggle:checked ~ .sidebar .sidebar-link-group,
-.nav-toggle:checked ~ .sidebar ul,
-.nav-toggle:checked ~ .sidebar .session-card {
-  display: flex;
-  flex-direction: column;
-  width: 220px;
+/* ✅ SINGLE DROPDOWN CONTAINER (Only .sidebar-link-group becomes the dropdown) */
+.sidebar-link-group {
+  position: absolute;
+  top: 64px;
+  left: 24px;
+  min-width: 220px;
   background: var(--dark-gold);
   border-radius: 0 12px 12px 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   padding: 12px;
-  margin: 0; /* Zero margin = seamless continuous panel */
-  gap: 6px;
-  position: static; /* Flows naturally, no absolute stacking */
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
   z-index: 10000;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: visibility 0.2s, opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Merge session card visually */
+/* Pull ul and session-card INTO the dropdown flow (no overlap) */
+.sidebar ul,
 .session-card {
-  border-radius: 0 0 12px 12px;
-  margin-top: 6px !important;
-  background: rgba(255, 255, 255, 0.08);
+  position: static !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  padding: 0 !important;
+  margin: 6px 0 0 0 !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  pointer-events: auto !important;
+  transform: none !important;
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px;
+}
+
+.session-card { margin-top: 12px !important; }
+
+/* ✅ SHOW DROPDOWN ONLY WHEN CHECKED (Hover removed to prevent double-triggering) */
+.nav-toggle:checked ~ .sidebar .sidebar-link-group {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 /* Navigation Links */
@@ -192,7 +202,7 @@ body {
 .standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
 /* ========================
-   PRESERVED STYLES (Dashboard, Charts, Cards, etc.)
+   DASHBOARD & KPIs (PRESERVED)
    ======================== */
 .dashboard-snapshot { display: grid; gap: 20px; }
 .dashboard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
@@ -206,6 +216,10 @@ body {
 .snapshot-kpi-teal { background: linear-gradient(180deg, #daf7f2, #b8efe5); }
 .snapshot-kpi-coral { background: linear-gradient(180deg, #ffe3d7, #ffd0bd); }
 .snapshot-kpi-slate { background: linear-gradient(180deg, #e9eef8, #d8e1f0); }
+
+/* ========================
+   CHARTS & VISUALS (PRESERVED)
+   ======================== */
 .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .snapshot-chart-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 220, 0.72)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 18px; padding: 18px; display: grid; gap: 18px; }
 .snapshot-chart-copy h3 { margin-bottom: 8px; }
@@ -226,9 +240,17 @@ body {
 .trend-line.dispatch, .trend-area.dispatch { color: #2563eb; }
 .trend-axis-label { fill: #6b7280; }
 .trend-value-label { fill: #374151; font-weight: 700; }
+
+/* ========================
+   PAGE LAYOUTS (PRESERVED)
+   ======================== */
 .vehicle-master-page, .lease-scorecard-page, .live-gps-page, .maintenance-page, .insurance-page, .vehicle-detail-page, .scorecard-page { display: grid; gap: 18px; }
 .vehicle-master-header, .lease-scorecard-header, .live-gps-header, .maintenance-header, .insurance-header, .vehicle-detail-header, .scorecard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
 .vehicle-master-header p, .lease-scorecard-header p, .live-gps-header p, .maintenance-header p, .insurance-header p, .vehicle-detail-header p, .scorecard-header p { margin-bottom: 0; max-width: 760px; }
+
+/* ========================
+   CARDS & GRID SYSTEMS (PRESERVED)
+   ======================== */
 .vehicle-master-grid, .dashboard-grid, .lease-scorecard-grid, .live-gps-grid, .live-gps-detail-grid, .maintenance-grid, .insurance-grid, .vehicle-detail-grid, .vehicle-detail-panels, .vehicle-detail-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .vehicle-profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
 .vehicle-master-card, .lease-card, .live-gps-card, .vehicle-detail-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
@@ -239,6 +261,10 @@ body {
 .vehicle-db-source code, .vehicle-master-note code { display: inline-block; margin-top: 6px; padding: 8px 10px; background: #fffef4; border: 1px dashed rgba(184, 134, 11, 0.45); border-radius: 8px; white-space: normal; word-break: break-all; }
 .vehicle-master-steps { margin: 0; padding-left: 20px; }
 .vehicle-master-note { margin: 0; }
+
+/* ========================
+   LEASE SCORECARD (PRESERVED)
+   ======================== */
 .lease-scorecard-workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr); gap: 18px; align-items: start; }
 .lease-scorecard-list { margin: 0; padding-left: 20px; }
 .lease-scorecard-note { margin: 0; color: #5b6472; }
@@ -252,6 +278,10 @@ body {
 .lease-result-grid strong { display: block; margin-top: 4px; }
 .lease-result-summary { grid-column: 1 / -1; }
 .lease-result-summary p { margin: 6px 0 0; }
+
+/* ========================
+   LIVE GPS MAP (PRESERVED)
+   ======================== */
 .live-gps-map-card { overflow: hidden; }
 .live-gps-map { position: relative; min-height: 320px; border-radius: 18px; background: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.18), transparent 20%), radial-gradient(circle at 72% 50%, rgba(37, 99, 235, 0.18), transparent 18%), linear-gradient(135deg, #1f2937, #334155 42%, #0f766e 100%); overflow: hidden; }
 .live-gps-map::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 44px 44px; }
@@ -270,6 +300,10 @@ body {
 .live-gps-detail-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .live-gps-detail-list span { display: block; color: #6b7280; font-size: 0.85rem; }
 .live-gps-detail-list strong { display: block; margin-top: 4px; }
+
+/* ========================
+   SCORECARD & METRICS (PRESERVED)
+   ======================== */
 .scorecard-summary-card, .scorecard-outcome-card { background: linear-gradient(180deg, #fffef7, #f7ecd1); border: 1px solid rgba(184, 134, 11, 0.3); border-radius: 16px; padding: 18px; display: grid; gap: 10px; }
 .scorecard-pill { display: inline-flex; justify-content: center; width: fit-content; padding: 6px 12px; background: rgba(255, 215, 0, 0.18); border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
 .scorecard-total { font-size: 2rem; line-height: 1; color: var(--dark-gold); }
@@ -304,6 +338,10 @@ body {
 .scorecard-outcome-grid strong { display: block; margin-top: 4px; }
 .scorecard-section-totals { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
 .scorecard-section-totals li { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
+
+/* ========================
+   UI COMPONENTS (PRESERVED)
+   ======================== */
 .container { max-width: 1200px; margin: 0 auto; }
 .intro { margin-bottom: 20px; color: var(--text); }
 .card, .standalone-card { background-color: rgba(255, 248, 220, 0.95); border: 1px solid var(--secondary-gold); border-radius: 8px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12); }
@@ -347,27 +385,72 @@ th { color: var(--dark-gold); }
     flex-direction: column;
     align-items: stretch;
   }
+  
   .nav-trigger { display: none !important; }
+  
   .sidebar-link-group,
   .sidebar ul,
   .session-card {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    background: transparent !important;
+    position: static !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    pointer-events: auto !important;
+    transform: none !important;
     box-shadow: none !important;
     border-radius: 0 !important;
+    background: transparent !important;
     padding: 0 !important;
     margin: 0 !important;
-    gap: 6px !important;
-    position: static !important;
+    display: flex !important;
+    flex-direction: column !important;
   }
+
   .content {
     width: 100% !important;
     padding: 16px;
     padding-top: 24px;
   }
-  .vehicle-grid, .access-grid, .fuel-management .fuel-grid, .snapshot-kpis, .dashboard-grid, .vehicle-master-grid, .vehicle-detail-grid, .vehicle-detail-panels, .vehicle-detail-columns, .vehicle-profile-grid, .lease-scorecard-grid, .lease-scorecard-workspace, .lease-scorecard-form, .live-gps-grid, .live-gps-detail-grid, .live-gps-detail-list, .maintenance-grid, .insurance-grid, .scorecard-meta, .scorecard-legend, .scorecard-grid { grid-template-columns: 1fr; }
-  .dashboard-header, .vehicle-master-header, .vehicle-detail-header, .lease-scorecard-header, .live-gps-header, .maintenance-header, .insurance-header, .scorecard-header, .scorecard-section-header { flex-direction: column; }
-  .vehicle-db-status, .scorecard-side-panel, .scorecard-outcome-grid, .lease-result-grid { grid-template-columns: 1fr; }
+
+  .vehicle-grid,
+  .access-grid,
+  .fuel-management .fuel-grid,
+  .snapshot-kpis,
+  .dashboard-grid,
+  .vehicle-master-grid,
+  .vehicle-detail-grid,
+  .vehicle-detail-panels,
+  .vehicle-detail-columns,
+  .vehicle-profile-grid,
+  .lease-scorecard-grid,
+  .lease-scorecard-workspace,
+  .lease-scorecard-form,
+  .live-gps-grid,
+  .live-gps-detail-grid,
+  .live-gps-detail-list,
+  .maintenance-grid,
+  .insurance-grid,
+  .scorecard-meta,
+  .scorecard-legend,
+  .scorecard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header,
+  .vehicle-master-header,
+  .vehicle-detail-header,
+  .lease-scorecard-header,
+  .live-gps-header,
+  .maintenance-header,
+  .insurance-header,
+  .scorecard-header,
+  .scorecard-section-header {
+    flex-direction: column;
+  }
+
+  .vehicle-db-status,
+  .scorecard-side-panel,
+  .scorecard-outcome-grid,
+  .lease-result-grid {
+    grid-template-columns: 1fr;
+  }
 }
