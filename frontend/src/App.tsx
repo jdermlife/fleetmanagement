@@ -26,13 +26,13 @@ import SendEmail from './pages/ai/SendEmail'
 import AttendMeeting from './pages/ai/AttendMeeting'
 import ComplianceAI from './pages/ai/ComplianceAI'
 
-
+// ✅ FLAT TYPE (no children)
 type MenuLink = {
   id: string
   label: string
-  children?: MenuLink[]
 }
 
+// ✅ FLAT MENU ARRAY (all items are top-level)
 const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Dashboard Snapshot' },
   { id: 'lending-scorecard', label: 'Lending Scorecard' },
@@ -46,48 +46,25 @@ const menuLinks: MenuLink[] = [
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'fuel-management', label: 'Fuel Management' },
   { id: 'credit-scoring', label: 'Credit Scoring' },
-    {id: 'ai-center',   label: 'AI Center', },
-    {      id: 'ai-dashboard', label: 'AI Dashboard',  },
-    { id: 'chat-assistant',       label: 'Chat Assistant',    },
-    { id: 'voice-reports',       label: 'Voice Reports',     },
-    { id: 'ocr-scanner',       label: 'OCR Scanner', },
-    { id: 'maintenance-ai', label: 'Maintenance AI', },
-    { id: 'risk-analysis', label: 'Risk Analysis', },
-    { id: 'pdf-summarizer', label: 'PDF Summarizer', },
-    { id: 'meeting-minutes', label: 'Meeting Minutes',  },
-    { id: 'send-email',  label: 'Send Email',  },
-    { id: 'attend-meeting', label: 'Attend Meeting',   },
-    { id: 'compliance-ai', label: 'Compliance AI', },
-    
-    {id: 'audit-compliance',
-    label: 'Audit & Compliance',
-       children: [
-      {
-        id: 'audit-trail',
-        label: 'Audit Trail',
-      },
-      {
-        id: 'risk-management',
-        label: 'Risk Management',
-      },
-      {
-        id: 'compliance',
-        label: 'Compliance',
-      },
-    ],
-  },
- 
-  ]
-
-  
-
+  { id: 'ai-dashboard', label: 'AI Dashboard' },
+  { id: 'chat-assistant', label: 'Chat Assistant' },
+  { id: 'voice-reports', label: 'Voice Reports' },
+  { id: 'ocr-scanner', label: 'OCR Scanner' },
+  { id: 'maintenance-ai', label: 'Maintenance AI' },
+  { id: 'risk-analysis', label: 'Risk Analysis' },
+  { id: 'pdf-summarizer', label: 'PDF Summarizer' },
+  { id: 'meeting-minutes', label: 'Meeting Minutes' },
+  { id: 'send-email', label: 'Send Email' },
+  { id: 'attend-meeting', label: 'Attend Meeting' },
+  { id: 'compliance-ai', label: 'Compliance AI' },
+  { id: 'audit-trail', label: 'Audit Trail' },
+  { id: 'risk-management', label: 'Risk Management' },
+  { id: 'compliance', label: 'Compliance' },
+]
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
-
-  const closeMenu = () => {
-    setMenuOpen(false)
-  }
+  const closeMenu = () => setMenuOpen(false)
 
   return (
     <div className="app-shell">
@@ -101,29 +78,15 @@ function App() {
             width: '100%',
           }}
         >
-          {/* BRAND */}
           <div>
-            <h2
-              style={{
-                margin: 0,
-                color: '#fff',
-              }}
-            >
+            <h2 style={{ margin: 0, color: '#fff' }}>
               The BestBank Car and Fleet Financing and Rental Company
             </h2>
-
-            <p
-              style={{
-                margin: '4px 0 0',
-                fontSize: '0.85rem',
-                color: '#fff',
-              }}
-            >
+            <p style={{ margin: '4px 0 0', fontSize: '0.85rem', color: '#fff' }}>
               Demo Version. Access Rights Integrated in Actual
             </p>
           </div>
 
-          {/* HAMBURGER BUTTON */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             style={{
@@ -140,7 +103,7 @@ function App() {
           </button>
         </div>
 
-        {/* DROPDOWN MENU */}
+        {/* ✅ SIMPLIFIED DROPDOWN MENU (NO CHILDREN/NESTING) */}
         {menuOpen && (
           <div
             style={{
@@ -161,100 +124,23 @@ function App() {
             }}
           >
             {menuLinks.map((page) => (
-              <div
+              <Link
                 key={page.id}
+                to={`/${page.id}`}
+                onClick={closeMenu}
                 style={{
-                  position: 'relative',
+                  display: 'block',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: 'rgba(255,255,255,0.06)',
+                  transition: '0.2s',
                 }}
               >
-                {/* NORMAL MENU ITEM */}
-                {!page.children && (
-                  <Link
-                    to={`/${page.id}`}
-                    onClick={closeMenu}
-                    style={{
-                      display: 'block',
-                      color: '#fff',
-                      textDecoration: 'none',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      background: 'rgba(255,255,255,0.06)',
-                      transition: '0.2s',
-                    }}
-                  >
-                    {page.label}
-                  </Link>
-                )}
-
-                {/* PARENT MENU WITH HOVER CHILDREN */}
-                {page.children && (
-                  <div
-                    className="menu-parent"
-                    style={{
-                      position: 'relative',
-                    }}
-                  >
-                    {/* PARENT BUTTON */}
-                    <div
-                      style={{
-                        color: '#fff',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        background: 'rgba(255,255,255,0.12)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span>{page.label}</span>
-                      <span>▸</span>
-                    </div>
-
-                    {/* HIDDEN CHILD MENU */}
-                    <div
-                      className="child-dropdown"
-                      style={{
-                        position: 'absolute',
-                        top: '0',
-                        left: '100%',
-                        width: '220px',
-                        background: '#926c07',
-                        borderRadius: '12px',
-                        padding: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        transform: 'translateX(10px)',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
-                        zIndex: 999999,
-                      }}
-                    >
-                      {page.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          to={`/${child.id}`}
-                          onClick={closeMenu}
-                          style={{
-                            display: 'block',
-                            color: '#fff',
-                            textDecoration: 'none',
-                            padding: '10px',
-                            borderRadius: '8px',
-                            background: 'rgba(255,255,255,0.08)',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+                {page.label}
+              </Link>
             ))}
           </div>
         )}
@@ -264,108 +150,40 @@ function App() {
       <main className="content">
         <Routes>
           <Route path="/" element={<DashboardSnapshot />} />
-
-          <Route
-            path="/dashboard"
-            element={<DashboardSnapshot />}
-          />
-
-          <Route
-            path="/lending-scorecard"
-            element={<LendingScorecard />}
-          />
-
-          <Route
-            path="/lease-scorecard"
-            element={<LeaseScorecardPage />}
-          />
-
-          <Route
-            path="/vehicle-master"
-            element={<VehicleMasterPage />}
-          />
-
-          <Route
-            path="/vehicle-detail"
-            element={<VehicleDetailPage />}
-          />
-
-          <Route
-            path="/driver-management"
-            element={<DriverManagementScorecardPage />}
-          />
-
-          <Route
-            path="/driver-registration"
-            element={<DriverRegistrationPage />}
-          />
-
-          <Route
-            path="/live-gps"
-            element={<LiveGpsTrackingPage />}
-          />
-
-          <Route
-            path="/maintenance-management"
-            element={<MaintenanceManagementPage />}
-          />
-
-          <Route
-            path="/insurance-management"
-            element={<InsuranceManagementPage />}
-          />
-
-          <Route
-            path="/fuel-management"
-            element={<FuelManagement />}
-          />
-
-          <Route
-            path="/credit-scoring"
-            element={<CreditScoring />}
-          />
-
-          <Route
-            path="/audit-trail"
-            element={<AuditTrailPanel />}
-          />
-
-          {/* RISK MANAGEMENT PAGE */}
+          <Route path="/dashboard" element={<DashboardSnapshot />} />
+          <Route path="/lending-scorecard" element={<LendingScorecard />} />
+          <Route path="/lease-scorecard" element={<LeaseScorecardPage />} />
+          <Route path="/vehicle-master" element={<VehicleMasterPage />} />
+          <Route path="/vehicle-detail" element={<VehicleDetailPage />} />
+          <Route path="/driver-management" element={<DriverManagementScorecardPage />} />
+          <Route path="/driver-registration" element={<DriverRegistrationPage />} />
+          <Route path="/live-gps" element={<LiveGpsTrackingPage />} />
+          <Route path="/maintenance-management" element={<MaintenanceManagementPage />} />
+          <Route path="/insurance-management" element={<InsuranceManagementPage />} />
+          <Route path="/fuel-management" element={<FuelManagement />} />
+          <Route path="/credit-scoring" element={<CreditScoring />} />
+          <Route path="/audit-trail" element={<AuditTrailPanel />} />
+          
           <Route
             path="/risk-management"
             element={
               <div className="card">
                 <h1>Risk Management</h1>
-
-                <p>
-                  Risk monitoring, operational controls,
-                  fraud prevention, and fleet governance.
-                </p>
+                <p>Risk monitoring, operational controls, fraud prevention, and fleet governance.</p>
               </div>
             }
           />
-
-
-          {/* COMPLIANCE PAGE */}
           <Route
             path="/compliance"
             element={
               <div className="card">
                 <h1>Compliance</h1>
-
-                <p>
-                  Regulatory compliance, internal controls,
-                  audit reviews, and compliance reporting.
-                </p>
+                <p>Regulatory compliance, internal controls, audit reviews, and compliance reporting.</p>
               </div>
             }
           />
 
-
-          
-                    {/* ... your existing routes above ... */}
-
-          {/* ✅ ADD THESE AI ROUTES */}
+          {/* AI ROUTES */}
           <Route path="/ai-dashboard" element={<AIDashboard />} />
           <Route path="/chat-assistant" element={<ChatAssistant />} />
           <Route path="/voice-reports" element={<VoiceReports />} />
@@ -377,8 +195,6 @@ function App() {
           <Route path="/send-email" element={<SendEmail />} />
           <Route path="/attend-meeting" element={<AttendMeeting />} />
           <Route path="/compliance-ai" element={<ComplianceAI />} />
-
-        
         </Routes>
       </main>
     </div>
