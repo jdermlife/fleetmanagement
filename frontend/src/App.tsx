@@ -14,17 +14,17 @@ import CreditScoring from './pages/scoring/CreditScoring'
 import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
-import AIDashboard from './pages/ai/AIDashboard.tsx'
-import ChatAssistant from './pages/ai/ChatAssistant.tsx'
-import VoiceReports from './pages/ai/VoiceReports.tsx'
-import OCRScanner from './pages/ai/OCRScanner.tsx'
-import MaintenanceAI from './pages/ai/MaintenanceAI.tsx'
-import RiskAnalysis from './pages/ai/RiskAnalysis.tsx'
-import PDFSummarizer from './pages/ai/PDFSummarizer.tsx'
-import MeetingMinutes from './pages/ai/MeetingMinutes.tsx'
-import SendEmail from './pages/ai/SendEmail.tsx'
-import AttendMeeting from './pages/ai/AttendMeeting.tsx'
-import ComplianceAI from './pages/ai/ComplianceAI.tsx'
+import AIDashboard from './pages/ai/AIDashboard'
+import ChatAssistant from './pages/ai/ChatAssistant'
+import VoiceReports from './pages/ai/VoiceReports'
+import OCRScanner from './pages/ai/OCRScanner'
+import MaintenanceAI from './pages/ai/MaintenanceAI'
+import RiskAnalysis from './pages/ai/RiskAnalysis'
+import PDFSummarizer from './pages/ai/PDFSummarizer'
+import MeetingMinutes from './pages/ai/MeetingMinutes'
+import SendEmail from './pages/ai/SendEmail'
+import AttendMeeting from './pages/ai/AttendMeeting'
+import ComplianceAI from './pages/ai/ComplianceAI'
 
 
 type MenuLink = {
@@ -265,8 +265,6 @@ function App() {
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '8px',
-                        opacity: 0,
-                        visibility: 'hidden',
                         transform: 'translateX(10px)',
                         transition: 'all 0.2s ease',
                         boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
@@ -279,12 +277,13 @@ function App() {
                           to={`/${child.id}`}
                           onClick={closeMenu}
                           style={{
+                            display: 'block',
                             color: '#fff',
                             textDecoration: 'none',
-                            padding: '10px 12px',
+                            padding: '10px',
                             borderRadius: '8px',
-                            fontSize: '0.92rem',
                             background: 'rgba(255,255,255,0.08)',
+                            fontWeight: 600,
                           }}
                         >
                           {child.label}
