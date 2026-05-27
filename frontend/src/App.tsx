@@ -52,6 +52,56 @@ const menuLinks: MenuLink[] = [
         label: 'Compliance',
       },
     ],
+    {
+  id: 'ai-center',
+  label: 'AI Center',
+  children: [
+    {
+      id: 'ai-dashboard',
+      label: 'AI Dashboard',
+    },
+    {
+      id: 'chat-assistant',
+      label: 'Chat Assistant',
+    },
+    {
+      id: 'voice-reports',
+      label: 'Voice Reports',
+    },
+    {
+      id: 'ocr-scanner',
+      label: 'OCR Scanner',
+    },
+    {
+      id: 'maintenance-ai',
+      label: 'Maintenance AI',
+    },
+    {
+      id: 'risk-analysis',
+      label: 'Risk Analysis',
+    },
+    {
+      id: 'pdf-summarizer',
+      label: 'PDF Summarizer',
+    },
+    {
+      id: 'meeting-minutes',
+      label: 'Meeting Minutes',
+    },
+    {
+      id: 'send-email',
+      label: 'Send Email',
+    },
+    {
+      id: 'attend-meeting',
+      label: 'Attend Meeting',
+    },
+    {
+      id: 'compliance-ai',
+      label: 'Compliance AI',
+    },
+  ],
+},
   },
 ]
 
