@@ -46,9 +46,20 @@ const menuLinks: MenuLink[] = [
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'fuel-management', label: 'Fuel Management' },
   { id: 'credit-scoring', label: 'Credit Scoring' },
-
-  {
-    id: 'audit-compliance',
+    {id: 'ai-center',   label: 'AI Center', },
+    {      id: 'ai-dashboard', label: 'AI Dashboard',  },
+    { id: 'chat-assistant',       label: 'Chat Assistant',    },
+    { id: 'voice-reports',       label: 'Voice Reports',     },
+    { id: 'ocr-scanner',       label: 'OCR Scanner', },
+    { id: 'maintenance-ai', label: 'Maintenance AI', },
+    { id: 'risk-analysis', label: 'Risk Analysis', },
+    { id: 'pdf-summarizer', label: 'PDF Summarizer', },
+    { id: 'meeting-minutes', label: 'Meeting Minutes',  },
+    { id: 'send-email',  label: 'Send Email',  },
+    { id: 'attend-meeting', label: 'Attend Meeting',   },
+    { id: 'compliance-ai', label: 'Compliance AI', },
+    
+    {id: 'audit-compliance',
     label: 'Audit & Compliance',
        children: [
       {
@@ -65,60 +76,11 @@ const menuLinks: MenuLink[] = [
       },
     ],
   },
-{id: 'ai-center',
-  label: 'AI Center',
-  children: [
-    {
-      id: 'ai-dashboard',
-      label: 'AI Dashboard',
-    },
-    {
-      id: 'chat-assistant',
-      label: 'Chat Assistant',
-    },
-    {
-      id: 'voice-reports',
-      label: 'Voice Reports',
-    },
-    {
-      id: 'ocr-scanner',
-      label: 'OCR Scanner',
-    },
-    {
-      id: 'maintenance-ai',
-      label: 'Maintenance AI',
-    },
-    {
-      id: 'risk-analysis',
-      label: 'Risk Analysis',
-    },
-    {
-      id: 'pdf-summarizer',
-      label: 'PDF Summarizer',
-    },
-    {
-      id: 'meeting-minutes',
-      label: 'Meeting Minutes',
-    },
-    {
-      id: 'send-email',
-      label: 'Send Email',
-    },
-    {
-      id: 'attend-meeting',
-      label: 'Attend Meeting',
-    },
-    {
-      id: 'compliance-ai',
-      label: 'Compliance AI',
-    },
-
  
+  ]
+
   
-  ],
-},
-  
-]
+
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
