@@ -63,6 +63,24 @@ body {
 
 /* Topbar Container */
 
+.sidebar {
+  width: 100%;
+  min-height: 64px;
+  background-color: var(--dark-gold);
+  color: #ffffff;
+  padding: 0 24px;
+  position: sticky;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+  overflow: visible;
+}
+
+/* Dropdown containers (hidden by default) */
+
 /* ✅ SHOW DROPDOWN: on Hover (desktop) OR Checkbox Checked (tap/click) */
 .nav-toggle:checked ~ .sidebar .sidebar-link-group,
 .nav-toggle:checked ~ .sidebar ul,
