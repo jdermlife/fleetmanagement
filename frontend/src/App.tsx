@@ -82,7 +82,7 @@ function App() {
                 color: '#fff',
               }}
             >
-              The Best Car and Fleet Rental
+              The BestBank Car and Fleet Financing and Rental Company
             </h2>
 
             <p
