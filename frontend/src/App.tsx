@@ -14,6 +14,21 @@ import CreditScoring from './pages/scoring/CreditScoring'
 import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
+import AIDashboard from './pages/ai/AIDashboard'
+import ChatAssistant from './pages/ai/ChatAssistant'
+import VoiceReports from './pages/ai/VoiceReports'
+import OCRScanner from './pages/ai/OCRScanner'
+import MaintenanceAI from './pages/ai/MaintenanceAI'
+import RiskAnalysis from './pages/ai/RiskAnalysis'
+import PDFSummarizer from './pages/ai/PDFSummarizer'
+import MeetingMinutes from './pages/ai/MeetingMinutes'
+import SendEmail from './pages/ai/SendEmail'
+import AttendMeeting from './pages/ai/AttendMeeting'
+import ComplianceAI from './pages/ai/ComplianceAI'
+
+
+
+
 
 type MenuLink = {
   id: string
@@ -372,6 +387,7 @@ function App() {
             }
           />
 
+
           {/* COMPLIANCE PAGE */}
           <Route
             path="/compliance"
@@ -386,6 +402,25 @@ function App() {
               </div>
             }
           />
+
+
+          
+                    {/* ... your existing routes above ... */}
+
+          {/* ✅ ADD THESE AI ROUTES */}
+          <Route path="/ai-dashboard" element={<AIDashboard />} />
+          <Route path="/chat-assistant" element={<ChatAssistant />} />
+          <Route path="/voice-reports" element={<VoiceReports />} />
+          <Route path="/ocr-scanner" element={<OCRScanner />} />
+          <Route path="/maintenance-ai" element={<MaintenanceAI />} />
+          <Route path="/risk-analysis" element={<RiskAnalysis />} />
+          <Route path="/pdf-summarizer" element={<PDFSummarizer />} />
+          <Route path="/meeting-minutes" element={<MeetingMinutes />} />
+          <Route path="/send-email" element={<SendEmail />} />
+          <Route path="/attend-meeting" element={<AttendMeeting />} />
+          <Route path="/compliance-ai" element={<ComplianceAI />} />
+
+        
         </Routes>
       </main>
     </div>
