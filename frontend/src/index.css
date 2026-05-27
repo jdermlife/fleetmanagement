@@ -141,19 +141,18 @@ body {
   color: #222;
 }
 
-
-.sidebar-link-group a.active::after,
-.sidebar ul a.active::after,
-.sidebar-link-group a[aria-current="page"]::after,
-.sidebar ul a[aria-current="page"]::after {
-  content: '';
-  position: absolute;
-  left: 0; top: 50%;
-  transform: translateY(-50%);
-  width: 3px; height: 60%;
-  background: var(--dark-gold);
-  border-radius: 0 4px 4px 0;
+/* ✅ ACTIVE ROUTE HIGHLIGHTING */
+.sidebar-link-group a.active,
+.sidebar ul a.active,
+.sidebar-link-group a[aria-current="page"],
+.sidebar ul a[aria-current="page"] {
+  background: var(--primary-gold);
+  color: #222;
+  font-weight: 700;
+  position: relative;
+  padding-left: 14px;
 }
+
 
 /* Session Card Button */
 .session-card button {
