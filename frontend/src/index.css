@@ -21,16 +21,47 @@ body {
 }
 
 /* ========================
-   LAYOUT & TOPBAR (RELIABLE HOVER DROPDOWN)
+   PURE CSS TOGGLE & LAYOUT
    ======================== */
 .app-shell {
   display: flex;
   flex-direction: column;
   min-height: 100vh;
   width: 100%;
+  position: relative;
 }
 
-/* Transform existing .sidebar into a sticky topbar */
+/* Hidden checkbox (state controller) */
+.nav-toggle {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 0; height: 0;
+}
+
+/* ☰ Trigger Button (replaces ::before) */
+.nav-trigger {
+  font-size: 1.6rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.15);
+  cursor: pointer;
+  transition: background 0.2s, transform 0.2s;
+  flex-shrink: 0;
+  margin: 10px 24px 10px 0;
+  align-self: flex-start;
+}
+
+.nav-trigger:hover {
+  background: rgba(255, 255, 255, 0.3);
+  transform: scale(1.05);
+}
+
+/* Topbar Container */
 .sidebar {
   width: 100%;
   min-height: 64px;
@@ -42,35 +73,12 @@ body {
   left: 0;
   z-index: 9999;
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
+  align-items: center;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
   overflow: visible;
 }
 
-/* Pure CSS Menu Trigger Button */
-.sidebar::before {
-  content: '☰';
-  font-size: 1.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  margin: 10px 0;
-  transition: background 0.2s, transform 0.2s;
-  flex-shrink: 0;
-}
-
-.sidebar::before:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-/* Hide menu items by default (keeps them in DOM for hover chain) */
+/* Dropdown containers (hidden by default) */
 .sidebar-link-group,
 .sidebar ul,
 .session-card {
@@ -90,7 +98,10 @@ body {
   transition: visibility 0.2s, opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
-/* Reveal dropdown on hover (persists while hovering the menu itself) */
+/* ✅ SHOW DROPDOWN: on Hover (desktop) OR Checkbox Checked (tap/click) */
+.nav-toggle:checked ~ .sidebar .sidebar-link-group,
+.nav-toggle:checked ~ .sidebar ul,
+.nav-toggle:checked ~ .sidebar .session-card,
 .sidebar:hover .sidebar-link-group,
 .sidebar:hover ul,
 .sidebar:hover .session-card {
@@ -100,12 +111,12 @@ body {
   transform: translateY(0);
 }
 
-/* Layout for dropdown content */
+/* Dropdown layout */
 .sidebar-link-group { display: flex; flex-direction: column; gap: 6px; margin-bottom: 0; }
 .sidebar ul { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; }
 .session-card { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 
-/* Clickable Navigation Links */
+/* Navigation Links */
 .sidebar-link-group a,
 .sidebar ul a {
   display: block;
@@ -129,6 +140,31 @@ body {
   color: #222;
 }
 
+/* ✅ ACTIVE ROUTE HIGHLIGHTING */
+.sidebar-link-group a.active,
+.sidebar ul a.active,
+.sidebar-link-group a[aria-current="page"],
+.sidebar ul a[aria-current="page"] {
+  background: var(--primary-gold);
+  color: #222;
+  font-weight: 700;
+  position: relative;
+  padding-left: 14px;
+}
+.sidebar-link-group a.active::after,
+.sidebar ul a.active::after,
+.sidebar-link-group a[aria-current="page"]::after,
+.sidebar ul a[aria-current="page"]::after {
+  content: '';
+  position: absolute;
+  left: 0; top: 50%;
+  transform: translateY(-50%);
+  width: 3px; height: 60%;
+  background: var(--dark-gold);
+  border-radius: 0 4px 4px 0;
+}
+
+/* Session Card Button */
 .session-card button {
   width: 100%;
   background: var(--light-gold);
@@ -142,38 +178,27 @@ body {
 }
 .session-card button:hover { background: #fff; }
 
-/* Content Area (Full Width + Clear Header) */
+/* Content Area */
 .content {
   flex: 1;
   width: 100%;
   min-width: 0;
   padding: 24px;
-  padding-top: 88px; /* 64px topbar + 24px breathing room */
+  padding-top: 88px;
   position: relative;
   z-index: 1;
   overflow-x: auto;
 }
 
-.standalone-card {
-  max-width: 720px;
-  margin: 48px auto;
-  padding: 24px;
-}
+.standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
 /* ========================
-   DASHBOARD & KPIs
+   DASHBOARD & KPIs (PRESERVED)
    ======================== */
 .dashboard-snapshot { display: grid; gap: 20px; }
 .dashboard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
 .dashboard-header p { margin-bottom: 0; max-width: 760px; }
-.dashboard-badge {
-  background: linear-gradient(135deg, #fff2b3, #ffd24d);
-  color: #6d4c00;
-  padding: 10px 14px;
-  border-radius: 999px;
-  font-weight: 700;
-  white-space: nowrap;
-}
+.dashboard-badge { background: linear-gradient(135deg, #fff2b3, #ffd24d); color: #6d4c00; padding: 10px 14px; border-radius: 999px; font-weight: 700; white-space: nowrap; }
 .snapshot-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 .snapshot-kpi { display: grid; gap: 8px; padding: 18px; border-radius: 16px; color: #1f2937; border: 1px solid rgba(0, 0, 0, 0.08); }
 .snapshot-kpi span, .snapshot-kpi small { color: rgba(31, 41, 55, 0.82); }
@@ -184,32 +209,17 @@ body {
 .snapshot-kpi-slate { background: linear-gradient(180deg, #e9eef8, #d8e1f0); }
 
 /* ========================
-   CHARTS & VISUALS
+   CHARTS & VISUALS (PRESERVED)
    ======================== */
 .dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.snapshot-chart-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 220, 0.72));
-  border: 1px solid rgba(184, 134, 11, 0.28);
-  border-radius: 18px;
-  padding: 18px;
-  display: grid;
-  gap: 18px;
-}
+.snapshot-chart-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 220, 0.72)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 18px; padding: 18px; display: grid; gap: 18px; }
 .snapshot-chart-copy h3 { margin-bottom: 8px; }
 .snapshot-chart-copy p { margin: 0; color: #5b6472; }
 .bar-chart { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: end; min-height: 250px; }
 .bar-chart-column { display: grid; gap: 10px; justify-items: center; }
 .bar-chart-value, .bar-chart-label, .trend-axis-label, .trend-value-label { font-size: 0.8rem; }
-.bar-chart-track {
-  width: 100%; max-width: 52px; height: 180px;
-  background: linear-gradient(180deg, rgba(255, 215, 0, 0.12), rgba(184, 134, 11, 0.16));
-  border-radius: 999px; display: flex; align-items: end; padding: 6px;
-}
-.bar-chart-bar {
-  width: 100%; border-radius: 999px;
-  background: linear-gradient(180deg, #f7c948, #c89211);
-  box-shadow: 0 10px 18px rgba(184, 134, 11, 0.22);
-}
+.bar-chart-track { width: 100%; max-width: 52px; height: 180px; background: linear-gradient(180deg, rgba(255, 215, 0, 0.12), rgba(184, 134, 11, 0.16)); border-radius: 999px; display: flex; align-items: end; padding: 6px; }
+.bar-chart-bar { width: 100%; border-radius: 999px; background: linear-gradient(180deg, #f7c948, #c89211); box-shadow: 0 10px 18px rgba(184, 134, 11, 0.22); }
 .bar-chart-label { color: #6b7280; }
 .trend-chart { overflow-x: auto; }
 .trend-chart svg { width: 100%; min-width: 480px; height: auto; color: #c89211; }
@@ -223,39 +233,28 @@ body {
 .trend-value-label { fill: #374151; font-weight: 700; }
 
 /* ========================
-   PAGE LAYOUTS
+   PAGE LAYOUTS (PRESERVED)
    ======================== */
 .vehicle-master-page, .lease-scorecard-page, .live-gps-page, .maintenance-page, .insurance-page, .vehicle-detail-page, .scorecard-page { display: grid; gap: 18px; }
 .vehicle-master-header, .lease-scorecard-header, .live-gps-header, .maintenance-header, .insurance-header, .vehicle-detail-header, .scorecard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
 .vehicle-master-header p, .lease-scorecard-header p, .live-gps-header p, .maintenance-header p, .insurance-header p, .vehicle-detail-header p, .scorecard-header p { margin-bottom: 0; max-width: 760px; }
 
 /* ========================
-   CARDS & GRID SYSTEMS
+   CARDS & GRID SYSTEMS (PRESERVED)
    ======================== */
 .vehicle-master-grid, .dashboard-grid, .lease-scorecard-grid, .live-gps-grid, .live-gps-detail-grid, .maintenance-grid, .insurance-grid, .vehicle-detail-grid, .vehicle-detail-panels, .vehicle-detail-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
 .vehicle-profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.vehicle-master-card, .lease-card, .live-gps-card, .vehicle-detail-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92));
-  border: 1px solid rgba(184, 134, 11, 0.28);
-  border-radius: 16px;
-  padding: 18px;
-  display: grid;
-  gap: 12px;
-}
+.vehicle-master-card, .lease-card, .live-gps-card, .vehicle-detail-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
 .vehicle-db-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .vehicle-db-status span { display: block; color: #6b7280; font-size: 0.85rem; }
 .vehicle-db-status strong { display: block; margin-top: 4px; }
 .vehicle-db-source { grid-column: 1 / -1; }
-.vehicle-db-source code, .vehicle-master-note code {
-  display: inline-block; margin-top: 6px; padding: 8px 10px;
-  background: #fffef4; border: 1px dashed rgba(184, 134, 11, 0.45);
-  border-radius: 8px; white-space: normal; word-break: break-all;
-}
+.vehicle-db-source code, .vehicle-master-note code { display: inline-block; margin-top: 6px; padding: 8px 10px; background: #fffef4; border: 1px dashed rgba(184, 134, 11, 0.45); border-radius: 8px; white-space: normal; word-break: break-all; }
 .vehicle-master-steps { margin: 0; padding-left: 20px; }
 .vehicle-master-note { margin: 0; }
 
 /* ========================
-   LEASE SCORECARD
+   LEASE SCORECARD (PRESERVED)
    ======================== */
 .lease-scorecard-workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr); gap: 18px; align-items: start; }
 .lease-scorecard-list { margin: 0; padding-left: 20px; }
@@ -272,29 +271,13 @@ body {
 .lease-result-summary p { margin: 6px 0 0; }
 
 /* ========================
-   LIVE GPS MAP
+   LIVE GPS MAP (PRESERVED)
    ======================== */
 .live-gps-map-card { overflow: hidden; }
-.live-gps-map {
-  position: relative; min-height: 320px; border-radius: 18px;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.18), transparent 20%),
-    radial-gradient(circle at 72% 50%, rgba(37, 99, 235, 0.18), transparent 18%),
-    linear-gradient(135deg, #1f2937, #334155 42%, #0f766e 100%);
-  overflow: hidden;
-}
-.live-gps-map::before {
-  content: ''; position: absolute; inset: 0;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
-  background-size: 44px 44px;
-}
+.live-gps-map { position: relative; min-height: 320px; border-radius: 18px; background: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.18), transparent 20%), radial-gradient(circle at 72% 50%, rgba(37, 99, 235, 0.18), transparent 18%), linear-gradient(135deg, #1f2937, #334155 42%, #0f766e 100%); overflow: hidden; }
+.live-gps-map::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 44px 44px; }
 .gps-map-overlay { position: absolute; left: 18px; bottom: 18px; padding: 12px 14px; border-radius: 14px; background: rgba(15, 23, 42, 0.68); color: #f8fafc; display: grid; gap: 4px; }
-.gps-marker {
-  position: absolute; width: 42px; height: 42px; border-radius: 999px;
-  border: 2px solid rgba(255, 255, 255, 0.8); display: inline-flex;
-  align-items: center; justify-content: center; font-weight: 700;
-  color: #fff; cursor: pointer; box-shadow: 0 12px 20px rgba(15, 23, 42, 0.35);
-}
+.gps-marker { position: absolute; width: 42px; height: 42px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.8); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 12px 20px rgba(15, 23, 42, 0.35); }
 .gps-marker-moving { background: #16a34a; }
 .gps-marker-idle { background: #2563eb; }
 .gps-marker-stopped { background: #c2410c; }
@@ -310,13 +293,9 @@ body {
 .live-gps-detail-list strong { display: block; margin-top: 4px; }
 
 /* ========================
-   SCORECARD & METRICS
+   SCORECARD & METRICS (PRESERVED)
    ======================== */
-.scorecard-summary-card, .scorecard-outcome-card {
-  background: linear-gradient(180deg, #fffef7, #f7ecd1);
-  border: 1px solid rgba(184, 134, 11, 0.3);
-  border-radius: 16px; padding: 18px; display: grid; gap: 10px;
-}
+.scorecard-summary-card, .scorecard-outcome-card { background: linear-gradient(180deg, #fffef7, #f7ecd1); border: 1px solid rgba(184, 134, 11, 0.3); border-radius: 16px; padding: 18px; display: grid; gap: 10px; }
 .scorecard-pill { display: inline-flex; justify-content: center; width: fit-content; padding: 6px 12px; background: rgba(255, 215, 0, 0.18); border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
 .scorecard-total { font-size: 2rem; line-height: 1; color: var(--dark-gold); }
 .scorecard-grade { width: fit-content; padding: 8px 12px; border-radius: 999px; font-weight: 700; }
@@ -336,10 +315,7 @@ body {
 .scorecard-legend-5 { background: #fee2e2; }
 .scorecard-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 0.95fr); gap: 20px; align-items: start; }
 .scorecard-sections { display: grid; gap: 18px; }
-.scorecard-section-card {
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 220, 0.86));
-  border: 1px solid rgba(184, 134, 11, 0.25); border-radius: 16px; padding: 18px; display: grid; gap: 16px;
-}
+.scorecard-section-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 220, 0.86)); border: 1px solid rgba(184, 134, 11, 0.25); border-radius: 16px; padding: 18px; display: grid; gap: 16px; }
 .scorecard-section-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
 .scorecard-section-header p { margin-bottom: 0; color: #5b6472; }
 .scorecard-section-badge { min-width: 86px; display: grid; justify-items: center; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 215, 0, 0.16); }
@@ -355,7 +331,7 @@ body {
 .scorecard-section-totals li { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
 
 /* ========================
-   UI COMPONENTS
+   UI COMPONENTS (PRESERVED)
    ======================== */
 .container { max-width: 1200px; margin: 0 auto; }
 .intro { margin-bottom: 20px; color: var(--text); }
@@ -401,7 +377,7 @@ th { color: var(--dark-gold); }
     align-items: stretch;
   }
   
-  .sidebar::before { display: none !important; }
+  .nav-trigger { display: none !important; }
   
   .sidebar-link-group,
   .sidebar ul,
