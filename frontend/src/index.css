@@ -55,12 +55,14 @@ body {
   margin: 10px 24px 10px 0;
   align-self: flex-start;
 }
+
 .nav-trigger:hover {
   background: rgba(255, 255, 255, 0.3);
   transform: scale(1.05);
 }
 
 /* Topbar Container */
+
 .sidebar {
   width: 100%;
   min-height: 64px;
@@ -77,7 +79,7 @@ body {
   overflow: visible;
 }
 
-/* ✅ SINGLE DROPDOWN CONTAINER (replaces duplicated blocks) */
+
 .sidebar-dropdown {
   position: absolute;
   top: 64px;
