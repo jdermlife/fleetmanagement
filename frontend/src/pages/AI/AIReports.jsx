@@ -4,7 +4,7 @@ function AIReports() {
       <h1>AI Reports</h1>
 
       <p>
-        AI-generated reports and insights for fleet management.
+        AI-generated reports and insights for car financing and fleet management.
       </p>
     </div>
   );

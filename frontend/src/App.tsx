@@ -38,7 +38,7 @@ const menuLinks: MenuLink[] = [
   {
     id: 'audit-compliance',
     label: 'Audit & Compliance',
-    children: [
+       children: [
       {
         id: 'audit-trail',
         label: 'Audit Trail',
@@ -52,8 +52,8 @@ const menuLinks: MenuLink[] = [
         label: 'Compliance',
       },
     ],
-    {
-  id: 'ai-center',
+  },
+{id: 'ai-center',
   label: 'AI Center',
   children: [
     {
@@ -100,9 +100,12 @@ const menuLinks: MenuLink[] = [
       id: 'compliance-ai',
       label: 'Compliance AI',
     },
+
+ 
+  
   ],
 },
-  },
+  
 ]
 
 function App() {
