@@ -10,4 +10,4 @@ function PDFSummarizer() {
   );
 }
 
-export default PDFSummarizer
+export default PDFSummarizer;

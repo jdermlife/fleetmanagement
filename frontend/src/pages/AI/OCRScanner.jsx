@@ -10,4 +10,4 @@ function OCRScanner() {
   );
 }
 
-export default OCRScanner
+export default OCRScanner;

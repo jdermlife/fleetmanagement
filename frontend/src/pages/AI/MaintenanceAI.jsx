@@ -10,4 +10,4 @@ function MaintenanceAI() {
   );
 }
 
-export default MaintenanceAI
+export default MaintenanceAI;

@@ -7,7 +7,7 @@ function VoiceReports() {
         Fleet AI command center.
       </p>
     </div>
-  )
+  );
 }
 
-export default VoiceReports
+export default VoiceReports;

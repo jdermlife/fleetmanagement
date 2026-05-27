@@ -10,4 +10,4 @@ function MeetingMinutes() {
   );
 }
 
-export default MeetingMinutes
+export default MeetingMinutes;

@@ -10,4 +10,4 @@ function AIDashboard() {
   );
 }
 
-export default AIDashboard
+export default AIDashboard;

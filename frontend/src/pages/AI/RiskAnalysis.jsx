@@ -10,4 +10,4 @@ function RiskAnalysis() {
   );
 }
 
-export default RiskAnalysis
+export default RiskAnalysis;

@@ -10,4 +10,4 @@ function SendEmail() {
   );
 }
 
-export default SendEmail
+export default SendEmail;

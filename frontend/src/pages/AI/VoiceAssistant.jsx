@@ -10,4 +10,4 @@ function VoiceAssistant() {
   )
 }
 
-export default VoiceAssistant
+export default VoiceAssistant;

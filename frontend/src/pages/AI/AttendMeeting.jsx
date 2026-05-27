@@ -10,4 +10,4 @@ function AttendMeeting() {
   );
 }
 
-export default AttendMeeting
+export default AttendMeeting;

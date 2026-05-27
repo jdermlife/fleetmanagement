@@ -10,4 +10,4 @@ function AIReports() {
   );
 }
 
-export default AIReports
+export default AIReports;

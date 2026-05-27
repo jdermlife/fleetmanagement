@@ -10,4 +10,4 @@ function ComplianceAI() {
   );
 }
 
-export default ComplianceAI
+export default ComplianceAI;
