@@ -21,7 +21,7 @@ body {
 }
 
 /* ========================
-   PURE CSS TOGGLE (FIXED: NO DOUBLE DROPDOWN)
+   PURE CSS CONTINUOUS DROPDOWN (NO OVERLAP)
    ======================== */
 .app-shell {
   display: flex;
@@ -54,6 +54,7 @@ body {
   flex-shrink: 0;
   margin: 10px 24px 10px 0;
   align-self: flex-start;
+  z-index: 10001; /* Stays above dropdown */
 }
 .nav-trigger:hover {
   background: rgba(255, 255, 255, 0.3);
@@ -77,53 +78,42 @@ body {
   overflow: visible;
 }
 
-/* ✅ SINGLE DROPDOWN CONTAINER (Only .sidebar-link-group becomes the dropdown) */
-.sidebar-link-group {
-  position: absolute;
-  top: 64px;
-  left: 24px;
-  min-width: 220px;
-  background: var(--dark-gold);
-  border-radius: 0 12px 12px 12px;
-  padding: 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  z-index: 10000;
-  visibility: hidden;
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(-8px);
-  transition: visibility 0.2s, opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-/* Pull ul and session-card INTO the dropdown flow (no overlap) */
+/* ✅ HIDE ALL MENU ITEMS BY DEFAULT */
+.sidebar-link-group,
 .sidebar ul,
 .session-card {
-  position: static !important;
-  background: transparent !important;
-  box-shadow: none !important;
-  border-radius: 0 !important;
-  padding: 0 !important;
-  margin: 6px 0 0 0 !important;
-  visibility: visible !important;
-  opacity: 1 !important;
-  pointer-events: auto !important;
-  transform: none !important;
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 6px;
+  display: none;
 }
 
-.session-card { margin-top: 12px !important; }
+/* ✅ CONTINUOUS DROPDOWN (When checked) */
+.nav-toggle:checked ~ .sidebar {
+  flex-direction: column;
+  align-items: flex-start;
+  min-height: auto;
+  padding-bottom: 12px;
+}
 
-/* ✅ SHOW DROPDOWN ONLY WHEN CHECKED (Hover removed to prevent double-triggering) */
-.nav-toggle:checked ~ .sidebar .sidebar-link-group {
-  visibility: visible;
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+.nav-toggle:checked ~ .sidebar .sidebar-link-group,
+.nav-toggle:checked ~ .sidebar ul,
+.nav-toggle:checked ~ .sidebar .session-card {
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  background: var(--dark-gold);
+  border-radius: 0 12px 12px 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  padding: 12px;
+  margin: 0; /* Zero spacing between siblings = continuous panel */
+  gap: 6px;  /* Consistent internal spacing */
+  position: static; /* Flows naturally under topbar */
+  z-index: 10000;
+}
+
+/* Merge the session card seamlessly */
+.session-card {
+  border-radius: 0 0 12px 12px; /* Rounds bottom corners */
+  margin-top: 6px !important;    /* Tiny gap before logout */
+  background: rgba(255, 255, 255, 0.08); /* Slight contrast */
 }
 
 /* Navigation Links */
@@ -391,18 +381,16 @@ th { color: var(--dark-gold); }
   .sidebar-link-group,
   .sidebar ul,
   .session-card {
-    position: static !important;
-    visibility: visible !important;
-    opacity: 1 !important;
-    pointer-events: auto !important;
-    transform: none !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    background: transparent !important;
-    padding: 0 !important;
-    margin: 0 !important;
     display: flex !important;
     flex-direction: column !important;
+    width: 100% !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    border-radius: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    gap: 6px !important;
+    position: static !important;
   }
 
   .content {
