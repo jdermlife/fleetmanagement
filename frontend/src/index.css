@@ -80,6 +80,24 @@ body {
 }
 
 /* Dropdown containers (hidden by default) */
+.sidebar-link-group,
+.sidebar ul,
+.session-card {
+  position: absolute;
+  top: 64px;
+  left: 24px;
+  min-width: 220px;
+  background: var(--dark-gold);
+  border-radius: 0 12px 12px 12px;
+  padding: 12px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  z-index: 10000;
+  visibility: hidden;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-8px);
+  transition: visibility 0.2s, opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
 
 /* ✅ SHOW DROPDOWN: on Hover (desktop) OR Checkbox Checked (tap/click) */
 .nav-toggle:checked ~ .sidebar .sidebar-link-group,
