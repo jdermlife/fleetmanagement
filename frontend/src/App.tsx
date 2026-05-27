@@ -14,20 +14,17 @@ import CreditScoring from './pages/scoring/CreditScoring'
 import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
-import AIDashboard from './pages/ai/AIDashboard'
-import ChatAssistant from './pages/ai/ChatAssistant'
-import VoiceReports from './pages/ai/VoiceReports'
-import OCRScanner from './pages/ai/OCRScanner'
-import MaintenanceAI from './pages/ai/MaintenanceAI'
-import RiskAnalysis from './pages/ai/RiskAnalysis'
-import PDFSummarizer from './pages/ai/PDFSummarizer'
-import MeetingMinutes from './pages/ai/MeetingMinutes'
-import SendEmail from './pages/ai/SendEmail'
-import AttendMeeting from './pages/ai/AttendMeeting'
-import ComplianceAI from './pages/ai/ComplianceAI'
-
-
-
+import AIDashboard from './pages/ai/AIDashboard.tsx'
+import ChatAssistant from './pages/ai/ChatAssistant.tsx'
+import VoiceReports from './pages/ai/VoiceReports.tsx'
+import OCRScanner from './pages/ai/OCRScanner.tsx'
+import MaintenanceAI from './pages/ai/MaintenanceAI.tsx'
+import RiskAnalysis from './pages/ai/RiskAnalysis.tsx'
+import PDFSummarizer from './pages/ai/PDFSummarizer.tsx'
+import MeetingMinutes from './pages/ai/MeetingMinutes.tsx'
+import SendEmail from './pages/ai/SendEmail.tsx'
+import AttendMeeting from './pages/ai/AttendMeeting.tsx'
+import ComplianceAI from './pages/ai/ComplianceAI.tsx'
 
 
 type MenuLink = {
