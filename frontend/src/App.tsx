@@ -35,10 +35,7 @@ const sidebarLinkPages: SidebarLink[] = [
   { id: 'vehicle-detail', label: 'Vehicle Detail Page' },
   { id: 'live-gps', label: 'Live GPS Tracking' },
   { id: 'maintenance-management', label: 'Maintenance Management' },
-  { id: 'insurance-management', label: 'Insurance Management' },
-  { id: 'fuel-management', label: 'Fuel Management' },
-  { id: 'credit-scoring', label: 'Credit Scoring' },
-  { id: 'audit-trail', label: 'Audit Trail Page' },
+
 ]
 
 const productPages: FleetPage[] = [
