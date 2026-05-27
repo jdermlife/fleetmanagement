@@ -1,444 +1,388 @@
-:root {
-  --primary-gold: #ffd700;
-  --secondary-gold: #daa520;
-  --dark-gold: #b8860b;
-  --light-gold: #fff8dc;
-  --background: #ffffff;
-  --panel: #fffef4;
-  --text: #333333;
-  --danger: #b42318;
-  --success: #0f766e;
+import { useState } from 'react'
+import { Routes, Route, Link } from 'react-router-dom'
+
+import DriverManagementScorecardPage from './pages/drivers/DriverManagementScorecardPage'
+import DriverRegistrationPage from './pages/drivers/DriverRegistrationPage'
+import InsuranceManagementPage from './pages/insurance/InsuranceManagementPage'
+import LiveGpsTrackingPage from './pages/gps/LiveGpsTrackingPage'
+import LendingScorecard from './pages/scoring/LendingScorecard'
+import LeaseScorecardPage from './pages/scoring/LeaseScorecardPage'
+import MaintenanceManagementPage from './pages/maintenance/MaintenanceManagementPage'
+import DashboardSnapshot from './pages/dashboard/DashboardSnapshot'
+import AuditTrailPanel from './pages/audit/AuditTrailPanel'
+import CreditScoring from './pages/scoring/CreditScoring'
+import FuelManagement from './pages/fuel/FuelManagement'
+import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
+import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
+import AIDashboard from './pages/ai/AIDashboard'
+import ChatAssistant from './pages/ai/ChatAssistant'
+import VoiceReports from './pages/ai/VoiceReports'
+import OCRScanner from './pages/ai/OCRScanner'
+import MaintenanceAI from './pages/ai/MaintenanceAI'
+import RiskAnalysis from './pages/ai/RiskAnalysis'
+import PDFSummarizer from './pages/ai/PDFSummarizer'
+import MeetingMinutes from './pages/ai/MeetingMinutes'
+import SendEmail from './pages/ai/SendEmail'
+import AttendMeeting from './pages/ai/AttendMeeting'
+import ComplianceAI from './pages/ai/ComplianceAI'
+
+
+type MenuLink = {
+  id: string
+  label: string
+  children?: MenuLink[]
 }
 
-* { box-sizing: border-box; }
-html { scroll-behavior: smooth; }
-body {
-  font-family: Arial, sans-serif;
-  background-color: var(--background);
-  color: var(--text);
-  margin: 0; padding: 0;
-  line-height: 1.6;
-}
+const menuLinks: MenuLink[] = [
+  { id: 'dashboard', label: 'Dashboard Snapshot' },
+  { id: 'lending-scorecard', label: 'Lending Scorecard' },
+  { id: 'lease-scorecard', label: 'Lease Scorecard' },
+  { id: 'driver-management', label: 'Driver Management' },
+  { id: 'driver-registration', label: 'Driver Registration' },
+  { id: 'vehicle-master', label: 'Vehicle Master' },
+  { id: 'vehicle-detail', label: 'Vehicle Detail' },
+  { id: 'live-gps', label: 'Live GPS Tracking' },
+  { id: 'maintenance-management', label: 'Maintenance Management' },
+  { id: 'insurance-management', label: 'Insurance Management' },
+  { id: 'fuel-management', label: 'Fuel Management' },
+  { id: 'credit-scoring', label: 'Credit Scoring' },
+    {id: 'ai-center',   label: 'AI Center', },
+    {      id: 'ai-dashboard', label: 'AI Dashboard',  },
+    { id: 'chat-assistant',       label: 'Chat Assistant',    },
+    { id: 'voice-reports',       label: 'Voice Reports',     },
+    { id: 'ocr-scanner',       label: 'OCR Scanner', },
+    { id: 'maintenance-ai', label: 'Maintenance AI', },
+    { id: 'risk-analysis', label: 'Risk Analysis', },
+    { id: 'pdf-summarizer', label: 'PDF Summarizer', },
+    { id: 'meeting-minutes', label: 'Meeting Minutes',  },
+    { id: 'send-email',  label: 'Send Email',  },
+    { id: 'attend-meeting', label: 'Attend Meeting',   },
+    { id: 'compliance-ai', label: 'Compliance AI', },
+    
+    {id: 'audit-compliance',
+    label: 'Audit & Compliance',
+       children: [
+      {
+        id: 'audit-trail',
+        label: 'Audit Trail',
+      },
+      {
+        id: 'risk-management',
+        label: 'Risk Management',
+      },
+      {
+        id: 'compliance',
+        label: 'Compliance',
+      },
+    ],
+  },
+ 
+  ]
 
-/* ========================
-   PURE CSS CONTINUOUS DROPDOWN (NO OVERLAP)
-   ======================== */
-.app-shell {
-  display: flex;
-  flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
-  position: relative;
-}
-
-/* Hidden checkbox (state controller) */
-.nav-toggle {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-  width: 0; height: 0;
-}
-
-/* ☰ Trigger Button */
-.nav-trigger {
-  font-size: 1.6rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.15);
-  cursor: pointer;
-  transition: background 0.2s, transform 0.2s;
-  flex-shrink: 0;
-  margin: 10px 24px 10px 0;
-  align-self: flex-start;
-  z-index: 10001; /* Stays above dropdown */
-}
-.nav-trigger:hover {
-  background: rgba(255, 255, 255, 0.3);
-  transform: scale(1.05);
-}
-
-/* Topbar Container */
-.sidebar {
-  width: 100%;
-  min-height: 64px;
-  background-color: var(--dark-gold);
-  color: #ffffff;
-  padding: 0 24px;
-  position: sticky;
-  top: 0;
-  left: 0;
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
-  overflow: visible;
-}
-
-/* ✅ HIDE ALL MENU ITEMS BY DEFAULT */
-.sidebar-link-group,
-.sidebar ul,
-.session-card {
-  display: none;
-}
-
-/* ✅ CONTINUOUS DROPDOWN (When checked) */
-.nav-toggle:checked ~ .sidebar {
-  flex-direction: column;
-  align-items: flex-start;
-  min-height: auto;
-  padding-bottom: 12px;
-}
-
-.nav-toggle:checked ~ .sidebar .sidebar-link-group,
-.nav-toggle:checked ~ .sidebar ul,
-.nav-toggle:checked ~ .sidebar .session-card {
-  display: flex;
-  flex-direction: column;
-  width: 220px;
-  background: var(--dark-gold);
-  border-radius: 0 12px 12px 12px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
-  padding: 12px;
-  margin: 0; /* Zero spacing between siblings = continuous panel */
-  gap: 6px;  /* Consistent internal spacing */
-  position: static; /* Flows naturally under topbar */
-  z-index: 10000;
-}
-
-/* Merge the session card seamlessly */
-.session-card {
-  border-radius: 0 0 12px 12px; /* Rounds bottom corners */
-  margin-top: 6px !important;    /* Tiny gap before logout */
-  background: rgba(255, 255, 255, 0.08); /* Slight contrast */
-}
-
-/* Navigation Links */
-.sidebar-link-group a,
-.sidebar ul a {
-  display: block;
-  width: 100%;
-  background: transparent;
-  color: #ffffff;
-  padding: 10px 12px;
-  border-radius: 6px;
-  text-decoration: none;
-  font-weight: 600;
-  font-size: 0.95rem;
-  cursor: pointer;
-  transition: background 0.2s, color 0.2s;
-}
-.sidebar-link-group a:hover,
-.sidebar-link-group a:focus,
-.sidebar ul a:hover,
-.sidebar ul a:focus {
-  background: var(--primary-gold);
-  color: #222;
-}
-
-/* ✅ ACTIVE ROUTE HIGHLIGHTING */
-.sidebar-link-group a.active,
-.sidebar ul a.active,
-.sidebar-link-group a[aria-current="page"],
-.sidebar ul a[aria-current="page"] {
-  background: var(--primary-gold);
-  color: #222;
-  font-weight: 700;
-  position: relative;
-  padding-left: 14px;
-}
-.sidebar-link-group a.active::after,
-.sidebar ul a.active::after,
-.sidebar-link-group a[aria-current="page"]::after,
-.sidebar ul a[aria-current="page"]::after {
-  content: '';
-  position: absolute;
-  left: 0; top: 50%;
-  transform: translateY(-50%);
-  width: 3px; height: 60%;
-  background: var(--dark-gold);
-  border-radius: 0 4px 4px 0;
-}
-
-/* Session Card Button */
-.session-card button {
-  width: 100%;
-  background: var(--light-gold);
-  color: var(--dark-gold);
-  border: none;
-  padding: 8px;
-  border-radius: 6px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-.session-card button:hover { background: #fff; }
-
-/* Content Area */
-.content {
-  flex: 1;
-  width: 100%;
-  min-width: 0;
-  padding: 24px;
-  padding-top: 88px;
-  position: relative;
-  z-index: 1;
-  overflow-x: auto;
-}
-
-.standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
-
-/* ========================
-   DASHBOARD & KPIs (PRESERVED)
-   ======================== */
-.dashboard-snapshot { display: grid; gap: 20px; }
-.dashboard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-.dashboard-header p { margin-bottom: 0; max-width: 760px; }
-.dashboard-badge { background: linear-gradient(135deg, #fff2b3, #ffd24d); color: #6d4c00; padding: 10px 14px; border-radius: 999px; font-weight: 700; white-space: nowrap; }
-.snapshot-kpis { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
-.snapshot-kpi { display: grid; gap: 8px; padding: 18px; border-radius: 16px; color: #1f2937; border: 1px solid rgba(0, 0, 0, 0.08); }
-.snapshot-kpi span, .snapshot-kpi small { color: rgba(31, 41, 55, 0.82); }
-.snapshot-kpi strong { font-size: 2rem; line-height: 1; }
-.snapshot-kpi-gold { background: linear-gradient(180deg, #fff8cf, #ffeaa0); }
-.snapshot-kpi-teal { background: linear-gradient(180deg, #daf7f2, #b8efe5); }
-.snapshot-kpi-coral { background: linear-gradient(180deg, #ffe3d7, #ffd0bd); }
-.snapshot-kpi-slate { background: linear-gradient(180deg, #e9eef8, #d8e1f0); }
-
-/* ========================
-   CHARTS & VISUALS (PRESERVED)
-   ======================== */
-.dashboard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.snapshot-chart-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 248, 220, 0.72)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 18px; padding: 18px; display: grid; gap: 18px; }
-.snapshot-chart-copy h3 { margin-bottom: 8px; }
-.snapshot-chart-copy p { margin: 0; color: #5b6472; }
-.bar-chart { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 14px; align-items: end; min-height: 250px; }
-.bar-chart-column { display: grid; gap: 10px; justify-items: center; }
-.bar-chart-value, .bar-chart-label, .trend-axis-label, .trend-value-label { font-size: 0.8rem; }
-.bar-chart-track { width: 100%; max-width: 52px; height: 180px; background: linear-gradient(180deg, rgba(255, 215, 0, 0.12), rgba(184, 134, 11, 0.16)); border-radius: 999px; display: flex; align-items: end; padding: 6px; }
-.bar-chart-bar { width: 100%; border-radius: 999px; background: linear-gradient(180deg, #f7c948, #c89211); box-shadow: 0 10px 18px rgba(184, 134, 11, 0.22); }
-.bar-chart-label { color: #6b7280; }
-.trend-chart { overflow-x: auto; }
-.trend-chart svg { width: 100%; min-width: 480px; height: auto; color: #c89211; }
-.trend-line { stroke-width: 4; stroke-linecap: round; stroke-linejoin: round; }
-.trend-dot { fill: currentColor; stroke: #fffef4; stroke-width: 2; }
-.trend-line.revenue, .trend-area.revenue { color: #0f766e; }
-.trend-line.gasoline, .trend-area.gasoline { color: #c2410c; }
-.trend-line.maintenance, .trend-area.maintenance { color: #7c3aed; }
-.trend-line.dispatch, .trend-area.dispatch { color: #2563eb; }
-.trend-axis-label { fill: #6b7280; }
-.trend-value-label { fill: #374151; font-weight: 700; }
-
-/* ========================
-   PAGE LAYOUTS (PRESERVED)
-   ======================== */
-.vehicle-master-page, .lease-scorecard-page, .live-gps-page, .maintenance-page, .insurance-page, .vehicle-detail-page, .scorecard-page { display: grid; gap: 18px; }
-.vehicle-master-header, .lease-scorecard-header, .live-gps-header, .maintenance-header, .insurance-header, .vehicle-detail-header, .scorecard-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-.vehicle-master-header p, .lease-scorecard-header p, .live-gps-header p, .maintenance-header p, .insurance-header p, .vehicle-detail-header p, .scorecard-header p { margin-bottom: 0; max-width: 760px; }
-
-/* ========================
-   CARDS & GRID SYSTEMS (PRESERVED)
-   ======================== */
-.vehicle-master-grid, .dashboard-grid, .lease-scorecard-grid, .live-gps-grid, .live-gps-detail-grid, .maintenance-grid, .insurance-grid, .vehicle-detail-grid, .vehicle-detail-panels, .vehicle-detail-columns { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
-.vehicle-profile-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
-.vehicle-master-card, .lease-card, .live-gps-card, .vehicle-detail-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(255, 248, 220, 0.92)); border: 1px solid rgba(184, 134, 11, 0.28); border-radius: 16px; padding: 18px; display: grid; gap: 12px; }
-.vehicle-db-status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.vehicle-db-status span { display: block; color: #6b7280; font-size: 0.85rem; }
-.vehicle-db-status strong { display: block; margin-top: 4px; }
-.vehicle-db-source { grid-column: 1 / -1; }
-.vehicle-db-source code, .vehicle-master-note code { display: inline-block; margin-top: 6px; padding: 8px 10px; background: #fffef4; border: 1px dashed rgba(184, 134, 11, 0.45); border-radius: 8px; white-space: normal; word-break: break-all; }
-.vehicle-master-steps { margin: 0; padding-left: 20px; }
-.vehicle-master-note { margin: 0; }
-
-/* ========================
-   LEASE SCORECARD (PRESERVED)
-   ======================== */
-.lease-scorecard-workspace { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(320px, 0.9fr); gap: 18px; align-items: start; }
-.lease-scorecard-list { margin: 0; padding-left: 20px; }
-.lease-scorecard-note { margin: 0; color: #5b6472; }
-.lease-scorecard-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.lease-scorecard-preview { padding: 14px; border-radius: 12px; background: rgba(255, 215, 0, 0.14); display: grid; gap: 4px; grid-column: 1 / -1; }
-.lease-scorecard-preview strong { font-size: 1.4rem; }
-.lease-scorecard-form .form-actions { grid-column: 1 / -1; }
-.lease-side-panel { display: grid; gap: 18px; }
-.lease-result-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.lease-result-grid span { display: block; color: #6b7280; font-size: 0.85rem; }
-.lease-result-grid strong { display: block; margin-top: 4px; }
-.lease-result-summary { grid-column: 1 / -1; }
-.lease-result-summary p { margin: 6px 0 0; }
-
-/* ========================
-   LIVE GPS MAP (PRESERVED)
-   ======================== */
-.live-gps-map-card { overflow: hidden; }
-.live-gps-map { position: relative; min-height: 320px; border-radius: 18px; background: radial-gradient(circle at 20% 30%, rgba(16, 185, 129, 0.18), transparent 20%), radial-gradient(circle at 72% 50%, rgba(37, 99, 235, 0.18), transparent 18%), linear-gradient(135deg, #1f2937, #334155 42%, #0f766e 100%); overflow: hidden; }
-.live-gps-map::before { content: ''; position: absolute; inset: 0; background-image: linear-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px); background-size: 44px 44px; }
-.gps-map-overlay { position: absolute; left: 18px; bottom: 18px; padding: 12px 14px; border-radius: 14px; background: rgba(15, 23, 42, 0.68); color: #f8fafc; display: grid; gap: 4px; }
-.gps-marker { position: absolute; width: 42px; height: 42px; border-radius: 999px; border: 2px solid rgba(255, 255, 255, 0.8); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; color: #fff; cursor: pointer; box-shadow: 0 12px 20px rgba(15, 23, 42, 0.35); }
-.gps-marker-moving { background: #16a34a; }
-.gps-marker-idle { background: #2563eb; }
-.gps-marker-stopped { background: #c2410c; }
-.gps-marker-selected { transform: scale(1.08); outline: 3px solid rgba(255, 255, 255, 0.45); }
-.gps-status-badge { display: inline-flex; padding: 4px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 700; text-transform: capitalize; }
-.gps-status-moving { background: #dcfce7; color: #166534; }
-.gps-status-idle { background: #dbeafe; color: #1d4ed8; }
-.gps-status-stopped { background: #ffedd5; color: #c2410c; }
-.gps-row-selected { background: rgba(255, 215, 0, 0.12); }
-.live-gps-card-header { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
-.live-gps-detail-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.live-gps-detail-list span { display: block; color: #6b7280; font-size: 0.85rem; }
-.live-gps-detail-list strong { display: block; margin-top: 4px; }
-
-/* ========================
-   SCORECARD & METRICS (PRESERVED)
-   ======================== */
-.scorecard-summary-card, .scorecard-outcome-card { background: linear-gradient(180deg, #fffef7, #f7ecd1); border: 1px solid rgba(184, 134, 11, 0.3); border-radius: 16px; padding: 18px; display: grid; gap: 10px; }
-.scorecard-pill { display: inline-flex; justify-content: center; width: fit-content; padding: 6px 12px; background: rgba(255, 215, 0, 0.18); border-radius: 999px; font-size: 0.85rem; font-weight: 700; }
-.scorecard-total { font-size: 2rem; line-height: 1; color: var(--dark-gold); }
-.scorecard-grade { width: fit-content; padding: 8px 12px; border-radius: 999px; font-weight: 700; }
-.scorecard-grade-a { background: #d1fae5; color: #065f46; }
-.scorecard-grade-b { background: #dbeafe; color: #1d4ed8; }
-.scorecard-grade-c { background: #fef3c7; color: #92400e; }
-.scorecard-grade-d { background: #fed7aa; color: #9a3412; }
-.scorecard-grade-e, .scorecard-grade-override { background: #fee2e2; color: #b91c1c; }
-.scorecard-meta { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.scorecard-legend { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 12px; }
-.scorecard-legend-item { padding: 12px; border-radius: 12px; display: grid; gap: 4px; border: 1px solid rgba(0, 0, 0, 0.06); }
-.scorecard-legend-item strong { font-size: 1.1rem; }
-.scorecard-legend-1 { background: #dcfce7; }
-.scorecard-legend-2 { background: #ecfccb; }
-.scorecard-legend-3 { background: #fef3c7; }
-.scorecard-legend-4 { background: #fed7aa; }
-.scorecard-legend-5 { background: #fee2e2; }
-.scorecard-grid { display: grid; grid-template-columns: minmax(0, 2fr) minmax(280px, 0.95fr); gap: 20px; align-items: start; }
-.scorecard-sections { display: grid; gap: 18px; }
-.scorecard-section-card { background: linear-gradient(180deg, rgba(255, 255, 255, 0.86), rgba(255, 248, 220, 0.86)); border: 1px solid rgba(184, 134, 11, 0.25); border-radius: 16px; padding: 18px; display: grid; gap: 16px; }
-.scorecard-section-header { display: flex; justify-content: space-between; gap: 16px; align-items: flex-start; }
-.scorecard-section-header p { margin-bottom: 0; color: #5b6472; }
-.scorecard-section-badge { min-width: 86px; display: grid; justify-items: center; gap: 2px; padding: 10px 12px; border-radius: 12px; background: rgba(255, 215, 0, 0.16); }
-.scorecard-section-badge strong { font-size: 1.1rem; }
-.scorecard-table td, .scorecard-table th { font-size: 0.92rem; }
-.scorecard-criterion-title { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 700; }
-.scorecard-critical-chip { display: inline-flex; align-items: center; padding: 3px 8px; background: #fee2e2; color: #b91c1c; border-radius: 999px; font-size: 0.75rem; font-weight: 700; }
-.scorecard-side-panel { display: grid; gap: 16px; position: sticky; top: 16px; }
-.scorecard-outcome-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
-.scorecard-outcome-grid span { display: block; color: #6b7280; font-size: 0.85rem; }
-.scorecard-outcome-grid strong { display: block; margin-top: 4px; }
-.scorecard-section-totals { list-style: none; padding: 0; margin: 0; display: grid; gap: 10px; }
-.scorecard-section-totals li { display: flex; justify-content: space-between; gap: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(0, 0, 0, 0.08); }
-
-/* ========================
-   UI COMPONENTS (PRESERVED)
-   ======================== */
-.container { max-width: 1200px; margin: 0 auto; }
-.intro { margin-bottom: 20px; color: var(--text); }
-.card, .standalone-card { background-color: rgba(255, 248, 220, 0.95); border: 1px solid var(--secondary-gold); border-radius: 8px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.12); }
-.card { padding: 20px; margin: 16px 0; }
-.card h2, .card h3, .standalone-card h1 { margin-top: 0; }
-button { background-color: var(--primary-gold); color: var(--text); border: 2px solid var(--secondary-gold); padding: 10px 20px; font-size: 16px; cursor: pointer; border-radius: 5px; transition: background-color 0.3s; }
-button:hover { background-color: var(--secondary-gold); }
-button:disabled { cursor: wait; opacity: 0.7; }
-.button-danger { background-color: #ffe0dc; border-color: #d92d20; color: #7a271a; }
-.button-danger:hover { background-color: #fecdc7; }
-input, select, textarea { border: 1px solid var(--secondary-gold); padding: 8px; border-radius: 4px; font-size: 14px; width: 100%; }
-textarea { min-height: 100px; }
-label { display: block; margin-bottom: 12px; }
-.checkbox-label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-.checkbox-label input { width: auto; }
-.vehicle-grid, .access-grid, .fuel-management .fuel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
-.stack-panel { display: grid; gap: 20px; }
-.backup-code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
-.backup-code { display: inline-block; padding: 10px 12px; background: #fffef4; border: 1px dashed var(--secondary-gold); border-radius: 6px; text-align: center; }
-.table-wrap { overflow-x: auto; }
-table { width: 100%; border-collapse: collapse; }
-thead { background-color: rgba(218, 165, 32, 0.15); }
-th, td { padding: 12px 10px; border: 1px solid rgba(0, 0, 0, 0.08); text-align: left; vertical-align: top; }
-th { color: var(--dark-gold); }
-.actions-cell { display: flex; gap: 8px; flex-wrap: wrap; }
-.fuel-management .fuel-summary, .fuel-management .fuel-form, .auth-panel { background: var(--panel); }
-.empty-state { margin: 0; color: #6b7280; }
-.status-message { margin: 12px 0 0; font-weight: 600; }
-.status-error { color: var(--danger); }
-.status-success { color: var(--success); }
-.form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-
-/* ========================
-   RESPONSIVE (≤960px)
-   ======================== */
-@media (max-width: 960px) {
-  .sidebar {
-    min-height: auto;
-    padding: 12px 16px;
-    position: relative;
-    flex-direction: column;
-    align-items: stretch;
-  }
   
-  .nav-trigger { display: none !important; }
-  
-  .sidebar-link-group,
-  .sidebar ul,
-  .session-card {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    background: transparent !important;
-    box-shadow: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    gap: 6px !important;
-    position: static !important;
+
+
+function App() {
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const closeMenu = () => {
+    setMenuOpen(false)
   }
 
-  .content {
-    width: 100% !important;
-    padding: 16px;
-    padding-top: 24px;
-  }
+  return (
+    <div className="app-shell">
+      {/* TOP NAVIGATION */}
+      <header className="sidebar">
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            width: '100%',
+          }}
+        >
+          {/* BRAND */}
+          <div>
+            <h2
+              style={{
+                margin: 0,
+                color: '#fff',
+              }}
+            >
+              The BestBank Car and Fleet Financing and Rental Company
+            </h2>
 
-  .vehicle-grid,
-  .access-grid,
-  .fuel-management .fuel-grid,
-  .snapshot-kpis,
-  .dashboard-grid,
-  .vehicle-master-grid,
-  .vehicle-detail-grid,
-  .vehicle-detail-panels,
-  .vehicle-detail-columns,
-  .vehicle-profile-grid,
-  .lease-scorecard-grid,
-  .lease-scorecard-workspace,
-  .lease-scorecard-form,
-  .live-gps-grid,
-  .live-gps-detail-grid,
-  .live-gps-detail-list,
-  .maintenance-grid,
-  .insurance-grid,
-  .scorecard-meta,
-  .scorecard-legend,
-  .scorecard-grid {
-    grid-template-columns: 1fr;
-  }
+            <p
+              style={{
+                margin: '4px 0 0',
+                fontSize: '0.85rem',
+                color: '#fff',
+              }}
+            >
+              Demo Version. Access Rights Integrated in Actual
+            </p>
+          </div>
 
-  .dashboard-header,
-  .vehicle-master-header,
-  .vehicle-detail-header,
-  .lease-scorecard-header,
-  .live-gps-header,
-  .maintenance-header,
-  .insurance-header,
-  .scorecard-header,
-  .scorecard-section-header {
-    flex-direction: column;
-  }
+          {/* HAMBURGER BUTTON */}
+          <button
+            onClick={() => setMenuOpen(!menuOpen)}
+            style={{
+              width: '46px',
+              height: '46px',
+              borderRadius: '10px',
+              fontSize: '1.4rem',
+              fontWeight: 'bold',
+              cursor: 'pointer',
+              border: 'none',
+            }}
+          >
+            ☰
+          </button>
+        </div>
 
-  .vehicle-db-status,
-  .scorecard-side-panel,
-  .scorecard-outcome-grid,
-  .lease-result-grid {
-    grid-template-columns: 1fr;
-  }
+        {/* DROPDOWN MENU */}
+        {menuOpen && (
+          <div
+            style={{
+              position: 'absolute',
+              top: '72px',
+              right: '24px',
+              width: '300px',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              background: '#b8860b',
+              borderRadius: '14px',
+              padding: '14px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '10px',
+              boxShadow: '0 12px 30px rgba(0,0,0,0.28)',
+              zIndex: 99999,
+            }}
+          >
+            {menuLinks.map((page) => (
+              <div
+                key={page.id}
+                style={{
+                  position: 'relative',
+                }}
+              >
+                {/* NORMAL MENU ITEM */}
+                {!page.children && (
+                  <Link
+                    to={`/${page.id}`}
+                    onClick={closeMenu}
+                    style={{
+                      display: 'block',
+                      color: '#fff',
+                      textDecoration: 'none',
+                      padding: '12px',
+                      borderRadius: '8px',
+                      fontWeight: 600,
+                      background: 'rgba(255,255,255,0.06)',
+                      transition: '0.2s',
+                    }}
+                  >
+                    {page.label}
+                  </Link>
+                )}
+
+                {/* PARENT MENU WITH HOVER CHILDREN */}
+                {page.children && (
+                  <div
+                    className="menu-parent"
+                    style={{
+                      position: 'relative',
+                    }}
+                  >
+                    {/* PARENT BUTTON */}
+                    <div
+                      style={{
+                        color: '#fff',
+                        padding: '12px',
+                        borderRadius: '8px',
+                        fontWeight: 700,
+                        background: 'rgba(255,255,255,0.12)',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <span>{page.label}</span>
+                      <span>▸</span>
+                    </div>
+
+                    {/* HIDDEN CHILD MENU */}
+                    <div
+                      className="child-dropdown"
+                      style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '100%',
+                        width: '220px',
+                        background: '#926c07',
+                        borderRadius: '12px',
+                        padding: '10px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        gap: '8px',
+                        transform: 'translateX(10px)',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
+                        zIndex: 999999,
+                      }}
+                    >
+                      {page.children.map((child) => (
+                        <Link
+                          key={child.id}
+                          to={`/${child.id}`}
+                          onClick={closeMenu}
+                          style={{
+                            display: 'block',
+                            color: '#fff',
+                            textDecoration: 'none',
+                            padding: '10px',
+                            borderRadius: '8px',
+                            background: 'rgba(255,255,255,0.08)',
+                            fontWeight: 600,
+                          }}
+                        >
+                          {child.label}
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </header>
+
+      {/* PAGE CONTENT */}
+      <main className="content">
+        <Routes>
+          <Route path="/" element={<DashboardSnapshot />} />
+
+          <Route
+            path="/dashboard"
+            element={<DashboardSnapshot />}
+          />
+
+          <Route
+            path="/lending-scorecard"
+            element={<LendingScorecard />}
+          />
+
+          <Route
+            path="/lease-scorecard"
+            element={<LeaseScorecardPage />}
+          />
+
+          <Route
+            path="/vehicle-master"
+            element={<VehicleMasterPage />}
+          />
+
+          <Route
+            path="/vehicle-detail"
+            element={<VehicleDetailPage />}
+          />
+
+          <Route
+            path="/driver-management"
+            element={<DriverManagementScorecardPage />}
+          />
+
+          <Route
+            path="/driver-registration"
+            element={<DriverRegistrationPage />}
+          />
+
+          <Route
+            path="/live-gps"
+            element={<LiveGpsTrackingPage />}
+          />
+
+          <Route
+            path="/maintenance-management"
+            element={<MaintenanceManagementPage />}
+          />
+
+          <Route
+            path="/insurance-management"
+            element={<InsuranceManagementPage />}
+          />
+
+          <Route
+            path="/fuel-management"
+            element={<FuelManagement />}
+          />
+
+          <Route
+            path="/credit-scoring"
+            element={<CreditScoring />}
+          />
+
+          <Route
+            path="/audit-trail"
+            element={<AuditTrailPanel />}
+          />
+
+          {/* RISK MANAGEMENT PAGE */}
+          <Route
+            path="/risk-management"
+            element={
+              <div className="card">
+                <h1>Risk Management</h1>
+
+                <p>
+                  Risk monitoring, operational controls,
+                  fraud prevention, and fleet governance.
+                </p>
+              </div>
+            }
+          />
+
+
+          {/* COMPLIANCE PAGE */}
+          <Route
+            path="/compliance"
+            element={
+              <div className="card">
+                <h1>Compliance</h1>
+
+                <p>
+                  Regulatory compliance, internal controls,
+                  audit reviews, and compliance reporting.
+                </p>
+              </div>
+            }
+          />
+
+
+          
+                    {/* ... your existing routes above ... */}
+
+          {/* ✅ ADD THESE AI ROUTES */}
+          <Route path="/ai-dashboard" element={<AIDashboard />} />
+          <Route path="/chat-assistant" element={<ChatAssistant />} />
+          <Route path="/voice-reports" element={<VoiceReports />} />
+          <Route path="/ocr-scanner" element={<OCRScanner />} />
+          <Route path="/maintenance-ai" element={<MaintenanceAI />} />
+          <Route path="/risk-analysis" element={<RiskAnalysis />} />
+          <Route path="/pdf-summarizer" element={<PDFSummarizer />} />
+          <Route path="/meeting-minutes" element={<MeetingMinutes />} />
+          <Route path="/send-email" element={<SendEmail />} />
+          <Route path="/attend-meeting" element={<AttendMeeting />} />
+          <Route path="/compliance-ai" element={<ComplianceAI />} />
+
+        
+        </Routes>
+      </main>
+    </div>
+  )
 }
+
+export default App
