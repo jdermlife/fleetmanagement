@@ -117,6 +117,21 @@ body {
 .sidebar ul { list-style: none; display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; }
 .session-card { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
 
+/* Navigation Links */
+.sidebar-link-group a,
+.sidebar ul a {
+  display: block;
+  width: 100%;
+  background: transparent;
+  color: #ffffff;
+  padding: 10px 12px;
+  border-radius: 6px;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
 
 .sidebar-link-group a:hover,
 .sidebar-link-group a:focus,
@@ -126,17 +141,7 @@ body {
   color: #222;
 }
 
-/* ✅ ACTIVE ROUTE HIGHLIGHTING */
-.sidebar-link-group a.active,
-.sidebar ul a.active,
-.sidebar-link-group a[aria-current="page"],
-.sidebar ul a[aria-current="page"] {
-  background: var(--primary-gold);
-  color: #222;
-  font-weight: 700;
-  position: relative;
-  padding-left: 14px;
-}
+
 .sidebar-link-group a.active::after,
 .sidebar ul a.active::after,
 .sidebar-link-group a[aria-current="page"]::after,
