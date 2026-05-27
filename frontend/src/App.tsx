@@ -57,27 +57,10 @@ const menuLinks: MenuLink[] = [
     { id: 'send-email',  label: 'Send Email',  },
     { id: 'attend-meeting', label: 'Attend Meeting',   },
     { id: 'compliance-ai', label: 'Compliance AI', },
-    
-    {id: 'audit-compliance',
-    label: 'Audit & Compliance',
-       children: [
-      {
-        id: 'audit-trail',
-        label: 'Audit Trail',
-      },
-      {
-        id: 'risk-management',
-        label: 'Risk Management',
-      },
-      {
-        id: 'compliance',
-        label: 'Compliance',
-      },
-    ],
-  },
- 
-  ]
-
+    {id: 'audit-trail', label: 'Audit Trail',},
+     {id: 'risk-management', label: 'Risk Management',  },
+      { id: 'compliance', label: 'Compliance',  },
+]
   
 
 
