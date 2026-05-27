@@ -30,7 +30,7 @@ import ComplianceAI from './pages/ai/ComplianceAI'
 type MenuLink = {
   id: string
   label: string
-  children?: MenuLink[]
+  
 }
 
 const menuLinks: MenuLink[] = [
@@ -194,43 +194,9 @@ function App() {
                       <span>{page.label}</span>
                       <span>▸</span>
                     </div>
-
-                    {/* HIDDEN CHILD MENU */}
-                    <div
-                      className="child-dropdown"
-                      style={{
-                        position: 'absolute',
-                        top: '0',
-                        left: '100%',
-                        width: '220px',
-                        background: '#926c07',
-                        borderRadius: '12px',
-                        padding: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        transform: 'translateX(10px)',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
-                        zIndex: 999999,
-                      }}
-                    >
-                      {page.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          to={`/${child.id}`}
-                          onClick={closeMenu}
-                          style={{
-                            display: 'block',
-                            color: '#fff',
-                            textDecoration: 'none',
-                            padding: '10px',
-                            borderRadius: '8px',
-                            background: 'rgba(255,255,255,0.08)',
-                            fontWeight: 600,
-                          }}
+             
                         >
-                          {child.label}
+                         
                         </Link>
                       ))}
                     </div>
