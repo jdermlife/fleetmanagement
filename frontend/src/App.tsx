@@ -134,7 +134,12 @@ function App() {
             }}
           >
             {menuLinks.map((page) => (
-              <div key={page.id}>
+              <div
+                key={page.id}
+                style={{
+                  position: 'relative',
+                }}
+              >
                 {/* NORMAL MENU ITEM */}
                 {!page.children && (
                   <Link
@@ -147,18 +152,23 @@ function App() {
                       padding: '12px',
                       borderRadius: '8px',
                       fontWeight: 600,
-                      transition: '0.2s',
                       background: 'rgba(255,255,255,0.06)',
+                      transition: '0.2s',
                     }}
                   >
                     {page.label}
                   </Link>
                 )}
 
-                {/* PARENT MENU WITH CHILDREN */}
+                {/* PARENT MENU WITH HOVER CHILDREN */}
                 {page.children && (
-                  <div>
-                    {/* PARENT TITLE */}
+                  <div
+                    className="menu-parent"
+                    style={{
+                      position: 'relative',
+                    }}
+                  >
+                    {/* PARENT BUTTON */}
                     <div
                       style={{
                         color: '#fff',
@@ -166,19 +176,36 @@ function App() {
                         borderRadius: '8px',
                         fontWeight: 700,
                         background: 'rgba(255,255,255,0.12)',
-                        marginBottom: '8px',
+                        cursor: 'pointer',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
                       }}
                     >
-                      {page.label}
+                      <span>{page.label}</span>
+                      <span>▸</span>
                     </div>
 
-                    {/* CHILD LINKS */}
+                    {/* HIDDEN CHILD MENU */}
                     <div
+                      className="child-dropdown"
                       style={{
+                        position: 'absolute',
+                        top: '0',
+                        left: '100%',
+                        width: '220px',
+                        background: '#926c07',
+                        borderRadius: '12px',
+                        padding: '10px',
                         display: 'flex',
                         flexDirection: 'column',
                         gap: '8px',
-                        paddingLeft: '12px',
+                        opacity: 0,
+                        visibility: 'hidden',
+                        transform: 'translateX(10px)',
+                        transition: 'all 0.2s ease',
+                        boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
+                        zIndex: 999999,
                       }}
                     >
                       {page.children.map((child) => (
@@ -277,26 +304,31 @@ function App() {
             element={<AuditTrailPanel />}
           />
 
-          {/* NEW CHILD PAGES */}
+          {/* RISK MANAGEMENT PAGE */}
           <Route
             path="/risk-management"
             element={
               <div className="card">
                 <h1>Risk Management</h1>
+
                 <p>
-                  Risk monitoring and fleet operational risk controls.
+                  Risk monitoring, operational controls,
+                  fraud prevention, and fleet governance.
                 </p>
               </div>
             }
           />
 
+          {/* COMPLIANCE PAGE */}
           <Route
             path="/compliance"
             element={
               <div className="card">
                 <h1>Compliance</h1>
+
                 <p>
-                  Compliance policies, audit reviews, and regulatory tracking.
+                  Regulatory compliance, internal controls,
+                  audit reviews, and compliance reporting.
                 </p>
               </div>
             }
