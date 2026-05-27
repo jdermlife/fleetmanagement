@@ -13,13 +13,6 @@ import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
 
-type FleetPage = {
-  id: string
-  title: string
-  description: string
-  features: string[]
-}
-
 type SidebarLink = {
   id: string
   label: string
@@ -39,9 +32,7 @@ const sidebarLinkPages: SidebarLink[] = [
   { id: 'fuel-management', label: 'Fuel Management' },
   { id: 'credit-scoring', label: 'Credit Scoring' },
   { id: 'audit-trail', label: 'Audit Trail Page' },
-
 ]
-
 
 function App() {
   return (
@@ -57,8 +48,6 @@ function App() {
             </Link>
           ))}
         </div>
-
-      
       </aside>
 
       <main className="content">
@@ -69,29 +58,44 @@ function App() {
           <Route path="/lease-scorecard" element={<LeaseScorecardPage />} />
           <Route path="/vehicle-master" element={<VehicleMasterPage />} />
           <Route path="/vehicle-detail" element={<VehicleDetailPage />} />
+
           <Route
             path="/driver-management"
             element={<DriverManagementScorecardPage />}
           />
+
           <Route
             path="/driver-registration"
             element={<DriverRegistrationPage />}
           />
+
           <Route path="/live-gps" element={<LiveGpsTrackingPage />} />
+
           <Route
             path="/maintenance-management"
             element={<MaintenanceManagementPage />}
           />
+
           <Route
             path="/insurance-management"
             element={<InsuranceManagementPage />}
           />
+
           <Route path="/fuel-management" element={<FuelManagement />} />
-          <Route path="/credit-scoring" element={<CreditScoring />} />
-          <Route path="/audit-trail" element={<AuditTrailPanel />} />
+
+          <Route
+            path="/credit-scoring"
+            element={<CreditScoring />}
+          />
+
+          <Route
+            path="/audit-trail"
+            element={<AuditTrailPanel />}
+          />
         </Routes>
       </main>
     </div>
   )
 }
+
 export default App
