@@ -81,7 +81,9 @@ body {
 
 /* Dropdown containers (hidden by default) */
 /* Single Dropdown Container */
-.sidebar-dropdown {
+.sidebar-link-group,
+.sidebar ul,
+.session-card {
   position: absolute;
   top: 64px;
   left: 24px;
@@ -97,15 +99,19 @@ body {
   transform: translateY(-8px);
   transition: visibility 0.2s, opacity 0.2s, transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
 }
-
-/* Show on hover OR checkbox toggle */
-.nav-toggle:checked ~ .sidebar .sidebar-dropdown,
-.sidebar:hover .sidebar-dropdown {
+.nav-toggle:checked ~ .sidebar .sidebar-link-group,
+.nav-toggle:checked ~ .sidebar ul,
+.nav-toggle:checked ~ .sidebar .session-card,
+.sidebar:hover .sidebar-link-group,
+.sidebar:hover ul,
+.sidebar:hover .session-card {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0);
 }
+
+
 
 /* Keep your existing link/card styles, just scope them inside the dropdown */
 .sidebar-dropdown ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
