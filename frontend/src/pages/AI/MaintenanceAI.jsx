@@ -4,10 +4,10 @@ function MaintenanceAI() {
       <h1>Maintenance AI</h1>
 
       <p>
-        Fleet AI command center.
+        AI-powered maintenance scheduling and optimization for fleet operations.
       </p>
     </div>
-  )
+  );
 }
 
 export default MaintenanceAI

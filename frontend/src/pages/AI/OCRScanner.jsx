@@ -4,10 +4,10 @@ function OCRScanner() {
       <h1>OCR Scanner</h1>
 
       <p>
-        Fleet AI command center.
+        OCR Scanner for extracting text from images and documents, enabling data digitization and analysis for fleet managemen
       </p>
     </div>
-  )
+  );
 }
 
 export default OCRScanner

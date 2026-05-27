@@ -4,10 +4,10 @@ function SendEmail() {
       <h1>Send Email</h1>
 
       <p>
-        Fleet AI command center.
+        Send email notifications and updates related to fleet management, ensuring timely communication with stakeholders.
       </p>
     </div>
-  )
+  );
 }
 
 export default SendEmail

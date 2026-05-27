@@ -4,10 +4,10 @@ function AIReports() {
       <h1>AI Reports</h1>
 
       <p>
-        Fleet AI command center.
+        AI-generated reports and insights for fleet management.
       </p>
     </div>
-  )
+  );
 }
 
 export default AIReports

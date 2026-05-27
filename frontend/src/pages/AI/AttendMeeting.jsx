@@ -4,10 +4,10 @@ function AttendMeeting() {
       <h1>Attend Meeting</h1>
 
       <p>
-        Fleet AI command center.
+        Artificial Intelligence for attending meetings, taking notes, and generating action items.
       </p>
     </div>
-  )
+  );
 }
 
 export default AttendMeeting

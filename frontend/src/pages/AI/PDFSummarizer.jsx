@@ -4,10 +4,10 @@ function PDFSummarizer() {
       <h1>PDF Summarizer</h1>
 
       <p>
-        Fleet AI command center.
+        PDF Summarizer for extracting key insights and summaries from PDF documents, enhancing information accessibility for fleet management.
       </p>
     </div>
-  )
+  );
 }
 
 export default PDFSummarizer

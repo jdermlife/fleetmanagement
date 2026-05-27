@@ -4,10 +4,10 @@ function RiskAnalysis() {
       <h1>Risk Analysis</h1>
 
       <p>
-        Fleet AI command center.
+        Risk analysis and predictive modeling for fleet safety and compliance.
       </p>
     </div>
-  )
+  );
 }
 
 export default RiskAnalysis

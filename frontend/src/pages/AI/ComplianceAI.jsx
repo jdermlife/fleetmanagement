@@ -4,10 +4,10 @@ function ComplianceAI() {
       <h1>Compliance AI</h1>
 
       <p>
-        Fleet AI command center.
+        Compliance AI for monitoring and ensuring regulatory compliance. fleet operations.
       </p>
     </div>
-  )
+  );
 }
 
 export default ComplianceAI
