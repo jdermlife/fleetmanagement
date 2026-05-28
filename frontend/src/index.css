@@ -305,64 +305,6 @@ th {
 }
 
 /* ========================
-   STATUS
-   ======================== */
-
-.status-message {
-  margin: 12px 0 0;
-  font-weight: 600;
-}
-
-.status-error {
-  color: var(--danger);
-}
-
-.status-success {
-  color: var(--success);
-}
-
-/* ========================
-   RESPONSIVE
-   ======================== */
-
-@media (max-width: 960px) {
-  .sidebar {
-    padding: 12px 16px;
-    min-height: auto;
-  }
-
-  .sidebar-dropdown {
-    width: calc(100vw - 32px);
-    right: 16px;
-    top: 76px;
-    max-height: 75vh;
-  }
-
-  .content {
-    width: 100%;
-    padding: 16px;
-    padding-top: 24px;
-  }
-
-  .vehicle-grid,
-  .access-grid,
-  .fuel-management .fuel-grid,
-  .snapshot-kpis,
-  .dashboard-grid,
-  .vehicle-master-grid,
-  .vehicle-detail-grid,
-  .vehicle-detail-panels,
-  .vehicle-detail-columns,
-  .vehicle-profile-grid,
-  .lease-scorecard-grid,
-  .lease-scorecard-workspace,
-  .live-gps-grid,
-  .live-gps-detail-grid,
-  .scorecard-grid {
-    grid-template-columns: 1fr;
-  }
-
-/* ========================
    DASHBOARD SNAPSHOT
    ======================== */
 
@@ -593,5 +535,69 @@ th {
   font-weight: 700;
 }
 
-  
+/* ========================
+   STATUS
+   ======================== */
+
+.status-message {
+  margin: 12px 0 0;
+  font-weight: 600;
+}
+
+.status-error {
+  color: var(--danger);
+}
+
+.status-success {
+  color: var(--success);
+}
+
+/* ========================
+   RESPONSIVE
+   ======================== */
+
+@media (max-width: 960px) {
+  .sidebar {
+    padding: 12px 16px;
+    min-height: auto;
+  }
+
+  .sidebar-dropdown {
+    width: calc(100vw - 32px);
+    right: 16px;
+    top: 76px;
+    max-height: 75vh;
+  }
+
+  .content {
+    width: 100%;
+    padding: 16px;
+    padding-top: 24px;
+  }
+
+  .vehicle-grid,
+  .access-grid,
+  .fuel-management .fuel-grid,
+  .snapshot-kpis,
+  .dashboard-grid,
+  .vehicle-master-grid,
+  .vehicle-detail-grid,
+  .vehicle-detail-panels,
+  .vehicle-detail-columns,
+  .vehicle-profile-grid,
+  .lease-scorecard-grid,
+  .lease-scorecard-workspace,
+  .live-gps-grid,
+  .live-gps-detail-grid,
+  .scorecard-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .dashboard-header {
+    flex-direction: column;
+  }
+
+  .bar-chart {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
