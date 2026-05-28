@@ -14,6 +14,8 @@ import CreditScoring from './pages/scoring/CreditScoring'
 import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
+
+/* AI PAGES */
 import AIDashboard from './pages/ai/AIDashboard'
 import ChatAssistant from './pages/ai/ChatAssistant'
 import VoiceReports from './pages/ai/VoiceReports'
@@ -26,11 +28,9 @@ import SendEmail from './pages/ai/SendEmail'
 import AttendMeeting from './pages/ai/AttendMeeting'
 import ComplianceAI from './pages/ai/ComplianceAI'
 
-
 type MenuLink = {
   id: string
   label: string
-  children?: MenuLink[]
 }
 
 const menuLinks: MenuLink[] = [
@@ -46,23 +46,25 @@ const menuLinks: MenuLink[] = [
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'fuel-management', label: 'Fuel Management' },
   { id: 'credit-scoring', label: 'Credit Scoring' },
-  {      id: 'ai-dashboard', label: 'AI Dashboard',  },
-    { id: 'chat-assistant',       label: 'Chat Assistant',    },
-    { id: 'voice-reports',       label: 'Voice Reports',     },
-    { id: 'ocr-scanner',       label: 'OCR Scanner', },
-    { id: 'maintenance-ai', label: 'Maintenance AI', },
-    { id: 'risk-analysis', label: 'Risk Analysis', },
-    { id: 'pdf-summarizer', label: 'PDF Summarizer', },
-    { id: 'meeting-minutes', label: 'Meeting Minutes',  },
-    { id: 'send-email',  label: 'Send Email',  },
-    { id: 'attend-meeting', label: 'Attend Meeting',   },
-    { id: 'compliance-ai', label: 'Compliance AI', },
-    {id: 'audit-trail', label: 'Audit Trail',},
-     {id: 'risk-management', label: 'Risk Management',  },
-      { id: 'compliance', label: 'Compliance',  },
-]
-  
 
+  /* AI MENU */
+  { id: 'ai-dashboard', label: 'AI Dashboard' },
+  { id: 'chat-assistant', label: 'Chat Assistant' },
+  { id: 'voice-reports', label: 'Voice Reports' },
+  { id: 'ocr-scanner', label: 'OCR Scanner' },
+  { id: 'maintenance-ai', label: 'Maintenance AI' },
+  { id: 'risk-analysis', label: 'Risk Analysis' },
+  { id: 'pdf-summarizer', label: 'PDF Summarizer' },
+  { id: 'meeting-minutes', label: 'Meeting Minutes' },
+  { id: 'send-email', label: 'Send Email' },
+  { id: 'attend-meeting', label: 'Attend Meeting' },
+  { id: 'compliance-ai', label: 'Compliance AI' },
+
+  /* AUDIT */
+  { id: 'audit-trail', label: 'Audit Trail' },
+  { id: 'risk-management', label: 'Risk Management' },
+  { id: 'compliance', label: 'Compliance' },
+]
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
@@ -129,7 +131,7 @@ function App() {
               position: 'absolute',
               top: '72px',
               right: '24px',
-              width: '300px',
+              width: '320px',
               maxHeight: '80vh',
               overflowY: 'auto',
               background: '#b8860b',
@@ -143,34 +145,23 @@ function App() {
             }}
           >
             {menuLinks.map((page) => (
-              <div
+              <Link
                 key={page.id}
+                to={`/${page.id}`}
+                onClick={closeMenu}
                 style={{
-                  position: 'relative',
+                  display: 'block',
+                  color: '#fff',
+                  textDecoration: 'none',
+                  padding: '12px',
+                  borderRadius: '8px',
+                  fontWeight: 600,
+                  background: 'rgba(255,255,255,0.06)',
+                  transition: '0.2s',
                 }}
               >
-                {/* NORMAL MENU ITEM */}
-                {!page.children && (
-                  <Link
-                    to={`/${page.id}`}
-                    onClick={closeMenu}
-                    style={{
-                      display: 'block',
-                      color: '#fff',
-                      textDecoration: 'none',
-                      padding: '12px',
-                      borderRadius: '8px',
-                      fontWeight: 600,
-                      background: 'rgba(255,255,255,0.06)',
-                      transition: '0.2s',
-                    }}
-                  >
-                    {page.label}
-                  </Link>
-                )}
-
-              
-                 
+                {page.label}
+              </Link>
             ))}
           </div>
         )}
@@ -246,7 +237,7 @@ function App() {
             element={<AuditTrailPanel />}
           />
 
-          {/* RISK MANAGEMENT PAGE */}
+          {/* RISK MANAGEMENT */}
           <Route
             path="/risk-management"
             element={
@@ -261,8 +252,7 @@ function App() {
             }
           />
 
-
-          {/* COMPLIANCE PAGE */}
+          {/* COMPLIANCE */}
           <Route
             path="/compliance"
             element={
@@ -277,24 +267,61 @@ function App() {
             }
           />
 
+          {/* AI ROUTES */}
+          <Route
+            path="/ai-dashboard"
+            element={<AIDashboard />}
+          />
 
-          
-                    {/* ... your existing routes above ... */}
+          <Route
+            path="/chat-assistant"
+            element={<ChatAssistant />}
+          />
 
-          {/* ✅ ADD THESE AI ROUTES */}
-          <Route path="/ai-dashboard" element={<AIDashboard />} />
-          <Route path="/chat-assistant" element={<ChatAssistant />} />
-          <Route path="/voice-reports" element={<VoiceReports />} />
-          <Route path="/ocr-scanner" element={<OCRScanner />} />
-          <Route path="/maintenance-ai" element={<MaintenanceAI />} />
-          <Route path="/risk-analysis" element={<RiskAnalysis />} />
-          <Route path="/pdf-summarizer" element={<PDFSummarizer />} />
-          <Route path="/meeting-minutes" element={<MeetingMinutes />} />
-          <Route path="/send-email" element={<SendEmail />} />
-          <Route path="/attend-meeting" element={<AttendMeeting />} />
-          <Route path="/compliance-ai" element={<ComplianceAI />} />
+          <Route
+            path="/voice-reports"
+            element={<VoiceReports />}
+          />
 
-        
+          <Route
+            path="/ocr-scanner"
+            element={<OCRScanner />}
+          />
+
+          <Route
+            path="/maintenance-ai"
+            element={<MaintenanceAI />}
+          />
+
+          <Route
+            path="/risk-analysis"
+            element={<RiskAnalysis />}
+          />
+
+          <Route
+            path="/pdf-summarizer"
+            element={<PDFSummarizer />}
+          />
+
+          <Route
+            path="/meeting-minutes"
+            element={<MeetingMinutes />}
+          />
+
+          <Route
+            path="/send-email"
+            element={<SendEmail />}
+          />
+
+          <Route
+            path="/attend-meeting"
+            element={<AttendMeeting />}
+          />
+
+          <Route
+            path="/compliance-ai"
+            element={<ComplianceAI />}
+          />
         </Routes>
       </main>
     </div>
