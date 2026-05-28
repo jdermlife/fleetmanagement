@@ -169,74 +169,8 @@ function App() {
                   </Link>
                 )}
 
-                {/* PARENT MENU WITH HOVER CHILDREN */}
-                {page.children && (
-                  <div
-                    className="menu-parent"
-                    style={{
-                      position: 'relative',
-                    }}
-                  >
-                    {/* PARENT BUTTON */}
-                    <div
-                      style={{
-                        color: '#fff',
-                        padding: '12px',
-                        borderRadius: '8px',
-                        fontWeight: 700,
-                        background: 'rgba(255,255,255,0.12)',
-                        cursor: 'pointer',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span>{page.label}</span>
-                      <span>▸</span>
-                    </div>
-
-                    {/* HIDDEN CHILD MENU */}
-                    <div
-                      className="child-dropdown"
-                      style={{
-                        position: 'absolute',
-                        top: '0',
-                        left: '100%',
-                        width: '220px',
-                        background: '#926c07',
-                        borderRadius: '12px',
-                        padding: '10px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '8px',
-                        transform: 'translateX(10px)',
-                        transition: 'all 0.2s ease',
-                        boxShadow: '0 12px 24px rgba(0,0,0,0.22)',
-                        zIndex: 999999,
-                      }}
-                    >
-                      {page.children.map((child) => (
-                        <Link
-                          key={child.id}
-                          to={`/${child.id}`}
-                          onClick={closeMenu}
-                          style={{
-                            display: 'block',
-                            color: '#fff',
-                            textDecoration: 'none',
-                            padding: '10px',
-                            borderRadius: '8px',
-                            background: 'rgba(255,255,255,0.08)',
-                            fontWeight: 600,
-                          }}
-                        >
-                          {child.label}
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
+              
+                 
             ))}
           </div>
         )}
