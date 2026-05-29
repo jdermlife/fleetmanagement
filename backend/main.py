@@ -2,8 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.routes.drivers import router as driver_router
-from fastapi import FastAPI
-from app.api.ai import router as ai_router
+from app.routes.ai import router as ai_router
 
 
 

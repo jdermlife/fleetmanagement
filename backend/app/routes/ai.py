@@ -1,15 +1,16 @@
-# app/api/ai.py
-
 from fastapi import APIRouter, UploadFile, File
 from openai import OpenAI
+from dotenv import load_dotenv
 import tempfile
 import os
 
+load_dotenv()
 router = APIRouter()
 
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY")
 )
+
 
 @router.post("/ai/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
@@ -29,45 +30,60 @@ async def transcribe(audio: UploadFile = File(...)):
     return {
         "transcript": result.text
     }
-@ai_bp.route("/ai/minutes", methods=["POST"])
-def meeting_minutes():
 
-    transcript = request.json["transcript"]
+
+@router.post("/ai/minutes")
+async def meeting_minutes(data: dict):
+
+    transcript = data.get("transcript", "")
+
+    if not transcript:
+        return {
+            "error": "Transcript is required"
+        }
 
     prompt = f"""
-    Generate:
+Generate the following:
 
-    1. Meeting Summary
-    2. Key Decisions
-    3. Risks
-    4. Action Items
-    5. Assigned Personnel
+1. Meeting Summary
+2. Key Decisions
+3. Risks
+4. Action Items
+5. Assigned Personnel
 
-    Transcript:
-    {transcript}
-    """
+Transcript:
+
+{transcript}
+"""
 
     response = client.chat.completions.create(
         model="gpt-4.1",
         messages=[
             {
-                "role":"user",
-                "content":prompt
+                "role": "user",
+                "content": prompt
             }
         ]
     )
 
-    return jsonify({
-        "minutes":
-            response.choices[0].message.content
-    })
-@ai_bp.route("/ai/send-minutes", methods=["POST"])
-def send_minutes():
+    return {
+        "minutes": response.choices[0].message.content
+    }
 
-    minutes = request.json["minutes"]
 
-    # Send email via SMTP
+@router.post("/ai/send-minutes")
+async def send_minutes(data: dict):
 
-    return jsonify({
-        "message":"Minutes sent"
-    })
+    minutes = data.get("minutes", "")
+
+    return {
+        "message": "Minutes sent successfully",
+        "minutes": minutes
+    }
+
+
+@router.get("/ai/health")
+async def ai_health():
+    return {
+        "status": "AI Service Running"
+    }
