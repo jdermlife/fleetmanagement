@@ -1,6 +1,12 @@
 from fastapi import APIRouter, UploadFile, File
 from openai import OpenAI
 from dotenv import load_dotenv
+
+from datetime import datetime
+
+from app.database import SessionLocal
+from app.models.meeting_minutes import MeetingMinutes
+
 import tempfile
 import os
 
@@ -36,6 +42,8 @@ async def transcribe(audio: UploadFile = File(...)):
 async def meeting_minutes(data: dict):
 
     transcript = data.get("transcript", "")
+    meeting_title = data.get("meeting_title", "Meeting")
+    meeting_date = data.get("meeting_date")
 
     if not transcript:
         return {
@@ -43,7 +51,7 @@ async def meeting_minutes(data: dict):
         }
 
     prompt = f"""
-Generate the following:
+Generate:
 
 1. Meeting Summary
 2. Key Decisions
@@ -66,10 +74,63 @@ Transcript:
         ]
     )
 
-    return {
-        "minutes": response.choices[0].message.content
-    }
+    summary = response.choices[0].message.content
 
+    db = SessionLocal()
+
+    try:
+
+        meeting = MeetingMinutes(
+            meeting_title=meeting_title,
+            meeting_date=datetime.fromisoformat(
+                meeting_date
+            ) if meeting_date else None,
+            transcript=transcript,
+            summary = summary,
+            action_items = summary
+        )
+
+        db.add(meeting)
+
+        db.commit()
+
+        db.refresh(meeting)
+
+        return {
+            "id": meeting.id,
+            "meeting_title": meeting.meeting_title,
+            "summary": meeting.summary,
+            "message": "Meeting saved successfully"
+        }
+
+    finally:
+        db.close()
+
+@router.get("/ai/meetings")
+def get_meetings():
+
+    db = SessionLocal()
+
+    try:
+
+        meetings = (
+            db.query(MeetingMinutes)
+            .order_by(MeetingMinutes.id.desc())
+            .all()
+        )
+
+        return [
+            {
+                "id": m.id,
+                "meeting_title": m.meeting_title,
+                "meeting_date": str(m.meeting_date),
+                "created_at": str(m.created_at)
+            }
+            for m in meetings
+        ]
+
+    finally:
+        db.close()
 
 @router.post("/ai/send-minutes")
 async def send_minutes(data: dict):
