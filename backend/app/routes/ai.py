@@ -43,7 +43,7 @@ async def transcribe(audio: UploadFile = File(...)):
            
          result = client.audio.transcriptions.create( 
             model="whisper-1",
-            file=(audio.filename, audio_file)
+            file=audio_file
          )
 
         return {
