@@ -21,6 +21,8 @@ client = OpenAI(
 @router.post("/ai/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
 
+    tmp_path = None
+  
     try:
 
         suffix = os.path.splitext(audio.filename)[1]
@@ -32,24 +34,32 @@ async def transcribe(audio: UploadFile = File(...)):
             tmp.write(await audio.read())
             tmp_path = tmp.name
 
-        print("========== AUDIO DEBUG ==========")
         print("Filename:", audio.filename)
         print("Content-Type:", audio.content_type)
-        print("Temp Path:", tmp_path)
         print("File Size:", os.path.getsize(tmp_path))
-        print("=================================")
+
+        with open(tmp_path, "rb") as audio_file:
+
+           
+         result = client.audio.transcriptions.create( 
+            model="whisper-1",
+            file=(audio.filename, audio_file)
 
         return {
-            "filename": audio.filename,
-            "content_type": audio.content_type,
-            "size": os.path.getsize(tmp_path),
-            "temp_path": tmp_path
+            "transcript": result.text
         }
 
     except Exception as e:
         return {
             "error": str(e)
         }
+
+    finally:
+        if tmp_path and os.path.exists(tmp_path):
+            os.remove(tmp_path)
+
+
+        
 
 
 @router.post("/ai/minutes")
@@ -161,4 +171,4 @@ async def send_minutes(data: dict):
 async def ai_health():
     return {
         "status": "AI Service Running"
-    }
+           }
