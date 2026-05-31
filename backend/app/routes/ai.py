@@ -3,7 +3,7 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 from datetime import datetime
-
+from openai import RateLimitError
 from app.database import SessionLocal
 from app.models.meeting_minutes import MeetingMinutes
 
@@ -18,24 +18,39 @@ client = OpenAI(
 )
 
 
+
+
 @router.post("/ai/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
 
-    with tempfile.NamedTemporaryFile(delete=False) as tmp:
-        tmp.write(await audio.read())
-        tmp_path = tmp.name
+    try:
 
-    with open(tmp_path, "rb") as audio_file:
-        result = client.audio.transcriptions.create(
-            model="whisper-1",
-            file=audio_file
-        )
+        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+            tmp.write(await audio.read())
+            tmp_path = tmp.name
 
-    os.remove(tmp_path)
+        with open(tmp_path, "rb") as audio_file:
+            result = client.audio.transcriptions.create(
+                model="whisper-1",
+                file=audio_file
+            )
 
-    return {
-        "transcript": result.text
-    }
+        os.remove(tmp_path)
+
+      
+        return {
+            "transcript": result.text
+        }
+
+    except RateLimitError:
+        return {
+            "error": "OpenAI API quota exceeded. Please check billing."
+        }
+
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
 
 @router.post("/ai/minutes")
