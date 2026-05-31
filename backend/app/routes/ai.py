@@ -3,7 +3,6 @@ from openai import OpenAI
 from dotenv import load_dotenv
 
 from datetime import datetime
-from openai import RateLimitError
 from app.database import SessionLocal
 from app.models.meeting_minutes import MeetingMinutes
 
@@ -11,6 +10,7 @@ import tempfile
 import os
 
 load_dotenv()
+
 router = APIRouter()
 
 client = OpenAI(
@@ -18,33 +18,32 @@ client = OpenAI(
 )
 
 
-
-
 @router.post("/ai/transcribe")
 async def transcribe(audio: UploadFile = File(...)):
 
     try:
 
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
+        suffix = os.path.splitext(audio.filename)[1]
+
+        with tempfile.NamedTemporaryFile(
+            delete=False,
+            suffix=suffix
+        ) as tmp:
             tmp.write(await audio.read())
             tmp_path = tmp.name
 
-        with open(tmp_path, "rb") as audio_file:
-            result = client.audio.transcriptions.create(
-                model="whisper-1",
-                file=audio_file
-            )
+        print("========== AUDIO DEBUG ==========")
+        print("Filename:", audio.filename)
+        print("Content-Type:", audio.content_type)
+        print("Temp Path:", tmp_path)
+        print("File Size:", os.path.getsize(tmp_path))
+        print("=================================")
 
-        os.remove(tmp_path)
-
-      
         return {
-            "transcript": result.text
-        }
-
-    except RateLimitError:
-        return {
-            "error": "OpenAI API quota exceeded. Please check billing."
+            "filename": audio.filename,
+            "content_type": audio.content_type,
+            "size": os.path.getsize(tmp_path),
+            "temp_path": tmp_path
         }
 
     except Exception as e:
@@ -101,14 +100,12 @@ Transcript:
                 meeting_date
             ) if meeting_date else None,
             transcript=transcript,
-            summary = summary,
-            action_items = summary
+            summary=summary,
+            action_items=summary
         )
 
         db.add(meeting)
-
         db.commit()
-
         db.refresh(meeting)
 
         return {
@@ -120,6 +117,7 @@ Transcript:
 
     finally:
         db.close()
+
 
 @router.get("/ai/meetings")
 def get_meetings():
@@ -146,6 +144,7 @@ def get_meetings():
 
     finally:
         db.close()
+
 
 @router.post("/ai/send-minutes")
 async def send_minutes(data: dict):
