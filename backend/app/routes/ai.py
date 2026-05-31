@@ -14,7 +14,7 @@ load_dotenv()
 router = APIRouter()
 
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY")
+    api_key=os.getenv("OPENAI_API_KEY", "").strip()
 )
 
 
