@@ -8,6 +8,11 @@ from app.routes.ai import router as ai_router
 
 app = FastAPI()
 
+origins = [
+    "http://localhost:5173",
+    "https://fleetmanagement-flame.vercel.app",
+]
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -30,7 +35,3 @@ def health():
     return {
         "status": "healthy"
     }
-allow_origins=[
-    "http://localhost:5173",
-    "https://your-vercel-app.vercel.app"
-]
