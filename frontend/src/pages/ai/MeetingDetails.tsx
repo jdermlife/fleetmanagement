@@ -1,68 +1,150 @@
-import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import axios from "axios";
+import { useEffect, useState } from 'react'
+import { useParams, Link } from 'react-router-dom'
+import axios from 'axios'
 
-export default function MeetingHistory() {
-  const [meetings, setMeetings] = useState<any[]>([]);
+export default function MeetingDetails() {
+  return (
+    <div>
+      <h1>MEETING DETAILS PAGE LOADED</h1>
+    </div>
+  )
+
+
+
+
+  
+  const { id } = useParams()
+
+  const [meeting, setMeeting] = useState<any>(null)
+  const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadMeetings();
-  }, []);
+    loadMeeting()
+  }, [id])
 
-  const loadMeetings = async () => {
+  const loadMeeting = async () => {
     try {
       const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/ai/meetings`
-      );
+        `${import.meta.env.VITE_API_URL}/ai/meetings/${id}`
+      )
 
-      setMeetings(response.data);
+      setMeeting(response.data)
     } catch (error) {
-      console.error(error);
+      console.error(error)
+    } finally {
+      setLoading(false)
     }
-  };
+  }
+
+  if (loading) {
+    return (
+      <div style={{ padding: '24px' }}>
+        Loading meeting...
+      </div>
+    )
+  }
+
+  if (!meeting) {
+    return (
+      <div style={{ padding: '24px' }}>
+        Meeting not found.
+      </div>
+    )
+  }
 
   return (
-    <div className="container-fluid">
+    <div style={{ padding: '24px' }}>
+      <Link
+        to="/meeting-history"
+        style={{
+          textDecoration: 'none',
+          color: '#0891b2',
+          fontWeight: 'bold',
+        }}
+      >
+        ← Back to Meeting History
+      </Link>
 
-      <h2 className="mb-4">
-        Meeting History
-      </h2>
+      <h1 style={{ marginTop: '20px' }}>
+        📋 {meeting.meeting_title}
+      </h1>
 
-      <table className="table table-bordered">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Meeting Title</th>
-            <th>Meeting Date</th>
-            <th>Created</th>
-            <th>Action</th>
-          </tr>
-        </thead>
+      <p>
+        <strong>Meeting Date:</strong>{' '}
+        {meeting.meeting_date}
+      </p>
 
-        <tbody>
-          {meetings.map((meeting) => (
-            <tr key={meeting.id}>
-              <td>{meeting.id}</td>
+      <p>
+        <strong>Created:</strong>{' '}
+        {meeting.created_at}
+      </p>
 
-              <td>{meeting.meeting_title}</td>
+      {/* SUMMARY */}
 
-              <td>{meeting.meeting_date}</td>
+      <div
+        style={{
+          background: '#f8fafc',
+          padding: '20px',
+          borderRadius: '12px',
+          marginTop: '20px',
+        }}
+      >
+        <h2>📝 Summary</h2>
 
-              <td>{meeting.created_at}</td>
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'inherit',
+          }}
+        >
+          {meeting.summary}
+        </pre>
+      </div>
 
-              <td>
-                <Link
-                  to={`/ai/history/${meeting.id}`}
-                  className="btn btn-primary btn-sm"
-                >
-                  View
-                </Link>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {/* ACTION ITEMS */}
 
+      <div
+        style={{
+          background: '#ecfeff',
+          padding: '20px',
+          borderRadius: '12px',
+          marginTop: '20px',
+        }}
+      >
+        <h2>✅ Action Items</h2>
+
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'inherit',
+          }}
+        >
+          {meeting.action_items}
+        </pre>
+      </div>
+
+      {/* TRANSCRIPT */}
+
+      <div
+        style={{
+          background: '#fafafa',
+          padding: '20px',
+          borderRadius: '12px',
+          marginTop: '20px',
+          marginBottom: '40px',
+        }}
+      >
+        <h2>🎤 Transcript</h2>
+
+        <pre
+          style={{
+            whiteSpace: 'pre-wrap',
+            fontFamily: 'inherit',
+          }}
+        >
+          {meeting.transcript}
+        </pre>
+      </div>
     </div>
-  );
+  )
 }
