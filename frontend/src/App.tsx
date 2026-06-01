@@ -78,6 +78,23 @@ function App() {
     setMenuOpen(false)
   }
 
+const aiMenus = [
+  'ai-dashboard',
+  'chat-assistant',
+  'voice-reports',
+  'ocr-scanner',
+  'maintenance-ai',
+  'risk-analysis',
+  'pdf-summarizer',
+  'meeting-minutes',
+  'send-email',
+  'attend-meeting',
+  'compliance-ai',
+  'meeting-history'
+]
+
+
+
   return (
     <div className="app-shell">
       {/* TOP NAVIGATION */}
@@ -160,12 +177,19 @@ function App() {
                   textDecoration: 'none',
                   padding: '12px',
                   borderRadius: '8px',
+                  border: aiMenus.includes(page.id)
+                     ? '1px solid #22d3ee'
+                     : '1px solid transparent',
                   fontWeight: 600,
-                  background: 'rgba(255,255,255,0.06)',
+                  background: aiMenus.includes(page.id)
+                     ? 'linear-gradient(135deg,#0f766e,#0891b2)'
+                     : 'rgba(255,255,255,0.06)',
                   transition: '0.2s',
                 }}
               >
-                {page.label}
+                {aiMenus.includes(page.id)
+                  ? `🤖 ${page.label}`
+                   : page.label}
               </Link>
             ))}
           </div>
