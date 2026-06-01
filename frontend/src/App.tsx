@@ -30,11 +30,11 @@ import ComplianceAI from './pages/ai/ComplianceAI'
 import MeetingHistory from './pages/ai/MeetingHistory'
 import MeetingDetails from './pages/ai/MeetingDetails'
 
-
 type MenuLink = {
   id: string
   label: string
 }
+
 
 const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Dashboard Snapshot' },
@@ -63,7 +63,6 @@ const menuLinks: MenuLink[] = [
   { id: 'attend-meeting', label: 'Attend Meeting' },
   { id: 'compliance-ai', label: 'Compliance AI' },
   { id: 'meeting-history', label: 'Meeting History' },
-  { id: 'meeting-details', label: 'Meeting Details' },
 
 
   /* AUDIT */
@@ -336,6 +335,11 @@ function App() {
           <Route
             path="/ai/history/:id"
             element={<MeetingDetails />}
+          />
+
+          <Route
+            path="/meeting-history"
+            element={<MeetingHistory />}
           />
 
         </Routes>
