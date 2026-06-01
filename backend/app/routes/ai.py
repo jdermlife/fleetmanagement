@@ -152,6 +152,11 @@ def get_meetings():
             }
             for m in meetings
         ]
+    
+    except Exception as e:
+        return {
+            "error": str(e)
+        }
 
     finally:
         db.close()
