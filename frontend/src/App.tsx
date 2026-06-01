@@ -166,27 +166,46 @@ const aiMenus = [
               zIndex: 99999,
             }}
           >
-{menuLinks.map((page, index) => {
-  const isAI = aiMenus.includes(page.id)
+          {menuLinks.map((page) => {
+              const isAI = aiMenus.includes(page.id)
 
-  return (
-    <div key={page.id}>
-      {/* AI SECTION HEADER */}
-      {page.id === 'ai-dashboard' && (
+           return (
+               <div key={page.id}>
+            {/* AI SECTION HEADER */}
+                {page.id === 'ai-dashboard' && (
+               <div
+                  style={{
+                  background: '#083344',
+                  color: '#67e8f9',
+                  padding: '10px',
+                  borderRadius: '8px',
+                  textAlign: 'center',
+                  fontWeight: 700,
+                  letterSpacing: '1px',
+                  marginBottom: '8px',
+                  border: '1px solid #0891b2',
+                      }}
+        >
+          🤖 AI TOOLS
+        </div>
+      )}
+
+      {/* AUDIT SECTION HEADER */}
+      {page.id === 'audit-trail' && (
         <div
           style={{
-            background: '#083344',
-            color: '#67e8f9',
+            background: '#3f1d0d',
+            color: '#fcd34d',
             padding: '10px',
             borderRadius: '8px',
             textAlign: 'center',
             fontWeight: 700,
             letterSpacing: '1px',
-            marginBottom: '8px',
-            border: '1px solid #0891b2',
+            marginTop: '10px',
+            border: '1px solid #f59e0b',
           }}
         >
-          🤖 AI TOOLS
+          🛡️ GOVERNANCE & COMPLIANCE
         </div>
       )}
 
@@ -215,24 +234,7 @@ const aiMenus = [
         {isAI ? `🤖 ${page.label}` : page.label}
       </Link>
 
-      {/* AUDIT SECTION HEADER */}
-      {page.id === 'audit-trail' && (
-        <div
-          style={{
-            background: '#3f1d0d',
-            color: '#fcd34d',
-            padding: '10px',
-            borderRadius: '8px',
-            textAlign: 'center',
-            fontWeight: 700,
-            letterSpacing: '1px',
-            marginTop: '10px',
-            border: '1px solid #f59e0b',
-          }}
-        >
-          🛡️ GOVERNANCE & COMPLIANCE
-        </div>
-      )}
+
     </div>
   )
 })}
