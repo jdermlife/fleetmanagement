@@ -414,6 +414,28 @@ th { color: var(--dark-gold); }
   box-shadow: 0 10px 24px rgba(0,0,0,0.25);
 }
 
+.stat-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  text-align: center;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
 
+.ai-card {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 120px;
+  text-decoration: none;
+  color: white;
+  font-weight: 700;
+  border-radius: 16px;
+  background: linear-gradient(
+    135deg,
+    #0f766e,
+    #0891b2
+  );
+}
 
 }
