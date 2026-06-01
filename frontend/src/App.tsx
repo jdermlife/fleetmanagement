@@ -27,6 +27,9 @@ import MeetingMinutes from './pages/ai/MeetingMinutes'
 import SendEmail from './pages/ai/SendEmail'
 import AttendMeeting from './pages/ai/AttendMeeting'
 import ComplianceAI from './pages/ai/ComplianceAI'
+import MeetingHistory from './pages/ai/MeetingHistory'
+import MeetingDetails from './pages/ai/MeetingDetails'
+
 
 type MenuLink = {
   id: string
@@ -59,6 +62,9 @@ const menuLinks: MenuLink[] = [
   { id: 'send-email', label: 'Send Email' },
   { id: 'attend-meeting', label: 'Attend Meeting' },
   { id: 'compliance-ai', label: 'Compliance AI' },
+  { id: 'meeting-history', label: 'Meeting History' },
+  { id: 'meeting-details', label: 'Meeting Details' },
+
 
   /* AUDIT */
   { id: 'audit-trail', label: 'Audit Trail' },
@@ -322,6 +328,16 @@ function App() {
             path="/compliance-ai"
             element={<ComplianceAI />}
           />
+          <Route
+             path="/ai/history"
+             element={<MeetingHistory />}
+          />
+
+          <Route
+            path="/ai/history/:id"
+            element={<MeetingDetails />}
+          />
+
         </Routes>
       </main>
     </div>
