@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from app.database import SessionLocal
 from app.models.meeting_minutes import MeetingMinutes
+from fastapi import HTTPException
 
 import tempfile
 import os
@@ -160,6 +161,41 @@ def get_meetings():
 
     finally:
         db.close()
+
+@router.get("/ai/meetings/{meeting_id}")
+def get_meeting(meeting_id: int):
+
+    db = SessionLocal()
+
+    try:
+
+        meeting = (
+            db.query(MeetingMinutes)
+            .filter(
+                MeetingMinutes.id == meeting_id
+            )
+            .first()
+        )
+
+        if not meeting:
+            raise HTTPException(
+                status_code=404,
+                detail="Meeting not found"
+            )
+
+        return {
+            "id": meeting.id,
+            "meeting_title": meeting.meeting_title,
+            "meeting_date": str(meeting.meeting_date),
+            "transcript": meeting.transcript,
+            "summary": meeting.summary,
+            "action_items": meeting.action_items,
+            "created_at": str(meeting.created_at)
+        }
+
+    finally:
+        db.close()
+
 
 
 @router.post("/ai/send-minutes")
