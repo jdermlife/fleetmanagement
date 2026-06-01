@@ -209,44 +209,6 @@ async def send_minutes(data: dict):
     }
 
 
-@router.get("/meetings/{meeting_id}")
-def get_meeting(meeting_id: int):
-    conn = get_db_connection()
-    cursor = conn.cursor()
-
-    cursor.execute("""
-        SELECT
-            id,
-            meeting_title,
-            meeting_date,
-            transcript,
-            summary,
-            action_items,
-            created_at
-        FROM meetings
-        WHERE id=%s
-    """, (meeting_id,))
-
-    meeting = cursor.fetchone()
-
-    cursor.close()
-    conn.close()
-
-    if not meeting:
-        raise HTTPException(
-            status_code=404,
-            detail="Meeting not found"
-        )
-
-    return {
-        "id": meeting[0],
-        "meeting_title": meeting[1],
-        "meeting_date": meeting[2],
-        "transcript": meeting[3],
-        "summary": meeting[4],
-        "action_items": meeting[5],
-        "created_at": meeting[6]
-    }
 
 
 
