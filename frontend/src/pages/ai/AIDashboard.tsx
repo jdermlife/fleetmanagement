@@ -1,6 +1,35 @@
 import { Link } from 'react-router-dom'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
+
+
 
 export default function AIDashboard() {
+const [stats, setStats] = useState({
+  total_meetings: 0,
+  minutes_generated: 0,
+  emails_sent: 0,
+  pdf_exports: 0,
+})
+
+useEffect(() => {
+  loadStats()
+}, [])
+
+const loadStats = async () => {
+  try {
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/ai/dashboard/stats`
+    )
+
+    setStats(response.data)
+  } catch (error) {
+    console.error(error)
+  }
+}
+
+
+
 return (
 <div style={{ padding: '24px' }}> <h1>🤖 AI Operations Center</h1>
 
@@ -20,17 +49,17 @@ return (
   >
     <div className="stat-card">
       <h3>🎤 Meetings</h3>
-      <h1>1</h1>
+      <h1>{stats.total_meetings}</h1>
     </div>
 
     <div className="stat-card">
       <h3>📋 Action Items</h3>
-      <h1>1</h1>
+      <h1>{stats.minutes_generated}</h1>
     </div>
 
     <div className="stat-card">
       <h3>⚠ Risk Alerts</h3>
-      <h1>0</h1>
+      <h1>{stats.pdf_exports}</h1>
     </div>
 
     <div className="stat-card">
