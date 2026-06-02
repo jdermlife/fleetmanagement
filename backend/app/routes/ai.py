@@ -210,7 +210,7 @@ async def send_minutes(data: dict):
 
 
 
-
+@router.get("/ai/meetings/{meeting_id}/pdf")
 
 
 @router.get("/ai/health")

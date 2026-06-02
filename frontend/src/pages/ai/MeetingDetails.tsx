@@ -20,7 +20,7 @@ export default function MeetingDetails() {
 
       setMeeting(response.data)
     } catch (error) {
-      console.error(error)
+      console.error('Failed to load meeting:', error)
     } finally {
       setLoading(false)
     }
@@ -59,13 +59,41 @@ export default function MeetingDetails() {
         📋 {meeting.meeting_title}
       </h1>
 
+      {/* PDF BUTTON */}
+      <div
+        style={{
+          marginTop: '12px',
+          marginBottom: '20px',
+        }}
+      >
+        <a
+          href={`${import.meta.env.VITE_API_URL}/ai/meetings/${id}/pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          style={{
+            background: '#0891b2',
+            color: '#fff',
+            padding: '10px 16px',
+            borderRadius: '8px',
+            textDecoration: 'none',
+            fontWeight: 'bold',
+          }}
+        >
+          📄 Export PDF
+        </a>
+      </div>
+
       <p>
-        <strong>Meeting Date:</strong> {meeting.meeting_date}
+        <strong>Meeting Date:</strong>{' '}
+        {meeting.meeting_date}
       </p>
 
       <p>
-        <strong>Created:</strong> {meeting.created_at}
+        <strong>Created:</strong>{' '}
+        {meeting.created_at}
       </p>
+
+      {/* SUMMARY */}
 
       <div
         style={{
@@ -87,6 +115,8 @@ export default function MeetingDetails() {
         </pre>
       </div>
 
+      {/* ACTION ITEMS */}
+
       <div
         style={{
           background: '#ecfeff',
@@ -106,6 +136,8 @@ export default function MeetingDetails() {
           {meeting.action_items}
         </pre>
       </div>
+
+      {/* TRANSCRIPT */}
 
       <div
         style={{
