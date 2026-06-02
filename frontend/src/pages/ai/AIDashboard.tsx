@@ -58,7 +58,7 @@ return (
     </div>
 
     <div className="stat-card">
-      <h3>⚠ Risk Alerts</h3>
+      <h3>Emails Sent</h3>
       <h1>{stats.emails_sent}</h1>
     </div>
 
