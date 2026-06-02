@@ -42,7 +42,7 @@ return (
   <div
     style={{
       display: 'grid',
-      gridTemplateColumns: 'repeat(4,1fr)',
+      gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))',
       gap: '16px',
       marginTop: '20px',
     }}
@@ -59,7 +59,7 @@ return (
 
     <div className="stat-card">
       <h3>⚠ Risk Alerts</h3>
-      <h1>{stats.pdf_exports}</h1>
+      <h1>{stats.emails_sent}</h1>
     </div>
 
     <div className="stat-card">
