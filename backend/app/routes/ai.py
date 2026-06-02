@@ -2,6 +2,7 @@ from fastapi import APIRouter, UploadFile, File
 from openai import OpenAI
 from dotenv import load_dotenv
 
+from app.services.email_service import send_email
 from datetime import datetime
 from app.database import SessionLocal
 from app.models.meeting_minutes import MeetingMinutes
@@ -249,11 +250,26 @@ def download_meeting_pdf(meeting_id: int):
 @router.post("/ai/send-minutes")
 async def send_minutes(data: dict):
 
-    minutes = data.get("minutes", "")
+    recipient = data.get("recipient")
+
+    subject = data.get(
+        "subject",
+        "Meeting Minutes"
+    )
+
+    body = data.get(
+        "body",
+        ""
+    )
+
+    send_email(
+        recipient,
+        subject,
+        body
+    )
 
     return {
-        "message": "Minutes sent successfully",
-        "minutes": minutes
+        "message": "Email sent successfully"
     }
 
 
