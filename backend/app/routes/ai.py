@@ -272,6 +272,29 @@ async def send_minutes(data: dict):
         "message": "Email sent successfully"
     }
 
+@router.get("/ai/dashboard/stats")
+def dashboard_stats():
+
+    db = SessionLocal()
+
+    try:
+
+        total_meetings = (
+            db.query(MeetingMinutes)
+            .count()
+        )
+
+        return {
+            "total_meetings": total_meetings,
+            "minutes_generated": total_meetings,
+            "emails_sent": 0,
+            "pdf_exports": 0
+        }
+
+    finally:
+        db.close()
+
+
 
 @router.get("/ai/health")
 async def ai_health():
