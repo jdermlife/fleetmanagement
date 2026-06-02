@@ -6,6 +6,14 @@ from datetime import datetime
 from app.database import SessionLocal
 from app.models.meeting_minutes import MeetingMinutes
 from fastapi import HTTPException
+from fastapi.responses import FileResponse
+import tempfile
+
+from app.services.pdf_service import generate_minutes_pdf
+from fastapi.responses import FileResponse
+import tempfile
+
+
 
 import tempfile
 import os
@@ -165,6 +173,41 @@ def get_meetings():
 @router.get("/ai/meetings/{meeting_id}")
 def get_meeting(meeting_id: int):
 
+
+  db = SessionLocal()
+
+  try:
+
+    meeting = (
+        db.query(MeetingMinutes)
+        .filter(
+            MeetingMinutes.id == meeting_id
+        )
+        .first()
+    )
+
+    if not meeting:
+        raise HTTPException(
+            status_code=404,
+            detail="Meeting not found"
+        )
+
+        return {
+            "id": meeting.id,
+            "meeting_title": meeting.meeting_title,
+            "meeting_date": str(meeting.meeting_date),
+            "transcript": meeting.transcript,
+            "summary": meeting.summary,
+            "action_items": meeting.action_items,
+              "created_at": str(meeting.created_at)
+        }
+
+  finally:
+    db.close()
+
+@router.get("/ai/meetings/{meeting_id}/pdf")
+def download_meeting_pdf(meeting_id: int):
+
     db = SessionLocal()
 
     try:
@@ -183,15 +226,20 @@ def get_meeting(meeting_id: int):
                 detail="Meeting not found"
             )
 
-        return {
-            "id": meeting.id,
-            "meeting_title": meeting.meeting_title,
-            "meeting_date": str(meeting.meeting_date),
-            "transcript": meeting.transcript,
-            "summary": meeting.summary,
-            "action_items": meeting.action_items,
-            "created_at": str(meeting.created_at)
-        }
+        pdf_path = tempfile.mktemp(
+            suffix=".pdf"
+        )
+
+        generate_minutes_pdf(
+            pdf_path,
+            meeting
+        )
+        
+        return FileResponse(
+            path=pdf_path,
+            filename=f"{meeting.meeting_title}.pdf",
+            media_type="application/pdf"
+        )
 
     finally:
         db.close()
@@ -207,10 +255,6 @@ async def send_minutes(data: dict):
         "message": "Minutes sent successfully",
         "minutes": minutes
     }
-
-
-
-@router.get("/ai/meetings/{meeting_id}/pdf")
 
 
 @router.get("/ai/health")
