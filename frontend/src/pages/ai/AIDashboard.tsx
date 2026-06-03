@@ -66,7 +66,7 @@ return (
       <h3>🛡 Compliance</h3>
       <h1>100%</h1>
     </div>
-  </div>
+  
 
        <div className="stat-card">
       <h3>🛡 PDF Export</h3>
