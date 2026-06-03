@@ -3,12 +3,37 @@ import { Link } from 'react-router-dom'
 import axios from 'axios'
 
 export default function MeetingHistory() {
+  const [search, setSearch] = useState('')
   const [meetings, setMeetings] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     loadMeetings()
   }, [])
+
+  
+
+ const searchMeetings = async () => {
+  try {
+
+    if (!search.trim()) {
+      loadMeetings()
+      return
+    }
+
+    const response = await axios.get(
+      `${import.meta.env.VITE_API_URL}/ai/meetings/search/${search}`
+    )
+
+    setMeetings(response.data)
+
+  } catch (error) {
+    console.error(error)
+  }
+} 
+
+
+
 
   const loadMeetings = async () => {
     try {
@@ -64,6 +89,60 @@ export default function MeetingHistory() {
               </th>
             </tr>
           </thead>
+
+          <div
+  style={{
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+  }}
+>
+  <input
+    type="text"
+    placeholder="Search meeting title..."
+    value={search}
+    onChange={(e) =>
+      setSearch(e.target.value)
+    }
+    style={{
+      flex: 1,
+      padding: '12px',
+      borderRadius: '8px',
+      border: '1px solid #ccc',
+    }}
+  />
+
+  <button
+    onClick={searchMeetings}
+    style={{
+      background: '#0891b2',
+      color: '#fff',
+      border: 'none',
+      padding: '12px 20px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+    }}
+  >
+    Search
+  </button>
+
+  <button
+    onClick={loadMeetings}
+    style={{
+      background: '#64748b',
+      color: '#fff',
+      border: 'none',
+      padding: '12px 20px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      fontWeight: 'bold',
+    }}
+  >
+    Reset
+  </button>
+</div>
+
 
           <tbody>
             {meetings.map((meeting) => (
