@@ -136,7 +136,7 @@ const govMenuItems = menuLinks.filter(
                 color: '#fff',
               }}
             >
-              The BestBank Car and Fleet Financing and Rental Company
+              The BestBank Car Financing Company
             </h2>
 
             <p
