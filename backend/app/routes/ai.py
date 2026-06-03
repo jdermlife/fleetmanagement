@@ -323,6 +323,43 @@ def search_meetings(keyword: str):
     finally:
         db.close()
 
+@router.get("/ai/dashboard/stats")
+def dashboard_stats():
+
+    db = SessionLocal()
+
+    try:
+
+        total_meetings = (
+            db.query(MeetingMinutes)
+            .count()
+        )
+
+        total_action_items = (
+            db.query(MeetingMinutes)
+            .count()
+        )
+
+        meetings_this_month = (
+            db.query(MeetingMinutes)
+            .count()
+        )
+
+        return {
+            "total_meetings": total_meetings,
+            "minutes_generated": total_meetings,
+            "emails_sent": 0,
+            "pdf_exports": 0,
+            "action_items": total_action_items,
+            "meetings_this_month": meetings_this_month
+        }
+
+    finally:
+        db.close()
+
+
+
+
 @router.get("/ai/health")
 async def ai_health():
     return {
