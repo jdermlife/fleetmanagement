@@ -74,6 +74,9 @@ const menuLinks: MenuLink[] = [
 function App() {
   const [menuOpen, setMenuOpen] = useState(false)
 
+  const [fleetOpen, setFleetOpen] = useState(true)
+  const [aiOpen, setAiOpen] = useState(true)
+  const [govOpen, setGovOpen] = useState(true)
   const closeMenu = () => {
     setMenuOpen(false)
   }
@@ -90,10 +93,28 @@ const aiMenus = [
   'send-email',
   'attend-meeting',
   'compliance-ai',
-  'meeting-history'
+  'meeting-history',
 ]
 
+const governanceMenus = [
+  'audit-trail',
+  'risk-management',
+  'compliance',
+]
 
+const fleetMenus = menuLinks.filter(
+  (item) =>
+    !aiMenus.includes(item.id) &&
+    !governanceMenus.includes(item.id)
+)
+
+const aiMenuItems = menuLinks.filter(
+  (item) => aiMenus.includes(item.id)
+)
+
+const govMenuItems = menuLinks.filter(
+  (item) => governanceMenus.includes(item.id)
+)
 
   return (
     <div className="app-shell">
@@ -146,105 +167,140 @@ const aiMenus = [
           </button>
         </div>
 
-
-
         {/* DROPDOWN MENU */}
-        {menuOpen && (
-          <div
-            style={{
-              position: 'absolute',
-              top: '72px',
-              right: '24px',
-              width: '320px',
-              maxHeight: '80vh',
-              overflowY: 'auto',
-              background: '#b8860b',
-              borderRadius: '14px',
-              padding: '14px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '10px',
-              boxShadow: '0 12px 30px rgba(0,0,0,0.28)',
-              zIndex: 99999,
-            }}
-          >
-          {menuLinks.map((page) => {
-              const isAI = aiMenus.includes(page.id)
+{menuOpen && (
+  <div
+    style={{
+      position: 'absolute',
+      top: '72px',
+      right: '24px',
+      width: '340px',
+      maxHeight: '80vh',
+      overflowY: 'auto',
+      background: '#0f172a',
+      borderRadius: '14px',
+      padding: '14px',
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '10px',
+      boxShadow: '0 12px 30px rgba(0,0,0,0.28)',
+      zIndex: 99999,
+    }}
+  >
 
-           return (
-               <div key={page.id}>
-            {/* AI SECTION HEADER */}
-                {page.id === 'ai-dashboard' && (
-               <div
-                  style={{
-                  background: '#083344',
-                  color: '#67e8f9',
-                  padding: '10px',
-                  borderRadius: '8px',
-                  textAlign: 'center',
-                  fontWeight: 700,
-                  letterSpacing: '1px',
-                  marginBottom: '8px',
-                  border: '1px solid #0891b2',
-                      }}
-        >
-          🤖 AI TOOLS
-        </div>
-      )}
+    {/* FLEET MANAGEMENT */}
 
-      {/* AUDIT SECTION HEADER */}
-      {page.id === 'audit-trail' && (
-        <div
+    <div
+      onClick={() => setFleetOpen(!fleetOpen)}
+      style={{
+        background: '#1e293b',
+        color: '#fff',
+        padding: '12px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+      }}
+    >
+      📊 FLEET MANAGEMENT {fleetOpen ? '▲' : '▼'}
+    </div>
+
+    {fleetOpen &&
+      fleetMenus.map((page) => (
+        <Link
+          key={page.id}
+          to={`/${page.id}`}
+          onClick={closeMenu}
           style={{
-            background: '#3f1d0d',
-            color: '#fcd34d',
-            padding: '10px',
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
             borderRadius: '8px',
-            textAlign: 'center',
-            fontWeight: 700,
-            letterSpacing: '1px',
-            marginTop: '10px',
-            border: '1px solid #f59e0b',
+            background: 'rgba(255,255,255,0.05)',
           }}
         >
-          🛡️ GOVERNANCE & COMPLIANCE
-        </div>
-      )}
+          {page.label}
+        </Link>
+      ))}
 
-      <Link
-        to={`/${page.id}`}
-        onClick={closeMenu}
-        style={{
-          display: 'block',
-          color: '#fff',
-          textDecoration: 'none',
-          padding: '12px',
-          borderRadius: '8px',
-          fontWeight: 600,
+    {/* AI TOOLS */}
 
-          background: isAI
-            ? 'linear-gradient(135deg,#0f766e,#0891b2)'
-            : 'rgba(255,255,255,0.06)',
-
-          border: isAI
-            ? '1px solid #22d3ee'
-            : '1px solid transparent',
-
-          transition: '0.2s',
-        }}
-      >
-        {isAI ? `🤖 ${page.label}` : page.label}
-      </Link>
-
-
+    <div
+      onClick={() => setAiOpen(!aiOpen)}
+      style={{
+        background: '#083344',
+        color: '#67e8f9',
+        padding: '12px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        marginTop: '10px',
+      }}
+    >
+      🤖 AI TOOLS {aiOpen ? '▲' : '▼'}
     </div>
-  )
-})}
-          </div>
-        )}
-      </header>
 
-      {/* PAGE CONTENT */}
+    {aiOpen &&
+      aiMenuItems.map((page) => (
+        <Link
+          key={page.id}
+          to={`/${page.id}`}
+          onClick={closeMenu}
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background:
+              'linear-gradient(135deg,#0f766e,#0891b2)',
+          }}
+        >
+          🤖 {page.label}
+        </Link>
+      ))}
+
+    {/* GOVERNANCE */}
+
+    <div
+      onClick={() => setGovOpen(!govOpen)}
+      style={{
+        background: '#7c2d12',
+        color: '#fed7aa',
+        padding: '12px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+        marginTop: '10px',
+      }}
+    >
+      🛡 GOVERNANCE & COMPLIANCE {govOpen ? '▲' : '▼'}
+    </div>
+
+    {govOpen &&
+      govMenuItems.map((page) => (
+        <Link
+          key={page.id}
+          to={`/${page.id}`}
+          onClick={closeMenu}
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background:
+              'linear-gradient(135deg,#92400e,#b45309)',
+          }}
+        >
+          🛡 {page.label}
+        </Link>
+      ))}
+  </div>
+)}
+
+
+  {/* PAGE CONTENT */}
       <main className="content">
         <Routes>
           <Route path="/" element={<DashboardSnapshot />} />
