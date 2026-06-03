@@ -68,6 +68,16 @@ return (
     </div>
   </div>
 
+       <div className="stat-card">
+      <h3>🛡 PDF Export</h3>
+      <h1>1</h1>
+    </div>
+  </div> 
+
+  
+
+
+
   {/* AI CARDS */}
   <div
     style={{
