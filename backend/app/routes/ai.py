@@ -294,7 +294,34 @@ def dashboard_stats():
     finally:
         db.close()
 
+@router.get("/ai/meetings/search/{keyword}")
+def search_meetings(keyword: str):
 
+    db = SessionLocal()
+
+    try:
+
+        meetings = (
+            db.query(MeetingMinutes)
+            .filter(
+                MeetingMinutes.meeting_title.ilike(
+                    f"%{keyword}%"
+                )
+            )
+            .all()
+        )
+
+        return [
+            {
+                "id": m.id,
+                "meeting_title": m.meeting_title,
+                "meeting_date": str(m.meeting_date)
+            }
+            for m in meetings
+        ]
+
+    finally:
+        db.close()
 
 @router.get("/ai/health")
 async def ai_health():
