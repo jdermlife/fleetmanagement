@@ -18,9 +18,9 @@ const initialForm: LeaseScorecardSubmission = {
   creditScore: 680,
   yearsInBusiness: 0,
   employmentYears: 0,
-  VehicleAge: 0,
-  VehiclesUse: 0,
-  EstimatedResidualValue: 0,
+  vehicleAge: 0,
+  vehicleUse: 0,
+  estimatedResidualValue: 0,
 }
 
 
@@ -318,8 +318,8 @@ if (safeRecords[0]) {
                 min="0"
                 max="1"
                 step="1"
-                value={form.vehiclesUse || ''}
-                onChange={(event) => updateNumberField('vehiclesUse', event.target.value)}
+                value={form.vehicleUse || ''}
+                onChange={(event) => updateNumberField('vehicleUse', event.target.value)}
                 required
               />
             </label>
