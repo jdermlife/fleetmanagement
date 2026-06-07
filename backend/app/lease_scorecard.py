@@ -17,7 +17,9 @@ class LeaseScorecardInput:
     credit_score: int
     years_in_business: float
     employment_years: float
-
+    vehicle_age: float
+    vehicle_use: float
+    estimated_residual_value: float
 
 def compute_lease_scorecard(payload: LeaseScorecardInput) -> dict[str, float | str]:
     financed_amount = max(payload.requested_amount - payload.down_payment, 0.0)

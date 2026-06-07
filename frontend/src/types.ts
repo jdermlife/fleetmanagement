@@ -46,6 +46,9 @@ export interface LeaseScorecardSubmission {
   creditScore: number
   yearsInBusiness: number
   employmentYears: number
+  vehicleAge: number;
+  vehicleUse: number;
+  estimatedResidualValue: number;
 }
 
 export interface LeaseScorecardRecord extends LeaseScorecardSubmission {

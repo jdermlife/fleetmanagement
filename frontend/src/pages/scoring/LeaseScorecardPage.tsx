@@ -18,6 +18,9 @@ const initialForm: LeaseScorecardSubmission = {
   creditScore: 680,
   yearsInBusiness: 0,
   employmentYears: 0,
+  VehicleAge: 0,
+  VehiclesUse: 0,
+  EstimatedResidualValue: 0,
 }
 
 
@@ -151,7 +154,7 @@ if (safeRecords[0]) {
               </div>
             </div>
           ) : (
-            <p className="empty-state">No database connection details available yet.</p>
+            <p className="empty-state">Database connection under BestBank Server.</p>
           )}
         </article>
 
@@ -160,9 +163,9 @@ if (safeRecords[0]) {
           <ul className="lease-scorecard-list">
             <li>Credit quality contributes 35%.</li>
             <li>Affordability and debt service contribute 30%.</li>
-            <li>Equity contribution contributes `15%`.</li>
-            <li>Customer stability contributes `10%`.</li>
-            <li>Asset coverage contributes `10%`.</li>
+            <li>Equity contribution contributes 15%.</li>
+            <li>Customer stability contributes 10%.</li>
+            <li>Asset coverage contributes 10%.</li>
           </ul>
           <p className="lease-scorecard-note">
             When the customer submits the required information, the backend computes the score in Python and stores the
@@ -296,6 +299,43 @@ if (safeRecords[0]) {
                 value={form.employmentYears || ''}
                 onChange={(event) => updateNumberField('employmentYears', event.target.value)}
               />
+            </label>
+            <label>
+              Vehicle Age              <input
+                type="number"
+                min="0"
+                max="10"
+                step="1"
+                value={form.vehicleAge || ''}
+                onChange={(event) => updateNumberField('vehicleAge', event.target.value)}
+                required
+              />
+            </label>
+              <label>
+              Vehicles Use (Personal=0, Business=1)
+              <input
+                type="number"
+                min="0"
+                max="1"
+                step="1"
+                value={form.vehiclesUse || ''}
+                onChange={(event) => updateNumberField('vehiclesUse', event.target.value)}
+                required
+              />
+            </label>
+              
+
+            <label>
+              Estimated Residual Value (end of lease)
+              <input
+                type="number"
+                min="0"
+                step="0.01"
+                value={form.estimatedResidualValue || ''}
+                onChange={(event) => updateNumberField('estimatedResidualValue', event.target.value)}
+                required
+              />
+
             </label>
             <div className="lease-scorecard-preview">
               <span>Estimated financed amount</span>
