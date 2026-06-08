@@ -48,15 +48,7 @@ def create_lease_scorecard(data: LeaseCreate):
      else:
       vehicle_age_score = 1
 
-     final_score = round(
-        credit_component +
-        affordability_component +
-        equity_component +
-        stability_component +
-        asset_component +
-        vehicle_age_score,
-        2
-    )
+
 
      credit_component = min(
         (data.creditScore / 850) * 35,
@@ -102,7 +94,8 @@ def create_lease_scorecard(data: LeaseCreate):
 
      if data.vehicleUse == 1:
        vehicle_use_score = 3
-     final_score = round(
+     final_score = min(
+      round(
         credit_component +
         affordability_component +
         equity_component +
@@ -111,7 +104,9 @@ def create_lease_scorecard(data: LeaseCreate):
         vehicle_age_score +
         vehicle_use_score,
         2
-     )    
+      ),
+       100
+      )  
      if final_score >= 90:
       risk_grade = "A+"
       decision = "APPROVED"
@@ -176,7 +171,11 @@ def create_lease_scorecard(data: LeaseCreate):
         monthly_estimated_payment=monthly_payment,
         loan_to_value=loan_to_value,
 
-        summary=f"Lease rated {risk_grade}"
+        summary=(
+          f"Final Score {final_score}. "
+          f"Risk Grade {risk_grade}. "
+          f"Decision {decision}. "
+          f"Monthly Payment {monthly_payment:.2f}."
       )
 
      db.add(lease)
@@ -194,5 +193,5 @@ def create_lease_scorecard(data: LeaseCreate):
         "monthlyEstimatedPayment": lease.monthly_estimated_payment,
         "loanToValue": lease.loan_to_value,
         "summary": lease.summary
-    } 
+     } 
 
