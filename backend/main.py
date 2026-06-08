@@ -27,7 +27,6 @@ app.add_middleware(
 
 app.include_router(driver_router)
 app.include_router(ai_router)
-
 app.include_router(lease_router)
 app.include_router(database_router)
 
