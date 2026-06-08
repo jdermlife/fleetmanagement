@@ -19,5 +19,5 @@ class LeaseCreate(BaseModel):
     employmentYears: float
 
     vehicleAge: int
-    vehiclesUse: int
+    vehicleUse: int
     estimatedResidualValue: float
