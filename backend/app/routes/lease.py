@@ -35,36 +35,55 @@ def get_lease_scorecards():
 
 @router.post("/lease-scorecards")
 def create_lease_scorecard(data: LeaseCreate):
+     
 
-    db = SessionLocal()
+     db = SessionLocal()
 
+     vehicle_age_score = 0
 
-    credit_component = min(
+     if data.vehicleAge <= 3:
+      vehicle_age_score = 5
+     elif data.vehicleAge <= 7:
+      vehicle_age_score = 3
+     else:
+      vehicle_age_score = 1
+
+     final_score = round(
+        credit_component +
+        affordability_component +
+        equity_component +
+        stability_component +
+        asset_component +
+        vehicle_age_score,
+        2
+    )
+
+     credit_component = min(
         (data.creditScore / 850) * 35,
         35
     )
 
-    debt_ratio = (
+     debt_ratio = (
         data.existingDebt /
         max(data.monthlyIncome, 1)
     )
 
-    affordability_component = (
+     affordability_component = (
         max(0, 1 - debt_ratio)
         * 30
     )
 
-    equity_ratio = (
+     equity_ratio = (
         data.downPayment /
         max(data.vehicleValue, 1)
     )
 
-    equity_component = min(
+     equity_component = min(
         equity_ratio * 15,
         15
     )
 
-    stability_component = min(
+     stability_component = min(
         (
             data.yearsInBusiness +
             data.employmentYears
@@ -72,50 +91,63 @@ def create_lease_scorecard(data: LeaseCreate):
         10
     )
 
-    asset_component = min(
+     asset_component = min(
         (
             data.estimatedResidualValue /
             max(data.vehicleValue, 1)
         ) * 10,
         10
-    )
+         )
+     vehicle_use_score = 0
 
-    final_score = round(
+     if data.vehicleUse == 1:
+       vehicle_use_score = 3
+     final_score = round(
         credit_component +
         affordability_component +
         equity_component +
         stability_component +
-        asset_component,
+        asset_component +
+        vehicle_age_score +
+        vehicle_use_score,
         2
-    )    
-    if final_score >= 80:
-        risk_grade = "A"
-        decision = "APPROVED"
+     )    
+     if final_score >= 90:
+      risk_grade = "A+"
+      decision = "APPROVED"
 
-    elif final_score >= 65:
-        risk_grade = "B"
-        decision = "REVIEW"
+     elif final_score >= 80:
+      risk_grade = "A"
+      decision = "APPROVED"
 
-    else:
-        risk_grade = "C"
-        decision = "DECLINED"
+     elif final_score >= 70:
+      risk_grade = "B"
+      decision = "REVIEW"
 
-    financed_amount = (
+     elif final_score >= 60:
+       risk_grade = "C"
+       decision = "REVIEW"
+
+     else:
+       risk_grade = "D"
+       decision = "DECLINED"
+
+     financed_amount = (
         data.requestedAmount -
         data.downPayment
-    )
+      )
 
-    monthly_payment = (
+     monthly_payment = (
         financed_amount /
         max(data.leaseTermMonths, 1)
-    )
+     )
 
-    loan_to_value = (
+     loan_to_value = (
         data.requestedAmount /
         max(data.vehicleValue, 1)
-    )
+     )
 
-    lease = Leasee(
+     lease = Leasee(
         customer_name=data.customerName,
         company_name=data.companyName,
         vehicle_type=data.vehicleType,
@@ -145,15 +177,15 @@ def create_lease_scorecard(data: LeaseCreate):
         loan_to_value=loan_to_value,
 
         summary=f"Lease rated {risk_grade}"
-    )
+      )
 
-    db.add(lease)
+     db.add(lease)
 
-    db.commit()
+     db.commit()
 
-    db.refresh(lease)   
+     db.refresh(lease)   
 
-    return {
+     return {
         "id": lease.id,
         "customerName": lease.customer_name,
         "finalScore": lease.final_score,
