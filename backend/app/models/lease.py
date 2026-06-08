@@ -19,7 +19,7 @@ class Leasee(Base):
     years_in_business = Column(Integer)
     employment_years = Column(Integer)
     vehicle_age = Column(Integer)
-    vehicles_use = Column(Integer)
+    vehicle_use = Column(Integer)
     estimated_residual_value = Column(Float)
     final_score = Column(Float)
     risk_grade = Column(String(50))
