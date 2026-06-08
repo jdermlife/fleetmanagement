@@ -13,11 +13,11 @@ def get_lease_scorecards():
     db = SessionLocal()
 
     records = (
-        db.query(Leasee)
-        .order_by(desc(Leasee.id))
-        .limit(20)
-        .all()
-    )
+       db.query(Leasee)
+       .order_by(desc(Leasee.created_at))
+       .limit(20)
+       .all()
+)
 
     return [
         {
