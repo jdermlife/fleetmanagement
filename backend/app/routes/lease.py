@@ -134,7 +134,7 @@ def create_lease_scorecard(data: LeaseCreate):
         employment_years=data.employmentYears,
 
         vehicle_age=data.vehicleAge,
-        vehicles_use=data.vehiclesUse,
+        vehicle_use=data.vehicleUse,
         estimated_residual_value=data.estimatedResidualValue,
 
         final_score=final_score,
