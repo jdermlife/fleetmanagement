@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float
 from app.database import Base
 
 class Leasee(Base):
-    __tablename__ = "lease"
+    __tablename__ = "lease_scorecards"
 
     id = Column(Integer, primary_key=True, index=True)
 
@@ -22,8 +22,8 @@ class Leasee(Base):
     vehicles_use = Column(Integer)
     estimated_residual_value = Column(Float)
     final_score = Column(Float)
-    risk_grade = Column(String(20))
-    decision = Column(String(20))
+    risk_grade = Column(String(50))
+    decision = Column(String(50))
     monthly_estimated_payment = Column(Float)
     loan_to_value = Column(Float)
     summary = Column(String(500))

@@ -162,4 +162,5 @@ def create_lease_scorecard(data: LeaseCreate):
         "monthlyEstimatedPayment": lease.monthly_estimated_payment,
         "loanToValue": lease.loan_to_value,
         "summary": lease.summary
-    }    
+    } 
+
