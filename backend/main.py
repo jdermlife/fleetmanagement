@@ -8,6 +8,16 @@ from app.routes.vehicles import router as vehicle_router
 from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
 
+app.include_router(lease_router)
+app.include_router(database_router)
+
+
+app.include_router(driver_router)
+app.include_router(ai_router)
+
+
+
+
 app = FastAPI()
 
 origins = [
@@ -37,3 +47,5 @@ def health():
     return {
         "status": "healthy"
     }
+
+

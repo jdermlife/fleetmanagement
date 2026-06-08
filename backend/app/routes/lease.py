@@ -60,3 +60,12 @@ def create_driver(data: DriverCreate):
         "status": driver.status,
         "createdAt": str(driver.created_at)
     }
+
+
+    @router.get("/lease-scorecards")
+    def get_lease_scorecards():
+       return []
+
+    @router.post("/lease-scorecards")
+    def create_lease_scorecard(payload: dict):
+      return payload
