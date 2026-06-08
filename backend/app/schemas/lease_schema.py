@@ -1,18 +1,23 @@
 from pydantic import BaseModel
 
-class LeaseScorecardSubmission(BaseModel):
+class LeaseCreate(BaseModel):
     customerName: str
-    companyName: str
+    companyName: str | None = None
     vehicleType: str
+
     vehicleValue: float
     downPayment: float
     requestedAmount: float
+
     monthlyIncome: float
     existingDebt: float
+
     leaseTermMonths: int
     creditScore: int
-    yearsInBusiness: int
-    employmentYears: int
-    VehicleAge: int
-    VehiclesUse: int
-    EstimatedResidualValue: float
+
+    yearsInBusiness: float
+    employmentYears: float
+
+    vehicleAge: int
+    vehiclesUse: int
+    estimatedResidualValue: float

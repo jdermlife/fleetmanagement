@@ -21,7 +21,12 @@ class Leasee(Base):
     vehicle_age = Column(Integer)
     vehicles_use = Column(Integer)
     estimated_residual_value = Column(Float)
-
+    final_score = Column(Float)
+    risk_grade = Column(String(20))
+    decision = Column(String(20))
+    monthly_estimated_payment = Column(Float)
+    loan_to_value = Column(Float)
+    summary = Column(String(500))
     # Optional: add created_at timestamp if you want to track record creation
     # from sqlalchemy.sql import func
     # created_at = Column(DateTime(timezone=True), server_default=func.now())
