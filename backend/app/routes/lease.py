@@ -178,22 +178,27 @@ def create_lease_scorecard(data: LeaseCreate):
           f"Monthly Payment {monthly_payment:.2f}."
          )
 
-        )
+     )
 
-     db.add(lease)
+     try:
+           
+           db.add(lease)
+           db.commit()
+           db.refresh(lease)
 
-     db.commit()
-
-     db.refresh(lease)   
-
+     except Exception as e:
+           db.rollback()
+           print("LEASE SAVE ERROR:", str(e))
+           raise e
+     
      return {
-        "id": lease.id,
-        "customerName": lease.customer_name,
-        "finalScore": lease.final_score,
-        "riskGrade": lease.risk_grade,
-        "decision": lease.decision,
-        "monthlyEstimatedPayment": lease.monthly_estimated_payment,
-        "loanToValue": lease.loan_to_value,
-        "summary": lease.summary
+            "id": lease.id,
+            "customerName": lease.customer_name,
+            "finalScore": lease.final_score,
+            "riskGrade": lease.risk_grade,
+            "decision": lease.decision,
+            "monthlyEstimatedPayment": lease.monthly_estimated_payment,
+            "loanToValue": lease.loan_to_value,
+            "summary": lease.summary
      } 
 
