@@ -1,10 +1,19 @@
 from sqlalchemy import Column, Integer, String, Float
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
 from app.database import Base
+from sqlalchemy import DateTime
+from sqlalchemy.sql import func
+
+created_at = Column(
+    DateTime(timezone=True),
+    server_default=func.now()
+)
 
 class Leasee(Base):
     __tablename__ = "lease_scorecards"
 
-    id = Column(Integer, primary_key=True, index=True)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
 
     customer_name = Column(String(255))
     company_name = Column(String(255))
@@ -16,8 +25,8 @@ class Leasee(Base):
     existing_debt = Column(Float)
     lease_term_months = Column(Integer)
     credit_score = Column(Integer)
-    years_in_business = Column(Integer)
-    employment_years = Column(Integer)
+    years_in_business = Column(Float)
+    employment_years = Column(Float)
     vehicle_age = Column(Integer)
     vehicle_use = Column(Integer)
     estimated_residual_value = Column(Float)
