@@ -176,9 +176,9 @@ def create_lease_scorecard(data: LeaseCreate):
           f"Risk Grade {risk_grade}. "
           f"Decision {decision}. "
           f"Monthly Payment {monthly_payment:.2f}."
-      )
+         )
 
-     )
+        )
 
      db.add(lease)
 
