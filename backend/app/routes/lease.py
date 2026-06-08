@@ -178,6 +178,8 @@ def create_lease_scorecard(data: LeaseCreate):
           f"Monthly Payment {monthly_payment:.2f}."
       )
 
+     )
+
      db.add(lease)
 
      db.commit()
