@@ -19,7 +19,7 @@ const initialForm: LeaseScorecardSubmission = {
   yearsInBusiness: 0,
   employmentYears: 0,
   vehicleAge: 0,
-  vehicleUse: 0,
+  vehiclesUse: 0,
   estimatedResidualValue: 0,
 }
 
