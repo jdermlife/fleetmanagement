@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, String, Float
 from app.database import Base
 
 class Leasee(Base):
-    __tablename__ = "leasees"
+    __tablename__ = "lease"
 
     id = Column(Integer, primary_key=True, index=True)
 
