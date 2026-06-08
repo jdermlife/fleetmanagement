@@ -4,7 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.routes.drivers import router as driver_router
 from app.routes.ai import router as ai_router
 
-
+from app.routes.vehicles import router as vehicle_router
+from app.routes.lease import router as lease_router
+from app.routes.database import router as database_router
 
 app = FastAPI()
 
