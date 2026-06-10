@@ -1,4 +1,6 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo } from 'react';
+
+
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 type WorkflowStatus = 'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
@@ -99,9 +101,26 @@ export default function AdvancedLoanWorkflow() {
   }, [calculations, automatedScorecard, formData.loan.amount]);
 
   // --- Handlers ---
-  const updateField = (section: keyof LoanApplication, field: string, value: any) => {
-    setFormData(prev => ({ ...prev, [section]: { ...prev[section], [field]: value } }));
-  };
+type EditableSection =
+  | 'borrower'
+  | 'employment'
+  | 'loan'
+  | 'collateral'
+  | 'routing';
+
+const updateField = (
+  section: EditableSection,
+  field: string,
+  value: any
+) => {
+  setFormData(prev => ({
+    ...prev,
+    [section]: {
+      ...prev[section],
+      [field]: value,
+    },
+  }));
+};
 
   const addCoBorrower = () => {
     const newCb: CoBorrower = { id: Date.now().toString(), name: '', relationship: '', monthlyIncome: 0, debtObligations: 0, creditStanding: 'Good' };
