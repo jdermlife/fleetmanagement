@@ -239,7 +239,7 @@ export default function AdvancedLoanWorkflow() {
                   <button onClick={() => removeCoBorrower(cb.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">✕</button>
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Co-Borrower #{idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {renderInput('coBorrowers', 'name', 'Full Name').replace('section', `coBorrower_${cb.id}`) /* Custom mapping needed for array, simplified below */}
+                    
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Full Name</label>
                       <input value={cb.name} onChange={(e) => updateCoBorrower(cb.id, 'name', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
@@ -316,9 +316,7 @@ export default function AdvancedLoanWorkflow() {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 5: Credit Scoring & Auto Metrics</h3>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {renderInput('scoring', 'internalScore', 'Internal Credit Score', 'number')}
-                {renderInput('scoring', 'bureauResults', 'Credit Bureau Results Summary')}
-                {renderInput('scoring', 'capacityAnalysis', 'Capacity Analysis Notes')}
+
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-red-50 p-4 rounded-md border border-red-200">
