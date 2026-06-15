@@ -179,7 +179,7 @@ const updateField = (
   const isReadyToSubmit = validationChecks.every(v => v.passed);
 
   // --- Render Helpers ---
-  const renderInput = (section: keyof LoanApplication, field: string, label: string, type = 'text', disabled = false) => (
+  const renderInput = ( section: EditableSection, field: string, label: string, type = 'text',   disabled = false ) => (
     <div className="mb-3">
       <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</label>
       <input
