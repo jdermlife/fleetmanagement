@@ -1,1 +1,1 @@
-# from app.models.loan_application import LoanApplicationempty init file
+# from app.models.loan_application import LoanApplication
