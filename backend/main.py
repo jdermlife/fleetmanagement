@@ -7,7 +7,13 @@ from app.routes.ai import router as ai_router
 
 from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
+from app.routes.loan_routes import router as loan_router
 
+app.include_router(
+    loan_router,
+    prefix="/api",
+    tags=["Loan Origination"]
+)
 
 
 app = FastAPI()
@@ -29,7 +35,13 @@ app.include_router(driver_router)
 app.include_router(ai_router)
 app.include_router(lease_router)
 app.include_router(database_router)
+from app.routes.loan_routes import router as loan_router
 
+app.include_router(
+    loan_router,
+    prefix="/api",
+    tags=["Loan Origination"]
+)
 
 
 
