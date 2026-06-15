@@ -159,10 +159,55 @@ const updateField = (
     }, 1500);
   };
 
-  const handleSaveDraft = () => {
-    setSaveMessage('Draft saved to PostgreSQL successfully!');
-    setTimeout(() => setSaveMessage(''), 3000);
-  };
+const handleSaveDraft = async () => {
+  try {
+    const response = await fetch(
+      "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          application_no: formData.id,
+          status: formData.status,
+
+          borrower_name: formData.borrower.fullName,
+          email: formData.borrower.email,
+          phone: formData.borrower.phone,
+          gov_id: formData.borrower.govId,
+          address: formData.borrower.address,
+
+          monthly_income: formData.employment.monthlyIncome,
+          other_income: formData.employment.otherIncome,
+          debt_obligations: formData.employment.debtObligations,
+
+          loan_amount: formData.loan.amount,
+          term_months: formData.loan.termMonths,
+          interest_rate: formData.loan.interestRate,
+          purpose: formData.loan.purpose,
+
+          vehicle_info: formData.collateral.vehicleInfo,
+          appraised_value: formData.collateral.appraisedValue,
+
+          committee_remarks: formData.committeeRemarks,
+
+          executive_approval:
+            formData.routing.executiveApproval,
+        }),
+      }
+    );
+
+    const result = await response.json();
+
+    setSaveMessage(result.message || "Loan application saved");
+
+    setTimeout(() => setSaveMessage(""), 3000);
+  } catch (error) {
+    console.error(error);
+    setSaveMessage("Failed to save loan application");
+  }
+};
 
   const updateStatus = (newStatus: WorkflowStatus) => {
     setFormData(prev => ({ ...prev, status: newStatus }));
