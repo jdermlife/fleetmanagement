@@ -2,6 +2,7 @@ from app.database import engine, Base
 
 from app.models.driver import Driver
 from app.models.borrower import Borrower
+from app.models.loan_application import LoanApplication
 
 print("Creating tables...")
 
