@@ -198,9 +198,13 @@ const handleSaveDraft = async () => {
       }
     );
 
-    const result = await response.json();
+if (!response.ok) {
+  throw new Error(`Server Error: ${response.status}`);
+}
 
-    setSaveMessage(result.message || "Loan application saved");
+const result = await response.json();
+
+setSaveMessage(result.message || "Loan application saved successfully");
 
     setTimeout(() => setSaveMessage(""), 3000);
   } catch (error) {
