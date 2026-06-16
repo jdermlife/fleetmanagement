@@ -192,9 +192,17 @@ const handleSaveDraft = async () => {
 
           committee_remarks: formData.committeeRemarks,
 
-          executive_approval:
-            formData.routing.executiveApproval,
-        }),
+           executive_approval:
+    formData.routing.executiveApproval,
+
+  dti: calculations.dti,
+  dsr: calculations.dsr,
+  ltv: calculations.ltv,
+
+  scorecard_total: automatedScorecard.total,
+
+  ai_probability: aiRecommendation.probability
+}),
       }
     );
 

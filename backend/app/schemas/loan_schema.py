@@ -26,3 +26,12 @@ class LoanApplicationCreate(BaseModel):
     committee_remarks: str
 
     executive_approval: bool
+
+
+    dti: float
+    dsr: float
+    ltv: float
+
+    scorecard_total: int
+
+    ai_probability: float

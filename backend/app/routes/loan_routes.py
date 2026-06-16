@@ -37,6 +37,17 @@ def create_loan_application(data: LoanApplicationCreate):
             committee_remarks=data.committee_remarks,
 
             executive_approval=data.executive_approval
+
+            dti=data.dti,
+            dsr=data.dsr,
+            ltv=data.ltv,
+
+            scorecard_total=data.scorecard_total,
+
+            ai_probability=data.ai_probability,
+
+
+
         )
 
         db.add(record)
@@ -81,3 +92,27 @@ def update_status(id: int, status: str):
 
     return {"message": "Status updated"}
 
+@router.put("/loan-applications/{application_no}/status")
+def update_status(application_no: str, status: str):
+
+    db = SessionLocal()
+
+    try:
+
+        record = db.query(LoanApplication).filter(
+            LoanApplication.application_no == application_no
+        ).first()
+
+        if not record:
+            return {"error": "Application not found"}
+
+        record.status = status
+
+        db.commit()
+
+        return {
+            "message": f"Status updated to {status}"
+        }
+
+    finally:
+        db.close()
