@@ -159,8 +159,8 @@ const updateField = (
     }, 1500);
   };
 
-  const handleSaveDraft = async () => {
-    await updateLoanStatus(formData.status);
+ const handleSaveDraft = async () => {
+  await updateLoanStatus('Draft');
   };
 
   const updateLoanStatus = async (newStatus: WorkflowStatus) => {
