@@ -500,16 +500,16 @@ setSaveMessage(result.message || "Loan application saved successfully");
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
                 <textarea 
-                  value={formData.committeeRemarks} 
-                  onChange={(e) => setFormData(prev => ({
-                    ...prev,
+                  value={formData.committeeRemarks}
+                  onChange={(e) =>
+                  setFormData(prev => ({
+                  ...prev,
                   committeeRemarks: e.target.value,
-                    }))
-                   }
-
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter conditions, stipulations, or approval notes here..."
+                   }))
+               }
+                 rows={4}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                 placeholder="Enter conditions, stipulations, or approval notes here..."
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
