@@ -32,14 +32,6 @@ class LoanApplication(Base):
 
     executive_approval = Column(Boolean, default=False)
 
-class LoanApplication(Base):
-
-    __tablename__ = "loan_applications"
-
-    id = Column(Integer, primary_key=True)
-
-    borrower_name = Column(String)
-
     dti = Column(Float)
     dsr = Column(Float)
     ltv = Column(Float)

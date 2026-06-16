@@ -36,7 +36,7 @@ def create_loan_application(data: LoanApplicationCreate):
 
             committee_remarks=data.committee_remarks,
 
-            executive_approval=data.executive_approval
+            executive_approval=data.executive_approval,
 
             dti=data.dti,
             dsr=data.dsr,
@@ -76,21 +76,7 @@ def get_loan_applications():
         db.close()
 
 
-@router.put("/loan-applications/{id}/status")
-def update_status(id: int, status: str):
-    db = SessionLocal()
 
-    loan = (
-        db.query(LoanApplication)
-        .filter(LoanApplication.id == id)
-        .first()
-    )
-
-    loan.status = status
-
-    db.commit()
-
-    return {"message": "Status updated"}
 
 @router.put("/loan-applications/{application_no}/status")
 def update_status(application_no: str, status: str):
