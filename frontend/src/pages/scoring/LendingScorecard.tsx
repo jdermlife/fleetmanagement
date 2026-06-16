@@ -159,20 +159,25 @@ const updateField = (
     }, 1500);
   };
 
-const handleSaveDraft = async () => {
-  try {
-    const response = await fetch(
-      "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          application_no: formData.id,
-          status: formData.status,
+  const handleSaveDraft = async () => {
+    await updateLoanStatus(formData.status);
+  };
 
-          borrower_name: formData.borrower.fullName,
+  const updateLoanStatus = async (newStatus: WorkflowStatus) => {
+    try {
+      const response = await fetch(
+        "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
+         
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            application_no: formData.id,
+            status: newStatus,
+
+            borrower_name: formData.borrower.fullName,
           email: formData.borrower.email,
           phone: formData.borrower.phone,
           gov_id: formData.borrower.govId,
@@ -221,9 +226,15 @@ setSaveMessage(result.message || "Loan application saved successfully");
   }
 };
 
-  const updateStatus = (newStatus: WorkflowStatus) => {
-    setFormData(prev => ({ ...prev, status: newStatus }));
-  };
+const updateStatus = async (newStatus: WorkflowStatus) => {
+
+  setFormData(prev => ({
+    ...prev,
+    status: newStatus
+  }));
+
+    await updateLoanStatus(newStatus);
+   };
 
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
@@ -589,6 +600,10 @@ setSaveMessage(result.message || "Loan application saved successfully");
                   {formData.status === 'Approved' && (
                     <button onClick={() => updateStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
                   )}
+
+
+
+
 
                   {formData.status === 'Released' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">🎉 Application Successfully Released</span>
