@@ -45,6 +45,39 @@ def create_loan_application(data: LoanApplicationCreate):
         return {
             "message": "Loan application saved"
         }
+    
+
+    
+    finally:
+        db.close()
+
+@router.get("/loan-applications")
+def get_loan_applications():
+
+    db = SessionLocal()
+
+    try:
+        loans = db.query(LoanApplication).all()
+
+        return loans
 
     finally:
         db.close()
+
+
+@router.put("/loan-applications/{id}/status")
+def update_status(id: int, status: str):
+    db = SessionLocal()
+
+    loan = (
+        db.query(LoanApplication)
+        .filter(LoanApplication.id == id)
+        .first()
+    )
+
+    loan.status = status
+
+    db.commit()
+
+    return {"message": "Status updated"}
+
