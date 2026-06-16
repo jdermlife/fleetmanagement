@@ -505,8 +505,8 @@ setSaveMessage(result.message || "Loan application saved successfully");
                     ...prev,
                   committeeRemarks: e.target.value,
                     }))
-                  }
-                  onChange={(e) => updateField('routing' as any, 'committeeRemarks' as any, e.target.value)} // Quick hack for nested, better to flatten or use specific handler
+                   }
+
                   rows={4}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
                   placeholder="Enter conditions, stipulations, or approval notes here..."
