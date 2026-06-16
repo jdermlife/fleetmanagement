@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
-type WorkflowStatus = 'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
+type WorkflowStatus = |'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
 
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
@@ -162,6 +162,33 @@ const updateField = (
  const handleSaveDraft = async () => {
   await updateLoanStatus('Draft');
   };
+
+const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
+  try {
+    const response = await fetch(
+      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${formData.id}/status?status=${newStatus}`,
+      {
+        method: "PUT",
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error("Failed to update status");
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      status: newStatus,
+    }));
+
+    setSaveMessage(`Status updated to ${newStatus}`);
+
+  } catch (error) {
+    console.error(error);
+    setSaveMessage("Failed to update status");
+  }
+};
+
 
   const updateLoanStatus = async (newStatus: WorkflowStatus) => {
     try {
@@ -592,13 +619,13 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
 
                   {formData.status === 'Credit Review' && (
                     <>
-                      <button onClick={() => updateStatus('Approved')} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-bold transition">✓ Approve</button>
-                      <button onClick={() => updateStatus('Rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-sm font-bold transition">✕ Reject</button>
+                      <button onClick={() => changeWorkflowStatus('Approved')} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-bold transition">✓ Approve</button>
+                      <button onClick={() => changeWorkflowStatus('Rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-sm font-bold transition">✕ Reject</button>
                     </>
                   )}
 
                   {formData.status === 'Approved' && (
-                    <button onClick={() => updateStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
+                    <button onClick={() => changeWorkflowStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
                   )}
 
 
