@@ -159,20 +159,52 @@ const updateField = (
     }, 1500);
   };
 
-const handleSaveDraft = async () => {
+ const handleSaveDraft = async () => {
+  await updateLoanStatus('Draft');
+  };
+
+const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
   try {
     const response = await fetch(
-      "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
+      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${formData.id}/status?status=${newStatus}`,
       {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          application_no: formData.id,
-          status: formData.status,
+        method: "PUT",
+      }
+    );
 
-          borrower_name: formData.borrower.fullName,
+    if (!response.ok) {
+      throw new Error("Status update failed");
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      status: newStatus,
+    }));
+
+    setSaveMessage(`Status updated to ${newStatus}`);
+
+  } catch (error) {
+    console.error(error);
+    setSaveMessage("Failed to update status");
+  }
+};
+
+
+  const updateLoanStatus = async (newStatus: WorkflowStatus) => {
+    try {
+      const response = await fetch(
+        "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
+         
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            application_no: formData.id,
+            status: formData.status,
+
+            borrower_name: formData.borrower.fullName,
           email: formData.borrower.email,
           phone: formData.borrower.phone,
           gov_id: formData.borrower.govId,
@@ -192,15 +224,27 @@ const handleSaveDraft = async () => {
 
           committee_remarks: formData.committeeRemarks,
 
-          executive_approval:
-            formData.routing.executiveApproval,
-        }),
+           executive_approval:
+    formData.routing.executiveApproval,
+
+  dti: calculations.dti,
+  dsr: calculations.dsr,
+  ltv: calculations.ltv,
+
+  scorecard_total: automatedScorecard.total,
+
+  ai_probability: aiRecommendation.probability
+}),
       }
     );
 
-    const result = await response.json();
+if (!response.ok) {
+  throw new Error(`Server Error: ${response.status}`);
+}
 
-    setSaveMessage(result.message || "Loan application saved");
+const result = await response.json();
+
+setSaveMessage(result.message || "Loan application saved successfully");
 
     setTimeout(() => setSaveMessage(""), 3000);
   } catch (error) {
@@ -209,9 +253,15 @@ const handleSaveDraft = async () => {
   }
 };
 
-  const updateStatus = (newStatus: WorkflowStatus) => {
-    setFormData(prev => ({ ...prev, status: newStatus }));
-  };
+const updateStatus = async (newStatus: WorkflowStatus) => {
+
+  setFormData(prev => ({
+    ...prev,
+    status: newStatus
+  }));
+
+    await updateLoanStatus(newStatus);
+   };
 
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
@@ -496,11 +546,16 @@ const handleSaveDraft = async () => {
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
                 <textarea 
-                  value={formData.committeeRemarks} 
-                  onChange={(e) => updateField('routing' as any, 'committeeRemarks' as any, e.target.value)} // Quick hack for nested, better to flatten or use specific handler
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter conditions, stipulations, or approval notes here..."
+                  value={formData.committeeRemarks}
+                  onChange={(e) =>
+                  setFormData(prev => ({
+                  ...prev,
+                  committeeRemarks: e.target.value,
+                   }))
+               }
+                 rows={4}
+                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                 placeholder="Enter conditions, stipulations, or approval notes here..."
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -564,14 +619,18 @@ const handleSaveDraft = async () => {
 
                   {formData.status === 'Credit Review' && (
                     <>
-                      <button onClick={() => updateStatus('Approved')} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-bold transition">✓ Approve</button>
-                      <button onClick={() => updateStatus('Rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-sm font-bold transition">✕ Reject</button>
+                      <button onClick={() => changeWorkflowStatus('Approved')} className="px-4 py-2 bg-green-600 hover:bg-green-500 rounded text-sm font-bold transition">✓ Approve</button>
+                      <button onClick={() => changeWorkflowStatus('Rejected')} className="px-4 py-2 bg-red-600 hover:bg-red-500 rounded text-sm font-bold transition">✕ Reject</button>
                     </>
                   )}
 
                   {formData.status === 'Approved' && (
-                    <button onClick={() => updateStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
+                    <button onClick={() => changeWorkflowStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
                   )}
+
+
+
+
 
                   {formData.status === 'Released' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">🎉 Application Successfully Released</span>
