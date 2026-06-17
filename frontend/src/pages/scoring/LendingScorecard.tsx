@@ -602,7 +602,18 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                       📤 Submit for Review
                     </button>
                   )}
-                  
+                  {formData.status === 'Draft' && (
+                  <button
+                      onClick={() => loadApplication(formData.id)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded"
+                      >
+                      Load Record
+                   </button>
+                  )}
+
+
+
+
                   {formData.status === 'Submitted' && (
                     <button onClick={() => updateStatus('Under Review')} className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded text-sm font-bold transition">🔍 Move to Under Review</button>
                   )}
@@ -656,3 +667,59 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
     </div>
   );
 }
+const loadApplication = async (
+  applicationNo: string
+) => {
+  try {
+
+    const response = await fetch(
+      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${applicationNo}`
+    );
+
+    const data = await response.json();
+
+    setFormData(prev => ({
+  ...prev,
+
+  id: data.application_no,
+  status: data.status,
+
+  borrower: {
+    ...prev.borrower,
+    fullName: data.borrower_name,
+    email: data.email,
+    phone: data.phone,
+    govId: data.gov_id,
+    address: data.address,
+  },
+
+  employment: {
+    ...prev.employment,
+    monthlyIncome: data.monthly_income,
+    otherIncome: data.other_income,
+    debtObligations: data.debt_obligations,
+  },
+
+  loan: {
+    ...prev.loan,
+    amount: data.loan_amount,
+    termMonths: data.term_months,
+    interestRate: data.interest_rate,
+    purpose: data.purpose,
+  },
+
+  collateral: {
+    ...prev.collateral,
+    vehicleInfo: data.vehicle_info,
+    appraisedValue: data.appraised_value,
+  },
+
+  committeeRemarks: data.committee_remarks,
+}));
+
+  } catch (error) {
+
+    console.error(error);
+
+  }
+};
