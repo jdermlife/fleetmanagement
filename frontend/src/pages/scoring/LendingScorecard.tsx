@@ -202,7 +202,7 @@ const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
           },
           body: JSON.stringify({
             application_no: formData.id,
-            status: formData.status,
+            status: newStatus,
 
             borrower_name: formData.borrower.fullName,
           email: formData.borrower.email,
@@ -254,14 +254,8 @@ setSaveMessage(result.message || "Loan application saved successfully");
 };
 
 const updateStatus = async (newStatus: WorkflowStatus) => {
-
-  setFormData(prev => ({
-    ...prev,
-    status: newStatus
-  }));
-
-    await updateLoanStatus(newStatus);
-   };
+  await changeWorkflowStatus(newStatus);
+};
 
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
