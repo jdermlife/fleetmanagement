@@ -111,9 +111,7 @@ type EditableSection =
 const updateField = (
   section: EditableSection,
   field: string,
-  value: any
-) => {
-  setFormData(prev => ({
+  value: any ) => {setFormData(prev => ({
     ...prev,
     [section]: {
       ...prev[section],
@@ -124,25 +122,25 @@ const updateField = (
 
   const addCoBorrower = () => {
     const newCb: CoBorrower = { id: Date.now().toString(), name: '', relationship: '', monthlyIncome: 0, debtObligations: 0, creditStanding: 'Good' };
-    setFormData(prev => ({ ...prev, coBorrowers: [...prev.coBorrowers, newCb] }));
-  };
+        setFormData(prev => ({ ...prev, coBorrowers: [...prev.coBorrowers, newCb] }));
+         };
 
-  const updateCoBorrower = (id: string, field: keyof CoBorrower, value: any) => {
-    setFormData(prev => ({
-      ...prev,
+  const updateCoBorrower = (id: string, field: keyof CoBorrower, 
+         value: any) => {setFormData(prev => ({
+            ...prev,
       coBorrowers: prev.coBorrowers.map(cb => cb.id === id ? { ...cb, [field]: value } : cb)
-    }));
-  };
+       }));
+        };
 
   const removeCoBorrower = (id: string) => {
-    setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
-  };
+        setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
+         };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const newDoc: DocumentItem = { id: Date.now().toString(), name: file.name, type: file.type, status: 'Pending' };
-      setFormData(prev => ({ ...prev, documents: [...prev.documents, newDoc] }));
+         setFormData(prev => ({ ...prev, documents: [...prev.documents, newDoc] }));
     }
   };
 
@@ -150,7 +148,7 @@ const updateField = (
     setIsParsing(true);
     // Simulate AI OCR/NLP Parsing Delay
     setTimeout(() => {
-      setFormData(prev => ({
+        setFormData(prev => ({
         ...prev,
         employment: { ...prev.employment, monthlyIncome: prev.employment.monthlyIncome + 4500 }, // Simulated extraction
         documents: prev.documents.map(d => d.id === docId ? { ...d, status: 'Parsed', parsedData: 'Extracted: +$4,500/mo income' } : d)
@@ -176,7 +174,7 @@ const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
       throw new Error("Status update failed");
     }
 
-    setFormData(prev => ({
+       setFormData(prev => ({
       ...prev,
       status: newStatus,
     }));
@@ -272,8 +270,8 @@ const loadApplication = async (
 
     const data = await response.json();
 
-    setFormData(prev => ({
-      ...prev,
+       setFormData(prev => ({
+        ...prev,
 
       id: data.application_no,
       status: data.status,
@@ -695,10 +693,6 @@ const loadApplication = async (
                   {formData.status === 'Approved' && (
                     <button onClick={() => changeWorkflowStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
                   )}
-
-
-
-
 
                   {formData.status === 'Released' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">🎉 Application Successfully Released</span>
