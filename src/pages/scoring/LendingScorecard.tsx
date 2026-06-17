@@ -202,7 +202,7 @@ const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
           },
           body: JSON.stringify({
             application_no: formData.id,
-            status: formData.status,
+            status: newStatus,
 
             borrower_name: formData.borrower.fullName,
           email: formData.borrower.email,
@@ -254,14 +254,73 @@ setSaveMessage(result.message || "Loan application saved successfully");
 };
 
 const updateStatus = async (newStatus: WorkflowStatus) => {
+  await changeWorkflowStatus(newStatus);
+};
 
-  setFormData(prev => ({
-    ...prev,
-    status: newStatus
-  }));
+const loadApplication = async (
+  applicationNo: string
+) => {
+  try {
 
-    await updateLoanStatus(newStatus);
-   };
+    const response = await fetch(
+      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${applicationNo}`
+    );
+
+    if (!response.ok) {
+      throw new Error("Application not found");
+    }
+
+    const data = await response.json();
+
+    setFormData(prev => ({
+      ...prev,
+
+      id: data.application_no,
+      status: data.status,
+
+      borrower: {
+        ...prev.borrower,
+        fullName: data.borrower_name,
+        email: data.email,
+        phone: data.phone,
+        govId: data.gov_id,
+        address: data.address,
+      },
+
+      employment: {
+        ...prev.employment,
+        monthlyIncome: data.monthly_income,
+        otherIncome: data.other_income,
+        debtObligations: data.debt_obligations,
+      },
+
+      loan: {
+        ...prev.loan,
+        amount: data.loan_amount,
+        termMonths: data.term_months,
+        interestRate: data.interest_rate,
+        purpose: data.purpose,
+      },
+
+      collateral: {
+        ...prev.collateral,
+        vehicleInfo: data.vehicle_info,
+        appraisedValue: data.appraised_value,
+      },
+
+      committeeRemarks: data.committee_remarks,
+    }));
+
+    setSaveMessage("Application loaded");
+
+  } catch (error) {
+
+    console.error(error);
+    setSaveMessage("Failed to load application");
+
+  }
+};
+
 
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
@@ -608,7 +667,16 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                       📤 Submit for Review
                     </button>
                   )}
-                  
+                  {formData.status === 'Draft' && (
+                  <button
+                      onClick={() => loadApplication(formData.id)}
+                      className="px-4 py-2 bg-blue-500 text-white rounded"
+                      >
+                      Load Record
+                   </button>
+                  )}
+
+
                   {formData.status === 'Submitted' && (
                     <button onClick={() => updateStatus('Under Review')} className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded text-sm font-bold transition">🔍 Move to Under Review</button>
                   )}
