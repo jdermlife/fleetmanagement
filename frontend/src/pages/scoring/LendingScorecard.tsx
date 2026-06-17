@@ -3,7 +3,7 @@ import React, { useState, useMemo } from 'react';
 
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
-type WorkflowStatus = |'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
+type WorkflowStatus = 'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
 
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
@@ -173,7 +173,7 @@ const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
     );
 
     if (!response.ok) {
-      throw new Error("Failed to update status");
+      throw new Error("Status update failed");
     }
 
     setFormData(prev => ({
@@ -202,7 +202,7 @@ const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
           },
           body: JSON.stringify({
             application_no: formData.id,
-            status: newStatus,
+            status: formData.status,
 
             borrower_name: formData.borrower.fullName,
           email: formData.borrower.email,
