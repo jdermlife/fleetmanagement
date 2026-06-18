@@ -324,6 +324,10 @@ const govMenuItems = menuLinks.filter(
             element={<LoanRepository />}
           />
           <Route
+            path="/loan-applications"
+            element={<LoanRepository />}
+          />
+          <Route
             path="/loan-details/:applicationNo"
             element={<LoanDetails />}
           />
