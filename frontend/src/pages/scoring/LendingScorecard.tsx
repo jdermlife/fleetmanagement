@@ -207,7 +207,9 @@ export default function LendingScorecard() {
     | 'spouseInformation'
     | 'bankingRelationships'
     | 'signatures'
-    | 'supportingDocuments';
+    | 'supportingDocuments'
+    | 'disbursement'
+    | 'finalChecklist';
   type FieldValue = string | number | boolean;
   type FormSectionValue =
     | BorrowerInfo
@@ -225,7 +227,9 @@ export default function LendingScorecard() {
     | SpouseInformation
     | BankingRelationships
     | Signatures
-    | SupportingDocuments;
+    | SupportingDocuments
+    | Disbursement
+    | FinalChecklist;
 
   const setTransientMessage = useCallback((message: string) => {
     setSaveMessage(message);
@@ -234,7 +238,7 @@ export default function LendingScorecard() {
 
   const hydrateApplication = useCallback((record: LoanApplicationRecord): LoanApplication => {
     const blankApplication = createNewApplicationInstance();
-    const savedRequirements = record.requirements ?? {};
+    const savedRequirements:  Partial<LoanApplicationRequirements> = record.requirements ?? {};
 
     return {
       ...blankApplication,
@@ -483,8 +487,6 @@ export default function LendingScorecard() {
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
   ], [formData, calculations]);
-
-  const isReadyToSubmit = validationChecks.every(v => v.passed);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
   const getInputValue = (section: EditableSection, field: string): string | number => {
     const rawValue = (formData[section] as Record<string, FieldValue | undefined>)[field];
@@ -1041,6 +1043,16 @@ export default function LendingScorecard() {
           {step === 10 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
+              <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
+                <h4 className="font-bold text-blue-800 mb-2 text-sm uppercase">✅ System Validation Check</h4>
+                <ul className="space-y-1">
+                  {validationChecks.map((check, idx) => (
+                    <li key={idx} className={`text-sm flex items-center gap-2 ${check.passed ? 'text-green-700' : 'text-red-600'}`}>
+                      {check.passed ? '✓' : '✗'} {check.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
                 <h4 className="font-bold text-green-800 text-sm mb-3">Approval Summary</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
