@@ -412,7 +412,7 @@ export default function CreditDashboard() {
           <button onClick={() => { setFormData(initialData); setStep(1); }} className="bg-blue-600 hover:bg-blue-700 text-white p-4 rounded-lg font-semibold shadow transition-all hover:shadow-md flex flex-col items-start gap-1">
             <span className="text-xl">➕</span> Create New Application
           </button>
-          <button onClick={() => navigate('/loan-applications')} className="bg-amber-600 hover:bg-amber-700 text-white p-4 rounded-lg font-semibold shadow transition-all hover:shadow-md flex flex-col items-start gap-1">
+          <button onClick={() => navigate('/loan-repository')} className="bg-amber-600 hover:bg-amber-700 text-white p-4 rounded-lg font-semibold shadow transition-all hover:shadow-md flex flex-col items-start gap-1">
             <span className="text-xl">📋</span> Review Applications
           </button>
           <button onClick={() => navigate('/approval-queue')} className="bg-purple-600 hover:bg-purple-700 text-white p-4 rounded-lg font-semibold shadow transition-all hover:shadow-md flex flex-col items-start gap-1">

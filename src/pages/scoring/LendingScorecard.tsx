@@ -399,37 +399,43 @@ export default function LendingScorecard() {
         <div className="bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
           <button 
             onClick={handleCreateNew}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded text-xs font-bold transition shadow-sm"
           >
             ➕ Create New Application
           </button>
           <button 
             onClick={() => navigate('/loan-repository')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
           >
             📋 Review Applications
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Credit%20Review')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
           >
             ⏳ Approval Queue
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Released')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
           >
             💸 Released Accounts
           </button>
         </div>
 
         {/* Progress Stepper */}
-        <div className="bg-slate-50 border-b border-gray-200 p-4 overflow-x-auto">
-          <div className="flex justify-between min-w-[800px] text-xs font-medium text-gray-500">
+        <div className="bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
+          <div className="grid min-w-[960px] grid-cols-10 gap-2 text-xs font-medium text-gray-500">
             {['Borrower', 'Co-Borrowers', 'Income', 'Loan & Collateral', 'Metrics', 'Scorecard', 'AI Rec', 'Documents', 'Committee', 'Review'].map((label, i) => (
-              <button key={i} onClick={() => setStep(i + 1)} className={`flex flex-col items-center gap-1 hover:text-blue-600 transition ${step === i + 1 ? 'text-blue-700 font-bold' : ''}`}>
-                <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>{i + 1}</div>
-                <span>{label}</span>
+              <button
+                key={i}
+                onClick={() => setStep(i + 1)}
+                className={`flex h-full min-h-[84px] w-full flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2 text-center transition hover:border-blue-400 hover:text-blue-600 ${step === i + 1 ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold shadow-sm' : 'border-gray-200 bg-white'}`}
+              >
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                  {i + 1}
+                </div>
+                <span className="leading-tight">{label}</span>
               </button>
             ))}
           </div>
