@@ -36,6 +36,12 @@ export default function LoanDetails() {
     void loadLoan();
   }, [applicationNo]);
 
+  const formatCurrency = (value: number | null | undefined) =>
+    typeof value === "number" ? value.toLocaleString() : "N/A";
+
+  const formatPercent = (value: number | null | undefined) =>
+    typeof value === "number" ? `${value.toFixed(2)}%` : "N/A";
+
   if (loading) {
     return <div className="p-10">Loading loan details...</div>;
   }
@@ -68,18 +74,18 @@ export default function LoanDetails() {
             <div className="rounded bg-blue-50 p-4">
               <div className="text-sm">Loan Amount</div>
               <div className="text-2xl font-bold">
-                PHP {loan.loan_amount.toLocaleString()}
+                PHP {formatCurrency(loan.loan_amount)}
               </div>
             </div>
 
             <div className="rounded bg-green-50 p-4">
               <div className="text-sm">AI Probability</div>
-              <div className="text-2xl font-bold">{loan.ai_probability}%</div>
+              <div className="text-2xl font-bold">{formatPercent(loan.ai_probability)}</div>
             </div>
 
             <div className="rounded bg-yellow-50 p-4">
               <div className="text-sm">Scorecard</div>
-              <div className="text-2xl font-bold">{loan.scorecard_total}/50</div>
+              <div className="text-2xl font-bold">{loan.scorecard_total ?? "N/A"}/50</div>
             </div>
 
             <div className="rounded bg-purple-50 p-4">
@@ -121,19 +127,19 @@ export default function LoanDetails() {
             <div>
               Monthly Income
               <div className="font-bold">
-                PHP {loan.monthly_income.toLocaleString()}
+                PHP {formatCurrency(loan.monthly_income)}
               </div>
             </div>
             <div>
               Other Income
               <div className="font-bold">
-                PHP {loan.other_income.toLocaleString()}
+                PHP {formatCurrency(loan.other_income)}
               </div>
             </div>
             <div>
               Existing Debt
               <div className="font-bold">
-                PHP {loan.debt_obligations.toLocaleString()}
+                PHP {formatCurrency(loan.debt_obligations)}
               </div>
             </div>
           </div>
@@ -145,7 +151,7 @@ export default function LoanDetails() {
             <div>
               Loan Amount
               <div className="font-bold">
-                PHP {loan.loan_amount.toLocaleString()}
+                PHP {formatCurrency(loan.loan_amount)}
               </div>
             </div>
             <div>
@@ -173,7 +179,7 @@ export default function LoanDetails() {
             <div>
               Appraised Value
               <div className="font-bold">
-                PHP {loan.appraised_value.toLocaleString()}
+                PHP {formatCurrency(loan.appraised_value)}
               </div>
             </div>
           </div>
@@ -184,15 +190,15 @@ export default function LoanDetails() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded bg-red-50 p-4">
               DTI
-              <div className="text-2xl font-bold">{loan.dti.toFixed(2)}%</div>
+              <div className="text-2xl font-bold">{formatPercent(loan.dti)}</div>
             </div>
             <div className="rounded bg-orange-50 p-4">
               DSR
-              <div className="text-2xl font-bold">{loan.dsr.toFixed(2)}%</div>
+              <div className="text-2xl font-bold">{formatPercent(loan.dsr)}</div>
             </div>
             <div className="rounded bg-blue-50 p-4">
               LTV
-              <div className="text-2xl font-bold">{loan.ltv.toFixed(2)}%</div>
+              <div className="text-2xl font-bold">{formatPercent(loan.ltv)}</div>
             </div>
           </div>
         </div>
