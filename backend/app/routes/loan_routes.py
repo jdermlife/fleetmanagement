@@ -39,6 +39,7 @@ def create_loan_application(data: LoanApplicationCreate):
         record = LoanApplication(
             application_no=data.application_no,
             status=data.status,
+            product_type=data.product_type,
 
             borrower_name=data.borrower_name,
             email=data.email,
@@ -69,6 +70,8 @@ def create_loan_application(data: LoanApplicationCreate):
             scorecard_total=data.scorecard_total,
 
             ai_probability=data.ai_probability,
+
+            requirements=data.requirements,
 
 
 
@@ -149,6 +152,7 @@ def update_loan_application(
         record = get_loan_application_or_404(db, application_no)
 
         record.status = data.status
+        record.product_type = data.product_type
 
         record.borrower_name = data.borrower_name
         record.email = data.email
@@ -179,6 +183,8 @@ def update_loan_application(
         record.scorecard_total = data.scorecard_total
 
         record.ai_probability = data.ai_probability
+
+        record.requirements = data.requirements
 
         db.commit()
 

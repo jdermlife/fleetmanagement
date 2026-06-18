@@ -1,9 +1,12 @@
-from pydantic import BaseModel
+from typing import Any
+
+from pydantic import BaseModel, Field
 
 class LoanApplicationCreate(BaseModel):
 
     application_no: str
     status: str
+    product_type: str
 
     borrower_name: str
     email: str
@@ -35,3 +38,5 @@ class LoanApplicationCreate(BaseModel):
     scorecard_total: int
 
     ai_probability: float
+
+    requirements: dict[str, Any] = Field(default_factory=dict)

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Float, Boolean, Text
+from sqlalchemy import Column, Integer, String, Float, Boolean, Text, JSON
 from app.database import Base
 
 class LoanApplication(Base):
@@ -9,6 +9,7 @@ class LoanApplication(Base):
     application_no = Column(String)
 
     status = Column(String)
+    product_type = Column(String)
 
     borrower_name = Column(String)
     email = Column(String)
@@ -39,3 +40,5 @@ class LoanApplication(Base):
     scorecard_total = Column(Integer)
 
     ai_probability = Column(Float) 
+
+    requirements = Column(JSON)
