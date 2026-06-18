@@ -168,6 +168,75 @@ export default function LendingScorecard() {
     return { character, capacity, capital, collateral, conditions, total };
   }, [calculations, formData]);
 
+  const creditRiskInsights = useMemo(() => {
+    const parsedDocsCount = formData.documents.filter((doc) => doc.status === 'Parsed').length;
+    const docsCoverage = formData.documents.length > 0
+      ? parsedDocsCount / formData.documents.length
+      : 0;
+
+    // Higher is better: confidence that applicant identity/profile is legitimate.
+    const fraudScore = Math.max(
+      0,
+      Math.min(
+        100,
+        (formData.borrower.govId ? 30 : 0) +
+          (formData.borrower.email ? 10 : 0) +
+          (formData.borrower.phone ? 10 : 0) +
+          (formData.borrower.address ? 10 : 0) +
+          Math.round(docsCoverage * 35) +
+          (formData.applicantPersonal.dateOfBirth ? 5 : 0),
+      ),
+    );
+
+    // Higher is better: likelihood application can move forward without early rejection.
+    const nonStarterScore = Math.max(
+      0,
+      Math.min(
+        100,
+        (formData.loan.amount > 0 ? 20 : 0) +
+          (formData.collateral.appraisedValue > 0 ? 20 : 0) +
+          (formData.loan.productType ? 10 : 0) +
+          (calculations.totalIncome > 0 ? 20 : 0) +
+          (calculations.dsr < 60 ? 15 : 0) +
+          (parsedDocsCount >= 2 ? 15 : 0),
+      ),
+    );
+
+    // Lower is better: blended risk index from affordability, coverage, and scorecard quality.
+    const riskScore = Math.max(
+      0,
+      Math.min(
+        100,
+        (calculations.dsr * 0.4) +
+          (calculations.ltv * 0.3) +
+          ((50 - automatedScorecard.total) * 2) +
+          (parsedDocsCount === 0 ? 10 : 0),
+      ),
+    );
+
+    const grossRevenue =
+      formData.loan.amount *
+      (formData.loan.interestRate / 100) *
+      Math.max(1, formData.loan.termMonths / 12);
+    const expectedLoss = formData.loan.amount * (riskScore / 100) * 0.08;
+    const processingCost = Math.max(150, formData.loan.amount * 0.005);
+    const originationProfitability = grossRevenue - expectedLoss - processingCost;
+    const originationMargin = grossRevenue > 0
+      ? (originationProfitability / grossRevenue) * 100
+      : 0;
+
+    return {
+      fraudScore,
+      nonStarterScore,
+      riskScore,
+      originationProfitability,
+      originationMargin,
+      grossRevenue,
+      expectedLoss,
+      processingCost,
+    };
+  }, [automatedScorecard.total, calculations, formData]);
+
   // --- AI Recommendation with Computations ---
   const aiRecommendation = useMemo(() => {
     let baseProb = 70;
@@ -975,6 +1044,49 @@ export default function LendingScorecard() {
                 <div className="bg-slate-800 text-white p-4 rounded-lg flex justify-between items-center">
                   <span className="font-bold text-lg">Total Automated Score</span>
                   <span className="text-3xl font-bold text-blue-400">{automatedScorecard.total}<span className="text-sm text-slate-400">/50</span></span>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-800 text-sm">Advanced Scoring Signals</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Fraud Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.fraudScore >= 70 ? 'text-green-600' : creditRiskInsights.fraudScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.fraudScore}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Non-starter Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.nonStarterScore >= 70 ? 'text-green-600' : creditRiskInsights.nonStarterScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.nonStarterScore}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Risk Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.riskScore <= 35 ? 'text-green-600' : creditRiskInsights.riskScore <= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.riskScore.toFixed(1)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Lower is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Origination Profitability</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.originationProfitability >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${creditRiskInsights.originationProfitability.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Margin: {creditRiskInsights.originationMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>Gross Interest Revenue: <span className="font-semibold text-gray-800">${creditRiskInsights.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                  <div>Expected Loss Reserve: <span className="font-semibold text-gray-800">${creditRiskInsights.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                  <div>Processing Cost: <span className="font-semibold text-gray-800">${creditRiskInsights.processingCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
                 </div>
               </div>
 
