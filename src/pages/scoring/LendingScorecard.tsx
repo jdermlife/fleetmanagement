@@ -286,6 +286,24 @@ export default function AdvancedLoanWorkflow() {
     return colors[status];
   };
 
+  const getDocumentStatusColor = (
+  status: 'Pending' | 'Parsed' | 'Failed'
+) => {
+  switch (status) {
+    case 'Parsed':
+      return 'bg-green-100 text-green-700';
+
+    case 'Failed':
+      return 'bg-red-100 text-red-700';
+
+    default:
+      return 'bg-yellow-100 text-yellow-700';
+  }
+}; 
+     <span
+  className={`text-xs font-bold px-2 py-1 rounded ${getDocumentStatusColor(doc.status)}`}
+> </span>
+
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
       <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
@@ -539,7 +557,15 @@ export default function AdvancedLoanWorkflow() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-bold px-2 py-1 rounded ${doc.status === 'Parsed' ? 'bg-green-100 text-green-700' : doc.status === 'Failed' ? 'bg-red-100 text-red-700' : doc.status === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      <span
+                      className={`text-xs font-bold px-2 py-1 rounded ${
+                               doc.status === 'Parsed'
+                                 ? 'bg-green-100 text-green-700'
+                                 : doc.status === 'Failed'
+                                 ? 'bg-red-100 text-red-700'
+                                 : 'bg-yellow-100 text-yellow-700'
+                                }`}
+                         >
                         {doc.status}
                       </span>
                       {doc.status === 'Pending' && (
