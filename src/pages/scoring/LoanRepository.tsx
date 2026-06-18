@@ -229,9 +229,18 @@ export default function LoanRepository() {
                     <th className="p-3 text-left">Borrower</th>
                     <th className="p-3 text-left">Email</th>
                     <th className="p-3 text-left">Phone</th>
+                    <th className="p-3 text-left">Gov ID</th>
+                    <th className="p-3 text-left">Address</th>
+                    <th className="p-3 text-left">Monthly Income</th>
+                    <th className="p-3 text-left">Other Income</th>
+                    <th className="p-3 text-left">Debt Obligations</th>
                     <th className="p-3 text-left">Loan Amount</th>
+                    <th className="p-3 text-left">Term</th>
+                    <th className="p-3 text-left">Interest Rate</th>
                     <th className="p-3 text-left">Purpose</th>
                     <th className="p-3 text-left">Collateral</th>
+                    <th className="p-3 text-left">Committee Remarks</th>
+                    <th className="p-3 text-left">Executive Approval</th>
                     <th className="p-3 text-left">Scorecard</th>
                     <th className="p-3 text-left">AI Prob.</th>
                     <th className="p-3 text-left">DTI</th>
@@ -262,11 +271,24 @@ export default function LoanRepository() {
                       <td className="p-3">{row.borrower_name}</td>
                       <td className="p-3">{row.email}</td>
                       <td className="p-3">{row.phone}</td>
+                      <td className="p-3">{row.gov_id}</td>
+                      <td className="p-3 max-w-xs whitespace-normal break-words">
+                        {row.address}
+                      </td>
+                      <td className="p-3">PHP {row.monthly_income.toLocaleString()}</td>
+                      <td className="p-3">PHP {row.other_income.toLocaleString()}</td>
+                      <td className="p-3">PHP {row.debt_obligations.toLocaleString()}</td>
                       <td className="p-3">
                         PHP {row.loan_amount.toLocaleString()}
                       </td>
+                      <td className="p-3">{row.term_months} mos</td>
+                      <td className="p-3">{row.interest_rate}%</td>
                       <td className="p-3">{row.purpose}</td>
                       <td className="p-3">{row.vehicle_info}</td>
+                      <td className="p-3 max-w-sm whitespace-normal break-words">
+                        {row.committee_remarks}
+                      </td>
+                      <td className="p-3">{row.executive_approval ? "Yes" : "No"}</td>
                       <td className="p-3">{row.scorecard_total ?? 0}</td>
                       <td className="p-3">{row.ai_probability ?? 0}%</td>
                       <td className="p-3">{row.dti ?? 0}%</td>
@@ -343,7 +365,7 @@ export default function LoanRepository() {
                   {!loading && filteredApplications.length === 0 && (
                     <tr>
                       <td
-                                    colSpan={14}
+                        colSpan={20}
                         className="p-6 text-center text-sm text-slate-500"
                       >
                         No loan applications matched the current filters.
