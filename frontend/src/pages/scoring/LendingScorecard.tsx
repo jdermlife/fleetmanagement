@@ -1,7 +1,5 @@
 import React, { useState, useMemo } from 'react';
 
-
-
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 type WorkflowStatus = 'Draft' | 'Submitted' | 'Under Review' | 'Credit Review' | 'Approved' | 'Rejected' | 'Released';
 
@@ -25,8 +23,8 @@ interface LoanApplication {
   routing: { creditOfficer: string; branchManager: string; creditCommittee: string; executiveApproval: boolean; };
 }
 
-// --- Initial State ---
-const initialData: LoanApplication = {
+// --- Initial State Factory ---
+const createNewApplicationInstance = (): LoanApplication => ({
   id: 'APP-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
   status: 'Draft',
   borrower: { fullName: '', email: '', phone: '', govId: '', address: '' },
@@ -37,12 +35,12 @@ const initialData: LoanApplication = {
   documents: [],
   committeeRemarks: '',
   routing: { creditOfficer: '', branchManager: '', creditCommittee: 'Pending', executiveApproval: false },
-};
+});
 
 // --- Main Component ---
 export default function AdvancedLoanWorkflow() {
   const [step, setStep] = useState(1);
-  const [formData, setFormData] = useState<LoanApplication>(initialData);
+  const [formData, setFormData] = useState<LoanApplication>(createNewApplicationInstance());
   const [isParsing, setIsParsing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
 
@@ -101,26 +99,17 @@ export default function AdvancedLoanWorkflow() {
   }, [calculations, automatedScorecard, formData.loan.amount]);
 
   // --- Handlers ---
-type EditableSection =
-  | 'borrower'
-  | 'employment'
-  | 'loan'
-  | 'collateral'
-  | 'routing';
+  type EditableSection = 'borrower' | 'employment' | 'loan' | 'collateral' | 'routing';
 
-const updateField = (
-  section: EditableSection,
-  field: string,
-  value: any
-) => {
-  setFormData(prev => ({
-    ...prev,
-    [section]: {
-      ...prev[section],
-      [field]: value,
-    },
-  }));
-};
+  const updateField = (section: EditableSection, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
+    }));
+  };
 
   const addCoBorrower = () => {
     const newCb: CoBorrower = { id: Date.now().toString(), name: '', relationship: '', monthlyIncome: 0, debtObligations: 0, creditStanding: 'Good' };
@@ -148,114 +137,122 @@ const updateField = (
 
   const handleParseDocument = (docId: string) => {
     setIsParsing(true);
-    // Simulate AI OCR/NLP Parsing Delay
     setTimeout(() => {
       setFormData(prev => ({
         ...prev,
-        employment: { ...prev.employment, monthlyIncome: prev.employment.monthlyIncome + 4500 }, // Simulated extraction
+        employment: { ...prev.employment, monthlyIncome: prev.employment.monthlyIncome + 4500 },
         documents: prev.documents.map(d => d.id === docId ? { ...d, status: 'Parsed', parsedData: 'Extracted: +$4,500/mo income' } : d)
       }));
       setIsParsing(false);
     }, 1500);
   };
 
- const handleSaveDraft = async () => {
-  await updateLoanStatus('Draft');
+  const handleSaveDraft = async () => {
+    await updateLoanStatus('Draft');
   };
 
-const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
-  try {
-    const response = await fetch(
-      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${formData.id}/status?status=${newStatus}`,
-      {
-        method: "PUT",
-      }
-    );
+  const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
+    try {
+      const response = await fetch(
+        `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${formData.id}/status?status=${newStatus}`,
+        { method: "PUT" }
+      );
 
-    if (!response.ok) {
-      throw new Error("Status update failed");
+      if (!response.ok) throw new Error("Status update failed");
+
+      setFormData(prev => ({ ...prev, status: newStatus }));
+      setSaveMessage(`Status updated to ${newStatus}`);
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Failed to update status");
     }
-
-    setFormData(prev => ({
-      ...prev,
-      status: newStatus,
-    }));
-
-    setSaveMessage(`Status updated to ${newStatus}`);
-
-  } catch (error) {
-    console.error(error);
-    setSaveMessage("Failed to update status");
-  }
-};
-
+  };
 
   const updateLoanStatus = async (newStatus: WorkflowStatus) => {
     try {
       const response = await fetch(
         "https://fleetmanagement-dq9t.onrender.com/api/loan-applications",
-         
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             application_no: formData.id,
             status: newStatus,
-
             borrower_name: formData.borrower.fullName,
-          email: formData.borrower.email,
-          phone: formData.borrower.phone,
-          gov_id: formData.borrower.govId,
-          address: formData.borrower.address,
+            email: formData.borrower.email,
+            phone: formData.borrower.phone,
+            gov_id: formData.borrower.govId,
+            address: formData.borrower.address,
+            monthly_income: formData.employment.monthlyIncome,
+            other_income: formData.employment.otherIncome,
+            debt_obligations: formData.employment.debtObligations,
+            loan_amount: formData.loan.amount,
+            term_months: formData.loan.termMonths,
+            interest_rate: formData.loan.interestRate,
+            purpose: formData.loan.purpose,
+            vehicle_info: formData.collateral.vehicleInfo,
+            appraised_value: formData.collateral.appraisedValue,
+            committee_remarks: formData.committeeRemarks,
+            executive_approval: formData.routing.executiveApproval,
+            dti: calculations.dti,
+            dsr: calculations.dsr,
+            ltv: calculations.ltv,
+            scorecard_total: automatedScorecard.total,
+            ai_probability: aiRecommendation.probability
+          }),
+        }
+      );
 
-          monthly_income: formData.employment.monthlyIncome,
-          other_income: formData.employment.otherIncome,
-          debt_obligations: formData.employment.debtObligations,
+      if (!response.ok) throw new Error(`Server Error: ${response.status}`);
+      const result = await response.json();
+      setSaveMessage(result.message || "Loan application saved successfully");
+      setTimeout(() => setSaveMessage(""), 3000);
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Failed to save loan application");
+    }
+  };
 
-          loan_amount: formData.loan.amount,
-          term_months: formData.loan.termMonths,
-          interest_rate: formData.loan.interestRate,
-          purpose: formData.loan.purpose,
+  const updateStatus = async (newStatus: WorkflowStatus) => {
+    await changeWorkflowStatus(newStatus);
+  };
 
-          vehicle_info: formData.collateral.vehicleInfo,
-          appraised_value: formData.collateral.appraisedValue,
+  const loadApplication = async (applicationNo: string) => {
+    try {
+      const response = await fetch(`https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${applicationNo}`);
+      if (!response.ok) throw new Error("Application not found");
+      const data = await response.json();
 
-          committee_remarks: formData.committeeRemarks,
+      setFormData(prev => ({
+        ...prev,
+        id: data.application_no,
+        status: data.status,
+        borrower: { ...prev.borrower, fullName: data.borrower_name, email: data.email, phone: data.phone, govId: data.gov_id, address: data.address },
+        employment: { ...prev.employment, monthlyIncome: data.monthly_income, otherIncome: data.other_income, debtObligations: data.debt_obligations },
+        loan: { ...prev.loan, amount: data.loan_amount, termMonths: data.term_months, interestRate: data.interest_rate, purpose: data.purpose },
+        collateral: { ...prev.collateral, vehicleInfo: data.vehicle_info, appraisedValue: data.appraised_value },
+        committeeRemarks: data.committee_remarks,
+      }));
 
-           executive_approval:
-    formData.routing.executiveApproval,
+      setSaveMessage("Application loaded");
+    } catch (error) {
+      console.error(error);
+      setSaveMessage("Failed to load application");
+    }
+  };
 
-  dti: calculations.dti,
-  dsr: calculations.dsr,
-  ltv: calculations.ltv,
-
-  scorecard_total: automatedScorecard.total,
-
-  ai_probability: aiRecommendation.probability
-}),
-      }
-    );
-
-if (!response.ok) {
-  throw new Error(`Server Error: ${response.status}`);
-}
-
-const result = await response.json();
-
-setSaveMessage(result.message || "Loan application saved successfully");
-
+  // --- Global Nav Actions ---
+  const handleCreateNew = () => {
+    setFormData(createNewApplicationInstance());
+    setStep(1);
+    setSaveMessage("New application draft generated.");
     setTimeout(() => setSaveMessage(""), 3000);
-  } catch (error) {
-    console.error(error);
-    setSaveMessage("Failed to save loan application");
-  }
-};
+  };
 
-const updateStatus = async (newStatus: WorkflowStatus) => {
-  await changeWorkflowStatus(newStatus);
-};
+  const handleGlobalActionStub = (actionName: string) => {
+    setSaveMessage(`Redirecting to view: ${actionName}`);
+    setTimeout(() => setSaveMessage(""), 3000);
+  };
 
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
@@ -267,8 +264,7 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
 
   const isReadyToSubmit = validationChecks.every(v => v.passed);
 
-  // --- Render Helpers ---
-  const renderInput = ( section: EditableSection, field: string, label: string, type = 'text',   disabled = false ) => (
+  const renderInput = (section: EditableSection, field: string, label: string, type = 'text', disabled = false) => (
     <div className="mb-3">
       <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</label>
       <input
@@ -306,6 +302,34 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
               {formData.status}
             </span>
           </div>
+        </div>
+
+        {/* Global Pipeline Dashboard Navigation Bar */}
+        <div className="bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
+          <button 
+            onClick={handleCreateNew}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-xs font-bold transition shadow-sm"
+          >
+            ➕ Create New Application
+          </button>
+          <button 
+            onClick={() => handleGlobalActionStub('Review Applications')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+          >
+            📋 Review Applications
+          </button>
+          <button 
+            onClick={() => handleGlobalActionStub('Approval Queue')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+          >
+            ⏳ Approval Queue
+          </button>
+          <button 
+            onClick={() => handleGlobalActionStub('Released Accounts')}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-white border border-gray-300 hover:bg-gray-50 text-slate-700 rounded text-xs font-semibold transition shadow-sm"
+          >
+            💸 Released Accounts
+          </button>
         </div>
 
         {/* Progress Stepper */}
@@ -347,7 +371,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                   <button onClick={() => removeCoBorrower(cb.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">✕</button>
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Co-Borrower #{idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Full Name</label>
                       <input value={cb.name} onChange={(e) => updateCoBorrower(cb.id, 'name', e.target.value)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
@@ -423,9 +446,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
           {step === 5 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 5: Credit Scoring & Auto Metrics</h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="bg-red-50 p-4 rounded-md border border-red-200">
                   <h4 className="font-bold text-red-800 text-sm mb-2">Debt-to-Income (DTI)</h4>
@@ -519,7 +539,7 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className={`text-xs font-bold px-2 py-1 rounded ${doc.status === 'Parsed' ? 'bg-green-100 text-green-700' : doc.status === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                      <span className={`text-xs font-bold px-2 py-1 rounded ${doc.status === 'Parsed' ? 'bg-green-100 text-green-700' : doc.status === 'Failed' ? 'bg-red-100 text-red-700' : doc.status === 'Failed' ? 'bg-red-100 text-red-700' : 'bg-yellow-100 text-yellow-700'}`}>
                         {doc.status}
                       </span>
                       {doc.status === 'Pending' && (
@@ -541,15 +561,10 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                 <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
                 <textarea 
                   value={formData.committeeRemarks}
-                  onChange={(e) =>
-                  setFormData(prev => ({
-                  ...prev,
-                  committeeRemarks: e.target.value,
-                   }))
-               }
-                 rows={4}
-                 className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                 placeholder="Enter conditions, stipulations, or approval notes here..."
+                  onChange={(e) => setFormData(prev => ({ ...prev, committeeRemarks: e.target.value }))}
+                  rows={4}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                  placeholder="Enter conditions, stipulations, or approval notes here..."
                 />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -568,7 +583,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
             <div className="space-y-6">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 10: Review, Validation & Workflow Actions</h3>
               
-              {/* Review Summary */}
               <div className="bg-gray-50 p-4 rounded-md border border-gray-200">
                 <h4 className="font-bold text-gray-700 mb-2 text-sm uppercase">📋 Application Summary</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
@@ -579,7 +593,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                 </div>
               </div>
 
-              {/* Validation Check */}
               <div className="bg-blue-50 p-4 rounded-md border border-blue-200">
                 <h4 className="font-bold text-blue-800 mb-2 text-sm uppercase">✅ System Validation Check</h4>
                 <ul className="space-y-1">
@@ -591,7 +604,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                 </ul>
               </div>
 
-              {/* Workflow Actions */}
               <div className="bg-slate-800 text-white p-6 rounded-lg mt-6">
                 <h4 className="font-bold text-lg mb-4">Workflow Management</h4>
                 <div className="flex flex-wrap gap-3">
@@ -602,17 +614,12 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                       📤 Submit for Review
                     </button>
                   )}
+
                   {formData.status === 'Draft' && (
-                  <button
-                      onClick={() => loadApplication(formData.id)}
-                      className="px-4 py-2 bg-blue-500 text-white rounded"
-                      >
+                    <button onClick={() => loadApplication(formData.id)} className="px-4 py-2 bg-blue-500 text-white text-sm font-semibold rounded hover:bg-blue-400 transition">
                       Load Record
-                   </button>
+                    </button>
                   )}
-
-
-
 
                   {formData.status === 'Submitted' && (
                     <button onClick={() => updateStatus('Under Review')} className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-slate-900 rounded text-sm font-bold transition">🔍 Move to Under Review</button>
@@ -632,10 +639,6 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
                   {formData.status === 'Approved' && (
                     <button onClick={() => changeWorkflowStatus('Released')} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition">💸 Release Funds</button>
                   )}
-
-
-
-
 
                   {formData.status === 'Released' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">🎉 Application Successfully Released</span>
@@ -667,59 +670,3 @@ const updateStatus = async (newStatus: WorkflowStatus) => {
     </div>
   );
 }
-const loadApplication = async (
-  applicationNo: string
-) => {
-  try {
-
-    const response = await fetch(
-      `https://fleetmanagement-dq9t.onrender.com/api/loan-applications/${applicationNo}`
-    );
-
-    const data = await response.json();
-
-    setFormData(prev => ({
-  ...prev,
-
-  id: data.application_no,
-  status: data.status,
-
-  borrower: {
-    ...prev.borrower,
-    fullName: data.borrower_name,
-    email: data.email,
-    phone: data.phone,
-    govId: data.gov_id,
-    address: data.address,
-  },
-
-  employment: {
-    ...prev.employment,
-    monthlyIncome: data.monthly_income,
-    otherIncome: data.other_income,
-    debtObligations: data.debt_obligations,
-  },
-
-  loan: {
-    ...prev.loan,
-    amount: data.loan_amount,
-    termMonths: data.term_months,
-    interestRate: data.interest_rate,
-    purpose: data.purpose,
-  },
-
-  collateral: {
-    ...prev.collateral,
-    vehicleInfo: data.vehicle_info,
-    appraisedValue: data.appraised_value,
-  },
-
-  committeeRemarks: data.committee_remarks,
-}));
-
-  } catch (error) {
-
-    console.error(error);
-
-  }
-};
