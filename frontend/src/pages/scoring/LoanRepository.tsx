@@ -20,6 +20,16 @@ const statusOptions: Array<"All" | WorkflowStatus> = [
   "Released",
 ];
 
+const workflowStatuses: WorkflowStatus[] = [
+  "Draft",
+  "Submitted",
+  "Under Review",
+  "Credit Review",
+  "Approved",
+  "Rejected",
+  "Released",
+];
+
 function getStatusColor(status: WorkflowStatus) {
   switch (status) {
     case "Draft":
@@ -76,12 +86,15 @@ export default function LoanRepository() {
   const stats = useMemo(
     () => ({
       total: applications.length,
-      approved: applications.filter((item) => item.status === "Approved")
-        .length,
-      released: applications.filter((item) => item.status === "Released")
-        .length,
-      rejected: applications.filter((item) => item.status === "Rejected")
-        .length,
+      byStatus: workflowStatuses.reduce(
+        (accumulator, status) => {
+          accumulator[status] = applications.filter(
+            (item) => item.status === status,
+          ).length;
+          return accumulator;
+        },
+        {} as Record<WorkflowStatus, number>,
+      ),
     }),
     [applications],
   );
@@ -139,22 +152,38 @@ export default function LoanRepository() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 p-6 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-8">
             <div className="rounded bg-blue-50 p-4">
               <div className="text-sm">Total Applications</div>
               <div className="text-3xl font-bold">{stats.total}</div>
             </div>
+            <div className="rounded bg-gray-50 p-4">
+              <div className="text-sm">Draft</div>
+              <div className="text-3xl font-bold">{stats.byStatus.Draft}</div>
+            </div>
+            <div className="rounded bg-blue-50 p-4">
+              <div className="text-sm">Submitted</div>
+              <div className="text-3xl font-bold">{stats.byStatus.Submitted}</div>
+            </div>
+            <div className="rounded bg-yellow-50 p-4">
+              <div className="text-sm">Under Review</div>
+              <div className="text-3xl font-bold">{stats.byStatus["Under Review"]}</div>
+            </div>
+            <div className="rounded bg-purple-50 p-4">
+              <div className="text-sm">Credit Review</div>
+              <div className="text-3xl font-bold">{stats.byStatus["Credit Review"]}</div>
+            </div>
             <div className="rounded bg-green-50 p-4">
               <div className="text-sm">Approved</div>
-              <div className="text-3xl font-bold">{stats.approved}</div>
-            </div>
-            <div className="rounded bg-indigo-50 p-4">
-              <div className="text-sm">Released</div>
-              <div className="text-3xl font-bold">{stats.released}</div>
+              <div className="text-3xl font-bold">{stats.byStatus.Approved}</div>
             </div>
             <div className="rounded bg-red-50 p-4">
               <div className="text-sm">Rejected</div>
-              <div className="text-3xl font-bold">{stats.rejected}</div>
+              <div className="text-3xl font-bold">{stats.byStatus.Rejected}</div>
+            </div>
+            <div className="rounded bg-indigo-50 p-4">
+              <div className="text-sm">Released</div>
+              <div className="text-3xl font-bold">{stats.byStatus.Released}</div>
             </div>
           </div>
 
@@ -198,8 +227,16 @@ export default function LoanRepository() {
                   <tr className="bg-gray-100">
                     <th className="p-3 text-left">Application No</th>
                     <th className="p-3 text-left">Borrower</th>
+                    <th className="p-3 text-left">Email</th>
+                    <th className="p-3 text-left">Phone</th>
                     <th className="p-3 text-left">Loan Amount</th>
                     <th className="p-3 text-left">Purpose</th>
+                    <th className="p-3 text-left">Collateral</th>
+                    <th className="p-3 text-left">Scorecard</th>
+                    <th className="p-3 text-left">AI Prob.</th>
+                    <th className="p-3 text-left">DTI</th>
+                    <th className="p-3 text-left">DSR</th>
+                    <th className="p-3 text-left">LTV</th>
                     <th className="p-3 text-left">Status</th>
                     <th className="p-3 text-left">Actions</th>
                   </tr>
@@ -208,12 +245,33 @@ export default function LoanRepository() {
                 <tbody>
                   {filteredApplications.map((row) => (
                     <tr key={row.application_no} className="border-t">
-                      <td className="p-3">{row.application_no}</td>
+                      <td className="p-3">
+                        <button
+                          onClick={() =>
+                            navigate(
+                              `/lending-scorecard?applicationNo=${encodeURIComponent(
+                                row.application_no,
+                              )}`,
+                            )
+                          }
+                          className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
+                        >
+                          {row.application_no}
+                        </button>
+                      </td>
                       <td className="p-3">{row.borrower_name}</td>
+                      <td className="p-3">{row.email}</td>
+                      <td className="p-3">{row.phone}</td>
                       <td className="p-3">
                         PHP {row.loan_amount.toLocaleString()}
                       </td>
                       <td className="p-3">{row.purpose}</td>
+                      <td className="p-3">{row.vehicle_info}</td>
+                      <td className="p-3">{row.scorecard_total ?? 0}</td>
+                      <td className="p-3">{row.ai_probability ?? 0}%</td>
+                      <td className="p-3">{row.dti ?? 0}%</td>
+                      <td className="p-3">{row.dsr ?? 0}%</td>
+                      <td className="p-3">{row.ltv ?? 0}%</td>
                       <td className="p-3">
                         <span
                           className={`rounded px-3 py-1 text-xs font-bold ${getStatusColor(
@@ -243,7 +301,7 @@ export default function LoanRepository() {
                           }
                           className="rounded bg-green-600 px-3 py-1 text-white"
                         >
-                          Edit
+                          Update
                         </button>
 
                         {row.status === "Credit Review" && (
@@ -285,7 +343,7 @@ export default function LoanRepository() {
                   {!loading && filteredApplications.length === 0 && (
                     <tr>
                       <td
-                        colSpan={6}
+                                    colSpan={14}
                         className="p-6 text-center text-sm text-slate-500"
                       >
                         No loan applications matched the current filters.
