@@ -51,6 +51,14 @@ function getStatusColor(status: WorkflowStatus) {
   }
 }
 
+function formatCurrency(value: number | null | undefined) {
+  return typeof value === "number" ? value.toLocaleString() : "N/A";
+}
+
+function formatPercent(value: number | null | undefined) {
+  return typeof value === "number" ? `${value}%` : "N/A";
+}
+
 export default function LoanRepository() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -275,14 +283,14 @@ export default function LoanRepository() {
                       <td className="p-3 max-w-xs whitespace-normal break-words">
                         {row.address}
                       </td>
-                      <td className="p-3">PHP {row.monthly_income.toLocaleString()}</td>
-                      <td className="p-3">PHP {row.other_income.toLocaleString()}</td>
-                      <td className="p-3">PHP {row.debt_obligations.toLocaleString()}</td>
+                      <td className="p-3">PHP {formatCurrency(row.monthly_income)}</td>
+                      <td className="p-3">PHP {formatCurrency(row.other_income)}</td>
+                      <td className="p-3">PHP {formatCurrency(row.debt_obligations)}</td>
                       <td className="p-3">
-                        PHP {row.loan_amount.toLocaleString()}
+                        PHP {formatCurrency(row.loan_amount)}
                       </td>
                       <td className="p-3">{row.term_months} mos</td>
-                      <td className="p-3">{row.interest_rate}%</td>
+                      <td className="p-3">{formatPercent(row.interest_rate)}</td>
                       <td className="p-3">{row.purpose}</td>
                       <td className="p-3">{row.vehicle_info}</td>
                       <td className="p-3 max-w-sm whitespace-normal break-words">
@@ -290,10 +298,10 @@ export default function LoanRepository() {
                       </td>
                       <td className="p-3">{row.executive_approval ? "Yes" : "No"}</td>
                       <td className="p-3">{row.scorecard_total ?? 0}</td>
-                      <td className="p-3">{row.ai_probability ?? 0}%</td>
-                      <td className="p-3">{row.dti ?? 0}%</td>
-                      <td className="p-3">{row.dsr ?? 0}%</td>
-                      <td className="p-3">{row.ltv ?? 0}%</td>
+                      <td className="p-3">{formatPercent(row.ai_probability)}</td>
+                      <td className="p-3">{formatPercent(row.dti)}</td>
+                      <td className="p-3">{formatPercent(row.dsr)}</td>
+                      <td className="p-3">{formatPercent(row.ltv)}</td>
                       <td className="p-3">
                         <span
                           className={`rounded px-3 py-1 text-xs font-bold ${getStatusColor(
