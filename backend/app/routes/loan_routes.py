@@ -1,16 +1,40 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException, status as http_status
 from app.database import SessionLocal
 from app.models.loan_application import LoanApplication
 from app.schemas.loan_schema import LoanApplicationCreate
 
 router = APIRouter()
 
-@router.post("/loan-applications")
+
+def get_loan_application_or_404(db, application_no: str) -> LoanApplication:
+    record = db.query(LoanApplication).filter(
+        LoanApplication.application_no == application_no
+    ).first()
+
+    if not record:
+        raise HTTPException(
+            status_code=http_status.HTTP_404_NOT_FOUND,
+            detail="Application not found",
+        )
+
+    return record
+
+
+@router.post("/loan-applications", status_code=http_status.HTTP_201_CREATED)
 def create_loan_application(data: LoanApplicationCreate):
 
     db = SessionLocal()
 
     try:
+        existing_record = db.query(LoanApplication).filter(
+            LoanApplication.application_no == data.application_no
+        ).first()
+
+        if existing_record:
+            raise HTTPException(
+                status_code=http_status.HTTP_409_CONFLICT,
+                detail="Application already exists",
+            )
 
         record = LoanApplication(
             application_no=data.application_no,
@@ -52,9 +76,11 @@ def create_loan_application(data: LoanApplicationCreate):
 
         db.add(record)
         db.commit()
+        db.refresh(record)
 
         return {
-            "message": "Loan application saved"
+            "message": "Loan application saved",
+            "application_no": record.application_no,
         }
     
 
@@ -84,13 +110,7 @@ def update_status(application_no: str, status: str):
     db = SessionLocal()
 
     try:
-
-        record = db.query(LoanApplication).filter(
-            LoanApplication.application_no == application_no
-        ).first()
-
-        if not record:
-            return {"error": "Application not found"}
+        record = get_loan_application_or_404(db, application_no)
 
         record.status = status
 
@@ -109,14 +129,7 @@ def get_loan_application(application_no: str):
     db = SessionLocal()
 
     try:
-
-        record = db.query(LoanApplication).filter(
-            LoanApplication.application_no == application_no
-        ).first()
-
-        if not record:
-            return {"error": "Application not found"}
-
+        record = get_loan_application_or_404(db, application_no)
         return record
 
     finally:
@@ -133,13 +146,7 @@ def update_loan_application(
     db = SessionLocal()
 
     try:
-
-        record = db.query(LoanApplication).filter(
-            LoanApplication.application_no == application_no
-        ).first()
-
-        if not record:
-            return {"error": "Application not found"}
+        record = get_loan_application_or_404(db, application_no)
 
         record.status = data.status
 
@@ -176,7 +183,8 @@ def update_loan_application(
         db.commit()
 
         return {
-            "message": "Loan application updated"
+            "message": "Loan application updated",
+            "application_no": record.application_no,
         }
 
     finally:

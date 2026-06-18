@@ -1,6 +1,8 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
-const DEFAULT_API_BASE_URL = import.meta.env.VITE_API_URL 
+const DEFAULT_API_BASE_URL = (
+  import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
+).replace(/\/$/, '')
 
 export const api = axios.create({
   baseURL: DEFAULT_API_BASE_URL,
@@ -84,6 +86,15 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       typeof responseData.error === 'string'
     ) {
       return responseData.error
+    }
+
+    if (
+      responseData &&
+      typeof responseData === 'object' &&
+      'detail' in responseData &&
+      typeof responseData.detail === 'string'
+    ) {
+      return responseData.detail
     }
 
     // Handle network errors

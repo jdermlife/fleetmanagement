@@ -15,6 +15,7 @@ import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
 import LoanRepository from "./pages/scoring/LoanRepository";
+import LoanDetails from "./pages/scoring/LoanDetails";
 
 
 /* AI PAGES */
@@ -321,6 +322,10 @@ const govMenuItems = menuLinks.filter(
           <Route
             path="/loan-repository"
             element={<LoanRepository />}
+          />
+          <Route
+            path="/loan-details/:applicationNo"
+            element={<LoanDetails />}
           />
 
           <Route
