@@ -14,6 +14,8 @@ import CreditScoring from './pages/scoring/CreditScoring'
 import FuelManagement from './pages/fuel/FuelManagement'
 import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
 import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
+import LoanRepository from "./pages/scoring/LoanRepository";
+
 
 /* AI PAGES */
 import AIDashboard from './pages/ai/AIDashboard'
@@ -314,6 +316,11 @@ const govMenuItems = menuLinks.filter(
           <Route
             path="/lending-scorecard"
             element={<LendingScorecard />}
+          />
+
+          <Route
+            path="/loan-repository"
+            element={<LoanRepository />}
           />
 
           <Route
