@@ -557,11 +557,19 @@ export default function LendingScorecard() {
     { label: 'Product selected', passed: !!formData.loan.productType },
   ], [formData, calculations]);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
-  const getInputValue = (section: EditableSection, field: string): string | number => {
+  const getInputValue = (
+    section: EditableSection,
+    field: string,
+    type = 'text',
+  ): string | number => {
     const rawValue = (formData[section] as Record<string, FieldValue | undefined>)[field];
 
     if (typeof rawValue === 'boolean') {
       return rawValue ? 'true' : 'false';
+    }
+
+    if (type === 'number' && rawValue === 0) {
+      return '';
     }
 
     return rawValue ?? '';
@@ -573,7 +581,7 @@ export default function LendingScorecard() {
       <input
         type={type}
         disabled={disabled}
-        value={getInputValue(section, field)}
+        value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
         className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
       />
@@ -838,11 +846,11 @@ export default function LendingScorecard() {
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Monthly Income</label>
-                      <input type="number" value={cb.monthlyIncome} onChange={(e) => updateCoBorrower(cb.id, 'monthlyIncome', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                      <input type="number" value={cb.monthlyIncome === 0 ? '' : cb.monthlyIncome} onChange={(e) => updateCoBorrower(cb.id, 'monthlyIncome', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Debt Obligations</label>
-                      <input type="number" value={cb.debtObligations} onChange={(e) => updateCoBorrower(cb.id, 'debtObligations', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                      <input type="number" value={cb.debtObligations === 0 ? '' : cb.debtObligations} onChange={(e) => updateCoBorrower(cb.id, 'debtObligations', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Standing</label>
