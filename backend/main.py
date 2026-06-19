@@ -1,3 +1,5 @@
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -14,14 +16,25 @@ from app.routes.loan_routes import router as loan_router
 
 app = FastAPI()
 
-origins = [
+default_origins = [
+    "http://localhost:3000",
     "http://localhost:5173",
+    "http://127.0.0.1:5173",
     "https://fleetmanagement-flame.vercel.app",
 ]
+
+configured_origins = [
+    origin.strip()
+    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
+    if origin.strip()
+]
+
+origins = list(dict.fromkeys([*default_origins, *configured_origins]))
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

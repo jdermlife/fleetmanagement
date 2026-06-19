@@ -123,32 +123,14 @@ const govMenuItems = menuLinks.filter(
     <div className="app-shell">
       {/* TOP NAVIGATION */}
       <header className="sidebar">
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            width: '100%',
-          }}
-        >
+        <div className="app-topbar-row">
           {/* BRAND */}
-          <div>
-            <h2
-              style={{
-                margin: 0,
-                color: '#fff',
-              }}
-            >
+          <div className="app-brand-block">
+            <h2 className="app-brand-title">
               The BestBank Car Financing Company
             </h2>
 
-            <p
-              style={{
-                margin: '4px 0 0',
-                fontSize: '0.85rem',
-                color: '#fff',
-              }}
-            >
+            <p className="app-brand-subtitle">
               Demo Version. Access Rights Integrated in Actual
             </p>
           </div>
@@ -156,15 +138,9 @@ const govMenuItems = menuLinks.filter(
           {/* HAMBURGER BUTTON */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
-            style={{
-              width: '46px',
-              height: '46px',
-              borderRadius: '10px',
-              fontSize: '1.4rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              border: 'none',
-            }}
+            type="button"
+            className="app-menu-toggle"
+            aria-label="Toggle application menu"
           >
             ☰
           </button>
@@ -173,6 +149,7 @@ const govMenuItems = menuLinks.filter(
         {/* DROPDOWN MENU */}
 {menuOpen && (
   <div
+    className="app-menu-panel"
     style={{
       position: 'absolute',
       top: '72px',
@@ -195,6 +172,7 @@ const govMenuItems = menuLinks.filter(
 
     <div
       onClick={() => setFleetOpen(!fleetOpen)}
+      className="app-menu-group app-menu-group-fleet"
       style={{
         background: '#1e293b',
         color: '#fff',
@@ -213,6 +191,7 @@ const govMenuItems = menuLinks.filter(
           key={page.id}
           to={`/${page.id}`}
           onClick={closeMenu}
+          className="app-menu-link app-menu-link-fleet"
           style={{
             display: 'block',
             color: '#fff',
@@ -230,6 +209,7 @@ const govMenuItems = menuLinks.filter(
 
     <div
       onClick={() => setAiOpen(!aiOpen)}
+      className="app-menu-group app-menu-group-ai"
       style={{
         background: '#083344',
         color: '#67e8f9',
@@ -249,6 +229,7 @@ const govMenuItems = menuLinks.filter(
           key={page.id}
           to={`/${page.id}`}
           onClick={closeMenu}
+          className="app-menu-link app-menu-link-ai"
           style={{
             display: 'block',
             color: '#fff',
@@ -267,6 +248,7 @@ const govMenuItems = menuLinks.filter(
 
     <div
       onClick={() => setGovOpen(!govOpen)}
+      className="app-menu-group app-menu-group-governance"
       style={{
         background: '#7c2d12',
         color: '#fed7aa',
@@ -286,6 +268,7 @@ const govMenuItems = menuLinks.filter(
           key={page.id}
           to={`/${page.id}`}
           onClick={closeMenu}
+          className="app-menu-link app-menu-link-governance"
           style={{
             display: 'block',
             color: '#fff',

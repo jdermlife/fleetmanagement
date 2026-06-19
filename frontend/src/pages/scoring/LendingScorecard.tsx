@@ -644,13 +644,13 @@ export default function LendingScorecard() {
 
   const renderInput = (section: EditableSection, field: string, label: string, type = 'text', disabled = false) => (
     <div className="mb-3">
-      <label className="mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
       <input
         type={type}
         disabled={disabled}
         value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+        className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
       />
     </div>
   );
@@ -669,7 +669,7 @@ export default function LendingScorecard() {
 
     return (
       <div className="mb-3">
-        <label className="mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
+        <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
         <input
           type="text"
           inputMode="decimal"
@@ -702,14 +702,14 @@ export default function LendingScorecard() {
               return nextDrafts;
             })
           }
-          className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+          className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
         />
       </div>
     );
   };
 
   const renderCheckbox = (section: EditableSection, field: string, label: string) => (
-    <label className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+    <label className="loan-checkbox-row flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
       <input
         type="checkbox"
         checked={Boolean((formData[section] as Record<string, FieldValue | undefined>)[field])}
@@ -727,11 +727,11 @@ export default function LendingScorecard() {
     options: string[],
   ) => (
     <div className="mb-3">
-      <label className="mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
       <select
         value={String(getInputValue(section, field))}
         onChange={(event) => updateField(section, field, event.target.value)}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Select...</option>
         {options.map((option) => (
@@ -767,67 +767,64 @@ export default function LendingScorecard() {
     }
   };
 
-  const topNavButtonClass =
-    'inline-flex min-h-[40px] items-center justify-center rounded-md border px-4 py-2 text-xs font-semibold uppercase tracking-[0.08em] shadow-sm transition focus:outline-none focus:ring-2 focus:ring-offset-1';
-  const stepperButtonClass =
-    'flex h-full min-h-[88px] w-full flex-col items-center justify-center gap-2 rounded-md border px-3 py-3 text-center transition';
-  const footerButtonClass =
-    'inline-flex min-h-[42px] items-center justify-center rounded-md px-6 py-2 text-sm font-semibold tracking-wide transition disabled:opacity-50';
+  const topNavButtonClass = 'loan-toolbar-button';
+  const stepperButtonClass = 'loan-stepper-button';
+  const footerButtonClass = 'loan-footer-button';
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+    <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+      <div className="lending-scorecard-card max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         
         {/* Header & Workflow Status */}
-        <div className="bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Advanced Loan Origination System</h1>
-            <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Application ID: {formData.id}</p>
+        <div className="loan-page-header bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="loan-page-header-copy">
+            <h1 className="loan-page-title text-2xl font-semibold tracking-tight">Advanced Loan Origination System</h1>
+            <p className="loan-page-id mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Application ID: {formData.id}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-xs font-medium uppercase tracking-[0.12em] text-slate-300">Current Status</span>
-            <span className={`rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${getStatusColor(formData.status)}`}>
+          <div className="loan-page-status flex items-center gap-3">
+            <span className="loan-page-status-label text-xs font-medium uppercase tracking-[0.12em] text-slate-300">Current Status</span>
+            <span className={`loan-page-status-chip rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${getStatusColor(formData.status)}`}>
               {formData.status}
             </span>
           </div>
         </div>
 
         {/* Global Pipeline Dashboard Navigation Bar */}
-        <div className="bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
+        <div className="loan-toolbar bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
           <button 
             onClick={handleCreateNew}
-            className={`${topNavButtonClass} border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
+            className={`${topNavButtonClass} loan-toolbar-button-primary border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
           >
             Create New Application
           </button>
           <button 
             onClick={() => navigate('/loan-repository')}
-            className={`${topNavButtonClass} border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
             Review Applications
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Credit%20Review')}
-            className={`${topNavButtonClass} border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
             Approval Queue
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Released')}
-            className={`${topNavButtonClass} border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
             Released Accounts
           </button>
         </div>
 
         {/* Progress Stepper */}
-        <div className="bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
-          <div className="grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
+        <div className="loan-stepper-shell bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
+          <div className="loan-stepper-grid grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
             {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'Credit Scoring', 'Approval', 'Release & Booking'].map((label, i) => (
               <button
                 key={i}
                 onClick={() => setStep(i + 1)}
-                className={`${stepperButtonClass} ${step === i + 1 ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                className={`${stepperButtonClass} ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
               >
                 <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
                   {i + 1}
@@ -839,7 +836,7 @@ export default function LendingScorecard() {
         </div>
 
         {/* Form Body */}
-        <div className="p-6 md:p-8 min-h-[400px]">
+        <div className="loan-page-body p-6 md:p-8 min-h-[400px]">
           {saveMessage && (
             <div
               className={`mb-4 rounded-md p-3 text-sm font-medium ${
@@ -955,12 +952,12 @@ export default function LendingScorecard() {
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
                 <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information</h3>
-                <button onClick={addCoBorrower} className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">+ Add Co-Borrower</button>
+                <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
               </div>
               {formData.coBorrowers.length === 0 && <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>}
               {formData.coBorrowers.map((cb, idx) => (
                 <div key={cb.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
-                  <button onClick={() => removeCoBorrower(cb.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">✕</button>
+                  <button onClick={() => removeCoBorrower(cb.id)} className="loan-icon-button absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">Remove</button>
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Co-Borrower #{idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="mb-3">
@@ -1104,7 +1101,7 @@ export default function LendingScorecard() {
                         {doc.status}
                       </span>
                       {doc.status === 'Pending' && (
-                        <button onClick={() => handleParseDocument(doc.id)} disabled={isParsing} className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 disabled:opacity-50">
+                        <button onClick={() => handleParseDocument(doc.id)} disabled={isParsing} className="loan-inline-button loan-inline-button-accent text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 disabled:opacity-50">
                           {isParsing ? 'Parsing...' : 'AI Parse'}
                         </button>
                       )}
@@ -1376,10 +1373,10 @@ export default function LendingScorecard() {
               <div className="bg-slate-800 text-white p-6 rounded-lg mt-6">
                 <h4 className="font-bold text-lg mb-4">Final Workflow Actions</h4>
                 <div className="flex flex-wrap gap-3">
-                  <button onClick={handleSaveDraft} disabled={isSaving} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50">Save Draft</button>
+                  <button onClick={handleSaveDraft} disabled={isSaving} className="loan-inline-button loan-inline-button-secondary px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50">Save Draft</button>
                   
                   {formData.status === 'Approved' && (
-                    <button onClick={() => changeWorkflowStatus('Released')} disabled={isSaving} className="inline-flex min-h-[42px] items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-indigo-500 disabled:opacity-50">Release Funds</button>
+                    <button onClick={() => changeWorkflowStatus('Released')} disabled={isSaving} className="loan-inline-button loan-inline-button-accent inline-flex min-h-[42px] items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-indigo-500 disabled:opacity-50">Release Funds</button>
                   )}
 
                   {formData.status === 'Released' && (
@@ -1394,12 +1391,12 @@ export default function LendingScorecard() {
         {/* Footer Navigation */}
         {step < 10 && (
           <div className="bg-gray-50 p-6 border-t flex justify-between">
-            <button onClick={() => setStep(prev => Math.max(prev - 1, 1))} disabled={step === 1} className={`${footerButtonClass} border border-gray-300 text-gray-700 hover:bg-gray-100`}>
+            <button onClick={() => setStep(prev => Math.max(prev - 1, 1))} disabled={step === 1} className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}>
               ← Back
             </button>
             <div className="flex gap-3">
-              <button onClick={handleSaveDraft} disabled={isSaving} className="inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800 disabled:opacity-50">Save Draft</button>
-              <button onClick={() => setStep(prev => Math.min(prev + 1, 10))} className={`${footerButtonClass} bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
+              <button onClick={handleSaveDraft} disabled={isSaving} className="loan-footer-link inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800 disabled:opacity-50">Save Draft</button>
+              <button onClick={() => setStep(prev => Math.min(prev + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
                 Next Step →
               </button>
             </div>
