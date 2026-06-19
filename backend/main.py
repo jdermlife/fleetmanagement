@@ -2,7 +2,10 @@ import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import text
 
+from app.database import Base, engine
+from app.models.loan_application import LoanApplication  # noqa: F401
 from app.routes.drivers import router as driver_router
 from app.routes.ai import router as ai_router
 
@@ -51,6 +54,29 @@ app.include_router(
     prefix="/api",
     tags=["Loan Origination"]
 )
+
+
+@app.on_event("startup")
+def ensure_loan_application_schema() -> None:
+    Base.metadata.create_all(bind=engine)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS product_type VARCHAR;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS requirements JSONB;
+                """
+            )
+        )
 
 
 
