@@ -25,7 +25,7 @@ interface ContactInformation { mobileNumber: string; homePhoneNumber: string; em
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
 interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
-interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: string; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
+interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
 interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
@@ -78,7 +78,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
   otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
-  employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: '', investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
+  employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
   collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '' },
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
@@ -97,6 +97,7 @@ export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedApplicationNo = searchParams.get('applicationNo');
+  const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<LoanApplication>(createNewApplicationInstance());
   const [isParsing, setIsParsing] = useState(false);
@@ -305,6 +306,35 @@ export default function LendingScorecard() {
     window.setTimeout(() => setSaveMessage(''), 3000);
   }, []);
 
+  const parseFormattedNumber = useCallback((value: string) => {
+    const normalizedValue = value.replace(/,/g, '').replace(/[^\d.-]/g, '');
+    const parsedValue = Number.parseFloat(normalizedValue);
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }, []);
+
+  const formatFormattedNumber = useCallback((value: unknown) => {
+    if (value === '' || value === null || value === undefined) {
+      return '';
+    }
+
+    const numericValue =
+      typeof value === 'number' ? value : parseFormattedNumber(String(value));
+
+    if (numericValue === 0) {
+      return '';
+    }
+
+    return numericValue.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [parseFormattedNumber]);
+
+  const buildFormattedNumberKey = useCallback(
+    (section: EditableSection, field: string) => `${section}.${field}`,
+    [],
+  );
+
   const hydrateApplication = useCallback((record: LoanApplicationRecord): LoanApplication => {
     const blankApplication = createNewApplicationInstance();
     const savedRequirements:  Partial<LoanApplicationRequirements> = record.requirements ?? {};
@@ -367,6 +397,30 @@ export default function LendingScorecard() {
       employmentInformation: {
         ...blankApplication.employmentInformation,
         ...savedRequirements.employmentInformation,
+        grossMonthlyIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.grossMonthlyIncome ??
+              blankApplication.employmentInformation.grossMonthlyIncome,
+          ),
+        ),
+        otherSourcesOfIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.otherSourcesOfIncome ??
+              blankApplication.employmentInformation.otherSourcesOfIncome,
+          ),
+        ),
+        investmentIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.investmentIncome ??
+              blankApplication.employmentInformation.investmentIncome,
+          ),
+        ),
+        businessIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.businessIncome ??
+              blankApplication.employmentInformation.businessIncome,
+          ),
+        ),
       },
       collateralInformation: {
         ...blankApplication.collateralInformation,
@@ -375,10 +429,22 @@ export default function LendingScorecard() {
       spouseInformation: {
         ...blankApplication.spouseInformation,
         ...savedRequirements.spouseInformation,
+        grossMonthlyIncome: parseFormattedNumber(
+          String(
+            savedRequirements.spouseInformation?.grossMonthlyIncome ??
+              blankApplication.spouseInformation.grossMonthlyIncome,
+          ),
+        ),
       },
       bankingRelationships: {
         ...blankApplication.bankingRelationships,
         ...savedRequirements.bankingRelationships,
+        loanCurrentBalance: parseFormattedNumber(
+          String(
+            savedRequirements.bankingRelationships?.loanCurrentBalance ??
+              blankApplication.bankingRelationships.loanCurrentBalance,
+          ),
+        ),
       },
       signatures: {
         ...blankApplication.signatures,
@@ -394,7 +460,7 @@ export default function LendingScorecard() {
         executiveApproval: record.executive_approval,
       },
     };
-  }, []);
+  }, [parseFormattedNumber]);
 
   const buildLoanPayload = (newStatus: WorkflowStatus): LoanApplicationPayload => ({
     application_no: formData.id,
@@ -542,6 +608,7 @@ export default function LendingScorecard() {
   // --- Global Nav Actions ---
   const handleCreateNew = () => {
     setFormData(createNewApplicationInstance());
+    setFormattedNumberDrafts({});
     setHasPersistedRecord(false);
     setStep(1);
     navigate('/lending-scorecard', { replace: true });
@@ -587,6 +654,59 @@ export default function LendingScorecard() {
       />
     </div>
   );
+
+  const renderFormattedNumberInput = (
+    section: EditableSection,
+    field: string,
+    label: string,
+    disabled = false,
+  ) => {
+    const fieldKey = buildFormattedNumberKey(section, field);
+    const rawValue = (formData[section] as Record<string, FieldValue | undefined>)[field];
+    const displayValue =
+      formattedNumberDrafts[fieldKey] ??
+      formatFormattedNumber(rawValue);
+
+    return (
+      <div className="mb-3">
+        <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          disabled={disabled}
+          value={displayValue}
+          onFocus={() =>
+            setFormattedNumberDrafts((prev) => ({
+              ...prev,
+              [fieldKey]:
+                rawValue === 0 || rawValue === '' || rawValue === undefined
+                  ? ''
+                  : String(rawValue),
+            }))
+          }
+          onChange={(event) => {
+            const nextDraft = event.target.value
+              .replace(/,/g, '')
+              .replace(/[^\d.-]/g, '');
+
+            setFormattedNumberDrafts((prev) => ({
+              ...prev,
+              [fieldKey]: nextDraft,
+            }));
+            updateField(section, field, parseFormattedNumber(nextDraft));
+          }}
+          onBlur={() =>
+            setFormattedNumberDrafts((prev) => {
+              const nextDrafts = { ...prev };
+              delete nextDrafts[fieldKey];
+              return nextDrafts;
+            })
+          }
+          className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+        />
+      </div>
+    );
+  };
 
   const renderCheckbox = (section: EditableSection, field: string, label: string) => (
     <label className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
@@ -792,9 +912,9 @@ export default function LendingScorecard() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment & Income</h3>
               {renderInput('employment', 'history', 'Employment History (Current Employer & Tenure)')}
-              {renderInput('employment', 'monthlyIncome', 'Primary Monthly Income', 'number')}
-              {renderInput('employment', 'otherIncome', 'Other Sources of Income', 'number')}
-              {renderInput('employment', 'debtObligations', 'Existing Monthly Debt Obligations', 'number')}
+              {renderFormattedNumberInput('employment', 'monthlyIncome', 'Primary Monthly Income')}
+              {renderFormattedNumberInput('employment', 'otherIncome', 'Other Sources of Income')}
+              {renderFormattedNumberInput('employment', 'debtObligations', 'Existing Monthly Debt Obligations')}
               <div className="md:col-span-2 bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
                 <h4 className="font-bold text-blue-800 text-sm mb-2">Auto-Calculated Totals</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -815,11 +935,11 @@ export default function LendingScorecard() {
               {renderInput('employmentInformation', 'officePhoneNumber', 'Office Phone Number')}
               {renderInput('employmentInformation', 'previousEmployer', 'Previous Employer')}
               {renderInput('employmentInformation', 'totalYearsWorking', 'Total Years Working')}
-              {renderInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income', 'number')}
+              {renderFormattedNumberInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income')}
               {renderInput('employmentInformation', 'monthlyLivingExpenses', 'Monthly Living Expenses', 'number')}
-              {renderInput('employmentInformation', 'otherSourcesOfIncome', 'Other Sources of Income')}
-              {renderInput('employmentInformation', 'investmentIncome', 'Investment Income', 'number')}
-              {renderInput('employmentInformation', 'businessIncome', 'Business Income', 'number')}
+              {renderFormattedNumberInput('employmentInformation', 'otherSourcesOfIncome', 'Other Sources of Income')}
+              {renderFormattedNumberInput('employmentInformation', 'investmentIncome', 'Investment Income')}
+              {renderFormattedNumberInput('employmentInformation', 'businessIncome', 'Business Income')}
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
             </div>
           )}
@@ -883,7 +1003,13 @@ export default function LendingScorecard() {
                     ['spouseInformation', 'monthlyExpenses', 'Monthly Expenses'],
                     ['spouseInformation', 'otherIncomeSources', 'Other Income Sources'],
                   ].map(([section, field, label]) => (
-                    renderInput(
+                    field === 'grossMonthlyIncome'
+                      ? renderFormattedNumberInput(
+                          section as EditableSection,
+                          field,
+                          label,
+                        )
+                      : renderInput(
                       section as EditableSection,
                       field,
                       label,
@@ -918,7 +1044,7 @@ export default function LendingScorecard() {
               </div>
               {renderInput('bankingRelationships', 'loanLender', 'Lender / Bank')}
               {renderInput('bankingRelationships', 'loanType', 'Loan Type')}
-              {renderInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance', 'number')}
+              {renderFormattedNumberInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance')}
               {renderInput('bankingRelationships', 'loanMonthlyAmortization', 'Monthly Amortization', 'number')}
             </div>
           )}

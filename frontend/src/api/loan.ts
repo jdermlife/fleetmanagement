@@ -80,7 +80,7 @@ export interface LoanApplicationRequirements {
     totalYearsWorking: string
     grossMonthlyIncome: number
     monthlyLivingExpenses: number
-    otherSourcesOfIncome: string
+    otherSourcesOfIncome: number
     investmentIncome: number
     businessIncome: number
     pensionIncome: number
