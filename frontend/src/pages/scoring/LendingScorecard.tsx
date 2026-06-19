@@ -777,8 +777,7 @@ export default function LendingScorecard() {
               {renderInput('otherInformation', 'homeOwnership', 'Home Ownership')}
               {renderInput('otherInformation', 'educationalAttainment', 'Educational Attainment')}
               {renderInput('otherInformation', 'numberOfVehiclesOwned', 'Number of Vehicles Owned', 'number')}
-              {renderCheckbox('otherInformation', 'recentPhotoUploaded', '1x1 Recent Photo Uploaded')}
-            </div>
+             </div>
           )}
 
           {step === 3 && (
