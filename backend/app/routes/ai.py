@@ -1,3 +1,7 @@
+import base64
+import json
+from typing import Any
+
 from fastapi import APIRouter, UploadFile, File
 from openai import OpenAI
 from dotenv import load_dotenv
@@ -26,6 +30,18 @@ router = APIRouter()
 client = OpenAI(
     api_key=os.getenv("OPENAI_API_KEY", "").strip()
 )
+
+
+def _extract_json_payload(content: str) -> dict[str, Any]:
+    normalized = content.strip()
+
+    if normalized.startswith("```"):
+        normalized = normalized.split("```", 2)[1]
+        if normalized.startswith("json"):
+            normalized = normalized[4:]
+        normalized = normalized.strip()
+
+    return json.loads(normalized)
 
 
 @router.post("/ai/transcribe")
@@ -271,6 +287,172 @@ async def send_minutes(data: dict):
     return {
         "message": "Email sent successfully"
     }
+
+
+@router.post("/ai/loan-documents/parse")
+async def parse_loan_document(file: UploadFile = File(...)):
+    if not os.getenv("OPENAI_API_KEY", "").strip():
+        raise HTTPException(
+            status_code=503,
+            detail="AI document parsing is not configured on the backend.",
+        )
+
+    if not file.content_type or not file.content_type.startswith("image/"):
+        raise HTTPException(
+            status_code=400,
+            detail="Only image uploads are supported for automatic requirement capture.",
+        )
+
+    file_bytes = await file.read()
+
+    if not file_bytes:
+        raise HTTPException(
+            status_code=400,
+            detail="Uploaded image is empty.",
+        )
+
+    image_data_url = (
+        f"data:{file.content_type};base64,"
+        f"{base64.b64encode(file_bytes).decode('utf-8')}"
+    )
+
+    prompt = """
+You are reviewing a single uploaded loan application document image.
+
+Extract only information that is clearly visible. Do not guess missing values.
+Return strict JSON with this shape:
+{
+  "documentName": "string",
+  "documentType": "string",
+  "confidence": 0.0,
+  "summary": "string",
+  "notes": ["string"],
+  "supportingDocuments": {
+    "validGovernmentId": false,
+    "passportIfApplicable": false,
+    "driversLicense": false,
+    "philSysId": false,
+    "certificateOfEmployment": false,
+    "latestPayslips": false,
+    "latestItr": false,
+    "dtiSecRegistration": false,
+    "businessPermit": false,
+    "financialStatements": false,
+    "utilityBill": false,
+    "waterBill": false,
+    "internetBill": false,
+    "titleTctCct": false,
+    "taxDeclaration": false,
+    "lotPlan": false,
+    "propertyPhotos": false,
+    "vehicleQuotation": false,
+    "vehicleInvoice": false,
+    "orCrForRefinancing": false,
+    "proofOfIncome": false,
+    "bankStatements": false,
+    "existingCreditCardStatements": false
+  },
+  "extractedData": {
+    "borrower": {
+      "fullName": "",
+      "email": "",
+      "phone": "",
+      "govId": "",
+      "address": ""
+    },
+    "applicantPersonal": {
+      "lastName": "",
+      "firstName": "",
+      "middleName": "",
+      "dateOfBirth": "",
+      "placeOfBirth": ""
+    },
+    "contactInformation": {
+      "mobileNumber": "",
+      "homePhoneNumber": "",
+      "emailAddress": ""
+    },
+    "governmentIds": {
+      "tin": "",
+      "sssGsisNumber": "",
+      "idNumber": "",
+      "issueDate": "",
+      "expiryDate": ""
+    },
+    "addressInformation": {
+      "presentAddress": "",
+      "permanentAddress": "",
+      "mailingAddress": ""
+    },
+    "employment": {
+      "history": "",
+      "monthlyIncome": 0,
+      "otherIncome": 0,
+      "debtObligations": 0
+    },
+    "employmentInformation": {
+      "employmentStatus": "",
+      "employerBusinessName": "",
+      "occupation": "",
+      "grossMonthlyIncome": 0,
+      "otherSourcesOfIncome": 0,
+      "investmentIncome": 0,
+      "businessIncome": 0
+    },
+    "collateralInformation": {
+      "propertyAddress": "",
+      "registeredOwner": "",
+      "tctCctNumber": ""
+    },
+    "otherInformation": {}
+  }
+}
+
+Rules:
+- Keep unsupported or unknown fields empty strings, zeros, or false.
+- Only mark a supporting document true when the image actually appears to match it.
+- Dates must be YYYY-MM-DD if confidently readable, otherwise empty.
+- Numeric amounts must be plain numbers without commas or currency symbols.
+- Confidence must be between 0 and 1.
+"""
+
+    try:
+        response = client.chat.completions.create(
+            model="gpt-4.1-mini",
+            temperature=0,
+            messages=[
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": prompt,
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": image_data_url,
+                            },
+                        },
+                    ],
+                }
+            ],
+        )
+
+        message_content = response.choices[0].message.content or "{}"
+        parsed_payload = _extract_json_payload(message_content)
+
+        return parsed_payload
+    except json.JSONDecodeError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail=f"AI document parser returned invalid JSON: {exc}",
+        ) from exc
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail=f"AI document parsing failed: {exc}",
+        ) from exc
 
 @router.get("/ai/dashboard/stats")
 def dashboard_stats():
