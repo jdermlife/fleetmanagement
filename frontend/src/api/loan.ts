@@ -9,7 +9,7 @@ export type WorkflowStatus =
   | 'Rejected'
   | 'Released'
 
-export type ProductType = 'Home Loan' | 'Auto Loan' | 'Credit Card'
+export type ProductType = 'Home Loan' | 'Auto Loan' | 'Credit Card' | 'Personal Loan'
 
 export interface LoanApplicationRequirements {
   productInformation: {

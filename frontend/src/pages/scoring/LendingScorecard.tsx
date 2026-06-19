@@ -726,7 +726,7 @@ export default function LendingScorecard() {
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
-              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card'])}
+              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card', 'Personal Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderInput('loan', 'amount', 'Requested Loan Amount', 'number')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
