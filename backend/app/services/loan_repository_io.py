@@ -3,6 +3,8 @@ from __future__ import annotations
 import csv
 import io
 import json
+import secrets
+import string
 from datetime import date, datetime, time, timedelta, timezone
 from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
@@ -226,6 +228,26 @@ def row_to_application_payload(row: dict[str, Any]) -> dict[str, Any]:
     return payload
 
 
+def generate_application_no(db, reserved_numbers: set[str]) -> str:
+    alphabet = string.ascii_uppercase + string.digits
+
+    for _ in range(100):
+        candidate = "APP-" + "".join(secrets.choice(alphabet) for _ in range(6))
+        if candidate in reserved_numbers:
+            continue
+
+        existing_record = (
+            db.query(LoanApplication)
+            .filter(LoanApplication.application_no == candidate)
+            .first()
+        )
+        if existing_record is None:
+            reserved_numbers.add(candidate)
+            return candidate
+
+    raise ValueError("Unable to generate a unique application number for import.")
+
+
 def parse_csv_rows(file_bytes: bytes) -> list[dict[str, Any]]:
     text = file_bytes.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
@@ -351,14 +373,17 @@ def upsert_loan_applications(
     inserted = 0
     updated = 0
     skipped = 0
+    reserved_numbers: set[str] = set()
 
     for raw_row in rows:
         payload = row_to_application_payload(raw_row)
-        application_no = payload["application_no"]
+        application_no = payload["application_no"] or generate_application_no(
+            db,
+            reserved_numbers,
+        )
+        payload["application_no"] = application_no
 
-        if not application_no:
-            skipped += 1
-            continue
+        reserved_numbers.add(application_no)
 
         record = (
             db.query(LoanApplication)
