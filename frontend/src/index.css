@@ -455,13 +455,13 @@ body {
 }
 
 .loan-inline-button-accent {
-  background: #4f46e5;
-  border: 1px solid #4f46e5;
+  background: #6d28d9;
+  border: 1px solid #6d28d9;
   color: #ffffff;
 }
 
 .loan-inline-button-accent:hover {
-  background: #4338ca;
+  background: #5b21b6;
 }
 
 .loan-icon-button {
