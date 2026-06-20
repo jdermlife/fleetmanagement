@@ -1229,10 +1229,97 @@ export default function LendingScorecard() {
   const stepperButtonClass = 'loan-stepper-button';
   const footerButtonClass = 'loan-footer-button';
   const workflowActionOptions: Array<{ label: string; value: WorkflowStatus }> = [
-    { label: 'Save for Review', value: 'Credit Review' },
-    { label: 'Save as Approved', value: 'Approved' },
-    { label: 'Save for Release', value: 'Released' },
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Review', value: 'Credit Review' },
+    { label: 'Reject', value: 'Rejected' },
+    { label: 'Approve', value: 'Approved' },
+    { label: 'Release', value: 'Released' },
   ];
+  const automatedScoreBand =
+    automatedScorecard.total >= 40
+      ? 'Prime Quality'
+      : automatedScorecard.total >= 30
+        ? 'Standard Quality'
+        : 'Elevated Review';
+  const automatedScoreItems = [
+    { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
+    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on DSR performance' },
+    { label: 'Capital', score: automatedScorecard.capital, desc: 'Supplemental liquidity and outside income support' },
+    { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Asset coverage and loan-to-value resilience' },
+    { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Purpose quality and overall loan context' },
+  ];
+  const advancedSignalItems = [
+    {
+      label: 'Fraud Score',
+      value: creditRiskInsights.fraudScore.toFixed(0),
+      tone:
+        creditRiskInsights.fraudScore >= 70
+          ? 'text-emerald-700'
+          : creditRiskInsights.fraudScore >= 50
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Higher is better',
+    },
+    {
+      label: 'Non-starter Score',
+      value: creditRiskInsights.nonStarterScore.toFixed(0),
+      tone:
+        creditRiskInsights.nonStarterScore >= 70
+          ? 'text-emerald-700'
+          : creditRiskInsights.nonStarterScore >= 50
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Higher is better',
+    },
+    {
+      label: 'Risk Score',
+      value: creditRiskInsights.riskScore.toFixed(1),
+      tone:
+        creditRiskInsights.riskScore <= 35
+          ? 'text-emerald-700'
+          : creditRiskInsights.riskScore <= 60
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Lower is better',
+    },
+    {
+      label: 'Origination Profitability',
+      value: `$${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+      tone:
+        creditRiskInsights.originationProfitability >= 0
+          ? 'text-emerald-700'
+          : 'text-rose-600',
+      note: `Margin ${creditRiskInsights.originationMargin.toFixed(1)}%`,
+    },
+  ];
+  const profitabilityBreakdown = [
+    {
+      label: 'Gross Interest Revenue',
+      value: `$${creditRiskInsights.grossRevenue.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+    {
+      label: 'Expected Loss Reserve',
+      value: `$${creditRiskInsights.expectedLoss.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+    {
+      label: 'Processing Cost',
+      value: `$${creditRiskInsights.processingCost.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+  ];
+  const aiRiskTone =
+    aiRecommendation.riskLevel === 'Low'
+      ? 'bg-emerald-100 text-emerald-800'
+      : aiRecommendation.riskLevel === 'Medium'
+        ? 'bg-amber-100 text-amber-800'
+        : 'bg-rose-100 text-rose-800';
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -1796,109 +1883,155 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 8: Credit Scoring</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-red-50 p-4 rounded-md border border-red-200">
-                  <h4 className="font-bold text-red-800 text-sm mb-2">Debt-to-Income (DTI)</h4>
-                  <p className="text-3xl font-bold text-red-700">{calculations.dti.toFixed(1)}%</p>
-                  <p className="text-xs text-red-600 mt-1">Formula: (Total Existing Debt / Total Income) * 100</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-md border border-orange-200">
-                  <h4 className="font-bold text-orange-800 text-sm mb-2">Debt Service Ratio (DSR)</h4>
-                  <p className="text-3xl font-bold text-orange-700">{calculations.dsr.toFixed(1)}%</p>
-                  <p className="text-xs text-orange-600 mt-1">Formula: ((Existing Debt + Proposed Payment) / Total Income) * 100</p>
+              <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_58%,#334155_100%)] p-6 text-white shadow-[0_22px_48px_rgba(15,23,42,0.18)] md:p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-2xl space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">Step 8: Credit Scoring</p>
+                    <h3 className="m-0 text-3xl font-semibold tracking-tight text-white">Executive Credit Assessment</h3>
+                    <p className="text-sm leading-6 text-slate-300 md:text-base">
+                      Consolidated underwriting view for debt capacity, collateral quality,
+                      profitability, and AI-assisted approval guidance.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[340px]">
+                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Total Automated Score</p>
+                      <p className="mt-2 text-4xl font-semibold text-white">
+                        {automatedScorecard.total}
+                        <span className="ml-1 text-base font-medium text-slate-300">/50</span>
+                      </p>
+                      <p className="mt-2 text-xs text-slate-300">{automatedScoreBand}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">AI Approval Outlook</p>
+                      <p className="mt-2 text-4xl font-semibold text-cyan-300">{aiRecommendation.probability}%</p>
+                      <p className="mt-2 text-xs text-slate-300">
+                        Suggested amount ${aiRecommendation.suggestedAmount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">Automated Lending Scorecard</h4>
-                <p className="text-sm text-gray-600">Scores are automatically computed based on application data inputs.</p>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {[
-                    { label: 'Character', score: automatedScorecard.character, desc: 'Based on ID & History' },
-                    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Based on DSR' },
-                    { label: 'Capital', score: automatedScorecard.capital, desc: 'Based on Other Income' },
-                    { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Based on LTV' },
-                    { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Based on Purpose' },
-                  ].map((c, i) => (
-                    <div key={i} className="bg-white border-2 border-gray-200 rounded-lg p-4 text-center shadow-sm">
-                      <p className="text-xs font-bold text-gray-500 uppercase">{c.label}</p>
-                      <p className={`text-3xl font-bold my-2 ${c.score >= 8 ? 'text-green-600' : c.score >= 6 ? 'text-yellow-600' : 'text-red-600'}`}>{c.score}<span className="text-sm text-gray-400">/10</span></p>
-                      <p className="text-[10px] text-gray-500">{c.desc}</p>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5">
+                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Capacity Metrics</h4>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Primary affordability ratios used to assess repayment pressure.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)] p-5">
+                  <h4 className="font-bold text-rose-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt-to-Income (DTI)</h4>
+                  <p className="text-4xl font-semibold text-rose-700">{calculations.dti.toFixed(1)}%</p>
+                  <p className="text-xs text-rose-700/80 mt-4 leading-5">Formula: (Total Existing Debt / Total Income) x 100</p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-5">
+                  <h4 className="font-bold text-amber-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt Service Ratio (DSR)</h4>
+                  <p className="text-4xl font-semibold text-amber-700">{calculations.dsr.toFixed(1)}%</p>
+                  <p className="text-xs text-amber-700/80 mt-4 leading-5">Formula: ((Existing Debt + Proposed Payment) / Total Income) x 100</p>
+                </div>
+              </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Automated Lending Scorecard</h4>
+                        <p className="mt-2 text-sm text-slate-600">Weighted 5C indicators automatically derived from the application record.</p>
+                      </div>
+                      <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        Corporate Underwriting Index
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {automatedScoreItems.map((c, i) => (
+                    <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{c.label}</p>
+                      <p className={`mt-4 text-4xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}>{c.score}<span className="ml-1 text-base font-medium text-slate-400">/10</span></p>
+                      <p className="mt-3 text-xs leading-5 text-slate-500">{c.desc}</p>
                     </div>
                   ))}
                 </div>
-                <div className="bg-slate-800 text-white p-4 rounded-lg flex justify-between items-center">
-                  <span className="font-bold text-lg">Total Automated Score</span>
-                  <span className="text-3xl font-bold text-blue-400">{automatedScorecard.total}<span className="text-sm text-slate-400">/50</span></span>
-                </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">Advanced Scoring Signals</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Fraud Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.fraudScore >= 70 ? 'text-green-600' : creditRiskInsights.fraudScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.fraudScore}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Non-starter Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.nonStarterScore >= 70 ? 'text-green-600' : creditRiskInsights.nonStarterScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.nonStarterScore}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Risk Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.riskScore <= 35 ? 'text-green-600' : creditRiskInsights.riskScore <= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.riskScore.toFixed(1)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Lower is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Origination Profitability</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.originationProfitability >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${creditRiskInsights.originationProfitability.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Margin: {creditRiskInsights.originationMargin.toFixed(1)}%</p>
-                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5">
+                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Advanced Scoring Signals</h4>
+                      <p className="mt-2 text-sm text-slate-600">Secondary screening signals for fraud resistance, profitability, and downstream risk.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                  {advancedSignalItems.map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{item.label}</p>
+                      <p className={`mt-3 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
+                      <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>Gross Interest Revenue: <span className="font-semibold text-gray-800">${creditRiskInsights.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
-                  <div>Expected Loss Reserve: <span className="font-semibold text-gray-800">${creditRiskInsights.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
-                  <div>Processing Cost: <span className="font-semibold text-gray-800">${creditRiskInsights.processingCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {profitabilityBreakdown.map((item) => (
+                    <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
+                </div>
 
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div className="space-y-6">
+              <div className="rounded-[24px] border border-indigo-200 bg-[linear-gradient(180deg,#eef2ff_0%,#f8fbff_100%)] p-6 shadow-sm">
+                <div className="flex flex-col gap-5 border-b border-indigo-100 pb-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-indigo-800 uppercase tracking-wide">AI Approval Probability</h4>
-                    <p className="text-4xl font-bold text-indigo-700 mt-1">{aiRecommendation.probability}%</p>
-                    <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${aiRecommendation.riskLevel === 'Low' ? 'bg-green-200 text-green-800' : aiRecommendation.riskLevel === 'Medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'}`}>
+                    <h4 className="m-0 text-sm font-semibold text-indigo-700 uppercase tracking-[0.22em]">AI Approval Probability</h4>
+                    <p className="mt-3 text-5xl font-semibold tracking-tight text-indigo-700">{aiRecommendation.probability}%</p>
+                    <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${aiRiskTone}`}>
                       Risk Level: {aiRecommendation.riskLevel}
                     </span>
                   </div>
-                  <div className="mt-4 md:mt-0 text-right">
-                    <p className="text-sm text-gray-600">AI Suggested Loan Amount</p>
-                    <p className="text-2xl font-bold text-gray-800">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                  <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-right shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-800">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="bg-white/60 p-4 rounded-md border border-indigo-100">
-                  <h5 className="font-semibold text-sm text-indigo-900 mb-2">Computation Log:</h5>
-                  <ul className="space-y-1">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-800">${calculations.monthlyPayment.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
+                  </div>
+                </div>
+                </div>
+                <div className="mt-5">
+                  <h5 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-indigo-900">Computation Log</h5>
+                  <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/80 p-4">
+                  <ul className="space-y-3">
                     {aiRecommendation.computationLog.map((log, i) => (
-                      <li key={i} className="text-sm text-gray-700 font-mono">• {log}</li>
+                      <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                        <span className="mt-1 h-2 w-2 flex-none rounded-full bg-indigo-500" />
+                        <span className="leading-6">{log}</span>
+                      </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+              </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                    <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Underwriting Note</h4>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      This panel combines repayment capacity, collateral adequacy, and AI-assisted
+                      decision support into a single review surface designed for credit officers and
+                      approval committee presentation.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
