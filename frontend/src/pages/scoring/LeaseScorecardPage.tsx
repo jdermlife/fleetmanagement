@@ -339,7 +339,7 @@ if (safeRecords[0]) {
             </label>
             <div className="lease-scorecard-preview">
               <span>Estimated financed amount</span>
-              <strong>{estimatedFinancedAmount.toFixed(2)}</strong>
+              <strong>PHP {estimatedFinancedAmount.toFixed(2)}</strong>
             </div>
             <div className="form-actions">
               <button type="submit" disabled={isSaving}>
@@ -372,7 +372,7 @@ if (safeRecords[0]) {
                 </div>
                 <div>
                   <span>Est. Monthly Payment</span>
-                  <strong>{savedRecord.monthlyEstimatedPayment.toFixed(2)}</strong>
+                  <strong>PHP {savedRecord.monthlyEstimatedPayment.toFixed(2)}</strong>
                 </div>
                 <div>
                   <span>Loan-to-Value</span>

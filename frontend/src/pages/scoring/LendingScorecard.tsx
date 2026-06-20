@@ -1396,6 +1396,120 @@ export default function LendingScorecard() {
     </div>
   );
 
+  const renderEnhancedDueDiligenceSection = () => (
+    <div className="border-t pt-4 mt-4 space-y-6">
+      <div>
+        <h4 className="font-semibold text-sm text-gray-700 mb-2">Enhanced Due Diligence & Declarations</h4>
+        <p className="text-sm text-slate-500">
+          These required fields capture the previously missing or only partially captured underwriting details.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Credit Exposure & Banking Background</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'previousLendersAndExistingLoanAccounts', 'Previous Lenders and Existing Loan Accounts', 3, true)}
+          {renderInput('enhancedDueDiligence', 'numberOfActiveLoans', 'Number of Active Loans', 'number')}
+          {renderTextarea('enhancedDueDiligence', 'previousLoanRestructuringDisclosures', 'Previous Loan Restructuring Disclosures', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalBankAccountsOwned', 'Additional Bank Accounts Owned', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'priorBankingRelationships', 'Prior Banking Relationships', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'existingInsurancePolicies', 'Existing Insurance Policies', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'selfDeclaredAssetsAndLiabilities', 'Self-Declared Assets and Liabilities', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'selfDeclaredInvestmentPortfolio', 'Self-Declared Investment Portfolio', 4, true)}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Employment, Income, and Residence Verification</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
+          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile (Optional)')}
+          {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links (Optional)', 2)}
+          {renderInput('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)')}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'futureFinancialPlansQuestionnaire', 'Future Financial Plans Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'spendingBehaviorQuestionnaire', 'Spending Behavior Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'householdBudgetingQuestionnaire', 'Household Budgeting Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'emergencyPreparednessQuestionnaire', 'Emergency Preparedness Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'characterAndIntegrityAssessmentAnswers', 'Character and Integrity Assessment Answers', 4, true)}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+        <div className="mb-3">
+          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Optional to Answer: 20-Question Psychometric Scoring Questionnaire</h5>
+          <p className="text-sm text-indigo-700/80">
+            This optional section helps profile planning, financial discipline, consistency, and repayment behavior.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {psychometricQuestionnaireItems.map((item, index) => (
+            <div key={item.field} className="rounded-lg border border-indigo-100 bg-white p-3">
+              <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+                {index + 1}. {item.question}
+              </label>
+              <select
+                value={String(getInputValue('optionalPsychometricQuestionnaire', item.field))}
+                onChange={(event) =>
+                  updateField('optionalPsychometricQuestionnaire', item.field, event.target.value)
+                }
+                className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                {psychometricResponseOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Verification Consents</h5>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {renderCheckbox('enhancedDueDiligence', 'consentOpenBankingDataAccess', 'Consent for Open Banking Data Access')}
+          {renderCheckbox('enhancedDueDiligence', 'consentEmploymentVerification', 'Consent for Employment Verification')}
+          {renderCheckbox('enhancedDueDiligence', 'consentIdentityVerification', 'Consent for Identity Verification')}
+        </div>
+      </div>
+    </div>
+  );
+
   const getStatusColor = (status: WorkflowStatus) => {
     const colors: Record<WorkflowStatus, string> = {
       'Draft': 'bg-gray-100 text-gray-800', 'Submitted': 'bg-blue-100 text-blue-800',
@@ -1482,7 +1596,7 @@ export default function LendingScorecard() {
     },
     {
       label: 'Origination Profitability',
-      value: `$${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
         maximumFractionDigits: 0,
       })}`,
       tone:
@@ -1495,19 +1609,19 @@ export default function LendingScorecard() {
   const profitabilityBreakdown = [
     {
       label: 'Gross Interest Revenue',
-      value: `$${creditRiskInsights.grossRevenue.toLocaleString(undefined, {
+      value: `PHP ${creditRiskInsights.grossRevenue.toLocaleString(undefined, {
         maximumFractionDigits: 0,
       })}`,
     },
     {
       label: 'Expected Loss Reserve',
-      value: `$${creditRiskInsights.expectedLoss.toLocaleString(undefined, {
+      value: `PHP ${creditRiskInsights.expectedLoss.toLocaleString(undefined, {
         maximumFractionDigits: 0,
       })}`,
     },
     {
       label: 'Processing Cost',
-      value: `$${creditRiskInsights.processingCost.toLocaleString(undefined, {
+      value: `PHP ${creditRiskInsights.processingCost.toLocaleString(undefined, {
         maximumFractionDigits: 0,
       })}`,
     },
@@ -1608,13 +1722,13 @@ export default function LendingScorecard() {
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
               {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card', 'Personal Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
-              {renderInput('loan', 'amount', 'Requested Loan Amount', 'number')}
+              {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
               {renderInput('loan', 'interestRate', 'Annual Interest Rate (%)', 'number')}
               <div className="md:col-span-2 bg-purple-50 p-4 rounded-md border border-purple-200 mt-2">
                 <h4 className="font-bold text-purple-800 text-sm mb-2">Auto-Calculated Metrics</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>Est. Monthly Amortization: <span className="font-bold">${calculations.monthlyPayment.toFixed(2)}</span></div>
+                  <div>Est. Monthly Amortization: <span className="font-bold">PHP {calculations.monthlyPayment.toFixed(2)}</span></div>
                   <div>Loan-to-Value Ratio (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
                 </div>
               </div>
@@ -1851,8 +1965,8 @@ export default function LendingScorecard() {
               <div className="md:col-span-2 bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
                 <h4 className="font-bold text-blue-800 text-sm mb-2">Auto-Calculated Totals</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>Total Household Income: <span className="font-bold">${calculations.totalIncome.toLocaleString()}</span></div>
-                  <div>Total Existing Debt: <span className="font-bold">${calculations.totalExistingDebt.toLocaleString()}</span></div>
+                  <div>Total Household Income: <span className="font-bold">PHP {calculations.totalIncome.toLocaleString()}</span></div>
+                  <div>Total Existing Debt: <span className="font-bold">PHP {calculations.totalExistingDebt.toLocaleString()}</span></div>
                 </div>
               </div>
               <div className="md:col-span-2 border-t pt-4 mt-4">
@@ -1979,6 +2093,9 @@ export default function LendingScorecard() {
               {renderInput('bankingRelationships', 'loanType', 'Loan Type')}
               {renderFormattedNumberInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance')}
               {renderInput('bankingRelationships', 'loanMonthlyAmortization', 'Monthly Amortization', 'number')}
+              <div className="col-span-full">
+                {renderEnhancedDueDiligenceSection()}
+              </div>
             </div>
           )}
 
@@ -2108,7 +2225,7 @@ export default function LendingScorecard() {
                       <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">AI Approval Outlook</p>
                       <p className="mt-2 text-4xl font-semibold text-cyan-300">{aiRecommendation.probability}%</p>
                       <p className="mt-2 text-xs text-slate-300">
-                        Suggested amount ${aiRecommendation.suggestedAmount.toLocaleString()}
+                        Suggested amount PHP {aiRecommendation.suggestedAmount.toLocaleString()}
                       </p>
                     </div>
                   </div>
@@ -2197,13 +2314,13 @@ export default function LendingScorecard() {
                   </div>
                   <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-right shadow-sm">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-800">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-800">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
                   </div>
                 </div>
                 <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-800">${calculations.monthlyPayment.toFixed(2)}</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-800">PHP {calculations.monthlyPayment.toFixed(2)}</p>
                   </div>
                   <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
                     <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
@@ -2273,117 +2390,6 @@ export default function LendingScorecard() {
                 </div>
               </div>
 
-              <div className="border-t pt-4 mt-4 space-y-6">
-                <div>
-                  <h4 className="font-semibold text-sm text-gray-700 mb-2">Enhanced Due Diligence & Declarations</h4>
-                  <p className="text-sm text-slate-500">
-                    These required fields capture the previously missing or only partially captured underwriting details.
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Credit Exposure & Banking Background</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderTextarea('enhancedDueDiligence', 'previousLendersAndExistingLoanAccounts', 'Previous Lenders and Existing Loan Accounts', 3, true)}
-                    {renderInput('enhancedDueDiligence', 'numberOfActiveLoans', 'Number of Active Loans', 'number')}
-                    {renderTextarea('enhancedDueDiligence', 'previousLoanRestructuringDisclosures', 'Previous Loan Restructuring Disclosures', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'additionalBankAccountsOwned', 'Additional Bank Accounts Owned', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'priorBankingRelationships', 'Prior Banking Relationships', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'existingInsurancePolicies', 'Existing Insurance Policies', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'selfDeclaredAssetsAndLiabilities', 'Self-Declared Assets and Liabilities', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'selfDeclaredInvestmentPortfolio', 'Self-Declared Investment Portfolio', 4, true)}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Employment, Income, and Residence Verification</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
-                    {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
-                    {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile (Optional)')}
-                    {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile (Optional)')}
-                    {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile (Optional)')}
-                    {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile (Optional)')}
-                    {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile (Optional)')}
-                    {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links (Optional)', 2)}
-                    {renderInput('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)')}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'futureFinancialPlansQuestionnaire', 'Future Financial Plans Questionnaire', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'spendingBehaviorQuestionnaire', 'Spending Behavior Questionnaire', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'householdBudgetingQuestionnaire', 'Household Budgeting Questionnaire', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'emergencyPreparednessQuestionnaire', 'Emergency Preparedness Questionnaire', 4, true)}
-                    {renderTextarea('enhancedDueDiligence', 'characterAndIntegrityAssessmentAnswers', 'Character and Integrity Assessment Answers', 4, true)}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
-                  <div className="mb-3">
-                    <h5 className="font-semibold text-sm text-indigo-800 mb-1">Optional to Answer: 20-Question Psychometric Scoring Questionnaire</h5>
-                    <p className="text-sm text-indigo-700/80">
-                      This optional section helps profile planning, financial discipline, consistency, and repayment behavior.
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {psychometricQuestionnaireItems.map((item, index) => (
-                      <div key={item.field} className="rounded-lg border border-indigo-100 bg-white p-3">
-                        <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
-                          {index + 1}. {item.question}
-                        </label>
-                        <select
-                          value={String(getInputValue('optionalPsychometricQuestionnaire', item.field))}
-                          onChange={(event) =>
-                            updateField('optionalPsychometricQuestionnaire', item.field, event.target.value)
-                          }
-                          className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="">Select...</option>
-                          {psychometricResponseOptions.map((option) => (
-                            <option key={option} value={option}>
-                              {option}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="rounded-lg border border-slate-200 bg-white p-4">
-                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Verification Consents</h5>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                    {renderCheckbox('enhancedDueDiligence', 'consentOpenBankingDataAccess', 'Consent for Open Banking Data Access')}
-                    {renderCheckbox('enhancedDueDiligence', 'consentEmploymentVerification', 'Consent for Employment Verification')}
-                    {renderCheckbox('enhancedDueDiligence', 'consentIdentityVerification', 'Consent for Identity Verification')}
-                  </div>
-                </div>
-              </div>
             </div>
           )}
 
@@ -2405,15 +2411,15 @@ export default function LendingScorecard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Requested Loan Amount:</span>
-                    <p className="text-xl font-bold text-green-700">${formData.loan.amount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-green-700">PHP {formData.loan.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Approved Loan Amount:</span>
-                    <p className="text-xl font-bold text-blue-700">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-blue-700">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Monthly Amortization:</span>
-                    <p className="text-xl font-bold text-orange-700">${calculations.monthlyPayment.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-orange-700">PHP {calculations.monthlyPayment.toFixed(2)}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">AI Approval Probability:</span>
