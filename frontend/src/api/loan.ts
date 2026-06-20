@@ -176,8 +176,12 @@ export interface LoanApplicationRequirements {
     characterReferences: string
     professionalOrganizationMemberships: string
     professionalLicenses: string
-    socialMediaProfileLinks: string
+    facebookProfile: string
+    instagramProfile: string
+    xProfile: string
+    tikTokProfile: string
     linkedInProfile: string
+    otherSocialMediaLinks: string
     businessWebsite: string
     guarantorReferences: string
     coBorrowerReferences: string
@@ -201,6 +205,28 @@ export interface LoanApplicationRequirements {
     characterAndIntegrityAssessmentAnswers: string
     communityInvolvementInformation: string
     referencesFromEmployerOrCommunity: string
+  }
+  optionalPsychometricQuestionnaire: {
+    question01: string
+    question02: string
+    question03: string
+    question04: string
+    question05: string
+    question06: string
+    question07: string
+    question08: string
+    question09: string
+    question10: string
+    question11: string
+    question12: string
+    question13: string
+    question14: string
+    question15: string
+    question16: string
+    question17: string
+    question18: string
+    question19: string
+    question20: string
   }
 }
 
