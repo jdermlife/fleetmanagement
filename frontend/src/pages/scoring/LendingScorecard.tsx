@@ -1742,20 +1742,29 @@ export default function LendingScorecard() {
                     </p>
                   </div>
                   <div className="shrink-0">
-                    <input
-                      type="file"
-                      id="step1DocumentUpload"
-                      className="hidden"
-                      onChange={(event) => void handleFileUpload(event)}
-                      accept="image/*"
-                      capture="environment"
-                    />
-                    <label
-                      htmlFor="step1DocumentUpload"
-                      className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
-                    >
-                      {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
-                    </label>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href="/loan-application-intake-form.pdf"
+                        download
+                        className="loan-inline-button loan-inline-button-secondary inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold"
+                      >
+                        Download PDF Form
+                      </a>
+                      <input
+                        type="file"
+                        id="step1DocumentUpload"
+                        className="hidden"
+                        onChange={(event) => void handleFileUpload(event)}
+                        accept="image/*"
+                        capture="environment"
+                      />
+                      <label
+                        htmlFor="step1DocumentUpload"
+                        className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
+                      >
+                        {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
+                      </label>
+                    </div>
                   </div>
                 </div>
 

@@ -127,7 +127,7 @@ const govMenuItems = menuLinks.filter(
           {/* BRAND */}
           <div className="app-brand-block">
             <h2 className="app-brand-title">
-              The BestBank Car Financing Company
+              QUANTEDGE
             </h2>
 
             <p className="app-brand-subtitle">
