@@ -234,6 +234,7 @@ export default function LoanRepository() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="p-3 text-left">Application No</th>
+                    <th className="p-3 text-left">Product</th>
                     <th className="p-3 text-left">Borrower</th>
                     <th className="p-3 text-left">Email</th>
                     <th className="p-3 text-left">Phone</th>
@@ -276,6 +277,7 @@ export default function LoanRepository() {
                           {row.application_no}
                         </button>
                       </td>
+                      <td className="p-3">{row.product_type}</td>
                       <td className="p-3">{row.borrower_name}</td>
                       <td className="p-3">{row.email}</td>
                       <td className="p-3">{row.phone}</td>
@@ -373,7 +375,7 @@ export default function LoanRepository() {
                   {!loading && filteredApplications.length === 0 && (
                     <tr>
                       <td
-                        colSpan={20}
+                        colSpan={24}
                         className="p-6 text-center text-sm text-slate-500"
                       >
                         No loan applications matched the current filters.

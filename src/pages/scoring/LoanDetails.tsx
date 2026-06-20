@@ -78,6 +78,11 @@ export default function LoanDetails() {
               </div>
             </div>
 
+            <div className="rounded bg-slate-50 p-4">
+              <div className="text-sm">Product Type</div>
+              <div className="text-2xl font-bold">{loan.product_type}</div>
+            </div>
+
             <div className="rounded bg-green-50 p-4">
               <div className="text-sm">AI Probability</div>
               <div className="text-2xl font-bold">{formatPercent(loan.ai_probability)}</div>
