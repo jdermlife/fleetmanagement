@@ -30,7 +30,8 @@ interface CollateralInformation { propertyAddress: string; registeredOwner: stri
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
-interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; }
+interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
+interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; characterReferences: string; professionalOrganizationMemberships: string; professionalLicenses: string; socialMediaProfileLinks: string; linkedInProfile: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
 interface DocumentItem { id: string; name: string; type: string; parsedData?: string; status: 'Pending' | 'Parsed' | 'Failed'; }
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
 interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; }
@@ -55,6 +56,7 @@ interface LoanApplication {
   bankingRelationships: BankingRelationships;
   signatures: Signatures;
   supportingDocuments: SupportingDocuments;
+  enhancedDueDiligence: EnhancedDueDiligence;
   documents: DocumentItem[];
   committeeRemarks: string;
   routing: { creditOfficer: string; branchManager: string; creditCommittee: string; executiveApproval: boolean; };
@@ -105,7 +107,8 @@ const createNewApplicationInstance = (): LoanApplication => ({
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
-  supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false },
+  supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
+  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', characterReferences: '', professionalOrganizationMemberships: '', professionalLicenses: '', socialMediaProfileLinks: '', linkedInProfile: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
   documents: [],
   committeeRemarks: '',
   routing: { creditOfficer: '', branchManager: '', creditCommittee: 'Pending', executiveApproval: false },
@@ -146,6 +149,7 @@ const buildLoanRequirements = (
   bankingRelationships: application.bankingRelationships,
   signatures: application.signatures,
   supportingDocuments: application.supportingDocuments,
+  enhancedDueDiligence: application.enhancedDueDiligence,
 });
 
 const calculateLoanMetrics = (application: LoanApplication) => {
@@ -277,18 +281,18 @@ const calculateAiRecommendation = (
 
   if (calculations.dsr < 35) {
     baseProb += 15;
-    computationLog.push('+15% (Strong DSR < 35%)');
+    computationLog.push('+15% (Strong Debt Service Ratio (DSR) < 35%)');
   } else if (calculations.dsr > 50) {
     baseProb -= 20;
-    computationLog.push('-20% (High DSR > 50%)');
+    computationLog.push('-20% (High Debt Service Ratio (DSR) > 50%)');
   }
 
   if (calculations.ltv < 80) {
     baseProb += 10;
-    computationLog.push('+10% (Safe LTV < 80%)');
+    computationLog.push('+10% (Safe Loan-to-Value Ratio (LTV) < 80%)');
   } else if (calculations.ltv > 95) {
     baseProb -= 15;
-    computationLog.push('-15% (Risky LTV > 95%)');
+    computationLog.push('-15% (Risky Loan-to-Value Ratio (LTV) > 95%)');
   }
 
   if (automatedTotal >= 40) {
@@ -306,6 +310,53 @@ const calculateAiRecommendation = (
     computationLog,
   };
 };
+
+const hasRequiredEnhancedDueDiligence = (
+  dueDiligence: EnhancedDueDiligence,
+) =>
+  dueDiligence.previousLendersAndExistingLoanAccounts.trim().length > 0 &&
+  dueDiligence.numberOfActiveLoans >= 0 &&
+  dueDiligence.previousLoanRestructuringDisclosures.trim().length > 0 &&
+  dueDiligence.employmentReferencePerson.trim().length > 0 &&
+  dueDiligence.hrContactInformation.trim().length > 0 &&
+  dueDiligence.supervisorInformation.trim().length > 0 &&
+  dueDiligence.additionalBankAccountsOwned.trim().length > 0 &&
+  dueDiligence.sourceOfIncomeVerificationReferences.trim().length > 0 &&
+  dueDiligence.lengthOfResidenceConfirmation.trim().length > 0 &&
+  dueDiligence.utilityAccountReferences.trim().length > 0 &&
+  dueDiligence.characterReferences.trim().length > 0 &&
+  dueDiligence.professionalOrganizationMemberships.trim().length > 0 &&
+  dueDiligence.professionalLicenses.trim().length > 0 &&
+  dueDiligence.guarantorReferences.trim().length > 0 &&
+  dueDiligence.coBorrowerReferences.trim().length > 0 &&
+  dueDiligence.additionalPropertyDeclarations.trim().length > 0 &&
+  dueDiligence.additionalVehicleDeclarations.trim().length > 0 &&
+  dueDiligence.selfDeclaredAssetsAndLiabilities.trim().length > 0 &&
+  dueDiligence.selfDeclaredInvestmentPortfolio.trim().length > 0 &&
+  dueDiligence.existingInsurancePolicies.trim().length > 0 &&
+  dueDiligence.priorBankingRelationships.trim().length > 0 &&
+  dueDiligence.consentOpenBankingDataAccess &&
+  dueDiligence.consentEmploymentVerification &&
+  dueDiligence.consentIdentityVerification &&
+  dueDiligence.psychometricQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.financialBehaviorQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.riskAppetiteQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.businessOutlookQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.futureFinancialPlansQuestionnaire.trim().length > 0 &&
+  dueDiligence.spendingBehaviorQuestionnaire.trim().length > 0 &&
+  dueDiligence.householdBudgetingQuestionnaire.trim().length > 0 &&
+  dueDiligence.emergencyPreparednessQuestionnaire.trim().length > 0 &&
+  dueDiligence.characterAndIntegrityAssessmentAnswers.trim().length > 0 &&
+  dueDiligence.communityInvolvementInformation.trim().length > 0 &&
+  dueDiligence.referencesFromEmployerOrCommunity.trim().length > 0;
+
+const hasRequiredAdditionalSupportingDocuments = (
+  supportingDocuments: SupportingDocuments,
+) =>
+  supportingDocuments.auditedFinancialStatements &&
+  supportingDocuments.proofOfRemittanceIncome &&
+  supportingDocuments.investmentStatements &&
+  supportingDocuments.additionalSupportingDocuments;
 
 const mergeDefinedFields = <T extends object>(
   current: T,
@@ -486,6 +537,7 @@ export default function LendingScorecard() {
     | 'bankingRelationships'
     | 'signatures'
     | 'supportingDocuments'
+    | 'enhancedDueDiligence'
     | 'disbursement'
     | 'finalChecklist';
   type FieldValue = string | number | boolean;
@@ -506,6 +558,7 @@ export default function LendingScorecard() {
     | BankingRelationships
     | Signatures
     | SupportingDocuments
+    | EnhancedDueDiligence
     | Disbursement
     | FinalChecklist;
 
@@ -826,6 +879,10 @@ export default function LendingScorecard() {
         ...blankApplication.supportingDocuments,
         ...savedRequirements.supportingDocuments,
       },
+      enhancedDueDiligence: {
+        ...blankApplication.enhancedDueDiligence,
+        ...savedRequirements.enhancedDueDiligence,
+      },
       committeeRemarks: record.committee_remarks,
       routing: {
         ...blankApplication.routing,
@@ -956,6 +1013,16 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
   ) => {
+    if (
+      newStatus !== 'Draft' &&
+      (!enhancedDueDiligenceComplete || !enhancedSupportingDocumentsComplete)
+    ) {
+      setSaveMessage(
+        'Complete all required enhanced due diligence fields and supporting document declarations before moving beyond Draft.',
+      );
+      return;
+    }
+
     if (applicationOverride) {
       await persistLoanApplication(newStatus, applicationOverride);
       return;
@@ -1037,14 +1104,24 @@ export default function LendingScorecard() {
     setTransientMessage('New application draft generated.');
   };
 
+  const enhancedDueDiligenceComplete = useMemo(
+    () => hasRequiredEnhancedDueDiligence(formData.enhancedDueDiligence),
+    [formData.enhancedDueDiligence],
+  );
+  const enhancedSupportingDocumentsComplete = useMemo(
+    () => hasRequiredAdditionalSupportingDocuments(formData.supportingDocuments),
+    [formData.supportingDocuments],
+  );
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
     { label: 'Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
     { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && formData.collateral.appraisedValue > 0 },
-    { label: 'DSR is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
+    { label: 'Debt Service Ratio (DSR) is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
-  ], [formData, calculations]);
+    { label: 'Enhanced due diligence fields completed', passed: enhancedDueDiligenceComplete },
+    { label: 'Enhanced supporting document declarations completed', passed: enhancedSupportingDocumentsComplete },
+  ], [calculations, enhancedDueDiligenceComplete, enhancedSupportingDocumentsComplete, formData]);
   const allValidationChecksPassed = validationChecks.every((check) => check.passed);
   const finalChecklistComplete = Boolean(
     formData.finalChecklist?.allRequiredDocumentsProvided &&
@@ -1157,6 +1234,26 @@ export default function LendingScorecard() {
         value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
         className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+      />
+    </div>
+  );
+
+  const renderTextarea = (
+    section: EditableSection,
+    field: string,
+    label: string,
+    rows = 3,
+    required = false,
+  ) => (
+    <div className="mb-3">
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+        {label}{required ? ' (Required)' : ''}
+      </label>
+      <textarea
+        rows={rows}
+        value={String(getInputValue(section, field))}
+        onChange={(event) => updateField(section, field, event.target.value)}
+        className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   );
@@ -1294,7 +1391,7 @@ export default function LendingScorecard() {
         : 'Elevated Review';
   const automatedScoreItems = [
     { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
-    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on DSR performance' },
+    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
     { label: 'Capital', score: automatedScorecard.capital, desc: 'Supplemental liquidity and outside income support' },
     { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Asset coverage and loan-to-value resilience' },
     { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Purpose quality and overall loan context' },
@@ -1468,7 +1565,7 @@ export default function LendingScorecard() {
                 <h4 className="font-bold text-purple-800 text-sm mb-2">Auto-Calculated Metrics</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>Est. Monthly Amortization: <span className="font-bold">${calculations.monthlyPayment.toFixed(2)}</span></div>
-                  <div>Loan-to-Value (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
+                  <div>Loan-to-Value Ratio (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
                 </div>
               </div>
 
@@ -1926,6 +2023,10 @@ export default function LendingScorecard() {
                     ['supportingDocuments', 'proofOfIncome', 'Proof of Income'],
                     ['supportingDocuments', 'bankStatements', 'Bank Statements (last 6 months)'],
                     ['supportingDocuments', 'existingCreditCardStatements', 'Existing Credit Card Statements'],
+                    ['supportingDocuments', 'additionalSupportingDocuments', 'Additional Supporting Documents'],
+                    ['supportingDocuments', 'auditedFinancialStatements', 'Audited Financial Statements'],
+                    ['supportingDocuments', 'proofOfRemittanceIncome', 'Proof of Remittance Income'],
+                    ['supportingDocuments', 'investmentStatements', 'Investment Statements'],
                   ].map(([section, field, label]) => renderCheckbox(section as EditableSection, field, label))}
                 </div>
               </div>
@@ -1975,7 +2076,7 @@ export default function LendingScorecard() {
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="rounded-2xl border border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)] p-5">
-                  <h4 className="font-bold text-rose-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt-to-Income (DTI)</h4>
+                  <h4 className="font-bold text-rose-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt-to-Income Ratio (DTI)</h4>
                   <p className="text-4xl font-semibold text-rose-700">{calculations.dti.toFixed(1)}%</p>
                   <p className="text-xs text-rose-700/80 mt-4 leading-5">Formula: (Total Existing Debt / Total Income) x 100</p>
                 </div>
@@ -2055,7 +2156,7 @@ export default function LendingScorecard() {
                     <p className="mt-2 text-xl font-semibold text-slate-800">${calculations.monthlyPayment.toFixed(2)}</p>
                   </div>
                   <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value</p>
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
                     <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
                   </div>
                 </div>
@@ -2119,6 +2220,83 @@ export default function LendingScorecard() {
                     ['signatures', 'borrowerSignatureAutoLoanInsurance', 'Borrower Signature (Auto Loan Insurance)'],
                     ['signatures', 'extensionCardholderSignature', 'Extension Cardholder Signature'],
                   ].map(([section, field, label]) => renderInput(section as EditableSection, field, label))}
+                </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-6">
+                <div>
+                  <h4 className="font-semibold text-sm text-gray-700 mb-2">Enhanced Due Diligence & Declarations</h4>
+                  <p className="text-sm text-slate-500">
+                    These required fields capture the previously missing or only partially captured underwriting details.
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Credit Exposure & Banking Background</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('enhancedDueDiligence', 'previousLendersAndExistingLoanAccounts', 'Previous Lenders and Existing Loan Accounts', 3, true)}
+                    {renderInput('enhancedDueDiligence', 'numberOfActiveLoans', 'Number of Active Loans', 'number')}
+                    {renderTextarea('enhancedDueDiligence', 'previousLoanRestructuringDisclosures', 'Previous Loan Restructuring Disclosures', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'additionalBankAccountsOwned', 'Additional Bank Accounts Owned', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'priorBankingRelationships', 'Prior Banking Relationships', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'existingInsurancePolicies', 'Existing Insurance Policies', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'selfDeclaredAssetsAndLiabilities', 'Self-Declared Assets and Liabilities', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'selfDeclaredInvestmentPortfolio', 'Self-Declared Investment Portfolio', 4, true)}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Employment, Income, and Residence Verification</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
+                    {renderTextarea('enhancedDueDiligence', 'socialMediaProfileLinks', 'Social Media Profile Links (Optional)', 2)}
+                    {renderTextarea('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile (Optional)', 2)}
+                    {renderTextarea('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)', 2)}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('enhancedDueDiligence', 'psychometricQuestionnaireResponses', 'Psychometric Questionnaire Responses', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'futureFinancialPlansQuestionnaire', 'Future Financial Plans Questionnaire', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'spendingBehaviorQuestionnaire', 'Spending Behavior Questionnaire', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'householdBudgetingQuestionnaire', 'Household Budgeting Questionnaire', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'emergencyPreparednessQuestionnaire', 'Emergency Preparedness Questionnaire', 4, true)}
+                    {renderTextarea('enhancedDueDiligence', 'characterAndIntegrityAssessmentAnswers', 'Character and Integrity Assessment Answers', 4, true)}
+                  </div>
+                </div>
+
+                <div className="rounded-lg border border-slate-200 bg-white p-4">
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Verification Consents</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    {renderCheckbox('enhancedDueDiligence', 'consentOpenBankingDataAccess', 'Consent for Open Banking Data Access')}
+                    {renderCheckbox('enhancedDueDiligence', 'consentEmploymentVerification', 'Consent for Employment Verification')}
+                    {renderCheckbox('enhancedDueDiligence', 'consentIdentityVerification', 'Consent for Identity Verification')}
+                  </div>
                 </div>
               </div>
             </div>

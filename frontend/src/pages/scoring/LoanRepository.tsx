@@ -588,9 +588,9 @@ export default function LoanRepository() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Executive Approval</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Scorecard</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">AI Prob.</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">DTI</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">DSR</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">LTV</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Debt-to-Income Ratio (DTI)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Debt Service Ratio (DSR)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Loan-to-Value Ratio (LTV)</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Actions</th>
                   </tr>

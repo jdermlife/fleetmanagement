@@ -157,6 +157,50 @@ export interface LoanApplicationRequirements {
     proofOfIncome: boolean
     bankStatements: boolean
     existingCreditCardStatements: boolean
+    additionalSupportingDocuments: boolean
+    auditedFinancialStatements: boolean
+    proofOfRemittanceIncome: boolean
+    investmentStatements: boolean
+  }
+  enhancedDueDiligence: {
+    previousLendersAndExistingLoanAccounts: string
+    numberOfActiveLoans: number
+    previousLoanRestructuringDisclosures: string
+    employmentReferencePerson: string
+    hrContactInformation: string
+    supervisorInformation: string
+    additionalBankAccountsOwned: string
+    sourceOfIncomeVerificationReferences: string
+    lengthOfResidenceConfirmation: string
+    utilityAccountReferences: string
+    characterReferences: string
+    professionalOrganizationMemberships: string
+    professionalLicenses: string
+    socialMediaProfileLinks: string
+    linkedInProfile: string
+    businessWebsite: string
+    guarantorReferences: string
+    coBorrowerReferences: string
+    additionalPropertyDeclarations: string
+    additionalVehicleDeclarations: string
+    selfDeclaredAssetsAndLiabilities: string
+    selfDeclaredInvestmentPortfolio: string
+    existingInsurancePolicies: string
+    priorBankingRelationships: string
+    consentOpenBankingDataAccess: boolean
+    consentEmploymentVerification: boolean
+    consentIdentityVerification: boolean
+    psychometricQuestionnaireResponses: string
+    financialBehaviorQuestionnaireResponses: string
+    riskAppetiteQuestionnaireResponses: string
+    businessOutlookQuestionnaireResponses: string
+    futureFinancialPlansQuestionnaire: string
+    spendingBehaviorQuestionnaire: string
+    householdBudgetingQuestionnaire: string
+    emergencyPreparednessQuestionnaire: string
+    characterAndIntegrityAssessmentAnswers: string
+    communityInvolvementInformation: string
+    referencesFromEmployerOrCommunity: string
   }
 }
 
