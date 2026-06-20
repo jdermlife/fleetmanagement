@@ -141,6 +141,7 @@ const govMenuItems = menuLinks.filter(
             type="button"
             className="app-menu-toggle"
             aria-label="Toggle application menu"
+            aria-expanded={menuOpen}
           >
             ☰
           </button>
