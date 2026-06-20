@@ -2,7 +2,7 @@ import axios from "axios";
 
 export const DEFAULT_API_BASE_URL =
   import.meta.env.VITE_API_URL ??
-  "https://fleetmanagement-dq9t.onrender.com";
+  "https://fleetmanagement-api.onrender.com";
 
 export const api = axios.create({
   baseURL: DEFAULT_API_BASE_URL,

@@ -9,7 +9,7 @@ export type WorkflowStatus =
   | 'Rejected'
   | 'Released'
 
-export type ProductType = 'Home Loan' | 'Auto Loan' | 'Credit Card'
+export type ProductType = 'Home Loan' | 'Auto Loan' | 'Credit Card' | 'Personal Loan'
 
 export interface LoanApplicationRequirements {
   productInformation: {
@@ -80,7 +80,7 @@ export interface LoanApplicationRequirements {
     totalYearsWorking: string
     grossMonthlyIncome: number
     monthlyLivingExpenses: number
-    otherSourcesOfIncome: string
+    otherSourcesOfIncome: number
     investmentIncome: number
     businessIncome: number
     pensionIncome: number
@@ -198,10 +198,55 @@ export interface LoanMutationResponse {
   application_no?: string
 }
 
+export interface LoanBulkMutationResponse {
+  inserted: number
+  message: string
+  skipped: number
+  updated: number
+}
+
 const LOAN_APPLICATIONS_PATH = '/api/loan-applications'
 
 export async function fetchLoanApplications(): Promise<LoanApplicationRecord[]> {
   const response = await api.get<LoanApplicationRecord[]>(LOAN_APPLICATIONS_PATH)
+  return response.data
+}
+
+export async function importLoanApplications(
+  file: File,
+): Promise<LoanBulkMutationResponse> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await api.post<LoanBulkMutationResponse>(
+    `${LOAN_APPLICATIONS_PATH}/import`,
+    formData,
+    {
+      headers: {
+        'Content-Type': 'multipart/form-data',
+      },
+    },
+  )
+
+  return response.data
+}
+
+export async function exportLoanApplications(params: {
+  dateFrom?: string
+  dateTo?: string
+  format: 'csv' | 'xlsx'
+  status?: 'All' | WorkflowStatus
+}): Promise<Blob> {
+  const response = await api.get<Blob>(`${LOAN_APPLICATIONS_PATH}/export`, {
+    params: {
+      date_from: params.dateFrom || undefined,
+      date_to: params.dateTo || undefined,
+      format: params.format,
+      status: params.status && params.status !== 'All' ? params.status : undefined,
+    },
+    responseType: 'blob',
+  })
+
   return response.data
 }
 

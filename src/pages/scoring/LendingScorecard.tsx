@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { getErrorMessage } from '../../api';
+import { api, getErrorMessage } from '../../api';
 import {
   createLoanApplication,
   fetchLoanApplication,
@@ -25,7 +25,7 @@ interface ContactInformation { mobileNumber: string; homePhoneNumber: string; em
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
 interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
-interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: string; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
+interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
 interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
@@ -63,6 +63,28 @@ interface LoanApplication {
   releaseNotes?: string;
 }
 
+type ParsedSectionUpdates = {
+  borrower?: Partial<BorrowerInfo>;
+  applicantPersonal?: Partial<ApplicantPersonal>;
+  contactInformation?: Partial<ContactInformation>;
+  governmentIds?: Partial<GovernmentIds>;
+  addressInformation?: Partial<AddressInformation>;
+  employment?: Partial<Employment>;
+  employmentInformation?: Partial<EmploymentInformation>;
+  collateralInformation?: Partial<CollateralInformation>;
+  otherInformation?: Partial<OtherInformation>;
+};
+
+interface DocumentParseReview {
+  documentName: string;
+  documentType: string;
+  confidence: number;
+  summary: string;
+  notes: string[];
+  supportingDocuments: Partial<SupportingDocuments>;
+  extractedData: ParsedSectionUpdates;
+}
+
 // --- Initial State Factory ---
 const createNewApplicationInstance = (): LoanApplication => ({
   id: 'APP-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
@@ -78,7 +100,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
   otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
-  employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: '', investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
+  employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
   collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '' },
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
@@ -92,11 +114,327 @@ const createNewApplicationInstance = (): LoanApplication => ({
   releaseNotes: '',
 });
 
+const buildLoanRequirements = (
+  application: LoanApplication,
+): LoanApplicationRequirements => ({
+  productInformation: {
+    productType: application.loan.productType,
+    homePurposeOfLoan: application.loan.purpose,
+    homeDesiredLoanAmount: application.loan.amount,
+    homeLoanTerm: application.loan.termMonths,
+    homeCollateralType: application.collateral.vehicleInfo,
+    autoPurpose: application.loan.purpose,
+    autoVehicleClassification: application.loan.productType,
+    autoUnitModel: application.collateral.vehicleInfo,
+    autoYearModel: application.loan.termMonths.toString(),
+    autoSellingPrice: application.collateral.appraisedValue,
+    autoDesiredLoanAmount: application.loan.amount,
+    autoDownPayment: 0,
+    autoYearsToPay: Math.max(1, Math.round(application.loan.termMonths / 12)),
+    creditCardType: application.loan.purpose,
+    creditCardExtensionRequested:
+      application.signatures.extensionCardholderSignature.length > 0,
+  },
+  applicantPersonal: application.applicantPersonal,
+  contactInformation: application.contactInformation,
+  governmentIds: application.governmentIds,
+  addressInformation: application.addressInformation,
+  otherInformation: application.otherInformation,
+  employmentInformation: application.employmentInformation,
+  collateralInformation: application.collateralInformation,
+  spouseInformation: application.spouseInformation,
+  bankingRelationships: application.bankingRelationships,
+  signatures: application.signatures,
+  supportingDocuments: application.supportingDocuments,
+});
+
+const calculateLoanMetrics = (application: LoanApplication) => {
+  const totalIncome =
+    application.employment.monthlyIncome +
+    application.employment.otherIncome +
+    application.coBorrowers.reduce((sum, cb) => sum + cb.monthlyIncome, 0);
+
+  const totalExistingDebt =
+    application.employment.debtObligations +
+    application.coBorrowers.reduce((sum, cb) => sum + cb.debtObligations, 0);
+
+  const r = application.loan.interestRate / 100 / 12;
+  const n = application.loan.termMonths;
+  const p = application.loan.amount;
+  const monthlyPayment =
+    n === 0
+      ? 0
+      : r === 0
+        ? p / n
+        : p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1);
+
+  const dti = totalIncome > 0 ? (totalExistingDebt / totalIncome) * 100 : 0;
+  const dsr =
+    totalIncome > 0
+      ? ((totalExistingDebt + monthlyPayment) / totalIncome) * 100
+      : 0;
+  const ltv =
+    application.collateral.appraisedValue > 0
+      ? (application.loan.amount / application.collateral.appraisedValue) * 100
+      : 0;
+
+  return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv };
+};
+
+const calculateAutomatedScorecard = (
+  application: LoanApplication,
+  calculations: ReturnType<typeof calculateLoanMetrics>,
+) => {
+  const character = application.borrower.govId ? 8 : 5;
+  const capacity = calculations.dsr < 30 ? 10 : calculations.dsr < 40 ? 7 : 4;
+  const capital = application.employment.otherIncome > 0 ? 8 : 5;
+  const collateral = calculations.ltv < 80 ? 10 : calculations.ltv < 90 ? 7 : 4;
+  const conditions = application.loan.purpose ? 8 : 5;
+  const total = character + capacity + capital + collateral + conditions;
+
+  return { character, capacity, capital, collateral, conditions, total };
+};
+
+const calculateCreditRiskInsights = (
+  application: LoanApplication,
+  calculations: ReturnType<typeof calculateLoanMetrics>,
+  automatedTotal: number,
+) => {
+  const parsedDocsCount = application.documents.filter(
+    (doc) => doc.status === 'Parsed',
+  ).length;
+  const docsCoverage =
+    application.documents.length > 0
+      ? parsedDocsCount / application.documents.length
+      : 0;
+
+  const fraudScore = Math.max(
+    0,
+    Math.min(
+      100,
+      (application.borrower.govId ? 30 : 0) +
+        (application.borrower.email ? 10 : 0) +
+        (application.borrower.phone ? 10 : 0) +
+        (application.borrower.address ? 10 : 0) +
+        Math.round(docsCoverage * 35) +
+        (application.applicantPersonal.dateOfBirth ? 5 : 0),
+    ),
+  );
+
+  const nonStarterScore = Math.max(
+    0,
+    Math.min(
+      100,
+      (application.loan.amount > 0 ? 20 : 0) +
+        (application.collateral.appraisedValue > 0 ? 20 : 0) +
+        (application.loan.productType ? 10 : 0) +
+        (calculations.totalIncome > 0 ? 20 : 0) +
+        (calculations.dsr < 60 ? 15 : 0) +
+        (parsedDocsCount >= 2 ? 15 : 0),
+    ),
+  );
+
+  const riskScore = Math.max(
+    0,
+    Math.min(
+      100,
+      calculations.dsr * 0.4 +
+        calculations.ltv * 0.3 +
+        (50 - automatedTotal) * 2 +
+        (parsedDocsCount === 0 ? 10 : 0),
+    ),
+  );
+
+  const grossRevenue =
+    application.loan.amount *
+    (application.loan.interestRate / 100) *
+    Math.max(1, application.loan.termMonths / 12);
+  const expectedLoss = application.loan.amount * (riskScore / 100) * 0.08;
+  const processingCost = Math.max(150, application.loan.amount * 0.005);
+  const originationProfitability = grossRevenue - expectedLoss - processingCost;
+  const originationMargin =
+    grossRevenue > 0 ? (originationProfitability / grossRevenue) * 100 : 0;
+
+  return {
+    fraudScore,
+    nonStarterScore,
+    riskScore,
+    originationProfitability,
+    originationMargin,
+    grossRevenue,
+    expectedLoss,
+    processingCost,
+  };
+};
+
+const calculateAiRecommendation = (
+  application: LoanApplication,
+  calculations: ReturnType<typeof calculateLoanMetrics>,
+  automatedTotal: number,
+) => {
+  let baseProb = 70;
+  const computationLog = ['Base Probability: 70%'];
+
+  if (calculations.dsr < 35) {
+    baseProb += 15;
+    computationLog.push('+15% (Strong DSR < 35%)');
+  } else if (calculations.dsr > 50) {
+    baseProb -= 20;
+    computationLog.push('-20% (High DSR > 50%)');
+  }
+
+  if (calculations.ltv < 80) {
+    baseProb += 10;
+    computationLog.push('+10% (Safe LTV < 80%)');
+  } else if (calculations.ltv > 95) {
+    baseProb -= 15;
+    computationLog.push('-15% (Risky LTV > 95%)');
+  }
+
+  if (automatedTotal >= 40) {
+    baseProb += 5;
+    computationLog.push('+5% (High Automated Scorecard)');
+  }
+
+  const finalProb = Math.min(Math.max(baseProb, 0), 100);
+
+  return {
+    probability: finalProb,
+    riskLevel: finalProb > 80 ? 'Low' : finalProb > 50 ? 'Medium' : 'High',
+    suggestedAmount:
+      finalProb > 80 ? application.loan.amount : application.loan.amount * 0.8,
+    computationLog,
+  };
+};
+
+const mergeDefinedFields = <T extends object>(
+  current: T,
+  updates?: Partial<T>,
+): T => {
+  if (!updates) {
+    return current;
+  }
+
+  const next = { ...(current as Record<string, unknown>) };
+
+  for (const [key, value] of Object.entries(updates)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+
+    if (typeof value === 'string' && value.trim().length === 0) {
+      continue;
+    }
+
+    next[key] = value as unknown;
+  }
+
+  return next as T;
+};
+
+const reviewSectionConfigs: Array<{
+  key: keyof ParsedSectionUpdates;
+  title: string;
+  fields: Array<{
+    key: string;
+    label: string;
+    type?: 'text' | 'number' | 'date' | 'email' | 'tel';
+  }>;
+}> = [
+  {
+    key: 'borrower',
+    title: 'Borrower Information',
+    fields: [
+      { key: 'fullName', label: 'Full Legal Name' },
+      { key: 'email', label: 'Email Address', type: 'email' },
+      { key: 'phone', label: 'Contact Number', type: 'tel' },
+      { key: 'govId', label: 'Government ID Number' },
+      { key: 'address', label: 'Complete Residential Address' },
+    ],
+  },
+  {
+    key: 'applicantPersonal',
+    title: 'Personal Details',
+    fields: [
+      { key: 'lastName', label: 'Last Name' },
+      { key: 'firstName', label: 'First Name' },
+      { key: 'middleName', label: 'Middle Name' },
+      { key: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
+      { key: 'placeOfBirth', label: 'Place of Birth' },
+    ],
+  },
+  {
+    key: 'contactInformation',
+    title: 'Contact Information',
+    fields: [
+      { key: 'mobileNumber', label: 'Mobile Number', type: 'tel' },
+      { key: 'homePhoneNumber', label: 'Home Phone Number', type: 'tel' },
+      { key: 'emailAddress', label: 'Email Address', type: 'email' },
+    ],
+  },
+  {
+    key: 'governmentIds',
+    title: 'Government IDs',
+    fields: [
+      { key: 'tin', label: 'TIN' },
+      { key: 'sssGsisNumber', label: 'SSS / GSIS Number' },
+      { key: 'idNumber', label: 'ID Number' },
+      { key: 'issueDate', label: 'Issue Date', type: 'date' },
+      { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
+    ],
+  },
+  {
+    key: 'addressInformation',
+    title: 'Address Information',
+    fields: [
+      { key: 'presentAddress', label: 'Present Address' },
+      { key: 'permanentAddress', label: 'Permanent Address' },
+      { key: 'mailingAddress', label: 'Mailing Address' },
+    ],
+  },
+  {
+    key: 'employment',
+    title: 'Employment Summary',
+    fields: [
+      { key: 'history', label: 'Employment History' },
+      { key: 'monthlyIncome', label: 'Primary Monthly Income', type: 'number' },
+      { key: 'otherIncome', label: 'Other Sources of Income', type: 'number' },
+      { key: 'debtObligations', label: 'Existing Monthly Debt Obligations', type: 'number' },
+    ],
+  },
+  {
+    key: 'employmentInformation',
+    title: 'Detailed Employment Information',
+    fields: [
+      { key: 'employmentStatus', label: 'Employment Status' },
+      { key: 'employerBusinessName', label: 'Employer / Business Name' },
+      { key: 'occupation', label: 'Occupation' },
+      { key: 'grossMonthlyIncome', label: 'Gross Monthly Income', type: 'number' },
+      { key: 'otherSourcesOfIncome', label: 'Other Sources of Income', type: 'number' },
+      { key: 'investmentIncome', label: 'Investment Income', type: 'number' },
+      { key: 'businessIncome', label: 'Business Income', type: 'number' },
+    ],
+  },
+  {
+    key: 'collateralInformation',
+    title: 'Collateral Information',
+    fields: [
+      { key: 'propertyAddress', label: 'Property Address' },
+      { key: 'registeredOwner', label: 'Registered Owner' },
+      { key: 'tctCctNumber', label: 'TCT/CCT Number' },
+    ],
+  },
+];
+
 // --- Main Component ---
 export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedApplicationNo = searchParams.get('applicationNo');
+  const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
+  const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
+  const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
+  const [selectedWorkflowAction, setSelectedWorkflowAction] = useState<WorkflowStatus>('Credit Review');
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState<LoanApplication>(createNewApplicationInstance());
   const [isParsing, setIsParsing] = useState(false);
@@ -106,89 +444,29 @@ export default function LendingScorecard() {
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
 
   // --- Auto-Calculations (Memoized for Performance) ---
-  const calculations = useMemo(() => {
-    const totalIncome = formData.employment.monthlyIncome + formData.employment.otherIncome + 
-                        formData.coBorrowers.reduce((sum, cb) => sum + cb.monthlyIncome, 0);
-    
-    const totalExistingDebt = formData.employment.debtObligations + 
-                              formData.coBorrowers.reduce((sum, cb) => sum + cb.debtObligations, 0);
-
-    // PMT Formula: P * (r * (1 + r)^n) / ((1 + r)^n - 1)
-    const r = formData.loan.interestRate / 100 / 12;
-    const n = formData.loan.termMonths;
-    const p = formData.loan.amount;
-    const monthlyPayment = n === 0 ? 0 : (r === 0 ? p / n : p * (r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1));
-
-    const dti = totalIncome > 0 ? (totalExistingDebt / totalIncome) * 100 : 0;
-    const dsr = totalIncome > 0 ? ((totalExistingDebt + monthlyPayment) / totalIncome) * 100 : 0;
-    const ltv = formData.collateral.appraisedValue > 0 ? (formData.loan.amount / formData.collateral.appraisedValue) * 100 : 0;
-
-    return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv };
-  }, [formData]);
-
-  const requirements = useMemo<LoanApplicationRequirements>(() => ({
-    productInformation: {
-      productType: formData.loan.productType,
-      homePurposeOfLoan: formData.loan.purpose,
-      homeDesiredLoanAmount: formData.loan.amount,
-      homeLoanTerm: formData.loan.termMonths,
-      homeCollateralType: formData.collateral.vehicleInfo,
-      autoPurpose: formData.loan.purpose,
-      autoVehicleClassification: formData.loan.productType,
-      autoUnitModel: formData.collateral.vehicleInfo,
-      autoYearModel: formData.loan.termMonths.toString(),
-      autoSellingPrice: formData.collateral.appraisedValue,
-      autoDesiredLoanAmount: formData.loan.amount,
-      autoDownPayment: 0,
-      autoYearsToPay: Math.max(1, Math.round(formData.loan.termMonths / 12)),
-      creditCardType: formData.loan.purpose,
-      creditCardExtensionRequested: formData.signatures.extensionCardholderSignature.length > 0,
-    },
-    applicantPersonal: formData.applicantPersonal,
-    contactInformation: formData.contactInformation,
-    governmentIds: formData.governmentIds,
-    addressInformation: formData.addressInformation,
-    otherInformation: formData.otherInformation,
-    employmentInformation: formData.employmentInformation,
-    collateralInformation: formData.collateralInformation,
-    spouseInformation: formData.spouseInformation,
-    bankingRelationships: formData.bankingRelationships,
-    signatures: formData.signatures,
-    supportingDocuments: formData.supportingDocuments,
-  }), [formData]);
+  const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
 
   // --- Automated Lending Scorecard (5 Cs) ---
-  const automatedScorecard = useMemo(() => {
-    const character = formData.borrower.govId ? 8 : 5; // Simplified logic
-    const capacity = calculations.dsr < 30 ? 10 : calculations.dsr < 40 ? 7 : 4;
-    const capital = formData.employment.otherIncome > 0 ? 8 : 5;
-    const collateral = calculations.ltv < 80 ? 10 : calculations.ltv < 90 ? 7 : 4;
-    const conditions = formData.loan.purpose ? 8 : 5;
-    const total = character + capacity + capital + collateral + conditions;
-    return { character, capacity, capital, collateral, conditions, total };
-  }, [calculations, formData]);
+  const automatedScorecard = useMemo(
+    () => calculateAutomatedScorecard(formData, calculations),
+    [calculations, formData],
+  );
+
+  const creditRiskInsights = useMemo(
+    () =>
+      calculateCreditRiskInsights(
+        formData,
+        calculations,
+        automatedScorecard.total,
+      ),
+    [automatedScorecard.total, calculations, formData],
+  );
 
   // --- AI Recommendation with Computations ---
-  const aiRecommendation = useMemo(() => {
-    let baseProb = 70;
-    const computationLog = ['Base Probability: 70%'];
-    
-    if (calculations.dsr < 35) { baseProb += 15; computationLog.push('+15% (Strong DSR < 35%)'); }
-    else if (calculations.dsr > 50) { baseProb -= 20; computationLog.push('-20% (High DSR > 50%)'); }
-
-    if (calculations.ltv < 80) { baseProb += 10; computationLog.push('+10% (Safe LTV < 80%)'); }
-    else if (calculations.ltv > 95) { baseProb -= 15; computationLog.push('-15% (Risky LTV > 95%)'); }
-
-    if (automatedScorecard.total >= 40) { baseProb += 5; computationLog.push('+5% (High Automated Scorecard)'); }
-
-    const finalProb = Math.min(Math.max(baseProb, 0), 100);
-    return {
-      probability: finalProb,
-      riskLevel: finalProb > 80 ? 'Low' : finalProb > 50 ? 'Medium' : 'High',
-      suggestedAmount: finalProb > 80 ? formData.loan.amount : formData.loan.amount * 0.8,
-      computationLog
-    };
-  }, [calculations, automatedScorecard, formData.loan.amount]);
+  const aiRecommendation = useMemo(
+    () => calculateAiRecommendation(formData, calculations, automatedScorecard.total),
+    [calculations, automatedScorecard.total, formData],
+  );
 
   // --- Handlers ---
   type EditableSection =
@@ -207,7 +485,9 @@ export default function LendingScorecard() {
     | 'spouseInformation'
     | 'bankingRelationships'
     | 'signatures'
-    | 'supportingDocuments';
+    | 'supportingDocuments'
+    | 'disbursement'
+    | 'finalChecklist';
   type FieldValue = string | number | boolean;
   type FormSectionValue =
     | BorrowerInfo
@@ -225,16 +505,211 @@ export default function LendingScorecard() {
     | SpouseInformation
     | BankingRelationships
     | Signatures
-    | SupportingDocuments;
+    | SupportingDocuments
+    | Disbursement
+    | FinalChecklist;
 
   const setTransientMessage = useCallback((message: string) => {
     setSaveMessage(message);
     window.setTimeout(() => setSaveMessage(''), 3000);
   }, []);
 
+  const parseFormattedNumber = useCallback((value: string) => {
+    const normalizedValue = value.replace(/,/g, '').replace(/[^\d.-]/g, '');
+    const parsedValue = Number.parseFloat(normalizedValue);
+    return Number.isFinite(parsedValue) ? parsedValue : 0;
+  }, []);
+
+  const formatFormattedNumber = useCallback((value: unknown) => {
+    if (value === '' || value === null || value === undefined) {
+      return '';
+    }
+
+    const numericValue =
+      typeof value === 'number' ? value : parseFormattedNumber(String(value));
+
+    if (numericValue === 0) {
+      return '';
+    }
+
+    return numericValue.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }, [parseFormattedNumber]);
+
+  const buildFormattedNumberKey = useCallback(
+    (section: EditableSection, field: string) => `${section}.${field}`,
+    [],
+  );
+
+  const updateDocumentItem = useCallback(
+    (
+      documentId: string,
+      status: DocumentItem['status'],
+      parsedData?: string,
+    ) => {
+      setFormData((prev) => ({
+        ...prev,
+        documents: prev.documents.map((document) =>
+          document.id === documentId
+            ? { ...document, status, parsedData }
+            : document,
+        ),
+      }));
+    },
+    [],
+  );
+
+  const mergeReviewIntoApplication = useCallback(
+    (
+      baseApplication: LoanApplication,
+      review: DocumentParseReview,
+    ): LoanApplication => ({
+      ...baseApplication,
+      borrower: mergeDefinedFields(
+        baseApplication.borrower,
+        review.extractedData.borrower,
+      ),
+      applicantPersonal: mergeDefinedFields(
+        baseApplication.applicantPersonal,
+        review.extractedData.applicantPersonal,
+      ),
+      contactInformation: mergeDefinedFields(
+        baseApplication.contactInformation,
+        review.extractedData.contactInformation,
+      ),
+      governmentIds: mergeDefinedFields(
+        baseApplication.governmentIds,
+        review.extractedData.governmentIds,
+      ),
+      addressInformation: mergeDefinedFields(
+        baseApplication.addressInformation,
+        review.extractedData.addressInformation,
+      ),
+      employment: mergeDefinedFields(
+        baseApplication.employment,
+        review.extractedData.employment,
+      ),
+      employmentInformation: mergeDefinedFields(
+        baseApplication.employmentInformation,
+        review.extractedData.employmentInformation,
+      ),
+      collateralInformation: mergeDefinedFields(
+        baseApplication.collateralInformation,
+        review.extractedData.collateralInformation,
+      ),
+      otherInformation: mergeDefinedFields(
+        baseApplication.otherInformation,
+        review.extractedData.otherInformation,
+      ),
+      supportingDocuments: {
+        ...baseApplication.supportingDocuments,
+        ...review.supportingDocuments,
+      },
+    }),
+    [],
+  );
+
+  const parseLoanDocument = useCallback(
+    async (documentId: string, file: File) => {
+      setIsParsing(true);
+      setSaveMessage('');
+
+      try {
+        const payload = new FormData();
+        payload.append('file', file);
+
+        const response = await api.post<DocumentParseReview>(
+          '/ai/loan-documents/parse',
+          payload,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
+          },
+        );
+
+        const normalizedReview: DocumentParseReview = {
+          documentName: response.data.documentName || file.name,
+          documentType: response.data.documentType || 'Unclassified Document',
+          confidence: response.data.confidence || 0,
+          summary: response.data.summary || 'AI review completed.',
+          notes: response.data.notes || [],
+          supportingDocuments: response.data.supportingDocuments || {},
+          extractedData: response.data.extractedData || {},
+        };
+
+        setDocumentReview(normalizedReview);
+        setReviewDocumentId(documentId);
+        updateDocumentItem(
+          documentId,
+          'Parsed',
+          normalizedReview.summary || `Detected ${normalizedReview.documentType}`,
+        );
+        setStep(1);
+      } catch (error) {
+        const message = getErrorMessage(
+          error,
+          'Failed to analyze the uploaded document.',
+        );
+        updateDocumentItem(documentId, 'Failed', message);
+        setSaveMessage(message);
+      } finally {
+        setIsParsing(false);
+      }
+    },
+    [updateDocumentItem],
+  );
+
+  const updateDocumentReviewField = useCallback(
+    (
+      section: keyof ParsedSectionUpdates,
+      field: string,
+      value: string | number,
+    ) => {
+      setDocumentReview((prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          extractedData: {
+            ...prev.extractedData,
+            [section]: {
+              ...(prev.extractedData[section] ?? {}),
+              [field]: value,
+            },
+          },
+        };
+      });
+    },
+    [],
+  );
+
+  const updateDocumentReviewRequirement = useCallback(
+    (field: keyof SupportingDocuments, value: boolean) => {
+      setDocumentReview((prev) => {
+        if (!prev) {
+          return prev;
+        }
+
+        return {
+          ...prev,
+          supportingDocuments: {
+            ...prev.supportingDocuments,
+            [field]: value,
+          },
+        };
+      });
+    },
+    [],
+  );
+
   const hydrateApplication = useCallback((record: LoanApplicationRecord): LoanApplication => {
     const blankApplication = createNewApplicationInstance();
-    const savedRequirements = record.requirements ?? {};
+    const savedRequirements:  Partial<LoanApplicationRequirements> = record.requirements ?? {};
 
     return {
       ...blankApplication,
@@ -294,6 +769,30 @@ export default function LendingScorecard() {
       employmentInformation: {
         ...blankApplication.employmentInformation,
         ...savedRequirements.employmentInformation,
+        grossMonthlyIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.grossMonthlyIncome ??
+              blankApplication.employmentInformation.grossMonthlyIncome,
+          ),
+        ),
+        otherSourcesOfIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.otherSourcesOfIncome ??
+              blankApplication.employmentInformation.otherSourcesOfIncome,
+          ),
+        ),
+        investmentIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.investmentIncome ??
+              blankApplication.employmentInformation.investmentIncome,
+          ),
+        ),
+        businessIncome: parseFormattedNumber(
+          String(
+            savedRequirements.employmentInformation?.businessIncome ??
+              blankApplication.employmentInformation.businessIncome,
+          ),
+        ),
       },
       collateralInformation: {
         ...blankApplication.collateralInformation,
@@ -302,10 +801,22 @@ export default function LendingScorecard() {
       spouseInformation: {
         ...blankApplication.spouseInformation,
         ...savedRequirements.spouseInformation,
+        grossMonthlyIncome: parseFormattedNumber(
+          String(
+            savedRequirements.spouseInformation?.grossMonthlyIncome ??
+              blankApplication.spouseInformation.grossMonthlyIncome,
+          ),
+        ),
       },
       bankingRelationships: {
         ...blankApplication.bankingRelationships,
         ...savedRequirements.bankingRelationships,
+        loanCurrentBalance: parseFormattedNumber(
+          String(
+            savedRequirements.bankingRelationships?.loanCurrentBalance ??
+              blankApplication.bankingRelationships.loanCurrentBalance,
+          ),
+        ),
       },
       signatures: {
         ...blankApplication.signatures,
@@ -321,35 +832,51 @@ export default function LendingScorecard() {
         executiveApproval: record.executive_approval,
       },
     };
-  }, []);
+  }, [parseFormattedNumber]);
 
-  const buildLoanPayload = (newStatus: WorkflowStatus): LoanApplicationPayload => ({
-    application_no: formData.id,
+  const buildLoanPayload = (
+    newStatus: WorkflowStatus,
+    application: LoanApplication = formData,
+  ): LoanApplicationPayload => {
+    const payloadCalculations = calculateLoanMetrics(application);
+    const payloadScorecard = calculateAutomatedScorecard(
+      application,
+      payloadCalculations,
+    );
+    const payloadAiRecommendation = calculateAiRecommendation(
+      application,
+      payloadCalculations,
+      payloadScorecard.total,
+    );
+
+    return {
+    application_no: application.id,
     status: newStatus,
-    product_type: formData.loan.productType,
-    borrower_name: formData.borrower.fullName,
-    email: formData.borrower.email,
-    phone: formData.borrower.phone,
-    gov_id: formData.borrower.govId,
-    address: formData.borrower.address,
-    monthly_income: formData.employment.monthlyIncome,
-    other_income: formData.employment.otherIncome,
-    debt_obligations: formData.employment.debtObligations,
-    loan_amount: formData.loan.amount,
-    term_months: formData.loan.termMonths,
-    interest_rate: formData.loan.interestRate,
-    purpose: formData.loan.purpose,
-    vehicle_info: formData.collateral.vehicleInfo,
-    appraised_value: formData.collateral.appraisedValue,
-    committee_remarks: formData.committeeRemarks,
-    executive_approval: formData.routing.executiveApproval,
-    dti: calculations.dti,
-    dsr: calculations.dsr,
-    ltv: calculations.ltv,
-    scorecard_total: automatedScorecard.total,
-    ai_probability: aiRecommendation.probability,
-    requirements,
-  });
+    product_type: application.loan.productType,
+    borrower_name: application.borrower.fullName,
+    email: application.borrower.email,
+    phone: application.borrower.phone,
+    gov_id: application.borrower.govId,
+    address: application.borrower.address,
+    monthly_income: application.employment.monthlyIncome,
+    other_income: application.employment.otherIncome,
+    debt_obligations: application.employment.debtObligations,
+    loan_amount: application.loan.amount,
+    term_months: application.loan.termMonths,
+    interest_rate: application.loan.interestRate,
+    purpose: application.loan.purpose,
+    vehicle_info: application.collateral.vehicleInfo,
+    appraised_value: application.collateral.appraisedValue,
+    committee_remarks: application.committeeRemarks,
+    executive_approval: application.routing.executiveApproval,
+    dti: payloadCalculations.dti,
+    dsr: payloadCalculations.dsr,
+    ltv: payloadCalculations.ltv,
+    scorecard_total: payloadScorecard.total,
+    ai_probability: payloadAiRecommendation.probability,
+    requirements: buildLoanRequirements(application),
+  };
+  };
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
     setFormData(prev => ({
@@ -377,37 +904,37 @@ export default function LendingScorecard() {
     setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const newDoc: DocumentItem = { id: Date.now().toString(), name: file.name, type: file.type, status: 'Pending' };
       setFormData(prev => ({ ...prev, documents: [...prev.documents, newDoc] }));
+
+      if (file.type.startsWith('image/')) {
+        await parseLoanDocument(newDoc.id, file);
+      } else {
+        setSaveMessage('Document uploaded. AI auto-fill currently supports image files for sequential review.');
+      }
+
+      e.target.value = '';
     }
   };
 
-  const handleParseDocument = (docId: string) => {
-    setIsParsing(true);
-    setTimeout(() => {
-      setFormData(prev => ({
-        ...prev,
-        employment: { ...prev.employment, monthlyIncome: prev.employment.monthlyIncome + 4500 },
-        documents: prev.documents.map(d => d.id === docId ? { ...d, status: 'Parsed', parsedData: 'Extracted: +$4,500/mo income' } : d)
-      }));
-      setIsParsing(false);
-    }, 1500);
-  };
-
-  const persistLoanApplication = async (newStatus: WorkflowStatus) => {
+  const persistLoanApplication = async (
+    newStatus: WorkflowStatus,
+    applicationOverride?: LoanApplication,
+  ) => {
     setIsSaving(true);
 
     try {
-      const payload = buildLoanPayload(newStatus);
+      const applicationToSave = applicationOverride ?? formData;
+      const payload = buildLoanPayload(newStatus, applicationToSave);
       const result = hasPersistedRecord
-        ? await updateLoanApplication(formData.id, payload)
+        ? await updateLoanApplication(applicationToSave.id, payload)
         : await createLoanApplication(payload);
 
       setHasPersistedRecord(true);
-      setFormData(prev => ({ ...prev, status: newStatus }));
+      setFormData({ ...applicationToSave, status: newStatus });
       setTransientMessage(result.message || `Application saved as ${newStatus}`);
     } catch (error) {
       setSaveMessage(
@@ -418,7 +945,15 @@ export default function LendingScorecard() {
     }
   };
 
-  const changeWorkflowStatus = async (newStatus: WorkflowStatus) => {
+  const changeWorkflowStatus = async (
+    newStatus: WorkflowStatus,
+    applicationOverride?: LoanApplication,
+  ) => {
+    if (applicationOverride) {
+      await persistLoanApplication(newStatus, applicationOverride);
+      return;
+    }
+
     if (!hasPersistedRecord || formData.status === 'Draft') {
       await persistLoanApplication(newStatus);
       return;
@@ -441,6 +976,21 @@ export default function LendingScorecard() {
     await persistLoanApplication('Draft');
   };
 
+  const handleSelectedWorkflowAction = async () => {
+    await changeWorkflowStatus(selectedWorkflowAction);
+  };
+
+  const handleFinalizeDocumentReview = async (newStatus: WorkflowStatus) => {
+    if (!documentReview) {
+      return;
+    }
+
+    const mergedApplication = mergeReviewIntoApplication(formData, documentReview);
+    await changeWorkflowStatus(newStatus, mergedApplication);
+    setDocumentReview(null);
+    setReviewDocumentId(null);
+  };
+
   const loadApplication = useCallback(async (applicationNo: string) => {
     setIsLoadingApplication(true);
 
@@ -449,6 +999,8 @@ export default function LendingScorecard() {
 
       setFormData(hydrateApplication(data));
       setHasPersistedRecord(true);
+      setDocumentReview(null);
+      setReviewDocumentId(null);
       setStep(1);
       setTransientMessage('Application loaded');
     } catch (error) {
@@ -469,6 +1021,9 @@ export default function LendingScorecard() {
   // --- Global Nav Actions ---
   const handleCreateNew = () => {
     setFormData(createNewApplicationInstance());
+    setFormattedNumberDrafts({});
+    setDocumentReview(null);
+    setReviewDocumentId(null);
     setHasPersistedRecord(false);
     setStep(1);
     navigate('/lending-scorecard', { replace: true });
@@ -483,34 +1038,129 @@ export default function LendingScorecard() {
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
   ], [formData, calculations]);
-
-  const isReadyToSubmit = validationChecks.every(v => v.passed);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
-  const getInputValue = (section: EditableSection, field: string): string | number => {
+  const getInputValue = (
+    section: EditableSection,
+    field: string,
+    type = 'text',
+  ): string | number => {
     const rawValue = (formData[section] as Record<string, FieldValue | undefined>)[field];
 
     if (typeof rawValue === 'boolean') {
       return rawValue ? 'true' : 'false';
     }
 
+    if (type === 'number' && rawValue === 0) {
+      return '';
+    }
+
     return rawValue ?? '';
+  };
+
+  const getReviewFieldValue = (
+    section: keyof ParsedSectionUpdates,
+    field: string,
+  ) => {
+    if (!documentReview) {
+      return '';
+    }
+
+    const sectionValues = documentReview.extractedData[section];
+
+    if (!sectionValues) {
+      return '';
+    }
+
+    return (sectionValues as Record<string, string | number | undefined>)[field] ?? '';
+  };
+
+  const hasReviewSectionValues = (section: keyof ParsedSectionUpdates) => {
+    if (!documentReview) {
+      return false;
+    }
+
+    const sectionValues = documentReview.extractedData[section];
+
+    if (!sectionValues) {
+      return false;
+    }
+
+    return Object.values(sectionValues).some(
+      (value) =>
+        value !== undefined &&
+        value !== null &&
+        !(typeof value === 'string' && value.trim().length === 0),
+    );
   };
 
   const renderInput = (section: EditableSection, field: string, label: string, type = 'text', disabled = false) => (
     <div className="mb-3">
-      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</label>
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
       <input
         type={type}
         disabled={disabled}
-        value={getInputValue(section, field)}
+        value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
-        className={`w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+        className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
       />
     </div>
   );
 
+  const renderFormattedNumberInput = (
+    section: EditableSection,
+    field: string,
+    label: string,
+    disabled = false,
+  ) => {
+    const fieldKey = buildFormattedNumberKey(section, field);
+    const rawValue = (formData[section] as Record<string, FieldValue | undefined>)[field];
+    const displayValue =
+      formattedNumberDrafts[fieldKey] ??
+      formatFormattedNumber(rawValue);
+
+    return (
+      <div className="mb-3">
+        <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
+        <input
+          type="text"
+          inputMode="decimal"
+          disabled={disabled}
+          value={displayValue}
+          onFocus={() =>
+            setFormattedNumberDrafts((prev) => ({
+              ...prev,
+              [fieldKey]:
+                rawValue === 0 || rawValue === '' || rawValue === undefined
+                  ? ''
+                  : String(rawValue),
+            }))
+          }
+          onChange={(event) => {
+            const nextDraft = event.target.value
+              .replace(/,/g, '')
+              .replace(/[^\d.-]/g, '');
+
+            setFormattedNumberDrafts((prev) => ({
+              ...prev,
+              [fieldKey]: nextDraft,
+            }));
+            updateField(section, field, parseFormattedNumber(nextDraft));
+          }}
+          onBlur={() =>
+            setFormattedNumberDrafts((prev) => {
+              const nextDrafts = { ...prev };
+              delete nextDrafts[fieldKey];
+              return nextDrafts;
+            })
+          }
+          className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+        />
+      </div>
+    );
+  };
+
   const renderCheckbox = (section: EditableSection, field: string, label: string) => (
-    <label className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+    <label className="loan-checkbox-row flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
       <input
         type="checkbox"
         checked={Boolean((formData[section] as Record<string, FieldValue | undefined>)[field])}
@@ -528,11 +1178,11 @@ export default function LendingScorecard() {
     options: string[],
   ) => (
     <div className="mb-3">
-      <label className="block text-xs font-semibold text-gray-600 uppercase tracking-wide mb-1">{label}</label>
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
       <select
         value={String(getInputValue(section, field))}
         onChange={(event) => updateField(section, field, event.target.value)}
-        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       >
         <option value="">Select...</option>
         {options.map((option) => (
@@ -568,72 +1218,81 @@ export default function LendingScorecard() {
     }
   };
 
+  const topNavButtonClass = 'loan-toolbar-button';
+  const stepperButtonClass = 'loan-stepper-button';
+  const footerButtonClass = 'loan-footer-button';
+  const workflowActionOptions: Array<{ label: string; value: WorkflowStatus }> = [
+    { label: 'Save for Review', value: 'Credit Review' },
+    { label: 'Save as Approved', value: 'Approved' },
+    { label: 'Save for Release', value: 'Released' },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
-      <div className="max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
+    <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
+      <div className="lending-scorecard-card max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
         
         {/* Header & Workflow Status */}
-        <div className="bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">Advanced Loan Origination System</h1>
-            <p className="text-slate-400 text-sm mt-1">Application ID: {formData.id}</p>
+        <div className="loan-page-header bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="loan-page-header-copy">
+            <h1 className="loan-page-title text-2xl font-semibold tracking-tight">Advanced Loan Origination System</h1>
+            <p className="loan-page-id mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Application ID: {formData.id}</p>
           </div>
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-slate-300">Current Status:</span>
-            <span className={`px-4 py-1.5 rounded-full text-sm font-bold uppercase tracking-wider ${getStatusColor(formData.status)}`}>
+          <div className="loan-page-status flex items-center gap-3">
+            <span className="loan-page-status-label text-xs font-medium uppercase tracking-[0.12em] text-slate-300">Current Status</span>
+            <span className={`loan-page-status-chip rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${getStatusColor(formData.status)}`}>
               {formData.status}
             </span>
           </div>
         </div>
 
         {/* Global Pipeline Dashboard Navigation Bar */}
-        <div className="bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
+        <div className="loan-toolbar bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
           <button 
             onClick={handleCreateNew}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-emerald-800 hover:bg-emerald-900 text-white rounded text-xs font-bold transition shadow-sm"
+            className={`${topNavButtonClass} loan-toolbar-button-primary border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
           >
-            ➕ Create New Application
+            Create New Application
           </button>
           <button 
             onClick={() => navigate('/loan-repository')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
-            📋 Review Applications
+            Review Applications
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Credit%20Review')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
-            ⏳ Approval Queue
+            Approval Queue
           </button>
           <button 
             onClick={() => navigate('/loan-repository?status=Released')}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-slate-700 hover:bg-slate-800 text-white rounded text-xs font-semibold transition shadow-sm"
+            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
           >
-            💸 Released Accounts
+            Released Accounts
           </button>
         </div>
 
         {/* Progress Stepper */}
-        <div className="bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
-          <div className="grid min-w-[1200px] grid-cols-10 gap-2 text-xs font-medium text-gray-500">
+        <div className="loan-stepper-shell bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
+          <div className="loan-stepper-grid grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
             {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'Credit Scoring', 'Approval', 'Release & Booking'].map((label, i) => (
               <button
                 key={i}
                 onClick={() => setStep(i + 1)}
-                className={`flex h-full min-h-[84px] w-full flex-col items-center justify-center gap-1 rounded-lg border px-2 py-2 text-center transition hover:border-blue-400 hover:text-blue-600 ${step === i + 1 ? 'border-blue-500 bg-blue-50 text-blue-700 font-bold shadow-sm' : 'border-gray-200 bg-white'}`}
+                className={`${stepperButtonClass} ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
               >
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-xs font-bold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
                   {i + 1}
                 </div>
-                <span className="leading-tight">{label}</span>
+                <span className="leading-snug">{label}</span>
               </button>
             ))}
           </div>
         </div>
 
         {/* Form Body */}
-        <div className="p-6 md:p-8 min-h-[400px]">
+        <div className="loan-page-body p-6 md:p-8 min-h-[400px]">
           {saveMessage && (
             <div
               className={`mb-4 rounded-md p-3 text-sm font-medium ${
@@ -655,7 +1314,7 @@ export default function LendingScorecard() {
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
-              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card'])}
+              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card', 'Personal Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderInput('loan', 'amount', 'Requested Loan Amount', 'number')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
@@ -666,6 +1325,187 @@ export default function LendingScorecard() {
                   <div>Est. Monthly Amortization: <span className="font-bold">${calculations.monthlyPayment.toFixed(2)}</span></div>
                   <div>Loan-to-Value (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
                 </div>
+              </div>
+
+              <div className="md:col-span-2 mt-4 rounded-lg border border-slate-200 bg-slate-50 p-5">
+                <div className="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                  <div>
+                    <h4 className="font-bold text-slate-800 text-sm mb-1">Step 1 Review Capture</h4>
+                    <p className="text-sm text-slate-600">
+                      Take a picture or upload an image document. AI will suggest requirement checks and field values for review before saving.
+                    </p>
+                  </div>
+                  <div className="shrink-0">
+                    <input
+                      type="file"
+                      id="step1DocumentUpload"
+                      className="hidden"
+                      onChange={(event) => void handleFileUpload(event)}
+                      accept="image/*"
+                      capture="environment"
+                    />
+                    <label
+                      htmlFor="step1DocumentUpload"
+                      className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
+                    >
+                      {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
+                    </label>
+                  </div>
+                </div>
+
+                {formData.documents.length > 0 && (
+                  <div className="mt-4 space-y-2">
+                    {formData.documents.map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2"
+                      >
+                        <div>
+                          <p className="text-sm font-semibold text-slate-800">{doc.name}</p>
+                          <p className="text-xs text-slate-500">
+                            {doc.parsedData || 'Waiting for AI analysis...'}
+                          </p>
+                        </div>
+                        <span className={`text-xs font-bold px-2 py-1 rounded ${getDocumentStatusColor(doc.status)}`}>
+                          {doc.status}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {documentReview && (
+                  <div className="mt-5 rounded-lg border border-blue-200 bg-white p-5">
+                    <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 md:flex-row md:items-start md:justify-between">
+                      <div>
+                        <h4 className="font-bold text-slate-800 text-sm mb-1">Verification Confirmation</h4>
+                        <p className="text-sm text-slate-600">
+                          Review and edit AI-suggested details before finalizing this application as draft or for review.
+                        </p>
+                        {reviewDocumentId && (
+                          <p className="mt-1 text-xs text-slate-500">
+                            Linked upload reference: {reviewDocumentId}
+                          </p>
+                        )}
+                      </div>
+                      <div className="rounded-md bg-blue-50 px-3 py-2 text-right">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">Detected Document</p>
+                        <p className="text-sm font-bold text-blue-900">{documentReview.documentType}</p>
+                        <p className="text-xs text-blue-700">
+                          Confidence: {(documentReview.confidence * 100).toFixed(0)}%
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-3">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">AI Summary</p>
+                      <p className="mt-1 text-sm text-slate-700">{documentReview.summary}</p>
+                      {documentReview.notes.length > 0 && (
+                        <ul className="mt-2 list-disc pl-5 text-xs text-slate-600">
+                          {documentReview.notes.map((note) => (
+                            <li key={note}>{note}</li>
+                          ))}
+                        </ul>
+                      )}
+                    </div>
+
+                    <div className="mt-5">
+                      <h5 className="text-sm font-bold text-slate-800 mb-3">Suggested Requirements</h5>
+                      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                        {Object.entries(documentReview.supportingDocuments).map(([field, value]) => (
+                          <label
+                            key={field}
+                            className="loan-checkbox-row flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={Boolean(value)}
+                              onChange={(event) =>
+                                updateDocumentReviewRequirement(
+                                  field as keyof SupportingDocuments,
+                                  event.target.checked,
+                                )
+                              }
+                              className="h-4 w-4"
+                            />
+                            <span>{field}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="mt-5 space-y-5">
+                      {reviewSectionConfigs.map((sectionConfig) =>
+                        hasReviewSectionValues(sectionConfig.key) ? (
+                          <div key={sectionConfig.key} className="rounded-md border border-slate-200 p-4">
+                            <h5 className="text-sm font-bold text-slate-800 mb-3">{sectionConfig.title}</h5>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              {sectionConfig.fields.map((fieldConfig) => {
+                                const fieldValue = getReviewFieldValue(
+                                  sectionConfig.key,
+                                  fieldConfig.key,
+                                );
+
+                                if (fieldValue === '') {
+                                  return null;
+                                }
+
+                                return (
+                                  <div key={`${sectionConfig.key}.${fieldConfig.key}`} className="mb-1">
+                                    <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+                                      {fieldConfig.label}
+                                    </label>
+                                    <input
+                                      type={fieldConfig.type ?? 'text'}
+                                      value={fieldValue}
+                                      onChange={(event) =>
+                                        updateDocumentReviewField(
+                                          sectionConfig.key,
+                                          fieldConfig.key,
+                                          fieldConfig.type === 'number'
+                                            ? parseFormattedNumber(event.target.value)
+                                            : event.target.value,
+                                        )
+                                      }
+                                      className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ) : null,
+                      )}
+                    </div>
+
+                    <div className="mt-5 flex flex-wrap gap-3">
+                      <button
+                        onClick={() => void handleFinalizeDocumentReview('Draft')}
+                        disabled={isSaving}
+                        className="loan-inline-button loan-inline-button-secondary px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50"
+                      >
+                        Apply, Save as Draft
+                      </button>
+                      <button
+                        onClick={() => void handleFinalizeDocumentReview('Credit Review')}
+                        disabled={isSaving}
+                        className="loan-inline-button loan-inline-button-accent px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-semibold transition disabled:opacity-50"
+                      >
+                        Apply, Save for Review
+                      </button>
+                      <button
+                        onClick={() => {
+                          setDocumentReview(null);
+                          setReviewDocumentId(null);
+                        }}
+                        type="button"
+                        className="loan-footer-link inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800"
+                      >
+                        Dismiss Review
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -706,17 +1546,16 @@ export default function LendingScorecard() {
               {renderInput('otherInformation', 'homeOwnership', 'Home Ownership')}
               {renderInput('otherInformation', 'educationalAttainment', 'Educational Attainment')}
               {renderInput('otherInformation', 'numberOfVehiclesOwned', 'Number of Vehicles Owned', 'number')}
-              {renderCheckbox('otherInformation', 'recentPhotoUploaded', '1x1 Recent Photo Uploaded')}
-            </div>
+             </div>
           )}
 
           {step === 3 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment & Income</h3>
               {renderInput('employment', 'history', 'Employment History (Current Employer & Tenure)')}
-              {renderInput('employment', 'monthlyIncome', 'Primary Monthly Income', 'number')}
-              {renderInput('employment', 'otherIncome', 'Other Sources of Income', 'number')}
-              {renderInput('employment', 'debtObligations', 'Existing Monthly Debt Obligations', 'number')}
+              {renderFormattedNumberInput('employment', 'monthlyIncome', 'Primary Monthly Income')}
+              {renderFormattedNumberInput('employment', 'otherIncome', 'Other Sources of Income')}
+              {renderFormattedNumberInput('employment', 'debtObligations', 'Existing Monthly Debt Obligations')}
               <div className="md:col-span-2 bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
                 <h4 className="font-bold text-blue-800 text-sm mb-2">Auto-Calculated Totals</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
@@ -737,11 +1576,11 @@ export default function LendingScorecard() {
               {renderInput('employmentInformation', 'officePhoneNumber', 'Office Phone Number')}
               {renderInput('employmentInformation', 'previousEmployer', 'Previous Employer')}
               {renderInput('employmentInformation', 'totalYearsWorking', 'Total Years Working')}
-              {renderInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income', 'number')}
+              {renderFormattedNumberInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income')}
               {renderInput('employmentInformation', 'monthlyLivingExpenses', 'Monthly Living Expenses', 'number')}
-              {renderInput('employmentInformation', 'otherSourcesOfIncome', 'Other Sources of Income')}
-              {renderInput('employmentInformation', 'investmentIncome', 'Investment Income', 'number')}
-              {renderInput('employmentInformation', 'businessIncome', 'Business Income', 'number')}
+              {renderFormattedNumberInput('employmentInformation', 'otherSourcesOfIncome', 'Other Sources of Income')}
+              {renderFormattedNumberInput('employmentInformation', 'investmentIncome', 'Investment Income')}
+              {renderFormattedNumberInput('employmentInformation', 'businessIncome', 'Business Income')}
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
             </div>
           )}
@@ -750,12 +1589,12 @@ export default function LendingScorecard() {
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
                 <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information</h3>
-                <button onClick={addCoBorrower} className="text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">+ Add Co-Borrower</button>
+                <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
               </div>
               {formData.coBorrowers.length === 0 && <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>}
               {formData.coBorrowers.map((cb, idx) => (
                 <div key={cb.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
-                  <button onClick={() => removeCoBorrower(cb.id)} className="absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">✕</button>
+                  <button onClick={() => removeCoBorrower(cb.id)} className="loan-icon-button absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">Remove</button>
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Co-Borrower #{idx + 1}</h4>
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                     <div className="mb-3">
@@ -768,11 +1607,11 @@ export default function LendingScorecard() {
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Monthly Income</label>
-                      <input type="number" value={cb.monthlyIncome} onChange={(e) => updateCoBorrower(cb.id, 'monthlyIncome', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                      <input type="number" value={cb.monthlyIncome === 0 ? '' : cb.monthlyIncome} onChange={(e) => updateCoBorrower(cb.id, 'monthlyIncome', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Debt Obligations</label>
-                      <input type="number" value={cb.debtObligations} onChange={(e) => updateCoBorrower(cb.id, 'debtObligations', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
+                      <input type="number" value={cb.debtObligations === 0 ? '' : cb.debtObligations} onChange={(e) => updateCoBorrower(cb.id, 'debtObligations', parseFloat(e.target.value)||0)} className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm" />
                     </div>
                     <div className="mb-3">
                       <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Standing</label>
@@ -805,7 +1644,13 @@ export default function LendingScorecard() {
                     ['spouseInformation', 'monthlyExpenses', 'Monthly Expenses'],
                     ['spouseInformation', 'otherIncomeSources', 'Other Income Sources'],
                   ].map(([section, field, label]) => (
-                    renderInput(
+                    field === 'grossMonthlyIncome'
+                      ? renderFormattedNumberInput(
+                          section as EditableSection,
+                          field,
+                          label,
+                        )
+                      : renderInput(
                       section as EditableSection,
                       field,
                       label,
@@ -840,7 +1685,7 @@ export default function LendingScorecard() {
               </div>
               {renderInput('bankingRelationships', 'loanLender', 'Lender / Bank')}
               {renderInput('bankingRelationships', 'loanType', 'Loan Type')}
-              {renderInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance', 'number')}
+              {renderFormattedNumberInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance')}
               {renderInput('bankingRelationships', 'loanMonthlyAmortization', 'Monthly Amortization', 'number')}
             </div>
           )}
@@ -870,7 +1715,7 @@ export default function LendingScorecard() {
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 7: Document Upload Center</h3>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                <input type="file" id="fileUpload" className="hidden" onChange={handleFileUpload} />
+                <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
                 <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
                   <svg className="w-10 h-10 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
                   <span className="text-sm font-medium text-blue-600">Click to upload documents</span>
@@ -893,9 +1738,7 @@ export default function LendingScorecard() {
                         {doc.status}
                       </span>
                       {doc.status === 'Pending' && (
-                        <button onClick={() => handleParseDocument(doc.id)} disabled={isParsing} className="text-xs bg-indigo-600 text-white px-3 py-1.5 rounded hover:bg-indigo-700 disabled:opacity-50">
-                          {isParsing ? 'Parsing...' : 'AI Parse'}
-                        </button>
+                        <span className="text-xs text-slate-500">Awaiting image analysis</span>
                       )}
                     </div>
                   </div>
@@ -976,6 +1819,49 @@ export default function LendingScorecard() {
                 </div>
               </div>
 
+              <div className="space-y-4">
+                <h4 className="font-bold text-slate-800 text-sm">Advanced Scoring Signals</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Fraud Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.fraudScore >= 70 ? 'text-green-600' : creditRiskInsights.fraudScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.fraudScore}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Non-starter Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.nonStarterScore >= 70 ? 'text-green-600' : creditRiskInsights.nonStarterScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.nonStarterScore}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Risk Score</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.riskScore <= 35 ? 'text-green-600' : creditRiskInsights.riskScore <= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
+                      {creditRiskInsights.riskScore.toFixed(1)}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Lower is better</p>
+                  </div>
+
+                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+                    <p className="text-xs font-bold text-gray-500 uppercase">Origination Profitability</p>
+                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.originationProfitability >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      ${creditRiskInsights.originationProfitability.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-1">Margin: {creditRiskInsights.originationMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600 grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div>Gross Interest Revenue: <span className="font-semibold text-gray-800">${creditRiskInsights.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                  <div>Expected Loss Reserve: <span className="font-semibold text-gray-800">${creditRiskInsights.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                  <div>Processing Cost: <span className="font-semibold text-gray-800">${creditRiskInsights.processingCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                </div>
+              </div>
+
               <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
                   <div>
@@ -1041,6 +1927,16 @@ export default function LendingScorecard() {
           {step === 10 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
+              <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
+                <h4 className="font-bold text-blue-800 mb-2 text-sm uppercase">✅ System Validation Check</h4>
+                <ul className="space-y-1">
+                  {validationChecks.map((check, idx) => (
+                    <li key={idx} className={`text-sm flex items-center gap-2 ${check.passed ? 'text-green-700' : 'text-red-600'}`}>
+                      {check.passed ? '✓' : '✗'} {check.label}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
                 <h4 className="font-bold text-green-800 text-sm mb-3">Approval Summary</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
@@ -1111,12 +2007,35 @@ export default function LendingScorecard() {
 
               <div className="bg-slate-800 text-white p-6 rounded-lg mt-6">
                 <h4 className="font-bold text-lg mb-4">Final Workflow Actions</h4>
-                <div className="flex flex-wrap gap-3">
-                  <button onClick={handleSaveDraft} disabled={isSaving} className="px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50">Save Draft</button>
-                  
-                  {formData.status === 'Approved' && (
-                    <button onClick={() => changeWorkflowStatus('Released')} disabled={isSaving} className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-bold transition disabled:opacity-50">Release Funds</button>
-                  )}
+                <div className="flex flex-wrap gap-3 items-end">
+                  <button onClick={handleSaveDraft} disabled={isSaving} className="loan-inline-button loan-inline-button-secondary px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50">Save Draft</button>
+
+                  <div className="min-w-[220px]">
+                    <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
+                      Workflow Action
+                    </label>
+                    <select
+                      value={selectedWorkflowAction}
+                      onChange={(event) =>
+                        setSelectedWorkflowAction(event.target.value as WorkflowStatus)
+                      }
+                      className="loan-form-select w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      {workflowActionOptions.map((option) => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <button
+                    onClick={handleSelectedWorkflowAction}
+                    disabled={isSaving}
+                    className="loan-inline-button loan-inline-button-accent inline-flex min-h-[42px] items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                  >
+                    {workflowActionOptions.find((option) => option.value === selectedWorkflowAction)?.label ?? 'Save Workflow Action'}
+                  </button>
 
                   {formData.status === 'Released' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">Application Successfully Released</span>
@@ -1130,12 +2049,12 @@ export default function LendingScorecard() {
         {/* Footer Navigation */}
         {step < 10 && (
           <div className="bg-gray-50 p-6 border-t flex justify-between">
-            <button onClick={() => setStep(prev => Math.max(prev - 1, 1))} disabled={step === 1} className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 font-medium hover:bg-gray-100 disabled:opacity-50">
+            <button onClick={() => setStep(prev => Math.max(prev - 1, 1))} disabled={step === 1} className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}>
               ← Back
             </button>
             <div className="flex gap-3">
-              <button onClick={handleSaveDraft} disabled={isSaving} className="px-4 py-2 text-gray-600 font-medium hover:text-gray-800 text-sm disabled:opacity-50">Save Draft</button>
-              <button onClick={() => setStep(prev => Math.min(prev + 1, 10))} className="px-6 py-2 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 shadow-sm">
+              <button onClick={handleSaveDraft} disabled={isSaving} className="loan-footer-link inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800 disabled:opacity-50">Save Draft</button>
+              <button onClick={() => setStep(prev => Math.min(prev + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
                 Next Step →
               </button>
             </div>

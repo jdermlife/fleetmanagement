@@ -153,6 +153,375 @@ body {
 }
 .standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
+.app-topbar-row {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.app-brand-block {
+  display: grid;
+  gap: 4px;
+}
+
+.app-brand-title {
+  margin: 0;
+  color: #fff;
+  font-size: 2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.1;
+}
+
+.app-brand-subtitle {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-menu-toggle {
+  min-width: 108px;
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  background: rgba(255, 255, 255, 0.14);
+  color: transparent;
+  font-size: 0;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-menu-toggle::before {
+  content: 'Menu';
+  color: #ffffff;
+  font-size: 0.78rem;
+}
+
+.app-menu-toggle:hover,
+.app-menu-toggle:focus {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.app-menu-panel {
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-menu-group {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.app-menu-link {
+  font-size: 0.95rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.lending-scorecard-page {
+  padding-top: 8px;
+}
+
+.lending-scorecard-card {
+  max-width: 1200px;
+  margin: 0 auto;
+  border-radius: 18px;
+  overflow: hidden;
+  background: #ffffff;
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+}
+
+.loan-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.loan-page-header-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.loan-page-title {
+  margin: 0;
+  font-size: 2.1rem;
+  font-weight: 700;
+  line-height: 1.08;
+  letter-spacing: 0.01em;
+}
+
+.loan-page-id {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.92);
+}
+
+.loan-page-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.loan-page-status-label {
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(226, 232, 240, 0.82);
+}
+
+.loan-page-status-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.loan-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+}
+
+.loan-stepper-shell {
+  overflow-x: auto;
+}
+
+.loan-stepper-grid {
+  display: grid;
+  grid-template-columns: repeat(10, minmax(110px, 1fr));
+  gap: 8px;
+  min-width: 1180px;
+}
+
+.loan-page-body {
+  min-height: 400px;
+}
+
+.lending-scorecard-page h3 {
+  margin: 0 0 14px;
+  font-size: 1.18rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  line-height: 1.3;
+}
+
+.lending-scorecard-page h4 {
+  margin: 0 0 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.4;
+  text-transform: uppercase;
+}
+
+.lending-scorecard-page label,
+.loan-form-label {
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.loan-form-input,
+.loan-form-select,
+.lending-scorecard-page textarea {
+  min-height: 42px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1f2937;
+  font-size: 0.95rem;
+  padding: 10px 12px;
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.loan-form-input:focus,
+.loan-form-select:focus,
+.lending-scorecard-page textarea:focus {
+  border-color: #2563eb;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.loan-checkbox-row {
+  min-height: 42px;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+}
+
+.loan-toolbar-button,
+.loan-inline-button,
+.loan-stepper-button,
+.loan-footer-button {
+  border-radius: 8px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  transition: all 0.2s ease;
+}
+
+.loan-toolbar-button {
+  min-height: 42px;
+  padding: 10px 18px;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.loan-toolbar-button-primary {
+  background: #065f46;
+  border: 1px solid #065f46;
+  color: #ffffff;
+}
+
+.loan-toolbar-button-primary:hover {
+  background: #064e3b;
+}
+
+.loan-toolbar-button-secondary {
+  background: #334155;
+  border: 1px solid #334155;
+  color: #ffffff;
+}
+
+.loan-toolbar-button-secondary:hover {
+  background: #1f2937;
+}
+
+.loan-stepper-button {
+  min-height: 88px;
+  padding: 14px 12px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.82rem;
+  line-height: 1.35;
+}
+
+.loan-stepper-button-active {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 10px 18px rgba(37, 99, 235, 0.08);
+}
+
+.loan-stepper-button-idle:hover {
+  border-color: #93c5fd;
+  color: #2563eb;
+}
+
+.loan-inline-button,
+.loan-footer-button {
+  min-height: 40px;
+  padding: 10px 16px;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.loan-inline-button-primary {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #ffffff;
+}
+
+.loan-inline-button-primary:hover {
+  background: #1d4ed8;
+}
+
+.loan-inline-button-secondary {
+  background: #475569;
+  border: 1px solid #475569;
+  color: #ffffff;
+}
+
+.loan-inline-button-secondary:hover {
+  background: #334155;
+}
+
+.loan-inline-button-accent {
+  background: #4f46e5;
+  border: 1px solid #4f46e5;
+  color: #ffffff;
+}
+
+.loan-inline-button-accent:hover {
+  background: #4338ca;
+}
+
+.loan-icon-button {
+  min-height: auto;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  color: #b91c1c;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.loan-icon-button:hover {
+  background: transparent;
+  color: #991b1b;
+}
+
+.loan-footer-button-primary {
+  background: #2563eb;
+  border: 1px solid #2563eb;
+  color: #ffffff;
+}
+
+.loan-footer-button-primary:hover {
+  background: #1d4ed8;
+}
+
+.loan-footer-button-secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.loan-footer-button-secondary:hover {
+  background: #f8fafc;
+}
+
+.loan-footer-link {
+  font-size: 0.84rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+@media (max-width: 900px) {
+  .loan-page-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .loan-page-title {
+    font-size: 1.75rem;
+  }
+
+  .loan-stepper-grid {
+    grid-template-columns: repeat(10, minmax(120px, 1fr));
+  }
+}
+
 /* ========================
    DASHBOARD & KPIs (PRESERVED)
    ======================== */
