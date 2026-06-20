@@ -1,9 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { getErrorMessage } from "../../api";
 import {
+  exportLoanApplications,
   fetchLoanApplications,
+  importLoanApplications,
   updateLoanApplicationStatus,
   type LoanApplicationRecord,
   type WorkflowStatus,
@@ -59,19 +61,38 @@ function formatPercent(value: number | null | undefined) {
   return typeof value === "number" ? `${value}%` : "N/A";
 }
 
+function formatDateTime(value: string | null | undefined) {
+  if (!value) {
+    return "N/A";
+  }
+
+  const parsed = new Date(value);
+
+  if (Number.isNaN(parsed.getTime())) {
+    return "N/A";
+  }
+
+  return parsed.toLocaleString();
+}
+
 export default function LoanRepository() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const requestedStatus = searchParams.get("status");
 
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
   const [searchText, setSearchText] = useState("");
+  const [dateFrom, setDateFrom] = useState("");
+  const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | WorkflowStatus>(
     "All",
   );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [isImporting, setIsImporting] = useState(false);
+  const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
 
   const filteredApplications = useMemo(() => {
     return applications.filter((application) => {
@@ -87,9 +108,23 @@ export default function LoanRepository() {
       const matchesStatus =
         statusFilter === "All" || application.status === statusFilter;
 
-      return matchesSearch && matchesStatus;
+      const createdAt = application.created_at
+        ? new Date(application.created_at)
+        : null;
+      const matchesDateFrom =
+        !dateFrom ||
+        (createdAt !== null &&
+          !Number.isNaN(createdAt.getTime()) &&
+          createdAt >= new Date(`${dateFrom}T00:00:00`));
+      const matchesDateTo =
+        !dateTo ||
+        (createdAt !== null &&
+          !Number.isNaN(createdAt.getTime()) &&
+          createdAt <= new Date(`${dateTo}T23:59:59.999`));
+
+      return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
     });
-  }, [applications, searchText, statusFilter]);
+  }, [applications, dateFrom, dateTo, searchText, statusFilter]);
 
   const stats = useMemo(
     () => ({
@@ -133,6 +168,61 @@ export default function LoanRepository() {
       await loadApplications();
     } catch (error) {
       setMessage(getErrorMessage(error, "Failed to update loan status."));
+    }
+  };
+
+  const handleImportClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImportFile = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const selectedFile = event.target.files?.[0];
+
+    if (!selectedFile) {
+      return;
+    }
+
+    setIsImporting(true);
+    setMessage("");
+
+    try {
+      const result = await importLoanApplications(selectedFile);
+      setMessage(result.message);
+      await loadApplications();
+    } catch (error) {
+      setMessage(getErrorMessage(error, "Failed to import loan applications."));
+    } finally {
+      setIsImporting(false);
+      event.target.value = "";
+    }
+  };
+
+  const triggerExport = async (format: "csv" | "xlsx") => {
+    setIsExporting(format);
+    setMessage("");
+
+    try {
+      const blob = await exportLoanApplications({
+        dateFrom,
+        dateTo,
+        format,
+        status: statusFilter,
+      });
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = downloadUrl;
+      link.download = `loan-repository-${statusFilter.toLowerCase()}-${dateFrom || "start"}-${dateTo || "end"}.${format}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+      setMessage(`Loan repository ${format.toUpperCase()} export generated.`);
+    } catch (error) {
+      setMessage(getErrorMessage(error, `Failed to export ${format.toUpperCase()}.`));
+    } finally {
+      setIsExporting(null);
     }
   };
 
@@ -196,27 +286,72 @@ export default function LoanRepository() {
           </div>
 
           <div className="border-t p-6">
-            <div className="flex flex-col gap-4 md:flex-row">
-              <input
-                value={searchText}
-                onChange={(event) => setSearchText(event.target.value)}
-                placeholder="Search application no or borrower"
-                className="flex-1 rounded border px-4 py-2"
-              />
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-4 md:flex-row">
+                <input
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  placeholder="Search application no or borrower"
+                  className="flex-1 rounded border px-4 py-2"
+                />
 
-              <select
-                value={statusFilter}
-                onChange={(event) =>
-                  setStatusFilter(event.target.value as "All" | WorkflowStatus)
-                }
-                className="rounded border px-4 py-2"
-              >
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
+                <select
+                  value={statusFilter}
+                  onChange={(event) =>
+                    setStatusFilter(event.target.value as "All" | WorkflowStatus)
+                  }
+                  className="rounded border px-4 py-2"
+                >
+                  {statusOptions.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-4 md:flex-row md:items-center">
+                <input
+                  type="date"
+                  value={dateFrom}
+                  onChange={(event) => setDateFrom(event.target.value)}
+                  className="rounded border px-4 py-2"
+                />
+                <input
+                  type="date"
+                  value={dateTo}
+                  onChange={(event) => setDateTo(event.target.value)}
+                  className="rounded border px-4 py-2"
+                />
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".csv,.xlsx"
+                  onChange={handleImportFile}
+                  className="hidden"
+                />
+                <button
+                  onClick={handleImportClick}
+                  disabled={isImporting}
+                  className="rounded bg-slate-700 px-4 py-2 text-white disabled:opacity-50"
+                >
+                  {isImporting ? "Importing..." : "Upload CSV / Excel"}
+                </button>
+                <button
+                  onClick={() => void triggerExport("csv")}
+                  disabled={isExporting !== null}
+                  className="rounded bg-blue-600 px-4 py-2 text-white disabled:opacity-50"
+                >
+                  {isExporting === "csv" ? "Exporting CSV..." : "Download CSV"}
+                </button>
+                <button
+                  onClick={() => void triggerExport("xlsx")}
+                  disabled={isExporting !== null}
+                  className="rounded bg-emerald-700 px-4 py-2 text-white disabled:opacity-50"
+                >
+                  {isExporting === "xlsx" ? "Exporting Excel..." : "Download Excel"}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -234,6 +369,7 @@ export default function LoanRepository() {
                 <thead>
                   <tr className="bg-gray-100">
                     <th className="p-3 text-left">Application No</th>
+                    <th className="p-3 text-left">Created At</th>
                     <th className="p-3 text-left">Product</th>
                     <th className="p-3 text-left">Borrower</th>
                     <th className="p-3 text-left">Email</th>
@@ -277,6 +413,7 @@ export default function LoanRepository() {
                           {row.application_no}
                         </button>
                       </td>
+                      <td className="p-3">{formatDateTime(row.created_at)}</td>
                       <td className="p-3">{row.product_type}</td>
                       <td className="p-3">{row.borrower_name}</td>
                       <td className="p-3">{row.email}</td>
@@ -375,7 +512,7 @@ export default function LoanRepository() {
                   {!loading && filteredApplications.length === 0 && (
                     <tr>
                       <td
-                        colSpan={24}
+                        colSpan={25}
                         className="p-6 text-center text-sm text-slate-500"
                       >
                         No loan applications matched the current filters.

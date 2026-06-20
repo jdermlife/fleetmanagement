@@ -77,6 +77,23 @@ def ensure_loan_application_schema() -> None:
                 """
             )
         )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE loan_applications
+                SET created_at = NOW()
+                WHERE created_at IS NULL;
+                """
+            )
+        )
 
 
 

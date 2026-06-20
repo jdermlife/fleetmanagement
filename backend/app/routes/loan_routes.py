@@ -1,7 +1,17 @@
-from fastapi import APIRouter, HTTPException, status as http_status
+from io import BytesIO
+
+from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status as http_status
+from fastapi.responses import StreamingResponse
 from app.database import SessionLocal
 from app.models.loan_application import LoanApplication
 from app.schemas.loan_schema import LoanApplicationCreate
+from app.services.loan_repository_io import (
+    apply_repository_filters,
+    generate_csv_bytes,
+    generate_xlsx_bytes,
+    parse_upload_rows,
+    upsert_loan_applications,
+)
 
 router = APIRouter()
 
@@ -92,15 +102,85 @@ def create_loan_application(data: LoanApplicationCreate):
         db.close()
 
 @router.get("/loan-applications")
-def get_loan_applications():
+def get_loan_applications(
+    status: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+):
 
     db = SessionLocal()
 
     try:
-        loans = db.query(LoanApplication).all()
+        query = db.query(LoanApplication)
+        query = apply_repository_filters(query, status, date_from, date_to)
+        loans = query.order_by(LoanApplication.created_at.desc()).all()
 
         return loans
 
+    finally:
+        db.close()
+
+
+@router.post("/loan-applications/import")
+async def import_loan_applications(file: UploadFile = File(...)):
+    db = SessionLocal()
+
+    try:
+        file_bytes = await file.read()
+        rows = parse_upload_rows(file.filename or "upload.csv", file_bytes)
+        result = upsert_loan_applications(db, rows)
+
+        return {
+            "message": (
+                f"Bulk import completed. Inserted: {result['inserted']}, "
+                f"Updated: {result['updated']}, Skipped: {result['skipped']}"
+            ),
+            **result,
+        }
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    finally:
+        db.close()
+
+
+@router.get("/loan-applications/export")
+def export_loan_applications(
+    status: str | None = Query(default=None),
+    date_from: str | None = Query(default=None),
+    date_to: str | None = Query(default=None),
+    format: str = Query(default="csv"),
+):
+    db = SessionLocal()
+
+    try:
+        query = db.query(LoanApplication)
+        query = apply_repository_filters(query, status, date_from, date_to)
+        records = query.order_by(LoanApplication.created_at.desc()).all()
+
+        normalized_format = format.lower()
+        if normalized_format == "xlsx":
+            content = generate_xlsx_bytes(records)
+            media_type = (
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            )
+            extension = "xlsx"
+        else:
+            content = generate_csv_bytes(records)
+            media_type = "text/csv"
+            extension = "csv"
+
+        return StreamingResponse(
+            BytesIO(content),
+            media_type=media_type,
+            headers={
+                "Content-Disposition": (
+                    f'attachment; filename="loan-repository-export.{extension}"'
+                )
+            },
+        )
     finally:
         db.close()
 
