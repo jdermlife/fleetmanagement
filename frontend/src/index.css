@@ -146,10 +146,10 @@ body {
   width: 100%;
   min-width: 0;
   padding: 24px;
-  padding-top: 88px;
+  padding-top: 24px;
   position: relative;
   z-index: 1;
-  overflow-x: auto;
+  overflow-x: hidden;
 }
 .standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
@@ -158,21 +158,25 @@ body {
   width: 100%;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: 18px;
 }
 
 .app-brand-block {
   display: grid;
   gap: 4px;
+  flex: 1 1 320px;
+  min-width: 0;
 }
 
 .app-brand-title {
   margin: 0;
   color: #fff;
-  font-size: 2rem;
+  font-size: clamp(1.35rem, 3vw, 2rem);
   font-weight: 700;
   letter-spacing: 0.01em;
   line-height: 1.1;
+  overflow-wrap: anywhere;
 }
 
 .app-brand-subtitle {
@@ -182,9 +186,14 @@ body {
   font-weight: 600;
   letter-spacing: 0.08em;
   text-transform: uppercase;
+  overflow-wrap: anywhere;
 }
 
 .app-menu-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   min-width: 108px;
   min-height: 42px;
   padding: 10px 18px;
@@ -702,6 +711,18 @@ th { color: var(--dark-gold); }
   .sidebar {
     padding: 12px 16px;
     min-height: auto;
+  }
+
+  .app-topbar-row {
+    align-items: flex-start;
+  }
+
+  .app-brand-block {
+    flex-basis: 100%;
+  }
+
+  .app-menu-toggle {
+    margin-left: auto;
   }
 
   .sidebar-dropdown {
