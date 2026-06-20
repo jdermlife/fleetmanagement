@@ -1045,6 +1045,54 @@ export default function LendingScorecard() {
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
   ], [formData, calculations]);
+  const allValidationChecksPassed = validationChecks.every((check) => check.passed);
+  const finalChecklistComplete = Boolean(
+    formData.finalChecklist?.allRequiredDocumentsProvided &&
+      formData.finalChecklist?.allSignaturesCollected &&
+      formData.finalChecklist?.creditCommitteeApproved &&
+      formData.finalChecklist?.executiveApprovalObtained &&
+      formData.finalChecklist?.collateralDocumentationReady,
+  );
+  const suggestedWorkflowAction = useMemo<WorkflowStatus>(() => {
+    if (formData.status === 'Released') {
+      return 'Released';
+    }
+
+    if (formData.status === 'Rejected') {
+      return 'Rejected';
+    }
+
+    if (formData.status === 'Approved') {
+      return finalChecklistComplete ? 'Released' : 'Approved';
+    }
+
+    if (formData.status === 'Credit Review') {
+      if (aiRecommendation.probability < 50 || creditRiskInsights.riskScore > 60) {
+        return 'Rejected';
+      }
+
+      if (allValidationChecksPassed && aiRecommendation.probability >= 70) {
+        return 'Approved';
+      }
+
+      return 'Credit Review';
+    }
+
+    if (formData.status === 'Submitted' || formData.status === 'Under Review') {
+      return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+    }
+
+    return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+  }, [
+    aiRecommendation.probability,
+    allValidationChecksPassed,
+    creditRiskInsights.riskScore,
+    finalChecklistComplete,
+    formData.status,
+  ]);
+  useEffect(() => {
+    setSelectedWorkflowAction(suggestedWorkflowAction);
+  }, [suggestedWorkflowAction]);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
   const getInputValue = (
     section: EditableSection,
@@ -1235,6 +1283,9 @@ export default function LendingScorecard() {
     { label: 'Approve', value: 'Approved' },
     { label: 'Release', value: 'Released' },
   ];
+  const suggestedWorkflowLabel =
+    workflowActionOptions.find((option) => option.value === suggestedWorkflowAction)?.label ??
+    suggestedWorkflowAction;
   const automatedScoreBand =
     automatedScorecard.total >= 40
       ? 'Prime Quality'
@@ -2163,6 +2214,9 @@ export default function LendingScorecard() {
                     <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
                       Workflow Action
                     </label>
+                    <p className="mb-2 text-xs text-slate-400">
+                      Suggested next: <span className="font-semibold text-slate-100">{suggestedWorkflowLabel}</span>
+                    </p>
                     <select
                       value={selectedWorkflowAction}
                       onChange={(event) =>
