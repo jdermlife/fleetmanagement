@@ -2383,18 +2383,18 @@ export default function LendingScorecard() {
           ? {
               badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
               value: 'text-emerald-700',
-              panel: 'border-emerald-200 bg-[linear-gradient(180deg,#f4fbf6_0%,#ffffff_100%)]',
+              panel: 'border-emerald-200 bg-emerald-50',
             }
           : calculations.dti <= 35
             ? {
                 badge: 'border-amber-200 bg-amber-50 text-amber-700',
                 value: 'text-amber-700',
-                panel: 'border-amber-200 bg-[linear-gradient(180deg,#fff9eb_0%,#ffffff_100%)]',
+                panel: 'border-amber-200 bg-amber-50',
               }
             : {
                 badge: 'border-rose-200 bg-rose-50 text-rose-700',
                 value: 'text-rose-700',
-                panel: 'border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)]',
+                panel: 'border-rose-200 bg-rose-50',
               },
     },
     {
@@ -2412,18 +2412,18 @@ export default function LendingScorecard() {
           ? {
               badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
               value: 'text-emerald-700',
-              panel: 'border-emerald-200 bg-[linear-gradient(180deg,#f4fbf6_0%,#ffffff_100%)]',
+              panel: 'border-emerald-200 bg-emerald-50',
             }
           : calculations.dsr <= 50
             ? {
                 badge: 'border-amber-200 bg-amber-50 text-amber-700',
                 value: 'text-amber-700',
-                panel: 'border-amber-200 bg-[linear-gradient(180deg,#fff9eb_0%,#ffffff_100%)]',
+                panel: 'border-amber-200 bg-amber-50',
               }
             : {
                 badge: 'border-rose-200 bg-rose-50 text-rose-700',
                 value: 'text-rose-700',
-                panel: 'border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)]',
+                panel: 'border-rose-200 bg-rose-50',
               },
     },
   ];
@@ -3169,36 +3169,36 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
-                <div className="bg-[#133a67] px-5 py-3 text-white">
+              <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-lg">
+                <div className="bg-blue-900 px-5 py-3 text-white">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                     <div>
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-blue-100">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-blue-100">
                         Approval Committee Brief
                       </p>
                       <h3 className="m-0 mt-1 text-xl font-semibold tracking-tight">
                         Executive Assessment
                       </h3>
                     </div>
-                    <p className="max-w-2xl text-xs leading-5 text-blue-100/90 md:text-right">
+                    <p className="max-w-2xl text-xs leading-5 text-blue-100 md:text-right">
                       Consolidated summary of lending quality, fraud exposure, social standing,
                       bureau strength, psychometric behavior, and origination returns.
                     </p>
                   </div>
                 </div>
 
-                <div className="grid gap-4 p-4 xl:grid-cols-[1.55fr_0.95fr]">
-                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                <div className="grid gap-4 p-4 xl:grid-cols-2">
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4">
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-wide text-slate-700">
                           QuantScores
                         </h4>
                         <p className="mt-1 text-xs text-slate-500">
                           Committee-ready top-line indicators
                         </p>
                       </div>
-                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                         Reviewed
                       </span>
                     </div>
@@ -3217,24 +3217,24 @@ export default function LendingScorecard() {
                         return (
                           <div
                             key={item.label}
-                            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                            className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
                           >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                               {item.label}
                             </p>
                             <p className={`mt-3 text-4xl font-semibold leading-none ${valueTone}`}>
                               {item.value}
                             </p>
-                            <p className="mt-3 text-[11px] leading-4 text-slate-500">{item.note}</p>
+                            <p className="mt-3 text-xs leading-4 text-slate-500">{item.note}</p>
                           </div>
                         );
                       })}
                     </div>
                   </div>
 
-                  <div className="overflow-hidden rounded-[22px] border border-[#1c4c86] bg-[#133a67] text-white shadow-[0_12px_28px_rgba(19,58,103,0.22)]">
+                  <div className="overflow-hidden rounded-2xl border border-blue-800 bg-blue-900 text-white shadow-lg">
                     <div className="border-b border-white/10 px-5 py-4">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-blue-100">
+                      <p className="text-xs font-semibold uppercase tracking-widest text-blue-100">
                         AI Approval Probability
                       </p>
                     </div>
@@ -3247,11 +3247,11 @@ export default function LendingScorecard() {
                               background: `conic-gradient(#57c27c ${aiRecommendation.probability * 3.6}deg, rgba(255,255,255,0.18) 0deg)`,
                             }}
                           />
-                          <div className="absolute inset-[14px] flex flex-col items-center justify-center rounded-full bg-white text-slate-900 shadow-inner">
+                          <div className="absolute inset-3.5 flex flex-col items-center justify-center rounded-full bg-white text-slate-900 shadow-inner">
                             <span className="text-4xl font-semibold leading-none">
                               {aiRecommendation.probability}%
                             </span>
-                            <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
+                            <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
                               Risk Level: {aiRecommendation.riskLevel}
                             </span>
                           </div>
@@ -3259,34 +3259,34 @@ export default function LendingScorecard() {
                       </div>
 
                       <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                        <span className="text-blue-100/80">Suggested Loan Amount</span>
+                        <span className="text-blue-100">Suggested Loan Amount</span>
                         <span className="text-right font-semibold text-white">
                           PHP {aiRecommendation.suggestedAmount.toLocaleString()}
                         </span>
-                        <span className="text-blue-100/80">Monthly Amortization</span>
+                        <span className="text-blue-100">Monthly Amortization</span>
                         <span className="text-right font-semibold text-white">
                           PHP {calculations.monthlyPayment.toFixed(2)}
                         </span>
-                        <span className="text-blue-100/80">Loan-to-Value (LTV)</span>
+                        <span className="text-blue-100">Loan-to-Value (LTV)</span>
                         <span className="text-right font-semibold text-white">
                           {calculations.ltv.toFixed(1)}%
                         </span>
                       </div>
 
-                      <div className="rounded-[18px] bg-white/10 p-4">
-                        <h5 className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-50">
+                      <div className="rounded-xl bg-white/10 p-4">
+                        <h5 className="m-0 text-xs font-semibold uppercase tracking-wide text-blue-50">
                           Computation Log
                         </h5>
                         <ul className="mt-3 space-y-2">
                           {aiRecommendation.computationLog.map((log, i) => (
                             <li key={i} className="flex items-start gap-2 text-xs leading-5 text-blue-50/90">
-                              <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-[#7bd19a]" />
+                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full bg-emerald-300" />
                               <span>{log}</span>
                             </li>
                           ))}
                         </ul>
                         <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-                          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-100/80">
+                          <span className="text-xs font-semibold uppercase tracking-wide text-blue-100">
                             Final Probability
                           </span>
                           <span className="text-xl font-semibold text-white">
@@ -3298,11 +3298,11 @@ export default function LendingScorecard() {
                   </div>
                 </div>
 
-                <div className="grid gap-4 border-t border-slate-200 bg-slate-50 p-4 xl:grid-cols-[1fr_1.12fr]">
+                <div className="grid gap-4 border-t border-slate-200 bg-slate-50 p-4 xl:grid-cols-2">
                   <div className="space-y-4">
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="mb-4">
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-wide text-slate-700">
                           Capacity Metrics
                         </h4>
                         <p className="mt-1 text-xs text-slate-500">
@@ -3321,9 +3321,9 @@ export default function LendingScorecard() {
                           return (
                             <div
                               key={metric.label}
-                              className="rounded-[18px] border border-slate-200 bg-slate-50 p-4"
+                              className="rounded-xl border border-slate-200 bg-slate-50 p-4"
                             >
-                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                                 {metric.label}
                               </p>
                               <div className="mt-4 flex items-center gap-4">
@@ -3334,20 +3334,20 @@ export default function LendingScorecard() {
                                       background: `conic-gradient(${ringColor} 300deg, #e5e7eb 0deg)`,
                                     }}
                                   />
-                                  <div className="absolute inset-[10px] flex items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-800">
+                                  <div className="absolute inset-2.5 flex items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-800">
                                     {metric.value}
                                   </div>
                                 </div>
                                 <div className="min-w-0">
                                   <span
-                                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${metric.tone.badge}`}
+                                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${metric.tone.badge}`}
                                   >
                                     {metric.status}
                                   </span>
-                                  <p className="mt-3 text-[11px] leading-4 text-slate-500">
+                                  <p className="mt-3 text-xs leading-4 text-slate-500">
                                     Formula:
                                   </p>
-                                  <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                                  <p className="mt-1 text-xs leading-4 text-slate-600">
                                     {metric.formula.replace('Formula: ', '')}
                                   </p>
                                 </div>
@@ -3358,9 +3358,9 @@ export default function LendingScorecard() {
                       </div>
                     </div>
 
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="mb-4">
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-wide text-slate-700">
                           Advanced Scoring Signals
                         </h4>
                         <p className="mt-1 text-xs text-slate-500">
@@ -3371,13 +3371,13 @@ export default function LendingScorecard() {
                         {advancedSignalItems.map((item) => (
                           <div
                             key={item.label}
-                            className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-3"
                           >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                               {item.label}
                             </p>
                             <p className={`mt-2 text-2xl font-semibold ${item.tone}`}>{item.value}</p>
-                            <p className="mt-1 text-[11px] text-slate-500">{item.note}</p>
+                            <p className="mt-1 text-xs text-slate-500">{item.note}</p>
                           </div>
                         ))}
                       </div>
@@ -3385,9 +3385,9 @@ export default function LendingScorecard() {
                         {profitabilityBreakdown.map((item) => (
                           <div
                             key={item.label}
-                            className="rounded-[16px] border border-slate-200 bg-white px-3 py-3"
+                            className="rounded-xl border border-slate-200 bg-white px-3 py-3"
                           >
-                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                               {item.label}
                             </p>
                             <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
@@ -3398,10 +3398,10 @@ export default function LendingScorecard() {
                   </div>
 
                   <div className="space-y-4">
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
                       <div className="mb-4 flex items-center justify-between gap-3">
                         <div>
-                          <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                          <h4 className="m-0 text-sm font-semibold uppercase tracking-wide text-slate-700">
                             Automated Lending Scorecard
                           </h4>
                           <p className="mt-1 text-xs text-slate-500">
@@ -3416,9 +3416,9 @@ export default function LendingScorecard() {
                         {automatedScoreItems.map((c, i) => (
                           <div
                             key={i}
-                            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3"
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
                           >
-                            <div className="grid gap-3 md:grid-cols-[1.2fr_72px_1fr] md:items-center">
+                            <div className="grid gap-3 md:grid-cols-3 md:items-center">
                               <div className="min-w-0">
                                 <div className="flex items-center gap-2">
                                   <span
@@ -3427,16 +3427,16 @@ export default function LendingScorecard() {
                                         ? 'bg-emerald-100 text-emerald-700'
                                         : c.score >= 6
                                           ? 'bg-amber-100 text-amber-700'
-                                          : 'bg-rose-100 text-rose-700'
+                                        : 'bg-rose-100 text-rose-700'
                                     }`}
                                   >
                                     {i + 1}
                                   </span>
-                                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600">
+                                  <p className="text-xs font-bold uppercase tracking-wide text-slate-600">
                                     {c.label}
                                   </p>
                                 </div>
-                                <p className="mt-2 text-[11px] leading-4 text-slate-500">{c.desc}</p>
+                                <p className="mt-2 text-xs leading-4 text-slate-500">{c.desc}</p>
                               </div>
                               <div className="text-right">
                                 <p
@@ -3464,8 +3464,8 @@ export default function LendingScorecard() {
                       </div>
                     </div>
 
-                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
-                      <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                    <div className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-blue-700">
                         Formal Committee Note
                       </div>
                       <p className="mt-4 text-sm leading-6 text-slate-600">
