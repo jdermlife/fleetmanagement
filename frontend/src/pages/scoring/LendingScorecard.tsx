@@ -350,6 +350,23 @@ const calculateAiRecommendation = (
   };
 };
 
+const psychometricResponseToPoints = (response: string) => {
+  switch (response) {
+    case 'Strongly Agree':
+      return 5;
+    case 'Agree':
+      return 4;
+    case 'Neutral':
+      return 3;
+    case 'Disagree':
+      return 2;
+    case 'Strongly Disagree':
+      return 1;
+    default:
+      return 0;
+  }
+};
+
 const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
   if (!dateOfBirth) {
     return 0;
@@ -1837,12 +1854,6 @@ export default function LendingScorecard() {
   const suggestedWorkflowLabel =
     workflowActionOptions.find((option) => option.value === suggestedWorkflowAction)?.label ??
     suggestedWorkflowAction;
-  const automatedScoreBand =
-    automatedScorecard.total >= 40
-      ? 'Prime Quality'
-      : automatedScorecard.total >= 30
-        ? 'Standard Quality'
-        : 'Elevated Review';
   const automatedScoreItems = [
     { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
     { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
@@ -1922,6 +1933,78 @@ export default function LendingScorecard() {
       : aiRecommendation.riskLevel === 'Medium'
         ? 'bg-amber-100 text-amber-800'
         : 'bg-rose-100 text-rose-800';
+  const quantScoresSummary = useMemo(() => {
+    const socialSignals = [
+      formData.enhancedDueDiligence.facebookProfile,
+      formData.enhancedDueDiligence.instagramProfile,
+      formData.enhancedDueDiligence.xProfile,
+      formData.enhancedDueDiligence.tikTokProfile,
+      formData.enhancedDueDiligence.linkedInProfile,
+      formData.enhancedDueDiligence.otherSocialMediaLinks,
+      formData.enhancedDueDiligence.communityInvolvementInformation,
+      formData.enhancedDueDiligence.referencesFromEmployerOrCommunity,
+      formData.enhancedDueDiligence.professionalOrganizationMemberships,
+    ].filter((value) => value.trim().length > 0).length;
+
+    const socialScore = Math.min(100, socialSignals * 12 + (formData.borrower.address ? 10 : 0));
+    const bureauBase =
+      520 +
+      automatedScorecard.total * 5 +
+      (calculations.dsr < 40 ? 70 : calculations.dsr < 55 ? 30 : -30) +
+      (calculations.ltv < 85 ? 40 : calculations.ltv < 95 ? 10 : -25);
+    const creditBureauScore = Math.max(300, Math.min(850, Math.round(bureauBase)));
+
+    const psychometricResponses = Object.values(formData.optionalPsychometricQuestionnaire)
+      .map((response) => psychometricResponseToPoints(response))
+      .filter((score) => score > 0);
+    const psychometricScore =
+      psychometricResponses.length > 0
+        ? Math.round(
+            (psychometricResponses.reduce((sum, score) => sum + score, 0) /
+              (psychometricResponses.length * 5)) *
+              100,
+          )
+        : null;
+
+    const aCreditScore =
+      aiRecommendation.probability >= 85 && creditRiskInsights.riskScore < 35
+        ? 'A'
+        : aiRecommendation.probability >= 70 && creditRiskInsights.riskScore < 50
+          ? 'B'
+          : aiRecommendation.probability >= 55
+            ? 'C'
+            : 'D';
+
+    return {
+      aCreditScore,
+      fraudScore: creditRiskInsights.fraudScore.toFixed(0),
+      socialScore: socialScore.toFixed(0),
+      creditBureauScore: creditBureauScore.toString(),
+      psychometricScore: psychometricScore !== null ? psychometricScore.toString() : 'N/A',
+      originationProfitability: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    };
+  }, [
+    aiRecommendation.probability,
+    automatedScorecard.total,
+    calculations.dsr,
+    calculations.ltv,
+    creditRiskInsights.fraudScore,
+    creditRiskInsights.originationProfitability,
+    creditRiskInsights.riskScore,
+    formData.borrower.address,
+    formData.enhancedDueDiligence.communityInvolvementInformation,
+    formData.enhancedDueDiligence.facebookProfile,
+    formData.enhancedDueDiligence.instagramProfile,
+    formData.enhancedDueDiligence.linkedInProfile,
+    formData.enhancedDueDiligence.otherSocialMediaLinks,
+    formData.enhancedDueDiligence.professionalOrganizationMemberships,
+    formData.enhancedDueDiligence.referencesFromEmployerOrCommunity,
+    formData.enhancedDueDiligence.tikTokProfile,
+    formData.enhancedDueDiligence.xProfile,
+    formData.optionalPsychometricQuestionnaire,
+  ]);
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -1987,7 +2070,7 @@ export default function LendingScorecard() {
         {/* Progress Stepper */}
         <div className="loan-stepper-shell bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
           <div className="loan-stepper-grid grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
-            {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'Credit Scoring', 'Approval', 'Release & Booking'].map((label, i) => (
+            {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'QuantScores', 'Approval', 'Release & Booking'].map((label, i) => (
               <button
                 key={i}
                 onClick={() => setStep(i + 1)}
@@ -2666,29 +2749,34 @@ export default function LendingScorecard() {
               <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_58%,#334155_100%)] p-6 text-white shadow-[0_22px_48px_rgba(15,23,42,0.18)] md:p-8">
                 <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
                   <div className="max-w-2xl space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">Step 8: Credit Scoring</p>
-                    <h3 className="m-0 text-3xl font-semibold tracking-tight text-white">Executive Credit Assessment</h3>
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">Step 8: QuantScores</p>
+                    <h3 className="m-0 text-3xl font-semibold tracking-tight text-white">Executive Assessment</h3>
                     <p className="text-sm leading-6 text-slate-300 md:text-base">
-                      Consolidated underwriting view for debt capacity, collateral quality,
-                      profitability, and AI-assisted approval guidance.
+                      Consolidated summary of lending quality, fraud exposure, social standing,
+                      bureau strength, psychometric behavior, and origination returns.
                     </p>
                   </div>
-                  <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[340px]">
-                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Total Automated Score</p>
-                      <p className="mt-2 text-4xl font-semibold text-white">
-                        {automatedScorecard.total}
-                        <span className="ml-1 text-base font-medium text-slate-300">/50</span>
-                      </p>
-                      <p className="mt-2 text-xs text-slate-300">{automatedScoreBand}</p>
-                    </div>
-                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">AI Approval Outlook</p>
-                      <p className="mt-2 text-4xl font-semibold text-cyan-300">{aiRecommendation.probability}%</p>
-                      <p className="mt-2 text-xs text-slate-300">
-                        Suggested amount PHP {aiRecommendation.suggestedAmount.toLocaleString()}
-                      </p>
-                    </div>
+                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    {[
+                      { label: 'A-Credit Score', value: quantScoresSummary.aCreditScore },
+                      { label: 'Fraud Score', value: quantScoresSummary.fraudScore },
+                      { label: 'Social Score', value: quantScoresSummary.socialScore },
+                      { label: 'Credit Bureau Score', value: quantScoresSummary.creditBureauScore },
+                      { label: 'Psychometric Score', value: quantScoresSummary.psychometricScore },
+                      { label: 'Origination Profitability', value: quantScoresSummary.originationProfitability },
+                    ].map((item) => (
+                      <div
+                        key={item.label}
+                        className="min-h-[118px] rounded-none border border-[#8f6b00] bg-[linear-gradient(180deg,#f3d37b_0%,#d8a928_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(15,23,42,0.18)]"
+                      >
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4d3800]">
+                          {item.label}
+                        </p>
+                        <p className="mt-4 text-3xl font-extrabold leading-tight text-[#2f2200]">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
                   </div>
                 </div>
               </div>
