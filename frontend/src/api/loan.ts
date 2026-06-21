@@ -255,6 +255,138 @@ export interface LoanApplicationRequirements {
   }
 }
 
+export interface CreditScoreRecord {
+  id?: number
+  created_at?: string
+  character_score?: number | null
+  capacity_score?: number | null
+  capital_score?: number | null
+  collateral_score?: number | null
+  conditions_score?: number | null
+  bureau_score?: number | null
+  internal_score?: number | null
+  total_credit_score?: number | null
+  credit_grade?: string | null
+  model_version?: string | null
+}
+
+export interface FraudScoreRecord {
+  id?: number
+  created_at?: string
+  identity_score?: number | null
+  document_score?: number | null
+  geo_location_score?: number | null
+  device_score?: number | null
+  duplicate_application_score?: number | null
+  overall_fraud_score?: number | null
+  fraud_risk_level?: string | null
+  fraud_flags?: Record<string, unknown>
+}
+
+export interface SocialScoreRecord {
+  id?: number
+  created_at?: string
+  residence_stability_score?: number | null
+  employment_stability_score?: number | null
+  family_stability_score?: number | null
+  education_score?: number | null
+  banking_relationship_score?: number | null
+  overall_social_score?: number | null
+}
+
+export interface PsychometricScoreRecord {
+  id?: number
+  created_at?: string
+  discipline_score?: number | null
+  planning_score?: number | null
+  responsibility_score?: number | null
+  honesty_score?: number | null
+  resilience_score?: number | null
+  overall_psychometric_score?: number | null
+  questionnaire_answers?: Record<string, unknown>
+}
+
+export interface CreditBureauReportRecord {
+  id?: number
+  created_at?: string
+  bureau_name?: string | null
+  bureau_score?: number | null
+  total_loans?: number | null
+  active_loans?: number | null
+  closed_loans?: number | null
+  delinquent_accounts?: number | null
+  defaulted_accounts?: number | null
+  outstanding_balance?: number | null
+  report_json?: Record<string, unknown>
+  report_date?: string | null
+}
+
+export interface CollateralScoreRecord {
+  id?: number
+  created_at?: string
+  ltv_score?: number | null
+  asset_quality_score?: number | null
+  marketability_score?: number | null
+  insurance_score?: number | null
+  overall_collateral_score?: number | null
+}
+
+export interface ProfitabilityScoreRecord {
+  id?: number
+  created_at?: string
+  projected_interest_income?: number | null
+  fee_income?: number | null
+  expected_loss?: number | null
+  operating_cost?: number | null
+  funding_cost?: number | null
+  projected_profit?: number | null
+  profitability_score?: number | null
+}
+
+export interface RelationshipScoreRecord {
+  id?: number
+  created_at?: string
+  customer_since?: string | null
+  number_of_accounts?: number | null
+  deposit_balance?: number | null
+  prior_loans?: number | null
+  relationship_score?: number | null
+}
+
+export interface AIRecommendationRecord {
+  id?: number
+  created_at?: string
+  recommendation?: string | null
+  confidence_score?: number | null
+  explanation?: string | null
+  suggested_amount?: number | null
+  ai_model?: string | null
+}
+
+export interface OverallScoreRecord {
+  id?: number
+  created_at?: string
+  credit_score?: number | null
+  fraud_score?: number | null
+  social_score?: number | null
+  psychometric_score?: number | null
+  collateral_score?: number | null
+  profitability_score?: number | null
+  relationship_score?: number | null
+  final_score?: number | null
+  final_grade?: string | null
+  final_decision?: string | null
+}
+
+export interface DecisionAuditTrailRecord {
+  id?: number
+  changed_at?: string
+  previous_status?: string | null
+  new_status?: string | null
+  remarks?: string | null
+  changed_by?: string | null
+}
+
 export interface LoanApplicationPayload {
   application_no: string
   status: WorkflowStatus
@@ -281,6 +413,17 @@ export interface LoanApplicationPayload {
   scorecard_total: number
   ai_probability: number
   requirements: LoanApplicationRequirements
+  credit_scores: CreditScoreRecord
+  fraud_scores: FraudScoreRecord
+  social_scores: SocialScoreRecord
+  psychometric_scores: PsychometricScoreRecord
+  credit_bureau_reports: CreditBureauReportRecord
+  collateral_scores: CollateralScoreRecord
+  profitability_scores: ProfitabilityScoreRecord
+  relationship_scores: RelationshipScoreRecord
+  ai_recommendations: AIRecommendationRecord
+  overall_scores: OverallScoreRecord
+  decision_audit_trail?: DecisionAuditTrailRecord[]
 }
 
 export interface LoanApplicationRecord extends LoanApplicationPayload {

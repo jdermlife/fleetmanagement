@@ -307,6 +307,8 @@ const calculateCreditRiskInsights = (
     grossRevenue,
     expectedLoss,
     processingCost,
+    parsedDocsCount,
+    docsCoverage,
   };
 };
 
@@ -365,6 +367,377 @@ const psychometricResponseToPoints = (response: string) => {
     default:
       return 0;
   }
+};
+
+const clampScore = (value: number, min = 0, max = 100) =>
+  Math.max(min, Math.min(max, value));
+
+const averageScore = (values: Array<number | null | undefined>) => {
+  const validValues = values.filter((value): value is number => typeof value === 'number');
+  if (validValues.length === 0) {
+    return 0;
+  }
+
+  return validValues.reduce((sum, value) => sum + value, 0) / validValues.length;
+};
+
+const mapEducationScore = (education: string) => {
+  switch (education.trim().toLowerCase()) {
+    case 'post graduate':
+    case 'postgraduate':
+      return 95;
+    case 'college':
+    case 'college graduate':
+      return 85;
+    case 'vocational':
+      return 72;
+    case 'high school':
+      return 65;
+    case 'elementary':
+      return 50;
+    default:
+      return 40;
+  }
+};
+
+const normalizeCustomerSince = (value: string) => {
+  if (!value) {
+    return null;
+  }
+
+  const parsedDate = new Date(value);
+  if (Number.isNaN(parsedDate.getTime())) {
+    return null;
+  }
+
+  return parsedDate.toISOString().slice(0, 10);
+};
+
+const calculateQuantScoresSummary = (
+  application: LoanApplication,
+  calculations: ReturnType<typeof calculateLoanMetrics>,
+  automatedTotal: number,
+  aiRecommendation: ReturnType<typeof calculateAiRecommendation>,
+  creditRiskInsights: ReturnType<typeof calculateCreditRiskInsights>,
+) => {
+  const socialSignals = [
+    application.enhancedDueDiligence.facebookProfile,
+    application.enhancedDueDiligence.instagramProfile,
+    application.enhancedDueDiligence.xProfile,
+    application.enhancedDueDiligence.tikTokProfile,
+    application.enhancedDueDiligence.linkedInProfile,
+    application.enhancedDueDiligence.otherSocialMediaLinks,
+    application.enhancedDueDiligence.communityInvolvementInformation,
+    application.enhancedDueDiligence.referencesFromEmployerOrCommunity,
+    application.enhancedDueDiligence.professionalOrganizationMemberships,
+  ].filter((value) => value.trim().length > 0).length;
+
+  const socialScoreValue = Math.min(
+    100,
+    socialSignals * 12 + (application.borrower.address ? 10 : 0),
+  );
+  const bureauBase =
+    520 +
+    automatedTotal * 5 +
+    (calculations.dsr < 40 ? 70 : calculations.dsr < 55 ? 30 : -30) +
+    (calculations.ltv < 85 ? 40 : calculations.ltv < 95 ? 10 : -25);
+  const creditBureauScoreValue = Math.max(
+    300,
+    Math.min(850, Math.round(bureauBase)),
+  );
+
+  const psychometricResponses = Object.values(application.optionalPsychometricQuestionnaire)
+    .map((response) => psychometricResponseToPoints(response))
+    .filter((score) => score > 0);
+  const psychometricScoreValue =
+    psychometricResponses.length > 0
+      ? Math.round(
+          (psychometricResponses.reduce((sum, score) => sum + score, 0) /
+            (psychometricResponses.length * 5)) *
+            100,
+        )
+      : null;
+
+  const aCreditScore =
+    aiRecommendation.probability >= 85 && creditRiskInsights.riskScore < 35
+      ? 'A'
+      : aiRecommendation.probability >= 70 && creditRiskInsights.riskScore < 50
+        ? 'B'
+        : aiRecommendation.probability >= 55
+          ? 'C'
+          : 'D';
+
+  return {
+    aCreditScore,
+    fraudScoreValue: Math.round(creditRiskInsights.fraudScore),
+    fraudScore: creditRiskInsights.fraudScore.toFixed(0),
+    socialScoreValue,
+    socialScore: socialScoreValue.toFixed(0),
+    creditBureauScoreValue,
+    creditBureauScore: creditBureauScoreValue.toString(),
+    psychometricScoreValue,
+    psychometricScore:
+      psychometricScoreValue !== null ? psychometricScoreValue.toString() : 'N/A',
+    originationProfitabilityValue: creditRiskInsights.originationProfitability,
+    originationProfitability: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+      maximumFractionDigits: 0,
+    })}`,
+  };
+};
+
+const buildScorePayloadSections = (
+  application: LoanApplication,
+  calculations: ReturnType<typeof calculateLoanMetrics>,
+  automatedScorecard: ReturnType<typeof calculateAutomatedScorecard>,
+  creditRiskInsights: ReturnType<typeof calculateCreditRiskInsights>,
+  aiRecommendation: ReturnType<typeof calculateAiRecommendation>,
+) => {
+  const quantSummary = calculateQuantScoresSummary(
+    application,
+    calculations,
+    automatedScorecard.total,
+    aiRecommendation,
+    creditRiskInsights,
+  );
+  const psychometricAnswers = application.optionalPsychometricQuestionnaire;
+  const psychometricResponseValues = Object.values(psychometricAnswers).map((response) =>
+    psychometricResponseToPoints(response),
+  );
+  const traitSlices = [
+    psychometricResponseValues.slice(0, 4),
+    psychometricResponseValues.slice(4, 8),
+    psychometricResponseValues.slice(8, 12),
+    psychometricResponseValues.slice(12, 16),
+    psychometricResponseValues.slice(16, 20),
+  ];
+  const traitScores = traitSlices.map((slice) => {
+    const valid = slice.filter((value) => value > 0);
+    if (valid.length === 0) {
+      return null;
+    }
+
+    return Math.round((averageScore(valid) / 5) * 100);
+  });
+
+  const identityScore = clampScore(
+    (application.borrower.govId ? 35 : 0) +
+      (application.borrower.email ? 20 : 0) +
+      (application.borrower.phone ? 20 : 0) +
+      (application.applicantPersonal.dateOfBirth ? 15 : 0) +
+      (application.contactInformation.mobileNumber ? 10 : 0),
+  );
+  const documentScore = Math.round(clampScore(creditRiskInsights.docsCoverage * 100));
+  const geoLocationScore = application.borrower.address ? 85 : 25;
+  const deviceScore = 50;
+  const duplicateApplicationScore = 100;
+  const fraudRiskLevel =
+    creditRiskInsights.fraudScore >= 70
+      ? 'Low'
+      : creditRiskInsights.fraudScore >= 50
+        ? 'Medium'
+        : 'High';
+
+  const residenceStabilityScore = clampScore(
+    (application.addressInformation.lengthOfStay ? 60 : 35) +
+      (application.otherInformation.homeOwnership ? 20 : 0) +
+      (application.borrower.address ? 20 : 0),
+  );
+  const employmentStabilityScore = clampScore(
+    (application.employmentInformation.totalYearsWorking ? 65 : 40) +
+      (application.employmentInformation.employmentStatus ? 20 : 0) +
+      (application.employmentInformation.employerBusinessName ? 15 : 0),
+  );
+  const familyStabilityScore = clampScore(
+    (application.applicantPersonal.maritalStatus ? 45 : 25) +
+      (application.spouseInformation.fullName ? 20 : 0) +
+      (application.applicantPersonal.numberOfDependents >= 0 ? 15 : 0) +
+      (application.enhancedDueDiligence.referencesFromEmployerOrCommunity ? 20 : 0),
+  );
+  const educationScore = mapEducationScore(
+    application.otherInformation.educationalAttainment,
+  );
+  const bankingRelationshipScore = clampScore(
+    (application.bankingRelationships.accountNumber ? 35 : 0) +
+      (application.bankingRelationships.currentBalance > 0 ? 35 : 0) +
+      (application.bankingRelationships.creditCardNumber ? 15 : 0) +
+      (application.bankingRelationships.memberSince ? 15 : 0),
+  );
+  const overallSocialScore = Math.round(
+    averageScore([
+      residenceStabilityScore,
+      employmentStabilityScore,
+      familyStabilityScore,
+      educationScore,
+      bankingRelationshipScore,
+    ]),
+  );
+
+  const ltvScore = Math.round(clampScore(100 - calculations.ltv));
+  const assetQualityScore = clampScore(
+    (application.collateral.assetType ? 30 : 10) +
+      (application.collateral.brand ? 15 : 0) +
+      (application.collateral.model ? 15 : 0) +
+      (calculations.totalCollateralValue > 0 ? 40 : 0),
+  );
+  const marketabilityScore = clampScore(
+    (application.collateral.brand ? 35 : 10) +
+      (application.collateral.year ? 25 : 10) +
+      (application.loan.productType === 'Auto Loan' ? 20 : 10) +
+      (application.collateralInformation.propertyAddress ? 20 : 10),
+  );
+  const insuranceScore = clampScore(
+    (application.collateral.insuranceProviderCompany ? 55 : 20) +
+      (application.collateral.policyNumber ? 45 : 20),
+  );
+  const overallCollateralScore = Math.round(
+    averageScore([ltvScore, assetQualityScore, marketabilityScore, insuranceScore]),
+  );
+
+  const profitabilityScore = Math.round(
+    clampScore(50 + creditRiskInsights.originationMargin),
+  );
+  const numberOfAccounts =
+    (application.bankingRelationships.accountNumber ? 1 : 0) +
+    (application.bankingRelationships.creditCardNumber ? 1 : 0) +
+    (application.bankingRelationships.loanLender ? 1 : 0);
+  const priorLoans = application.enhancedDueDiligence.numberOfActiveLoans;
+  const relationshipScore = Math.round(
+    clampScore(
+      numberOfAccounts * 25 +
+        (application.bankingRelationships.currentBalance > 0 ? 35 : 0) +
+        (application.bankingRelationships.memberSince ? 20 : 0) +
+        (priorLoans > 0 ? 20 : 10),
+    ),
+  );
+
+  const recommendation =
+    aiRecommendation.probability > 80
+      ? 'Approve'
+      : aiRecommendation.probability > 60
+        ? 'Review'
+        : 'Decline';
+
+  const finalScore = Math.round(
+    averageScore([
+      automatedScorecard.total * 2,
+      quantSummary.fraudScoreValue,
+      overallSocialScore,
+      quantSummary.psychometricScoreValue,
+      overallCollateralScore,
+      profitabilityScore,
+      relationshipScore,
+    ]),
+  );
+
+  return {
+    quantSummary,
+    credit_scores: {
+      character_score: automatedScorecard.character,
+      capacity_score: automatedScorecard.capacity,
+      capital_score: automatedScorecard.capital,
+      collateral_score: automatedScorecard.collateral,
+      conditions_score: automatedScorecard.conditions,
+      bureau_score: quantSummary.creditBureauScoreValue,
+      internal_score: automatedScorecard.total,
+      total_credit_score: Math.round(
+        averageScore([
+          automatedScorecard.total * 2,
+          quantSummary.creditBureauScoreValue / 8.5,
+        ]),
+      ),
+      credit_grade: quantSummary.aCreditScore,
+      model_version: 'frontend-rule-engine-v1',
+    },
+    fraud_scores: {
+      identity_score: identityScore,
+      document_score: documentScore,
+      geo_location_score: geoLocationScore,
+      device_score: deviceScore,
+      duplicate_application_score: duplicateApplicationScore,
+      overall_fraud_score: quantSummary.fraudScoreValue,
+      fraud_risk_level: fraudRiskLevel,
+      fraud_flags: {
+        missing_government_id: !application.borrower.govId,
+        missing_address: !application.borrower.address,
+        parsed_documents_count: creditRiskInsights.parsedDocsCount,
+        document_coverage_ratio: Number(creditRiskInsights.docsCoverage.toFixed(2)),
+      },
+    },
+    social_scores: {
+      residence_stability_score: residenceStabilityScore,
+      employment_stability_score: employmentStabilityScore,
+      family_stability_score: familyStabilityScore,
+      education_score: educationScore,
+      banking_relationship_score: bankingRelationshipScore,
+      overall_social_score: overallSocialScore,
+    },
+    psychometric_scores: {
+      discipline_score: traitScores[0],
+      planning_score: traitScores[1],
+      responsibility_score: traitScores[2],
+      honesty_score: traitScores[3],
+      resilience_score: traitScores[4],
+      overall_psychometric_score: quantSummary.psychometricScoreValue,
+      questionnaire_answers: { ...psychometricAnswers },
+    },
+    credit_bureau_reports: {
+      bureau_name: 'Modeled Internal Bureau Proxy',
+      bureau_score: quantSummary.creditBureauScoreValue,
+      total_loans: priorLoans,
+      active_loans: priorLoans,
+      closed_loans: 0,
+      delinquent_accounts: 0,
+      defaulted_accounts: 0,
+      outstanding_balance: application.bankingRelationships.loanCurrentBalance,
+      report_json: {
+        modeled: true,
+        source: 'lending_scorecard_frontend',
+      },
+      report_date: new Date().toISOString(),
+    },
+    collateral_scores: {
+      ltv_score: ltvScore,
+      asset_quality_score: assetQualityScore,
+      marketability_score: marketabilityScore,
+      insurance_score: insuranceScore,
+      overall_collateral_score: overallCollateralScore,
+    },
+    profitability_scores: {
+      projected_interest_income: creditRiskInsights.grossRevenue,
+      fee_income: 0,
+      expected_loss: creditRiskInsights.expectedLoss,
+      operating_cost: creditRiskInsights.processingCost,
+      funding_cost: 0,
+      projected_profit: creditRiskInsights.originationProfitability,
+      profitability_score: profitabilityScore,
+    },
+    relationship_scores: {
+      customer_since: normalizeCustomerSince(application.bankingRelationships.memberSince),
+      number_of_accounts: numberOfAccounts,
+      deposit_balance: application.bankingRelationships.currentBalance,
+      prior_loans: priorLoans,
+      relationship_score: relationshipScore,
+    },
+    ai_recommendations: {
+      recommendation,
+      confidence_score: aiRecommendation.probability,
+      explanation: aiRecommendation.computationLog.join(' '),
+      suggested_amount: aiRecommendation.suggestedAmount,
+      ai_model: 'frontend-rule-engine-v1',
+    },
+    overall_scores: {
+      credit_score: automatedScorecard.total * 2,
+      fraud_score: quantSummary.fraudScoreValue,
+      social_score: overallSocialScore,
+      psychometric_score: quantSummary.psychometricScoreValue,
+      collateral_score: overallCollateralScore,
+      profitability_score: profitabilityScore,
+      relationship_score: relationshipScore,
+      final_score: finalScore,
+      final_grade: quantSummary.aCreditScore,
+      final_decision: recommendation,
+    },
+  };
 };
 
 const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
@@ -1107,40 +1480,63 @@ export default function LendingScorecard() {
       application,
       payloadCalculations,
     );
+    const payloadCreditRiskInsights = calculateCreditRiskInsights(
+      application,
+      payloadCalculations,
+      payloadScorecard.total,
+    );
     const payloadAiRecommendation = calculateAiRecommendation(
       application,
       payloadCalculations,
       payloadScorecard.total,
     );
+    const payloadScoreSections = buildScorePayloadSections(
+      application,
+      payloadCalculations,
+      payloadScorecard,
+      payloadCreditRiskInsights,
+      payloadAiRecommendation,
+    );
     const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
 
     return {
-    application_no: application.id,
-    status: newStatus,
-    product_type: application.loan.productType,
-    borrower_name: application.borrower.fullName,
-    email: application.borrower.email,
-    phone: application.borrower.phone,
-    gov_id: application.borrower.govId,
-    address: application.borrower.address,
-    monthly_income: application.employment.monthlyIncome,
-    other_income: application.employment.otherIncome,
-    debt_obligations: application.employment.debtObligations,
-    loan_amount: application.loan.amount,
-    term_months: application.loan.termMonths,
-    interest_rate: application.loan.interestRate,
-    purpose: application.loan.purpose,
-    vehicle_info: derivedVehicleInfo,
-    appraised_value: payloadCalculations.totalCollateralValue,
-    committee_remarks: application.committeeRemarks,
-    executive_approval: application.routing.executiveApproval,
-    dti: payloadCalculations.dti,
-    dsr: payloadCalculations.dsr,
-    ltv: payloadCalculations.ltv,
-    scorecard_total: payloadScorecard.total,
-    ai_probability: payloadAiRecommendation.probability,
-    requirements: buildLoanRequirements(application),
-  };
+      application_no: application.id,
+      status: newStatus,
+      product_type: application.loan.productType,
+      borrower_name: application.borrower.fullName,
+      email: application.borrower.email,
+      phone: application.borrower.phone,
+      gov_id: application.borrower.govId,
+      address: application.borrower.address,
+      monthly_income: application.employment.monthlyIncome,
+      other_income: application.employment.otherIncome,
+      debt_obligations: application.employment.debtObligations,
+      loan_amount: application.loan.amount,
+      term_months: application.loan.termMonths,
+      interest_rate: application.loan.interestRate,
+      purpose: application.loan.purpose,
+      vehicle_info: derivedVehicleInfo,
+      appraised_value: payloadCalculations.totalCollateralValue,
+      committee_remarks: application.committeeRemarks,
+      executive_approval: application.routing.executiveApproval,
+      dti: payloadCalculations.dti,
+      dsr: payloadCalculations.dsr,
+      ltv: payloadCalculations.ltv,
+      scorecard_total: payloadScorecard.total,
+      ai_probability: payloadAiRecommendation.probability,
+      requirements: buildLoanRequirements(application),
+      credit_scores: payloadScoreSections.credit_scores,
+      fraud_scores: payloadScoreSections.fraud_scores,
+      social_scores: payloadScoreSections.social_scores,
+      psychometric_scores: payloadScoreSections.psychometric_scores,
+      credit_bureau_reports: payloadScoreSections.credit_bureau_reports,
+      collateral_scores: payloadScoreSections.collateral_scores,
+      profitability_scores: payloadScoreSections.profitability_scores,
+      relationship_scores: payloadScoreSections.relationship_scores,
+      ai_recommendations: payloadScoreSections.ai_recommendations,
+      overall_scores: payloadScoreSections.overall_scores,
+      decision_audit_trail: [],
+    };
   };
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
@@ -1933,78 +2329,111 @@ export default function LendingScorecard() {
       : aiRecommendation.riskLevel === 'Medium'
         ? 'bg-amber-100 text-amber-800'
         : 'bg-rose-100 text-rose-800';
-  const quantScoresSummary = useMemo(() => {
-    const socialSignals = [
-      formData.enhancedDueDiligence.facebookProfile,
-      formData.enhancedDueDiligence.instagramProfile,
-      formData.enhancedDueDiligence.xProfile,
-      formData.enhancedDueDiligence.tikTokProfile,
-      formData.enhancedDueDiligence.linkedInProfile,
-      formData.enhancedDueDiligence.otherSocialMediaLinks,
-      formData.enhancedDueDiligence.communityInvolvementInformation,
-      formData.enhancedDueDiligence.referencesFromEmployerOrCommunity,
-      formData.enhancedDueDiligence.professionalOrganizationMemberships,
-    ].filter((value) => value.trim().length > 0).length;
-
-    const socialScore = Math.min(100, socialSignals * 12 + (formData.borrower.address ? 10 : 0));
-    const bureauBase =
-      520 +
-      automatedScorecard.total * 5 +
-      (calculations.dsr < 40 ? 70 : calculations.dsr < 55 ? 30 : -30) +
-      (calculations.ltv < 85 ? 40 : calculations.ltv < 95 ? 10 : -25);
-    const creditBureauScore = Math.max(300, Math.min(850, Math.round(bureauBase)));
-
-    const psychometricResponses = Object.values(formData.optionalPsychometricQuestionnaire)
-      .map((response) => psychometricResponseToPoints(response))
-      .filter((score) => score > 0);
-    const psychometricScore =
-      psychometricResponses.length > 0
-        ? Math.round(
-            (psychometricResponses.reduce((sum, score) => sum + score, 0) /
-              (psychometricResponses.length * 5)) *
-              100,
-          )
-        : null;
-
-    const aCreditScore =
-      aiRecommendation.probability >= 85 && creditRiskInsights.riskScore < 35
-        ? 'A'
-        : aiRecommendation.probability >= 70 && creditRiskInsights.riskScore < 50
-          ? 'B'
-          : aiRecommendation.probability >= 55
-            ? 'C'
-            : 'D';
-
-    return {
-      aCreditScore,
-      fraudScore: creditRiskInsights.fraudScore.toFixed(0),
-      socialScore: socialScore.toFixed(0),
-      creditBureauScore: creditBureauScore.toString(),
-      psychometricScore: psychometricScore !== null ? psychometricScore.toString() : 'N/A',
-      originationProfitability: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-    };
-  }, [
-    aiRecommendation.probability,
-    automatedScorecard.total,
-    calculations.dsr,
-    calculations.ltv,
-    creditRiskInsights.fraudScore,
-    creditRiskInsights.originationProfitability,
-    creditRiskInsights.riskScore,
-    formData.borrower.address,
-    formData.enhancedDueDiligence.communityInvolvementInformation,
-    formData.enhancedDueDiligence.facebookProfile,
-    formData.enhancedDueDiligence.instagramProfile,
-    formData.enhancedDueDiligence.linkedInProfile,
-    formData.enhancedDueDiligence.otherSocialMediaLinks,
-    formData.enhancedDueDiligence.professionalOrganizationMemberships,
-    formData.enhancedDueDiligence.referencesFromEmployerOrCommunity,
-    formData.enhancedDueDiligence.tikTokProfile,
-    formData.enhancedDueDiligence.xProfile,
-    formData.optionalPsychometricQuestionnaire,
-  ]);
+  const scorePayloadSections = useMemo(
+    () =>
+      buildScorePayloadSections(
+        formData,
+        calculations,
+        automatedScorecard,
+        creditRiskInsights,
+        aiRecommendation,
+      ),
+    [aiRecommendation, automatedScorecard, calculations, creditRiskInsights, formData],
+  );
+  const quantScoresSummary = scorePayloadSections.quantSummary;
+  const executiveSummaryItems = [
+    {
+      label: 'A-Credit Score',
+      value: quantScoresSummary.aCreditScore,
+      note: 'Internal composite grade',
+    },
+    {
+      label: 'Fraud Score',
+      value: quantScoresSummary.fraudScore,
+      note: 'Identity and anomaly screening',
+    },
+    {
+      label: 'Social Score',
+      value: quantScoresSummary.socialScore,
+      note: 'Community and digital footprint',
+    },
+    {
+      label: 'Credit Bureau Score',
+      value: quantScoresSummary.creditBureauScore,
+      note: 'Modeled bureau strength proxy',
+    },
+    {
+      label: 'Psychometric Score',
+      value: quantScoresSummary.psychometricScore,
+      note: 'Behavioral consistency index',
+    },
+    {
+      label: 'Origination Profitability',
+      value: quantScoresSummary.originationProfitability,
+      note: 'Expected first-booking outcome',
+    },
+  ];
+  const capacityMetricItems = [
+    {
+      label: 'Debt-to-Income Ratio (DTI)',
+      value: `${calculations.dti.toFixed(1)}%`,
+      formula: 'Formula: (Total Existing Debt / Total Income) x 100',
+      status:
+        calculations.dti <= 20
+          ? 'Prime Range'
+          : calculations.dti <= 35
+            ? 'Within Policy'
+            : 'Needs Review',
+      tone:
+        calculations.dti <= 20
+          ? {
+              badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+              value: 'text-emerald-700',
+              panel: 'border-emerald-200 bg-[linear-gradient(180deg,#f4fbf6_0%,#ffffff_100%)]',
+            }
+          : calculations.dti <= 35
+            ? {
+                badge: 'border-amber-200 bg-amber-50 text-amber-700',
+                value: 'text-amber-700',
+                panel: 'border-amber-200 bg-[linear-gradient(180deg,#fff9eb_0%,#ffffff_100%)]',
+              }
+            : {
+                badge: 'border-rose-200 bg-rose-50 text-rose-700',
+                value: 'text-rose-700',
+                panel: 'border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)]',
+              },
+    },
+    {
+      label: 'Debt Service Ratio (DSR)',
+      value: `${calculations.dsr.toFixed(1)}%`,
+      formula: 'Formula: ((Existing Debt + Proposed Payment) / Total Income) x 100',
+      status:
+        calculations.dsr < 35
+          ? 'Strong Capacity'
+          : calculations.dsr <= 50
+            ? 'Watchlist Band'
+            : 'High Burden',
+      tone:
+        calculations.dsr < 35
+          ? {
+              badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
+              value: 'text-emerald-700',
+              panel: 'border-emerald-200 bg-[linear-gradient(180deg,#f4fbf6_0%,#ffffff_100%)]',
+            }
+          : calculations.dsr <= 50
+            ? {
+                badge: 'border-amber-200 bg-amber-50 text-amber-700',
+                value: 'text-amber-700',
+                panel: 'border-amber-200 bg-[linear-gradient(180deg,#fff9eb_0%,#ffffff_100%)]',
+              }
+            : {
+                badge: 'border-rose-200 bg-rose-50 text-rose-700',
+                value: 'text-rose-700',
+                panel: 'border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)]',
+              },
+    },
+  ];
+  const corporateUnderwritingTotal = `${automatedScorecard.total}/50`;
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -2746,154 +3175,222 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_58%,#334155_100%)] p-6 text-white shadow-[0_22px_48px_rgba(15,23,42,0.18)] md:p-8">
-                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="max-w-2xl space-y-3">
-                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">Step 8: QuantScores</p>
-                    <h3 className="m-0 text-3xl font-semibold tracking-tight text-white">Executive Assessment</h3>
-                    <p className="text-sm leading-6 text-slate-300 md:text-base">
-                      Consolidated summary of lending quality, fraud exposure, social standing,
-                      bureau strength, psychometric behavior, and origination returns.
-                    </p>
-                  </div>
-                  <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                    {[
-                      { label: 'A-Credit Score', value: quantScoresSummary.aCreditScore },
-                      { label: 'Fraud Score', value: quantScoresSummary.fraudScore },
-                      { label: 'Social Score', value: quantScoresSummary.socialScore },
-                      { label: 'Credit Bureau Score', value: quantScoresSummary.creditBureauScore },
-                      { label: 'Psychometric Score', value: quantScoresSummary.psychometricScore },
-                      { label: 'Origination Profitability', value: quantScoresSummary.originationProfitability },
-                    ].map((item) => (
-                      <div
-                        key={item.label}
-                        className="min-h-[118px] rounded-none border border-[#8f6b00] bg-[linear-gradient(180deg,#f3d37b_0%,#d8a928_100%)] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.35),0_8px_18px_rgba(15,23,42,0.18)]"
-                      >
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-[#4d3800]">
-                          {item.label}
-                        </p>
-                        <p className="mt-4 text-3xl font-extrabold leading-tight text-[#2f2200]">
-                          {item.value}
+              <div className="overflow-hidden rounded-[30px] border border-[#b58a17] bg-[linear-gradient(135deg,#0b1220_0%,#132033_55%,#1c2f45_100%)] text-white shadow-[0_24px_56px_rgba(15,23,42,0.24)]">
+                <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.24),transparent_38%)] p-6 md:p-8">
+                  <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="max-w-2xl space-y-4">
+                      <div className="inline-flex items-center rounded-full border border-[#d5b35b] bg-[#f8e2a2]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f5d67a]">
+                        Step 8: QuantScores
+                      </div>
+                      <div className="space-y-3">
+                        <h3 className="m-0 text-3xl font-semibold tracking-tight text-white md:text-[2rem]">
+                          Executive Assessment
+                        </h3>
+                        <p className="text-sm leading-6 text-slate-300 md:text-base">
+                          Consolidated summary of lending quality, fraud exposure, social standing,
+                          bureau strength, psychometric behavior, and origination returns.
                         </p>
                       </div>
-                    ))}
+                    </div>
+                    <div className="min-w-[260px] rounded-[24px] border border-[#d7b45a]/45 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#f3d586]">
+                        Approval Committee Brief
+                      </p>
+                      <p className="mt-3 text-2xl font-semibold text-white">Formal Quantitative Review</p>
+                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                        Presented for underwriting governance, risk challenge, and final credit
+                        recommendation.
+                      </p>
+                    </div>
                   </div>
+                </div>
+                <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3 md:p-8">
+                  {executiveSummaryItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="group min-h-[146px] rounded-[24px] border border-[#8f6b00] bg-[linear-gradient(180deg,#f7df99_0%,#e4be59_48%,#c9961b_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_12px_26px_rgba(15,23,42,0.18)] transition-transform duration-200 hover:-translate-y-0.5"
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="inline-flex items-center rounded-full border border-[#8a6605]/35 bg-white/35 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a4200]">
+                          Highlight
+                        </div>
+                        <span className="text-lg leading-none text-[#6c5000] transition-transform duration-200 group-hover:translate-x-0.5">+</span>
+                      </div>
+                      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#594100]">
+                        {item.label}
+                      </p>
+                      <p className="mt-3 text-3xl font-extrabold leading-tight text-[#2f2200]">
+                        {item.value}
+                      </p>
+                      <p className="mt-4 text-xs leading-5 text-[#5f4600]">{item.note}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
 
               <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.95fr]">
                 <div className="space-y-6">
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5">
-                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Capacity Metrics</h4>
-                      <p className="mt-2 text-sm text-slate-600">
-                        Primary affordability ratios used to assess repayment pressure.
-                      </p>
+                  <div className="rounded-[28px] border border-[#e8d39a] bg-[linear-gradient(180deg,#fffdfa_0%,#ffffff_100%)] p-5 shadow-[0_12px_30px_rgba(148,126,62,0.08)] md:p-6">
+                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Capacity Metrics</h4>
+                        <p className="mt-2 text-sm text-slate-600">
+                          Primary affordability ratios used to assess repayment pressure.
+                        </p>
+                      </div>
+                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
+                        Affordability Control Panel
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="rounded-2xl border border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)] p-5">
-                  <h4 className="font-bold text-rose-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt-to-Income Ratio (DTI)</h4>
-                  <p className="text-4xl font-semibold text-rose-700">{calculations.dti.toFixed(1)}%</p>
-                  <p className="text-xs text-rose-700/80 mt-4 leading-5">Formula: (Total Existing Debt / Total Income) x 100</p>
-                </div>
-                <div className="rounded-2xl border border-amber-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-5">
-                  <h4 className="font-bold text-amber-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt Service Ratio (DSR)</h4>
-                  <p className="text-4xl font-semibold text-amber-700">{calculations.dsr.toFixed(1)}%</p>
-                  <p className="text-xs text-amber-700/80 mt-4 leading-5">Formula: ((Existing Debt + Proposed Payment) / Total Income) x 100</p>
-                </div>
-              </div>
+                      {capacityMetricItems.map((metric) => (
+                        <div
+                          key={metric.label}
+                          className={`rounded-[24px] border p-5 shadow-sm ${metric.tone.panel}`}
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-3">
+                            <h5 className="m-0 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-700">
+                              {metric.label}
+                            </h5>
+                            <span
+                              className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${metric.tone.badge}`}
+                            >
+                              {metric.status}
+                            </span>
+                          </div>
+                          <p className={`mt-5 text-4xl font-semibold ${metric.tone.value}`}>{metric.value}</p>
+                          <p className="mt-4 text-xs leading-5 text-slate-500">{metric.formula}</p>
+                        </div>
+                      ))}
+                    </div>
                   </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
                       <div>
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Automated Lending Scorecard</h4>
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Automated Lending Scorecard</h4>
                         <p className="mt-2 text-sm text-slate-600">Weighted 5C indicators automatically derived from the application record.</p>
                       </div>
-                      <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
-                        Corporate Underwriting Index
+                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
+                        Corporate Underwriting Index {corporateUnderwritingTotal}
                       </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                  {automatedScoreItems.map((c, i) => (
-                    <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{c.label}</p>
-                      <p className={`mt-4 text-4xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}>{c.score}<span className="ml-1 text-base font-medium text-slate-400">/10</span></p>
-                      <p className="mt-3 text-xs leading-5 text-slate-500">{c.desc}</p>
+                      {automatedScoreItems.map((c, i) => (
+                        <div
+                          key={i}
+                          className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{c.label}</p>
+                            <span className="inline-flex min-w-[58px] items-center justify-center rounded-full border border-[#ecd188] bg-[#fff8e4] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6f00]">
+                              {c.score >= 8 ? 'Strong' : c.score >= 6 ? 'Stable' : 'Review'}
+                            </span>
+                          </div>
+                          <p className={`mt-5 text-4xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}>
+                            {c.score}
+                            <span className="ml-1 text-base font-medium text-slate-400">/10</span>
+                          </p>
+                          <p className="mt-3 text-xs leading-5 text-slate-500">{c.desc}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5">
-                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Advanced Scoring Signals</h4>
-                      <p className="mt-2 text-sm text-slate-600">Secondary screening signals for fraud resistance, profitability, and downstream risk.</p>
+                  <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Advanced Scoring Signals</h4>
+                        <p className="mt-2 text-sm text-slate-600">Secondary screening signals for fraud resistance, profitability, and downstream risk.</p>
+                      </div>
+                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
+                        Risk Surveillance Deck
+                      </div>
                     </div>
                     <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                  {advancedSignalItems.map((item) => (
-                    <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{item.label}</p>
-                      <p className={`mt-3 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
-                      <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                      {advancedSignalItems.map((item) => (
+                        <div key={item.label} className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm">
+                          <div className="flex items-start justify-between gap-3">
+                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
+                            <span className="inline-flex items-center rounded-full border border-[#ecd188] bg-[#fff8e4] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6f00]">
+                              Monitor
+                            </span>
+                          </div>
+                          <p className={`mt-4 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
+                          <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-                <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-                  {profitabilityBreakdown.map((item) => (
-                    <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
-                      <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
+                    <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+                      {profitabilityBreakdown.map((item) => (
+                        <div key={item.label} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
+                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                          <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
+                        </div>
+                      ))}
                     </div>
-                  ))}
-                </div>
-              </div>
+                  </div>
                 </div>
 
                 <div className="space-y-6">
-              <div className="rounded-[24px] border border-indigo-200 bg-[linear-gradient(180deg,#eef2ff_0%,#f8fbff_100%)] p-6 shadow-sm">
-                <div className="flex flex-col gap-5 border-b border-indigo-100 pb-5">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div>
-                    <h4 className="m-0 text-sm font-semibold text-indigo-700 uppercase tracking-[0.22em]">AI Approval Probability</h4>
-                    <p className="mt-3 text-5xl font-semibold tracking-tight text-indigo-700">{aiRecommendation.probability}%</p>
-                    <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${aiRiskTone}`}>
-                      Risk Level: {aiRecommendation.riskLevel}
-                    </span>
+                  <div className="overflow-hidden rounded-[28px] border border-[#b58a17] bg-[linear-gradient(180deg,#fff8e5_0%,#fffdfa_22%,#f8fbff_100%)] shadow-[0_14px_34px_rgba(181,138,23,0.12)]">
+                    <div className="border-b border-[#edd390] bg-[linear-gradient(90deg,#f4d77b_0%,#fff2c4_100%)] px-6 py-4">
+                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.22em] text-[#6f5200]">AI Approval Probability</h4>
+                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#977200]">Decision Support Output</p>
+                        </div>
+                        <span className="inline-flex items-center rounded-full border border-[#b88c19]/35 bg-white/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7e5e00]">
+                          Committee Guidance
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-6">
+                      <div className="flex flex-col gap-5 border-b border-[#f1e0b5] pb-5">
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <p className="text-5xl font-semibold tracking-tight text-slate-900">{aiRecommendation.probability}%</p>
+                            <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${aiRiskTone}`}>
+                              Risk Level: {aiRecommendation.riskLevel}
+                            </span>
+                          </div>
+                          <div className="rounded-[22px] border border-[#f0deb0] bg-white px-4 py-3 text-right shadow-sm">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
+                            <p className="mt-2 text-2xl font-semibold text-slate-800">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                          <div className="rounded-[20px] border border-[#f0deb0] bg-white px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
+                            <p className="mt-2 text-xl font-semibold text-slate-800">PHP {calculations.monthlyPayment.toFixed(2)}</p>
+                          </div>
+                          <div className="rounded-[20px] border border-[#f0deb0] bg-white px-4 py-3">
+                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
+                            <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-5">
+                        <h5 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Computation Log</h5>
+                        <div className="mt-4 rounded-[22px] border border-[#f0deb0] bg-white p-4">
+                          <ul className="space-y-3">
+                            {aiRecommendation.computationLog.map((log, i) => (
+                              <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                                <span className="mt-1 h-2 w-2 flex-none rounded-full bg-[#c89c21]" />
+                                <span className="leading-6">{log}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-right shadow-sm">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
-                    <p className="mt-2 text-2xl font-semibold text-slate-800">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-800">PHP {calculations.monthlyPayment.toFixed(2)}</p>
-                  </div>
-                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
-                    <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
-                  </div>
-                </div>
-                </div>
-                <div className="mt-5">
-                  <h5 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-indigo-900">Computation Log</h5>
-                  <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/80 p-4">
-                  <ul className="space-y-3">
-                    {aiRecommendation.computationLog.map((log, i) => (
-                      <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
-                        <span className="mt-1 h-2 w-2 flex-none rounded-full bg-indigo-500" />
-                        <span className="leading-6">{log}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-              </div>
 
-                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
-                    <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Underwriting Note</h4>
+                  <div className="rounded-[24px] border border-[#ead7aa] bg-[linear-gradient(180deg,#fffdf8_0%,#f8fafc_100%)] p-5 shadow-sm">
+                    <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
+                      Formal Commentary
+                    </div>
+                    <h4 className="m-0 mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Underwriting Note</h4>
                     <p className="mt-3 text-sm leading-6 text-slate-600">
                       This panel combines repayment capacity, collateral adequacy, and AI-assisted
                       decision support into a single review surface designed for credit officers and
