@@ -194,15 +194,15 @@ export default function LoanDetails() {
           <h2 className="mb-4 text-lg font-bold">Credit Metrics</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded bg-red-50 p-4">
-              DTI
+              Debt-to-Income Ratio (DTI)
               <div className="text-2xl font-bold">{formatPercent(loan.dti)}</div>
             </div>
             <div className="rounded bg-orange-50 p-4">
-              DSR
+              Debt Service Ratio (DSR)
               <div className="text-2xl font-bold">{formatPercent(loan.dsr)}</div>
             </div>
             <div className="rounded bg-blue-50 p-4">
-              LTV
+              Loan-to-Value Ratio (LTV)
               <div className="text-2xl font-bold">{formatPercent(loan.ltv)}</div>
             </div>
           </div>

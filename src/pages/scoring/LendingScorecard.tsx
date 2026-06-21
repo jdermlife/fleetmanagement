@@ -19,18 +19,21 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { vehicleInfo: string; appraisedValue: number; insurance: string; registration: string; }
+interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; homePhoneNumber: string; emailAddress: string; }
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
 interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
 interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
-interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; }
+interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyAppraisedValue: number; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
-interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; }
+interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
+interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; characterReferences: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; instagramProfile: string; xProfile: string; tikTokProfile: string; linkedInProfile: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
+interface OptionalPsychometricQuestionnaire { question01: string; question02: string; question03: string; question04: string; question05: string; question06: string; question07: string; question08: string; question09: string; question10: string; question11: string; question12: string; question13: string; question14: string; question15: string; question16: string; question17: string; question18: string; question19: string; question20: string; }
 interface DocumentItem { id: string; name: string; type: string; parsedData?: string; status: 'Pending' | 'Parsed' | 'Failed'; }
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
 interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; }
@@ -51,10 +54,13 @@ interface LoanApplication {
   otherInformation: OtherInformation;
   employmentInformation: EmploymentInformation;
   collateralInformation: CollateralInformation;
+  additionalCollaterals: AdditionalCollateral[];
   spouseInformation: SpouseInformation;
   bankingRelationships: BankingRelationships;
   signatures: Signatures;
   supportingDocuments: SupportingDocuments;
+  enhancedDueDiligence: EnhancedDueDiligence;
+  optionalPsychometricQuestionnaire: OptionalPsychometricQuestionnaire;
   documents: DocumentItem[];
   committeeRemarks: string;
   routing: { creditOfficer: string; branchManager: string; creditCommittee: string; executiveApproval: boolean; };
@@ -94,18 +100,21 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { vehicleInfo: '', appraisedValue: 0, insurance: '', registration: '' },
+  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', homePhoneNumber: '', emailAddress: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
   otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
   employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
-  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '' },
+  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyAppraisedValue: 0 },
+  additionalCollaterals: [],
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
-  supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false },
+  supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
+  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', characterReferences: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', instagramProfile: '', xProfile: '', tikTokProfile: '', linkedInProfile: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
+  optionalPsychometricQuestionnaire: { question01: '', question02: '', question03: '', question04: '', question05: '', question06: '', question07: '', question08: '', question09: '', question10: '', question11: '', question12: '', question13: '', question14: '', question15: '', question16: '', question17: '', question18: '', question19: '', question20: '' },
   documents: [],
   committeeRemarks: '',
   routing: { creditOfficer: '', branchManager: '', creditCommittee: 'Pending', executiveApproval: false },
@@ -116,39 +125,73 @@ const createNewApplicationInstance = (): LoanApplication => ({
 
 const buildLoanRequirements = (
   application: LoanApplication,
-): LoanApplicationRequirements => ({
-  productInformation: {
-    productType: application.loan.productType,
-    homePurposeOfLoan: application.loan.purpose,
-    homeDesiredLoanAmount: application.loan.amount,
-    homeLoanTerm: application.loan.termMonths,
-    homeCollateralType: application.collateral.vehicleInfo,
-    autoPurpose: application.loan.purpose,
-    autoVehicleClassification: application.loan.productType,
-    autoUnitModel: application.collateral.vehicleInfo,
-    autoYearModel: application.loan.termMonths.toString(),
-    autoSellingPrice: application.collateral.appraisedValue,
-    autoDesiredLoanAmount: application.loan.amount,
-    autoDownPayment: 0,
-    autoYearsToPay: Math.max(1, Math.round(application.loan.termMonths / 12)),
-    creditCardType: application.loan.purpose,
-    creditCardExtensionRequested:
-      application.signatures.extensionCardholderSignature.length > 0,
-  },
-  applicantPersonal: application.applicantPersonal,
-  contactInformation: application.contactInformation,
-  governmentIds: application.governmentIds,
-  addressInformation: application.addressInformation,
-  otherInformation: application.otherInformation,
-  employmentInformation: application.employmentInformation,
-  collateralInformation: application.collateralInformation,
-  spouseInformation: application.spouseInformation,
-  bankingRelationships: application.bankingRelationships,
-  signatures: application.signatures,
-  supportingDocuments: application.supportingDocuments,
-});
+): LoanApplicationRequirements => {
+  const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
+  const derivedInsuranceSummary = buildCollateralInsuranceSummary(application.collateral);
+
+  return {
+    productInformation: {
+      productType: application.loan.productType,
+      homePurposeOfLoan: application.loan.purpose,
+      homeDesiredLoanAmount: application.loan.amount,
+      homeLoanTerm: application.loan.termMonths,
+      homeCollateralType:
+        derivedVehicleInfo || application.collateralInformation.propertyAddress,
+      autoPurpose: application.loan.purpose,
+      autoVehicleClassification: application.collateral.assetType,
+      autoUnitModel: application.collateral.model,
+      autoYearModel: application.collateral.year,
+      autoSellingPrice: application.collateral.appraisedValue,
+      autoDesiredLoanAmount: application.loan.amount,
+      autoDownPayment: 0,
+      autoYearsToPay: Math.max(1, Math.round(application.loan.termMonths / 12)),
+      creditCardType: application.loan.purpose,
+      creditCardExtensionRequested:
+        application.signatures.extensionCardholderSignature.length > 0,
+    },
+    applicantPersonal: application.applicantPersonal,
+    contactInformation: application.contactInformation,
+    governmentIds: application.governmentIds,
+    addressInformation: application.addressInformation,
+    otherInformation: application.otherInformation,
+    employmentInformation: application.employmentInformation,
+    collateralInformation: application.collateralInformation,
+    collateralAssetDetails: {
+      assetType: application.collateral.assetType,
+      maker: application.collateral.maker,
+      brand: application.collateral.brand,
+      model: application.collateral.model,
+      year: application.collateral.year,
+      insuranceProviderCompany:
+        application.collateral.insuranceProviderCompany || derivedInsuranceSummary,
+      policyNumber: application.collateral.policyNumber,
+      orNumber: application.collateral.orNumber,
+      crNumber: application.collateral.crNumber,
+      additionalCollaterals: application.additionalCollaterals.map((collateral) => ({
+        collateralType: collateral.collateralType,
+        maker: collateral.maker,
+        brand: collateral.brand,
+        model: collateral.model,
+        year: collateral.year,
+        appraisedValue: collateral.appraisedValue,
+        insuranceProviderCompany: collateral.insuranceProviderCompany,
+        policyNumber: collateral.policyNumber,
+        orNumber: collateral.orNumber,
+        crNumber: collateral.crNumber,
+        notes: collateral.notes,
+      })),
+    },
+    spouseInformation: application.spouseInformation,
+    bankingRelationships: application.bankingRelationships,
+    signatures: application.signatures,
+    supportingDocuments: application.supportingDocuments,
+    enhancedDueDiligence: application.enhancedDueDiligence,
+    optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
+  };
+};
 
 const calculateLoanMetrics = (application: LoanApplication) => {
+  const totalCollateralValue = calculateTotalCollateralValue(application);
   const totalIncome =
     application.employment.monthlyIncome +
     application.employment.otherIncome +
@@ -174,11 +217,11 @@ const calculateLoanMetrics = (application: LoanApplication) => {
       ? ((totalExistingDebt + monthlyPayment) / totalIncome) * 100
       : 0;
   const ltv =
-    application.collateral.appraisedValue > 0
-      ? (application.loan.amount / application.collateral.appraisedValue) * 100
+    totalCollateralValue > 0
+      ? (application.loan.amount / totalCollateralValue) * 100
       : 0;
 
-  return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv };
+  return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv, totalCollateralValue };
 };
 
 const calculateAutomatedScorecard = (
@@ -226,7 +269,7 @@ const calculateCreditRiskInsights = (
     Math.min(
       100,
       (application.loan.amount > 0 ? 20 : 0) +
-        (application.collateral.appraisedValue > 0 ? 20 : 0) +
+        (calculations.totalCollateralValue > 0 ? 20 : 0) +
         (application.loan.productType ? 10 : 0) +
         (calculations.totalIncome > 0 ? 20 : 0) +
         (calculations.dsr < 60 ? 15 : 0) +
@@ -277,18 +320,18 @@ const calculateAiRecommendation = (
 
   if (calculations.dsr < 35) {
     baseProb += 15;
-    computationLog.push('+15% (Strong DSR < 35%)');
+    computationLog.push('+15% (Strong Debt Service Ratio (DSR) < 35%)');
   } else if (calculations.dsr > 50) {
     baseProb -= 20;
-    computationLog.push('-20% (High DSR > 50%)');
+    computationLog.push('-20% (High Debt Service Ratio (DSR) > 50%)');
   }
 
   if (calculations.ltv < 80) {
     baseProb += 10;
-    computationLog.push('+10% (Safe LTV < 80%)');
+    computationLog.push('+10% (Safe Loan-to-Value Ratio (LTV) < 80%)');
   } else if (calculations.ltv > 95) {
     baseProb -= 15;
-    computationLog.push('-15% (Risky LTV > 95%)');
+    computationLog.push('-15% (Risky Loan-to-Value Ratio (LTV) > 95%)');
   }
 
   if (automatedTotal >= 40) {
@@ -306,6 +349,142 @@ const calculateAiRecommendation = (
     computationLog,
   };
 };
+
+const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
+  if (!dateOfBirth) {
+    return 0;
+  }
+
+  const birthDate = new Date(dateOfBirth);
+
+  if (Number.isNaN(birthDate.getTime())) {
+    return 0;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+  const dayDifference = today.getDate() - birthDate.getDate();
+
+  if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
+    age -= 1;
+  }
+
+  return Math.max(age, 0);
+};
+
+const buildCollateralVehicleInfo = (collateral: Collateral) =>
+  [
+    collateral.assetType,
+    collateral.maker,
+    collateral.brand,
+    collateral.model,
+    collateral.year,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' | ');
+
+const buildCollateralInsuranceSummary = (collateral: Collateral) =>
+  [collateral.insuranceProviderCompany, collateral.policyNumber]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' | ');
+
+const buildCollateralRegistrationSummary = (collateral: Collateral) =>
+  [
+    collateral.orNumber ? `OR: ${collateral.orNumber.trim()}` : '',
+    collateral.crNumber ? `CR: ${collateral.crNumber.trim()}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
+const calculateTotalCollateralValue = (application: LoanApplication) =>
+  application.collateral.appraisedValue +
+  application.collateralInformation.propertyAppraisedValue +
+  application.additionalCollaterals.reduce(
+    (sum, collateral) => sum + collateral.appraisedValue,
+    0,
+  );
+
+const hasRequiredEnhancedDueDiligence = (
+  dueDiligence: EnhancedDueDiligence,
+) =>
+  dueDiligence.previousLendersAndExistingLoanAccounts.trim().length > 0 &&
+  dueDiligence.numberOfActiveLoans >= 0 &&
+  dueDiligence.previousLoanRestructuringDisclosures.trim().length > 0 &&
+  dueDiligence.employmentReferencePerson.trim().length > 0 &&
+  dueDiligence.hrContactInformation.trim().length > 0 &&
+  dueDiligence.supervisorInformation.trim().length > 0 &&
+  dueDiligence.additionalBankAccountsOwned.trim().length > 0 &&
+  dueDiligence.sourceOfIncomeVerificationReferences.trim().length > 0 &&
+  dueDiligence.lengthOfResidenceConfirmation.trim().length > 0 &&
+  dueDiligence.utilityAccountReferences.trim().length > 0 &&
+  dueDiligence.characterReferences.trim().length > 0 &&
+  dueDiligence.professionalOrganizationMemberships.trim().length > 0 &&
+  dueDiligence.professionalLicenses.trim().length > 0 &&
+  dueDiligence.guarantorReferences.trim().length > 0 &&
+  dueDiligence.additionalPropertyDeclarations.trim().length > 0 &&
+  dueDiligence.additionalVehicleDeclarations.trim().length > 0 &&
+  dueDiligence.selfDeclaredAssetsAndLiabilities.trim().length > 0 &&
+  dueDiligence.selfDeclaredInvestmentPortfolio.trim().length > 0 &&
+  dueDiligence.existingInsurancePolicies.trim().length > 0 &&
+  dueDiligence.priorBankingRelationships.trim().length > 0 &&
+  dueDiligence.consentOpenBankingDataAccess &&
+  dueDiligence.consentEmploymentVerification &&
+  dueDiligence.consentIdentityVerification &&
+  dueDiligence.financialBehaviorQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.riskAppetiteQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.businessOutlookQuestionnaireResponses.trim().length > 0 &&
+  dueDiligence.futureFinancialPlansQuestionnaire.trim().length > 0 &&
+  dueDiligence.spendingBehaviorQuestionnaire.trim().length > 0 &&
+  dueDiligence.householdBudgetingQuestionnaire.trim().length > 0 &&
+  dueDiligence.emergencyPreparednessQuestionnaire.trim().length > 0 &&
+  dueDiligence.characterAndIntegrityAssessmentAnswers.trim().length > 0 &&
+  dueDiligence.communityInvolvementInformation.trim().length > 0 &&
+  dueDiligence.referencesFromEmployerOrCommunity.trim().length > 0;
+
+const hasRequiredAdditionalSupportingDocuments = (
+  supportingDocuments: SupportingDocuments,
+) =>
+  supportingDocuments.auditedFinancialStatements &&
+  supportingDocuments.proofOfRemittanceIncome &&
+  supportingDocuments.investmentStatements &&
+  supportingDocuments.additionalSupportingDocuments;
+
+const psychometricQuestionnaireItems: Array<{
+  field: keyof OptionalPsychometricQuestionnaire;
+  question: string;
+}> = [
+  { field: 'question01', question: 'I create a plan before making a major financial decision.' },
+  { field: 'question02', question: 'I consistently pay obligations on or before their due dates.' },
+  { field: 'question03', question: 'I compare several options before borrowing money.' },
+  { field: 'question04', question: 'I set aside part of my income for savings or emergencies.' },
+  { field: 'question05', question: 'I avoid buying non-essential items when money is tight.' },
+  { field: 'question06', question: 'I stay calm and organized when facing financial pressure.' },
+  { field: 'question07', question: 'I prefer long-term financial stability over short-term spending.' },
+  { field: 'question08', question: 'I keep personal records such as bills, receipts, or payment schedules organized.' },
+  { field: 'question09', question: 'I ask questions and clarify terms before signing contracts.' },
+  { field: 'question10', question: 'I feel personally responsible for meeting every debt obligation I take on.' },
+  { field: 'question11', question: 'I usually follow through on commitments even when circumstances become difficult.' },
+  { field: 'question12', question: 'I review my income and expenses regularly.' },
+  { field: 'question13', question: 'I think ahead about how unexpected events could affect my finances.' },
+  { field: 'question14', question: 'I would rather delay a purchase than borrow beyond what I can comfortably repay.' },
+  { field: 'question15', question: 'People who know me would describe me as financially disciplined.' },
+  { field: 'question16', question: 'I am careful about sharing accurate information in financial applications.' },
+  { field: 'question17', question: 'I am comfortable seeking advice when I do not understand financial matters.' },
+  { field: 'question18', question: 'I prioritize household essentials before discretionary spending.' },
+  { field: 'question19', question: 'I can adjust my lifestyle if income temporarily declines.' },
+  { field: 'question20', question: 'I make financial decisions with my long-term goals in mind.' },
+];
+
+const psychometricResponseOptions = [
+  'Strongly Disagree',
+  'Disagree',
+  'Neutral',
+  'Agree',
+  'Strongly Agree',
+];
 
 const mergeDefinedFields = <T extends object>(
   current: T,
@@ -431,6 +610,7 @@ export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedApplicationNo = searchParams.get('applicationNo');
+  const [selectedCountryCode, setSelectedCountryCode] = useState('PHL');
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
@@ -486,6 +666,8 @@ export default function LendingScorecard() {
     | 'bankingRelationships'
     | 'signatures'
     | 'supportingDocuments'
+    | 'enhancedDueDiligence'
+    | 'optionalPsychometricQuestionnaire'
     | 'disbursement'
     | 'finalChecklist';
   type FieldValue = string | number | boolean;
@@ -506,6 +688,8 @@ export default function LendingScorecard() {
     | BankingRelationships
     | Signatures
     | SupportingDocuments
+    | EnhancedDueDiligence
+    | OptionalPsychometricQuestionnaire
     | Disbursement
     | FinalChecklist;
 
@@ -710,6 +894,11 @@ export default function LendingScorecard() {
   const hydrateApplication = useCallback((record: LoanApplicationRecord): LoanApplication => {
     const blankApplication = createNewApplicationInstance();
     const savedRequirements:  Partial<LoanApplicationRequirements> = record.requirements ?? {};
+    const savedDueDiligence = (savedRequirements.enhancedDueDiligence ?? {}) as Record<string, unknown>;
+    const savedCollateralAssetDetails =
+      (savedRequirements.collateralAssetDetails ?? {}) as Partial<
+        LoanApplicationRequirements['collateralAssetDetails']
+      >;
 
     return {
       ...blankApplication,
@@ -743,8 +932,36 @@ export default function LendingScorecard() {
       },
       collateral: {
         ...blankApplication.collateral,
-        vehicleInfo: record.vehicle_info,
+        assetType: savedCollateralAssetDetails.assetType ?? blankApplication.collateral.assetType,
+        maker: savedCollateralAssetDetails.maker ?? blankApplication.collateral.maker,
+        brand: savedCollateralAssetDetails.brand ?? blankApplication.collateral.brand,
+        model: savedCollateralAssetDetails.model ?? record.vehicle_info ?? blankApplication.collateral.model,
+        year: savedCollateralAssetDetails.year ?? blankApplication.collateral.year,
         appraisedValue: record.appraised_value,
+        insuranceProviderCompany:
+          savedCollateralAssetDetails.insuranceProviderCompany ??
+          blankApplication.collateral.insuranceProviderCompany,
+        policyNumber:
+          savedCollateralAssetDetails.policyNumber ?? blankApplication.collateral.policyNumber,
+        orNumber:
+          savedCollateralAssetDetails.orNumber ?? blankApplication.collateral.orNumber,
+        crNumber:
+          savedCollateralAssetDetails.crNumber ?? blankApplication.collateral.crNumber,
+        vehicleInfo: record.vehicle_info,
+        insurance: buildCollateralInsuranceSummary({
+          ...blankApplication.collateral,
+          insuranceProviderCompany:
+            savedCollateralAssetDetails.insuranceProviderCompany ??
+            blankApplication.collateral.insuranceProviderCompany,
+          policyNumber:
+            savedCollateralAssetDetails.policyNumber ??
+            blankApplication.collateral.policyNumber,
+        }),
+        registration: buildCollateralRegistrationSummary({
+          ...blankApplication.collateral,
+          orNumber: savedCollateralAssetDetails.orNumber ?? blankApplication.collateral.orNumber,
+          crNumber: savedCollateralAssetDetails.crNumber ?? blankApplication.collateral.crNumber,
+        }),
       },
       applicantPersonal: {
         ...blankApplication.applicantPersonal,
@@ -798,6 +1015,22 @@ export default function LendingScorecard() {
         ...blankApplication.collateralInformation,
         ...savedRequirements.collateralInformation,
       },
+      additionalCollaterals: Array.isArray(savedCollateralAssetDetails.additionalCollaterals)
+        ? savedCollateralAssetDetails.additionalCollaterals.map((collateral, index) => ({
+            id: `COL-${index}-${Date.now()}`,
+            collateralType: collateral.collateralType ?? '',
+            maker: collateral.maker ?? '',
+            brand: collateral.brand ?? '',
+            model: collateral.model ?? '',
+            year: collateral.year ?? '',
+            appraisedValue: parseFormattedNumber(String(collateral.appraisedValue ?? 0)),
+            insuranceProviderCompany: collateral.insuranceProviderCompany ?? '',
+            policyNumber: collateral.policyNumber ?? '',
+            orNumber: collateral.orNumber ?? '',
+            crNumber: collateral.crNumber ?? '',
+            notes: collateral.notes ?? '',
+          }))
+        : blankApplication.additionalCollaterals,
       spouseInformation: {
         ...blankApplication.spouseInformation,
         ...savedRequirements.spouseInformation,
@@ -826,6 +1059,20 @@ export default function LendingScorecard() {
         ...blankApplication.supportingDocuments,
         ...savedRequirements.supportingDocuments,
       },
+      enhancedDueDiligence: {
+        ...blankApplication.enhancedDueDiligence,
+        ...savedRequirements.enhancedDueDiligence,
+        otherSocialMediaLinks:
+          typeof savedDueDiligence.otherSocialMediaLinks === 'string'
+            ? savedDueDiligence.otherSocialMediaLinks
+            : typeof savedDueDiligence.socialMediaProfileLinks === 'string'
+              ? savedDueDiligence.socialMediaProfileLinks
+              : blankApplication.enhancedDueDiligence.otherSocialMediaLinks,
+      },
+      optionalPsychometricQuestionnaire: {
+        ...blankApplication.optionalPsychometricQuestionnaire,
+        ...savedRequirements.optionalPsychometricQuestionnaire,
+      },
       committeeRemarks: record.committee_remarks,
       routing: {
         ...blankApplication.routing,
@@ -848,6 +1095,7 @@ export default function LendingScorecard() {
       payloadCalculations,
       payloadScorecard.total,
     );
+    const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
 
     return {
     application_no: application.id,
@@ -865,8 +1113,8 @@ export default function LendingScorecard() {
     term_months: application.loan.termMonths,
     interest_rate: application.loan.interestRate,
     purpose: application.loan.purpose,
-    vehicle_info: application.collateral.vehicleInfo,
-    appraised_value: application.collateral.appraisedValue,
+    vehicle_info: derivedVehicleInfo,
+    appraised_value: payloadCalculations.totalCollateralValue,
     committee_remarks: application.committeeRemarks,
     executive_approval: application.routing.executiveApproval,
     dti: payloadCalculations.dti,
@@ -902,6 +1150,50 @@ export default function LendingScorecard() {
 
   const removeCoBorrower = (id: string) => {
     setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
+  };
+
+  const addAdditionalCollateral = () => {
+    const newCollateral: AdditionalCollateral = {
+      id: `COL-${Date.now()}`,
+      collateralType: '',
+      maker: '',
+      brand: '',
+      model: '',
+      year: '',
+      appraisedValue: 0,
+      insuranceProviderCompany: '',
+      policyNumber: '',
+      orNumber: '',
+      crNumber: '',
+      notes: '',
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: [...prev.additionalCollaterals, newCollateral],
+    }));
+  };
+
+  const updateAdditionalCollateral = (
+    id: string,
+    field: keyof AdditionalCollateral,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: prev.additionalCollaterals.map((collateral) =>
+        collateral.id === id ? { ...collateral, [field]: value } : collateral,
+      ),
+    }));
+  };
+
+  const removeAdditionalCollateral = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: prev.additionalCollaterals.filter(
+        (collateral) => collateral.id !== id,
+      ),
+    }));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -956,6 +1248,16 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
   ) => {
+    if (
+      newStatus !== 'Draft' &&
+      (!enhancedDueDiligenceComplete || !enhancedSupportingDocumentsComplete)
+    ) {
+      setSaveMessage(
+        'Complete all required enhanced due diligence fields and supporting document declarations before moving beyond Draft.',
+      );
+      return;
+    }
+
     if (applicationOverride) {
       await persistLoanApplication(newStatus, applicationOverride);
       return;
@@ -1037,14 +1339,172 @@ export default function LendingScorecard() {
     setTransientMessage('New application draft generated.');
   };
 
+  const enhancedDueDiligenceComplete = useMemo(
+    () => hasRequiredEnhancedDueDiligence(formData.enhancedDueDiligence),
+    [formData.enhancedDueDiligence],
+  );
+  const enhancedSupportingDocumentsComplete = useMemo(
+    () => hasRequiredAdditionalSupportingDocuments(formData.supportingDocuments),
+    [formData.supportingDocuments],
+  );
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
     { label: 'Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
-    { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && formData.collateral.appraisedValue > 0 },
-    { label: 'DSR is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
+    { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && calculations.totalCollateralValue > 0 },
+    { label: 'Debt Service Ratio (DSR) is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
-  ], [formData, calculations]);
+    { label: 'Enhanced due diligence fields completed', passed: enhancedDueDiligenceComplete },
+    { label: 'Enhanced supporting document declarations completed', passed: enhancedSupportingDocumentsComplete },
+  ], [calculations, enhancedDueDiligenceComplete, enhancedSupportingDocumentsComplete, formData]);
+  const documentPreparationChecklist = useMemo(
+    () => [
+      {
+        label: 'Product',
+        complete:
+          !!formData.loan.productType &&
+          formData.loan.purpose.trim().length > 0 &&
+          formData.loan.amount > 0 &&
+          formData.loan.termMonths > 0 &&
+          formData.loan.interestRate > 0,
+      },
+      {
+        label: 'Applicant',
+        complete:
+          formData.borrower.fullName.trim().length > 0 &&
+          formData.borrower.govId.trim().length > 0 &&
+          formData.applicantPersonal.dateOfBirth.trim().length > 0 &&
+          formData.contactInformation.mobileNumber.trim().length > 0 &&
+          formData.addressInformation.presentAddress.trim().length > 0,
+      },
+      {
+        label: 'Employment',
+        complete:
+          formData.employment.monthlyIncome > 0 &&
+          formData.employmentInformation.employmentStatus.trim().length > 0 &&
+          formData.employmentInformation.employerBusinessName.trim().length > 0,
+      },
+      {
+        label: 'Co-Borrower',
+        complete:
+          formData.coBorrowers.length === 0 ||
+          formData.coBorrowers.every(
+            (coBorrower) =>
+              coBorrower.name.trim().length > 0 &&
+              coBorrower.relationship.trim().length > 0 &&
+              coBorrower.monthlyIncome > 0,
+          ),
+        optional: true,
+      },
+      {
+        label: 'Banking',
+        complete:
+          formData.bankingRelationships.bankBranch.trim().length > 0 ||
+          formData.bankingRelationships.creditCardIssuer.trim().length > 0 ||
+          formData.bankingRelationships.loanLender.trim().length > 0,
+      },
+      {
+        label: 'Collateral',
+        complete:
+          (
+            formData.collateral.assetType.trim().length > 0 &&
+            formData.collateral.maker.trim().length > 0 &&
+            formData.collateral.brand.trim().length > 0 &&
+            formData.collateral.model.trim().length > 0 &&
+            formData.collateral.year.trim().length > 0 &&
+            formData.collateral.appraisedValue > 0 &&
+            formData.collateral.insuranceProviderCompany.trim().length > 0 &&
+            formData.collateral.policyNumber.trim().length > 0 &&
+            (formData.collateral.orNumber.trim().length > 0 ||
+              formData.collateral.crNumber.trim().length > 0)
+          ) ||
+          (
+            formData.collateralInformation.propertyAddress.trim().length > 0 &&
+            formData.collateralInformation.registeredOwner.trim().length > 0 &&
+            formData.collateralInformation.propertyAppraisedValue > 0
+          ) ||
+          formData.additionalCollaterals.some(
+            (collateral) =>
+              collateral.collateralType.trim().length > 0 &&
+              collateral.appraisedValue > 0,
+          ),
+      },
+      {
+        label: 'Due Diligence',
+        complete: enhancedDueDiligenceComplete,
+      },
+    ],
+    [enhancedDueDiligenceComplete, formData],
+  );
+  const documentPreparationCompletedCount = documentPreparationChecklist.filter(
+    (item) => item.complete,
+  ).length;
+  const documentPreparationCompletionPercent = Math.round(
+    (documentPreparationCompletedCount / documentPreparationChecklist.length) * 100,
+  );
+  const allValidationChecksPassed = validationChecks.every((check) => check.passed);
+  const finalChecklistComplete = Boolean(
+    formData.finalChecklist?.allRequiredDocumentsProvided &&
+      formData.finalChecklist?.allSignaturesCollected &&
+      formData.finalChecklist?.creditCommitteeApproved &&
+      formData.finalChecklist?.executiveApprovalObtained &&
+      formData.finalChecklist?.collateralDocumentationReady,
+  );
+  const suggestedWorkflowAction = useMemo<WorkflowStatus>(() => {
+    if (formData.status === 'Released') {
+      return 'Released';
+    }
+
+    if (formData.status === 'Rejected') {
+      return 'Rejected';
+    }
+
+    if (formData.status === 'Approved') {
+      return finalChecklistComplete ? 'Released' : 'Approved';
+    }
+
+    if (formData.status === 'Credit Review') {
+      if (aiRecommendation.probability < 50 || creditRiskInsights.riskScore > 60) {
+        return 'Rejected';
+      }
+
+      if (allValidationChecksPassed && aiRecommendation.probability >= 70) {
+        return 'Approved';
+      }
+
+      return 'Credit Review';
+    }
+
+    if (formData.status === 'Submitted' || formData.status === 'Under Review') {
+      return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+    }
+
+    return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+  }, [
+    aiRecommendation.probability,
+    allValidationChecksPassed,
+    creditRiskInsights.riskScore,
+    finalChecklistComplete,
+    formData.status,
+  ]);
+  useEffect(() => {
+    setSelectedWorkflowAction(suggestedWorkflowAction);
+  }, [suggestedWorkflowAction]);
+  useEffect(() => {
+    const calculatedAge = calculateAgeFromDateOfBirth(
+      formData.applicantPersonal.dateOfBirth,
+    );
+
+    if (formData.applicantPersonal.age !== calculatedAge) {
+      setFormData((prev) => ({
+        ...prev,
+        applicantPersonal: {
+          ...prev.applicantPersonal,
+          age: calculatedAge,
+        },
+      }));
+    }
+  }, [formData.applicantPersonal.age, formData.applicantPersonal.dateOfBirth]);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
   const getInputValue = (
     section: EditableSection,
@@ -1109,6 +1569,26 @@ export default function LendingScorecard() {
         value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
         className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
+      />
+    </div>
+  );
+
+  const renderTextarea = (
+    section: EditableSection,
+    field: string,
+    label: string,
+    rows = 3,
+    required = false,
+  ) => (
+    <div className="mb-3">
+      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+        {label}{required ? ' (Required | Indicate N/A if Not Applicable)' : ''}
+      </label>
+      <textarea
+        rows={rows}
+        value={String(getInputValue(section, field))}
+        onChange={(event) => updateField(section, field, event.target.value)}
+        className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
       />
     </div>
   );
@@ -1201,6 +1681,124 @@ export default function LendingScorecard() {
     </div>
   );
 
+  const renderEnhancedDueDiligenceBankingSection = () => (
+    <div className="border-t pt-4 mt-4 space-y-6">
+      <div>
+        <h4 className="font-semibold text-sm text-gray-700 mb-2">Enhanced Due Diligence & Declarations</h4>
+        <p className="text-sm text-slate-500">
+          These required fields capture the previously missing or only partially captured underwriting details.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Credit Exposure & Banking Background</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'previousLendersAndExistingLoanAccounts', 'Previous Lenders and Existing Loan Accounts', 3, true)}
+          {renderInput('enhancedDueDiligence', 'numberOfActiveLoans', 'Number of Active Loans', 'number')}
+          {renderTextarea('enhancedDueDiligence', 'previousLoanRestructuringDisclosures', 'Previous Loan Restructuring Disclosures', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalBankAccountsOwned', 'Additional Bank Accounts Owned', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'priorBankingRelationships', 'Prior Banking Relationships', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'existingInsurancePolicies', 'Existing Insurance Policies', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'selfDeclaredAssetsAndLiabilities', 'Self-Declared Assets and Liabilities', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'selfDeclaredInvestmentPortfolio', 'Self-Declared Investment Portfolio', 4, true)}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderEnhancedDueDiligenceEmploymentSection = () => (
+    <div className="border-t pt-4 mt-4 space-y-6">
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Employment, Income, and Residence Verification</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References (Optional)', 3)}
+          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
+          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile (Optional)')}
+          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile (Optional)')}
+          {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links (Optional)', 2)}
+          {renderInput('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)')}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'futureFinancialPlansQuestionnaire', 'Future Financial Plans Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'spendingBehaviorQuestionnaire', 'Spending Behavior Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'householdBudgetingQuestionnaire', 'Household Budgeting Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'emergencyPreparednessQuestionnaire', 'Emergency Preparedness Questionnaire', 4, true)}
+          {renderTextarea('enhancedDueDiligence', 'characterAndIntegrityAssessmentAnswers', 'Character and Integrity Assessment Answers', 4, true)}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
+        <div className="mb-3">
+          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Optional to Answer: 20-Question Psychometric Scoring Questionnaire</h5>
+          <p className="text-sm text-indigo-700/80">
+            This optional section helps profile planning, financial discipline, consistency, and repayment behavior.
+          </p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {psychometricQuestionnaireItems.map((item, index) => (
+            <div key={item.field} className="rounded-lg border border-indigo-100 bg-white p-3">
+              <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+                {index + 1}. {item.question}
+              </label>
+              <select
+                value={String(getInputValue('optionalPsychometricQuestionnaire', item.field))}
+                onChange={(event) =>
+                  updateField('optionalPsychometricQuestionnaire', item.field, event.target.value)
+                }
+                className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">Select...</option>
+                {psychometricResponseOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-slate-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Verification Consents</h5>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {renderCheckbox('enhancedDueDiligence', 'consentOpenBankingDataAccess', 'Consent for Open Banking Data Access')}
+          {renderCheckbox('enhancedDueDiligence', 'consentEmploymentVerification', 'Consent for Employment Verification')}
+          {renderCheckbox('enhancedDueDiligence', 'consentIdentityVerification', 'Consent for Identity Verification')}
+        </div>
+      </div>
+    </div>
+  );
+
   const getStatusColor = (status: WorkflowStatus) => {
     const colors: Record<WorkflowStatus, string> = {
       'Draft': 'bg-gray-100 text-gray-800', 'Submitted': 'bg-blue-100 text-blue-800',
@@ -1228,11 +1826,102 @@ export default function LendingScorecard() {
   const topNavButtonClass = 'loan-toolbar-button';
   const stepperButtonClass = 'loan-stepper-button';
   const footerButtonClass = 'loan-footer-button';
+  const countryOptions = ['PHL', 'USA', 'SGP', 'MYS', 'THA', 'IDN', 'VNM'];
   const workflowActionOptions: Array<{ label: string; value: WorkflowStatus }> = [
-    { label: 'Save for Review', value: 'Credit Review' },
-    { label: 'Save as Approved', value: 'Approved' },
-    { label: 'Save for Release', value: 'Released' },
+    { label: 'Draft', value: 'Draft' },
+    { label: 'Review', value: 'Credit Review' },
+    { label: 'Reject', value: 'Rejected' },
+    { label: 'Approve', value: 'Approved' },
+    { label: 'Release', value: 'Released' },
   ];
+  const suggestedWorkflowLabel =
+    workflowActionOptions.find((option) => option.value === suggestedWorkflowAction)?.label ??
+    suggestedWorkflowAction;
+  const automatedScoreBand =
+    automatedScorecard.total >= 40
+      ? 'Prime Quality'
+      : automatedScorecard.total >= 30
+        ? 'Standard Quality'
+        : 'Elevated Review';
+  const automatedScoreItems = [
+    { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
+    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
+    { label: 'Capital', score: automatedScorecard.capital, desc: 'Supplemental liquidity and outside income support' },
+    { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Asset coverage and loan-to-value resilience' },
+    { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Purpose quality and overall loan context' },
+  ];
+  const advancedSignalItems = [
+    {
+      label: 'Fraud Score',
+      value: creditRiskInsights.fraudScore.toFixed(0),
+      tone:
+        creditRiskInsights.fraudScore >= 70
+          ? 'text-emerald-700'
+          : creditRiskInsights.fraudScore >= 50
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Higher is better',
+    },
+    {
+      label: 'Non-starter Score',
+      value: creditRiskInsights.nonStarterScore.toFixed(0),
+      tone:
+        creditRiskInsights.nonStarterScore >= 70
+          ? 'text-emerald-700'
+          : creditRiskInsights.nonStarterScore >= 50
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Higher is better',
+    },
+    {
+      label: 'Risk Score',
+      value: creditRiskInsights.riskScore.toFixed(1),
+      tone:
+        creditRiskInsights.riskScore <= 35
+          ? 'text-emerald-700'
+          : creditRiskInsights.riskScore <= 60
+            ? 'text-amber-600'
+            : 'text-rose-600',
+      note: 'Lower is better',
+    },
+    {
+      label: 'Origination Profitability',
+      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+      tone:
+        creditRiskInsights.originationProfitability >= 0
+          ? 'text-emerald-700'
+          : 'text-rose-600',
+      note: `Margin ${creditRiskInsights.originationMargin.toFixed(1)}%`,
+    },
+  ];
+  const profitabilityBreakdown = [
+    {
+      label: 'Gross Interest Revenue',
+      value: `PHP ${creditRiskInsights.grossRevenue.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+    {
+      label: 'Expected Loss Reserve',
+      value: `PHP ${creditRiskInsights.expectedLoss.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+    {
+      label: 'Processing Cost',
+      value: `PHP ${creditRiskInsights.processingCost.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+    },
+  ];
+  const aiRiskTone =
+    aiRecommendation.riskLevel === 'Low'
+      ? 'bg-emerald-100 text-emerald-800'
+      : aiRecommendation.riskLevel === 'Medium'
+        ? 'bg-amber-100 text-amber-800'
+        : 'bg-rose-100 text-rose-800';
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -1254,6 +1943,21 @@ export default function LendingScorecard() {
 
         {/* Global Pipeline Dashboard Navigation Bar */}
         <div className="loan-toolbar bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
+          <div className={`${topNavButtonClass} loan-toolbar-button-secondary flex items-center gap-2 border-slate-800 bg-slate-700 text-white`}>
+            <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-200">Country</span>
+            <select
+              value={selectedCountryCode}
+              onChange={(event) => setSelectedCountryCode(event.target.value)}
+              className="min-w-[88px] border-0 bg-transparent p-0 text-sm font-semibold text-white focus:outline-none"
+              aria-label="Select country"
+            >
+              {countryOptions.map((option) => (
+                <option key={option} value={option} className="text-slate-800">
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
           <button 
             onClick={handleCreateNew}
             className={`${topNavButtonClass} loan-toolbar-button-primary border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
@@ -1323,14 +2027,14 @@ export default function LendingScorecard() {
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
               {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card', 'Personal Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
-              {renderInput('loan', 'amount', 'Requested Loan Amount', 'number')}
+              {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
               {renderInput('loan', 'interestRate', 'Annual Interest Rate (%)', 'number')}
               <div className="md:col-span-2 bg-purple-50 p-4 rounded-md border border-purple-200 mt-2">
                 <h4 className="font-bold text-purple-800 text-sm mb-2">Auto-Calculated Metrics</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>Est. Monthly Amortization: <span className="font-bold">${calculations.monthlyPayment.toFixed(2)}</span></div>
-                  <div>Loan-to-Value (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
+                  <div>Est. Monthly Amortization: <span className="font-bold">PHP {calculations.monthlyPayment.toFixed(2)}</span></div>
+                  <div>Loan-to-Value Ratio (LTV): <span className={`font-bold ${calculations.ltv > 90 ? 'text-red-600' : 'text-green-600'}`}>{calculations.ltv.toFixed(1)}%</span></div>
                 </div>
               </div>
 
@@ -1343,20 +2047,29 @@ export default function LendingScorecard() {
                     </p>
                   </div>
                   <div className="shrink-0">
-                    <input
-                      type="file"
-                      id="step1DocumentUpload"
-                      className="hidden"
-                      onChange={(event) => void handleFileUpload(event)}
-                      accept="image/*"
-                      capture="environment"
-                    />
-                    <label
-                      htmlFor="step1DocumentUpload"
-                      className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
-                    >
-                      {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
-                    </label>
+                    <div className="flex flex-wrap gap-3">
+                      <a
+                        href="/loan-application-intake-form.pdf"
+                        download
+                        className="loan-inline-button loan-inline-button-secondary inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold"
+                      >
+                        Download PDF Form
+                      </a>
+                      <input
+                        type="file"
+                        id="step1DocumentUpload"
+                        className="hidden"
+                        onChange={(event) => void handleFileUpload(event)}
+                        accept="image/*"
+                        capture="environment"
+                      />
+                      <label
+                        htmlFor="step1DocumentUpload"
+                        className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
+                      >
+                        {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
+                      </label>
+                    </div>
                   </div>
                 </div>
 
@@ -1533,11 +2246,11 @@ export default function LendingScorecard() {
               {renderInput('applicantPersonal', 'middleName', 'Middle Name')}
               {renderInput('applicantPersonal', 'dateOfBirth', 'Date of Birth', 'date')}
               {renderInput('applicantPersonal', 'placeOfBirth', 'Place of Birth')}
-              {renderInput('applicantPersonal', 'age', 'Age', 'number')}
-              {renderInput('applicantPersonal', 'gender', 'Gender')}
+              {renderInput('applicantPersonal', 'age', 'Age', 'number', true)}
+              {renderSelect('applicantPersonal', 'gender', 'Gender', ['Male', 'Female'])}
               {renderInput('applicantPersonal', 'citizenship', 'Citizenship')}
               {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
-              {renderInput('applicantPersonal', 'maritalStatus', 'Marital Status')}
+              {renderSelect('applicantPersonal', 'maritalStatus', 'Marital Status', ['Single', 'Married', 'Widow', 'Separated', 'Others'])}
               {renderInput('applicantPersonal', 'mothersMaidenName', "Mother's Maiden Name")}
               {renderInput('contactInformation', 'mobileNumber', 'Mobile Number')}
               {renderInput('contactInformation', 'homePhoneNumber', 'Home Phone Number')}
@@ -1550,8 +2263,8 @@ export default function LendingScorecard() {
               {renderInput('addressInformation', 'permanentAddress', 'Permanent Address')}
               {renderInput('addressInformation', 'mailingAddress', 'Mailing Address')}
               {renderInput('addressInformation', 'lengthOfStay', 'Length of Stay')}
-              {renderInput('otherInformation', 'homeOwnership', 'Home Ownership')}
-              {renderInput('otherInformation', 'educationalAttainment', 'Educational Attainment')}
+              {renderSelect('otherInformation', 'homeOwnership', 'Home Ownership', ['Own', 'Mortgaged', 'Renting', 'Living with Relative'])}
+              {renderSelect('otherInformation', 'educationalAttainment', 'Educational Attainment', ['PHD', 'PostGraduate', 'College Degree', 'HighSchool'])}
               {renderInput('otherInformation', 'numberOfVehiclesOwned', 'Number of Vehicles Owned', 'number')}
              </div>
           )}
@@ -1566,14 +2279,14 @@ export default function LendingScorecard() {
               <div className="md:col-span-2 bg-blue-50 p-4 rounded-md border border-blue-200 mt-2">
                 <h4 className="font-bold text-blue-800 text-sm mb-2">Auto-Calculated Totals</h4>
                 <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>Total Household Income: <span className="font-bold">${calculations.totalIncome.toLocaleString()}</span></div>
-                  <div>Total Existing Debt: <span className="font-bold">${calculations.totalExistingDebt.toLocaleString()}</span></div>
+                  <div>Total Household Income: <span className="font-bold">PHP {calculations.totalIncome.toLocaleString()}</span></div>
+                  <div>Total Existing Debt: <span className="font-bold">PHP {calculations.totalExistingDebt.toLocaleString()}</span></div>
                 </div>
               </div>
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Detailed Employment Information</h4>
               </div>
-              {renderInput('employmentInformation', 'employmentStatus', 'Employment Status')}
+              {renderSelect('employmentInformation', 'employmentStatus', 'Employment Status', ['Regular', 'Contractual', 'Project-Basis', 'Consulting', 'Part-time'])}
               {renderInput('employmentInformation', 'employerBusinessName', 'Employer / Business Name')}
               {renderInput('employmentInformation', 'officeAddress', 'Office Address')}
               {renderInput('employmentInformation', 'occupation', 'Occupation')}
@@ -1589,13 +2302,16 @@ export default function LendingScorecard() {
               {renderFormattedNumberInput('employmentInformation', 'investmentIncome', 'Investment Income')}
               {renderFormattedNumberInput('employmentInformation', 'businessIncome', 'Business Income')}
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
+              <div className="col-span-full">
+                {renderEnhancedDueDiligenceEmploymentSection()}
+              </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
-                <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information</h3>
+                <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information (Optional)</h3>
                 <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
               </div>
               {formData.coBorrowers.length === 0 && <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>}
@@ -1630,7 +2346,7 @@ export default function LendingScorecard() {
                 </div>
               ))}
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse / Co-Borrower Information</h4>
+                <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse / Co-Borrower Information (Optional)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     ['spouseInformation', 'fullName', 'Full Name'],
@@ -1694,19 +2410,31 @@ export default function LendingScorecard() {
               {renderInput('bankingRelationships', 'loanType', 'Loan Type')}
               {renderFormattedNumberInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance')}
               {renderInput('bankingRelationships', 'loanMonthlyAmortization', 'Monthly Amortization', 'number')}
+              <div className="col-span-full">
+                {renderEnhancedDueDiligenceBankingSection()}
+              </div>
             </div>
           )}
 
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
+              <p className="col-span-full -mt-2 text-sm italic text-slate-500">
+                Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
+              </p>
               <div className="md:col-span-2">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
               </div>
-              {renderInput('collateral', 'vehicleInfo', 'Asset/Vehicle Information')}
+              {renderInput('collateral', 'assetType', 'Type')}
+              {renderInput('collateral', 'maker', 'Maker')}
+              {renderInput('collateral', 'brand', 'Brand')}
+              {renderInput('collateral', 'model', 'Model')}
+              {renderInput('collateral', 'year', 'Year')}
               {renderInput('collateral', 'appraisedValue', 'Appraised Value', 'number')}
-              {renderInput('collateral', 'insurance', 'Insurance Provider & Policy #')}
-              {renderInput('collateral', 'registration', 'Registration / OR/CR Number')}
+              {renderInput('collateral', 'insuranceProviderCompany', 'Insurance Provider / Company')}
+              {renderInput('collateral', 'policyNumber', 'Policy Number')}
+              {renderInput('collateral', 'orNumber', 'OR Number')}
+              {renderInput('collateral', 'crNumber', 'CR Number')}
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information (if applicable)</h4>
               </div>
@@ -1715,12 +2443,147 @@ export default function LendingScorecard() {
               {renderInput('collateralInformation', 'lotNumber', 'Lot Number')}
               {renderInput('collateralInformation', 'blockNumber', 'Block Number')}
               {renderInput('collateralInformation', 'tctCctNumber', 'TCT/CCT Number')}
+              {renderFormattedNumberInput('collateralInformation', 'propertyAppraisedValue', 'Property Appraised Value')}
+
+              <div className="md:col-span-2 border-t pt-4 mt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-0">Additional Collaterals</h4>
+                  <button
+                    type="button"
+                    onClick={addAdditionalCollateral}
+                    className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 px-3 py-1.5 text-white rounded hover:bg-blue-700"
+                  >
+                    Add Collateral
+                  </button>
+                </div>
+              </div>
+
+              {formData.additionalCollaterals.length === 0 && (
+                <p className="md:col-span-2 text-sm italic text-slate-500">
+                  No additional collaterals added.
+                </p>
+              )}
+
+              {formData.additionalCollaterals.map((collateral, index) => (
+                <div key={collateral.id} className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-4 relative">
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalCollateral(collateral.id)}
+                    className="loan-icon-button absolute right-2 top-2 text-red-500 hover:text-red-700 text-sm font-bold"
+                  >
+                    Remove
+                  </button>
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Additional Collateral #{index + 1}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Type</label>
+                      <input value={collateral.collateralType} onChange={(e) => updateAdditionalCollateral(collateral.id, 'collateralType', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Maker</label>
+                      <input value={collateral.maker} onChange={(e) => updateAdditionalCollateral(collateral.id, 'maker', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Brand</label>
+                      <input value={collateral.brand} onChange={(e) => updateAdditionalCollateral(collateral.id, 'brand', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Model</label>
+                      <input value={collateral.model} onChange={(e) => updateAdditionalCollateral(collateral.id, 'model', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Year</label>
+                      <input value={collateral.year} onChange={(e) => updateAdditionalCollateral(collateral.id, 'year', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Appraised Value</label>
+                      <input type="number" value={collateral.appraisedValue === 0 ? '' : collateral.appraisedValue} onChange={(e) => updateAdditionalCollateral(collateral.id, 'appraisedValue', parseFloat(e.target.value) || 0)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Insurance Provider / Company</label>
+                      <input value={collateral.insuranceProviderCompany} onChange={(e) => updateAdditionalCollateral(collateral.id, 'insuranceProviderCompany', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Policy Number</label>
+                      <input value={collateral.policyNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'policyNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">OR Number</label>
+                      <input value={collateral.orNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'orNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">CR Number</label>
+                      <input value={collateral.crNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'crNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="md:col-span-2 mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Notes</label>
+                      <textarea rows={3} value={collateral.notes} onChange={(e) => updateAdditionalCollateral(collateral.id, 'notes', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
           {step === 7 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 7: Document Upload Center</h3>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-amber-900 text-sm mb-1">Pre-Upload Completion Checklist</h4>
+                    <p className="text-xs text-amber-800/80">
+                      Quick readiness view before uploading supporting documents.
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-amber-900">
+                      {documentPreparationCompletionPercent}%
+                    </div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-amber-800/80">
+                      Ready
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-900/80">
+                    <span>Overall Completion</span>
+                    <span>
+                      {documentPreparationCompletedCount}/{documentPreparationChecklist.length}
+                    </span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-amber-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all"
+                      style={{ width: `${documentPreparationCompletionPercent}%` }}
+                    />
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="flex min-w-max gap-2">
+                    {documentPreparationChecklist.map((item) => (
+                      <div
+                        key={item.label}
+                        className={`min-w-[128px] rounded-lg border px-3 py-2 text-center ${
+                          item.complete
+                            ? 'border-emerald-200 bg-white text-emerald-700'
+                            : 'border-rose-200 bg-white text-rose-700'
+                        }`}
+                      >
+                        <div className="text-base font-bold leading-none">
+                          {item.complete ? '✓' : '✕'}
+                        </div>
+                        <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                          {item.label}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-500">
+                          {item.optional ? 'Optional' : item.complete ? 'Complete' : 'Incomplete'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
                 <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
                 <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
@@ -1788,6 +2651,10 @@ export default function LendingScorecard() {
                     ['supportingDocuments', 'proofOfIncome', 'Proof of Income'],
                     ['supportingDocuments', 'bankStatements', 'Bank Statements (last 6 months)'],
                     ['supportingDocuments', 'existingCreditCardStatements', 'Existing Credit Card Statements'],
+                    ['supportingDocuments', 'additionalSupportingDocuments', 'Additional Supporting Documents'],
+                    ['supportingDocuments', 'auditedFinancialStatements', 'Audited Financial Statements'],
+                    ['supportingDocuments', 'proofOfRemittanceIncome', 'Proof of Remittance Income'],
+                    ['supportingDocuments', 'investmentStatements', 'Investment Statements'],
                   ].map(([section, field, label]) => renderCheckbox(section as EditableSection, field, label))}
                 </div>
               </div>
@@ -1796,109 +2663,155 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 8: Credit Scoring</h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-red-50 p-4 rounded-md border border-red-200">
-                  <h4 className="font-bold text-red-800 text-sm mb-2">Debt-to-Income (DTI)</h4>
-                  <p className="text-3xl font-bold text-red-700">{calculations.dti.toFixed(1)}%</p>
-                  <p className="text-xs text-red-600 mt-1">Formula: (Total Existing Debt / Total Income) * 100</p>
-                </div>
-                <div className="bg-orange-50 p-4 rounded-md border border-orange-200">
-                  <h4 className="font-bold text-orange-800 text-sm mb-2">Debt Service Ratio (DSR)</h4>
-                  <p className="text-3xl font-bold text-orange-700">{calculations.dsr.toFixed(1)}%</p>
-                  <p className="text-xs text-orange-600 mt-1">Formula: ((Existing Debt + Proposed Payment) / Total Income) * 100</p>
+              <div className="rounded-[28px] border border-slate-200 bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_58%,#334155_100%)] p-6 text-white shadow-[0_22px_48px_rgba(15,23,42,0.18)] md:p-8">
+                <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="max-w-2xl space-y-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.32em] text-slate-300">Step 8: Credit Scoring</p>
+                    <h3 className="m-0 text-3xl font-semibold tracking-tight text-white">Executive Credit Assessment</h3>
+                    <p className="text-sm leading-6 text-slate-300 md:text-base">
+                      Consolidated underwriting view for debt capacity, collateral quality,
+                      profitability, and AI-assisted approval guidance.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2 lg:min-w-[340px]">
+                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">Total Automated Score</p>
+                      <p className="mt-2 text-4xl font-semibold text-white">
+                        {automatedScorecard.total}
+                        <span className="ml-1 text-base font-medium text-slate-300">/50</span>
+                      </p>
+                      <p className="mt-2 text-xs text-slate-300">{automatedScoreBand}</p>
+                    </div>
+                    <div className="rounded-2xl border border-white/10 bg-white/10 p-4 backdrop-blur-sm">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-300">AI Approval Outlook</p>
+                      <p className="mt-2 text-4xl font-semibold text-cyan-300">{aiRecommendation.probability}%</p>
+                      <p className="mt-2 text-xs text-slate-300">
+                        Suggested amount PHP {aiRecommendation.suggestedAmount.toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
                 </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">Automated Lending Scorecard</h4>
-                <p className="text-sm text-gray-600">Scores are automatically computed based on application data inputs.</p>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  {[
-                    { label: 'Character', score: automatedScorecard.character, desc: 'Based on ID & History' },
-                    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Based on DSR' },
-                    { label: 'Capital', score: automatedScorecard.capital, desc: 'Based on Other Income' },
-                    { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Based on LTV' },
-                    { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Based on Purpose' },
-                  ].map((c, i) => (
-                    <div key={i} className="bg-white border-2 border-gray-200 rounded-lg p-4 text-center shadow-sm">
-                      <p className="text-xs font-bold text-gray-500 uppercase">{c.label}</p>
-                      <p className={`text-3xl font-bold my-2 ${c.score >= 8 ? 'text-green-600' : c.score >= 6 ? 'text-yellow-600' : 'text-red-600'}`}>{c.score}<span className="text-sm text-gray-400">/10</span></p>
-                      <p className="text-[10px] text-gray-500">{c.desc}</p>
+              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.95fr]">
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5">
+                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Capacity Metrics</h4>
+                      <p className="mt-2 text-sm text-slate-600">
+                        Primary affordability ratios used to assess repayment pressure.
+                      </p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="rounded-2xl border border-rose-200 bg-[linear-gradient(180deg,#fff1f2_0%,#ffffff_100%)] p-5">
+                  <h4 className="font-bold text-rose-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt-to-Income Ratio (DTI)</h4>
+                  <p className="text-4xl font-semibold text-rose-700">{calculations.dti.toFixed(1)}%</p>
+                  <p className="text-xs text-rose-700/80 mt-4 leading-5">Formula: (Total Existing Debt / Total Income) x 100</p>
+                </div>
+                <div className="rounded-2xl border border-amber-200 bg-[linear-gradient(180deg,#fffbeb_0%,#ffffff_100%)] p-5">
+                  <h4 className="font-bold text-amber-800 text-[11px] uppercase tracking-[0.22em] mb-2">Debt Service Ratio (DSR)</h4>
+                  <p className="text-4xl font-semibold text-amber-700">{calculations.dsr.toFixed(1)}%</p>
+                  <p className="text-xs text-amber-700/80 mt-4 leading-5">Formula: ((Existing Debt + Proposed Payment) / Total Income) x 100</p>
+                </div>
+              </div>
+                  </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+                      <div>
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Automated Lending Scorecard</h4>
+                        <p className="mt-2 text-sm text-slate-600">Weighted 5C indicators automatically derived from the application record.</p>
+                      </div>
+                      <div className="rounded-full bg-slate-100 px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">
+                        Corporate Underwriting Index
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+                  {automatedScoreItems.map((c, i) => (
+                    <div key={i} className="rounded-2xl border border-slate-200 bg-slate-50 p-4 shadow-sm">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{c.label}</p>
+                      <p className={`mt-4 text-4xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}>{c.score}<span className="ml-1 text-base font-medium text-slate-400">/10</span></p>
+                      <p className="mt-3 text-xs leading-5 text-slate-500">{c.desc}</p>
                     </div>
                   ))}
                 </div>
-                <div className="bg-slate-800 text-white p-4 rounded-lg flex justify-between items-center">
-                  <span className="font-bold text-lg">Total Automated Score</span>
-                  <span className="text-3xl font-bold text-blue-400">{automatedScorecard.total}<span className="text-sm text-slate-400">/50</span></span>
-                </div>
               </div>
 
-              <div className="space-y-4">
-                <h4 className="font-bold text-slate-800 text-sm">Advanced Scoring Signals</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Fraud Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.fraudScore >= 70 ? 'text-green-600' : creditRiskInsights.fraudScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.fraudScore}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Non-starter Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.nonStarterScore >= 70 ? 'text-green-600' : creditRiskInsights.nonStarterScore >= 50 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.nonStarterScore}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Higher is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Risk Score</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.riskScore <= 35 ? 'text-green-600' : creditRiskInsights.riskScore <= 60 ? 'text-yellow-600' : 'text-red-600'}`}>
-                      {creditRiskInsights.riskScore.toFixed(1)}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Lower is better</p>
-                  </div>
-
-                  <div className="bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
-                    <p className="text-xs font-bold text-gray-500 uppercase">Origination Profitability</p>
-                    <p className={`text-3xl font-bold mt-1 ${creditRiskInsights.originationProfitability >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      ${creditRiskInsights.originationProfitability.toLocaleString(undefined, { maximumFractionDigits: 0 })}
-                    </p>
-                    <p className="text-xs text-gray-500 mt-1">Margin: {creditRiskInsights.originationMargin.toFixed(1)}%</p>
-                  </div>
+                  <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm md:p-6">
+                    <div className="mb-5">
+                      <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Advanced Scoring Signals</h4>
+                      <p className="mt-2 text-sm text-slate-600">Secondary screening signals for fraud resistance, profitability, and downstream risk.</p>
+                    </div>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
+                  {advancedSignalItems.map((item) => (
+                    <div key={item.label} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                      <p className="text-[11px] font-bold text-slate-500 uppercase tracking-[0.18em]">{item.label}</p>
+                      <p className={`mt-3 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
+                      <p className="mt-2 text-xs text-slate-500">{item.note}</p>
+                    </div>
+                  ))}
                 </div>
-
-                <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-xs text-gray-600 grid grid-cols-1 md:grid-cols-3 gap-3">
-                  <div>Gross Interest Revenue: <span className="font-semibold text-gray-800">${creditRiskInsights.grossRevenue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
-                  <div>Expected Loss Reserve: <span className="font-semibold text-gray-800">${creditRiskInsights.expectedLoss.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
-                  <div>Processing Cost: <span className="font-semibold text-gray-800">${creditRiskInsights.processingCost.toLocaleString(undefined, { maximumFractionDigits: 0 })}</span></div>
+                <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
+                  {profitabilityBreakdown.map((item) => (
+                    <div key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+                      <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
+                      <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
+                    </div>
+                  ))}
                 </div>
               </div>
+                </div>
 
-              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 p-6 rounded-lg border border-indigo-200">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6">
+                <div className="space-y-6">
+              <div className="rounded-[24px] border border-indigo-200 bg-[linear-gradient(180deg,#eef2ff_0%,#f8fbff_100%)] p-6 shadow-sm">
+                <div className="flex flex-col gap-5 border-b border-indigo-100 pb-5">
+                  <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                   <div>
-                    <h4 className="text-sm font-bold text-indigo-800 uppercase tracking-wide">AI Approval Probability</h4>
-                    <p className="text-4xl font-bold text-indigo-700 mt-1">{aiRecommendation.probability}%</p>
-                    <span className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-bold ${aiRecommendation.riskLevel === 'Low' ? 'bg-green-200 text-green-800' : aiRecommendation.riskLevel === 'Medium' ? 'bg-yellow-200 text-yellow-800' : 'bg-red-200 text-red-800'}`}>
+                    <h4 className="m-0 text-sm font-semibold text-indigo-700 uppercase tracking-[0.22em]">AI Approval Probability</h4>
+                    <p className="mt-3 text-5xl font-semibold tracking-tight text-indigo-700">{aiRecommendation.probability}%</p>
+                    <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${aiRiskTone}`}>
                       Risk Level: {aiRecommendation.riskLevel}
                     </span>
                   </div>
-                  <div className="mt-4 md:mt-0 text-right">
-                    <p className="text-sm text-gray-600">AI Suggested Loan Amount</p>
-                    <p className="text-2xl font-bold text-gray-800">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                  <div className="rounded-2xl border border-white/70 bg-white/80 px-4 py-3 text-right shadow-sm">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
+                    <p className="mt-2 text-2xl font-semibold text-slate-800">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
                   </div>
                 </div>
-                <div className="bg-white/60 p-4 rounded-md border border-indigo-100">
-                  <h5 className="font-semibold text-sm text-indigo-900 mb-2">Computation Log:</h5>
-                  <ul className="space-y-1">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-800">PHP {calculations.monthlyPayment.toFixed(2)}</p>
+                  </div>
+                  <div className="rounded-xl border border-white/70 bg-white/70 px-4 py-3">
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
+                    <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
+                  </div>
+                </div>
+                </div>
+                <div className="mt-5">
+                  <h5 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-indigo-900">Computation Log</h5>
+                  <div className="mt-4 rounded-2xl border border-indigo-100 bg-white/80 p-4">
+                  <ul className="space-y-3">
                     {aiRecommendation.computationLog.map((log, i) => (
-                      <li key={i} className="text-sm text-gray-700 font-mono">• {log}</li>
+                      <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
+                        <span className="mt-1 h-2 w-2 flex-none rounded-full bg-indigo-500" />
+                        <span className="leading-6">{log}</span>
+                      </li>
                     ))}
                   </ul>
+                </div>
+              </div>
+              </div>
+
+                  <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
+                    <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Underwriting Note</h4>
+                    <p className="mt-3 text-sm leading-6 text-slate-600">
+                      This panel combines repayment capacity, collateral adequacy, and AI-assisted
+                      decision support into a single review surface designed for credit officers and
+                      approval committee presentation.
+                    </p>
+                  </div>
                 </div>
               </div>
             </div>
@@ -1937,6 +2850,7 @@ export default function LendingScorecard() {
                   ].map(([section, field, label]) => renderInput(section as EditableSection, field, label))}
                 </div>
               </div>
+
             </div>
           )}
 
@@ -1958,15 +2872,15 @@ export default function LendingScorecard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Requested Loan Amount:</span>
-                    <p className="text-xl font-bold text-green-700">${formData.loan.amount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-green-700">PHP {formData.loan.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Approved Loan Amount:</span>
-                    <p className="text-xl font-bold text-blue-700">${aiRecommendation.suggestedAmount.toLocaleString()}</p>
+                    <p className="text-xl font-bold text-blue-700">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">Monthly Amortization:</span>
-                    <p className="text-xl font-bold text-orange-700">${calculations.monthlyPayment.toFixed(2)}</p>
+                    <p className="text-xl font-bold text-orange-700">PHP {calculations.monthlyPayment.toFixed(2)}</p>
                   </div>
                   <div className="bg-white/50 p-3 rounded">
                     <span className="text-gray-600">AI Approval Probability:</span>
@@ -2030,6 +2944,9 @@ export default function LendingScorecard() {
                     <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
                       Workflow Action
                     </label>
+                    <p className="mb-2 text-xs text-slate-400">
+                      Suggested next: <span className="font-semibold text-slate-100">{suggestedWorkflowLabel}</span>
+                    </p>
                     <select
                       value={selectedWorkflowAction}
                       onChange={(event) =>

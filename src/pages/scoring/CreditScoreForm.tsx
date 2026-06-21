@@ -112,7 +112,7 @@ export const CreditScoreForm: React.FC = () => {
           <label style={labelStyle}>Full Name <input style={inputStyle} value={b.full_name} onChange={e => updateBorrower(i, 'full_name', e.target.value)} required /></label>
           <label style={labelStyle}><input type="checkbox" checked={b.is_primary} onChange={e => updateBorrower(i, 'is_primary', e.target.checked)} /> Primary Applicant</label>
           <label style={labelStyle}><input type="checkbox" checked={b.is_married} onChange={e => updateBorrower(i, 'is_married', e.target.checked)} /> Married</label>
-          <label style={labelStyle}>DSR % <input type="number" step="0.01" style={inputStyle} value={b.dsr_percent} onChange={e => updateBorrower(i, 'dsr_percent', parseFloat(e.target.value))} /></label>
+          <label style={labelStyle}>Debt Service Ratio (DSR) % <input type="number" step="0.01" style={inputStyle} value={b.dsr_percent} onChange={e => updateBorrower(i, 'dsr_percent', parseFloat(e.target.value))} /></label>
           <label style={labelStyle}>Net Income (₱) <input type="number" step="0.01" style={inputStyle} value={b.net_disposable_income} onChange={e => updateBorrower(i, 'net_disposable_income', parseFloat(e.target.value))} /></label>
           <label style={labelStyle}>Household Members <input type="number" min="0" style={inputStyle} value={b.household_members} onChange={e => updateBorrower(i, 'household_members', parseInt(e.target.value))} /></label>
           <label style={labelStyle}>ADB (₱) <input type="number" step="0.01" style={inputStyle} value={b.adb_amount} onChange={e => updateBorrower(i, 'adb_amount', parseFloat(e.target.value))} /></label>

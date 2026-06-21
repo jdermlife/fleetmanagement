@@ -92,6 +92,31 @@ export interface LoanApplicationRequirements {
     lotNumber: string
     blockNumber: string
     tctCctNumber: string
+    propertyAppraisedValue: number
+  }
+  collateralAssetDetails: {
+    assetType: string
+    maker: string
+    brand: string
+    model: string
+    year: string
+    insuranceProviderCompany: string
+    policyNumber: string
+    orNumber: string
+    crNumber: string
+    additionalCollaterals: Array<{
+      collateralType: string
+      maker: string
+      brand: string
+      model: string
+      year: string
+      appraisedValue: number
+      insuranceProviderCompany: string
+      policyNumber: string
+      orNumber: string
+      crNumber: string
+      notes: string
+    }>
   }
   spouseInformation: {
     fullName: string
@@ -157,6 +182,76 @@ export interface LoanApplicationRequirements {
     proofOfIncome: boolean
     bankStatements: boolean
     existingCreditCardStatements: boolean
+    additionalSupportingDocuments: boolean
+    auditedFinancialStatements: boolean
+    proofOfRemittanceIncome: boolean
+    investmentStatements: boolean
+  }
+  enhancedDueDiligence: {
+    previousLendersAndExistingLoanAccounts: string
+    numberOfActiveLoans: number
+    previousLoanRestructuringDisclosures: string
+    employmentReferencePerson: string
+    hrContactInformation: string
+    supervisorInformation: string
+    additionalBankAccountsOwned: string
+    sourceOfIncomeVerificationReferences: string
+    lengthOfResidenceConfirmation: string
+    utilityAccountReferences: string
+    characterReferences: string
+    professionalOrganizationMemberships: string
+    professionalLicenses: string
+    facebookProfile: string
+    instagramProfile: string
+    xProfile: string
+    tikTokProfile: string
+    linkedInProfile: string
+    otherSocialMediaLinks: string
+    businessWebsite: string
+    guarantorReferences: string
+    coBorrowerReferences: string
+    additionalPropertyDeclarations: string
+    additionalVehicleDeclarations: string
+    selfDeclaredAssetsAndLiabilities: string
+    selfDeclaredInvestmentPortfolio: string
+    existingInsurancePolicies: string
+    priorBankingRelationships: string
+    consentOpenBankingDataAccess: boolean
+    consentEmploymentVerification: boolean
+    consentIdentityVerification: boolean
+    psychometricQuestionnaireResponses: string
+    financialBehaviorQuestionnaireResponses: string
+    riskAppetiteQuestionnaireResponses: string
+    businessOutlookQuestionnaireResponses: string
+    futureFinancialPlansQuestionnaire: string
+    spendingBehaviorQuestionnaire: string
+    householdBudgetingQuestionnaire: string
+    emergencyPreparednessQuestionnaire: string
+    characterAndIntegrityAssessmentAnswers: string
+    communityInvolvementInformation: string
+    referencesFromEmployerOrCommunity: string
+  }
+  optionalPsychometricQuestionnaire: {
+    question01: string
+    question02: string
+    question03: string
+    question04: string
+    question05: string
+    question06: string
+    question07: string
+    question08: string
+    question09: string
+    question10: string
+    question11: string
+    question12: string
+    question13: string
+    question14: string
+    question15: string
+    question16: string
+    question17: string
+    question18: string
+    question19: string
+    question20: string
   }
 }
 

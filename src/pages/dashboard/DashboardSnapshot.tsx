@@ -63,8 +63,8 @@ function DashboardSnapshot() {
 
       <div className="snapshot-kpis">
         <KpiCard label="Assets Ready for Lease" value="61" detail="+12 from January" tone="gold" />
-        <KpiCard label="Projected Monthly Revenue" value="$276K" detail="+49.2% in six months" tone="teal" />
-        <KpiCard label="Average Gasoline Price" value="$3.78" detail="Per gallon, trailing 6 weeks" tone="coral" />
+        <KpiCard label="Projected Monthly Revenue" value="PHP 276K" detail="+49.2% in six months" tone="teal" />
+        <KpiCard label="Average Gasoline Price" value="PHP 3.78" detail="Per gallon, trailing 6 weeks" tone="coral" />
         <KpiCard label="On-Time Dispatch Rate" value="96%" detail="Best level in the current trend" tone="slate" />
       </div>
 
@@ -82,7 +82,7 @@ function DashboardSnapshot() {
         >
           <TrendChart
             data={monthlyRevenueData}
-            formatter={(value) => `$${Math.round(value / 1000)}K`}
+            formatter={(value) => `PHP ${Math.round(value / 1000)}K`}
             strokeClassName="trend-line revenue"
             areaClassName="trend-area revenue"
           />
@@ -94,7 +94,7 @@ function DashboardSnapshot() {
         >
           <TrendChart
             data={gasolinePriceData}
-            formatter={(value) => `$${value.toFixed(2)}`}
+            formatter={(value) => `PHP ${value.toFixed(2)}`}
             strokeClassName="trend-line gasoline"
             areaClassName="trend-area gasoline"
           />

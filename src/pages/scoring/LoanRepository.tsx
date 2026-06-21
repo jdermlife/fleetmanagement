@@ -75,51 +75,30 @@ function formatDateTime(value: string | null | undefined) {
   return parsed.toLocaleString();
 }
 
-const summaryCardStyles: Record<
-  WorkflowStatus | "Total Applications",
-  { accent: string; surface: string; ring: string }
-> = {
-  "Total Applications": {
-    accent: "text-slate-900",
-    surface: "bg-slate-900",
-    ring: "ring-slate-800/10",
-  },
-  Draft: {
-    accent: "text-slate-800",
-    surface: "bg-slate-100",
-    ring: "ring-slate-300/80",
-  },
-  Submitted: {
-    accent: "text-blue-900",
-    surface: "bg-blue-50",
-    ring: "ring-blue-200",
-  },
-  "Under Review": {
-    accent: "text-amber-900",
-    surface: "bg-amber-50",
-    ring: "ring-amber-200",
-  },
-  "Credit Review": {
-    accent: "text-violet-900",
-    surface: "bg-violet-50",
-    ring: "ring-violet-200",
-  },
-  Approved: {
-    accent: "text-emerald-900",
-    surface: "bg-emerald-50",
-    ring: "ring-emerald-200",
-  },
-  Rejected: {
-    accent: "text-rose-900",
-    surface: "bg-rose-50",
-    ring: "ring-rose-200",
-  },
-  Released: {
-    accent: "text-indigo-900",
-    surface: "bg-indigo-50",
-    ring: "ring-indigo-200",
-  },
-};
+function getGraphColor(label: WorkflowStatus | "Total Applications" | "Visible Records") {
+  switch (label) {
+    case "Total Applications":
+      return "#0f172a";
+    case "Visible Records":
+      return "#0891b2";
+    case "Draft":
+      return "#64748b";
+    case "Submitted":
+      return "#2563eb";
+    case "Under Review":
+      return "#d97706";
+    case "Credit Review":
+      return "#7c3aed";
+    case "Approved":
+      return "#059669";
+    case "Rejected":
+      return "#dc2626";
+    case "Released":
+      return "#4f46e5";
+    default:
+      return "#475569";
+  }
+}
 
 export default function LoanRepository() {
   const navigate = useNavigate();
@@ -200,6 +179,29 @@ export default function LoanRepository() {
       { label: "Released", value: stats.byStatus.Released, note: "Fully booked accounts" },
     ],
     [stats],
+  );
+  const recordsCountItems = useMemo(
+    () => [
+      {
+        label: "Visible Records" as const,
+        value: filteredApplications.length,
+        note: "Records shown after search, date, and status filters",
+      },
+      {
+        label: "Total Applications" as const,
+        value: stats.total,
+        note: "All records currently loaded in the repository",
+      },
+    ],
+    [filteredApplications.length, stats.total],
+  );
+  const maxPortfolioValue = useMemo(
+    () => Math.max(1, ...summaryCards.map((item) => item.value)),
+    [summaryCards],
+  );
+  const maxRecordCountValue = useMemo(
+    () => Math.max(1, ...recordsCountItems.map((item) => item.value)),
+    [recordsCountItems],
   );
 
   const messageIsError = message.toLowerCase().includes("failed");
@@ -320,29 +322,42 @@ export default function LoanRepository() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-1 xl:text-right">
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Visible Records
-                  </div>
-                  <div className="mt-1 text-2xl font-semibold text-white">
-                    {filteredApplications.length}
-                  </div>
+              <div
+                style={{
+                  minWidth: "320px",
+                  width: "100%",
+                  maxWidth: "440px",
+                  background: "rgba(255,255,255,0.08)",
+                  border: "1px solid rgba(255,255,255,0.12)",
+                  borderRadius: "20px",
+                  padding: "18px",
+                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
+                }}
+              >
+                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#94a3b8", marginBottom: "14px" }}>
+                  Repository Record Counts
                 </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Active Filter
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {statusFilter}
-                  </div>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-white/5 px-4 py-3">
-                  <div className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-400">
-                    Period
-                  </div>
-                  <div className="mt-1 text-sm font-semibold text-white">
-                    {dateFrom || dateTo ? `${dateFrom || "Start"} to ${dateTo || "Present"}` : "All Dates"}
+                <div style={{ display: "grid", gap: "14px" }}>
+                  {recordsCountItems.map((item) => {
+                    const width = `${Math.max(8, (item.value / maxRecordCountValue) * 100)}%`;
+                    const barColor = getGraphColor(item.label);
+
+                    return (
+                      <div key={item.label}>
+                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginBottom: "6px", alignItems: "baseline" }}>
+                          <span style={{ fontSize: "13px", fontWeight: 700, color: "#e2e8f0" }}>{item.label}</span>
+                          <span style={{ fontSize: "26px", lineHeight: 1, fontWeight: 700, color: "#ffffff" }}>{item.value}</span>
+                        </div>
+                        <div style={{ height: "12px", borderRadius: "999px", background: "rgba(148,163,184,0.18)", overflow: "hidden" }}>
+                          <div style={{ width, height: "100%", borderRadius: "999px", background: `linear-gradient(90deg, ${barColor}, ${barColor}CC)` }} />
+                        </div>
+                        <div style={{ marginTop: "6px", fontSize: "11px", color: "#cbd5e1" }}>{item.note}</div>
+                      </div>
+                    );
+                  })}
+                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#cbd5e1" }}>
+                    <span>Active Filter: <strong style={{ color: "#fff" }}>{statusFilter}</strong></span>
+                    <span>{dateFrom || dateTo ? `${dateFrom || "Start"} to ${dateTo || "Present"}` : "All Dates"}</span>
                   </div>
                 </div>
               </div>
@@ -361,28 +376,44 @@ export default function LoanRepository() {
               </div>
             </div>
 
-            <div className="overflow-x-auto pb-1">
-              <div className="flex min-w-max gap-4">
-                {summaryCards.map((card) => {
-                  const styles =
-                    summaryCardStyles[card.label as keyof typeof summaryCardStyles];
+            <div
+              style={{
+                display: "grid",
+                gap: "14px",
+                padding: "18px",
+                background: "#ffffff",
+                border: "1px solid #e2e8f0",
+                borderRadius: "20px",
+                boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+              }}
+            >
+              {summaryCards.map((card) => {
+                const width = `${Math.max(6, (card.value / maxPortfolioValue) * 100)}%`;
+                const barColor = getGraphColor(card.label as WorkflowStatus | "Total Applications");
 
-                  return (
-                    <div
-                      key={card.label}
-                      className={`w-[172px] rounded-2xl ${styles.surface} p-4 shadow-sm ring-1 ${styles.ring}`}
-                    >
-                      <div className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">
-                        {card.label}
+                return (
+                  <div key={card.label} style={{ display: "grid", gap: "8px" }}>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "baseline" }}>
+                      <div>
+                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>{card.label}</div>
+                        <div style={{ fontSize: "11px", color: "#64748b" }}>{card.note}</div>
                       </div>
-                      <div className={`mt-3 text-3xl font-semibold ${styles.accent}`}>
-                        {card.value}
-                      </div>
-                      <div className="mt-2 text-xs text-slate-500">{card.note}</div>
+                      <div style={{ fontSize: "26px", lineHeight: 1, fontWeight: 700, color: barColor }}>{card.value}</div>
                     </div>
-                  );
-                })}
-              </div>
+                    <div style={{ height: "16px", borderRadius: "999px", background: "#e2e8f0", overflow: "hidden" }}>
+                      <div
+                        style={{
+                          width,
+                          height: "100%",
+                          borderRadius: "999px",
+                          background: `linear-gradient(90deg, ${barColor}, ${barColor}CC)`,
+                          boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.18)",
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -557,9 +588,9 @@ export default function LoanRepository() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Executive Approval</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Scorecard</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">AI Prob.</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">DTI</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">DSR</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">LTV</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Debt-to-Income Ratio (DTI)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Debt Service Ratio (DSR)</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Loan-to-Value Ratio (LTV)</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Status</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Actions</th>
                   </tr>
