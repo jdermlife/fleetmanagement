@@ -20,13 +20,14 @@ interface CoBorrower { id: string; name: string; relationship: string; monthlyIn
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
 interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; homePhoneNumber: string; emailAddress: string; }
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
 interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
 interface EmploymentInformation { employmentStatus: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
-interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; }
+interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyAppraisedValue: number; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
@@ -53,6 +54,7 @@ interface LoanApplication {
   otherInformation: OtherInformation;
   employmentInformation: EmploymentInformation;
   collateralInformation: CollateralInformation;
+  additionalCollaterals: AdditionalCollateral[];
   spouseInformation: SpouseInformation;
   bankingRelationships: BankingRelationships;
   signatures: Signatures;
@@ -105,7 +107,8 @@ const createNewApplicationInstance = (): LoanApplication => ({
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
   otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
   employmentInformation: { employmentStatus: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
-  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '' },
+  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyAppraisedValue: 0 },
+  additionalCollaterals: [],
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
@@ -132,7 +135,8 @@ const buildLoanRequirements = (
       homePurposeOfLoan: application.loan.purpose,
       homeDesiredLoanAmount: application.loan.amount,
       homeLoanTerm: application.loan.termMonths,
-      homeCollateralType: derivedVehicleInfo,
+      homeCollateralType:
+        derivedVehicleInfo || application.collateralInformation.propertyAddress,
       autoPurpose: application.loan.purpose,
       autoVehicleClassification: application.collateral.assetType,
       autoUnitModel: application.collateral.model,
@@ -163,6 +167,19 @@ const buildLoanRequirements = (
       policyNumber: application.collateral.policyNumber,
       orNumber: application.collateral.orNumber,
       crNumber: application.collateral.crNumber,
+      additionalCollaterals: application.additionalCollaterals.map((collateral) => ({
+        collateralType: collateral.collateralType,
+        maker: collateral.maker,
+        brand: collateral.brand,
+        model: collateral.model,
+        year: collateral.year,
+        appraisedValue: collateral.appraisedValue,
+        insuranceProviderCompany: collateral.insuranceProviderCompany,
+        policyNumber: collateral.policyNumber,
+        orNumber: collateral.orNumber,
+        crNumber: collateral.crNumber,
+        notes: collateral.notes,
+      })),
     },
     spouseInformation: application.spouseInformation,
     bankingRelationships: application.bankingRelationships,
@@ -174,6 +191,7 @@ const buildLoanRequirements = (
 };
 
 const calculateLoanMetrics = (application: LoanApplication) => {
+  const totalCollateralValue = calculateTotalCollateralValue(application);
   const totalIncome =
     application.employment.monthlyIncome +
     application.employment.otherIncome +
@@ -199,11 +217,11 @@ const calculateLoanMetrics = (application: LoanApplication) => {
       ? ((totalExistingDebt + monthlyPayment) / totalIncome) * 100
       : 0;
   const ltv =
-    application.collateral.appraisedValue > 0
-      ? (application.loan.amount / application.collateral.appraisedValue) * 100
+    totalCollateralValue > 0
+      ? (application.loan.amount / totalCollateralValue) * 100
       : 0;
 
-  return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv };
+  return { totalIncome, totalExistingDebt, monthlyPayment, dti, dsr, ltv, totalCollateralValue };
 };
 
 const calculateAutomatedScorecard = (
@@ -251,7 +269,7 @@ const calculateCreditRiskInsights = (
     Math.min(
       100,
       (application.loan.amount > 0 ? 20 : 0) +
-        (application.collateral.appraisedValue > 0 ? 20 : 0) +
+        (calculations.totalCollateralValue > 0 ? 20 : 0) +
         (application.loan.productType ? 10 : 0) +
         (calculations.totalIncome > 0 ? 20 : 0) +
         (calculations.dsr < 60 ? 15 : 0) +
@@ -380,6 +398,14 @@ const buildCollateralRegistrationSummary = (collateral: Collateral) =>
   ]
     .filter(Boolean)
     .join(' | ');
+
+const calculateTotalCollateralValue = (application: LoanApplication) =>
+  application.collateral.appraisedValue +
+  application.collateralInformation.propertyAppraisedValue +
+  application.additionalCollaterals.reduce(
+    (sum, collateral) => sum + collateral.appraisedValue,
+    0,
+  );
 
 const hasRequiredEnhancedDueDiligence = (
   dueDiligence: EnhancedDueDiligence,
@@ -989,6 +1015,22 @@ export default function LendingScorecard() {
         ...blankApplication.collateralInformation,
         ...savedRequirements.collateralInformation,
       },
+      additionalCollaterals: Array.isArray(savedCollateralAssetDetails.additionalCollaterals)
+        ? savedCollateralAssetDetails.additionalCollaterals.map((collateral, index) => ({
+            id: `COL-${index}-${Date.now()}`,
+            collateralType: collateral.collateralType ?? '',
+            maker: collateral.maker ?? '',
+            brand: collateral.brand ?? '',
+            model: collateral.model ?? '',
+            year: collateral.year ?? '',
+            appraisedValue: parseFormattedNumber(String(collateral.appraisedValue ?? 0)),
+            insuranceProviderCompany: collateral.insuranceProviderCompany ?? '',
+            policyNumber: collateral.policyNumber ?? '',
+            orNumber: collateral.orNumber ?? '',
+            crNumber: collateral.crNumber ?? '',
+            notes: collateral.notes ?? '',
+          }))
+        : blankApplication.additionalCollaterals,
       spouseInformation: {
         ...blankApplication.spouseInformation,
         ...savedRequirements.spouseInformation,
@@ -1072,7 +1114,7 @@ export default function LendingScorecard() {
     interest_rate: application.loan.interestRate,
     purpose: application.loan.purpose,
     vehicle_info: derivedVehicleInfo,
-    appraised_value: application.collateral.appraisedValue,
+    appraised_value: payloadCalculations.totalCollateralValue,
     committee_remarks: application.committeeRemarks,
     executive_approval: application.routing.executiveApproval,
     dti: payloadCalculations.dti,
@@ -1108,6 +1150,50 @@ export default function LendingScorecard() {
 
   const removeCoBorrower = (id: string) => {
     setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
+  };
+
+  const addAdditionalCollateral = () => {
+    const newCollateral: AdditionalCollateral = {
+      id: `COL-${Date.now()}`,
+      collateralType: '',
+      maker: '',
+      brand: '',
+      model: '',
+      year: '',
+      appraisedValue: 0,
+      insuranceProviderCompany: '',
+      policyNumber: '',
+      orNumber: '',
+      crNumber: '',
+      notes: '',
+    };
+
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: [...prev.additionalCollaterals, newCollateral],
+    }));
+  };
+
+  const updateAdditionalCollateral = (
+    id: string,
+    field: keyof AdditionalCollateral,
+    value: string | number,
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: prev.additionalCollaterals.map((collateral) =>
+        collateral.id === id ? { ...collateral, [field]: value } : collateral,
+      ),
+    }));
+  };
+
+  const removeAdditionalCollateral = (id: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      additionalCollaterals: prev.additionalCollaterals.filter(
+        (collateral) => collateral.id !== id,
+      ),
+    }));
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1264,7 +1350,7 @@ export default function LendingScorecard() {
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
     { label: 'Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
-    { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && formData.collateral.appraisedValue > 0 },
+    { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && calculations.totalCollateralValue > 0 },
     { label: 'Debt Service Ratio (DSR) is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
@@ -1320,16 +1406,28 @@ export default function LendingScorecard() {
       {
         label: 'Collateral',
         complete:
-          formData.collateral.assetType.trim().length > 0 &&
-          formData.collateral.maker.trim().length > 0 &&
-          formData.collateral.brand.trim().length > 0 &&
-          formData.collateral.model.trim().length > 0 &&
-          formData.collateral.year.trim().length > 0 &&
-          formData.collateral.appraisedValue > 0 &&
-          formData.collateral.insuranceProviderCompany.trim().length > 0 &&
-          formData.collateral.policyNumber.trim().length > 0 &&
-          (formData.collateral.orNumber.trim().length > 0 ||
-            formData.collateral.crNumber.trim().length > 0),
+          (
+            formData.collateral.assetType.trim().length > 0 &&
+            formData.collateral.maker.trim().length > 0 &&
+            formData.collateral.brand.trim().length > 0 &&
+            formData.collateral.model.trim().length > 0 &&
+            formData.collateral.year.trim().length > 0 &&
+            formData.collateral.appraisedValue > 0 &&
+            formData.collateral.insuranceProviderCompany.trim().length > 0 &&
+            formData.collateral.policyNumber.trim().length > 0 &&
+            (formData.collateral.orNumber.trim().length > 0 ||
+              formData.collateral.crNumber.trim().length > 0)
+          ) ||
+          (
+            formData.collateralInformation.propertyAddress.trim().length > 0 &&
+            formData.collateralInformation.registeredOwner.trim().length > 0 &&
+            formData.collateralInformation.propertyAppraisedValue > 0
+          ) ||
+          formData.additionalCollaterals.some(
+            (collateral) =>
+              collateral.collateralType.trim().length > 0 &&
+              collateral.appraisedValue > 0,
+          ),
       },
       {
         label: 'Due Diligence',
@@ -1337,6 +1435,12 @@ export default function LendingScorecard() {
       },
     ],
     [enhancedDueDiligenceComplete, formData],
+  );
+  const documentPreparationCompletedCount = documentPreparationChecklist.filter(
+    (item) => item.complete,
+  ).length;
+  const documentPreparationCompletionPercent = Math.round(
+    (documentPreparationCompletedCount / documentPreparationChecklist.length) * 100,
   );
   const allValidationChecksPassed = validationChecks.every((check) => check.passed);
   const finalChecklistComplete = Boolean(
@@ -2315,6 +2419,9 @@ export default function LendingScorecard() {
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
+              <p className="col-span-full -mt-2 text-sm italic text-slate-500">
+                Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
+              </p>
               <div className="md:col-span-2">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
               </div>
@@ -2336,6 +2443,85 @@ export default function LendingScorecard() {
               {renderInput('collateralInformation', 'lotNumber', 'Lot Number')}
               {renderInput('collateralInformation', 'blockNumber', 'Block Number')}
               {renderInput('collateralInformation', 'tctCctNumber', 'TCT/CCT Number')}
+              {renderFormattedNumberInput('collateralInformation', 'propertyAppraisedValue', 'Property Appraised Value')}
+
+              <div className="md:col-span-2 border-t pt-4 mt-4">
+                <div className="flex items-center justify-between gap-3">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-0">Additional Collaterals</h4>
+                  <button
+                    type="button"
+                    onClick={addAdditionalCollateral}
+                    className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 px-3 py-1.5 text-white rounded hover:bg-blue-700"
+                  >
+                    Add Collateral
+                  </button>
+                </div>
+              </div>
+
+              {formData.additionalCollaterals.length === 0 && (
+                <p className="md:col-span-2 text-sm italic text-slate-500">
+                  No additional collaterals added.
+                </p>
+              )}
+
+              {formData.additionalCollaterals.map((collateral, index) => (
+                <div key={collateral.id} className="md:col-span-2 rounded-lg border border-slate-200 bg-slate-50 p-4 relative">
+                  <button
+                    type="button"
+                    onClick={() => removeAdditionalCollateral(collateral.id)}
+                    className="loan-icon-button absolute right-2 top-2 text-red-500 hover:text-red-700 text-sm font-bold"
+                  >
+                    Remove
+                  </button>
+                  <h5 className="font-semibold text-sm text-slate-700 mb-3">Additional Collateral #{index + 1}</h5>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Type</label>
+                      <input value={collateral.collateralType} onChange={(e) => updateAdditionalCollateral(collateral.id, 'collateralType', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Maker</label>
+                      <input value={collateral.maker} onChange={(e) => updateAdditionalCollateral(collateral.id, 'maker', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Brand</label>
+                      <input value={collateral.brand} onChange={(e) => updateAdditionalCollateral(collateral.id, 'brand', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Model</label>
+                      <input value={collateral.model} onChange={(e) => updateAdditionalCollateral(collateral.id, 'model', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Year</label>
+                      <input value={collateral.year} onChange={(e) => updateAdditionalCollateral(collateral.id, 'year', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Appraised Value</label>
+                      <input type="number" value={collateral.appraisedValue === 0 ? '' : collateral.appraisedValue} onChange={(e) => updateAdditionalCollateral(collateral.id, 'appraisedValue', parseFloat(e.target.value) || 0)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Insurance Provider / Company</label>
+                      <input value={collateral.insuranceProviderCompany} onChange={(e) => updateAdditionalCollateral(collateral.id, 'insuranceProviderCompany', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Policy Number</label>
+                      <input value={collateral.policyNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'policyNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">OR Number</label>
+                      <input value={collateral.orNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'orNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">CR Number</label>
+                      <input value={collateral.crNumber} onChange={(e) => updateAdditionalCollateral(collateral.id, 'crNumber', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                    <div className="md:col-span-2 mb-3">
+                      <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Notes</label>
+                      <textarea rows={3} value={collateral.notes} onChange={(e) => updateAdditionalCollateral(collateral.id, 'notes', e.target.value)} className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
 
@@ -2349,6 +2535,28 @@ export default function LendingScorecard() {
                     <p className="text-xs text-amber-800/80">
                       Quick readiness view before uploading supporting documents.
                     </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-amber-900">
+                      {documentPreparationCompletionPercent}%
+                    </div>
+                    <div className="text-[10px] uppercase tracking-[0.14em] text-amber-800/80">
+                      Ready
+                    </div>
+                  </div>
+                </div>
+                <div className="mb-4">
+                  <div className="mb-1 flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.14em] text-amber-900/80">
+                    <span>Overall Completion</span>
+                    <span>
+                      {documentPreparationCompletedCount}/{documentPreparationChecklist.length}
+                    </span>
+                  </div>
+                  <div className="h-3 overflow-hidden rounded-full bg-amber-100">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-amber-500 to-emerald-500 transition-all"
+                      style={{ width: `${documentPreparationCompletionPercent}%` }}
+                    />
                   </div>
                 </div>
                 <div className="overflow-x-auto">
