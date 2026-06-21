@@ -2323,12 +2323,6 @@ export default function LendingScorecard() {
       })}`,
     },
   ];
-  const aiRiskTone =
-    aiRecommendation.riskLevel === 'Low'
-      ? 'bg-emerald-100 text-emerald-800'
-      : aiRecommendation.riskLevel === 'Medium'
-        ? 'bg-amber-100 text-amber-800'
-        : 'bg-rose-100 text-rose-800';
   const scorePayloadSections = useMemo(
     () =>
       buildScorePayloadSections(
@@ -3175,227 +3169,311 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <div className="overflow-hidden rounded-[30px] border border-[#b58a17] bg-[linear-gradient(135deg,#0b1220_0%,#132033_55%,#1c2f45_100%)] text-white shadow-[0_24px_56px_rgba(15,23,42,0.24)]">
-                <div className="border-b border-white/10 bg-[radial-gradient(circle_at_top_left,rgba(212,175,55,0.24),transparent_38%)] p-6 md:p-8">
-                  <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
-                    <div className="max-w-2xl space-y-4">
-                      <div className="inline-flex items-center rounded-full border border-[#d5b35b] bg-[#f8e2a2]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.3em] text-[#f5d67a]">
-                        Step 8: QuantScores
-                      </div>
-                      <div className="space-y-3">
-                        <h3 className="m-0 text-3xl font-semibold tracking-tight text-white md:text-[2rem]">
-                          Executive Assessment
-                        </h3>
-                        <p className="text-sm leading-6 text-slate-300 md:text-base">
-                          Consolidated summary of lending quality, fraud exposure, social standing,
-                          bureau strength, psychometric behavior, and origination returns.
-                        </p>
-                      </div>
-                    </div>
-                    <div className="min-w-[260px] rounded-[24px] border border-[#d7b45a]/45 bg-white/8 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.08)] backdrop-blur-sm">
-                      <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-[#f3d586]">
+              <div className="overflow-hidden rounded-[26px] border border-slate-200 bg-white shadow-[0_18px_48px_rgba(15,23,42,0.08)]">
+                <div className="bg-[#133a67] px-5 py-3 text-white">
+                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                    <div>
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.26em] text-blue-100">
                         Approval Committee Brief
                       </p>
-                      <p className="mt-3 text-2xl font-semibold text-white">Formal Quantitative Review</p>
-                      <p className="mt-2 text-sm leading-6 text-slate-300">
-                        Presented for underwriting governance, risk challenge, and final credit
-                        recommendation.
-                      </p>
+                      <h3 className="m-0 mt-1 text-xl font-semibold tracking-tight">
+                        Executive Assessment
+                      </h3>
                     </div>
+                    <p className="max-w-2xl text-xs leading-5 text-blue-100/90 md:text-right">
+                      Consolidated summary of lending quality, fraud exposure, social standing,
+                      bureau strength, psychometric behavior, and origination returns.
+                    </p>
                   </div>
                 </div>
-                <div className="grid gap-4 p-6 sm:grid-cols-2 xl:grid-cols-3 md:p-8">
-                  {executiveSummaryItems.map((item) => (
-                    <div
-                      key={item.label}
-                      className="group min-h-[146px] rounded-[24px] border border-[#8f6b00] bg-[linear-gradient(180deg,#f7df99_0%,#e4be59_48%,#c9961b_100%)] p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.38),0_12px_26px_rgba(15,23,42,0.18)] transition-transform duration-200 hover:-translate-y-0.5"
-                    >
-                      <div className="flex items-start justify-between gap-3">
-                        <div className="inline-flex items-center rounded-full border border-[#8a6605]/35 bg-white/35 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#5a4200]">
-                          Highlight
-                        </div>
-                        <span className="text-lg leading-none text-[#6c5000] transition-transform duration-200 group-hover:translate-x-0.5">+</span>
-                      </div>
-                      <p className="mt-4 text-[11px] font-semibold uppercase tracking-[0.2em] text-[#594100]">
-                        {item.label}
-                      </p>
-                      <p className="mt-3 text-3xl font-extrabold leading-tight text-[#2f2200]">
-                        {item.value}
-                      </p>
-                      <p className="mt-4 text-xs leading-5 text-[#5f4600]">{item.note}</p>
-                    </div>
-                  ))}
-                </div>
-              </div>
 
-              <div className="grid grid-cols-1 gap-6 xl:grid-cols-[1.45fr_0.95fr]">
-                <div className="space-y-6">
-                  <div className="rounded-[28px] border border-[#e8d39a] bg-[linear-gradient(180deg,#fffdfa_0%,#ffffff_100%)] p-5 shadow-[0_12px_30px_rgba(148,126,62,0.08)] md:p-6">
-                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
+                <div className="grid gap-4 p-4 xl:grid-cols-[1.55fr_0.95fr]">
+                  <div className="rounded-[22px] border border-slate-200 bg-slate-50 p-4">
+                    <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Capacity Metrics</h4>
-                        <p className="mt-2 text-sm text-slate-600">
-                          Primary affordability ratios used to assess repayment pressure.
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                          QuantScores
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Committee-ready top-line indicators
                         </p>
                       </div>
-                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
-                        Affordability Control Panel
-                      </div>
+                      <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-emerald-700">
+                        Reviewed
+                      </span>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {capacityMetricItems.map((metric) => (
-                        <div
-                          key={metric.label}
-                          className={`rounded-[24px] border p-5 shadow-sm ${metric.tone.panel}`}
-                        >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <h5 className="m-0 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-700">
-                              {metric.label}
-                            </h5>
-                            <span
-                              className={`inline-flex items-center rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${metric.tone.badge}`}
-                            >
-                              {metric.status}
-                            </span>
+
+                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                      {executiveSummaryItems.map((item) => {
+                        const valueTone =
+                          item.label === 'Origination Profitability' && item.value.includes('-')
+                            ? 'text-rose-600'
+                            : item.label === 'Credit Bureau Score'
+                              ? 'text-blue-600'
+                              : item.label === 'A-Credit Score'
+                                ? 'text-emerald-600'
+                                : 'text-slate-800';
+
+                        return (
+                          <div
+                            key={item.label}
+                            className="rounded-[18px] border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className={`mt-3 text-4xl font-semibold leading-none ${valueTone}`}>
+                              {item.value}
+                            </p>
+                            <p className="mt-3 text-[11px] leading-4 text-slate-500">{item.note}</p>
                           </div>
-                          <p className={`mt-5 text-4xl font-semibold ${metric.tone.value}`}>{metric.value}</p>
-                          <p className="mt-4 text-xs leading-5 text-slate-500">{metric.formula}</p>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                      <div>
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Automated Lending Scorecard</h4>
-                        <p className="mt-2 text-sm text-slate-600">Weighted 5C indicators automatically derived from the application record.</p>
-                      </div>
-                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
-                        Corporate Underwriting Index {corporateUnderwritingTotal}
-                      </div>
+                  <div className="overflow-hidden rounded-[22px] border border-[#1c4c86] bg-[#133a67] text-white shadow-[0_12px_28px_rgba(19,58,103,0.22)]">
+                    <div className="border-b border-white/10 px-5 py-4">
+                      <p className="text-[10px] font-semibold uppercase tracking-[0.22em] text-blue-100">
+                        AI Approval Probability
+                      </p>
                     </div>
-                    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
-                      {automatedScoreItems.map((c, i) => (
-                        <div
-                          key={i}
-                          className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{c.label}</p>
-                            <span className="inline-flex min-w-[58px] items-center justify-center rounded-full border border-[#ecd188] bg-[#fff8e4] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6f00]">
-                              {c.score >= 8 ? 'Strong' : c.score >= 6 ? 'Stable' : 'Review'}
+                    <div className="space-y-4 p-5">
+                      <div className="flex justify-center">
+                        <div className="relative flex h-36 w-36 items-center justify-center">
+                          <div
+                            className="h-full w-full rounded-full"
+                            style={{
+                              background: `conic-gradient(#57c27c ${aiRecommendation.probability * 3.6}deg, rgba(255,255,255,0.18) 0deg)`,
+                            }}
+                          />
+                          <div className="absolute inset-[14px] flex flex-col items-center justify-center rounded-full bg-white text-slate-900 shadow-inner">
+                            <span className="text-4xl font-semibold leading-none">
+                              {aiRecommendation.probability}%
                             </span>
-                          </div>
-                          <p className={`mt-5 text-4xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}>
-                            {c.score}
-                            <span className="ml-1 text-base font-medium text-slate-400">/10</span>
-                          </p>
-                          <p className="mt-3 text-xs leading-5 text-slate-500">{c.desc}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-sm md:p-6">
-                    <div className="mb-5 flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
-                      <div>
-                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.2em] text-slate-600">Advanced Scoring Signals</h4>
-                        <p className="mt-2 text-sm text-slate-600">Secondary screening signals for fraud resistance, profitability, and downstream risk.</p>
-                      </div>
-                      <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
-                        Risk Surveillance Deck
-                      </div>
-                    </div>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2 2xl:grid-cols-4">
-                      {advancedSignalItems.map((item) => (
-                        <div key={item.label} className="rounded-[24px] border border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] p-4 shadow-sm">
-                          <div className="flex items-start justify-between gap-3">
-                            <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-slate-500">{item.label}</p>
-                            <span className="inline-flex items-center rounded-full border border-[#ecd188] bg-[#fff8e4] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-[#9a6f00]">
-                              Monitor
-                            </span>
-                          </div>
-                          <p className={`mt-4 text-3xl font-semibold ${item.tone}`}>{item.value}</p>
-                          <p className="mt-2 text-xs text-slate-500">{item.note}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-5 grid grid-cols-1 gap-3 md:grid-cols-3">
-                      {profitabilityBreakdown.map((item) => (
-                        <div key={item.label} className="rounded-[20px] border border-slate-200 bg-slate-50 px-4 py-3">
-                          <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">{item.label}</p>
-                          <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="overflow-hidden rounded-[28px] border border-[#b58a17] bg-[linear-gradient(180deg,#fff8e5_0%,#fffdfa_22%,#f8fbff_100%)] shadow-[0_14px_34px_rgba(181,138,23,0.12)]">
-                    <div className="border-b border-[#edd390] bg-[linear-gradient(90deg,#f4d77b_0%,#fff2c4_100%)] px-6 py-4">
-                      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                        <div>
-                          <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.22em] text-[#6f5200]">AI Approval Probability</h4>
-                          <p className="mt-1 text-xs uppercase tracking-[0.18em] text-[#977200]">Decision Support Output</p>
-                        </div>
-                        <span className="inline-flex items-center rounded-full border border-[#b88c19]/35 bg-white/75 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-[#7e5e00]">
-                          Committee Guidance
-                        </span>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <div className="flex flex-col gap-5 border-b border-[#f1e0b5] pb-5">
-                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                          <div>
-                            <p className="text-5xl font-semibold tracking-tight text-slate-900">{aiRecommendation.probability}%</p>
-                            <span className={`mt-3 inline-flex rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.16em] ${aiRiskTone}`}>
+                            <span className="mt-2 rounded-full bg-emerald-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-emerald-700">
                               Risk Level: {aiRecommendation.riskLevel}
                             </span>
                           </div>
-                          <div className="rounded-[22px] border border-[#f0deb0] bg-white px-4 py-3 text-right shadow-sm">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Suggested Loan Amount</p>
-                            <p className="mt-2 text-2xl font-semibold text-slate-800">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
-                          </div>
-                        </div>
-                        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-                          <div className="rounded-[20px] border border-[#f0deb0] bg-white px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Monthly Amortization</p>
-                            <p className="mt-2 text-xl font-semibold text-slate-800">PHP {calculations.monthlyPayment.toFixed(2)}</p>
-                          </div>
-                          <div className="rounded-[20px] border border-[#f0deb0] bg-white px-4 py-3">
-                            <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-slate-500">Loan-to-Value Ratio (LTV)</p>
-                            <p className="mt-2 text-xl font-semibold text-slate-800">{calculations.ltv.toFixed(1)}%</p>
-                          </div>
                         </div>
                       </div>
-                      <div className="mt-5">
-                        <h5 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">Computation Log</h5>
-                        <div className="mt-4 rounded-[22px] border border-[#f0deb0] bg-white p-4">
-                          <ul className="space-y-3">
-                            {aiRecommendation.computationLog.map((log, i) => (
-                              <li key={i} className="flex items-start gap-3 text-sm text-slate-700">
-                                <span className="mt-1 h-2 w-2 flex-none rounded-full bg-[#c89c21]" />
-                                <span className="leading-6">{log}</span>
-                              </li>
-                            ))}
-                          </ul>
+
+                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                        <span className="text-blue-100/80">Suggested Loan Amount</span>
+                        <span className="text-right font-semibold text-white">
+                          PHP {aiRecommendation.suggestedAmount.toLocaleString()}
+                        </span>
+                        <span className="text-blue-100/80">Monthly Amortization</span>
+                        <span className="text-right font-semibold text-white">
+                          PHP {calculations.monthlyPayment.toFixed(2)}
+                        </span>
+                        <span className="text-blue-100/80">Loan-to-Value (LTV)</span>
+                        <span className="text-right font-semibold text-white">
+                          {calculations.ltv.toFixed(1)}%
+                        </span>
+                      </div>
+
+                      <div className="rounded-[18px] bg-white/10 p-4">
+                        <h5 className="m-0 text-[11px] font-semibold uppercase tracking-[0.16em] text-blue-50">
+                          Computation Log
+                        </h5>
+                        <ul className="mt-3 space-y-2">
+                          {aiRecommendation.computationLog.map((log, i) => (
+                            <li key={i} className="flex items-start gap-2 text-xs leading-5 text-blue-50/90">
+                              <span className="mt-[6px] h-1.5 w-1.5 rounded-full bg-[#7bd19a]" />
+                              <span>{log}</span>
+                            </li>
+                          ))}
+                        </ul>
+                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
+                          <span className="text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-100/80">
+                            Final Probability
+                          </span>
+                          <span className="text-xl font-semibold text-white">
+                            {aiRecommendation.probability}%
+                          </span>
                         </div>
                       </div>
                     </div>
                   </div>
+                </div>
 
-                  <div className="rounded-[24px] border border-[#ead7aa] bg-[linear-gradient(180deg,#fffdf8_0%,#f8fafc_100%)] p-5 shadow-sm">
-                    <div className="inline-flex items-center rounded-full border border-[#e5c367] bg-[#fff7df] px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-[#9a6f00]">
-                      Formal Commentary
+                <div className="grid gap-4 border-t border-slate-200 bg-slate-50 p-4 xl:grid-cols-[1fr_1.12fr]">
+                  <div className="space-y-4">
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="mb-4">
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                          Capacity Metrics
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Primary affordability ratios used to assess repayment pressure.
+                        </p>
+                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        {capacityMetricItems.map((metric) => {
+                          const ringColor =
+                            metric.status === 'Prime Range' || metric.status === 'Strong Capacity'
+                              ? '#57c27c'
+                              : metric.status === 'Within Policy' || metric.status === 'Watchlist Band'
+                                ? '#f59e0b'
+                                : '#ef4444';
+
+                          return (
+                            <div
+                              key={metric.label}
+                              className="rounded-[18px] border border-slate-200 bg-slate-50 p-4"
+                            >
+                              <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                                {metric.label}
+                              </p>
+                              <div className="mt-4 flex items-center gap-4">
+                                <div className="relative flex h-20 w-20 items-center justify-center">
+                                  <div
+                                    className="h-full w-full rounded-full"
+                                    style={{
+                                      background: `conic-gradient(${ringColor} 300deg, #e5e7eb 0deg)`,
+                                    }}
+                                  />
+                                  <div className="absolute inset-[10px] flex items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-800">
+                                    {metric.value}
+                                  </div>
+                                </div>
+                                <div className="min-w-0">
+                                  <span
+                                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em] ${metric.tone.badge}`}
+                                  >
+                                    {metric.status}
+                                  </span>
+                                  <p className="mt-3 text-[11px] leading-4 text-slate-500">
+                                    Formula:
+                                  </p>
+                                  <p className="mt-1 text-[11px] leading-4 text-slate-600">
+                                    {metric.formula.replace('Formula: ', '')}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <h4 className="m-0 mt-4 text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">Underwriting Note</h4>
-                    <p className="mt-3 text-sm leading-6 text-slate-600">
-                      This panel combines repayment capacity, collateral adequacy, and AI-assisted
-                      decision support into a single review surface designed for credit officers and
-                      approval committee presentation.
-                    </p>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="mb-4">
+                        <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                          Advanced Scoring Signals
+                        </h4>
+                        <p className="mt-1 text-xs text-slate-500">
+                          Secondary screening signals for fraud resistance, profitability, and downstream risk.
+                        </p>
+                      </div>
+                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                        {advancedSignalItems.map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-[16px] border border-slate-200 bg-slate-50 px-3 py-3"
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className={`mt-2 text-2xl font-semibold ${item.tone}`}>{item.value}</p>
+                            <p className="mt-1 text-[11px] text-slate-500">{item.note}</p>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
+                        {profitabilityBreakdown.map((item) => (
+                          <div
+                            key={item.label}
+                            className="rounded-[16px] border border-slate-200 bg-white px-3 py-3"
+                          >
+                            <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-slate-500">
+                              {item.label}
+                            </p>
+                            <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="mb-4 flex items-center justify-between gap-3">
+                        <div>
+                          <h4 className="m-0 text-sm font-semibold uppercase tracking-[0.18em] text-slate-700">
+                            Automated Lending Scorecard
+                          </h4>
+                          <p className="mt-1 text-xs text-slate-500">
+                            Weighted 5C indicators automatically derived from the application record.
+                          </p>
+                        </div>
+                        <div className="rounded-full bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">
+                          {corporateUnderwritingTotal}
+                        </div>
+                      </div>
+                      <div className="space-y-3">
+                        {automatedScoreItems.map((c, i) => (
+                          <div
+                            key={i}
+                            className="rounded-[16px] border border-slate-200 bg-slate-50 px-4 py-3"
+                          >
+                            <div className="grid gap-3 md:grid-cols-[1.2fr_72px_1fr] md:items-center">
+                              <div className="min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span
+                                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
+                                      c.score >= 8
+                                        ? 'bg-emerald-100 text-emerald-700'
+                                        : c.score >= 6
+                                          ? 'bg-amber-100 text-amber-700'
+                                          : 'bg-rose-100 text-rose-700'
+                                    }`}
+                                  >
+                                    {i + 1}
+                                  </span>
+                                  <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-slate-600">
+                                    {c.label}
+                                  </p>
+                                </div>
+                                <p className="mt-2 text-[11px] leading-4 text-slate-500">{c.desc}</p>
+                              </div>
+                              <div className="text-right">
+                                <p
+                                  className={`text-2xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}
+                                >
+                                  {c.score}
+                                  <span className="ml-1 text-sm font-medium text-slate-400">/10</span>
+                                </p>
+                              </div>
+                              <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                                <div
+                                  className={`h-full rounded-full ${
+                                    c.score >= 8
+                                      ? 'bg-emerald-500'
+                                      : c.score >= 6
+                                        ? 'bg-amber-500'
+                                        : 'bg-rose-500'
+                                  }`}
+                                  style={{ width: `${c.score * 10}%` }}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className="rounded-[22px] border border-slate-200 bg-white p-4 shadow-sm">
+                      <div className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.16em] text-blue-700">
+                        Formal Committee Note
+                      </div>
+                      <p className="mt-4 text-sm leading-6 text-slate-600">
+                        This panel combines repayment capacity, collateral adequacy, and AI-assisted
+                        decision support into a single review surface designed for credit officers and
+                        approval committee presentation.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
