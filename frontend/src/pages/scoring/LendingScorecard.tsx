@@ -19,7 +19,7 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { vehicleInfo: string; appraisedValue: number; insurance: string; registration: string; }
+interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; homePhoneNumber: string; emailAddress: string; }
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
@@ -98,7 +98,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { vehicleInfo: '', appraisedValue: 0, insurance: '', registration: '' },
+  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', homePhoneNumber: '', emailAddress: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
@@ -122,39 +122,56 @@ const createNewApplicationInstance = (): LoanApplication => ({
 
 const buildLoanRequirements = (
   application: LoanApplication,
-): LoanApplicationRequirements => ({
-  productInformation: {
-    productType: application.loan.productType,
-    homePurposeOfLoan: application.loan.purpose,
-    homeDesiredLoanAmount: application.loan.amount,
-    homeLoanTerm: application.loan.termMonths,
-    homeCollateralType: application.collateral.vehicleInfo,
-    autoPurpose: application.loan.purpose,
-    autoVehicleClassification: application.loan.productType,
-    autoUnitModel: application.collateral.vehicleInfo,
-    autoYearModel: application.loan.termMonths.toString(),
-    autoSellingPrice: application.collateral.appraisedValue,
-    autoDesiredLoanAmount: application.loan.amount,
-    autoDownPayment: 0,
-    autoYearsToPay: Math.max(1, Math.round(application.loan.termMonths / 12)),
-    creditCardType: application.loan.purpose,
-    creditCardExtensionRequested:
-      application.signatures.extensionCardholderSignature.length > 0,
-  },
-  applicantPersonal: application.applicantPersonal,
-  contactInformation: application.contactInformation,
-  governmentIds: application.governmentIds,
-  addressInformation: application.addressInformation,
-  otherInformation: application.otherInformation,
-  employmentInformation: application.employmentInformation,
-  collateralInformation: application.collateralInformation,
-  spouseInformation: application.spouseInformation,
-  bankingRelationships: application.bankingRelationships,
-  signatures: application.signatures,
-  supportingDocuments: application.supportingDocuments,
-  enhancedDueDiligence: application.enhancedDueDiligence,
-  optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
-});
+): LoanApplicationRequirements => {
+  const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
+  const derivedInsuranceSummary = buildCollateralInsuranceSummary(application.collateral);
+
+  return {
+    productInformation: {
+      productType: application.loan.productType,
+      homePurposeOfLoan: application.loan.purpose,
+      homeDesiredLoanAmount: application.loan.amount,
+      homeLoanTerm: application.loan.termMonths,
+      homeCollateralType: derivedVehicleInfo,
+      autoPurpose: application.loan.purpose,
+      autoVehicleClassification: application.collateral.assetType,
+      autoUnitModel: application.collateral.model,
+      autoYearModel: application.collateral.year,
+      autoSellingPrice: application.collateral.appraisedValue,
+      autoDesiredLoanAmount: application.loan.amount,
+      autoDownPayment: 0,
+      autoYearsToPay: Math.max(1, Math.round(application.loan.termMonths / 12)),
+      creditCardType: application.loan.purpose,
+      creditCardExtensionRequested:
+        application.signatures.extensionCardholderSignature.length > 0,
+    },
+    applicantPersonal: application.applicantPersonal,
+    contactInformation: application.contactInformation,
+    governmentIds: application.governmentIds,
+    addressInformation: application.addressInformation,
+    otherInformation: application.otherInformation,
+    employmentInformation: application.employmentInformation,
+    collateralInformation: application.collateralInformation,
+    collateralAssetDetails: {
+      assetType: application.collateral.assetType,
+      maker: application.collateral.maker,
+      brand: application.collateral.brand,
+      model: application.collateral.model,
+      year: application.collateral.year,
+      insuranceProviderCompany:
+        application.collateral.insuranceProviderCompany || derivedInsuranceSummary,
+      policyNumber: application.collateral.policyNumber,
+      orNumber: application.collateral.orNumber,
+      crNumber: application.collateral.crNumber,
+    },
+    spouseInformation: application.spouseInformation,
+    bankingRelationships: application.bankingRelationships,
+    signatures: application.signatures,
+    supportingDocuments: application.supportingDocuments,
+    enhancedDueDiligence: application.enhancedDueDiligence,
+    optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
+  };
+};
 
 const calculateLoanMetrics = (application: LoanApplication) => {
   const totalIncome =
@@ -315,6 +332,55 @@ const calculateAiRecommendation = (
   };
 };
 
+const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
+  if (!dateOfBirth) {
+    return 0;
+  }
+
+  const birthDate = new Date(dateOfBirth);
+
+  if (Number.isNaN(birthDate.getTime())) {
+    return 0;
+  }
+
+  const today = new Date();
+  let age = today.getFullYear() - birthDate.getFullYear();
+  const monthDifference = today.getMonth() - birthDate.getMonth();
+  const dayDifference = today.getDate() - birthDate.getDate();
+
+  if (monthDifference < 0 || (monthDifference === 0 && dayDifference < 0)) {
+    age -= 1;
+  }
+
+  return Math.max(age, 0);
+};
+
+const buildCollateralVehicleInfo = (collateral: Collateral) =>
+  [
+    collateral.assetType,
+    collateral.maker,
+    collateral.brand,
+    collateral.model,
+    collateral.year,
+  ]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' | ');
+
+const buildCollateralInsuranceSummary = (collateral: Collateral) =>
+  [collateral.insuranceProviderCompany, collateral.policyNumber]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' | ');
+
+const buildCollateralRegistrationSummary = (collateral: Collateral) =>
+  [
+    collateral.orNumber ? `OR: ${collateral.orNumber.trim()}` : '',
+    collateral.crNumber ? `CR: ${collateral.crNumber.trim()}` : '',
+  ]
+    .filter(Boolean)
+    .join(' | ');
+
 const hasRequiredEnhancedDueDiligence = (
   dueDiligence: EnhancedDueDiligence,
 ) =>
@@ -332,7 +398,6 @@ const hasRequiredEnhancedDueDiligence = (
   dueDiligence.professionalOrganizationMemberships.trim().length > 0 &&
   dueDiligence.professionalLicenses.trim().length > 0 &&
   dueDiligence.guarantorReferences.trim().length > 0 &&
-  dueDiligence.coBorrowerReferences.trim().length > 0 &&
   dueDiligence.additionalPropertyDeclarations.trim().length > 0 &&
   dueDiligence.additionalVehicleDeclarations.trim().length > 0 &&
   dueDiligence.selfDeclaredAssetsAndLiabilities.trim().length > 0 &&
@@ -519,6 +584,7 @@ export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedApplicationNo = searchParams.get('applicationNo');
+  const [selectedCountryCode, setSelectedCountryCode] = useState('PHL');
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
@@ -803,6 +869,10 @@ export default function LendingScorecard() {
     const blankApplication = createNewApplicationInstance();
     const savedRequirements:  Partial<LoanApplicationRequirements> = record.requirements ?? {};
     const savedDueDiligence = (savedRequirements.enhancedDueDiligence ?? {}) as Record<string, unknown>;
+    const savedCollateralAssetDetails =
+      (savedRequirements.collateralAssetDetails ?? {}) as Partial<
+        LoanApplicationRequirements['collateralAssetDetails']
+      >;
 
     return {
       ...blankApplication,
@@ -836,8 +906,36 @@ export default function LendingScorecard() {
       },
       collateral: {
         ...blankApplication.collateral,
-        vehicleInfo: record.vehicle_info,
+        assetType: savedCollateralAssetDetails.assetType ?? blankApplication.collateral.assetType,
+        maker: savedCollateralAssetDetails.maker ?? blankApplication.collateral.maker,
+        brand: savedCollateralAssetDetails.brand ?? blankApplication.collateral.brand,
+        model: savedCollateralAssetDetails.model ?? record.vehicle_info ?? blankApplication.collateral.model,
+        year: savedCollateralAssetDetails.year ?? blankApplication.collateral.year,
         appraisedValue: record.appraised_value,
+        insuranceProviderCompany:
+          savedCollateralAssetDetails.insuranceProviderCompany ??
+          blankApplication.collateral.insuranceProviderCompany,
+        policyNumber:
+          savedCollateralAssetDetails.policyNumber ?? blankApplication.collateral.policyNumber,
+        orNumber:
+          savedCollateralAssetDetails.orNumber ?? blankApplication.collateral.orNumber,
+        crNumber:
+          savedCollateralAssetDetails.crNumber ?? blankApplication.collateral.crNumber,
+        vehicleInfo: record.vehicle_info,
+        insurance: buildCollateralInsuranceSummary({
+          ...blankApplication.collateral,
+          insuranceProviderCompany:
+            savedCollateralAssetDetails.insuranceProviderCompany ??
+            blankApplication.collateral.insuranceProviderCompany,
+          policyNumber:
+            savedCollateralAssetDetails.policyNumber ??
+            blankApplication.collateral.policyNumber,
+        }),
+        registration: buildCollateralRegistrationSummary({
+          ...blankApplication.collateral,
+          orNumber: savedCollateralAssetDetails.orNumber ?? blankApplication.collateral.orNumber,
+          crNumber: savedCollateralAssetDetails.crNumber ?? blankApplication.collateral.crNumber,
+        }),
       },
       applicantPersonal: {
         ...blankApplication.applicantPersonal,
@@ -955,6 +1053,7 @@ export default function LendingScorecard() {
       payloadCalculations,
       payloadScorecard.total,
     );
+    const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
 
     return {
     application_no: application.id,
@@ -972,7 +1071,7 @@ export default function LendingScorecard() {
     term_months: application.loan.termMonths,
     interest_rate: application.loan.interestRate,
     purpose: application.loan.purpose,
-    vehicle_info: application.collateral.vehicleInfo,
+    vehicle_info: derivedVehicleInfo,
     appraised_value: application.collateral.appraisedValue,
     committee_remarks: application.committeeRemarks,
     executive_approval: application.routing.executiveApproval,
@@ -1172,6 +1271,73 @@ export default function LendingScorecard() {
     { label: 'Enhanced due diligence fields completed', passed: enhancedDueDiligenceComplete },
     { label: 'Enhanced supporting document declarations completed', passed: enhancedSupportingDocumentsComplete },
   ], [calculations, enhancedDueDiligenceComplete, enhancedSupportingDocumentsComplete, formData]);
+  const documentPreparationChecklist = useMemo(
+    () => [
+      {
+        label: 'Product',
+        complete:
+          !!formData.loan.productType &&
+          formData.loan.purpose.trim().length > 0 &&
+          formData.loan.amount > 0 &&
+          formData.loan.termMonths > 0 &&
+          formData.loan.interestRate > 0,
+      },
+      {
+        label: 'Applicant',
+        complete:
+          formData.borrower.fullName.trim().length > 0 &&
+          formData.borrower.govId.trim().length > 0 &&
+          formData.applicantPersonal.dateOfBirth.trim().length > 0 &&
+          formData.contactInformation.mobileNumber.trim().length > 0 &&
+          formData.addressInformation.presentAddress.trim().length > 0,
+      },
+      {
+        label: 'Employment',
+        complete:
+          formData.employment.monthlyIncome > 0 &&
+          formData.employmentInformation.employmentStatus.trim().length > 0 &&
+          formData.employmentInformation.employerBusinessName.trim().length > 0,
+      },
+      {
+        label: 'Co-Borrower',
+        complete:
+          formData.coBorrowers.length === 0 ||
+          formData.coBorrowers.every(
+            (coBorrower) =>
+              coBorrower.name.trim().length > 0 &&
+              coBorrower.relationship.trim().length > 0 &&
+              coBorrower.monthlyIncome > 0,
+          ),
+        optional: true,
+      },
+      {
+        label: 'Banking',
+        complete:
+          formData.bankingRelationships.bankBranch.trim().length > 0 ||
+          formData.bankingRelationships.creditCardIssuer.trim().length > 0 ||
+          formData.bankingRelationships.loanLender.trim().length > 0,
+      },
+      {
+        label: 'Collateral',
+        complete:
+          formData.collateral.assetType.trim().length > 0 &&
+          formData.collateral.maker.trim().length > 0 &&
+          formData.collateral.brand.trim().length > 0 &&
+          formData.collateral.model.trim().length > 0 &&
+          formData.collateral.year.trim().length > 0 &&
+          formData.collateral.appraisedValue > 0 &&
+          formData.collateral.insuranceProviderCompany.trim().length > 0 &&
+          formData.collateral.policyNumber.trim().length > 0 &&
+          (formData.collateral.orNumber.trim().length > 0 ||
+            formData.collateral.crNumber.trim().length > 0),
+      },
+      {
+        label: 'Due Diligence',
+        complete: enhancedDueDiligenceComplete,
+      },
+    ],
+    [enhancedDueDiligenceComplete, formData],
+  );
   const allValidationChecksPassed = validationChecks.every((check) => check.passed);
   const finalChecklistComplete = Boolean(
     formData.finalChecklist?.allRequiredDocumentsProvided &&
@@ -1220,6 +1386,21 @@ export default function LendingScorecard() {
   useEffect(() => {
     setSelectedWorkflowAction(suggestedWorkflowAction);
   }, [suggestedWorkflowAction]);
+  useEffect(() => {
+    const calculatedAge = calculateAgeFromDateOfBirth(
+      formData.applicantPersonal.dateOfBirth,
+    );
+
+    if (formData.applicantPersonal.age !== calculatedAge) {
+      setFormData((prev) => ({
+        ...prev,
+        applicantPersonal: {
+          ...prev.applicantPersonal,
+          age: calculatedAge,
+        },
+      }));
+    }
+  }, [formData.applicantPersonal.age, formData.applicantPersonal.dateOfBirth]);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
   const getInputValue = (
     section: EditableSection,
@@ -1297,7 +1478,7 @@ export default function LendingScorecard() {
   ) => (
     <div className="mb-3">
       <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
-        {label}{required ? ' (Required)' : ''}
+        {label}{required ? ' (Required | Indicate N/A if Not Applicable)' : ''}
       </label>
       <textarea
         rows={rows}
@@ -1396,7 +1577,7 @@ export default function LendingScorecard() {
     </div>
   );
 
-  const renderEnhancedDueDiligenceSection = () => (
+  const renderEnhancedDueDiligenceBankingSection = () => (
     <div className="border-t pt-4 mt-4 space-y-6">
       <div>
         <h4 className="font-semibold text-sm text-gray-700 mb-2">Enhanced Due Diligence & Declarations</h4>
@@ -1418,7 +1599,11 @@ export default function LendingScorecard() {
           {renderTextarea('enhancedDueDiligence', 'selfDeclaredInvestmentPortfolio', 'Self-Declared Investment Portfolio', 4, true)}
         </div>
       </div>
+    </div>
+  );
 
+  const renderEnhancedDueDiligenceEmploymentSection = () => (
+    <div className="border-t pt-4 mt-4 space-y-6">
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
         <h5 className="font-semibold text-sm text-slate-700 mb-3">Employment, Income, and Residence Verification</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1436,7 +1621,7 @@ export default function LendingScorecard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References (Optional)', 3)}
           {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
@@ -1537,6 +1722,7 @@ export default function LendingScorecard() {
   const topNavButtonClass = 'loan-toolbar-button';
   const stepperButtonClass = 'loan-stepper-button';
   const footerButtonClass = 'loan-footer-button';
+  const countryOptions = ['PHL', 'USA', 'SGP', 'MYS', 'THA', 'IDN', 'VNM'];
   const workflowActionOptions: Array<{ label: string; value: WorkflowStatus }> = [
     { label: 'Draft', value: 'Draft' },
     { label: 'Review', value: 'Credit Review' },
@@ -1653,6 +1839,21 @@ export default function LendingScorecard() {
 
         {/* Global Pipeline Dashboard Navigation Bar */}
         <div className="loan-toolbar bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
+          <div className={`${topNavButtonClass} loan-toolbar-button-secondary flex items-center gap-2 border-slate-800 bg-slate-700 text-white`}>
+            <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-200">Country</span>
+            <select
+              value={selectedCountryCode}
+              onChange={(event) => setSelectedCountryCode(event.target.value)}
+              className="min-w-[88px] border-0 bg-transparent p-0 text-sm font-semibold text-white focus:outline-none"
+              aria-label="Select country"
+            >
+              {countryOptions.map((option) => (
+                <option key={option} value={option} className="text-slate-800">
+                  {option}
+                </option>
+              ))}
+            </select>
+          </div>
           <button 
             onClick={handleCreateNew}
             className={`${topNavButtonClass} loan-toolbar-button-primary border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
@@ -1941,11 +2142,11 @@ export default function LendingScorecard() {
               {renderInput('applicantPersonal', 'middleName', 'Middle Name')}
               {renderInput('applicantPersonal', 'dateOfBirth', 'Date of Birth', 'date')}
               {renderInput('applicantPersonal', 'placeOfBirth', 'Place of Birth')}
-              {renderInput('applicantPersonal', 'age', 'Age', 'number')}
-              {renderInput('applicantPersonal', 'gender', 'Gender')}
+              {renderInput('applicantPersonal', 'age', 'Age', 'number', true)}
+              {renderSelect('applicantPersonal', 'gender', 'Gender', ['Male', 'Female'])}
               {renderInput('applicantPersonal', 'citizenship', 'Citizenship')}
               {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
-              {renderInput('applicantPersonal', 'maritalStatus', 'Marital Status')}
+              {renderSelect('applicantPersonal', 'maritalStatus', 'Marital Status', ['Single', 'Married', 'Widow', 'Separated', 'Others'])}
               {renderInput('applicantPersonal', 'mothersMaidenName', "Mother's Maiden Name")}
               {renderInput('contactInformation', 'mobileNumber', 'Mobile Number')}
               {renderInput('contactInformation', 'homePhoneNumber', 'Home Phone Number')}
@@ -1958,8 +2159,8 @@ export default function LendingScorecard() {
               {renderInput('addressInformation', 'permanentAddress', 'Permanent Address')}
               {renderInput('addressInformation', 'mailingAddress', 'Mailing Address')}
               {renderInput('addressInformation', 'lengthOfStay', 'Length of Stay')}
-              {renderInput('otherInformation', 'homeOwnership', 'Home Ownership')}
-              {renderInput('otherInformation', 'educationalAttainment', 'Educational Attainment')}
+              {renderSelect('otherInformation', 'homeOwnership', 'Home Ownership', ['Own', 'Mortgaged', 'Renting', 'Living with Relative'])}
+              {renderSelect('otherInformation', 'educationalAttainment', 'Educational Attainment', ['PHD', 'PostGraduate', 'College Degree', 'HighSchool'])}
               {renderInput('otherInformation', 'numberOfVehiclesOwned', 'Number of Vehicles Owned', 'number')}
              </div>
           )}
@@ -1981,7 +2182,7 @@ export default function LendingScorecard() {
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Detailed Employment Information</h4>
               </div>
-              {renderInput('employmentInformation', 'employmentStatus', 'Employment Status')}
+              {renderSelect('employmentInformation', 'employmentStatus', 'Employment Status', ['Regular', 'Contractual', 'Project-Basis', 'Consulting', 'Part-time'])}
               {renderInput('employmentInformation', 'employerBusinessName', 'Employer / Business Name')}
               {renderInput('employmentInformation', 'officeAddress', 'Office Address')}
               {renderInput('employmentInformation', 'occupation', 'Occupation')}
@@ -1997,13 +2198,16 @@ export default function LendingScorecard() {
               {renderFormattedNumberInput('employmentInformation', 'investmentIncome', 'Investment Income')}
               {renderFormattedNumberInput('employmentInformation', 'businessIncome', 'Business Income')}
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
+              <div className="col-span-full">
+                {renderEnhancedDueDiligenceEmploymentSection()}
+              </div>
             </div>
           )}
 
           {step === 4 && (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
-                <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information</h3>
+                <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information (Optional)</h3>
                 <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
               </div>
               {formData.coBorrowers.length === 0 && <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>}
@@ -2038,7 +2242,7 @@ export default function LendingScorecard() {
                 </div>
               ))}
               <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse / Co-Borrower Information</h4>
+                <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse / Co-Borrower Information (Optional)</h4>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {[
                     ['spouseInformation', 'fullName', 'Full Name'],
@@ -2103,7 +2307,7 @@ export default function LendingScorecard() {
               {renderFormattedNumberInput('bankingRelationships', 'loanCurrentBalance', 'Current Loan Balance')}
               {renderInput('bankingRelationships', 'loanMonthlyAmortization', 'Monthly Amortization', 'number')}
               <div className="col-span-full">
-                {renderEnhancedDueDiligenceSection()}
+                {renderEnhancedDueDiligenceBankingSection()}
               </div>
             </div>
           )}
@@ -2114,10 +2318,16 @@ export default function LendingScorecard() {
               <div className="md:col-span-2">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
               </div>
-              {renderInput('collateral', 'vehicleInfo', 'Asset/Vehicle Information')}
+              {renderInput('collateral', 'assetType', 'Type')}
+              {renderInput('collateral', 'maker', 'Maker')}
+              {renderInput('collateral', 'brand', 'Brand')}
+              {renderInput('collateral', 'model', 'Model')}
+              {renderInput('collateral', 'year', 'Year')}
               {renderInput('collateral', 'appraisedValue', 'Appraised Value', 'number')}
-              {renderInput('collateral', 'insurance', 'Insurance Provider & Policy #')}
-              {renderInput('collateral', 'registration', 'Registration / OR/CR Number')}
+              {renderInput('collateral', 'insuranceProviderCompany', 'Insurance Provider / Company')}
+              {renderInput('collateral', 'policyNumber', 'Policy Number')}
+              {renderInput('collateral', 'orNumber', 'OR Number')}
+              {renderInput('collateral', 'crNumber', 'CR Number')}
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information (if applicable)</h4>
               </div>
@@ -2132,6 +2342,40 @@ export default function LendingScorecard() {
           {step === 7 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 7: Document Upload Center</h3>
+              <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <div>
+                    <h4 className="font-bold text-amber-900 text-sm mb-1">Pre-Upload Completion Checklist</h4>
+                    <p className="text-xs text-amber-800/80">
+                      Quick readiness view before uploading supporting documents.
+                    </p>
+                  </div>
+                </div>
+                <div className="overflow-x-auto">
+                  <div className="flex min-w-max gap-2">
+                    {documentPreparationChecklist.map((item) => (
+                      <div
+                        key={item.label}
+                        className={`min-w-[128px] rounded-lg border px-3 py-2 text-center ${
+                          item.complete
+                            ? 'border-emerald-200 bg-white text-emerald-700'
+                            : 'border-rose-200 bg-white text-rose-700'
+                        }`}
+                      >
+                        <div className="text-base font-bold leading-none">
+                          {item.complete ? '✓' : '✕'}
+                        </div>
+                        <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                          {item.label}
+                        </div>
+                        <div className="mt-1 text-[10px] text-slate-500">
+                          {item.optional ? 'Optional' : item.complete ? 'Complete' : 'Incomplete'}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
               <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
                 <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
                 <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">

@@ -43,15 +43,8 @@ const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Dashboard Snapshot' },
   { id: 'lending-scorecard', label: 'Lending Scorecard' },
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
-  { id: 'driver-management', label: 'Driver Management' },
-  { id: 'driver-registration', label: 'Driver Registration' },
-  { id: 'vehicle-master', label: 'Vehicle Master' },
-  { id: 'vehicle-detail', label: 'Vehicle Detail' },
-  { id: 'live-gps', label: 'Live GPS Tracking' },
-  { id: 'maintenance-management', label: 'Maintenance Management' },
   { id: 'insurance-management', label: 'Insurance Management' },
-  { id: 'fuel-management', label: 'Fuel Management' },
-  { id: 'credit-scoring', label: 'Credit Scoring' },
+  { id: 'credit-scoring', label: 'Collateral Management' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },

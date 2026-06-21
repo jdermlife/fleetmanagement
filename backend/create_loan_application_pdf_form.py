@@ -23,7 +23,7 @@ def draw_header(pdf: canvas.Canvas, page_title: str) -> float:
     pdf.rect(0, PAGE_HEIGHT - 80, PAGE_WIDTH, 80, fill=1, stroke=0)
     pdf.setFillColor(colors.white)
     pdf.setFont("Helvetica-Bold", 26)
-    pdf.drawString(LEFT_MARGIN, PAGE_HEIGHT - 42, "BestBank Loan Application Form")
+    pdf.drawString(LEFT_MARGIN, PAGE_HEIGHT - 42, "QuantEdge Loan Application Form")
     pdf.setFont("Helvetica", 10)
     pdf.drawString(
         LEFT_MARGIN,
@@ -43,7 +43,7 @@ def draw_footer(pdf: canvas.Canvas, page_number: int) -> None:
     pdf.line(LEFT_MARGIN, 28, PAGE_WIDTH - RIGHT_MARGIN, 28)
     pdf.setFillColor(colors.HexColor("#475569"))
     pdf.setFont("Helvetica", 9)
-    pdf.drawString(LEFT_MARGIN, 16, "BestBank Car Financing Company")
+    pdf.drawString(LEFT_MARGIN, 16, "QuantEdge")
     pdf.drawRightString(PAGE_WIDTH - RIGHT_MARGIN, 16, f"Page {page_number}")
 
 
@@ -301,10 +301,16 @@ def build_pdf(output_path: Path) -> None:
             ("loan_type", "Loan Type"),
             ("loan_current_balance", "Current Loan Balance (PHP)"),
             ("loan_monthly_amortization", "Monthly Loan Amortization (PHP)"),
-            ("vehicle_info", "Asset / Vehicle Information"),
+            ("asset_vehicle_type", "Asset / Vehicle Type"),
+            ("asset_vehicle_maker", "Asset / Vehicle Maker"),
+            ("asset_vehicle_brand", "Asset / Vehicle Brand"),
+            ("asset_vehicle_model", "Asset / Vehicle Model"),
+            ("asset_vehicle_year", "Asset / Vehicle Year"),
             ("appraised_value", "Appraised Value (PHP)"),
-            ("insurance_policy", "Insurance Provider & Policy Number"),
-            ("registration_info", "Registration / OR-CR Number"),
+            ("insurance_provider_company", "Insurance Provider / Company"),
+            ("insurance_policy_number", "Policy Number"),
+            ("registration_or_number", "OR Number"),
+            ("registration_cr_number", "CR Number"),
             ("property_address", "Property Address"),
             ("registered_owner", "Registered Owner"),
             ("tct_cct_number", "TCT / CCT Number"),

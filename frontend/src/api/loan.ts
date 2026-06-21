@@ -93,6 +93,17 @@ export interface LoanApplicationRequirements {
     blockNumber: string
     tctCctNumber: string
   }
+  collateralAssetDetails: {
+    assetType: string
+    maker: string
+    brand: string
+    model: string
+    year: string
+    insuranceProviderCompany: string
+    policyNumber: string
+    orNumber: string
+    crNumber: string
+  }
   spouseInformation: {
     fullName: string
     dateOfBirth: string
