@@ -256,7 +256,12 @@ export default function LoanRepository() {
       setMessage(result.message);
       await loadApplications();
     } catch (error) {
-      setMessage(getErrorMessage(error, "Failed to import loan applications."));
+      setMessage(
+        getErrorMessage(
+          error,
+          "Failed to import loan applications. Large files may take longer to process.",
+        ),
+      );
     } finally {
       setIsImporting(false);
       event.target.value = "";
@@ -284,7 +289,12 @@ export default function LoanRepository() {
       window.URL.revokeObjectURL(downloadUrl);
       setMessage(`Loan repository ${format.toUpperCase()} export generated.`);
     } catch (error) {
-      setMessage(getErrorMessage(error, `Failed to export ${format.toUpperCase()}.`));
+      setMessage(
+        getErrorMessage(
+          error,
+          `Failed to export ${format.toUpperCase()}. Large exports may take longer to generate.`,
+        ),
+      );
     } finally {
       setIsExporting(null);
     }

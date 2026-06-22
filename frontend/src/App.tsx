@@ -129,14 +129,6 @@ const govMenuItems = menuLinks.filter(
   (item) => governanceMenus.includes(item.id)
 )
 
-const utilityLinks: MenuLink[] = [
-  { id: 'login', label: 'Sign In' },
-  { id: 'register', label: 'Create Account' },
-  { id: 'account', label: 'Account Settings' },
-  { id: 'privacy', label: 'Privacy Disclosures' },
-  { id: 'terms', label: 'Terms & Consent' },
-]
-
   useEffect(() => {
     const token = getAuthToken()
 
@@ -178,7 +170,7 @@ const utilityLinks: MenuLink[] = [
             </h2>
 
             <p className="app-brand-subtitle">
-              Get Ahead with Quantech
+              Get Ahead
             </p>
           </div>
 
@@ -246,7 +238,7 @@ const utilityLinks: MenuLink[] = [
     }}
   >
 
-    {/* FLEET MANAGEMENT */}
+    {/* OPERATIONS */}
 
     <div
       onClick={() => setFleetOpen(!fleetOpen)}
@@ -260,7 +252,7 @@ const utilityLinks: MenuLink[] = [
         fontWeight: 'bold',
       }}
     >
-      📊 CREDIT FLEET MANAGEMENT {fleetOpen ? '▲' : '▼'}
+      OPERATIONS {fleetOpen ? '▲' : '▼'}
     </div>
 
     {fleetOpen &&
@@ -375,24 +367,108 @@ const utilityLinks: MenuLink[] = [
       ACCOUNT & LEGAL
     </div>
 
-    {utilityLinks.map((page) => (
-      <Link
-        key={page.id}
-        to={`/${page.id}`}
-        onClick={closeMenu}
-        className="app-menu-link app-menu-link-account"
-        style={{
-          display: 'block',
-          color: '#fff',
-          textDecoration: 'none',
-          padding: '12px',
-          borderRadius: '8px',
-          background: 'rgba(255,255,255,0.05)',
-        }}
-      >
-        {page.label}
-      </Link>
-    ))}
+    {currentUser ? (
+      <>
+        <Link
+          to="/account"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.05)',
+          }}
+        >
+          Account Settings
+        </Link>
+        <button
+          type="button"
+          onClick={() => {
+            closeMenu()
+            void handleTopbarLogout()
+          }}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.05)',
+            border: 'none',
+            textAlign: 'left',
+          }}
+        >
+          Sign Out
+        </button>
+      </>
+    ) : (
+      <>
+        <Link
+          to="/login"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.05)',
+          }}
+        >
+          Sign In
+        </Link>
+        <Link
+          to="/register"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'rgba(255,255,255,0.05)',
+          }}
+        >
+          Create Account
+        </Link>
+      </>
+    )}
+    <Link
+      to="/privacy"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: '#fff',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'rgba(255,255,255,0.05)',
+      }}
+    >
+      Privacy Disclosures
+    </Link>
+    <Link
+      to="/terms"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: '#fff',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'rgba(255,255,255,0.05)',
+      }}
+    >
+      Terms & Consent
+    </Link>
   </div>
   
 )}

@@ -1,5 +1,7 @@
 import { api } from '../api'
 
+const LOAN_REPOSITORY_IO_TIMEOUT_MS = 120000
+
 export type WorkflowStatus =
   | 'Draft'
   | 'Submitted'
@@ -476,6 +478,7 @@ export async function importLoanApplications(
     `${LOAN_APPLICATIONS_PATH}/import`,
     formData,
     {
+      timeout: LOAN_REPOSITORY_IO_TIMEOUT_MS,
       headers: {
         'Content-Type': 'multipart/form-data',
       },
@@ -492,6 +495,7 @@ export async function exportLoanApplications(params: {
   status?: 'All' | WorkflowStatus
 }): Promise<Blob> {
   const response = await api.get<Blob>(`${LOAN_APPLICATIONS_PATH}/export`, {
+    timeout: LOAN_REPOSITORY_IO_TIMEOUT_MS,
     params: {
       date_from: params.dateFrom || undefined,
       date_to: params.dateTo || undefined,
