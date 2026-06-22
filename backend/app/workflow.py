@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Optional
 
+from sqlalchemy import text
+
 
 @dataclass
 class WorkflowState:
@@ -304,29 +306,52 @@ loan_workflow = Workflow("loan", LOAN_STATES, LOAN_TRANSITIONS)
 def create_workflow_tables(connection) -> None:
     """Create workflow_history table if it doesn't exist."""
     try:
-        connection.execute(
-            """
-            CREATE TABLE IF NOT EXISTS workflow_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                entity_type TEXT NOT NULL,
-                entity_id INTEGER NOT NULL,
-                from_state TEXT NOT NULL,
-                to_state TEXT NOT NULL,
-                user_id INTEGER NOT NULL,
-                user_role TEXT,
-                reason TEXT,
-                metadata TEXT,
-                created_at TEXT NOT NULL
+        dialect_name = getattr(connection.engine.dialect, "name", "")
+
+        if dialect_name == "postgresql":
+            create_table_sql = text(
+                """
+                CREATE TABLE IF NOT EXISTS workflow_history (
+                    id BIGSERIAL PRIMARY KEY,
+                    entity_type TEXT NOT NULL,
+                    entity_id BIGINT NOT NULL,
+                    from_state TEXT NOT NULL,
+                    to_state TEXT NOT NULL,
+                    user_id BIGINT NOT NULL,
+                    user_role TEXT,
+                    reason TEXT,
+                    metadata TEXT,
+                    created_at TIMESTAMPTZ NOT NULL
+                )
+                """
             )
-            """
-        )
-        
-        # Create index for faster queries
+        else:
+            create_table_sql = text(
+                """
+                CREATE TABLE IF NOT EXISTS workflow_history (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    entity_type TEXT NOT NULL,
+                    entity_id INTEGER NOT NULL,
+                    from_state TEXT NOT NULL,
+                    to_state TEXT NOT NULL,
+                    user_id INTEGER NOT NULL,
+                    user_role TEXT,
+                    reason TEXT,
+                    metadata TEXT,
+                    created_at TEXT NOT NULL
+                )
+                """
+            )
+
+        connection.execute(create_table_sql)
+
         connection.execute(
-            """
-            CREATE INDEX IF NOT EXISTS idx_workflow_history_entity
-            ON workflow_history(entity_type, entity_id, created_at)
-            """
+            text(
+                """
+                CREATE INDEX IF NOT EXISTS idx_workflow_history_entity
+                ON workflow_history(entity_type, entity_id, created_at)
+                """
+            )
         )
     except Exception as e:
         print(f"Error creating workflow tables: {e}")
