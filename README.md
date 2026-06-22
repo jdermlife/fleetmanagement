@@ -92,6 +92,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 - `POST /auth/password-reset-request` - Request password reset
 - `POST /auth/password-reset-confirm` - Confirm password reset
 - `POST /auth/password-change` - Change password
+- `POST /auth/delete-account` - Disable the authenticated user account
 - `POST /auth/unlock-account` - Unlock locked account (admin)
 
 ### Document Management

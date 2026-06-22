@@ -183,14 +183,31 @@ export interface RegisterRequest {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post<LoginResponse>('/auth/login', credentials)
-  setAuthToken(response.data.token)
-  return response.data
+  const response = await api.post('/auth/login', credentials)
+  const responseData = response.data as Record<string, unknown>
+  const token =
+    (typeof responseData.token === 'string' ? responseData.token : null) ??
+    (typeof responseData.access_token === 'string'
+      ? responseData.access_token
+      : null)
+  const user = responseData.user as LoginResponse['user'] | undefined
+
+  if (!token || !user) {
+    throw new Error('Unexpected login response received from the backend.')
+  }
+
+  setAuthToken(token)
+  return {
+    token,
+    user,
+  }
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
-  const response = await api.post<LoginResponse['user']>('/auth/register', data)
-  return response.data
+  const response = await api.post('/auth/register', data)
+  const responseData = response.data as Record<string, unknown>
+  return (responseData.user as LoginResponse['user'] | undefined) ??
+    (response.data as LoginResponse['user'])
 }
 
 export async function logout(): Promise<void> {
@@ -201,4 +218,62 @@ export async function refreshAuthToken(): Promise<string> {
   const response = await api.post<{ token: string }>('/auth/refresh')
   setAuthToken(response.data.token)
   return response.data.token
+}
+
+export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
+  const response = await api.get<{
+    user: LoginResponse['user']
+  }>('/auth/me')
+  return response.data.user
+}
+
+export async function requestPasswordReset(emailOrUsername: string): Promise<{
+  message: string
+  reset_token?: string
+  user_id?: number
+}> {
+  const response = await api.post<{
+    message: string
+    reset_token?: string
+    user_id?: number
+  }>('/auth/password-reset-request', {
+    email_or_username: emailOrUsername,
+  })
+  return response.data
+}
+
+export async function confirmPasswordReset(
+  userId: number,
+  resetToken: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  const response = await api.post<{ message: string }>(
+    '/auth/password-reset-confirm',
+    {
+      user_id: userId,
+      reset_token: resetToken,
+      new_password: newPassword,
+    },
+  )
+  return response.data
+}
+
+export async function changePassword(
+  currentPassword: string,
+  newPassword: string,
+): Promise<{ message: string }> {
+  const response = await api.post<{ message: string }>('/auth/password-change', {
+    current_password: currentPassword,
+    new_password: newPassword,
+  })
+  return response.data
+}
+
+export async function deleteAccount(
+  currentPassword: string,
+): Promise<{ message: string }> {
+  const response = await api.post<{ message: string }>('/auth/delete-account', {
+    current_password: currentPassword,
+  })
+  return response.data
 }

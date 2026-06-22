@@ -1,5 +1,7 @@
-import { Suspense, lazy, useState } from 'react'
-import { Routes, Route, Link } from 'react-router-dom'
+import { Suspense, lazy, useEffect, useState } from 'react'
+import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+
+import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
 
 type MenuLink = {
   id: string
@@ -28,6 +30,13 @@ const DriverManagementScorecardPage = lazy(() => import('./pages/drivers/DriverM
 const DriverRegistrationPage = lazy(() => import('./pages/drivers/DriverRegistrationPage'))
 const LiveGpsTrackingPage = lazy(() => import('./pages/gps/LiveGpsTrackingPage'))
 const MaintenanceManagementPage = lazy(() => import('./pages/maintenance/MaintenanceManagementPage'))
+const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
+const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
+const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
+const AccountSettingsPage = lazy(() => import('./pages/auth/AccountSettingsPage'))
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
+const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
 
 const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
 const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
@@ -73,8 +82,11 @@ const menuLinks: MenuLink[] = [
 ]
 
 function App() {
+  const navigate = useNavigate()
+  const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-
+  const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
+  const [authReady, setAuthReady] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
   const [govOpen, setGovOpen] = useState(true)
@@ -117,6 +129,43 @@ const govMenuItems = menuLinks.filter(
   (item) => governanceMenus.includes(item.id)
 )
 
+const utilityLinks: MenuLink[] = [
+  { id: 'login', label: 'Sign In' },
+  { id: 'register', label: 'Create Account' },
+  { id: 'account', label: 'Account Settings' },
+  { id: 'privacy', label: 'Privacy Disclosures' },
+  { id: 'terms', label: 'Terms & Consent' },
+]
+
+  useEffect(() => {
+    const token = getAuthToken()
+
+    if (!token) {
+      setCurrentUser(null)
+      setAuthReady(true)
+      return
+    }
+
+    const loadCurrentUser = async () => {
+      try {
+        const user = await fetchCurrentUser()
+        setCurrentUser(user)
+      } catch {
+        setCurrentUser(null)
+      } finally {
+        setAuthReady(true)
+      }
+    }
+
+    void loadCurrentUser()
+  }, [location.pathname])
+
+  const handleTopbarLogout = async () => {
+    await logout()
+    setCurrentUser(null)
+    navigate('/login')
+  }
+
   return (
     <div className="app-shell">
       {/* TOP NAVIGATION */}
@@ -131,6 +180,36 @@ const govMenuItems = menuLinks.filter(
             <p className="app-brand-subtitle">
               Demo Version. Access Rights Integrated in Actual
             </p>
+          </div>
+
+          <div className="app-auth-summary">
+            {authReady && currentUser ? (
+              <>
+                <div className="app-auth-chip">
+                  <span className="app-auth-chip-label">Signed In</span>
+                  <strong>{currentUser.username}</strong>
+                </div>
+                <Link className="app-auth-link" to="/account">
+                  Account
+                </Link>
+                <button
+                  type="button"
+                  className="app-auth-action"
+                  onClick={() => void handleTopbarLogout()}
+                >
+                  Sign Out
+                </button>
+              </>
+            ) : (
+              <>
+                <Link className="app-auth-link" to="/login">
+                  Sign In
+                </Link>
+                <Link className="app-auth-link" to="/register">
+                  Register
+                </Link>
+              </>
+            )}
           </div>
 
           {/* HAMBURGER BUTTON */}
@@ -281,6 +360,39 @@ const govMenuItems = menuLinks.filter(
           🛡 {page.label}
         </Link>
       ))}
+
+    <div
+      className="app-menu-group app-menu-group-account"
+      style={{
+        background: '#1f2937',
+        color: '#e2e8f0',
+        padding: '12px',
+        borderRadius: '8px',
+        fontWeight: 'bold',
+        marginTop: '10px',
+      }}
+    >
+      ACCOUNT & LEGAL
+    </div>
+
+    {utilityLinks.map((page) => (
+      <Link
+        key={page.id}
+        to={`/${page.id}`}
+        onClick={closeMenu}
+        className="app-menu-link app-menu-link-account"
+        style={{
+          display: 'block',
+          color: '#fff',
+          textDecoration: 'none',
+          padding: '12px',
+          borderRadius: '8px',
+          background: 'rgba(255,255,255,0.05)',
+        }}
+      >
+        {page.label}
+      </Link>
+    ))}
   </div>
   
 )}
@@ -508,6 +620,46 @@ const govMenuItems = menuLinks.filter(
             <Route
               path="/meeting-history"
               element={<MeetingHistory />}
+            />
+
+            <Route
+              path="/login"
+              element={<LoginPage />}
+            />
+
+            <Route
+              path="/register"
+              element={<RegisterPage />}
+            />
+
+            <Route
+              path="/forgot-password"
+              element={<ForgotPasswordPage />}
+            />
+
+            <Route
+              path="/reset-password"
+              element={<ResetPasswordPage />}
+            />
+
+            <Route
+              path="/account"
+              element={<AccountSettingsPage />}
+            />
+
+            <Route
+              path="/settings"
+              element={<AccountSettingsPage />}
+            />
+
+            <Route
+              path="/privacy"
+              element={<PrivacyPage />}
+            />
+
+            <Route
+              path="/terms"
+              element={<TermsPage />}
             />
           </Routes>
         </Suspense>

@@ -189,6 +189,58 @@ body {
   overflow-wrap: anywhere;
 }
 
+.app-auth-summary {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.app-auth-chip {
+  display: inline-flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 120px;
+  padding: 8px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+}
+
+.app-auth-chip-label {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.app-auth-link,
+.app-auth-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: rgba(255, 255, 255, 0.12);
+  color: #ffffff;
+  font-size: 0.85rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.app-auth-link:hover,
+.app-auth-action:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-auth-action {
+  cursor: pointer;
+}
+
 .app-menu-toggle {
   display: inline-flex;
   align-items: center;
@@ -703,6 +755,30 @@ th { color: var(--dark-gold); }
 .status-error { color: var(--danger); }
 .status-success { color: var(--success); }
 .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.auth-screen { display: grid; gap: 18px; }
+.auth-panel { padding: 20px; border-radius: 12px; }
+.auth-danger-panel { border: 1px solid rgba(180, 35, 24, 0.22); background: #fff8f7; }
+.auth-helper-card { display: grid; gap: 12px; }
+.auth-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.auth-profile-grid span { display: block; color: #6b7280; font-size: 0.85rem; }
+.auth-profile-grid strong { display: block; margin-top: 4px; }
+.auth-support-links { display: flex; gap: 12px; flex-wrap: wrap; }
+.auth-token-preview { overflow-wrap: anywhere; }
+.auth-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 40px;
+  padding: 10px 16px;
+  border: 1px solid rgba(184, 134, 11, 0.55);
+  border-radius: 5px;
+  background: #fffef4;
+  color: #6d4c00;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+.auth-link-button:hover { background: #fff4bf; }
 
 /* ========================
    RESPONSIVE (≤960px)
@@ -719,6 +795,11 @@ th { color: var(--dark-gold); }
 
   .app-brand-block {
     flex-basis: 100%;
+  }
+
+  .app-auth-summary {
+    width: 100%;
+    justify-content: flex-start;
   }
 
   .app-menu-toggle {
@@ -771,7 +852,8 @@ th { color: var(--dark-gold); }
   .vehicle-db-status,
   .scorecard-side-panel,
   .scorecard-outcome-grid,
-  .lease-result-grid {
+  .lease-result-grid,
+  .auth-profile-grid {
     grid-template-columns: 1fr;
   }
 

@@ -268,6 +268,51 @@ def register_auth_routes(app):
             
             return jsonify({"message": "Password has been changed successfully."}), 200
 
+    @app.post("/auth/delete-account")
+    def delete_account():
+        """Disable the authenticated user account after password confirmation."""
+        auth_header = request.headers.get("Authorization", "")
+        if not auth_header.startswith("Bearer "):
+            return jsonify({"error": "Authentication required."}), 401
+
+        token = auth_header[7:]
+        try:
+            payload = decode_token(token)
+        except TokenError:
+            return jsonify({"error": "Invalid or expired token."}), 401
+
+        data = request.get_json(silent=True) or {}
+        current_password = str(data.get("current_password", ""))
+
+        if not current_password:
+            return jsonify({"error": "Current password is required."}), 400
+
+        config = app.config.get("DATABASE_CONFIG")
+        with closing(get_connection(config)) as connection:
+            user = connection.execute(
+                "SELECT id, password_hash, is_active FROM users WHERE id = ?",
+                (payload.sub,)
+            ).fetchone()
+
+            if not user:
+                return jsonify({"error": "User not found."}), 404
+
+            if not user["is_active"]:
+                return jsonify({"error": "Account is already disabled."}), 400
+
+            if not verify_password(current_password, user["password_hash"]):
+                return jsonify({"error": "Current password is incorrect."}), 401
+
+            with connection:
+                connection.execute(
+                    "UPDATE users SET is_active = 0 WHERE id = ?",
+                    (payload.sub,)
+                )
+
+            return jsonify({
+                "message": "Account has been disabled successfully."
+            }), 200
+
     @app.post("/auth/unlock-account")
     def unlock_account_endpoint():
         """Admin endpoint to unlock a user account."""

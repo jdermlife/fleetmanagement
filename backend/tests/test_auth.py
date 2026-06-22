@@ -49,6 +49,30 @@ class AuthTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("token", response.get_json())
 
+    def test_delete_account_endpoint_disables_authenticated_user(self) -> None:
+        self.client.post(
+            "/auth/register",
+            json={
+                "username": "deleteuser",
+                "email": "delete@example.com",
+                "password": "password123",
+            },
+        )
+        login_response = self.client.post(
+            "/auth/login",
+            json={"username": "deleteuser", "password": "password123"},
+        )
+        token = login_response.get_json()["token"]
+
+        response = self.client.post(
+            "/auth/delete-account",
+            json={"current_password": "password123"},
+            headers={"Authorization": f"Bearer {token}"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("disabled", response.get_json()["message"].lower())
+
 
 if __name__ == "__main__":
     unittest.main()
