@@ -178,7 +178,7 @@ const utilityLinks: MenuLink[] = [
             </h2>
 
             <p className="app-brand-subtitle">
-              Demo Version. Access Rights Integrated in Actual
+              Get Ahead with Quantech
             </p>
           </div>
 
@@ -260,7 +260,7 @@ const utilityLinks: MenuLink[] = [
         fontWeight: 'bold',
       }}
     >
-      📊 FLEET MANAGEMENT {fleetOpen ? '▲' : '▼'}
+      📊 CREDIT FLEET MANAGEMENT {fleetOpen ? '▲' : '▼'}
     </div>
 
     {fleetOpen &&
