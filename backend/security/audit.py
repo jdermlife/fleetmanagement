@@ -8,12 +8,6 @@ from datetime import datetime, timezone
 from functools import wraps
 from typing import Any
 
-try:
-    from ..models import get_connection, resolve_database_config
-except ImportError:
-    from app.models import get_connection, resolve_database_config
-
-
 AUDIT_LOG_LEVEL = os.getenv("AUDIT_LOG_LEVEL", "INFO")
 
 audit_logger = logging.getLogger("fleet.audit")
@@ -45,6 +39,7 @@ class AuditLogger:
         
         if self.config:
             try:
+                get_connection = _import_get_connection()
                 with closing(get_connection(self.config)) as conn:
                     conn.execute(
                         "INSERT INTO audit_logs (actor_user_id, action, entity_type, entity_id, details) VALUES (?, ?, ?, ?, ?)",
@@ -92,3 +87,13 @@ def audit_decorator(action: str, entity_type: str):
             return result
         return decorated
     return decorator
+
+
+def _import_get_connection():
+    """Import DB helpers lazily to keep auth-only imports side-effect free."""
+    try:
+        from ..models import get_connection
+        return get_connection
+    except ImportError:
+        from app.models import get_connection
+        return get_connection

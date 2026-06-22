@@ -5,18 +5,25 @@ import os
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL") or "sqlite:///./fleet.db"
 
-engine = create_engine(
-    DATABASE_URL,
-    pool_pre_ping=True,
-    pool_recycle=300,
-    pool_size=5,
-    max_overflow=10,
-    connect_args={
-        "sslmode": "require"
-    }
-)
+engine_kwargs = {
+    "pool_pre_ping": True,
+}
+
+if DATABASE_URL.startswith("postgresql"):
+    engine_kwargs.update({
+        "pool_recycle": 300,
+        "pool_size": 5,
+        "max_overflow": 10,
+        "connect_args": {"sslmode": "require"},
+    })
+elif DATABASE_URL.startswith("sqlite"):
+    engine_kwargs.update({
+        "connect_args": {"check_same_thread": False},
+    })
+
+engine = create_engine(DATABASE_URL, **engine_kwargs)
 
 SessionLocal = sessionmaker(
     autocommit=False,
