@@ -281,14 +281,6 @@ def ensure_loan_application_schema() -> None:
                 """
             )
         )
-
-    session = SessionLocal()
-    try:
-        seed_roles_and_permissions(session)
-    except Exception:
-        session.rollback()
-    finally:
-        session.close()
         connection.execute(
             text(
                 """
@@ -297,6 +289,14 @@ def ensure_loan_application_schema() -> None:
                 """
             )
         )
+
+    session = SessionLocal()
+    try:
+        seed_roles_and_permissions(session)
+    except Exception:
+        session.rollback()
+    finally:
+        session.close()
 
 
 @app.on_event("startup")
@@ -351,5 +351,4 @@ def health():
     return {
         "status": "healthy"
     }
-
 

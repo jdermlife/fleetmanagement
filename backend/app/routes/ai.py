@@ -41,9 +41,23 @@ load_dotenv()
 
 router = APIRouter()
 
-client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY", "").strip()
-)
+client: OpenAI | None = None
+
+
+def get_openai_client() -> OpenAI:
+    global client
+
+    api_key = os.getenv("OPENAI_API_KEY", "").strip()
+    if not api_key:
+        raise HTTPException(
+            status_code=503,
+            detail="AI features are not configured on the backend.",
+        )
+
+    if client is None:
+        client = OpenAI(api_key=api_key)
+
+    return client
 
 
 def _extract_json_payload(content: str) -> dict[str, Any]:
@@ -98,7 +112,7 @@ async def transcribe(
         with open(tmp_path, "rb") as audio_file:
 
            
-         result = client.audio.transcriptions.create( 
+         result = get_openai_client().audio.transcriptions.create( 
             model=model_name,
             file=audio_file
          )
@@ -180,7 +194,7 @@ Transcript:
     )
 
     try:
-        response = client.chat.completions.create(
+        response = get_openai_client().chat.completions.create(
             model=model_name,
             messages=[
                 {
@@ -380,11 +394,7 @@ async def parse_loan_document(
     file: UploadFile = File(...),
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
-    if not os.getenv("OPENAI_API_KEY", "").strip():
-        raise HTTPException(
-            status_code=503,
-            detail="AI document parsing is not configured on the backend.",
-        )
+    get_openai_client()
 
     if not file.content_type or not file.content_type.startswith("image/"):
         raise HTTPException(
@@ -522,7 +532,7 @@ Rules:
     )
 
     try:
-        response = client.chat.completions.create(
+        response = get_openai_client().chat.completions.create(
             model=model_name,
             temperature=0,
             messages=[
