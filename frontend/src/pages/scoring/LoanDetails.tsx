@@ -42,6 +42,9 @@ export default function LoanDetails() {
   const formatPercent = (value: number | null | undefined) =>
     typeof value === "number" ? `${value.toFixed(2)}%` : "N/A";
 
+  const formatScore = (value: number | null | undefined) =>
+    typeof value === "number" ? value.toFixed(2) : "N/A";
+
   if (loading) {
     return <div className="p-10">Loading loan details...</div>;
   }
@@ -212,6 +215,76 @@ export default function LoanDetails() {
           <h2 className="mb-4 text-lg font-bold">Committee Remarks</h2>
           <div className="rounded border bg-gray-50 p-4">
             {loan.committee_remarks || "No remarks available"}
+          </div>
+        </div>
+
+        <div className="mt-6 rounded bg-white p-6 shadow">
+          <h2 className="mb-4 text-lg font-bold">QuantScore Breakdown</h2>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded border bg-slate-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-slate-500">A-Credit Score</div>
+              <div className="mt-1 text-2xl font-bold text-slate-800">
+                {loan.credit_scores?.credit_grade || loan.overall_scores?.final_grade || "N/A"}
+              </div>
+              <div className="mt-1 text-xs text-slate-600">
+                Total Credit: {formatScore(loan.credit_scores?.total_credit_score)}
+              </div>
+            </div>
+
+            <div className="rounded border bg-rose-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-rose-500">Fraud Score</div>
+              <div className="mt-1 text-2xl font-bold text-rose-700">
+                {formatScore(loan.fraud_scores?.overall_fraud_score)}
+              </div>
+              <div className="mt-1 text-xs text-rose-700">
+                Risk Level: {loan.fraud_scores?.fraud_risk_level || "N/A"}
+              </div>
+            </div>
+
+            <div className="rounded border bg-cyan-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-cyan-600">Social Score</div>
+              <div className="mt-1 text-2xl font-bold text-cyan-700">
+                {formatScore(loan.social_scores?.overall_social_score)}
+              </div>
+              <div className="mt-1 text-xs text-cyan-700">
+                Employment Stability: {formatScore(loan.social_scores?.employment_stability_score)}
+              </div>
+            </div>
+
+            <div className="rounded border bg-amber-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-amber-600">Credit Bureau Score</div>
+              <div className="mt-1 text-2xl font-bold text-amber-700">
+                {formatScore(loan.credit_bureau_reports?.bureau_score)}
+              </div>
+              <div className="mt-1 text-xs text-amber-700">
+                Bureau: {loan.credit_bureau_reports?.bureau_name || "N/A"}
+              </div>
+            </div>
+
+            <div className="rounded border bg-violet-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-violet-600">Psychometric Score</div>
+              <div className="mt-1 text-2xl font-bold text-violet-700">
+                {formatScore(loan.psychometric_scores?.overall_psychometric_score)}
+              </div>
+              <div className="mt-1 text-xs text-violet-700">
+                Discipline: {formatScore(loan.psychometric_scores?.discipline_score)}
+              </div>
+            </div>
+
+            <div className="rounded border bg-emerald-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-emerald-600">AI Recommendation</div>
+              <div className="mt-1 text-xl font-bold text-emerald-700">
+                {loan.ai_recommendations?.recommendation || "N/A"}
+              </div>
+              <div className="mt-1 text-xs text-emerald-700">
+                Confidence: {formatScore(loan.ai_recommendations?.confidence_score)}
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 rounded border bg-slate-50 p-4 text-sm text-slate-700">
+            <div className="font-semibold">AI Explanation</div>
+            <div className="mt-1">{loan.ai_recommendations?.explanation || "No AI explanation available."}</div>
           </div>
         </div>
       </div>

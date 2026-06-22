@@ -1,0 +1,63 @@
+name: Nightly Backup Verification
+
+on:
+  schedule:
+    - cron: "30 1 * * *"
+  workflow_dispatch:
+
+jobs:
+  verify-backups:
+    runs-on: ubuntu-latest
+    env:
+      BACKUP_ROOT_PATH: ${{ vars.BACKUP_ROOT_PATH }}
+      ALERT_WEBHOOK_URL: ${{ secrets.ALERT_WEBHOOK_URL }}
+      MAX_AGE_HOURS: ${{ vars.BACKUP_MAX_AGE_HOURS }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Verify backup root variable exists
+        run: |
+          if [ -z "${BACKUP_ROOT_PATH}" ]; then
+            echo "BACKUP_ROOT_PATH repository variable is required"
+            exit 1
+          fi
+
+      - name: Run backup verification
+        id: verify
+        run: |
+          AGE="${MAX_AGE_HOURS:-26}"
+          python ops/backup/verify_backups.py \
+            --backup-root "${BACKUP_ROOT_PATH}" \
+            --max-age-hours "${AGE}" \
+            --report-file .reports/backup_verification_report.json
+
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backup-verification-report
+          path: .reports/backup_verification_report.json
+          if-no-files-found: warn
+
+      - name: Alert on verification failure
+        if: failure() && env.ALERT_WEBHOOK_URL != ''
+        run: |
+          REPORT_CONTENT=$(cat .reports/backup_verification_report.json 2>/dev/null || echo '{"status":"fail","details":["report missing"]}')
+          PAYLOAD=$(jq -n \
+            --arg text "Backup verification failed on ${GITHUB_REPOSITORY} (${GITHUB_WORKFLOW})" \
+            --argjson report "$REPORT_CONTENT" \
+            '{text: $text, report: $report}')
+          curl -fsS -X POST -H "Content-Type: application/json" -d "$PAYLOAD" "$ALERT_WEBHOOK_URL"
+
+      - name: Fail if verification failed without webhook
+        if: failure() && env.ALERT_WEBHOOK_URL == ''
+        run: |
+          echo "Backup verification failed and ALERT_WEBHOOK_URL is not configured"
+          exit 1

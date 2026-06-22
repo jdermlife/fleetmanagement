@@ -1,42 +1,47 @@
-import { useState } from 'react'
+import { Suspense, lazy, useState } from 'react'
 import { Routes, Route, Link } from 'react-router-dom'
-
-import DriverManagementScorecardPage from './pages/drivers/DriverManagementScorecardPage'
-import DriverRegistrationPage from './pages/drivers/DriverRegistrationPage'
-import InsuranceManagementPage from './pages/insurance/InsuranceManagementPage'
-import LiveGpsTrackingPage from './pages/gps/LiveGpsTrackingPage'
-import LendingScorecard from './pages/scoring/LendingScorecard'
-import LeaseScorecardPage from './pages/scoring/LeaseScorecardPage'
-import MaintenanceManagementPage from './pages/maintenance/MaintenanceManagementPage'
-import DashboardSnapshot from './pages/dashboard/DashboardSnapshot'
-import AuditTrailPanel from './pages/audit/AuditTrailPanel'
-import CreditScoring from './pages/scoring/CreditScoring'
-import FuelManagement from './pages/fuel/FuelManagement'
-import VehicleDetailPage from './pages/vehicles/VehicleDetailPage'
-import VehicleMasterPage from './pages/vehicles/VehicleMasterPage'
-import LoanRepository from "./pages/scoring/LoanRepository";
-import LoanDetails from "./pages/scoring/LoanDetails";
-
-
-/* AI PAGES */
-import AIDashboard from './pages/ai/AIDashboard'
-import ChatAssistant from './pages/ai/ChatAssistant'
-import VoiceReports from './pages/ai/VoiceReports'
-import OCRScanner from './pages/ai/OCRScanner'
-import MaintenanceAI from './pages/ai/MaintenanceAI'
-import RiskAnalysis from './pages/ai/RiskAnalysis'
-import PDFSummarizer from './pages/ai/PDFSummarizer'
-import MeetingMinutes from './pages/ai/MeetingMinutes'
-import SendEmail from './pages/ai/SendEmail'
-import AttendMeeting from './pages/ai/AttendMeeting'
-import ComplianceAI from './pages/ai/ComplianceAI'
-import MeetingHistory from './pages/ai/MeetingHistory'
-import MeetingDetails from './pages/ai/MeetingDetails'
 
 type MenuLink = {
   id: string
   label: string
 }
+
+const DashboardSnapshot = lazy(() => import('./pages/dashboard/DashboardSnapshot'))
+const LendingScorecard = lazy(() => import('./pages/scoring/LendingScorecard'))
+const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
+const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
+const CreditScoring = lazy(() => import('./pages/scoring/CreditScoring'))
+const AuditTrailPanel = lazy(() => import('./pages/audit/AuditTrailPanel'))
+const FuelManagement = lazy(() => import('./pages/fuel/FuelManagement'))
+const VehicleDetailPage = lazy(() => import('./pages/vehicles/VehicleDetailPage'))
+const VehicleMasterPage = lazy(() => import('./pages/vehicles/VehicleMasterPage'))
+const LoanRepository = lazy(() => import('./pages/scoring/LoanRepository'))
+const LoanDetails = lazy(() => import('./pages/scoring/LoanDetails'))
+const ApprovalQueue = lazy(() => import('./pages/scoring/ApprovalQueue'))
+const CreditReviewWorkbench = lazy(() => import('./pages/scoring/CreditReviewWorkbench'))
+const ReleasedAccounts = lazy(() => import('./pages/scoring/ReleasedAccounts'))
+const LegacyLoanDashboard = lazy(() => import('./pages/dashboard/LoanDashboard'))
+const LegacyBorrowerProfile = lazy(() => import('./pages/scoring/BorrowerProfile'))
+const LegacyCreditCommitteeReview = lazy(() => import('./pages/scoring/CreditCommitteeReview'))
+const LegacyScoringAuditTrailPanel = lazy(() => import('./pages/scoring/AuditTrailPanel'))
+const DriverManagementScorecardPage = lazy(() => import('./pages/drivers/DriverManagementScorecardPage'))
+const DriverRegistrationPage = lazy(() => import('./pages/drivers/DriverRegistrationPage'))
+const LiveGpsTrackingPage = lazy(() => import('./pages/gps/LiveGpsTrackingPage'))
+const MaintenanceManagementPage = lazy(() => import('./pages/maintenance/MaintenanceManagementPage'))
+
+const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
+const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
+const VoiceReports = lazy(() => import('./pages/ai/VoiceReports'))
+const OCRScanner = lazy(() => import('./pages/ai/OCRScanner'))
+const MaintenanceAI = lazy(() => import('./pages/ai/MaintenanceAI'))
+const RiskAnalysis = lazy(() => import('./pages/ai/RiskAnalysis'))
+const PDFSummarizer = lazy(() => import('./pages/ai/PDFSummarizer'))
+const MeetingMinutes = lazy(() => import('./pages/ai/MeetingMinutes'))
+const SendEmail = lazy(() => import('./pages/ai/SendEmail'))
+const AttendMeeting = lazy(() => import('./pages/ai/AttendMeeting'))
+const ComplianceAI = lazy(() => import('./pages/ai/ComplianceAI'))
+const MeetingHistory = lazy(() => import('./pages/ai/MeetingHistory'))
+const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 
 const menuLinks: MenuLink[] = [
@@ -283,189 +288,229 @@ const govMenuItems = menuLinks.filter(
 </header>
   {/* PAGE CONTENT */}
       <main className="content">
-        <Routes>
-          <Route path="/" element={<DashboardSnapshot />} />
+        <Suspense fallback={<div className="card">Loading page...</div>}>
+          <Routes>
+            <Route path="/" element={<DashboardSnapshot />} />
 
-          <Route
-            path="/dashboard"
-            element={<DashboardSnapshot />}
-          />
+            <Route
+              path="/dashboard"
+              element={<DashboardSnapshot />}
+            />
 
-          <Route
-            path="/lending-scorecard"
-            element={<LendingScorecard />}
-          />
+            <Route
+              path="/lending-scorecard"
+              element={<LendingScorecard />}
+            />
 
-          <Route
-            path="/loan-repository"
-            element={<LoanRepository />}
-          />
-          <Route
-            path="/loan-applications"
-            element={<LoanRepository />}
-          />
-          <Route
-            path="/loan-details/:applicationNo"
-            element={<LoanDetails />}
-          />
+            <Route
+              path="/loan-repository"
+              element={<LoanRepository />}
+            />
+            <Route
+              path="/loan-applications"
+              element={<LoanRepository />}
+            />
+            <Route
+              path="/loan-details/:applicationNo"
+              element={<LoanDetails />}
+            />
 
-          <Route
-            path="/lease-scorecard"
-            element={<LeaseScorecardPage />}
-          />
+            <Route
+              path="/approval-queue"
+              element={<ApprovalQueue />}
+            />
 
-          <Route
-            path="/vehicle-master"
-            element={<VehicleMasterPage />}
-          />
+            <Route
+              path="/credit-review-workbench"
+              element={<CreditReviewWorkbench />}
+            />
 
-          <Route
-            path="/vehicle-detail"
-            element={<VehicleDetailPage />}
-          />
+            <Route
+              path="/released-accounts"
+              element={<ReleasedAccounts />}
+            />
 
-          <Route
-            path="/driver-management"
-            element={<DriverManagementScorecardPage />}
-          />
+            <Route
+              path="/loan-dashboard"
+              element={<LegacyLoanDashboard />}
+            />
 
-          <Route
-            path="/driver-registration"
-            element={<DriverRegistrationPage />}
-          />
+            <Route
+              path="/borrower-profile"
+              element={<LegacyBorrowerProfile />}
+            />
 
-          <Route
-            path="/live-gps"
-            element={<LiveGpsTrackingPage />}
-          />
+            <Route
+              path="/credit-committee-review"
+              element={<LegacyCreditCommitteeReview />}
+            />
 
-          <Route
-            path="/maintenance-management"
-            element={<MaintenanceManagementPage />}
-          />
+            <Route
+              path="/scoring-audit-trail-panel"
+              element={<LegacyScoringAuditTrailPanel />}
+            />
 
-          <Route
-            path="/insurance-management"
-            element={<InsuranceManagementPage />}
-          />
+            <Route
+              path="/scoring/audit-trail-panel"
+              element={<LegacyScoringAuditTrailPanel />}
+            />
 
-          <Route
-            path="/fuel-management"
-            element={<FuelManagement />}
-          />
+            <Route
+              path="/lease-scorecard"
+              element={<LeaseScorecardPage />}
+            />
 
-          <Route
-            path="/credit-scoring"
-            element={<CreditScoring />}
-          />
+            <Route
+              path="/vehicle-master"
+              element={<VehicleMasterPage />}
+            />
 
-          <Route
-            path="/audit-trail"
-            element={<AuditTrailPanel />}
-          />
+            <Route
+              path="/vehicle-detail"
+              element={<VehicleDetailPage />}
+            />
 
-          {/* RISK MANAGEMENT */}
-          <Route
-            path="/risk-management"
-            element={
-              <div className="card">
-                <h1>Risk Management</h1>
+            <Route
+              path="/driver-management"
+              element={<DriverManagementScorecardPage />}
+            />
 
-                <p>
-                  Risk monitoring, operational controls,
-                  fraud prevention, and fleet governance.
-                </p>
-              </div>
-            }
-          />
+            <Route
+              path="/driver-registration"
+              element={<DriverRegistrationPage />}
+            />
 
-          {/* COMPLIANCE */}
-          <Route
-            path="/compliance"
-            element={
-              <div className="card">
-                <h1>Compliance</h1>
+            <Route
+              path="/live-gps"
+              element={<LiveGpsTrackingPage />}
+            />
 
-                <p>
-                  Regulatory compliance, internal controls,
-                  audit reviews, and compliance reporting.
-                </p>
-              </div>
-            }
-          />
+            <Route
+              path="/maintenance-management"
+              element={<MaintenanceManagementPage />}
+            />
 
-          {/* AI ROUTES */}
-          <Route
-            path="/ai-dashboard"
-            element={<AIDashboard />}
-          />
+            <Route
+              path="/insurance-management"
+              element={<InsuranceManagementPage />}
+            />
 
-          <Route
-            path="/chat-assistant"
-            element={<ChatAssistant />}
-          />
+            <Route
+              path="/fuel-management"
+              element={<FuelManagement />}
+            />
 
-          <Route
-            path="/voice-reports"
-            element={<VoiceReports />}
-          />
+            <Route
+              path="/credit-scoring"
+              element={<CreditScoring />}
+            />
 
-          <Route
-            path="/ocr-scanner"
-            element={<OCRScanner />}
-          />
+            <Route
+              path="/audit-trail"
+              element={<AuditTrailPanel />}
+            />
 
-          <Route
-            path="/maintenance-ai"
-            element={<MaintenanceAI />}
-          />
+            {/* RISK MANAGEMENT */}
+            <Route
+              path="/risk-management"
+              element={
+                <div className="card">
+                  <h1>Risk Management</h1>
 
-          <Route
-            path="/risk-analysis"
-            element={<RiskAnalysis />}
-          />
+                  <p>
+                    Risk monitoring, operational controls,
+                    fraud prevention, and fleet governance.
+                  </p>
+                </div>
+              }
+            />
 
-          <Route
-            path="/pdf-summarizer"
-            element={<PDFSummarizer />}
-          />
+            {/* COMPLIANCE */}
+            <Route
+              path="/compliance"
+              element={
+                <div className="card">
+                  <h1>Compliance</h1>
 
-          <Route
-            path="/meeting-minutes"
-            element={<MeetingMinutes />}
-          />
+                  <p>
+                    Regulatory compliance, internal controls,
+                    audit reviews, and compliance reporting.
+                  </p>
+                </div>
+              }
+            />
 
-          <Route
-            path="/send-email"
-            element={<SendEmail />}
-          />
+            {/* AI ROUTES */}
+            <Route
+              path="/ai-dashboard"
+              element={<AIDashboard />}
+            />
 
-          <Route
-            path="/attend-meeting"
-            element={<AttendMeeting />}
-          />
+            <Route
+              path="/chat-assistant"
+              element={<ChatAssistant />}
+            />
 
-          <Route
-            path="/compliance-ai"
-            element={<ComplianceAI />}
-          />
-          <Route
-             path="/ai/history"
-             element={<MeetingHistory />}
-          />
+            <Route
+              path="/voice-reports"
+              element={<VoiceReports />}
+            />
 
-          <Route
-            path="/ai/history/:id"
-            element={<MeetingDetails />}
-          />
+            <Route
+              path="/ocr-scanner"
+              element={<OCRScanner />}
+            />
 
-          <Route
-            path="/meeting-history"
-            element={<MeetingHistory />}
-          />
-        
-       
-        </Routes>
+            <Route
+              path="/maintenance-ai"
+              element={<MaintenanceAI />}
+            />
+
+            <Route
+              path="/risk-analysis"
+              element={<RiskAnalysis />}
+            />
+
+            <Route
+              path="/pdf-summarizer"
+              element={<PDFSummarizer />}
+            />
+
+            <Route
+              path="/meeting-minutes"
+              element={<MeetingMinutes />}
+            />
+
+            <Route
+              path="/send-email"
+              element={<SendEmail />}
+            />
+
+            <Route
+              path="/attend-meeting"
+              element={<AttendMeeting />}
+            />
+
+            <Route
+              path="/compliance-ai"
+              element={<ComplianceAI />}
+            />
+            <Route
+               path="/ai/history"
+               element={<MeetingHistory />}
+            />
+
+            <Route
+              path="/ai/history/:id"
+              element={<MeetingDetails />}
+            />
+
+            <Route
+              path="/meeting-history"
+              element={<MeetingHistory />}
+            />
+          </Routes>
+        </Suspense>
       </main>
     </div>
   )

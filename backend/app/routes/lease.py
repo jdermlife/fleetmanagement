@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import desc
 
 from app.database import SessionLocal
+from app.fastapi_auth import require_roles
 from app.models.lease import Leasee
 from app.schemas.lease_schema import LeaseCreate
 
 router = APIRouter()
 
-@router.get("/lease-scorecards")
+@router.get("/lease-scorecards", dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))])
 def get_lease_scorecards():
 
     db = SessionLocal()
@@ -33,7 +34,7 @@ def get_lease_scorecards():
         for r in records
     ]
 
-@router.post("/lease-scorecards")
+@router.post("/lease-scorecards", dependencies=[Depends(require_roles("Admin", "Manager"))])
 def create_lease_scorecard(data: LeaseCreate):
      
 

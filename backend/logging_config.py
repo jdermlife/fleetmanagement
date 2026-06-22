@@ -36,5 +36,10 @@ class StructuredLogger:
 
 
 request_logger = StructuredLogger("fleet.request")
+api_logger = StructuredLogger("fleet.api")
+backend_logger = StructuredLogger("fleet.backend")
+database_logger = StructuredLogger("fleet.database")
+ai_logger = StructuredLogger("fleet.ai")
+error_logger = StructuredLogger("fleet.error", level=logging.ERROR)
 audit_logger = StructuredLogger("fleet.audit", level=int(os.getenv("AUDIT_LOG_LEVEL", logging.INFO)))
 security_logger = StructuredLogger("fleet.security")

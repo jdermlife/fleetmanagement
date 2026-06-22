@@ -1,13 +1,14 @@
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sqlalchemy import desc
 
 from app.database import SessionLocal
+from app.fastapi_auth import require_roles
 from app.models.driver import Driver
 from app.schemas.driver_schema import DriverCreate
 
 router = APIRouter()
 
-@router.get("/drivers")
+@router.get("/drivers", dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))])
 def get_drivers():
 
     db = SessionLocal()
@@ -29,7 +30,7 @@ def get_drivers():
     ]
 
 
-@router.post("/drivers")
+@router.post("/drivers", dependencies=[Depends(require_roles("Admin", "Manager"))])
 def create_driver(data: DriverCreate):
 
     db = SessionLocal()

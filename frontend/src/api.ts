@@ -4,6 +4,8 @@ const DEFAULT_API_BASE_URL = (
   import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
 ).replace(/\/$/, '')
 
+const isDevelopment = import.meta.env.DEV
+
 export const api = axios.create({
   baseURL: DEFAULT_API_BASE_URL,
   timeout: 10000,
@@ -48,11 +50,15 @@ if (typeof window !== 'undefined') {
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
-    console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
+    if (isDevelopment) {
+      console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
+    }
     return config
   },
   (error) => {
-    console.error('[API] Request error:', error)
+    if (isDevelopment) {
+      console.error('[API] Request error:', error)
+    }
     return Promise.reject(error)
   }
 )
@@ -60,16 +66,20 @@ api.interceptors.request.use(
 // Response interceptor
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(`[API] Response: ${response.status} ${response.statusText}`)
+    if (isDevelopment) {
+      console.log(`[API] Response: ${response.status} ${response.statusText}`)
+    }
     return response
   },
   (error: AxiosError) => {
-    console.error('[API] Response error:', {
-      status: error.response?.status,
-      statusText: error.response?.statusText,
-      data: error.response?.data,
-      message: error.message,
-    })
+    if (isDevelopment) {
+      console.error('[API] Response error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+      })
+    }
     return Promise.reject(error)
   }
 )

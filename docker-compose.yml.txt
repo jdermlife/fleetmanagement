@@ -15,3 +15,27 @@ services:
       - "5000:5000"
     env_file:
       - ./backend/.env
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    container_name: fms-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - backend
+
+  grafana:
+    image: grafana/grafana:11.2.2
+    container_name: fms-grafana
+    ports:
+      - "3001:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus

@@ -3,11 +3,12 @@ from __future__ import annotations
 from io import BytesIO
 from typing import Any
 
-from fastapi import APIRouter, File, HTTPException, Query, UploadFile, status as http_status
+from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import selectinload
 
 from app.database import SessionLocal
+from app.fastapi_auth import require_roles
 from app.models.loan_application import (
     AIRecommendation,
     CollateralScore,
@@ -275,6 +276,25 @@ def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
     }
 
 
+def serialize_loan_application_list_item(record: LoanApplication) -> dict[str, Any]:
+    return {
+        "id": record.id,
+        "application_no": record.application_no,
+        "status": record.status,
+        "product_type": record.product_type,
+        "borrower_name": record.borrower_name,
+        "email": record.email,
+        "phone": record.phone,
+        "monthly_income": record.monthly_income,
+        "loan_amount": record.loan_amount,
+        "term_months": record.term_months,
+        "interest_rate": record.interest_rate,
+        "scorecard_total": record.scorecard_total,
+        "ai_probability": record.ai_probability,
+        "created_at": record.created_at,
+    }
+
+
 def upsert_related_record(
     db,
     loan_application: LoanApplication,
@@ -410,7 +430,11 @@ def apply_loan_application_fields(record: LoanApplication, data: LoanApplication
     record.requirements = data.requirements
 
 
-@router.post("/loan-applications", status_code=http_status.HTTP_201_CREATED)
+@router.post(
+    "/loan-applications",
+    status_code=http_status.HTTP_201_CREATED,
+    dependencies=[Depends(require_roles("Admin", "Manager"))],
+)
 def create_loan_application(data: LoanApplicationCreate):
     db = SessionLocal()
 
@@ -452,25 +476,38 @@ def create_loan_application(data: LoanApplicationCreate):
         db.close()
 
 
-@router.get("/loan-applications")
+@router.get(
+    "/loan-applications",
+    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
+)
 def get_loan_applications(
     status: str | None = Query(default=None),
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
+    limit: int = Query(default=100, ge=1, le=500),
+    offset: int = Query(default=0, ge=0),
 ):
     db = SessionLocal()
 
     try:
-        query = db.query(LoanApplication).options(*LOAN_APPLICATION_LOAD_OPTIONS)
+        query = db.query(LoanApplication)
         query = apply_repository_filters(query, status, date_from, date_to)
-        loans = query.order_by(LoanApplication.created_at.desc()).all()
+        loans = (
+            query.order_by(LoanApplication.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
 
-        return [serialize_loan_application(loan) for loan in loans]
+        return [serialize_loan_application_list_item(loan) for loan in loans]
     finally:
         db.close()
 
 
-@router.post("/loan-applications/import")
+@router.post(
+    "/loan-applications/import",
+    dependencies=[Depends(require_roles("Admin", "Manager"))],
+)
 async def import_loan_applications(file: UploadFile = File(...)):
     db = SessionLocal()
 
@@ -495,7 +532,10 @@ async def import_loan_applications(file: UploadFile = File(...)):
         db.close()
 
 
-@router.get("/loan-applications/export")
+@router.get(
+    "/loan-applications/export",
+    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
+)
 def export_loan_applications(
     status: str | None = Query(default=None),
     date_from: str | None = Query(default=None),
@@ -534,7 +574,10 @@ def export_loan_applications(
         db.close()
 
 
-@router.put("/loan-applications/{application_no}/status")
+@router.put(
+    "/loan-applications/{application_no}/status",
+    dependencies=[Depends(require_roles("Admin", "Manager"))],
+)
 def update_status(application_no: str, status: str):
     db = SessionLocal()
 
@@ -558,7 +601,10 @@ def update_status(application_no: str, status: str):
         db.close()
 
 
-@router.get("/loan-applications/{application_no}")
+@router.get(
+    "/loan-applications/{application_no}",
+    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
+)
 def get_loan_application(application_no: str):
     db = SessionLocal()
 
@@ -569,7 +615,10 @@ def get_loan_application(application_no: str):
         db.close()
 
 
-@router.put("/loan-applications/{application_no}")
+@router.put(
+    "/loan-applications/{application_no}",
+    dependencies=[Depends(require_roles("Admin", "Manager"))],
+)
 def update_loan_application(application_no: str, data: LoanApplicationCreate):
     db = SessionLocal()
 
