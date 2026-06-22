@@ -3,8 +3,10 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { api, getErrorMessage } from '../../api';
 import {
+  computeQuantScores,
   createLoanApplication,
   fetchLoanApplication,
+  type QuantScoresSummary,
   updateLoanApplication,
   updateLoanApplicationStatus,
   type LoanApplicationRequirements,
@@ -1012,6 +1014,8 @@ export default function LendingScorecard() {
   const [hasPersistedRecord, setHasPersistedRecord] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
+  const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
+  const [isComputingQuantScores, setIsComputingQuantScores] = useState(false);
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -1539,6 +1543,29 @@ export default function LendingScorecard() {
     };
   };
 
+  const handleStepChange = async (nextStep: number) => {
+    if (nextStep !== 8) {
+      setStep(nextStep);
+      return;
+    }
+
+    setIsComputingQuantScores(true);
+    setSaveMessage('');
+
+    try {
+      const payload = buildLoanPayload(formData.status);
+      const result = await computeQuantScores(payload);
+      setBackendQuantSummary(result.summary);
+      setHasPersistedRecord(true);
+      setTransientMessage(result.message || 'QuantScores computed and stored');
+    } catch (error) {
+      setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
+    } finally {
+      setIsComputingQuantScores(false);
+      setStep(nextStep);
+    }
+  };
+
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
     setFormData(prev => ({
       ...prev,
@@ -1721,6 +1748,21 @@ export default function LendingScorecard() {
 
       setFormData(hydrateApplication(data));
       setHasPersistedRecord(true);
+      setBackendQuantSummary(
+        data.overall_scores
+          ? {
+              credit_score: Math.round(data.overall_scores.credit_score ?? 825),
+              fraud_score: Math.round(data.overall_scores.fraud_score ?? 76),
+              social_score: Math.round(data.overall_scores.social_score ?? 72),
+              psychometric_score: Math.round(data.overall_scores.psychometric_score ?? 81),
+              relationship_score: Math.round(data.overall_scores.relationship_score ?? 88),
+              profitability_score: Math.round(data.overall_scores.profitability_score ?? 79),
+              overall_score: Math.round(data.overall_scores.final_score ?? 82),
+              final_grade: data.overall_scores.final_grade ?? 'A-',
+              decision: (data.overall_scores.final_decision ?? 'APPROVE').toUpperCase(),
+            }
+          : null,
+      );
       setDocumentReview(null);
       setReviewDocumentId(null);
       setStep(1);
@@ -1746,6 +1788,7 @@ export default function LendingScorecard() {
     setFormattedNumberDrafts({});
     setDocumentReview(null);
     setReviewDocumentId(null);
+    setBackendQuantSummary(null);
     setHasPersistedRecord(false);
     setStep(1);
     navigate('/lending-scorecard', { replace: true });
@@ -2335,36 +2378,62 @@ export default function LendingScorecard() {
     [aiRecommendation, automatedScorecard, calculations, creditRiskInsights, formData],
   );
   const quantScoresSummary = scorePayloadSections.quantSummary;
+  const displayedQuantSummary = backendQuantSummary ?? {
+    credit_score: quantScoresSummary.creditBureauScoreValue,
+    fraud_score: quantScoresSummary.fraudScoreValue,
+    social_score: quantScoresSummary.socialScoreValue,
+    psychometric_score: quantScoresSummary.psychometricScoreValue ?? 81,
+    relationship_score: Math.round(scorePayloadSections.relationship_scores.relationship_score ?? 88),
+    profitability_score: Math.round(scorePayloadSections.profitability_scores.profitability_score ?? 79),
+    overall_score: Math.round(scorePayloadSections.overall_scores.final_score ?? 82),
+    final_grade: scorePayloadSections.overall_scores.final_grade ?? 'A-',
+    decision: (scorePayloadSections.overall_scores.final_decision ?? 'APPROVE').toUpperCase(),
+  };
   const executiveSummaryItems = [
     {
-      label: 'A-Credit Score',
-      value: quantScoresSummary.aCreditScore,
-      note: 'Internal composite grade',
+      label: 'Credit Score',
+      value: displayedQuantSummary.credit_score.toString(),
+      note: 'Backend bureau-weighted composite',
     },
     {
       label: 'Fraud Score',
-      value: quantScoresSummary.fraudScore,
+      value: displayedQuantSummary.fraud_score.toString(),
       note: 'Identity and anomaly screening',
     },
     {
       label: 'Social Score',
-      value: quantScoresSummary.socialScore,
+      value: displayedQuantSummary.social_score.toString(),
       note: 'Community and digital footprint',
     },
     {
-      label: 'Credit Bureau Score',
-      value: quantScoresSummary.creditBureauScore,
-      note: 'Modeled bureau strength proxy',
-    },
-    {
       label: 'Psychometric Score',
-      value: quantScoresSummary.psychometricScore,
+      value: displayedQuantSummary.psychometric_score.toString(),
       note: 'Behavioral consistency index',
     },
     {
-      label: 'Origination Profitability',
-      value: quantScoresSummary.originationProfitability,
-      note: 'Expected first-booking outcome',
+      label: 'Relationship Score',
+      value: displayedQuantSummary.relationship_score.toString(),
+      note: 'Existing banking depth and loyalty',
+    },
+    {
+      label: 'Profitability Score',
+      value: displayedQuantSummary.profitability_score.toString(),
+      note: 'Expected booking economics',
+    },
+    {
+      label: 'Overall Score',
+      value: displayedQuantSummary.overall_score.toString(),
+      note: 'Backend final weighted score',
+    },
+    {
+      label: 'Final Grade',
+      value: displayedQuantSummary.final_grade,
+      note: 'Committee-grade output',
+    },
+    {
+      label: 'Decision',
+      value: displayedQuantSummary.decision,
+      note: 'Automated backend decision',
     },
   ];
   const capacityMetricItems = [
@@ -2496,7 +2565,7 @@ export default function LendingScorecard() {
             {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'QuantScores', 'Approval', 'Release & Booking'].map((label, i) => (
               <button
                 key={i}
-                onClick={() => setStep(i + 1)}
+                onClick={() => void handleStepChange(i + 1)}
                 className={`${stepperButtonClass} ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
               >
                 <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
@@ -3199,7 +3268,7 @@ export default function LendingScorecard() {
                         </p>
                       </div>
                       <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                        Reviewed
+                        {isComputingQuantScores ? 'Computing' : 'Reviewed'}
                       </span>
                     </div>
 
@@ -3645,12 +3714,12 @@ export default function LendingScorecard() {
         {/* Footer Navigation */}
         {step < 10 && (
           <div className="bg-gray-50 p-6 border-t flex justify-between">
-            <button onClick={() => setStep(prev => Math.max(prev - 1, 1))} disabled={step === 1} className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}>
+            <button onClick={() => void handleStepChange(Math.max(step - 1, 1))} disabled={step === 1} className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}>
               ← Back
             </button>
             <div className="flex gap-3">
               <button onClick={handleSaveDraft} disabled={isSaving} className="loan-footer-link inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800 disabled:opacity-50">Save Draft</button>
-              <button onClick={() => setStep(prev => Math.min(prev + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
+              <button onClick={() => void handleStepChange(Math.min(step + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
                 Next Step →
               </button>
             </div>

@@ -31,6 +31,7 @@ from app.services.loan_repository_io import (
     parse_upload_rows,
     upsert_loan_applications,
 )
+from app.services.overall_scoring_engine import compute_quant_score_package
 
 router = APIRouter()
 
@@ -68,6 +69,9 @@ def get_loan_application_or_404(db, application_no: str) -> LoanApplication:
 
 
 def model_to_payload(model: Any) -> dict[str, Any]:
+    if isinstance(model, dict):
+        return model
+
     return model.dict() if hasattr(model, "dict") else {}
 
 
@@ -395,6 +399,29 @@ def persist_score_details(
     )
 
 
+def build_scored_loan_application(
+    data: LoanApplicationCreate,
+) -> tuple[LoanApplicationCreate, dict[str, Any]]:
+    score_package = compute_quant_score_package(data)
+    scored_data = data.copy(
+        update={
+            "scorecard_total": int(score_package["overall_scores"]["final_score"]),
+            "ai_probability": float(score_package["overall_scores"]["final_score"]),
+            "credit_scores": score_package["credit_scores"],
+            "fraud_scores": score_package["fraud_scores"],
+            "social_scores": score_package["social_scores"],
+            "psychometric_scores": score_package["psychometric_scores"],
+            "credit_bureau_reports": score_package["credit_bureau_reports"],
+            "collateral_scores": score_package["collateral_scores"],
+            "profitability_scores": score_package["profitability_scores"],
+            "relationship_scores": score_package["relationship_scores"],
+            "ai_recommendations": score_package["ai_recommendations"],
+            "overall_scores": score_package["overall_scores"],
+        }
+    )
+    return scored_data, score_package["quant_scores"]
+
+
 def apply_loan_application_fields(record: LoanApplication, data: LoanApplicationCreate) -> None:
     record.status = data.status
     record.product_type = data.product_type
@@ -439,9 +466,10 @@ def create_loan_application(data: LoanApplicationCreate):
     db = SessionLocal()
 
     try:
+        scored_data, quant_scores = build_scored_loan_application(data)
         existing_record = (
             db.query(LoanApplication)
-            .filter(LoanApplication.application_no == data.application_no)
+            .filter(LoanApplication.application_no == scored_data.application_no)
             .first()
         )
 
@@ -451,18 +479,18 @@ def create_loan_application(data: LoanApplicationCreate):
                 detail="Application already exists",
             )
 
-        record = LoanApplication(application_no=data.application_no)
-        apply_loan_application_fields(record, data)
+        record = LoanApplication(application_no=scored_data.application_no)
+        apply_loan_application_fields(record, scored_data)
         db.add(record)
         db.flush()
 
-        persist_score_details(db, record, data)
+        persist_score_details(db, record, scored_data)
         append_decision_audit_entry(
             db,
             record,
             previous_status=None,
-            new_status=data.status,
-            remarks=data.committee_remarks,
+            new_status=scored_data.status,
+            remarks=scored_data.committee_remarks,
         )
 
         db.commit()
@@ -471,6 +499,51 @@ def create_loan_application(data: LoanApplicationCreate):
         return {
             "message": "Loan application saved",
             "application_no": record.application_no,
+            "quant_scores": quant_scores,
+        }
+    finally:
+        db.close()
+
+
+@router.post(
+    "/loan-applications/compute-quant-scores",
+    dependencies=[Depends(require_roles("Admin", "Manager"))],
+)
+def compute_quant_scores(data: LoanApplicationCreate):
+    db = SessionLocal()
+
+    try:
+        scored_data, quant_scores = build_scored_loan_application(data)
+        record = (
+            db.query(LoanApplication)
+            .filter(LoanApplication.application_no == scored_data.application_no)
+            .first()
+        )
+        previous_status = record.status if record else None
+
+        if record is None:
+            record = LoanApplication(application_no=scored_data.application_no)
+            db.add(record)
+            db.flush()
+
+        record.application_no = scored_data.application_no
+        apply_loan_application_fields(record, scored_data)
+        persist_score_details(db, record, scored_data)
+        append_decision_audit_entry(
+            db,
+            record,
+            previous_status=previous_status,
+            new_status=scored_data.status,
+            remarks=scored_data.committee_remarks,
+        )
+
+        db.commit()
+        db.refresh(record)
+
+        return {
+            "message": "QuantScores computed and stored",
+            "application_no": record.application_no,
+            "quant_scores": quant_scores,
         }
     finally:
         db.close()
@@ -623,13 +696,14 @@ def update_loan_application(application_no: str, data: LoanApplicationCreate):
     db = SessionLocal()
 
     try:
+        scored_data, quant_scores = build_scored_loan_application(data)
         record = get_loan_application_or_404(db, application_no)
         previous_status = record.status
 
         if (
-            data.application_no != application_no
+            scored_data.application_no != application_no
             and db.query(LoanApplication)
-            .filter(LoanApplication.application_no == data.application_no)
+            .filter(LoanApplication.application_no == scored_data.application_no)
             .first()
         ):
             raise HTTPException(
@@ -637,15 +711,15 @@ def update_loan_application(application_no: str, data: LoanApplicationCreate):
                 detail="Application number already exists",
             )
 
-        record.application_no = data.application_no
-        apply_loan_application_fields(record, data)
-        persist_score_details(db, record, data)
+        record.application_no = scored_data.application_no
+        apply_loan_application_fields(record, scored_data)
+        persist_score_details(db, record, scored_data)
         append_decision_audit_entry(
             db,
             record,
             previous_status=previous_status,
-            new_status=data.status,
-            remarks=data.committee_remarks,
+            new_status=scored_data.status,
+            remarks=scored_data.committee_remarks,
         )
 
         db.commit()
@@ -653,6 +727,7 @@ def update_loan_application(application_no: str, data: LoanApplicationCreate):
         return {
             "message": "Loan application updated",
             "application_no": record.application_no,
+            "quant_scores": quant_scores,
         }
     finally:
         db.close()

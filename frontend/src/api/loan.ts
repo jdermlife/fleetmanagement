@@ -436,6 +436,22 @@ export interface LoanMutationResponse {
   application_no?: string
 }
 
+export interface QuantScoresSummary {
+  credit_score: number
+  fraud_score: number
+  social_score: number
+  psychometric_score: number
+  relationship_score: number
+  profitability_score: number
+  overall_score: number
+  final_grade: string
+  decision: string
+}
+
+export interface QuantScoresResponse extends LoanMutationResponse {
+  summary: QuantScoresSummary
+}
+
 export interface LoanBulkMutationResponse {
   inserted: number
   message: string
@@ -528,6 +544,16 @@ export async function updateLoanApplicationStatus(
     {
       params: { status },
     },
+  )
+  return response.data
+}
+
+export async function computeQuantScores(
+  payload: LoanApplicationPayload,
+): Promise<QuantScoresResponse> {
+  const response = await api.post<QuantScoresResponse>(
+    `${LOAN_APPLICATIONS_PATH}/compute-quant-scores`,
+    payload,
   )
   return response.data
 }
