@@ -39,7 +39,7 @@ narwhals==2.15.0
 numpy==2.4.1
 openai==2.38.0
 packaging==26.0
-pandas==2.3.3
+pandas==3.0.3
 pillow==12.1.0
 protobuf==6.33.4
 psycopg==3.3.3
