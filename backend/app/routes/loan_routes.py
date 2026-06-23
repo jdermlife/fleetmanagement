@@ -549,7 +549,7 @@ def get_loan_applications(
     status: str | None = Query(default=None),
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=500),
+    limit: int = Query(default=100, ge=1, le=25000),
     offset: int = Query(default=0, ge=0),
 ):
     db = SessionLocal()

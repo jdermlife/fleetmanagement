@@ -492,7 +492,7 @@ export async function fetchAllLoanApplications(
   params: Omit<LoanApplicationQueryParams, 'limit' | 'offset'> = {},
 ): Promise<LoanApplicationRecord[]> {
   const allRecords: LoanApplicationRecord[] = []
-  const pageSize = 500
+  const pageSize = 10000
 
   for (let offset = 0; ; offset += pageSize) {
     const batch = await fetchLoanApplications({
