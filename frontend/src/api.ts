@@ -1,18 +1,63 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
-const DEFAULT_API_BASE_URL = (
-  import.meta.env.VITE_API_URL ?? 'http://localhost:5000'
-).replace(/\/$/, '')
+const LOCAL_API_FALLBACK = 'http://localhost:5000'
+const RENDER_API_FALLBACKS = [
+  'https://fleetmanagement-api.onrender.com',
+  'https://fleetmanagement-dq9t.onrender.com',
+]
+
+const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
+  .split(',')
+  .map((origin) => origin.trim().replace(/\/$/, ''))
+  .filter(Boolean)
+
+const apiBaseUrlCandidates = Array.from(
+  new Set([
+    ...configuredBaseUrls,
+    ...(configuredBaseUrls.length === 0 ? [LOCAL_API_FALLBACK] : []),
+    ...RENDER_API_FALLBACKS,
+  ])
+)
+
+let activeApiBaseUrl = apiBaseUrlCandidates[0] ?? LOCAL_API_FALLBACK
 
 const isDevelopment = import.meta.env.DEV
 
 export const api = axios.create({
-  baseURL: DEFAULT_API_BASE_URL,
+  baseURL: activeApiBaseUrl,
   timeout: 10000,
   headers: {
     'Content-Type': 'application/json',
   },
 })
+
+function setActiveApiBaseUrl(url: string): void {
+  if (activeApiBaseUrl === url) {
+    return
+  }
+
+  activeApiBaseUrl = url
+  api.defaults.baseURL = url
+}
+
+async function findHealthyApiBaseUrl(): Promise<string | null> {
+  for (const candidate of apiBaseUrlCandidates) {
+    try {
+      const response = await api.get('/health', {
+        baseURL: candidate,
+        timeout: 6000,
+      })
+
+      if (response.status === 200) {
+        return candidate
+      }
+    } catch {
+      // Try the next configured backend URL.
+    }
+  }
+
+  return null
+}
 
 let authToken: string | null = null
 
@@ -112,7 +157,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
       if (error.code === 'ECONNABORTED') {
         return 'Request timeout. The backend may be slow or unavailable.'
       }
-      return `Unable to reach the backend at ${DEFAULT_API_BASE_URL}. Make sure the backend server is running.`
+      return `Unable to reach the backend. Tried: ${apiBaseUrlCandidates.join(', ')}. Make sure the backend server is running.`
     }
 
     // Handle HTTP errors
@@ -141,19 +186,20 @@ export function getErrorMessage(error: unknown, fallback: string): string {
  * Check if the backend is reachable
  */
 export async function checkBackendHealth(): Promise<boolean> {
-  try {
-    const response = await api.get('/health')
-    return response.status === 200
-  } catch {
+  const healthyBaseUrl = await findHealthyApiBaseUrl()
+  if (!healthyBaseUrl) {
     return false
   }
+
+  setActiveApiBaseUrl(healthyBaseUrl)
+  return true
 }
 
 /**
  * Get the configured API base URL
  */
 export function getApiBaseUrl(): string {
-  return DEFAULT_API_BASE_URL
+  return activeApiBaseUrl
 }
 
 // Auth API calls
