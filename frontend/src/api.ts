@@ -229,7 +229,7 @@ export interface RegisterRequest {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post('/auth/login', credentials)
+  const response = await api.post('api/auth/login', credentials)
   const responseData = response.data as Record<string, unknown>
   const token =
     (typeof responseData.token === 'string' ? responseData.token : null) ??
@@ -250,7 +250,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
-  const response = await api.post('/auth/register', data)
+  const response = await api.post('api/auth/register', data)
   const responseData = response.data as Record<string, unknown>
   return (responseData.user as LoginResponse['user'] | undefined) ??
     (response.data as LoginResponse['user'])
