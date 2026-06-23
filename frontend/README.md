@@ -55,6 +55,25 @@ The backend runs on `http://localhost:5000`.
 
 The frontend runs on `http://localhost:5173`.
 
+### Mobile (Capacitor)
+
+1. Build and sync web assets into native projects:
+   ```bash
+   npm run mobile:sync
+   ```
+2. Open Android project in Android Studio:
+   ```bash
+   npm run mobile:android
+   ```
+3. Open iOS project in Xcode (macOS required):
+   ```bash
+   npm run mobile:ios
+   ```
+
+Native project locations:
+- Android: `frontend/android`
+- iOS: `frontend/ios`
+
 ## Authentication
 
 Protected endpoints require a JWT token in the Authorization header:

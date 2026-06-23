@@ -1,0 +1,55 @@
+{
+  "app": {
+    "name": "FMS Mobile",
+    "shortDescription": "Enterprise fleet and lending operations in one secure mobile workspace.",
+    "fullDescription": "FMS Mobile helps teams manage fleet operations, lending workflows, and audit-ready compliance from anywhere. Features include role-based access, secure authentication, operational dashboards, and workflow traceability.",
+    "primaryCategory": "Business",
+    "secondaryCategory": "Productivity",
+    "supportEmail": "support@example.com",
+    "supportUrl": "https://example.com/support",
+    "marketingUrl": "https://example.com",
+    "privacyPolicyUrl": "https://example.com/privacy",
+    "termsUrl": "https://example.com/terms"
+  },
+  "googlePlay": {
+    "applicationId": "com.fms.mobile",
+    "contentRating": "Pending questionnaire",
+    "targetCountries": [
+      "US",
+      "GB",
+      "CA"
+    ],
+    "dataSafety": {
+      "collectsPersonalData": true,
+      "dataEncryptedInTransit": true,
+      "userCanRequestDeletion": true
+    },
+    "release": {
+      "track": "internal",
+      "rolloutPercent": 5
+    }
+  },
+  "appStore": {
+    "bundleId": "com.fms.mobile",
+    "ageRating": "Pending questionnaire",
+    "availability": "All territories",
+    "appReview": {
+      "contactFirstName": "",
+      "contactLastName": "",
+      "contactPhone": "",
+      "contactEmail": "",
+      "demoAccountRequired": true,
+      "demoUsername": "",
+      "demoPassword": "",
+      "notes": ""
+    },
+    "privacyNutritionLabels": {
+      "tracking": "To be completed",
+      "dataLinkedToUser": "To be completed",
+      "dataNotLinkedToUser": "To be completed"
+    },
+    "release": {
+      "phasedRelease": true
+    }
+  }
+}
