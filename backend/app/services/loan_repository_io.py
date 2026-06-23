@@ -44,6 +44,7 @@ UPSERT_FIELDS: list[str] = [
 ]
 
 EXPORT_FIELDS: list[str] = [column.name for column in LoanApplication.__table__.columns]
+EXISTING_RECORD_LOOKUP_CHUNK_SIZE = 1000
 
 HEADER_ALIASES: dict[str, str] = {
     "application no": "application_no",
@@ -250,6 +251,29 @@ def generate_application_no(db, reserved_numbers: set[str]) -> str:
     raise ValueError("Unable to generate a unique application number for import.")
 
 
+def chunk_values(values: list[str], size: int) -> list[list[str]]:
+    return [values[index : index + size] for index in range(0, len(values), size)]
+
+
+def load_existing_loan_applications(
+    db,
+    application_numbers: list[str],
+) -> dict[str, LoanApplication]:
+    unique_numbers = list(dict.fromkeys(number for number in application_numbers if number))
+    existing_records: dict[str, LoanApplication] = {}
+
+    for chunk in chunk_values(unique_numbers, EXISTING_RECORD_LOOKUP_CHUNK_SIZE):
+        records = (
+            db.query(LoanApplication)
+            .filter(LoanApplication.application_no.in_(chunk))
+            .all()
+        )
+        for record in records:
+            existing_records[record.application_no] = record
+
+    return existing_records
+
+
 def parse_csv_rows(file_bytes: bytes) -> list[dict[str, Any]]:
     text = file_bytes.decode("utf-8-sig")
     reader = csv.DictReader(io.StringIO(text))
@@ -372,13 +396,18 @@ def upsert_loan_applications(
     db,
     rows: list[dict[str, Any]],
 ) -> dict[str, int]:
+    payloads = [row_to_application_payload(raw_row) for raw_row in rows]
+
     inserted = 0
     updated = 0
     skipped = 0
     reserved_numbers: set[str] = set()
+    existing_records = load_existing_loan_applications(
+        db,
+        [payload["application_no"] for payload in payloads if payload.get("application_no")],
+    )
 
-    for raw_row in rows:
-        payload = row_to_application_payload(raw_row)
+    for payload in payloads:
         application_no = payload["application_no"] or generate_application_no(
             db,
             reserved_numbers,
@@ -386,16 +415,12 @@ def upsert_loan_applications(
         payload["application_no"] = application_no
 
         reserved_numbers.add(application_no)
-
-        record = (
-            db.query(LoanApplication)
-            .filter(LoanApplication.application_no == application_no)
-            .first()
-        )
+        record = existing_records.get(application_no)
 
         if record is None:
             record = LoanApplication(application_no=application_no)
             db.add(record)
+            existing_records[application_no] = record
             inserted += 1
         else:
             updated += 1

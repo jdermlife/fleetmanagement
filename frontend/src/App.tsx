@@ -170,7 +170,7 @@ const govMenuItems = menuLinks.filter(
             </h2>
 
             <p className="app-brand-subtitle">
-              Get Ahead
+              No Limits. Only Forward.
             </p>
           </div>
 
