@@ -166,11 +166,11 @@ const govMenuItems = menuLinks.filter(
           {/* BRAND */}
           <div className="app-brand-block">
             <h2 className="app-brand-title">
-              QUANTEDGE
+              CREDITEDGE
             </h2>
 
             <p className="app-brand-subtitle">
-              Be Ahead
+              QuanTech
             </p>
           </div>
 
