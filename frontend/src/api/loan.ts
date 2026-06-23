@@ -432,6 +432,7 @@ export interface LoanApplicationPayload {
 export interface LoanApplicationRecord extends LoanApplicationPayload {
   id?: number
   created_at?: string
+  updated_at?: string
 }
 
 export interface LoanMutationResponse {
@@ -464,9 +465,50 @@ export interface LoanBulkMutationResponse {
 
 const LOAN_APPLICATIONS_PATH = '/api/loan-applications'
 
-export async function fetchLoanApplications(): Promise<LoanApplicationRecord[]> {
-  const response = await api.get<LoanApplicationRecord[]>(LOAN_APPLICATIONS_PATH)
+export interface LoanApplicationQueryParams {
+  dateFrom?: string
+  dateTo?: string
+  limit?: number
+  offset?: number
+  status?: 'All' | WorkflowStatus | string
+}
+
+export async function fetchLoanApplications(
+  params: LoanApplicationQueryParams = {},
+): Promise<LoanApplicationRecord[]> {
+  const response = await api.get<LoanApplicationRecord[]>(LOAN_APPLICATIONS_PATH, {
+    params: {
+      date_from: params.dateFrom || undefined,
+      date_to: params.dateTo || undefined,
+      limit: params.limit,
+      offset: params.offset,
+      status: params.status && params.status !== 'All' ? params.status : undefined,
+    },
+  })
   return response.data
+}
+
+export async function fetchAllLoanApplications(
+  params: Omit<LoanApplicationQueryParams, 'limit' | 'offset'> = {},
+): Promise<LoanApplicationRecord[]> {
+  const allRecords: LoanApplicationRecord[] = []
+  const pageSize = 500
+
+  for (let offset = 0; ; offset += pageSize) {
+    const batch = await fetchLoanApplications({
+      ...params,
+      limit: pageSize,
+      offset,
+    })
+
+    allRecords.push(...batch)
+
+    if (batch.length < pageSize) {
+      break
+    }
+  }
+
+  return allRecords
 }
 
 export async function importLoanApplications(

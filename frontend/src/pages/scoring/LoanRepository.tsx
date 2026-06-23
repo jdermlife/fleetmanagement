@@ -116,6 +116,7 @@ export default function LoanRepository() {
   );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+  const [actionNotice, setActionNotice] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
 
@@ -250,10 +251,12 @@ export default function LoanRepository() {
 
     setIsImporting(true);
     setMessage("");
+    setActionNotice("");
 
     try {
       const result = await importLoanApplications(selectedFile);
       setMessage(result.message);
+      setActionNotice("👍 Upload completed.");
       await loadApplications();
     } catch (error) {
       setMessage(
@@ -262,6 +265,7 @@ export default function LoanRepository() {
           "Failed to import loan applications. Large files may take longer to process.",
         ),
       );
+      setActionNotice("");
     } finally {
       setIsImporting(false);
       event.target.value = "";
@@ -271,6 +275,7 @@ export default function LoanRepository() {
   const triggerExport = async (format: "csv" | "xlsx") => {
     setIsExporting(format);
     setMessage("");
+    setActionNotice("");
 
     try {
       const blob = await exportLoanApplications({
@@ -288,6 +293,7 @@ export default function LoanRepository() {
       link.remove();
       window.URL.revokeObjectURL(downloadUrl);
       setMessage(`Loan repository ${format.toUpperCase()} export generated.`);
+      setActionNotice(`👍 ${format.toUpperCase()} download completed.`);
     } catch (error) {
       setMessage(
         getErrorMessage(
@@ -295,6 +301,7 @@ export default function LoanRepository() {
           `Failed to export ${format.toUpperCase()}. Large exports may take longer to generate.`,
         ),
       );
+      setActionNotice("");
     } finally {
       setIsExporting(null);
     }
@@ -536,6 +543,11 @@ export default function LoanRepository() {
                   </button>
                 </div>
               </div>
+              {actionNotice && (
+                <p className="mt-3 text-xs text-emerald-700 xl:text-right">
+                  {actionNotice}
+                </p>
+              )}
             </div>
           </div>
 
