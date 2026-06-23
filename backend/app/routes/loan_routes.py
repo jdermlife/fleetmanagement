@@ -99,18 +99,7 @@ def latest_record(records: list[Any]) -> Any:
     )
 
 
-def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
-    latest_credit_score = latest_record(record.credit_scores)
-    latest_fraud_score = latest_record(record.fraud_scores)
-    latest_social_score = latest_record(record.social_scores)
-    latest_psychometric_score = latest_record(record.psychometric_scores)
-    latest_credit_bureau_report = latest_record(record.credit_bureau_reports)
-    latest_collateral_score = latest_record(record.collateral_scores)
-    latest_profitability_score = latest_record(record.profitability_scores)
-    latest_relationship_score = latest_record(record.relationship_scores)
-    latest_ai_recommendation = latest_record(record.ai_recommendations)
-    latest_overall_score = latest_record(record.overall_scores)
-
+def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]:
     return {
         "id": record.id,
         "application_no": record.application_no,
@@ -139,6 +128,24 @@ def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
         "ai_probability": record.ai_probability,
         "requirements": record.requirements or {},
         "created_at": record.created_at,
+        "updated_at": record.updated_at,
+    }
+
+
+def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
+    latest_credit_score = latest_record(record.credit_scores)
+    latest_fraud_score = latest_record(record.fraud_scores)
+    latest_social_score = latest_record(record.social_scores)
+    latest_psychometric_score = latest_record(record.psychometric_scores)
+    latest_credit_bureau_report = latest_record(record.credit_bureau_reports)
+    latest_collateral_score = latest_record(record.collateral_scores)
+    latest_profitability_score = latest_record(record.profitability_scores)
+    latest_relationship_score = latest_record(record.relationship_scores)
+    latest_ai_recommendation = latest_record(record.ai_recommendations)
+    latest_overall_score = latest_record(record.overall_scores)
+
+    return {
+        **serialize_loan_application_fields(record),
         "credit_scores": serialize_related_record(
             latest_credit_score,
             [
@@ -281,22 +288,7 @@ def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
 
 
 def serialize_loan_application_list_item(record: LoanApplication) -> dict[str, Any]:
-    return {
-        "id": record.id,
-        "application_no": record.application_no,
-        "status": record.status,
-        "product_type": record.product_type,
-        "borrower_name": record.borrower_name,
-        "email": record.email,
-        "phone": record.phone,
-        "monthly_income": record.monthly_income,
-        "loan_amount": record.loan_amount,
-        "term_months": record.term_months,
-        "interest_rate": record.interest_rate,
-        "scorecard_total": record.scorecard_total,
-        "ai_probability": record.ai_probability,
-        "created_at": record.created_at,
-    }
+    return serialize_loan_application_fields(record)
 
 
 def upsert_related_record(

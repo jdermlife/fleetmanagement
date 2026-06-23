@@ -14,7 +14,7 @@ from xml.sax.saxutils import escape
 from app.models.loan_application import LoanApplication
 
 
-EXPORT_FIELDS: list[str] = [
+UPSERT_FIELDS: list[str] = [
     "application_no",
     "status",
     "product_type",
@@ -42,6 +42,8 @@ EXPORT_FIELDS: list[str] = [
     "created_at",
     "requirements",
 ]
+
+EXPORT_FIELDS: list[str] = [column.name for column in LoanApplication.__table__.columns]
 
 HEADER_ALIASES: dict[str, str] = {
     "application no": "application_no",
@@ -398,15 +400,15 @@ def upsert_loan_applications(
         else:
             updated += 1
 
-        for field in EXPORT_FIELDS:
-          if field == "created_at":
-              if payload.get("created_at") is not None:
-                  record.created_at = payload["created_at"]
-              continue
-          if field == "requirements":
-              record.requirements = payload.get("requirements", {})
-              continue
-          setattr(record, field, payload.get(field))
+        for field in UPSERT_FIELDS:
+            if field == "created_at":
+                if payload.get("created_at") is not None:
+                    record.created_at = payload["created_at"]
+                continue
+            if field == "requirements":
+                record.requirements = payload.get("requirements", {})
+                continue
+            setattr(record, field, payload.get(field))
 
     db.commit()
 
