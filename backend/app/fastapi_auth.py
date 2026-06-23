@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from security.auth import TokenError, decode_token
 
 
-AUTH_REQUIRED = os.getenv("ENFORCE_AUTH", "false").lower() == "true"
+AUTH_REQUIRED = os.getenv("ENFORCE_AUTH", "true").lower() == "true"
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -53,9 +53,6 @@ def get_current_user(
 def require_authenticated_user(
     user: CurrentUser | None = Depends(get_current_user),
 ) -> CurrentUser:
-    if user is None and not AUTH_REQUIRED:
-        return CurrentUser(id=0, username="anonymous", role="Admin")
-
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -69,9 +66,6 @@ def require_roles(*allowed_roles: str):
     allowed = {role.strip().lower() for role in allowed_roles if role.strip()}
 
     def dependency(user: CurrentUser = Depends(require_authenticated_user)) -> CurrentUser:
-        if not AUTH_REQUIRED:
-            return user
-
         if allowed and user.role.lower() not in allowed:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

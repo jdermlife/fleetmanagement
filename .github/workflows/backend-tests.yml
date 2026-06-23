@@ -60,5 +60,5 @@ jobs:
       - name: Run existing backend tests
         working-directory: ./backend
         run: |
-          python -m unittest discover -s tests -p test_app.py -v 2>&1 | head -50
-        continue-on-error: true
+          python -m unittest discover -s tests -p test_app.py -v
+

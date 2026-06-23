@@ -24,7 +24,7 @@ from app.services.mfa_service import (
     verify_totp,
 )
 from app.services.security_bootstrap import seed_roles_and_permissions
-from security.auth import TokenError, create_token, decode_token, hash_password, verify_password
+from security.auth import SECRET_KEY, TokenError, create_token, decode_token, hash_password, verify_password
 
 try:
     import jwt
@@ -99,7 +99,6 @@ class AssignPermissionsRequest(BaseModel):
     permissions: list[str]
 
 
-SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET") or os.urandom(32).hex()
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
 

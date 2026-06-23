@@ -172,15 +172,17 @@ docker compose -f docker-compose.yml.txt up -d backend prometheus grafana
 | Variable | Description | Default |
 |----------|-------------|---------|
 | DATABASE_URL | PostgreSQL connection string | Required |
-| SECRET_KEY | JWT signing key (32+ chars) | Auto-generated |
+| SECRET_KEY | JWT signing key (32+ chars) | Required in production |
 | TOKEN_EXPIRY_HOURS | JWT expiration time | 24 |
 | RATE_LIMIT_REQUESTS | Max requests per window | 100 |
 | RATE_LIMIT_WINDOW | Rate limit window (seconds) | 60 |
-| ENFORCE_AUTH | Require Bearer token on protected API routes | false |
+| ENFORCE_AUTH | Require Bearer token on protected API routes | true |
 | AUTO_RUN_SCHEMA_MIGRATIONS | Run schema creation/migration on startup | false |
 | ENABLE_RATE_LIMIT | Enable API rate-limit middleware | true |
 | RATE_LIMIT_BACKEND | Rate-limit backend (`memory` or `redis`) | memory |
 | REDIS_URL | Redis connection string for distributed limits | empty |
+| FRONTEND_ORIGIN_REGEX | Optional strict CORS regex override | empty |
+| ENABLE_API_DOCS | Expose Swagger/ReDoc/OpenAPI endpoints | true in development, false in production |
 | SENTRY_DSN | Sentry DSN for error monitoring | empty (disabled) |
 | SENTRY_ENVIRONMENT | Sentry environment name | development |
 | SENTRY_RELEASE | Sentry release identifier | empty |

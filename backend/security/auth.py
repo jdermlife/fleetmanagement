@@ -15,7 +15,19 @@ except ImportError:
     jwt = None
 
 
-SECRET_KEY = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET") or os.urandom(32).hex()
+def _resolve_secret_key() -> str:
+    key = os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET")
+    if key:
+        return key
+
+    environment = os.getenv("ENVIRONMENT", "development").lower()
+    if environment in {"development", "dev", "test", "testing"}:
+        return "dev-insecure-secret-change-me"
+
+    raise RuntimeError("SECRET_KEY or JWT_SECRET must be configured")
+
+
+SECRET_KEY = _resolve_secret_key()
 TOKEN_EXPIRY_HOURS = int(os.getenv("TOKEN_EXPIRY_HOURS", "24"))
 
 

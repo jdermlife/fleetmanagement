@@ -39,10 +39,15 @@ from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
 from app.routes.loan_routes import router as loan_router
 
+environment = os.getenv("ENVIRONMENT", "development").lower()
+is_production = environment == "production"
+api_docs_enabled = os.getenv("ENABLE_API_DOCS", "false" if is_production else "true").lower() == "true"
 
-
-
-app = FastAPI()
+app = FastAPI(
+    docs_url="/docs" if api_docs_enabled else None,
+    redoc_url="/redoc" if api_docs_enabled else None,
+    openapi_url="/openapi.json" if api_docs_enabled else None,
+)
 setup_observability(app)
 
 auto_run_schema_migrations = os.getenv("AUTO_RUN_SCHEMA_MIGRATIONS", "false").lower() == "true"
@@ -64,19 +69,49 @@ configured_origins = [
     if origin.strip()
 ]
 
+origin_regex = os.getenv("FRONTEND_ORIGIN_REGEX", "").strip()
+
+if is_production:
+    if os.getenv("ENFORCE_AUTH", "true").lower() != "true":
+        raise RuntimeError("ENFORCE_AUTH must be true in production")
+    if not (os.getenv("SECRET_KEY") or os.getenv("JWT_SECRET")):
+        raise RuntimeError("SECRET_KEY or JWT_SECRET must be configured in production")
+    if not configured_origins:
+        raise RuntimeError("FRONTEND_ORIGINS must be configured in production")
+    if os.getenv("RATE_LIMIT_BACKEND", "memory").lower() != "redis":
+        raise RuntimeError("RATE_LIMIT_BACKEND must be redis in production")
+
 origins = list(dict.fromkeys([*default_origins, *configured_origins]))
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=origins,
-    allow_origin_regex=r"https://.*\.vercel\.app",
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
+cors_kwargs = {
+    "allow_origins": origins,
+    "allow_credentials": True,
+    "allow_methods": ["*"],
+    "allow_headers": ["*"],
+}
+if origin_regex:
+    cors_kwargs["allow_origin_regex"] = origin_regex
+
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 if RATE_LIMIT_ENABLED:
     app.add_middleware(RateLimitMiddleware)
+
+
+@app.middleware("http")
+async def add_security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers.setdefault("X-Content-Type-Options", "nosniff")
+    response.headers.setdefault("X-Frame-Options", "DENY")
+    response.headers.setdefault("Referrer-Policy", "strict-origin-when-cross-origin")
+    response.headers.setdefault("Content-Security-Policy", "default-src 'self'")
+    response.headers.setdefault("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+
+    forwarded_proto = request.headers.get("X-Forwarded-Proto", "")
+    if request.url.scheme == "https" or forwarded_proto.lower() == "https":
+        response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
+
+    return response
 
 
 def _infer_table_and_record(path: str) -> tuple[str, str | None]:

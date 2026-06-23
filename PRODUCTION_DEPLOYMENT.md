@@ -184,6 +184,40 @@ If critical issues occur in production:
 - [ ] Security headers set (HSTS, CSP, X-Frame-Options)
 - [ ] Sensitive logs redacted (no token or password content)
 
+## CI Security Gate (Blocking)
+
+- [ ] `backend-security-scan` passes (pip-audit + bandit)
+- [ ] `frontend-security-scan` passes (`npm audit --omit=dev --audit-level=high`)
+- [ ] `secret-scan` passes (Gitleaks)
+- [ ] Build/test jobs pass for backend and frontend
+- [ ] Deploy job remains blocked unless all required jobs are green
+
+## Global Launch Go/No-Go Gate
+
+All sections below must be complete for GO. Any unchecked item is NO-GO.
+
+### Technical Gate
+- [ ] Production environment variables configured and validated
+- [ ] Database migrations applied with rollback tested
+- [ ] Distributed rate limiting verified with Redis in multi-instance mode
+- [ ] Performance baseline validated against SLOs (p95 and error-rate)
+
+### Security Gate
+- [ ] Security checklist complete
+- [ ] CI security gate complete
+- [ ] Latest dependency scans reviewed and no unresolved high/critical findings
+
+### Operational Gate
+- [ ] Alerts configured and tested (latency, errors, DB, Redis)
+- [ ] Backup restore drill executed successfully
+- [ ] Rollback playbook tested in staging
+- [ ] On-call ownership and escalation contacts confirmed
+
+### Compliance Gate
+- [ ] Audit logging verified for critical workflows
+- [ ] Data retention and access controls documented
+- [ ] Incident response runbook linked in operations docs
+
 ## Post-Go-Live
 
 1. Monitor error rates, latency, and resource utilization for first 24 hours
