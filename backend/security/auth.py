@@ -74,7 +74,7 @@ def create_token(user_id: int, username: str, role: str, expires_in_hours: int =
     
     now = datetime.now(timezone.utc)
     payload = {
-        "sub": user_id,
+        "sub": str(user_id),
         "username": username,
         "role": role,
         "iat": now,
@@ -91,7 +91,7 @@ def decode_token(token: str) -> TokenPayload:
     try:
         data = jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
         return TokenPayload(
-            sub=data["sub"],
+            sub=int(data["sub"]),
             username=data["username"],
             role=data["role"],
             exp=data["exp"],
