@@ -229,7 +229,7 @@ export interface RegisterRequest {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post('api/auth/login', credentials)
+  const response = await api.post('/api/auth/login', credentials)
   const responseData = response.data as Record<string, unknown>
   const token =
     (typeof responseData.token === 'string' ? responseData.token : null) ??
@@ -250,7 +250,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
-  const response = await api.post('api/auth/register', data)
+  const response = await api.post('/api/auth/register', data)
   const responseData = response.data as Record<string, unknown>
   return (responseData.user as LoginResponse['user'] | undefined) ??
     (response.data as LoginResponse['user'])
@@ -308,7 +308,7 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<{ message: string }> {
-  const response = await api.post<{ message: string }>('/auth/password-change', {
+  const response = await api.post<{ message: string }>('api/auth/password-change', {
     current_password: currentPassword,
     new_password: newPassword,
   })
@@ -318,7 +318,7 @@ export async function changePassword(
 export async function deleteAccount(
   currentPassword: string,
 ): Promise<{ message: string }> {
-  const response = await api.post<{ message: string }>('/auth/delete-account', {
+  const response = await api.post<{ message: string }>('/api/auth/delete-account', {
     current_password: currentPassword,
   })
   return response.data
