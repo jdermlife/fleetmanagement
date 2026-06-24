@@ -170,7 +170,7 @@ const govMenuItems = menuLinks.filter(
             </h2>
 
             <p className="app-brand-subtitle">
-             Quantech
+             Everyone's Lending Tool
             </p>
           </div>
 
