@@ -170,7 +170,7 @@ const govMenuItems = menuLinks.filter(
             </h2>
 
             <p className="app-brand-subtitle">
-             by Quantech Solutions
+             Quantech
             </p>
           </div>
 
