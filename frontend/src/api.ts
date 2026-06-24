@@ -261,7 +261,7 @@ export async function logout(): Promise<void> {
 }
 
 export async function refreshAuthToken(): Promise<string> {
-  const response = await api.post<{ token: string }>('/auth/refresh')
+  const response = await api.post<{ token: string }>('/api/auth/refresh')
   setAuthToken(response.data.token)
   return response.data.token
 }
