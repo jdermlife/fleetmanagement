@@ -269,7 +269,7 @@ export async function refreshAuthToken(): Promise<string> {
 export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
   const response = await api.get<{
     user: LoginResponse['user']
-  }>('/auth/me')
+  }>('/api/auth/me')
   return response.data.user
 }
 
