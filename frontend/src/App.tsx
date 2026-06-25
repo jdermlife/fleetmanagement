@@ -41,6 +41,7 @@ const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
+const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 
 const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
 const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
@@ -63,6 +64,7 @@ const menuLinks: MenuLink[] = [
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'credit-scoring', label: 'Collateral Management' },
+  { id: 'subscriptions', label: 'Subscription Billing' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
@@ -711,6 +713,15 @@ const adminMenuItems = menuLinks.filter(
               element={
                 <ProtectedRoute permissions={['read:scorecards', 'read:analytics']}>
                   <CreditScoring />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/subscriptions"
+              element={
+                <ProtectedRoute roles={['admin', 'subscriber']}>
+                  <SubscriptionManagementPage />
                 </ProtectedRoute>
               }
             />

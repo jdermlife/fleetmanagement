@@ -1,0 +1,206 @@
+from __future__ import annotations
+
+from datetime import date
+
+import pytest
+from fastapi import FastAPI
+from fastapi.testclient import TestClient
+
+from app.models.subscription import Feature, Subscription, SubscriptionPlan
+from app.routes import subscriptions as subscription_routes
+from app.routes.subscriptions import router as subscriptions_router
+from security.auth import create_token
+
+
+class FakeQuery:
+    def __init__(self, rows: list[object]):
+        self._rows = rows
+
+    def _extract(self, criterion) -> tuple[str | None, object | None]:
+        left = getattr(criterion, "left", None)
+        right = getattr(criterion, "right", None)
+        key = getattr(left, "key", None)
+        value = getattr(right, "value", None)
+        if value is None and right is not None:
+            value = getattr(right, "effective_value", None)
+        return key, value
+
+    def filter(self, *criteria):
+        for criterion in criteria:
+            key, value = self._extract(criterion)
+            if key is None:
+                continue
+            self._rows = [row for row in self._rows if getattr(row, key, None) == value]
+        return self
+
+    def join(self, *_args, **_kwargs):
+        return self
+
+    def order_by(self, *_args, **_kwargs):
+        return self
+
+    def all(self):
+        return list(self._rows)
+
+    def first(self):
+        return self._rows[0] if self._rows else None
+
+    def delete(self):
+        deleted = len(self._rows)
+        self._rows = []
+        return deleted
+
+
+class FakeSession:
+    def __init__(self):
+        self.rows_by_model: dict[type, list[object]] = {}
+
+    def query(self, model):
+        return FakeQuery(list(self.rows_by_model.get(model, [])))
+
+    def add(self, row):
+        model = type(row)
+        bucket = self.rows_by_model.setdefault(model, [])
+        if getattr(row, "id", None) is None:
+            setattr(row, "id", len(bucket) + 1)
+        bucket.append(row)
+
+    def commit(self):
+        return None
+
+    def refresh(self, _row):
+        return None
+
+    def close(self):
+        return None
+
+
+@pytest.fixture
+def fake_db(monkeypatch):
+    session = FakeSession()
+    monkeypatch.setattr(subscription_routes, "SessionLocal", lambda: session)
+    return session
+
+
+@pytest.fixture
+def client(fake_db):
+    app = FastAPI()
+    app.include_router(subscriptions_router, prefix="/api")
+    return TestClient(app)
+
+
+@pytest.fixture
+def admin_headers():
+    token = create_token(user_id=1, username="admin", role="ADMIN")
+    return {"Authorization": f"Bearer {token}"}
+
+
+@pytest.fixture
+def subscriber_headers():
+    token = create_token(user_id=42, username="subscriber", role="SUBSCRIBER")
+    return {"Authorization": f"Bearer {token}"}
+
+
+def test_plans_create_and_list_smoke(client: TestClient, admin_headers):
+    create_response = client.post(
+        "/api/subscriptions/plans",
+        headers=admin_headers,
+        json={
+            "plan_code": "BASIC",
+            "plan_name": "Basic",
+            "billing_cycle": "MONTHLY",
+            "monthly_price": 999.0,
+        },
+    )
+    assert create_response.status_code == 200
+
+    list_response = client.get("/api/subscriptions/plans", headers=admin_headers)
+    assert list_response.status_code == 200
+    rows = list_response.json()
+    assert len(rows) == 1
+    assert rows[0]["plan_code"] == "BASIC"
+
+
+def test_subscriber_subscription_owner_scope_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    own_subscription = Subscription(
+        id=1,
+        subscription_no="SUB-OWN-001",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    foreign_subscription = Subscription(
+        id=2,
+        subscription_no="SUB-OTHER-001",
+        user_id=99,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [own_subscription, foreign_subscription]
+
+    list_response = client.get("/api/subscriptions", headers=subscriber_headers)
+    assert list_response.status_code == 200
+    rows = list_response.json()
+    assert len(rows) == 1
+    assert rows[0]["subscription_no"] == "SUB-OWN-001"
+
+
+def test_subscriber_cannot_pay_foreign_subscription_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    foreign_subscription = Subscription(
+        id=50,
+        subscription_no="SUB-FOREIGN",
+        user_id=999,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [foreign_subscription]
+
+    response = client.post(
+        "/api/subscriptions/payments",
+        headers=subscriber_headers,
+        json={
+            "payment_reference": "PAY-001",
+            "subscription_id": 50,
+            "payment_status": "PENDING",
+        },
+    )
+
+    assert response.status_code == 403
+
+
+def test_feature_assign_and_list_smoke(client: TestClient, fake_db: FakeSession, admin_headers):
+    plan = SubscriptionPlan(
+        id=7,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+    )
+    feature = Feature(
+        id=8,
+        feature_code="AI_REPORTS",
+        feature_name="AI Reports",
+    )
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[Feature] = [feature]
+
+    assign_response = client.put(
+        "/api/subscriptions/plans/7/features",
+        headers=admin_headers,
+        json={"feature_ids": [8]},
+    )
+    assert assign_response.status_code == 200
+
+    list_response = client.get("/api/subscriptions/plans/7/features", headers=admin_headers)
+    assert list_response.status_code == 200
+    assert isinstance(list_response.json(), list)

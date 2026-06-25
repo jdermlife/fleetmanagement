@@ -449,3 +449,313 @@ export async function deleteAccount(
   })
   return response.data
 }
+
+export interface SubscriptionPlan {
+  id: number
+  plan_code: string
+  plan_name: string
+  description: string | null
+  billing_cycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+  monthly_price: number | null
+  yearly_price: number | null
+  currency: string
+  max_users: number | null
+  max_vehicles: number | null
+  max_drivers: number | null
+  max_storage_gb: number | null
+  ai_enabled: boolean
+  api_enabled: boolean
+  reporting_enabled: boolean
+  is_active: boolean
+  created_at: string
+  updated_at: string
+}
+
+export interface SubscriptionRecord {
+  id: number
+  subscription_no: string
+  user_id: number
+  plan_id: number
+  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  trial_start: string | null
+  trial_end: string | null
+  subscription_start: string
+  subscription_end: string | null
+  auto_renew: boolean
+  payment_provider_id: number | null
+  next_billing_date: string | null
+  remarks: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface PaymentProvider {
+  id: number
+  provider_code: string
+  provider_name: string
+  api_endpoint: string | null
+  webhook_url: string | null
+  is_active: boolean
+  created_at: string
+}
+
+export interface SubscriptionPayment {
+  id: number
+  payment_reference: string
+  subscription_id: number
+  provider_id: number | null
+  invoice_no: string | null
+  amount: number | null
+  currency: string | null
+  payment_method: string | null
+  payment_status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED'
+  provider_transaction_id: string | null
+  paid_at: string | null
+  created_at: string
+}
+
+export interface SubscriptionInvoice {
+  id: number
+  invoice_no: string
+  subscription_id: number
+  invoice_date: string | null
+  due_date: string | null
+  subtotal: number | null
+  tax: number | null
+  total: number | null
+  status: string | null
+  pdf_url: string | null
+  created_at: string
+}
+
+export interface SubscriptionUsage {
+  id: number
+  subscription_id: number
+  usage_date: string | null
+  users_used: number | null
+  vehicles_used: number | null
+  drivers_used: number | null
+  storage_used_gb: number | null
+  api_calls: number | null
+  ai_requests: number | null
+  created_at: string
+}
+
+export interface SubscriptionEvent {
+  id: number
+  subscription_id: number
+  event_type: string
+  event_details: Record<string, unknown>
+  created_by: number
+  created_at: string
+}
+
+export interface PaymentWebhook {
+  id: number
+  provider_id: number
+  event_type: string
+  payload: Record<string, unknown>
+  processed: boolean
+  processed_at: string | null
+  created_at: string
+}
+
+export interface Feature {
+  id: number
+  feature_code: string
+  feature_name: string
+  description: string | null
+}
+
+export async function listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const response = await api.get<SubscriptionPlan[]>('/api/subscriptions/plans')
+  return response.data
+}
+
+export async function createSubscriptionPlan(payload: {
+  plan_code: string
+  plan_name: string
+  description?: string
+  billing_cycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+  monthly_price?: number
+  yearly_price?: number
+  currency?: string
+  max_users?: number
+  max_vehicles?: number
+  max_drivers?: number
+  max_storage_gb?: number
+  ai_enabled?: boolean
+  api_enabled?: boolean
+  reporting_enabled?: boolean
+  is_active?: boolean
+}): Promise<SubscriptionPlan> {
+  const response = await api.post<SubscriptionPlan>('/api/subscriptions/plans', payload)
+  return response.data
+}
+
+export async function listSubscriptions(status?: string): Promise<SubscriptionRecord[]> {
+  const response = await api.get<SubscriptionRecord[]>('/api/subscriptions', {
+    params: status ? { status } : undefined,
+  })
+  return response.data
+}
+
+export async function createSubscription(payload: {
+  subscription_no: string
+  user_id?: number
+  plan_id: number
+  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  trial_start?: string
+  trial_end?: string
+  subscription_start: string
+  subscription_end?: string
+  auto_renew?: boolean
+  payment_provider_id?: number
+  next_billing_date?: string
+  remarks?: string
+}): Promise<SubscriptionRecord> {
+  const response = await api.post<SubscriptionRecord>('/api/subscriptions', payload)
+  return response.data
+}
+
+export async function updateSubscriptionStatus(
+  subscriptionId: number,
+  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED',
+): Promise<SubscriptionRecord> {
+  const response = await api.patch<SubscriptionRecord>(`/api/subscriptions/${subscriptionId}/status`, null, {
+    params: { status },
+  })
+  return response.data
+}
+
+export async function listPaymentProviders(): Promise<PaymentProvider[]> {
+  const response = await api.get<PaymentProvider[]>('/api/subscriptions/providers')
+  return response.data
+}
+
+export async function createPaymentProvider(payload: {
+  provider_code: string
+  provider_name: string
+  api_endpoint?: string
+  webhook_url?: string
+  is_active?: boolean
+}): Promise<PaymentProvider> {
+  const response = await api.post<PaymentProvider>('/api/subscriptions/providers', payload)
+  return response.data
+}
+
+export async function listSubscriptionPayments(): Promise<SubscriptionPayment[]> {
+  const response = await api.get<SubscriptionPayment[]>('/api/subscriptions/payments')
+  return response.data
+}
+
+export async function createSubscriptionPayment(payload: {
+  payment_reference: string
+  subscription_id: number
+  provider_id?: number
+  invoice_no?: string
+  amount?: number
+  currency?: string
+  payment_method?: string
+  payment_status: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED'
+  provider_transaction_id?: string
+  paid_at?: string
+}): Promise<SubscriptionPayment> {
+  const response = await api.post<SubscriptionPayment>('/api/subscriptions/payments', payload)
+  return response.data
+}
+
+export async function listSubscriptionInvoices(): Promise<SubscriptionInvoice[]> {
+  const response = await api.get<SubscriptionInvoice[]>('/api/subscriptions/invoices')
+  return response.data
+}
+
+export async function createSubscriptionInvoice(payload: {
+  invoice_no: string
+  subscription_id: number
+  invoice_date?: string
+  due_date?: string
+  subtotal?: number
+  tax?: number
+  total?: number
+  status?: string
+  pdf_url?: string
+}): Promise<SubscriptionInvoice> {
+  const response = await api.post<SubscriptionInvoice>('/api/subscriptions/invoices', payload)
+  return response.data
+}
+
+export async function listSubscriptionUsage(): Promise<SubscriptionUsage[]> {
+  const response = await api.get<SubscriptionUsage[]>('/api/subscriptions/usage')
+  return response.data
+}
+
+export async function createSubscriptionUsage(payload: {
+  subscription_id: number
+  usage_date?: string
+  users_used?: number
+  vehicles_used?: number
+  drivers_used?: number
+  storage_used_gb?: number
+  api_calls?: number
+  ai_requests?: number
+}): Promise<SubscriptionUsage> {
+  const response = await api.post<SubscriptionUsage>('/api/subscriptions/usage', payload)
+  return response.data
+}
+
+export async function listSubscriptionEvents(): Promise<SubscriptionEvent[]> {
+  const response = await api.get<SubscriptionEvent[]>('/api/subscriptions/events')
+  return response.data
+}
+
+export async function createSubscriptionEvent(payload: {
+  subscription_id: number
+  event_type: string
+  event_details?: Record<string, unknown>
+}): Promise<SubscriptionEvent> {
+  const response = await api.post<SubscriptionEvent>('/api/subscriptions/events', payload)
+  return response.data
+}
+
+export async function listPaymentWebhooks(): Promise<PaymentWebhook[]> {
+  const response = await api.get<PaymentWebhook[]>('/api/subscriptions/webhooks')
+  return response.data
+}
+
+export async function createPaymentWebhook(payload: {
+  provider_id: number
+  event_type: string
+  payload?: Record<string, unknown>
+  processed?: boolean
+  processed_at?: string
+}): Promise<PaymentWebhook> {
+  const response = await api.post<PaymentWebhook>('/api/subscriptions/webhooks', payload)
+  return response.data
+}
+
+export async function listFeatures(): Promise<Feature[]> {
+  const response = await api.get<Feature[]>('/api/subscriptions/features')
+  return response.data
+}
+
+export async function createFeature(payload: {
+  feature_code: string
+  feature_name: string
+  description?: string
+}): Promise<Feature> {
+  const response = await api.post<Feature>('/api/subscriptions/features', payload)
+  return response.data
+}
+
+export async function listPlanFeatures(planId: number): Promise<Feature[]> {
+  const response = await api.get<Feature[]>(`/api/subscriptions/plans/${planId}/features`)
+  return response.data
+}
+
+export async function assignPlanFeatures(planId: number, feature_ids: number[]): Promise<{ message: string }> {
+  const response = await api.put<{ message: string }>(`/api/subscriptions/plans/${planId}/features`, {
+    feature_ids,
+  })
+  return response.data
+}

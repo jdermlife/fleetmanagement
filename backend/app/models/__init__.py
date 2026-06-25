@@ -31,3 +31,15 @@ from app.models.notification import (  # noqa: F401
 
 from app.models.users import User, AuthSession, MfaBackupCode  # noqa: F401
 from app.models.roles import Role, Permission  # noqa: F401
+from app.models.subscription import (  # noqa: F401
+    Feature,
+    PaymentProvider,
+    PaymentWebhook,
+    PlanFeature,
+    Subscription,
+    SubscriptionEvent,
+    SubscriptionInvoice,
+    SubscriptionPayment,
+    SubscriptionPlan,
+    SubscriptionUsage,
+)

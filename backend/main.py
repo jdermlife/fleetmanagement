@@ -22,6 +22,18 @@ from app.models.notification import (
 )  # noqa: F401
 from app.models.users import User, AuthSession, MfaBackupCode  # noqa: F401
 from app.models.roles import Role, Permission  # noqa: F401
+from app.models.subscription import (  # noqa: F401
+    Feature,
+    PaymentProvider,
+    PaymentWebhook,
+    PlanFeature,
+    Subscription,
+    SubscriptionEvent,
+    SubscriptionInvoice,
+    SubscriptionPayment,
+    SubscriptionPlan,
+    SubscriptionUsage,
+)
 from app.routes.drivers import router as driver_router
 from app.routes.ai import router as ai_router
 from app.routes.workflow import router as workflow_router
@@ -38,6 +50,7 @@ from security.auth import TokenError, decode_token
 from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
 from app.routes.loan_routes import router as loan_router
+from app.routes.subscriptions import router as subscriptions_router
 
 environment = os.getenv("ENVIRONMENT", "development").lower()
 is_production = environment == "production"
@@ -232,6 +245,10 @@ app.include_router(
     loan_router,
     prefix="/api",
     tags=["Loan Origination"],
+)
+app.include_router(
+    subscriptions_router,
+    prefix="/api",
 )
 
 
