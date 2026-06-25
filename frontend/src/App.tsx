@@ -147,10 +147,19 @@ const subscriberHiddenMenus = [
   'admin-permissions',
 ]
 
+const subscriberAlwaysVisibleMenus = [
+  'lending-scorecard',
+  'lease-scorecard',
+]
+
 const isSubscriber = currentUser?.role?.toLowerCase() === 'subscriber'
 
 const visibleMenuLinks = isSubscriber
-  ? menuLinks.filter((item) => !subscriberHiddenMenus.includes(item.id))
+  ? menuLinks.filter(
+      (item) =>
+        subscriberAlwaysVisibleMenus.includes(item.id) ||
+        !subscriberHiddenMenus.includes(item.id),
+    )
   : menuLinks
 
 const fleetMenus = visibleMenuLinks.filter(
@@ -588,7 +597,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/lending-scorecard"
               element={
-                <ProtectedRoute permissions={['read:loans', 'create:loans', 'edit:loans']}>
+                <ProtectedRoute roles={['admin', 'subscriber']}>
                   <LendingScorecard />
                 </ProtectedRoute>
               }
@@ -674,7 +683,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/lease-scorecard"
               element={
-                <ProtectedRoute permissions={['read:scorecards', 'write:scorecards']}>
+                <ProtectedRoute roles={['admin', 'subscriber']}>
                   <LeaseScorecardPage />
                 </ProtectedRoute>
               }
