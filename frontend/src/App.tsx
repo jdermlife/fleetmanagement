@@ -130,63 +130,11 @@ const adminMenus = [
   'admin-permissions',
 ]
 
-const currentRoles = [
-  ...(currentUser?.roles ?? []),
-  ...(currentUser?.role ? [currentUser.role] : []),
-].map((role) => role.toLowerCase())
-const currentPermissions = (currentUser?.permissions ?? []).map((permission) =>
-  permission.toLowerCase(),
-)
-
-const hasRoleLocal = (role: string): boolean => currentRoles.includes(role.toLowerCase())
-const hasPermissionLocal = (permission: string): boolean =>
-  currentPermissions.includes(permission.toLowerCase())
-
-const canAccessMenuItem = (menuId: string): boolean => {
-  if (hasRoleLocal('admin')) {
-    return true
-  }
-
-  switch (menuId) {
-    case 'dashboard':
-      return hasPermissionLocal('read:analytics')
-    case 'lending-scorecard':
-      return (
-        hasPermissionLocal('read:loans') ||
-        hasPermissionLocal('create:loans') ||
-        hasPermissionLocal('edit:loans')
-      )
-    case 'lease-scorecard':
-      return hasPermissionLocal('read:scorecards')
-    case 'insurance-management':
-    case 'maintenance-management':
-    case 'credit-scoring':
-      return hasPermissionLocal('read:vehicles')
-    case 'audit-trail':
-    case 'risk-management':
-    case 'compliance':
-      return hasPermissionLocal('read:audit_logs')
-    case 'admin-users':
-      return hasPermissionLocal('admin:users') || hasPermissionLocal('manage:system')
-    case 'admin-roles':
-    case 'admin-permissions':
-      return hasPermissionLocal('manage:system')
-    default:
-      return true
-  }
-}
-
-const canAccessAdmin =
-  hasRoleLocal('admin') ||
-  hasPermissionLocal('admin:users') ||
-  hasPermissionLocal('manage:system')
-
 const fleetMenus = menuLinks.filter(
   (item) =>
     !aiMenus.includes(item.id) &&
     !governanceMenus.includes(item.id) &&
-    !adminMenus.includes(item.id) &&
-    canAccessMenuItem(item.id)
+    !adminMenus.includes(item.id)
 )
 
 const aiMenuItems = menuLinks.filter(
@@ -194,11 +142,11 @@ const aiMenuItems = menuLinks.filter(
 )
 
 const govMenuItems = menuLinks.filter(
-  (item) => governanceMenus.includes(item.id) && canAccessMenuItem(item.id)
+  (item) => governanceMenus.includes(item.id)
 )
 
 const adminMenuItems = menuLinks.filter(
-  (item) => adminMenus.includes(item.id) && canAccessMenuItem(item.id),
+  (item) => adminMenus.includes(item.id),
 )
 
   useEffect(() => {
@@ -386,41 +334,39 @@ const adminMenuItems = menuLinks.filter(
         </Link>
       ))}
 
-    {canAccessAdmin && (
-      <>
-        <div
-          className="app-menu-group app-menu-group-account"
+    <>
+      <div
+        className="app-menu-group app-menu-group-account"
+        style={{
+          background: '#3f1d5c',
+          color: '#f5e8ff',
+          padding: '12px',
+          borderRadius: '8px',
+          fontWeight: 'bold',
+          marginTop: '10px',
+        }}
+      >
+        ADMINISTRATION
+      </div>
+      {adminMenuItems.map((page) => (
+        <Link
+          key={page.id}
+          to={`/${page.id}`}
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
           style={{
-            background: '#3f1d5c',
-            color: '#f5e8ff',
+            display: 'block',
+            color: '#fff',
+            textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            fontWeight: 'bold',
-            marginTop: '10px',
+            background: 'rgba(120, 76, 153, 0.35)',
           }}
         >
-          ADMINISTRATION
-        </div>
-        {adminMenuItems.map((page) => (
-          <Link
-            key={page.id}
-            to={`/${page.id}`}
-            onClick={closeMenu}
-            className="app-menu-link app-menu-link-account"
-            style={{
-              display: 'block',
-              color: '#fff',
-              textDecoration: 'none',
-              padding: '12px',
-              borderRadius: '8px',
-              background: 'rgba(120, 76, 153, 0.35)',
-            }}
-          >
-            {page.label}
-          </Link>
-        ))}
-      </>
-    )}
+          {page.label}
+        </Link>
+      ))}
+    </>
 
     {/* GOVERNANCE */}
 
