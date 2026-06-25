@@ -26,6 +26,8 @@ from app.schemas.subscription_schema import (
     SubscriptionInvoiceCreate,
     SubscriptionPaymentCreate,
     SubscriptionPlanCreate,
+    SubscriptionPlanUpdate,
+    SubscriptionUpdate,
     SubscriptionUsageCreate,
 )
 
@@ -56,6 +58,21 @@ def _serialize_plan(plan: SubscriptionPlan) -> dict:
         "max_vehicles": plan.max_vehicles,
         "max_drivers": plan.max_drivers,
         "max_storage_gb": plan.max_storage_gb,
+        "trial_days": plan.trial_days,
+        "display_order": plan.display_order,
+        "is_public": plan.is_public,
+        "is_custom_pricing": plan.is_custom_pricing,
+        "max_ai_requests_per_month": plan.max_ai_requests_per_month,
+        "max_api_calls_per_month": plan.max_api_calls_per_month,
+        "max_documents": plan.max_documents,
+        "max_reports": plan.max_reports,
+        "max_meetings": plan.max_meetings,
+        "max_storage_files": plan.max_storage_files,
+        "storage_unit": plan.storage_unit,
+        "support_level": plan.support_level,
+        "sla_hours": plan.sla_hours,
+        "color_code": plan.color_code,
+        "icon_name": plan.icon_name,
         "ai_enabled": plan.ai_enabled,
         "api_enabled": plan.api_enabled,
         "reporting_enabled": plan.reporting_enabled,
@@ -72,6 +89,7 @@ def _serialize_subscription(subscription: Subscription) -> dict:
         "user_id": subscription.user_id,
         "plan_id": subscription.plan_id,
         "status": subscription.status,
+        "subscription_type": subscription.subscription_type,
         "trial_start": subscription.trial_start,
         "trial_end": subscription.trial_end,
         "subscription_start": subscription.subscription_start,
@@ -79,6 +97,25 @@ def _serialize_subscription(subscription: Subscription) -> dict:
         "auto_renew": subscription.auto_renew,
         "payment_provider_id": subscription.payment_provider_id,
         "next_billing_date": subscription.next_billing_date,
+        "cancellation_reason": subscription.cancellation_reason,
+        "cancelled_at": subscription.cancelled_at,
+        "cancelled_by": subscription.cancelled_by,
+        "grace_period_end": subscription.grace_period_end,
+        "renewal_count": subscription.renewal_count,
+        "last_payment_date": subscription.last_payment_date,
+        "next_invoice_date": subscription.next_invoice_date,
+        "current_users": subscription.current_users,
+        "current_vehicles": subscription.current_vehicles,
+        "current_drivers": subscription.current_drivers,
+        "current_storage_gb": float(subscription.current_storage_gb) if subscription.current_storage_gb is not None else None,
+        "current_ai_requests": subscription.current_ai_requests,
+        "current_api_calls": subscription.current_api_calls,
+        "tenant_id": subscription.tenant_id,
+        "created_by": subscription.created_by,
+        "updated_by": subscription.updated_by,
+        "deleted_by": subscription.deleted_by,
+        "deleted_at": subscription.deleted_at,
+        "is_deleted": subscription.is_deleted,
         "remarks": subscription.remarks,
         "created_at": subscription.created_at,
         "updated_at": subscription.updated_at,
@@ -108,6 +145,35 @@ def create_plan(
 
         row = SubscriptionPlan(**payload.model_dump())
         db.add(row)
+        db.commit()
+        db.refresh(row)
+        return _serialize_plan(row)
+    finally:
+        db.close()
+
+
+@router.patch("/plans/{plan_id}")
+def update_plan(
+    plan_id: int,
+    payload: SubscriptionPlanUpdate,
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    db = _session_with_rls(user)
+    try:
+        row = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == plan_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="Plan not found")
+
+        updates = payload.model_dump(exclude_unset=True)
+        plan_code = updates.get("plan_code")
+        if plan_code and plan_code != row.plan_code:
+            existing = db.query(SubscriptionPlan).filter(SubscriptionPlan.plan_code == plan_code).first()
+            if existing and existing.id != row.id:
+                raise HTTPException(status_code=409, detail="Plan code already exists")
+
+        for key, value in updates.items():
+            setattr(row, key, value)
+
         db.commit()
         db.refresh(row)
         return _serialize_plan(row)
@@ -147,6 +213,34 @@ def create_subscription(
         user_id = payload.user_id if _is_admin(user) and payload.user_id else user.id
         row = Subscription(**payload.model_dump(exclude={"user_id"}), user_id=user_id)
         db.add(row)
+        db.commit()
+        db.refresh(row)
+        return _serialize_subscription(row)
+    finally:
+        db.close()
+
+
+@router.patch("/{subscription_id}")
+def update_subscription(
+    subscription_id: int,
+    payload: SubscriptionUpdate,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
+    db = _session_with_rls(user)
+    try:
+        row = db.query(Subscription).filter(Subscription.id == subscription_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if not _is_admin(user) and row.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot update another user's subscription")
+
+        updates = payload.model_dump(exclude_unset=True)
+        if not _is_admin(user) and "user_id" in updates:
+            raise HTTPException(status_code=403, detail="Cannot reassign subscription ownership")
+
+        for key, value in updates.items():
+            setattr(row, key, value)
+
         db.commit()
         db.refresh(row)
         return _serialize_subscription(row)

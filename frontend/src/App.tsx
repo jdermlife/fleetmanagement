@@ -132,22 +132,37 @@ const adminMenus = [
   'admin-permissions',
 ]
 
-const fleetMenus = menuLinks.filter(
+const subscriberHiddenMenus = [
+  'insurance-management',
+  'credit-scoring',
+  'subscriptions',
+  'admin-users',
+  'admin-roles',
+  'admin-permissions',
+]
+
+const isSubscriber = currentUser?.role?.toLowerCase() === 'subscriber'
+
+const visibleMenuLinks = isSubscriber
+  ? menuLinks.filter((item) => !subscriberHiddenMenus.includes(item.id))
+  : menuLinks
+
+const fleetMenus = visibleMenuLinks.filter(
   (item) =>
     !aiMenus.includes(item.id) &&
     !governanceMenus.includes(item.id) &&
     !adminMenus.includes(item.id)
 )
 
-const aiMenuItems = menuLinks.filter(
+const aiMenuItems = visibleMenuLinks.filter(
   (item) => aiMenus.includes(item.id)
 )
 
-const govMenuItems = menuLinks.filter(
+const govMenuItems = visibleMenuLinks.filter(
   (item) => governanceMenus.includes(item.id)
 )
 
-const adminMenuItems = menuLinks.filter(
+const adminMenuItems = visibleMenuLinks.filter(
   (item) => adminMenus.includes(item.id),
 )
 
@@ -336,39 +351,41 @@ const adminMenuItems = menuLinks.filter(
         </Link>
       ))}
 
-    <>
-      <div
-        className="app-menu-group app-menu-group-account"
-        style={{
-          background: '#3f1d5c',
-          color: '#f5e8ff',
-          padding: '12px',
-          borderRadius: '8px',
-          fontWeight: 'bold',
-          marginTop: '10px',
-        }}
-      >
-        ADMINISTRATION
-      </div>
-      {adminMenuItems.map((page) => (
-        <Link
-          key={page.id}
-          to={`/${page.id}`}
-          onClick={closeMenu}
-          className="app-menu-link app-menu-link-account"
+    {adminMenuItems.length > 0 && (
+      <>
+        <div
+          className="app-menu-group app-menu-group-account"
           style={{
-            display: 'block',
-            color: '#fff',
-            textDecoration: 'none',
+            background: '#3f1d5c',
+            color: '#f5e8ff',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(120, 76, 153, 0.35)',
+            fontWeight: 'bold',
+            marginTop: '10px',
           }}
         >
-          {page.label}
-        </Link>
-      ))}
-    </>
+          ADMINISTRATION
+        </div>
+        {adminMenuItems.map((page) => (
+          <Link
+            key={page.id}
+            to={`/${page.id}`}
+            onClick={closeMenu}
+            className="app-menu-link app-menu-link-account"
+            style={{
+              display: 'block',
+              color: '#fff',
+              textDecoration: 'none',
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'rgba(120, 76, 153, 0.35)',
+            }}
+          >
+            {page.label}
+          </Link>
+        ))}
+      </>
+    )}
 
     {/* GOVERNANCE */}
 
@@ -693,7 +710,7 @@ const adminMenuItems = menuLinks.filter(
             <Route
               path="/insurance-management"
               element={
-                <ProtectedRoute permissions={['read:vehicles']}>
+                <ProtectedRoute roles={['admin']} permissions={['read:vehicles']}>
                   <InsuranceManagementPage />
                 </ProtectedRoute>
               }
@@ -711,7 +728,7 @@ const adminMenuItems = menuLinks.filter(
             <Route
               path="/credit-scoring"
               element={
-                <ProtectedRoute permissions={['read:scorecards', 'read:analytics']}>
+                <ProtectedRoute roles={['admin']} permissions={['read:scorecards', 'read:analytics']}>
                   <CreditScoring />
                 </ProtectedRoute>
               }
@@ -720,7 +737,7 @@ const adminMenuItems = menuLinks.filter(
             <Route
               path="/subscriptions"
               element={
-                <ProtectedRoute roles={['admin', 'subscriber']}>
+                <ProtectedRoute roles={['admin']}>
                   <SubscriptionManagementPage />
                 </ProtectedRoute>
               }

@@ -204,3 +204,71 @@ def test_feature_assign_and_list_smoke(client: TestClient, fake_db: FakeSession,
     list_response = client.get("/api/subscriptions/plans/7/features", headers=admin_headers)
     assert list_response.status_code == 200
     assert isinstance(list_response.json(), list)
+
+
+def test_admin_can_update_plan_amendment_fields_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    admin_headers,
+):
+    existing_plan = SubscriptionPlan(
+        id=11,
+        plan_code="STARTER",
+        plan_name="Starter",
+        billing_cycle="MONTHLY",
+        trial_days=14,
+        support_level="STANDARD",
+        is_public=True,
+    )
+    fake_db.rows_by_model[SubscriptionPlan] = [existing_plan]
+
+    response = client.patch(
+        "/api/subscriptions/plans/11",
+        headers=admin_headers,
+        json={
+            "trial_days": 21,
+            "support_level": "PRIORITY",
+            "is_public": False,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["trial_days"] == 21
+    assert payload["support_level"] == "PRIORITY"
+    assert payload["is_public"] is False
+
+
+def test_subscriber_can_update_own_subscription_amendment_fields_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    own_subscription = Subscription(
+        id=20,
+        subscription_no="SUB-OWN-UPDATE",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+        subscription_type="TRIAL",
+        renewal_count=0,
+        current_users=1,
+    )
+    fake_db.rows_by_model[Subscription] = [own_subscription]
+
+    response = client.patch(
+        "/api/subscriptions/20",
+        headers=subscriber_headers,
+        json={
+            "subscription_type": "PAID",
+            "renewal_count": 3,
+            "current_users": 4,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["subscription_type"] == "PAID"
+    assert payload["renewal_count"] == 3
+    assert payload["current_users"] == 4

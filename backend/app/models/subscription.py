@@ -34,6 +34,21 @@ class SubscriptionPlan(Base):
     max_vehicles = Column(Integer)
     max_drivers = Column(Integer)
     max_storage_gb = Column(Integer)
+    trial_days = Column(Integer, nullable=False, default=30)
+    display_order = Column(Integer, nullable=False, default=1)
+    is_public = Column(Boolean, nullable=False, default=True)
+    is_custom_pricing = Column(Boolean, nullable=False, default=False)
+    max_ai_requests_per_month = Column(Integer, nullable=False, default=1000)
+    max_api_calls_per_month = Column(Integer, nullable=False, default=10000)
+    max_documents = Column(Integer, nullable=False, default=1000)
+    max_reports = Column(Integer, nullable=False, default=500)
+    max_meetings = Column(Integer, nullable=False, default=500)
+    max_storage_files = Column(Integer, nullable=False, default=10000)
+    storage_unit = Column(String(20), nullable=False, default="GB")
+    support_level = Column(String(30), nullable=False, default="STANDARD")
+    sla_hours = Column(Integer, nullable=False, default=48)
+    color_code = Column(String(20))
+    icon_name = Column(String(100))
     ai_enabled = Column(Boolean, nullable=False, default=True)
     api_enabled = Column(Boolean, nullable=False, default=True)
     reporting_enabled = Column(Boolean, nullable=False, default=True)
@@ -45,6 +60,10 @@ class SubscriptionPlan(Base):
         CheckConstraint(
             "billing_cycle IN ('MONTHLY','QUARTERLY','YEARLY')",
             name="ck_subscription_plans_billing_cycle",
+        ),
+        CheckConstraint(
+            "support_level IN ('STANDARD','PRIORITY','PREMIUM','ENTERPRISE')",
+            name="chk_support_level",
         ),
     )
 
@@ -81,8 +100,28 @@ class Subscription(Base):
     subscription_start = Column(Date, nullable=False)
     subscription_end = Column(Date)
     auto_renew = Column(Boolean, nullable=False, default=True)
+    subscription_type = Column(String(20), nullable=False, default="TRIAL")
     payment_provider_id = Column(BigInteger, ForeignKey("payment_providers.id"), index=True)
     next_billing_date = Column(Date)
+    cancellation_reason = Column(Text)
+    cancelled_at = Column(DateTime(timezone=True))
+    cancelled_by = Column(Integer, ForeignKey("users.id"), index=True)
+    grace_period_end = Column(Date)
+    renewal_count = Column(Integer, nullable=False, default=0)
+    last_payment_date = Column(Date)
+    next_invoice_date = Column(Date)
+    current_users = Column(Integer, nullable=False, default=1)
+    current_vehicles = Column(Integer, nullable=False, default=0)
+    current_drivers = Column(Integer, nullable=False, default=0)
+    current_storage_gb = Column(Numeric(12, 2), nullable=False, default=0)
+    current_ai_requests = Column(Integer, nullable=False, default=0)
+    current_api_calls = Column(Integer, nullable=False, default=0)
+    tenant_id = Column(BigInteger, index=True)
+    created_by = Column(Integer, ForeignKey("users.id"), index=True)
+    updated_by = Column(Integer, ForeignKey("users.id"), index=True)
+    deleted_by = Column(Integer, ForeignKey("users.id"), index=True)
+    deleted_at = Column(DateTime(timezone=True))
+    is_deleted = Column(Boolean, nullable=False, default=False)
     remarks = Column(Text)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -91,6 +130,10 @@ class Subscription(Base):
         CheckConstraint(
             "status IN ('TRIAL','ACTIVE','SUSPENDED','EXPIRED','CANCELLED')",
             name="ck_subscriptions_status",
+        ),
+        CheckConstraint(
+            "subscription_type IN ('FREE','TRIAL','PAID','LIFETIME')",
+            name="chk_subscription_type",
         ),
     )
 

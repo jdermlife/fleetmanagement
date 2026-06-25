@@ -497,6 +497,21 @@ export interface SubscriptionPlan {
   max_vehicles: number | null
   max_drivers: number | null
   max_storage_gb: number | null
+  trial_days: number
+  display_order: number
+  is_public: boolean
+  is_custom_pricing: boolean
+  max_ai_requests_per_month: number
+  max_api_calls_per_month: number
+  max_documents: number
+  max_reports: number
+  max_meetings: number
+  max_storage_files: number
+  storage_unit: string
+  support_level: 'STANDARD' | 'PRIORITY' | 'PREMIUM' | 'ENTERPRISE'
+  sla_hours: number
+  color_code: string | null
+  icon_name: string | null
   ai_enabled: boolean
   api_enabled: boolean
   reporting_enabled: boolean
@@ -511,6 +526,7 @@ export interface SubscriptionRecord {
   user_id: number
   plan_id: number
   status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  subscription_type: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
   trial_start: string | null
   trial_end: string | null
   subscription_start: string
@@ -518,6 +534,25 @@ export interface SubscriptionRecord {
   auto_renew: boolean
   payment_provider_id: number | null
   next_billing_date: string | null
+  cancellation_reason: string | null
+  cancelled_at: string | null
+  cancelled_by: number | null
+  grace_period_end: string | null
+  renewal_count: number
+  last_payment_date: string | null
+  next_invoice_date: string | null
+  current_users: number
+  current_vehicles: number
+  current_drivers: number
+  current_storage_gb: number | null
+  current_ai_requests: number
+  current_api_calls: number
+  tenant_id: number | null
+  created_by: number | null
+  updated_by: number | null
+  deleted_by: number | null
+  deleted_at: string | null
+  is_deleted: boolean
   remarks: string | null
   created_at: string
   updated_at: string
@@ -618,12 +653,66 @@ export async function createSubscriptionPlan(payload: {
   max_vehicles?: number
   max_drivers?: number
   max_storage_gb?: number
+  trial_days?: number
+  display_order?: number
+  is_public?: boolean
+  is_custom_pricing?: boolean
+  max_ai_requests_per_month?: number
+  max_api_calls_per_month?: number
+  max_documents?: number
+  max_reports?: number
+  max_meetings?: number
+  max_storage_files?: number
+  storage_unit?: string
+  support_level?: 'STANDARD' | 'PRIORITY' | 'PREMIUM' | 'ENTERPRISE'
+  sla_hours?: number
+  color_code?: string
+  icon_name?: string
   ai_enabled?: boolean
   api_enabled?: boolean
   reporting_enabled?: boolean
   is_active?: boolean
 }): Promise<SubscriptionPlan> {
   const response = await api.post<SubscriptionPlan>('/api/subscriptions/plans', payload)
+  return response.data
+}
+
+export async function updateSubscriptionPlan(
+  planId: number,
+  payload: {
+    plan_code?: string
+    plan_name?: string
+    description?: string
+    billing_cycle?: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+    monthly_price?: number
+    yearly_price?: number
+    currency?: string
+    max_users?: number
+    max_vehicles?: number
+    max_drivers?: number
+    max_storage_gb?: number
+    trial_days?: number
+    display_order?: number
+    is_public?: boolean
+    is_custom_pricing?: boolean
+    max_ai_requests_per_month?: number
+    max_api_calls_per_month?: number
+    max_documents?: number
+    max_reports?: number
+    max_meetings?: number
+    max_storage_files?: number
+    storage_unit?: string
+    support_level?: 'STANDARD' | 'PRIORITY' | 'PREMIUM' | 'ENTERPRISE'
+    sla_hours?: number
+    color_code?: string
+    icon_name?: string
+    ai_enabled?: boolean
+    api_enabled?: boolean
+    reporting_enabled?: boolean
+    is_active?: boolean
+  },
+): Promise<SubscriptionPlan> {
+  const response = await api.patch<SubscriptionPlan>(`/api/subscriptions/plans/${planId}`, payload)
   return response.data
 }
 
@@ -639,6 +728,7 @@ export async function createSubscription(payload: {
   user_id?: number
   plan_id: number
   status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  subscription_type?: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
   trial_start?: string
   trial_end?: string
   subscription_start: string
@@ -646,9 +736,68 @@ export async function createSubscription(payload: {
   auto_renew?: boolean
   payment_provider_id?: number
   next_billing_date?: string
+  cancellation_reason?: string
+  cancelled_at?: string
+  cancelled_by?: number
+  grace_period_end?: string
+  renewal_count?: number
+  last_payment_date?: string
+  next_invoice_date?: string
+  current_users?: number
+  current_vehicles?: number
+  current_drivers?: number
+  current_storage_gb?: number
+  current_ai_requests?: number
+  current_api_calls?: number
+  tenant_id?: number
+  created_by?: number
+  updated_by?: number
+  deleted_by?: number
+  deleted_at?: string
+  is_deleted?: boolean
   remarks?: string
 }): Promise<SubscriptionRecord> {
   const response = await api.post<SubscriptionRecord>('/api/subscriptions', payload)
+  return response.data
+}
+
+export async function updateSubscription(
+  subscriptionId: number,
+  payload: {
+    user_id?: number
+    plan_id?: number
+    status?: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+    subscription_type?: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
+    trial_start?: string
+    trial_end?: string
+    subscription_start?: string
+    subscription_end?: string
+    auto_renew?: boolean
+    payment_provider_id?: number
+    next_billing_date?: string
+    cancellation_reason?: string
+    cancelled_at?: string
+    cancelled_by?: number
+    grace_period_end?: string
+    renewal_count?: number
+    last_payment_date?: string
+    next_invoice_date?: string
+    current_users?: number
+    current_vehicles?: number
+    current_drivers?: number
+    current_storage_gb?: number
+    current_ai_requests?: number
+    current_api_calls?: number
+    tenant_id?: number
+    created_by?: number
+    updated_by?: number
+    deleted_by?: number
+    deleted_at?: string
+    is_deleted?: boolean
+    remarks?: string
+  },
+): Promise<SubscriptionRecord> {
+  const response = await api.patch<SubscriptionRecord>(`/api/subscriptions/${subscriptionId}`, payload)
   return response.data
 }
 
