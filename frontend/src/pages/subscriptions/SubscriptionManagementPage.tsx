@@ -7,9 +7,11 @@ import {
   getErrorMessage,
   listFeatures,
   listPlanFeatures,
+  listPaymentProviders,
   listSubscriptionPlans,
   listSubscriptions,
   type Feature,
+  type PaymentProvider,
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
@@ -24,6 +26,7 @@ export default function SubscriptionManagementPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [features, setFeatures] = useState<Feature[]>([])
+  const [providers, setProviders] = useState<PaymentProvider[]>([])
   const [planFeatures, setPlanFeatures] = useState<Record<number, Feature[]>>({})
   const [loading, setLoading] = useState(true)
   const [statusMessage, setStatusMessage] = useState('')
@@ -35,6 +38,7 @@ export default function SubscriptionManagementPage() {
 
   const [subscriptionNo, setSubscriptionNo] = useState('')
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('')
+  const [selectedProviderId, setSelectedProviderId] = useState<number | ''>('')
   const [subscriptionStart, setSubscriptionStart] = useState(toDateValue(''))
   const [subscriptionStatus, setSubscriptionStatus] = useState<'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'>('ACTIVE')
 
@@ -45,14 +49,16 @@ export default function SubscriptionManagementPage() {
     setLoading(true)
     setStatusMessage('')
     try {
-      const [planRows, subscriptionRows, featureRows] = await Promise.all([
+      const [planRows, subscriptionRows, featureRows, providerRows] = await Promise.all([
         listSubscriptionPlans(),
         listSubscriptions(),
         listFeatures(),
+        listPaymentProviders(),
       ])
       setPlans(planRows)
       setSubscriptions(subscriptionRows)
       setFeatures(featureRows)
+      setProviders(providerRows)
 
       const planFeatureEntries = await Promise.all(
         planRows.slice(0, 5).map(async (plan) => {
@@ -109,9 +115,11 @@ export default function SubscriptionManagementPage() {
         plan_id: Number(selectedPlanId),
         status: subscriptionStatus,
         subscription_start: subscriptionStart,
+        payment_provider_id: selectedProviderId ? Number(selectedProviderId) : undefined,
       })
       setSubscriptionNo('')
       setSelectedPlanId('')
+      setSelectedProviderId('')
       setSubscriptionStart(toDateValue(''))
       setSubscriptionStatus('ACTIVE')
       await loadData()
@@ -202,7 +210,21 @@ export default function SubscriptionManagementPage() {
                 <option value="">Select plan</option>
                 {plans.map((plan) => (
                   <option key={plan.id} value={plan.id}>
-                    {plan.plan_name}
+                    {plan.plan_name} ({plan.plan_code})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Payment Provider
+              <select
+                value={selectedProviderId}
+                onChange={(event) => setSelectedProviderId(event.target.value ? Number(event.target.value) : '')}
+              >
+                <option value="">None</option>
+                {providers.map((provider) => (
+                  <option key={provider.id} value={provider.id}>
+                    {provider.provider_name}
                   </option>
                 ))}
               </select>
@@ -271,7 +293,9 @@ export default function SubscriptionManagementPage() {
                   <th className="px-3 py-2 text-left">Code</th>
                   <th className="px-3 py-2 text-left">Name</th>
                   <th className="px-3 py-2 text-left">Cycle</th>
-                  <th className="px-3 py-2 text-left">Price</th>
+                  <th className="px-3 py-2 text-left">Monthly</th>
+                  <th className="px-3 py-2 text-left">Yearly</th>
+                  <th className="px-3 py-2 text-left">Max Users</th>
                   <th className="px-3 py-2 text-left">Features</th>
                 </tr>
               </thead>
@@ -281,9 +305,9 @@ export default function SubscriptionManagementPage() {
                     <td className="px-3 py-2">{plan.plan_code}</td>
                     <td className="px-3 py-2">{plan.plan_name}</td>
                     <td className="px-3 py-2">{plan.billing_cycle}</td>
-                    <td className="px-3 py-2">
-                      {plan.monthly_price ?? plan.yearly_price ?? 0} {plan.currency}
-                    </td>
+                    <td className="px-3 py-2">{plan.monthly_price ?? 0} {plan.currency}</td>
+                    <td className="px-3 py-2">{plan.yearly_price ?? 0} {plan.currency}</td>
+                    <td className="px-3 py-2">{plan.max_users ?? '∞'}</td>
                     <td className="px-3 py-2">
                       {(planFeatures[plan.id] ?? []).map((feature) => feature.feature_name).join(', ') || 'None'}
                     </td>
@@ -321,6 +345,38 @@ export default function SubscriptionManagementPage() {
                     </td>
                     <td className="px-3 py-2">{subscription.status}</td>
                     <td className="px-3 py-2">{subscription.next_billing_date ?? 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h3>Payment Providers</h3>
+        {loading ? (
+          <p>Loading providers...</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-left">Code</th>
+                  <th className="px-3 py-2 text-left">Name</th>
+                  <th className="px-3 py-2 text-left">API Endpoint</th>
+                  <th className="px-3 py-2 text-left">Webhook URL</th>
+                  <th className="px-3 py-2 text-left">Active</th>
+                </tr>
+              </thead>
+              <tbody>
+                {providers.map((provider) => (
+                  <tr key={provider.id}>
+                    <td className="px-3 py-2">{provider.provider_code}</td>
+                    <td className="px-3 py-2">{provider.provider_name}</td>
+                    <td className="px-3 py-2">{provider.api_endpoint ?? 'N/A'}</td>
+                    <td className="px-3 py-2">{provider.webhook_url ?? 'N/A'}</td>
+                    <td className="px-3 py-2">{provider.is_active ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
               </tbody>
