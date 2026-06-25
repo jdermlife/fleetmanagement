@@ -210,15 +210,48 @@ export interface LoginRequest {
 
 export interface LoginResponse {
   token: string
-  user: {
-    id: number
-    username: string
-    email: string
-    role: string
-    isActive: boolean
-    createdAt: string
-    updatedAt: string
-    lastLoginAt: string | null
+  user: AuthUser
+}
+
+export interface AuthUser {
+  id: number
+  username: string
+  email: string
+  role: string
+  roles: string[]
+  permissions: string[]
+  isActive: boolean
+  createdAt: string
+  updatedAt: string
+  lastLoginAt: string | null
+  mfaEnabled?: boolean
+}
+
+function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
+  const rolesFromPayload = Array.isArray(raw.roles)
+    ? raw.roles.filter((role): role is string => typeof role === 'string')
+    : []
+  const roleFromPayload =
+    typeof raw.role === 'string' && raw.role.length > 0
+      ? raw.role
+      : rolesFromPayload[0] ?? 'subscriber'
+
+  const permissions = Array.isArray(raw.permissions)
+    ? raw.permissions.filter((permission): permission is string => typeof permission === 'string')
+    : []
+
+  return {
+    id: Number(raw.id ?? 0),
+    username: String(raw.username ?? ''),
+    email: String(raw.email ?? ''),
+    role: roleFromPayload,
+    roles: rolesFromPayload.length > 0 ? rolesFromPayload : [roleFromPayload],
+    permissions,
+    isActive: Boolean(raw.isActive ?? raw.is_active ?? true),
+    createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
+    updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
+    lastLoginAt: (raw.lastLoginAt ?? raw.last_login_at ?? null) as string | null,
+    mfaEnabled: Boolean(raw.mfaEnabled ?? raw.mfa_enabled ?? false),
   }
 }
 
@@ -236,7 +269,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     (typeof responseData.access_token === 'string'
       ? responseData.access_token
       : null)
-  const user = responseData.user as LoginResponse['user'] | undefined
+  const user = responseData.user as Record<string, unknown> | undefined
 
   if (!token || !user) {
     throw new Error('Unexpected login response received from the backend.')
@@ -245,15 +278,17 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   setAuthToken(token)
   return {
     token,
-    user,
+    user: normalizeAuthUser(user),
   }
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
   const response = await api.post('/api/auth/register', data)
   const responseData = response.data as Record<string, unknown>
-  return (responseData.user as LoginResponse['user'] | undefined) ??
-    (response.data as LoginResponse['user'])
+  const rawUser =
+    (responseData.user as Record<string, unknown> | undefined) ??
+    (response.data as Record<string, unknown>)
+  return normalizeAuthUser(rawUser)
 }
 
 export async function logout(): Promise<void> {
@@ -268,9 +303,100 @@ export async function refreshAuthToken(): Promise<string> {
 
 export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
   const response = await api.get<{
-    user: LoginResponse['user']
+    user: Record<string, unknown>
   }>('/api/auth/me')
+  return normalizeAuthUser(response.data.user)
+}
+
+export interface AdminPermission {
+  id: number
+  name: string
+  description: string | null
+  resource: string
+  action: string
+}
+
+export interface AdminRole {
+  id: number
+  name: string
+  description: string | null
+  is_system?: boolean
+  permissions: AdminPermission[]
+}
+
+export interface AdminUser {
+  id: number
+  username: string
+  email: string
+  is_active: boolean
+  mfa_enabled?: boolean
+  last_login_at?: string | null
+  roles: string[]
+  permissions: string[]
+  created_at?: string
+}
+
+export async function listAdminUsers(): Promise<AdminUser[]> {
+  const response = await api.get<{ users: AdminUser[] }>('/api/admin/users')
+  return response.data.users
+}
+
+export async function createAdminUser(payload: {
+  username: string
+  email: string
+  password: string
+  is_active?: boolean
+  roles?: string[]
+}): Promise<AdminUser> {
+  const response = await api.post<{ user: AdminUser }>('/api/admin/users', payload)
   return response.data.user
+}
+
+export async function updateAdminUser(
+  userId: number,
+  payload: { email?: string; is_active?: boolean },
+): Promise<AdminUser> {
+  const response = await api.patch<{ user: AdminUser }>(`/api/admin/users/${userId}`, payload)
+  return response.data.user
+}
+
+export async function assignAdminUserRoles(userId: number, roles: string[]): Promise<AdminUser> {
+  const response = await api.put<{ user: AdminUser }>(`/api/admin/users/${userId}/roles`, {
+    roles,
+  })
+  return response.data.user
+}
+
+export async function listAdminRoles(): Promise<AdminRole[]> {
+  const response = await api.get<{ roles: AdminRole[] }>('/api/admin/roles')
+  return response.data.roles
+}
+
+export async function createAdminRole(payload: {
+  name: string
+  description?: string
+}): Promise<AdminRole> {
+  const response = await api.post<{ role: AdminRole }>('/api/admin/roles', payload)
+  return response.data.role
+}
+
+export async function assignRolePermissions(roleId: number, permissions: string[]): Promise<void> {
+  await api.put(`/api/admin/roles/${roleId}/permissions`, { permissions })
+}
+
+export async function listAdminPermissions(): Promise<AdminPermission[]> {
+  const response = await api.get<{ permissions: AdminPermission[] }>('/api/admin/permissions')
+  return response.data.permissions
+}
+
+export async function createAdminPermission(payload: {
+  name: string
+  description?: string
+  resource: string
+  action: string
+}): Promise<AdminPermission> {
+  const response = await api.post<{ permission: AdminPermission }>('/api/admin/permissions', payload)
+  return response.data.permission
 }
 
 export async function requestPasswordReset(emailOrUsername: string): Promise<{

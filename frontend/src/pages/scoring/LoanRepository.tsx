@@ -10,6 +10,8 @@ import {
   type LoanApplicationRecord,
   type WorkflowStatus,
 } from "../../api/loan";
+import Authorize from "../../components/auth/Authorize";
+import { useAuthorization } from "../../hooks/useAuthorization";
 
 const statusOptions: Array<"All" | WorkflowStatus> = [
   "All",
@@ -102,8 +104,16 @@ function getGraphColor(label: WorkflowStatus | "Total Applications" | "Visible R
 
 export default function LoanRepository() {
   const navigate = useNavigate();
+  const { hasRole, hasPermission } = useAuthorization();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const canCreateLoans = hasRole("admin") || hasPermission("create:loans");
+  const canEditLoans = hasRole("admin") || hasPermission("edit:loans");
+  const canApproveLoans = hasRole("admin") || hasPermission("approve:loans");
+  const canFinalApproveLoans =
+    hasRole("admin") || hasPermission("final_approve:loans");
+  const canExportLoans = hasRole("admin") || hasPermission("export:loans");
 
   const requestedStatus = searchParams.get("status");
 
@@ -226,6 +236,18 @@ export default function LoanRepository() {
     status: WorkflowStatus,
   ) => {
     setMessage("");
+
+    const allowed =
+      (status === "Approved" || status === "Rejected")
+        ? canApproveLoans
+        : status === "Released"
+          ? canFinalApproveLoans
+          : canEditLoans;
+
+    if (!allowed) {
+      setMessage("You do not have permission to perform this status transition.");
+      return;
+    }
 
     try {
       const result = await updateLoanApplicationStatus(applicationNo, status);
@@ -520,29 +542,52 @@ export default function LoanRepository() {
                     onChange={handleImportFile}
                     className="hidden"
                   />
-                  <button
-                    onClick={handleImportClick}
-                    disabled={isImporting}
-                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-slate-900 disabled:opacity-50"
+                  <Authorize
+                    permissions={["create:loans"]}
+                    roles={["admin"]}
+                    fallback={
+                      <button
+                        disabled
+                        className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-400 bg-slate-300 px-5 py-3 text-sm font-semibold tracking-wide text-slate-700"
+                      >
+                        Upload CSV / Excel (Admin only)
+                      </button>
+                    }
                   >
-                    {isImporting ? "Importing..." : "Upload CSV / Excel"}
-                  </button>
+                    <button
+                      onClick={handleImportClick}
+                      disabled={isImporting}
+                      className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-slate-900 disabled:opacity-50"
+                    >
+                      {isImporting ? "Importing..." : "Upload CSV / Excel"}
+                    </button>
+                  </Authorize>
                   <button
                     onClick={() => void triggerExport("csv")}
-                    disabled={isExporting !== null}
+                    disabled={isExporting !== null || !canExportLoans}
                     className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-blue-700 bg-blue-700 px-5 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-blue-800 disabled:opacity-50"
                   >
                     {isExporting === "csv" ? "Exporting CSV..." : "Download CSV"}
                   </button>
                   <button
                     onClick={() => void triggerExport("xlsx")}
-                    disabled={isExporting !== null}
+                    disabled={isExporting !== null || !canExportLoans}
                     className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-emerald-700 bg-emerald-700 px-5 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-emerald-800 disabled:opacity-50"
                   >
                     {isExporting === "xlsx" ? "Exporting Excel..." : "Download Excel"}
                   </button>
                 </div>
               </div>
+              {!canCreateLoans && (
+                <p className="mt-2 text-xs text-slate-500 xl:text-right">
+                  Bulk import requires create loan permission.
+                </p>
+              )}
+              {!canExportLoans && (
+                <p className="mt-2 text-xs text-slate-500 xl:text-right">
+                  Export requires export loan permission.
+                </p>
+              )}
               {actionNotice && (
                 <p className="mt-3 text-xs text-emerald-700 xl:text-right">
                   {actionNotice}
@@ -691,12 +736,13 @@ export default function LoanRepository() {
                               )}`,
                             )
                           }
+                          disabled={!canEditLoans}
                           className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"
                         >
                           Update
                         </button>
 
-                        {row.status === "Credit Review" && (
+                        {row.status === "Credit Review" && canApproveLoans && (
                           <>
                             <button
                               onClick={() =>
@@ -718,7 +764,7 @@ export default function LoanRepository() {
                           </>
                         )}
 
-                        {row.status === "Approved" && (
+                        {row.status === "Approved" && canFinalApproveLoans && (
                           <button
                             onClick={() =>
                               handleStatusUpdate(row.application_no, "Released")

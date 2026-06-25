@@ -431,6 +431,7 @@ export interface LoanApplicationPayload {
 
 export interface LoanApplicationRecord extends LoanApplicationPayload {
   id?: number
+  created_by_user_id?: number
   created_at?: string
   updated_at?: string
 }

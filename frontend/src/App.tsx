@@ -2,6 +2,7 @@ import { Suspense, lazy, useEffect, useState } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
+import ProtectedRoute from './components/auth/ProtectedRoute'
 
 type MenuLink = {
   id: string
@@ -37,6 +38,9 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const AccountSettingsPage = lazy(() => import('./pages/auth/AccountSettingsPage'))
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
+const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
+const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
+const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 
 const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
 const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
@@ -79,6 +83,11 @@ const menuLinks: MenuLink[] = [
   { id: 'audit-trail', label: 'Audit Trail' },
   { id: 'risk-management', label: 'Risk Management' },
   { id: 'compliance', label: 'Compliance' },
+
+  /* ADMIN */
+  { id: 'admin-users', label: 'User Management' },
+  { id: 'admin-roles', label: 'Admin Role Management' },
+  { id: 'admin-permissions', label: 'Permission Management' },
 ]
 
 function App() {
@@ -115,10 +124,69 @@ const governanceMenus = [
   'compliance',
 ]
 
+const adminMenus = [
+  'admin-users',
+  'admin-roles',
+  'admin-permissions',
+]
+
+const currentRoles = [
+  ...(currentUser?.roles ?? []),
+  ...(currentUser?.role ? [currentUser.role] : []),
+].map((role) => role.toLowerCase())
+const currentPermissions = (currentUser?.permissions ?? []).map((permission) =>
+  permission.toLowerCase(),
+)
+
+const hasRoleLocal = (role: string): boolean => currentRoles.includes(role.toLowerCase())
+const hasPermissionLocal = (permission: string): boolean =>
+  currentPermissions.includes(permission.toLowerCase())
+
+const canAccessMenuItem = (menuId: string): boolean => {
+  if (hasRoleLocal('admin')) {
+    return true
+  }
+
+  switch (menuId) {
+    case 'dashboard':
+      return hasPermissionLocal('read:analytics')
+    case 'lending-scorecard':
+      return (
+        hasPermissionLocal('read:loans') ||
+        hasPermissionLocal('create:loans') ||
+        hasPermissionLocal('edit:loans')
+      )
+    case 'lease-scorecard':
+      return hasPermissionLocal('read:scorecards')
+    case 'insurance-management':
+    case 'maintenance-management':
+    case 'credit-scoring':
+      return hasPermissionLocal('read:vehicles')
+    case 'audit-trail':
+    case 'risk-management':
+    case 'compliance':
+      return hasPermissionLocal('read:audit_logs')
+    case 'admin-users':
+      return hasPermissionLocal('admin:users') || hasPermissionLocal('manage:system')
+    case 'admin-roles':
+    case 'admin-permissions':
+      return hasPermissionLocal('manage:system')
+    default:
+      return true
+  }
+}
+
+const canAccessAdmin =
+  hasRoleLocal('admin') ||
+  hasPermissionLocal('admin:users') ||
+  hasPermissionLocal('manage:system')
+
 const fleetMenus = menuLinks.filter(
   (item) =>
     !aiMenus.includes(item.id) &&
-    !governanceMenus.includes(item.id)
+    !governanceMenus.includes(item.id) &&
+    !adminMenus.includes(item.id) &&
+    canAccessMenuItem(item.id)
 )
 
 const aiMenuItems = menuLinks.filter(
@@ -126,7 +194,11 @@ const aiMenuItems = menuLinks.filter(
 )
 
 const govMenuItems = menuLinks.filter(
-  (item) => governanceMenus.includes(item.id)
+  (item) => governanceMenus.includes(item.id) && canAccessMenuItem(item.id)
+)
+
+const adminMenuItems = menuLinks.filter(
+  (item) => adminMenus.includes(item.id) && canAccessMenuItem(item.id),
 )
 
   useEffect(() => {
@@ -314,6 +386,42 @@ const govMenuItems = menuLinks.filter(
         </Link>
       ))}
 
+    {canAccessAdmin && (
+      <>
+        <div
+          className="app-menu-group app-menu-group-account"
+          style={{
+            background: '#3f1d5c',
+            color: '#f5e8ff',
+            padding: '12px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            marginTop: '10px',
+          }}
+        >
+          ADMINISTRATION
+        </div>
+        {adminMenuItems.map((page) => (
+          <Link
+            key={page.id}
+            to={`/${page.id}`}
+            onClick={closeMenu}
+            className="app-menu-link app-menu-link-account"
+            style={{
+              display: 'block',
+              color: '#fff',
+              textDecoration: 'none',
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'rgba(120, 76, 153, 0.35)',
+            }}
+          >
+            {page.label}
+          </Link>
+        ))}
+      </>
+    )}
+
     {/* GOVERNANCE */}
 
     <div
@@ -487,35 +595,63 @@ const govMenuItems = menuLinks.filter(
 
             <Route
               path="/lending-scorecard"
-              element={<LendingScorecard />}
+              element={
+                <ProtectedRoute permissions={['read:loans', 'create:loans', 'edit:loans']}>
+                  <LendingScorecard />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/loan-repository"
-              element={<LoanRepository />}
+              element={
+                <ProtectedRoute permissions={['read:loans']}>
+                  <LoanRepository />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/loan-applications"
-              element={<LoanRepository />}
+              element={
+                <ProtectedRoute permissions={['read:loans']}>
+                  <LoanRepository />
+                </ProtectedRoute>
+              }
             />
             <Route
               path="/loan-details/:applicationNo"
-              element={<LoanDetails />}
+              element={
+                <ProtectedRoute permissions={['read:loans']}>
+                  <LoanDetails />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/approval-queue"
-              element={<ApprovalQueue />}
+              element={
+                <ProtectedRoute permissions={['approve:loans']}>
+                  <ApprovalQueue />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/credit-review-workbench"
-              element={<CreditReviewWorkbench />}
+              element={
+                <ProtectedRoute permissions={['read:loans', 'edit:loans', 'approve:loans']}>
+                  <CreditReviewWorkbench />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/released-accounts"
-              element={<ReleasedAccounts />}
+              element={
+                <ProtectedRoute permissions={['final_approve:loans', 'read:loans']}>
+                  <ReleasedAccounts />
+                </ProtectedRoute>
+              }
             />
 
             <Route
@@ -545,71 +681,117 @@ const govMenuItems = menuLinks.filter(
 
             <Route
               path="/lease-scorecard"
-              element={<LeaseScorecardPage />}
+              element={
+                <ProtectedRoute permissions={['read:scorecards', 'write:scorecards']}>
+                  <LeaseScorecardPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/vehicle-master"
-              element={<VehicleMasterPage />}
+              element={
+                <ProtectedRoute permissions={['read:vehicles', 'write:vehicles']}>
+                  <VehicleMasterPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/vehicle-detail"
-              element={<VehicleDetailPage />}
+              element={
+                <ProtectedRoute permissions={['read:vehicles']}>
+                  <VehicleDetailPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/driver-management"
-              element={<DriverManagementScorecardPage />}
+              element={
+                <ProtectedRoute permissions={['read:drivers', 'write:drivers']}>
+                  <DriverManagementScorecardPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/driver-registration"
-              element={<DriverRegistrationPage />}
+              element={
+                <ProtectedRoute permissions={['write:drivers']}>
+                  <DriverRegistrationPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/live-gps"
-              element={<LiveGpsTrackingPage />}
+              element={
+                <ProtectedRoute permissions={['read:vehicles']}>
+                  <LiveGpsTrackingPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/maintenance-management"
-              element={<MaintenanceManagementPage />}
+              element={
+                <ProtectedRoute permissions={['read:vehicles']}>
+                  <MaintenanceManagementPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/insurance-management"
-              element={<InsuranceManagementPage />}
+              element={
+                <ProtectedRoute permissions={['read:vehicles']}>
+                  <InsuranceManagementPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/fuel-management"
-              element={<FuelManagement />}
+              element={
+                <ProtectedRoute permissions={['read:fuel_logs', 'write:fuel_logs']}>
+                  <FuelManagement />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/credit-scoring"
-              element={<CreditScoring />}
+              element={
+                <ProtectedRoute permissions={['read:scorecards', 'read:analytics']}>
+                  <CreditScoring />
+                </ProtectedRoute>
+              }
             />
 
             <Route
               path="/audit-trail"
-              element={<AuditTrailPanel />}
+              element={
+                <ProtectedRoute permissions={['read:audit_logs']}>
+                  <AuditTrailPanel />
+                </ProtectedRoute>
+              }
             />
 
             {/* RISK MANAGEMENT */}
             <Route
               path="/risk-management"
               element={
-                <div className="card">
-                  <h1>Risk Management</h1>
+                <ProtectedRoute permissions={['read:audit_logs', 'read:analytics']}>
+                  <div className="card">
+                    <h1>Risk Management</h1>
 
-                  <p>
-                    Risk monitoring, operational controls,
-                    fraud prevention, and fleet governance.
-                  </p>
-                </div>
+                    <p>
+                      Risk monitoring, operational controls,
+                      fraud prevention, and fleet governance.
+                    </p>
+                  </div>
+                </ProtectedRoute>
               }
             />
 
@@ -617,14 +799,16 @@ const govMenuItems = menuLinks.filter(
             <Route
               path="/compliance"
               element={
-                <div className="card">
-                  <h1>Compliance</h1>
+                <ProtectedRoute permissions={['read:audit_logs']}>
+                  <div className="card">
+                    <h1>Compliance</h1>
 
-                  <p>
-                    Regulatory compliance, internal controls,
-                    audit reviews, and compliance reporting.
-                  </p>
-                </div>
+                    <p>
+                      Regulatory compliance, internal controls,
+                      audit reviews, and compliance reporting.
+                    </p>
+                  </div>
+                </ProtectedRoute>
               }
             />
 
@@ -736,6 +920,33 @@ const govMenuItems = menuLinks.filter(
             <Route
               path="/terms"
               element={<TermsPage />}
+            />
+
+            <Route
+              path="/admin-users"
+              element={
+                <ProtectedRoute roles={['admin']} permissions={['admin:users', 'manage:system']}>
+                  <UserManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin-roles"
+              element={
+                <ProtectedRoute roles={['admin']} permissions={['manage:system']}>
+                  <RoleManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/admin-permissions"
+              element={
+                <ProtectedRoute roles={['admin']} permissions={['manage:system']}>
+                  <PermissionManagementPage />
+                </ProtectedRoute>
+              }
             />
           </Routes>
         </Suspense>
