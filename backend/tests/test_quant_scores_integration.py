@@ -15,10 +15,12 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
+from uuid import uuid4
 
 from app.database import SessionLocal
 from app.routes.loan_routes import router as loan_router
 from app.models.loan_application import LoanApplication
+from security.auth import create_token
 
 
 @pytest.fixture
@@ -29,10 +31,16 @@ def client():
     return TestClient(app)
 
 
+@pytest.fixture
+def subscriber_headers():
+    token = create_token(user_id=1001, username="subscriber_test", role="SUBSCRIBER")
+    return {"Authorization": f"Bearer {token}"}
+
+
 def get_test_payload():
     """Return a valid LoanApplicationCreate payload with all required fields."""
     return {
-        "application_no": "APP-TEST-001",
+        "application_no": f"APP-TEST-{uuid4().hex[:8].upper()}",
         "status": "DRAFT",
         "product_type": "LOAN",
         "borrower_name": "Test Borrower",
@@ -69,11 +77,12 @@ def get_test_payload():
     }
 
 
-def test_compute_quant_scores_returns_200_with_summary(client):
+def test_compute_quant_scores_returns_200_with_summary(client, subscriber_headers):
     """Test POST endpoint returns 200 with complete quant_scores summary."""
     response = client.post(
         "/api/loan-applications/compute-quant-scores",
         json=get_test_payload(),
+        headers=subscriber_headers,
     )
 
     if response.status_code != 200:
@@ -109,7 +118,7 @@ def test_compute_quant_scores_returns_200_with_summary(client):
     assert summary["decision"] in ["APPROVE", "REVIEW", "DECLINE"]
 
 
-def test_compute_quant_scores_persists_to_database(client):
+def test_compute_quant_scores_persists_to_database(client, subscriber_headers):
     """Test that computed scores are persisted to database.
     
     SKIPPED: Requires active database connection with initialized schema.
@@ -118,7 +127,7 @@ def test_compute_quant_scores_persists_to_database(client):
     pytest.skip("Database persistence requires active PostgreSQL connection")
 
 
-def test_get_loan_retrieves_persisted_scores(client):
+def test_get_loan_retrieves_persisted_scores(client, subscriber_headers):
     """Test that GET endpoint retrieves the persisted scores.
     
     SKIPPED: Requires active database connection with initialized schema.
@@ -127,11 +136,12 @@ def test_get_loan_retrieves_persisted_scores(client):
     pytest.skip("Database retrieval requires active PostgreSQL connection")
 
 
-def test_compute_quant_scores_deterministic_values(client):
+def test_compute_quant_scores_deterministic_values(client, subscriber_headers):
     """Test that scoring engines return expected deterministic values."""
     response = client.post(
         "/api/loan-applications/compute-quant-scores",
         json=get_test_payload(),
+        headers=subscriber_headers,
     )
 
     assert response.status_code == 200
@@ -149,7 +159,7 @@ def test_compute_quant_scores_deterministic_values(client):
     assert summary["decision"] == "APPROVE"
 
 
-def test_compute_quant_scores_missing_required_fields(client):
+def test_compute_quant_scores_missing_required_fields(client, subscriber_headers):
     """Test that endpoint handles missing required fields gracefully."""
     invalid_payload = {
         "borrower_name": "Test User",
@@ -158,6 +168,7 @@ def test_compute_quant_scores_missing_required_fields(client):
     response = client.post(
         "/api/loan-applications/compute-quant-scores",
         json=invalid_payload,
+        headers=subscriber_headers,
     )
 
     # Should return 422 (validation error) 

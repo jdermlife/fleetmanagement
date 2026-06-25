@@ -23,6 +23,7 @@ class LoanApplication(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     application_no = Column(String, unique=True, index=True)
+    created_by_user_id = Column(Integer, nullable=True, index=True)
 
     status = Column(String)
     product_type = Column(String)

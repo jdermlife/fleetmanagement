@@ -8,7 +8,7 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import selectinload
 
 from app.database import SessionLocal
-from app.fastapi_auth import require_roles
+from app.fastapi_auth import CurrentUser, require_roles
 from app.models.loan_application import (
     AIRecommendation,
     CollateralScore,
@@ -68,6 +68,27 @@ def get_loan_application_or_404(db, application_no: str) -> LoanApplication:
     return record
 
 
+def is_admin_user(user: CurrentUser) -> bool:
+    return user.role.lower() == "admin"
+
+
+def is_subscriber_user(user: CurrentUser) -> bool:
+    return user.role.lower() == "subscriber"
+
+
+def enforce_loan_application_access(user: CurrentUser, record: LoanApplication) -> None:
+    if is_admin_user(user):
+        return
+
+    if is_subscriber_user(user) and record.created_by_user_id == user.id:
+        return
+
+    raise HTTPException(
+        status_code=http_status.HTTP_403_FORBIDDEN,
+        detail="You are not allowed to access this loan application",
+    )
+
+
 def model_to_payload(model: Any) -> dict[str, Any]:
     if isinstance(model, dict):
         return model
@@ -103,6 +124,7 @@ def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]
     return {
         "id": record.id,
         "application_no": record.application_no,
+        "created_by_user_id": record.created_by_user_id,
         "status": record.status,
         "product_type": record.product_type,
         "borrower_name": record.borrower_name,
@@ -395,7 +417,7 @@ def build_scored_loan_application(
     data: LoanApplicationCreate,
 ) -> tuple[LoanApplicationCreate, dict[str, Any]]:
     score_package = compute_quant_score_package(data)
-    scored_data = data.copy(
+    scored_data = data.model_copy(
         update={
             "scorecard_total": int(score_package["overall_scores"]["final_score"]),
             "ai_probability": float(score_package["overall_scores"]["final_score"]),
@@ -452,9 +474,11 @@ def apply_loan_application_fields(record: LoanApplication, data: LoanApplication
 @router.post(
     "/loan-applications",
     status_code=http_status.HTTP_201_CREATED,
-    dependencies=[Depends(require_roles("Admin", "Manager"))],
 )
-def create_loan_application(data: LoanApplicationCreate):
+def create_loan_application(
+    data: LoanApplicationCreate,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
     db = SessionLocal()
 
     try:
@@ -471,7 +495,10 @@ def create_loan_application(data: LoanApplicationCreate):
                 detail="Application already exists",
             )
 
-        record = LoanApplication(application_no=scored_data.application_no)
+        record = LoanApplication(
+            application_no=scored_data.application_no,
+            created_by_user_id=user.id,
+        )
         apply_loan_application_fields(record, scored_data)
         db.add(record)
         db.flush()
@@ -499,9 +526,11 @@ def create_loan_application(data: LoanApplicationCreate):
 
 @router.post(
     "/loan-applications/compute-quant-scores",
-    dependencies=[Depends(require_roles("Admin", "Manager"))],
 )
-def compute_quant_scores(data: LoanApplicationCreate):
+def compute_quant_scores(
+    data: LoanApplicationCreate,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
     db = SessionLocal()
 
     try:
@@ -513,8 +542,14 @@ def compute_quant_scores(data: LoanApplicationCreate):
         )
         previous_status = record.status if record else None
 
+        if record is not None:
+            enforce_loan_application_access(user, record)
+
         if record is None:
-            record = LoanApplication(application_no=scored_data.application_no)
+            record = LoanApplication(
+                application_no=scored_data.application_no,
+                created_by_user_id=user.id,
+            )
             db.add(record)
             db.flush()
 
@@ -543,7 +578,6 @@ def compute_quant_scores(data: LoanApplicationCreate):
 
 @router.get(
     "/loan-applications",
-    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
 )
 def get_loan_applications(
     status: str | None = Query(default=None),
@@ -551,11 +585,14 @@ def get_loan_applications(
     date_to: str | None = Query(default=None),
     limit: int = Query(default=100, ge=1, le=25000),
     offset: int = Query(default=0, ge=0),
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
 ):
     db = SessionLocal()
 
     try:
         query = db.query(LoanApplication)
+        if is_subscriber_user(user):
+            query = query.filter(LoanApplication.created_by_user_id == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
         loans = (
             query.order_by(LoanApplication.created_at.desc())
@@ -571,7 +608,7 @@ def get_loan_applications(
 
 @router.post(
     "/loan-applications/import",
-    dependencies=[Depends(require_roles("Admin", "Manager"))],
+    dependencies=[Depends(require_roles("Admin"))],
 )
 async def import_loan_applications(file: UploadFile = File(...)):
     db = SessionLocal()
@@ -599,18 +636,20 @@ async def import_loan_applications(file: UploadFile = File(...)):
 
 @router.get(
     "/loan-applications/export",
-    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
 )
 def export_loan_applications(
     status: str | None = Query(default=None),
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
     format: str = Query(default="csv"),
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
 ):
     db = SessionLocal()
 
     try:
         query = db.query(LoanApplication)
+        if is_subscriber_user(user):
+            query = query.filter(LoanApplication.created_by_user_id == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
         records = query.order_by(LoanApplication.created_at.desc()).all()
 
@@ -641,13 +680,17 @@ def export_loan_applications(
 
 @router.put(
     "/loan-applications/{application_no}/status",
-    dependencies=[Depends(require_roles("Admin", "Manager"))],
 )
-def update_status(application_no: str, status: str):
+def update_status(
+    application_no: str,
+    status: str,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
     db = SessionLocal()
 
     try:
         record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
         previous_status = record.status
 
         record.status = status
@@ -668,13 +711,16 @@ def update_status(application_no: str, status: str):
 
 @router.get(
     "/loan-applications/{application_no}",
-    dependencies=[Depends(require_roles("Admin", "Manager", "Viewer"))],
 )
-def get_loan_application(application_no: str):
+def get_loan_application(
+    application_no: str,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
     db = SessionLocal()
 
     try:
         record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
         return serialize_loan_application(record)
     finally:
         db.close()
@@ -682,14 +728,18 @@ def get_loan_application(application_no: str):
 
 @router.put(
     "/loan-applications/{application_no}",
-    dependencies=[Depends(require_roles("Admin", "Manager"))],
 )
-def update_loan_application(application_no: str, data: LoanApplicationCreate):
+def update_loan_application(
+    application_no: str,
+    data: LoanApplicationCreate,
+    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+):
     db = SessionLocal()
 
     try:
         scored_data, quant_scores = build_scored_loan_application(data)
         record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
         previous_status = record.status
 
         if (

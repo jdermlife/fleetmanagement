@@ -228,7 +228,7 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         username=request.username,
         email=request.email,
         password_hash=hash_password(request.password),
-        role="read_only_user",
+        role="SUBSCRIBER",
         is_active=True,
     )
     db.add(user)
