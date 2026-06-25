@@ -110,7 +110,7 @@ def token_required(fn):
     def decorated(*args, **kwargs):
         auth_header = request.headers.get("Authorization", "")
         if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Missing or invalid Authorization header"}), 401
+            return jsonify({"error": "Please Login.Missing or invalid Authorization header"}), 401
         
         token = auth_header[7:]
         try:
