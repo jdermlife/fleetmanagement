@@ -97,6 +97,7 @@ function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
+  const [authDropdownOpen, setAuthDropdownOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
@@ -104,6 +105,10 @@ function App() {
   const [govOpen, setGovOpen] = useState(true)
   const closeMenu = () => {
     setMenuOpen(false)
+  }
+
+  const closeAuthDropdown = () => {
+    setAuthDropdownOpen(false)
   }
 
 const aiMenus = [
@@ -190,6 +195,10 @@ const adminMenuItems = visibleMenuLinks.filter(
     void loadCurrentUser()
   }, [location.pathname])
 
+  useEffect(() => {
+    setAuthDropdownOpen(false)
+  }, [location.pathname])
+
   const handleTopbarLogout = async () => {
     await logout()
     setCurrentUser(null)
@@ -213,32 +222,49 @@ const adminMenuItems = visibleMenuLinks.filter(
           </div>
 
           <div className="app-auth-summary">
-            {authReady && currentUser ? (
-              <>
-                <div className="app-auth-chip">
-                  <span className="app-auth-chip-label">Signed In</span>
-                  <strong>{currentUser.username}</strong>
-                </div>
-                <Link className="app-auth-link" to="/account">
-                  Account
-                </Link>
-                <button
-                  type="button"
-                  className="app-auth-action"
-                  onClick={() => void handleTopbarLogout()}
-                >
-                  Sign Out
-                </button>
-              </>
-            ) : (
-              <>
-                <Link className="app-auth-link" to="/login">
-                  Sign In
-                </Link>
-                <Link className="app-auth-link" to="/register">
-                  Register
-                </Link>
-              </>
+            <button
+              type="button"
+              className="app-auth-action"
+              onClick={() => setAuthDropdownOpen((prev) => !prev)}
+              aria-haspopup="menu"
+              aria-expanded={authDropdownOpen}
+            >
+              {authReady && currentUser ? currentUser.username : 'Account'}
+            </button>
+
+            {authDropdownOpen && (
+              <div className="app-auth-dropdown" role="menu">
+                {authReady && currentUser ? (
+                  <>
+                    <div className="app-auth-chip">
+                      <span className="app-auth-chip-label">Signed In</span>
+                      <strong>{currentUser.username}</strong>
+                    </div>
+                    <Link className="app-auth-link" to="/account" onClick={closeAuthDropdown}>
+                      Account
+                    </Link>
+                    <button
+                      type="button"
+                      className="app-auth-action"
+                      onClick={() => {
+                        closeAuthDropdown()
+                        void handleTopbarLogout()
+                      }}
+                    >
+                      Sign Out
+                    </button>
+                  </>
+                ) : (
+                  <>
+                    <Link className="app-auth-link" to="/login" onClick={closeAuthDropdown}>
+                      Sign In
+                    </Link>
+                    <Link className="app-auth-link" to="/register" onClick={closeAuthDropdown}>
+                      Register
+                    </Link>
+                  </>
+                )}
+              </div>
             )}
           </div>
 

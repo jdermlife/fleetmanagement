@@ -212,6 +212,22 @@ textarea {
   gap: 10px;
   flex-wrap: wrap;
   justify-content: flex-end;
+  position: relative;
+}
+
+.app-auth-dropdown {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  min-width: 200px;
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  background: #7a5607;
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
+  z-index: 100000;
 }
 
 .app-auth-chip {
@@ -235,7 +251,7 @@ textarea {
 
 .app-auth-link,
 .app-auth-action {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   min-height: 40px;
