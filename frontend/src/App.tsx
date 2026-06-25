@@ -42,6 +42,7 @@ const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage')
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
+const SubscriptionPaymentPage = lazy(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 
 const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
 const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
@@ -739,6 +740,15 @@ const adminMenuItems = visibleMenuLinks.filter(
               element={
                 <ProtectedRoute roles={['admin']}>
                   <SubscriptionManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/subscription-payment"
+              element={
+                <ProtectedRoute roles={['admin', 'subscriber']}>
+                  <SubscriptionPaymentPage />
                 </ProtectedRoute>
               }
             />

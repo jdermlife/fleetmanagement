@@ -1,5 +1,5 @@
 import type { FormEvent } from 'react'
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import {
@@ -8,8 +8,10 @@ import {
   fetchCurrentUser,
   getAuthToken,
   getErrorMessage,
+  listSubscriptionPlans,
   logout,
   type LoginResponse,
+  type SubscriptionPlan,
 } from '../../api'
 
 export default function AccountSettingsPage() {
@@ -26,6 +28,9 @@ export default function AccountSettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('')
+  const [subscriptionMessage, setSubscriptionMessage] = useState('')
 
   useEffect(() => {
     const token = getAuthToken()
@@ -36,8 +41,15 @@ export default function AccountSettingsPage() {
 
     const loadCurrentUser = async () => {
       try {
-        const currentUser = await fetchCurrentUser()
+        const [currentUser, planRows] = await Promise.all([
+          fetchCurrentUser(),
+          listSubscriptionPlans(),
+        ])
         setUser(currentUser)
+        setPlans(planRows)
+        if (planRows.length > 0) {
+          setSelectedPlanId(planRows[0].id)
+        }
       } catch (error) {
         setLoadMessage(getErrorMessage(error, 'Unable to load account details.'))
       } finally {
@@ -98,6 +110,42 @@ export default function AccountSettingsPage() {
     } finally {
       setIsDeletingAccount(false)
     }
+  }
+
+  const getMonthlyEquivalent = (plan: SubscriptionPlan): number => {
+    if (plan.monthly_price && plan.monthly_price > 0) {
+      return plan.monthly_price
+    }
+    if (plan.yearly_price && plan.yearly_price > 0) {
+      return plan.yearly_price / 12
+    }
+    return 0
+  }
+
+  const sortedPlans = useMemo(
+    () => [...plans].sort((a, b) => getMonthlyEquivalent(a) - getMonthlyEquivalent(b)),
+    [plans],
+  )
+
+  const selectedPlan = useMemo(
+    () => sortedPlans.find((plan) => plan.id === selectedPlanId) ?? null,
+    [sortedPlans, selectedPlanId],
+  )
+
+  const suggestedUpgrade = useMemo(() => {
+    if (!selectedPlan) {
+      return null
+    }
+    const selectedPrice = getMonthlyEquivalent(selectedPlan)
+    return sortedPlans.find((plan) => getMonthlyEquivalent(plan) > selectedPrice) ?? null
+  }, [selectedPlan, sortedPlans])
+
+  const handleGoToPayment = () => {
+    if (!selectedPlan) {
+      setSubscriptionMessage('Please select a subscription plan first.')
+      return
+    }
+    navigate(`/subscription-payment?planId=${selectedPlan.id}`)
   }
 
   if (isLoading) {
@@ -171,6 +219,54 @@ export default function AccountSettingsPage() {
             View Terms & Consent
           </Link>
         </div>
+      </div>
+
+      <div className="card auth-helper-card">
+        <h3>Subscription Plan</h3>
+        <p className="intro">
+          Select your preferred plan and proceed to payment for activation or upgrade.
+        </p>
+
+        <label>
+          Available plans (monthly equivalent)
+          <select
+            value={selectedPlanId}
+            onChange={(event) => setSelectedPlanId(event.target.value ? Number(event.target.value) : '')}
+          >
+            {sortedPlans.map((plan) => (
+              <option key={plan.id} value={plan.id}>
+                {plan.plan_name} ({plan.plan_code}) - {plan.currency} {getMonthlyEquivalent(plan).toFixed(2)} / month
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {selectedPlan ? (
+          <p className="status-message">
+            Selected: <strong>{selectedPlan.plan_name}</strong> | Support: <strong>{selectedPlan.support_level}</strong>
+          </p>
+        ) : null}
+
+        {suggestedUpgrade ? (
+          <p className="status-message">
+            Upgrade offer: Move to <strong>{suggestedUpgrade.plan_name}</strong> for enhanced features at
+            {' '}
+            <strong>
+              {suggestedUpgrade.currency} {getMonthlyEquivalent(suggestedUpgrade).toFixed(2)} / month
+            </strong>
+            .
+          </p>
+        ) : (
+          <p className="status-message">You are already on the highest available monthly tier.</p>
+        )}
+
+        <div className="form-actions">
+          <button type="button" onClick={handleGoToPayment}>
+            Go to Payment
+          </button>
+        </div>
+
+        {subscriptionMessage ? <p className="status-message">{subscriptionMessage}</p> : null}
       </div>
 
       <form className="card auth-panel" onSubmit={handlePasswordChange}>
