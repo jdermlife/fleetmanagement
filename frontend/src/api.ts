@@ -329,6 +329,19 @@ export interface AdminUser {
   username: string
   email: string
   is_active: boolean
+  is_deleted?: boolean
+  account_status?: 'ACTIVE' | 'PENDING' | 'LOCKED' | 'SUSPENDED' | 'DISABLED' | 'DELETED'
+  first_name?: string | null
+  middle_name?: string | null
+  last_name?: string | null
+  mobile_no?: string | null
+  role_id?: number | null
+  subscription_id?: number | null
+  api_access?: boolean
+  email_verified?: boolean
+  last_login_ip?: string | null
+  last_login_device?: string | null
+  total_login_count?: number
   mfa_enabled?: boolean
   last_login_at?: string | null
   roles: string[]
@@ -346,6 +359,15 @@ export async function createAdminUser(payload: {
   email: string
   password: string
   is_active?: boolean
+  account_status?: 'ACTIVE' | 'PENDING' | 'LOCKED' | 'SUSPENDED' | 'DISABLED' | 'DELETED'
+  first_name?: string
+  middle_name?: string
+  last_name?: string
+  mobile_no?: string
+  role_id?: number
+  subscription_id?: number
+  api_access?: boolean
+  email_verified?: boolean
   roles?: string[]
 }): Promise<AdminUser> {
   const response = await api.post<{ user: AdminUser }>('/api/admin/users', payload)
@@ -354,7 +376,19 @@ export async function createAdminUser(payload: {
 
 export async function updateAdminUser(
   userId: number,
-  payload: { email?: string; is_active?: boolean },
+  payload: {
+    email?: string
+    is_active?: boolean
+    account_status?: 'ACTIVE' | 'PENDING' | 'LOCKED' | 'SUSPENDED' | 'DISABLED' | 'DELETED'
+    first_name?: string
+    middle_name?: string
+    last_name?: string
+    mobile_no?: string
+    role_id?: number
+    subscription_id?: number
+    api_access?: boolean
+    email_verified?: boolean
+  },
 ): Promise<AdminUser> {
   const response = await api.patch<{ user: AdminUser }>(`/api/admin/users/${userId}`, payload)
   return response.data.user

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
-from app.database import SessionLocal
+from app.database import SessionLocal, set_rls_context
 from app.fastapi_auth import CurrentUser, require_roles
 from app.models.subscription import (
     Feature,
@@ -30,6 +30,12 @@ from app.schemas.subscription_schema import (
 )
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+
+
+def _session_with_rls(user: CurrentUser):
+    db = SessionLocal()
+    set_rls_context(db, user.id, user.role)
+    return db
 
 
 def _is_admin(user: CurrentUser) -> bool:
@@ -81,7 +87,7 @@ def _serialize_subscription(subscription: Subscription) -> dict:
 
 @router.get("/plans")
 def list_plans(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         rows = db.query(SubscriptionPlan).order_by(SubscriptionPlan.plan_name.asc()).all()
         return [_serialize_plan(item) for item in rows]
@@ -94,7 +100,7 @@ def create_plan(
     payload: SubscriptionPlanCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         existing = db.query(SubscriptionPlan).filter(SubscriptionPlan.plan_code == payload.plan_code).first()
         if existing:
@@ -114,7 +120,7 @@ def list_subscriptions(
     user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
     status: str | None = Query(default=None),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         query = db.query(Subscription)
         if not _is_admin(user):
@@ -132,7 +138,7 @@ def create_subscription(
     payload: SubscriptionCreate,
     user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         existing = db.query(Subscription).filter(Subscription.subscription_no == payload.subscription_no).first()
         if existing:
@@ -154,7 +160,7 @@ def update_subscription_status(
     status: str,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         row = db.query(Subscription).filter(Subscription.id == subscription_id).first()
         if not row:
@@ -169,7 +175,7 @@ def update_subscription_status(
 
 @router.get("/providers")
 def list_payment_providers(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         rows = db.query(PaymentProvider).order_by(PaymentProvider.provider_name.asc()).all()
         return [
@@ -193,7 +199,7 @@ def create_payment_provider(
     payload: PaymentProviderCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         existing = db.query(PaymentProvider).filter(PaymentProvider.provider_code == payload.provider_code).first()
         if existing:
@@ -217,7 +223,7 @@ def create_payment_provider(
 
 @router.get("/payments")
 def list_subscription_payments(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionPayment).join(Subscription, Subscription.id == SubscriptionPayment.subscription_id)
         if not _is_admin(user):
@@ -249,7 +255,7 @@ def create_subscription_payment(
     payload: SubscriptionPaymentCreate,
     user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
         if not subscription:
@@ -281,7 +287,7 @@ def create_subscription_payment(
 
 @router.get("/invoices")
 def list_subscription_invoices(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionInvoice).join(Subscription, Subscription.id == SubscriptionInvoice.subscription_id)
         if not _is_admin(user):
@@ -312,7 +318,7 @@ def create_subscription_invoice(
     payload: SubscriptionInvoiceCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         row = SubscriptionInvoice(**payload.model_dump())
         db.add(row)
@@ -337,7 +343,7 @@ def create_subscription_invoice(
 
 @router.get("/usage")
 def list_subscription_usage(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionUsage).join(Subscription, Subscription.id == SubscriptionUsage.subscription_id)
         if not _is_admin(user):
@@ -367,7 +373,7 @@ def create_subscription_usage(
     payload: SubscriptionUsageCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         row = SubscriptionUsage(**payload.model_dump())
         db.add(row)
@@ -391,7 +397,7 @@ def create_subscription_usage(
 
 @router.get("/events")
 def list_subscription_events(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionEvent).join(Subscription, Subscription.id == SubscriptionEvent.subscription_id)
         if not _is_admin(user):
@@ -417,7 +423,7 @@ def create_subscription_event(
     payload: SubscriptionEventCreate,
     user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
         if not subscription:
@@ -448,7 +454,7 @@ def create_subscription_event(
 
 @router.get("/webhooks")
 def list_payment_webhooks(user: CurrentUser = Depends(require_roles("Admin"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         rows = db.query(PaymentWebhook).order_by(PaymentWebhook.created_at.desc()).all()
         return [
@@ -472,7 +478,7 @@ def create_payment_webhook(
     payload: PaymentWebhookCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         row = PaymentWebhook(**payload.model_dump())
         db.add(row)
@@ -493,7 +499,7 @@ def create_payment_webhook(
 
 @router.get("/features")
 def list_features(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         rows = db.query(Feature).order_by(Feature.feature_name.asc()).all()
         return [
@@ -514,7 +520,7 @@ def create_feature(
     payload: FeatureCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         existing = db.query(Feature).filter(Feature.feature_code == payload.feature_code).first()
         if existing:
@@ -536,7 +542,7 @@ def create_feature(
 
 @router.get("/plans/{plan_id}/features")
 def list_plan_features(plan_id: int, user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         rows = db.query(PlanFeature).filter(PlanFeature.plan_id == plan_id).all()
         feature_ids = [item.feature_id for item in rows]
@@ -562,7 +568,7 @@ def assign_plan_features(
     payload: PlanFeatureAssignRequest,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = SessionLocal()
+    db = _session_with_rls(user)
     try:
         plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == plan_id).first()
         if not plan:

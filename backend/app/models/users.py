@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String, Text
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
@@ -8,13 +8,44 @@ from app.models.roles import role_permissions, user_roles
 
 class User(Base):
 	__tablename__ = "users"
+	__table_args__ = (
+		CheckConstraint(
+			"account_status IN ('ACTIVE','PENDING','LOCKED','SUSPENDED','DISABLED','DELETED')",
+			name="chk_account_status",
+		),
+	)
 
 	id = Column(Integer, primary_key=True)
-	username = Column(String(150), nullable=False, unique=True, index=True)
+	username = Column(String(100), nullable=False, unique=True, index=True)
 	email = Column(String(255), nullable=False, unique=True, index=True)
 	password_hash = Column(Text, nullable=False)
 	role = Column(String(100), nullable=False, default="viewer")
+	role_id = Column(Integer, ForeignKey("roles.id"), index=True)
+	subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), index=True)
+	tenant_id = Column(BigInteger, index=True)
+	created_by = Column(Integer, ForeignKey("users.id"), index=True)
+	updated_by = Column(Integer, ForeignKey("users.id"), index=True)
+	deleted_by = Column(Integer, ForeignKey("users.id"), index=True)
 	is_active = Column(Boolean, nullable=False, default=True)
+	is_deleted = Column(Boolean, nullable=False, default=False)
+	deleted_at = Column(DateTime(timezone=True))
+	account_status = Column(String(30), nullable=False, default="ACTIVE")
+	first_name = Column(String(100))
+	middle_name = Column(String(100))
+	last_name = Column(String(100))
+	mobile_no = Column(String(30))
+	profile_photo = Column(Text)
+	total_login_count = Column(Integer, nullable=False, default=0)
+	last_failed_login = Column(DateTime(timezone=True))
+	last_login_ip = Column(String(100))
+	last_login_device = Column(Text)
+	api_access = Column(Boolean, nullable=False, default=False)
+	email_verified = Column(Boolean, nullable=False, default=False)
+	email_verified_at = Column(DateTime(timezone=True))
+	password_changed_at = Column(DateTime(timezone=True))
+	password_reset_expires = Column(DateTime(timezone=True))
+	password_expires_at = Column(DateTime(timezone=True))
+	force_password_change = Column(Boolean, nullable=False, default=False)
 
 	last_login_at = Column(DateTime(timezone=True))
 	failed_login_attempts = Column(Integer, nullable=False, default=0)
@@ -29,6 +60,8 @@ class User(Base):
 	updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
 	roles = relationship("Role", secondary=user_roles, back_populates="users", lazy="selectin")
+	role_ref = relationship("Role", foreign_keys=[role_id], lazy="selectin")
+	subscription = relationship("Subscription", foreign_keys=[subscription_id], lazy="selectin")
 	sessions = relationship("AuthSession", back_populates="user", cascade="all, delete-orphan")
 	mfa_backup_codes = relationship(
 		"MfaBackupCode",

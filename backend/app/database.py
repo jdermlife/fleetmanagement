@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, declarative_base
 from dotenv import load_dotenv
 import os
@@ -40,3 +40,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def set_rls_context(db, user_id: int | None, user_role: str | None) -> None:
+    if not DATABASE_URL.startswith("postgresql"):
+        return
+
+    if not hasattr(db, "execute"):
+        return
+
+    uid = "" if user_id is None else str(user_id)
+    role = "" if user_role is None else user_role.lower()
+    db.execute(text("SELECT set_config('app.user_id', :uid, true)"), {"uid": uid})
+    db.execute(text("SELECT set_config('app.user_role', :role, true)"), {"role": role})
