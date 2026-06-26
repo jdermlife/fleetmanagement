@@ -44,9 +44,10 @@ type PurposeSlice = {
   value: number;
 };
 
-type HeatmapRow = {
+type RiskProfilePoint = {
   label: string;
-  values: number[];
+  riskRate: number;
+  total: number;
 };
 
 type GeoPoint = {
@@ -70,13 +71,12 @@ type DashboardData = {
   approvalOutcomes: OutcomePoint[];
   geoCoverage: number;
   geoPoints: GeoPoint[];
-  heatmapColumns: string[];
-  heatmapRows: HeatmapRow[];
   kpis: MetricCardData[];
   processingCoverage: number;
   processingTrend: TrendPoint[];
   purposeSlices: PurposeSlice[];
   quarterVolume: TrendPoint[];
+  riskByLoanType: RiskProfilePoint[];
   repeatMix: PurposeSlice[];
   scatterPoints: ScatterPoint[];
 };
@@ -385,7 +385,7 @@ export default function DashboardSnapshot() {
                 <SectionGrid>
                   <Panel
                     subtitle="Trend line with month and quarter views to surface seasonality, spikes, and reporting momentum."
-                    title="Application Volume by Month / Quarter"
+                    title="Application Volume Over Time"
                   >
                     <LineChart
                       accent="#0891b2"
@@ -406,7 +406,7 @@ export default function DashboardSnapshot() {
 
                   <Panel
                     subtitle="Most common stated borrowing reasons across the repository."
-                    title="Top Loan Purposes"
+                    title="Loan Purpose Distribution"
                   >
                     <PieChart data={dashboard.purposeSlices} />
                   </Panel>
@@ -457,10 +457,10 @@ export default function DashboardSnapshot() {
 
                 <SectionGrid>
                   <Panel
-                    subtitle="Heatmap comparing default or delinquency concentrations across product categories and recent quarters."
-                    title="Default / Delinquency Rates by Loan Type"
+                    subtitle="Spider chart of default and delinquency rates across loan types to show where risk is concentrated."
+                    title="Risk Profile by Loan Type"
                   >
-                    <Heatmap columns={dashboard.heatmapColumns} rows={dashboard.heatmapRows} />
+                    <RadarRiskChart data={dashboard.riskByLoanType} />
                   </Panel>
 
                   <Panel
@@ -938,70 +938,136 @@ function PieChart({ data }: { data: PurposeSlice[] }) {
   );
 }
 
-function Heatmap({
-  columns,
-  rows,
-}: {
-  columns: string[];
-  rows: HeatmapRow[];
-}) {
-  if (columns.length === 0 || rows.length === 0) {
-    return <EmptyState message="Heatmap data is unavailable." />;
+function RadarRiskChart({ data }: { data: RiskProfilePoint[] }) {
+  if (data.length === 0) {
+    return <EmptyState message="Risk profile data is unavailable." />;
   }
 
+  const size = 320;
+  const center = size / 2;
+  const radius = 108;
+  const maxRate = Math.max(...data.map((point) => point.riskRate), 0.01);
+  const levels = [0.25, 0.5, 0.75, 1];
+
+  const vertices = data.map((point, index) => {
+    const angle = -Math.PI / 2 + (index * Math.PI * 2) / data.length;
+    const scaled = point.riskRate / maxRate;
+    const x = center + Math.cos(angle) * radius * scaled;
+    const y = center + Math.sin(angle) * radius * scaled;
+    const axisX = center + Math.cos(angle) * radius;
+    const axisY = center + Math.sin(angle) * radius;
+    const labelX = center + Math.cos(angle) * (radius + 26);
+    const labelY = center + Math.sin(angle) * (radius + 26);
+
+    return {
+      ...point,
+      axisX,
+      axisY,
+      labelX,
+      labelY,
+      x,
+      y,
+    };
+  });
+
+  const polygon = vertices.map((vertex) => `${vertex.x},${vertex.y}`).join(" ");
+
   return (
-    <div style={{ minHeight: "190px", overflowX: "auto" }}>
-      <table style={{ borderCollapse: "separate", borderSpacing: "8px", minWidth: "100%" }}>
-        <thead>
-          <tr>
-            <th style={{ color: "#64748b", fontSize: "0.72rem", textAlign: "left", textTransform: "uppercase" }}>
-              Loan Type
-            </th>
-            {columns.map((column) => (
-              <th
-                key={column}
-                style={{ color: "#64748b", fontSize: "0.72rem", textAlign: "center", textTransform: "uppercase" }}
-              >
-                {column}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <tr key={row.label}>
-              <td
-                style={{
-                  background: "#f8fafc",
-                  borderRadius: "14px",
-                  color: "#0f172a",
-                  fontSize: "0.88rem",
-                  fontWeight: 700,
-                  padding: "12px 14px",
-                }}
-              >
-                {row.label}
-              </td>
-              {row.values.map((value, index) => (
-                <td
-                  key={`${row.label}-${columns[index]}`}
-                  style={{
-                    background: `rgba(239,68,68, ${0.08 + Math.min(value, 1) * 0.76})`,
-                    borderRadius: "14px",
-                    color: "#0f172a",
-                    fontSize: "0.84rem",
-                    fontWeight: 700,
-                    padding: "12px",
-                    textAlign: "center",
-                  }}
-                >
-                  {formatPercent(value)}
-                </td>
-              ))}
-            </tr>
+    <div
+      style={{
+        alignItems: "center",
+        display: "grid",
+        gap: "18px",
+        gridTemplateColumns: "minmax(180px, 340px) minmax(0, 1fr)",
+        minHeight: "190px",
+      }}
+    >
+      <div style={{ margin: "0 auto", overflowX: "auto", width: "100%" }}>
+        <svg viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: "320px", minWidth: "240px", width: "100%" }}>
+          {levels.map((level) => {
+            const points = data
+              .map((_point, index) => {
+                const angle = -Math.PI / 2 + (index * Math.PI * 2) / data.length;
+                const x = center + Math.cos(angle) * radius * level;
+                const y = center + Math.sin(angle) * radius * level;
+                return `${x},${y}`;
+              })
+              .join(" ");
+
+            return (
+              <polygon
+                key={level}
+                fill="none"
+                points={points}
+                stroke="rgba(148,163,184,0.28)"
+                strokeDasharray="5 7"
+                strokeWidth="1.5"
+              />
+            );
+          })}
+
+          {vertices.map((vertex) => (
+            <line
+              key={`axis-${vertex.label}`}
+              x1={center}
+              x2={vertex.axisX}
+              y1={center}
+              y2={vertex.axisY}
+              stroke="rgba(148,163,184,0.35)"
+              strokeWidth="1.2"
+            />
           ))}
-        </tbody>
-      </table>
+
+          <polygon
+            fill="rgba(239,68,68,0.2)"
+            points={polygon}
+            stroke="#ef4444"
+            strokeLinejoin="round"
+            strokeWidth="3"
+          />
+
+          {vertices.map((vertex) => (
+            <g key={`point-${vertex.label}`}>
+              <circle cx={vertex.x} cy={vertex.y} fill="#ef4444" r="5" />
+              <text
+                style={{ fill: "#0f172a", fontSize: "11px", fontWeight: 700 }}
+                textAnchor="middle"
+                x={vertex.labelX}
+                y={vertex.labelY}
+              >
+                {vertex.label}
+              </text>
+            </g>
+          ))}
+        </svg>
+      </div>
+
+      <div style={{ display: "grid", gap: "10px" }}>
+        {data.map((point) => (
+          <div
+            key={point.label}
+            style={{
+              alignItems: "center",
+              background: "#f8fafc",
+              border: "1px solid rgba(148,163,184,0.18)",
+              borderRadius: "16px",
+              display: "flex",
+              justifyContent: "space-between",
+              padding: "10px 12px",
+            }}
+          >
+            <span style={{ color: "#0f172a", fontSize: "0.84rem", fontWeight: 700 }}>
+              {point.label}
+            </span>
+            <span style={{ color: "#ef4444", fontSize: "0.84rem", fontWeight: 700 }}>
+              {formatPercent(point.riskRate)}
+            </span>
+          </div>
+        ))}
+        <p style={{ ...subtleTextStyle, fontSize: "0.78rem", marginTop: "2px" }}>
+          Radar area is normalized to the highest observed default or delinquency rate.
+        </p>
+      </div>
     </div>
   );
 }
@@ -1274,7 +1340,7 @@ function buildDashboardData(applications: LoanApplicationRecord[]): DashboardDat
     submitted.filter((record) => record.age !== null).length,
     submitted.length,
   );
-  const { columns: heatmapColumns, rows: heatmapRows } = buildHeatmap(submitted);
+  const riskByLoanType = buildRiskByLoanType(submitted);
   const { geoCoverage, geoPoints } = buildGeoData(submitted);
   const scatterPoints = buildScatterPoints(submitted);
   const repeatMix = buildRepeatMix(submitted);
@@ -1287,13 +1353,12 @@ function buildDashboardData(applications: LoanApplicationRecord[]): DashboardDat
     approvalOutcomes,
     geoCoverage,
     geoPoints,
-    heatmapColumns,
-    heatmapRows,
     kpis,
     processingCoverage,
     processingTrend,
     purposeSlices,
     quarterVolume,
+    riskByLoanType,
     repeatMix,
     scatterPoints,
   };
@@ -1396,39 +1461,27 @@ function buildAgeBands(records: EnrichedLoan[]): TrendPoint[] {
   return bands.map(({ label, value }) => ({ label, value }));
 }
 
-function buildHeatmap(records: EnrichedLoan[]): { columns: string[]; rows: HeatmapRow[] } {
-  const columns = Array.from(
-    new Set(records.filter((record) => record.createdDate).map((record) => quarterKey(record.createdDate as Date))),
-  )
-    .sort((left, right) => left.localeCompare(right))
-    .slice(-4);
+function buildRiskByLoanType(records: EnrichedLoan[]): RiskProfilePoint[] {
+  const loanTypeMap = new Map<string, { risky: number; total: number }>();
 
-  const productTypes = Array.from(
-    records.reduce((map, record) => {
-      const label = normalizeText(record.product_type, "Unspecified");
-      map.set(label, (map.get(label) ?? 0) + 1);
-      return map;
-    }, new Map<string, number>()),
-  )
-    .sort((left, right) => right[1] - left[1])
+  for (const record of records) {
+    const label = normalizeText(record.product_type, normalizeText(record.purpose, "Unspecified"));
+    const bucket = loanTypeMap.get(label) ?? { risky: 0, total: 0 };
+    bucket.total += 1;
+    if (record.statusBucket === "defaulted") {
+      bucket.risky += 1;
+    }
+    loanTypeMap.set(label, bucket);
+  }
+
+  return Array.from(loanTypeMap.entries())
+    .sort((left, right) => right[1].total - left[1].total)
     .slice(0, 6)
-    .map(([label]) => label);
-
-  const rows = productTypes.map((productType) => ({
-    label: productType,
-    values: columns.map((column) => {
-      const relevant = records.filter(
-        (record) =>
-          record.createdDate &&
-          normalizeText(record.product_type, "Unspecified") === productType &&
-          quarterKey(record.createdDate) === column,
-      );
-      const risky = relevant.filter((record) => record.statusBucket === "defaulted").length;
-      return safeDivide(risky, relevant.length);
-    }),
-  }));
-
-  return { columns, rows };
+    .map(([label, bucket]) => ({
+      label,
+      riskRate: safeDivide(bucket.risky, bucket.total),
+      total: bucket.total,
+    }));
 }
 
 function buildGeoData(records: EnrichedLoan[]): { geoCoverage: number; geoPoints: GeoPoint[] } {
