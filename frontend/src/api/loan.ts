@@ -474,10 +474,29 @@ export interface LoanApplicationQueryParams {
   status?: 'All' | WorkflowStatus | string
 }
 
-export async function fetchLoanApplications(
+export interface DashboardStatistics {
+  totalApplications: number
+  approved: number
+  pending: number
+  rejected: number
+}
+
+export interface LoanApplicationsPageResponse {
+  total: number
+  limit: number
+  offset: number
+  records: LoanApplicationRecord[]
+}
+
+export async function fetchDashboardStatistics(): Promise<DashboardStatistics> {
+  const response = await api.get<DashboardStatistics>('/dashboard/statistics')
+  return response.data
+}
+
+async function fetchLoanApplicationsPage(
   params: LoanApplicationQueryParams = {},
-): Promise<LoanApplicationRecord[]> {
-  const response = await api.get<LoanApplicationRecord[]>(LOAN_APPLICATIONS_PATH, {
+): Promise<LoanApplicationsPageResponse> {
+  const response = await api.get<LoanApplicationsPageResponse>(LOAN_APPLICATIONS_PATH, {
     params: {
       date_from: params.dateFrom || undefined,
       date_to: params.dateTo || undefined,
@@ -489,6 +508,17 @@ export async function fetchLoanApplications(
   return response.data
 }
 
+export async function fetchLoanApplications(
+  params: LoanApplicationQueryParams = {},
+): Promise<LoanApplicationRecord[]> {
+  if (params.limit !== undefined || params.offset !== undefined) {
+    const response = await fetchLoanApplicationsPage(params)
+    return response.records
+  }
+
+  return fetchAllLoanApplications(params)
+}
+
 export async function fetchAllLoanApplications(
   params: Omit<LoanApplicationQueryParams, 'limit' | 'offset'> = {},
 ): Promise<LoanApplicationRecord[]> {
@@ -496,15 +526,15 @@ export async function fetchAllLoanApplications(
   const pageSize = 10000
 
   for (let offset = 0; ; offset += pageSize) {
-    const batch = await fetchLoanApplications({
+    const batch = await fetchLoanApplicationsPage({
       ...params,
       limit: pageSize,
       offset,
     })
 
-    allRecords.push(...batch)
+    allRecords.push(...batch.records)
 
-    if (batch.length < pageSize) {
+    if (batch.records.length < pageSize) {
       break
     }
   }

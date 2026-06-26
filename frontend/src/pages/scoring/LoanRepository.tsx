@@ -1,10 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
-import { getErrorMessage } from "../../api";
+import { api, getErrorMessage } from "../../api";
 import {
   exportLoanApplications,
-  fetchLoanApplications,
   importLoanApplications,
   updateLoanApplicationStatus,
   type LoanApplicationRecord,
@@ -107,6 +106,7 @@ export default function LoanRepository() {
   const { hasRole, hasPermission } = useAuthorization();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const PAGE_SIZE = 25;
 
   const canCreateLoans = hasRole("admin") || hasPermission("create:loans");
   const canEditLoans = hasRole("admin") || hasPermission("edit:loans");
@@ -118,6 +118,8 @@ export default function LoanRepository() {
   const requestedStatus = searchParams.get("status");
 
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
+  const [page, setPage] = useState(1);
+  const [totalApplications, setTotalApplications] = useState(0);
   const [searchText, setSearchText] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -129,6 +131,8 @@ export default function LoanRepository() {
   const [actionNotice, setActionNotice] = useState("");
   const [isImporting, setIsImporting] = useState(false);
   const [isExporting, setIsExporting] = useState<"csv" | "xlsx" | null>(null);
+
+  const totalPages = Math.max(1, Math.ceil(totalApplications / PAGE_SIZE));
 
   const filteredApplications = useMemo(() => {
     return applications.filter((application) => {
@@ -164,7 +168,7 @@ export default function LoanRepository() {
 
   const stats = useMemo(
     () => ({
-      total: applications.length,
+      total: totalApplications,
       byStatus: workflowStatuses.reduce(
         (accumulator, status) => {
           accumulator[status] = applications.filter(
@@ -222,8 +226,33 @@ export default function LoanRepository() {
     setMessage("");
 
     try {
-      const data = await fetchLoanApplications();
-      setApplications(data);
+      const offset = (page - 1) * PAGE_SIZE;
+      const searchParams = new URLSearchParams({
+        limit: String(PAGE_SIZE),
+        offset: String(offset),
+      });
+
+      if (statusFilter !== "All") {
+        searchParams.set("status", statusFilter);
+      }
+
+      if (dateFrom) {
+        searchParams.set("date_from", dateFrom);
+      }
+
+      if (dateTo) {
+        searchParams.set("date_to", dateTo);
+      }
+
+      const response = await api.get<{
+        total: number;
+        limit: number;
+        offset: number;
+        records: LoanApplicationRecord[];
+      }>(`/loan-applications?${searchParams.toString()}`);
+
+      setApplications(response.data.records);
+      setTotalApplications(response.data.total);
     } catch (error) {
       setMessage(getErrorMessage(error, "Failed to load loan applications."));
     } finally {
@@ -331,15 +360,17 @@ export default function LoanRepository() {
 
   useEffect(() => {
     void loadApplications();
-  }, []);
+  }, [page, statusFilter, dateFrom, dateTo]);
 
   useEffect(() => {
     if (requestedStatus && statusOptions.includes(requestedStatus as WorkflowStatus)) {
       setStatusFilter(requestedStatus as WorkflowStatus);
+      setPage(1);
       return;
     }
 
     setStatusFilter("All");
+    setPage(1);
   }, [requestedStatus]);
 
   return (
@@ -492,7 +523,10 @@ export default function LoanRepository() {
                   <select
                     value={statusFilter}
                     onChange={(event) =>
-                      setStatusFilter(event.target.value as "All" | WorkflowStatus)
+                      {
+                        setStatusFilter(event.target.value as "All" | WorkflowStatus);
+                        setPage(1);
+                      }
                     }
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   >
@@ -511,7 +545,10 @@ export default function LoanRepository() {
                   <input
                     type="date"
                     value={dateFrom}
-                    onChange={(event) => setDateFrom(event.target.value)}
+                    onChange={(event) => {
+                      setDateFrom(event.target.value);
+                      setPage(1);
+                    }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </label>
@@ -523,7 +560,10 @@ export default function LoanRepository() {
                   <input
                     type="date"
                     value={dateTo}
-                    onChange={(event) => setDateTo(event.target.value)}
+                    onChange={(event) => {
+                      setDateTo(event.target.value);
+                      setPage(1);
+                    }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </label>
@@ -620,7 +660,7 @@ export default function LoanRepository() {
               </div>
 
               <div className="rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-medium text-slate-600">
-                Showing {filteredApplications.length} of {applications.length} applications
+                Showing {filteredApplications.length} of {totalApplications} applications
               </div>
             </div>
 
@@ -791,6 +831,30 @@ export default function LoanRepository() {
                   )}
                 </tbody>
                 </table>
+              </div>
+            </div>
+
+            <div className="mt-5 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between">
+              <div className="text-sm text-slate-600">
+                Page {page} of {totalPages}
+              </div>
+              <div className="flex gap-2">
+                <button
+                  type="button"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((current) => Math.max(1, current - 1))}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={page >= totalPages || loading}
+                  onClick={() => setPage((current) => current + 1)}
+                  className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Next
+                </button>
               </div>
             </div>
           </div>

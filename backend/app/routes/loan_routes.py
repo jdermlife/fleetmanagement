@@ -10,7 +10,7 @@ from sqlalchemy.orm import selectinload
 
 
 from app.database import SessionLocal
-from app.fastapi_auth import CurrentUser, require_roles
+from app.fastapi_auth import CurrentUser, require_authenticated_user, require_roles
 from app.models.loan_application import (
     AIRecommendation,
     CollateralScore,
@@ -38,16 +38,29 @@ from app.services.overall_scoring_engine import compute_quant_score_package
 router = APIRouter()
 
 VALID_STATUSES = {
-    "DRAFT",
-    "SUBMITTED",
-    "UNDER REVIEW",
-    "CREDIT REVIEW",
-    "REVIEWED",
-    "APPROVED",
-    "REJECTED",
-    "RELEASED",
-    "CANCELLED",
+    "Draft",
+    "Submitted",
+    "Under Review",
+    "Credit Review",
+    "Reviewed",
+    "Approved",
+    "Rejected",
+    "Released",
+    "Cancelled",
 }
+
+STATUS_ALIASES = {status.upper(): status for status in VALID_STATUSES}
+
+
+def normalize_status(status: str) -> str:
+    normalized = STATUS_ALIASES.get(status.strip().upper())
+    if not normalized:
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Invalid status.",
+        )
+
+    return normalized
 
 LOAN_APPLICATION_LOAD_OPTIONS = (
     selectinload(LoanApplication.credit_scores),
@@ -490,7 +503,7 @@ def build_scored_loan_application(
 
 
 def apply_loan_application_fields(record: LoanApplication, data: LoanApplicationCreate) -> None:
-    record.status = data.status
+    record.status = normalize_status(data.status)
     record.product_type = data.product_type
 
     record.borrower_name = data.borrower_name
@@ -660,17 +673,18 @@ def get_loan_applications(
     status: str | None = Query(default=None),
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
-    limit: int = Query(default=100, ge=1, le=25000),
+    limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = SessionLocal()
 
     try:
         query = db.query(LoanApplication)
-        if is_subscriber_user(user):
+        if user.role.lower() != "admin":
             query = query.filter(LoanApplication.created_by == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
+        total = query.count()
         loans = (
             query.order_by(LoanApplication.created_at.desc())
             .offset(offset)
@@ -678,13 +692,11 @@ def get_loan_applications(
             .all()
         )
 
-        total = query.count()
-
         return {
             "total": total,
             "limit": limit,
             "offset": offset,
-            "records": [serialize_loan_application_list_item(loan) for loan in loans],
+            "records": [serialize_loan_application(loan) for loan in loans],
         }
     finally:
         db.close()
@@ -776,19 +788,14 @@ def update_status(
     db = SessionLocal()
 
     try:
-        status = status.upper()
-        if status not in VALID_STATUSES:
-            raise HTTPException(
-                status_code=http_status.HTTP_400_BAD_REQUEST,
-                detail="Invalid status.",
-            )
+        status = normalize_status(status)
 
         record = get_loan_application_or_404(db, application_no)
-        if status == "REVIEWED":
+        if status == "Reviewed":
             record.reviewed_by = user.id
-        if status == "APPROVED":
+        if status == "Approved":
             record.approved_by = user.id
-        if status == "RELEASED":
+        if status == "Released":
             record.released_by = user.id
 
         enforce_loan_application_access(user, record)

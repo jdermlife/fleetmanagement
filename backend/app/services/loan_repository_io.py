@@ -42,6 +42,18 @@ UPSERT_FIELDS: list[str] = [
     "created_at",
     "requirements",
 ]
+ 
+STATUS_ALIASES = {
+    "DRAFT": "Draft",
+    "SUBMITTED": "Submitted",
+    "UNDER REVIEW": "Under Review",
+    "CREDIT REVIEW": "Credit Review",
+    "REVIEWED": "Reviewed",
+    "APPROVED": "Approved",
+    "REJECTED": "Rejected",
+    "RELEASED": "Released",
+    "CANCELLED": "Cancelled",
+}
 
 EXPORT_FIELDS: list[str] = [column.name for column in LoanApplication.__table__.columns]
 EXISTING_RECORD_LOOKUP_CHUNK_SIZE = 1000
@@ -201,6 +213,13 @@ def parse_requirements(value: Any) -> dict[str, Any]:
         return parsed if isinstance(parsed, dict) else {}
     except json.JSONDecodeError:
         return {}
+ 
+def normalize_status(value: Any) -> str:
+    normalized = str(value or "").strip()
+    if not normalized:
+        return "Draft"
+ 
+    return STATUS_ALIASES.get(normalized.upper(), normalized)
 
 
 def row_to_application_payload(row: dict[str, Any]) -> dict[str, Any]:
@@ -210,7 +229,7 @@ def row_to_application_payload(row: dict[str, Any]) -> dict[str, Any]:
 
     payload: dict[str, Any] = {
         "application_no": str(normalized_row.get("application_no", "")).strip(),
-        "status": str(normalized_row.get("status", "Draft") or "Draft").strip() or "Draft",
+        "status": normalize_status(normalized_row.get("status", "Draft")),
         "product_type": str(normalized_row.get("product_type", "Auto Loan") or "Auto Loan").strip() or "Auto Loan",
         "executive_approval": parse_bool(normalized_row.get("executive_approval")),
         "requirements": parse_requirements(normalized_row.get("requirements")),
@@ -582,7 +601,7 @@ def generate_xlsx_bytes(records: list[LoanApplication]) -> bytes:
 
 def apply_repository_filters(query, status: str | None, date_from: str | None, date_to: str | None):
     if status and status != "All":
-        query = query.filter(LoanApplication.status == status)
+        query = query.filter(LoanApplication.status == normalize_status(status))
 
     if date_from:
         parsed_from = date.fromisoformat(date_from)

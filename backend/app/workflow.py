@@ -18,6 +18,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import datetime, timezone
 from enum import Enum
+import json
 from typing import Any, Optional
 
 from sqlalchemy import text
@@ -39,6 +40,33 @@ class WorkflowTransition:
     to_state: str
     allowed_roles: list[str]  # Which roles can make this transition
     description: str = ""
+
+
+WORKFLOW_STATE_ALIASES = {
+    "DRAFT": "draft",
+    "SUBMITTED": "submitted",
+    "UNDER REVIEW": "credit_review",
+    "CREDIT REVIEW": "credit_review",
+    "REVIEW": "credit_review",
+    "COMMITTEE REVIEW": "committee_review",
+    "APPROVED": "approved",
+    "RELEASED": "released",
+    "CLOSED": "closed",
+    "REJECTED": "rejected",
+    "WITHDRAWN": "withdrawn",
+}
+
+
+def normalize_workflow_state(state: Any) -> str:
+    """Normalize a workflow state value to the internal lowercase form."""
+    if isinstance(state, Enum):
+        state = state.value
+
+    normalized = str(state or "").strip()
+    if not normalized:
+        return ""
+
+    return WORKFLOW_STATE_ALIASES.get(normalized.upper(), normalized.lower().replace(" ", "_"))
 
 
 class LoanWorkflowStates(str, Enum):
@@ -218,19 +246,20 @@ class Workflow:
     
     def get_valid_transitions(self, current_state: str) -> list[WorkflowTransition]:
         """Get all valid transitions from current state."""
-        return [t for t in self.transitions if str(t.from_state) == str(current_state)]
+        normalized_state = normalize_workflow_state(current_state)
+        return [t for t in self.transitions if normalize_workflow_state(t.from_state) == normalized_state]
     
     def get_valid_next_states(self, current_state: str, user_role: str) -> list[str]:
         """Get valid next states for given role."""
         valid = []
         for transition in self.get_valid_transitions(current_state):
             if user_role.lower() in [r.lower() for r in transition.allowed_roles]:
-                valid.append(str(transition.to_state))
+                valid.append(normalize_workflow_state(transition.to_state))
         return valid
     
     def can_transition(self, from_state: str, to_state: str, user_role: str) -> bool:
         """Check if transition is allowed for user role."""
-        key = (str(from_state), str(to_state))
+        key = (normalize_workflow_state(from_state), normalize_workflow_state(to_state))
         transition = self._transition_map.get(key)
         
         if not transition:
@@ -240,7 +269,7 @@ class Workflow:
     
     def get_transition_description(self, from_state: str, to_state: str) -> str:
         """Get description of transition."""
-        key = (str(from_state), str(to_state))
+        key = (normalize_workflow_state(from_state), normalize_workflow_state(to_state))
         transition = self._transition_map.get(key)
         return transition.description if transition else "State change"
     
@@ -257,23 +286,26 @@ class Workflow:
     ) -> None:
         """Log state transition to audit table."""
         try:
-            timestamp = datetime.now(timezone.utc).isoformat()
+            timestamp = datetime.now(timezone.utc)
+            normalized_from_state = normalize_workflow_state(from_state)
+            normalized_to_state = normalize_workflow_state(to_state)
+            metadata_payload = json.dumps(metadata or {}, ensure_ascii=True)
             
             connection.execute(
                 """
                 INSERT INTO workflow_history 
-                (entity_type, entity_id, from_state, to_state, user_id, user_role, reason, metadata, created_at)
+                (entity_type, entity_id, from_state, to_state, performed_by, user_role, reason, metadata, created_at)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     self.entity_type,
                     entity_id,
-                    str(from_state),
-                    str(to_state),
+                    normalized_from_state,
+                    normalized_to_state,
                     user_id,
                     user_role,
                     reason,
-                    metadata and str(metadata) or None,
+                    metadata_payload,
                     timestamp,
                 ),
             )
@@ -286,7 +318,7 @@ class Workflow:
         try:
             cursor = connection.execute(
                 """
-                SELECT entity_type, entity_id, from_state, to_state, user_id, user_role, reason, metadata, created_at
+                SELECT entity_type, entity_id, from_state, to_state, performed_by, user_role, reason, metadata, created_at
                 FROM workflow_history
                 WHERE entity_type = ? AND entity_id = ?
                 ORDER BY created_at DESC
@@ -317,10 +349,10 @@ def create_workflow_tables(connection) -> None:
                     entity_id BIGINT NOT NULL,
                     from_state TEXT NOT NULL,
                     to_state TEXT NOT NULL,
-                    user_id BIGINT NOT NULL,
+                    performed_by BIGINT NOT NULL,
                     user_role TEXT,
                     reason TEXT,
-                    metadata TEXT,
+                    metadata JSONB,
                     created_at TIMESTAMPTZ NOT NULL
                 )
                 """
@@ -334,7 +366,7 @@ def create_workflow_tables(connection) -> None:
                     entity_id INTEGER NOT NULL,
                     from_state TEXT NOT NULL,
                     to_state TEXT NOT NULL,
-                    user_id INTEGER NOT NULL,
+                    performed_by INTEGER NOT NULL,
                     user_role TEXT,
                     reason TEXT,
                     metadata TEXT,

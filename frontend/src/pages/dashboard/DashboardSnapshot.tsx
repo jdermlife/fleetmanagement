@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { getErrorMessage } from "../../api";
 import {
+  fetchDashboardStatistics,
   fetchAllLoanApplications,
   type LoanApplicationRecord,
 } from "../../api/loan";
@@ -174,17 +175,55 @@ const stateCoordinates: Record<string, { x: number; y: number }> = {
 
 export default function DashboardSnapshot() {
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
+  const [dashboardSummary, setDashboardSummary] = useState<{
+    totalApplications: number;
+    approved: number;
+    pending: number;
+    rejected: number;
+  } | null>(null);
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
+  const [detailLoadNonce, setDetailLoadNonce] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
   useEffect(() => {
+    const loadSummary = async () => {
+      setLoading(true);
+      setMessage("");
+
+      try {
+        const summary = await fetchDashboardStatistics();
+        setDashboardSummary(summary);
+      } catch (error) {
+        setMessage(
+          getErrorMessage(
+            error,
+            "Failed to load dashboard summary. Please try again.",
+          ),
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    void loadSummary();
+  }, []);
+
+  useEffect(() => {
+    if (detailLoadNonce === 0 || detailsLoaded) {
+      return;
+    }
+
     const loadApplications = async () => {
+      setDetailsLoading(true);
       setLoading(true);
       setMessage("");
 
       try {
         const records = await fetchAllLoanApplications();
         setApplications(records);
+        setDetailsLoaded(true);
       } catch (error) {
         setMessage(
           getErrorMessage(
@@ -193,14 +232,40 @@ export default function DashboardSnapshot() {
           ),
         );
       } finally {
+        setDetailsLoading(false);
         setLoading(false);
       }
     };
 
     void loadApplications();
-  }, []);
+  }, [detailLoadNonce, detailsLoaded]);
 
   const dashboard = useMemo(() => buildDashboardData(applications), [applications]);
+  const summaryCards = useMemo(
+    () => [
+      {
+        label: "Total Applications",
+        value: dashboardSummary?.totalApplications ?? 0,
+        note: "Loaded from the lightweight summary endpoint",
+      },
+      {
+        label: "Approved",
+        value: dashboardSummary?.approved ?? 0,
+        note: "Approved records",
+      },
+      {
+        label: "Pending",
+        value: dashboardSummary?.pending ?? 0,
+        note: "Active pipeline records",
+      },
+      {
+        label: "Rejected",
+        value: dashboardSummary?.rejected ?? 0,
+        note: "Closed-out decisions",
+      },
+    ],
+    [dashboardSummary],
+  );
 
   return (
     <div
@@ -266,12 +331,11 @@ export default function DashboardSnapshot() {
           </div>
         ) : null}
 
-        {loading ? (
+        {loading && !dashboardSummary ? (
           <div style={{ ...panelStyle, marginBottom: "20px" }}>
-            <h2 style={sectionTitleStyle}>Loading dashboard analytics...</h2>
+            <h2 style={sectionTitleStyle}>Loading dashboard summary...</h2>
             <p style={{ ...subtleTextStyle, marginTop: "10px" }}>
-              The dashboard is reading loan repository records and preparing the
-              charts now.
+              The dashboard is fetching a lightweight statistics snapshot first.
             </p>
           </div>
         ) : null}
@@ -279,118 +343,162 @@ export default function DashboardSnapshot() {
         {!loading ? (
           <>
             <ResponsiveGrid minWidth={220}>
-              {dashboard.kpis.map((metric) => (
-                <MetricCard key={metric.label} metric={metric} />
+              {summaryCards.map((metric) => (
+                <MetricCard
+                  key={metric.label}
+                  metric={{
+                    accent: "linear-gradient(180deg, #fff8db, #fef3c7)",
+                    detail: metric.note,
+                    label: metric.label,
+                    value: metric.value.toLocaleString(),
+                  }}
+                />
               ))}
             </ResponsiveGrid>
 
-            <SectionGrid>
-              <Panel
-                subtitle="Trend line with month and quarter views to surface seasonality, spikes, and reporting momentum."
-                title="Application Volume by Month / Quarter"
+            <div style={{ marginTop: "18px", marginBottom: "6px" }}>
+              <button
+                type="button"
+                onClick={() => setDetailLoadNonce((current) => current + 1)}
+                disabled={detailsLoading}
+                style={{
+                  background: "#0f172a",
+                  border: "none",
+                  borderRadius: "999px",
+                  color: "#fff",
+                  cursor: "pointer",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  padding: "10px 16px",
+                }}
               >
-                <LineChart
-                  accent="#0891b2"
-                  data={dashboard.applicationVolume}
-                  formatValue={(value) => value.toLocaleString()}
-                />
-                <ResponsiveGrid minWidth={160} style={{ marginTop: "18px" }}>
-                  {dashboard.quarterVolume.map((item) => (
-                    <InfoTile
-                      key={item.label}
-                      label={item.label}
-                      note="Applications in quarter"
-                      value={item.value.toLocaleString()}
+                {detailsLoading
+                  ? "Loading detailed analytics..."
+                  : detailsLoaded
+                    ? "Detailed analytics loaded"
+                    : "Load detailed analytics"}
+              </button>
+            </div>
+
+            {detailsLoaded ? (
+              <>
+                <SectionGrid>
+                  <Panel
+                    subtitle="Trend line with month and quarter views to surface seasonality, spikes, and reporting momentum."
+                    title="Application Volume by Month / Quarter"
+                  >
+                    <LineChart
+                      accent="#0891b2"
+                      data={dashboard.applicationVolume}
+                      formatValue={(value) => value.toLocaleString()}
                     />
-                  ))}
-                </ResponsiveGrid>
-              </Panel>
+                    <ResponsiveGrid minWidth={160} style={{ marginTop: "18px" }}>
+                      {dashboard.quarterVolume.map((item) => (
+                        <InfoTile
+                          key={item.label}
+                          label={item.label}
+                          note="Applications in quarter"
+                          value={item.value.toLocaleString()}
+                        />
+                      ))}
+                    </ResponsiveGrid>
+                  </Panel>
 
-              <Panel
-                subtitle="Most common stated borrowing reasons across the repository."
-                title="Top Loan Purposes"
-              >
-                <PieChart data={dashboard.purposeSlices} />
-              </Panel>
-            </SectionGrid>
+                  <Panel
+                    subtitle="Most common stated borrowing reasons across the repository."
+                    title="Top Loan Purposes"
+                  >
+                    <PieChart data={dashboard.purposeSlices} />
+                  </Panel>
+                </SectionGrid>
 
-            <SectionGrid>
-              <Panel
-                subtitle="Stacked outcome view comparing approved and rejected flows across time."
-                title="Approval vs. Rejection Rates"
-              >
-                <StackedBarChart data={dashboard.approvalOutcomes} />
-              </Panel>
+                <SectionGrid>
+                  <Panel
+                    subtitle="Stacked outcome view comparing approved and rejected flows across time."
+                    title="Approval vs. Rejection Rates"
+                  >
+                    <StackedBarChart data={dashboard.approvalOutcomes} />
+                  </Panel>
 
-              <Panel
-                subtitle="Histogram of requested loan sizes showing the typical range and larger outliers."
-                title="Loan Amount Distribution"
-              >
-                <VerticalBars accent="#0ea5e9" data={dashboard.amountHistogram} />
-              </Panel>
-            </SectionGrid>
+                  <Panel
+                    subtitle="Histogram of requested loan sizes showing the typical range and larger outliers."
+                    title="Loan Amount Distribution"
+                  >
+                    <VerticalBars accent="#0ea5e9" data={dashboard.amountHistogram} />
+                  </Panel>
+                </SectionGrid>
 
-            <SectionGrid>
-              <Panel
-                subtitle="Average days between record creation and latest update, showing operational efficiency and bottlenecks."
-                title="Average Processing Time"
-              >
-                <LineChart
-                  accent="#f97316"
-                  data={dashboard.processingTrend}
-                  formatValue={(value) => `${value.toFixed(1)}d`}
-                />
-                <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
-                  Coverage: {formatPercent(dashboard.processingCoverage)} of records include both
-                  created and updated timestamps.
+                <SectionGrid>
+                  <Panel
+                    subtitle="Average days between record creation and latest update, showing operational efficiency and bottlenecks."
+                    title="Average Processing Time"
+                  >
+                    <LineChart
+                      accent="#f97316"
+                      data={dashboard.processingTrend}
+                      formatValue={(value) => `${value.toFixed(1)}d`}
+                    />
+                    <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
+                      Coverage: {formatPercent(dashboard.processingCoverage)} of records include both
+                      created and updated timestamps.
+                    </p>
+                  </Panel>
+
+                  <Panel
+                    subtitle="Application counts grouped into age bands from available applicant profile data."
+                    title="Customer Demographics (Age Bands)"
+                  >
+                    <VerticalBars accent="#8b5cf6" data={dashboard.ageBands} />
+                    <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
+                      Coverage: {formatPercent(dashboard.ageCoverage)} of records contain age details.
+                    </p>
+                  </Panel>
+                </SectionGrid>
+
+                <SectionGrid>
+                  <Panel
+                    subtitle="Heatmap comparing default or delinquency concentrations across product categories and recent quarters."
+                    title="Default / Delinquency Rates by Loan Type"
+                  >
+                    <Heatmap columns={dashboard.heatmapColumns} rows={dashboard.heatmapRows} />
+                  </Panel>
+
+                  <Panel
+                    subtitle="Distinct borrower mix split between first-time and repeat applicants."
+                    title="Repeat vs. First-Time Applicants"
+                  >
+                    <DonutChart data={dashboard.repeatMix} />
+                  </Panel>
+                </SectionGrid>
+
+                <SectionGrid>
+                  <Panel
+                    subtitle="Recognized state and territory codes plotted as hotspots to show where demand is concentrated."
+                    title="Geographic Distribution of Applications"
+                  >
+                    <GeoChart data={dashboard.geoPoints} />
+                    <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
+                      Coverage: {formatPercent(dashboard.geoCoverage)} of addresses were mappable.
+                    </p>
+                  </Panel>
+
+                  <Panel
+                    subtitle="Scatter plot of borrower income against requested amount to reveal affordability patterns."
+                    title="Income vs. Loan Amount Correlation"
+                  >
+                    <ScatterChart data={dashboard.scatterPoints} />
+                  </Panel>
+                </SectionGrid>
+              </>
+            ) : (
+              <div style={{ ...panelStyle, marginTop: "20px" }}>
+                <h2 style={sectionTitleStyle}>Detailed analytics are paused</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "10px" }}>
+                  The page loaded the lightweight summary only. Use the button above when you want
+                  the full repository analytics.
                 </p>
-              </Panel>
-
-              <Panel
-                subtitle="Application counts grouped into age bands from available applicant profile data."
-                title="Customer Demographics (Age Bands)"
-              >
-                <VerticalBars accent="#8b5cf6" data={dashboard.ageBands} />
-                <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
-                  Coverage: {formatPercent(dashboard.ageCoverage)} of records contain age details.
-                </p>
-              </Panel>
-            </SectionGrid>
-
-            <SectionGrid>
-              <Panel
-                subtitle="Heatmap comparing default or delinquency concentrations across product categories and recent quarters."
-                title="Default / Delinquency Rates by Loan Type"
-              >
-                <Heatmap columns={dashboard.heatmapColumns} rows={dashboard.heatmapRows} />
-              </Panel>
-
-              <Panel
-                subtitle="Distinct borrower mix split between first-time and repeat applicants."
-                title="Repeat vs. First-Time Applicants"
-              >
-                <DonutChart data={dashboard.repeatMix} />
-              </Panel>
-            </SectionGrid>
-
-            <SectionGrid>
-              <Panel
-                subtitle="Recognized state and territory codes plotted as hotspots to show where demand is concentrated."
-                title="Geographic Distribution of Applications"
-              >
-                <GeoChart data={dashboard.geoPoints} />
-                <p style={{ ...subtleTextStyle, fontSize: "0.82rem", marginTop: "12px" }}>
-                  Coverage: {formatPercent(dashboard.geoCoverage)} of addresses were mappable.
-                </p>
-              </Panel>
-
-              <Panel
-                subtitle="Scatter plot of borrower income against requested amount to reveal affordability patterns."
-                title="Income vs. Loan Amount Correlation"
-              >
-                <ScatterChart data={dashboard.scatterPoints} />
-              </Panel>
-            </SectionGrid>
+              </div>
+            )}
           </>
         ) : null}
       </div>
