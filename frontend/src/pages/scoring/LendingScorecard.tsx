@@ -3693,6 +3693,24 @@ export default function LendingScorecard() {
                     </select>
                   </div>
 
+                  <div className="min-w-[280px] flex-1">
+                    <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
+                      Comments / Basis of Action
+                    </label>
+                    <textarea
+                      value={formData.committeeRemarks}
+                      onChange={(event) =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          committeeRemarks: event.target.value,
+                        }))
+                      }
+                      rows={2}
+                      className="loan-form-input w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      placeholder="Enter comments or basis for the status change"
+                    />
+                  </div>
+
                   <button
                     onClick={handleSelectedWorkflowAction}
                     disabled={isSaving}

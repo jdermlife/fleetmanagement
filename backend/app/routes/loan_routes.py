@@ -5,6 +5,7 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
 from fastapi.responses import StreamingResponse
+from flask_jwt_extended import current_user
 from sqlalchemy.orm import selectinload
 
 from app.database import SessionLocal
@@ -497,7 +498,7 @@ def create_loan_application(
 
         record = LoanApplication(
             application_no=scored_data.application_no,
-            created_by_user_id=user.id,
+            created_by=current_user.id,
         )
         apply_loan_application_fields(record, scored_data)
         db.add(record)
