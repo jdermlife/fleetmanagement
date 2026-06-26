@@ -1932,10 +1932,10 @@ export default function LendingScorecard() {
     }
 
     if (formData.status === 'Submitted' || formData.status === 'Under Review') {
-      return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+      return 'Credit Review';
     }
 
-    return allValidationChecksPassed ? 'Credit Review' : 'Draft';
+    return 'Credit Review';
   }, [
     aiRecommendation.probability,
     allValidationChecksPassed,
@@ -2188,12 +2188,12 @@ export default function LendingScorecard() {
           {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
-          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile (Optional)')}
-          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile (Optional)')}
-          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile (Optional)')}
-          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile (Optional)')}
-          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile (Optional)')}
-          {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links (Optional)', 2)}
+          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile')}
+          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile')}
+          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile')}
+          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile')}
+          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile')}
+          {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links', 2)}
           {renderInput('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)')}
         </div>
       </div>
@@ -2283,16 +2283,20 @@ export default function LendingScorecard() {
   const stepperButtonClass = 'loan-stepper-button';
   const footerButtonClass = 'loan-footer-button';
   const countryOptions = ['PHL', 'USA', 'SGP', 'MYS', 'THA', 'IDN', 'VNM'];
+  const assetVehicleTypeOptions = [
+    'Passenger Cars',
+    'SUVs & Crossovers',
+    'Pickup Trucks',
+    'Motorcycles & Scooters',
+    'Buses & Minivans',
+    'Commercial Trucks',
+  ];
   const workflowActionOptions: Array<{ label: string; value: WorkflowStatus }> = [
-    { label: 'Draft', value: 'Draft' },
     { label: 'Review', value: 'Credit Review' },
     { label: 'Reject', value: 'Rejected' },
     { label: 'Approve', value: 'Approved' },
     { label: 'Release', value: 'Released' },
   ];
-  const suggestedWorkflowLabel =
-    workflowActionOptions.find((option) => option.value === suggestedWorkflowAction)?.label ??
-    suggestedWorkflowAction;
   const automatedScoreItems = [
     { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
     { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
@@ -2847,7 +2851,7 @@ export default function LendingScorecard() {
           {step === 3 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment & Income</h3>
-              {renderInput('employment', 'history', 'Employment History (Current Employer & Tenure)')}
+              {renderInput('employment', 'history', 'Employment History (Current Employer)')}
               {renderFormattedNumberInput('employment', 'monthlyIncome', 'Primary Monthly Income')}
               {renderFormattedNumberInput('employment', 'otherIncome', 'Other Sources of Income')}
               {renderFormattedNumberInput('employment', 'debtObligations', 'Existing Monthly Debt Obligations')}
@@ -3000,7 +3004,7 @@ export default function LendingScorecard() {
               <div className="md:col-span-2">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
               </div>
-              {renderInput('collateral', 'assetType', 'Type')}
+              {renderSelect('collateral', 'assetType', 'Type', assetVehicleTypeOptions)}
               {renderInput('collateral', 'maker', 'Maker')}
               {renderInput('collateral', 'brand', 'Brand')}
               {renderInput('collateral', 'model', 'Model')}
@@ -3670,15 +3674,10 @@ export default function LendingScorecard() {
               <div className="bg-slate-800 text-white p-6 rounded-lg mt-6">
                 <h4 className="font-bold text-lg mb-4">Final Workflow Actions</h4>
                 <div className="flex flex-wrap gap-3 items-end">
-                  <button onClick={handleSaveDraft} disabled={isSaving} className="loan-inline-button loan-inline-button-secondary px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50">Save Draft</button>
-
                   <div className="min-w-[220px]">
                     <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
-                      Workflow Action
+                      Action: Change Status
                     </label>
-                    <p className="mb-2 text-xs text-slate-400">
-                      Suggested next: <span className="font-semibold text-slate-100">{suggestedWorkflowLabel}</span>
-                    </p>
                     <select
                       value={selectedWorkflowAction}
                       onChange={(event) =>
@@ -3699,7 +3698,7 @@ export default function LendingScorecard() {
                     disabled={isSaving}
                     className="loan-inline-button loan-inline-button-accent inline-flex min-h-[42px] items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-indigo-500 disabled:opacity-50"
                   >
-                    {workflowActionOptions.find((option) => option.value === selectedWorkflowAction)?.label ?? 'Save Workflow Action'}
+                    Save as
                   </button>
 
                   {formData.status === 'Released' && (
