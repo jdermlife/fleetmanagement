@@ -4,10 +4,17 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { getErrorMessage, login } from '../../api'
 
+const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
+
+function getDefaultRedirectPath() {
+  const storedPath = window.localStorage.getItem(LAST_ROUTE_STORAGE_KEY)
+  return storedPath || '/dashboard'
+}
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || '/account'
+  const redirectTo = searchParams.get('redirect') || getDefaultRedirectPath()
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')

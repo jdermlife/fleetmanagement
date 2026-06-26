@@ -93,6 +93,13 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-permissions', label: 'Permission Management' },
 ]
 
+const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
+const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
+
+function isAuthPath(pathname: string) {
+  return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}?`))
+}
+
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -202,6 +209,14 @@ const adminMenuItems = visibleMenuLinks.filter(
     }
 
     void loadCurrentUser()
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (isAuthPath(location.pathname)) {
+      return
+    }
+
+    window.localStorage.setItem(LAST_ROUTE_STORAGE_KEY, location.pathname)
   }, [location.pathname])
 
   useEffect(() => {
