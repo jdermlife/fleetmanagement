@@ -5,8 +5,9 @@ from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
 from fastapi.responses import StreamingResponse
-from flask_jwt_extended import current_user
+from sqlalchemy import text
 from sqlalchemy.orm import selectinload
+
 
 from app.database import SessionLocal
 from app.fastapi_auth import CurrentUser, require_roles
@@ -36,6 +37,17 @@ from app.services.overall_scoring_engine import compute_quant_score_package
 
 router = APIRouter()
 
+VALID_STATUSES = {
+    "DRAFT",
+    "SUBMITTED",
+    "UNDER REVIEW",
+    "CREDIT REVIEW",
+    "REVIEWED",
+    "APPROVED",
+    "REJECTED",
+    "RELEASED",
+    "CANCELLED",
+}
 
 LOAN_APPLICATION_LOAD_OPTIONS = (
     selectinload(LoanApplication.credit_scores),
@@ -81,7 +93,7 @@ def enforce_loan_application_access(user: CurrentUser, record: LoanApplication) 
     if is_admin_user(user):
         return
 
-    if is_subscriber_user(user) and record.created_by_user_id == user.id:
+    if is_subscriber_user(user) and record.created_by == user.id:
         return
 
     raise HTTPException(
@@ -125,7 +137,7 @@ def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]
     return {
         "id": record.id,
         "application_no": record.application_no,
-        "created_by_user_id": record.created_by_user_id,
+        "created_by": record.created_by,
         "status": record.status,
         "product_type": record.product_type,
         "borrower_name": record.borrower_name,
@@ -336,11 +348,12 @@ def upsert_related_record(
 
 def append_decision_audit_entry(
     db,
-    loan_application: LoanApplication,
-    previous_status: str | None,
-    new_status: str,
-    remarks: str | None = None,
-    changed_by: str = "system",
+    loan_application,
+    previous_status,
+    new_status,
+    remarks=None,
+    changed_by=None,
+
 ) -> None:
     if previous_status == new_status:
         return
@@ -353,6 +366,45 @@ def append_decision_audit_entry(
         changed_by=changed_by,
     )
     db.add(audit_entry)
+
+
+def append_workflow_history_entry(
+    db,
+    loan_application: LoanApplication,
+    previous_status: str | None,
+    new_status: str,
+    user: CurrentUser,
+    reason: str | None = None,
+) -> None:
+    if previous_status == new_status:
+        return
+
+    from_state = str(previous_status) if previous_status else "UNKNOWN"
+    to_state = str(new_status) if new_status else "UNKNOWN"
+
+    try:
+        db.execute(
+            text(
+                """
+                INSERT INTO workflow_history
+                (entity_type, entity_id, from_state, to_state, performed_by, user_role, reason, metadata, created_at)
+                VALUES (:entity_type, :entity_id, :from_state, :to_state, :performed_by, :user_role, :reason, :metadata, NOW())
+                """
+            ),
+            {
+                "entity_type": "loan",
+                "entity_id": loan_application.id,
+                "from_state": from_state,
+                "to_state": to_state,
+                "performed_by": user.id,
+                "user_role": user.role,
+                "reason": reason,
+                "metadata": {},
+            },
+        )
+    except Exception:
+        # Keep primary workflow functional even if workflow_history is unavailable.
+        pass
 
 
 def persist_score_details(
@@ -498,7 +550,7 @@ def create_loan_application(
 
         record = LoanApplication(
             application_no=scored_data.application_no,
-            created_by=current_user.id,
+            created_by=user.id
         )
         apply_loan_application_fields(record, scored_data)
         db.add(record)
@@ -511,6 +563,15 @@ def create_loan_application(
             previous_status=None,
             new_status=scored_data.status,
             remarks=scored_data.committee_remarks,
+            changed_by=getattr(user, "username", str(user.id)),
+        )
+        append_workflow_history_entry(
+            db,
+            record,
+            previous_status=None,
+            new_status=scored_data.status,
+            user=user,
+            reason=scored_data.committee_remarks,
         )
 
         db.commit()
@@ -521,6 +582,9 @@ def create_loan_application(
             "application_no": record.application_no,
             "quant_scores": quant_scores,
         }
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -549,7 +613,7 @@ def compute_quant_scores(
         if record is None:
             record = LoanApplication(
                 application_no=scored_data.application_no,
-                created_by_user_id=user.id,
+                created_by=user.id,
             )
             db.add(record)
             db.flush()
@@ -563,6 +627,15 @@ def compute_quant_scores(
             previous_status=previous_status,
             new_status=scored_data.status,
             remarks=scored_data.committee_remarks,
+            changed_by=getattr(user, "username", str(user.id)),
+        )
+        append_workflow_history_entry(
+            db,
+            record,
+            previous_status=previous_status,
+            new_status=scored_data.status,
+            user=user,
+            reason=scored_data.committee_remarks,
         )
 
         db.commit()
@@ -573,6 +646,9 @@ def compute_quant_scores(
             "application_no": record.application_no,
             "quant_scores": quant_scores,
         }
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -593,7 +669,7 @@ def get_loan_applications(
     try:
         query = db.query(LoanApplication)
         if is_subscriber_user(user):
-            query = query.filter(LoanApplication.created_by_user_id == user.id)
+            query = query.filter(LoanApplication.created_by == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
         loans = (
             query.order_by(LoanApplication.created_at.desc())
@@ -602,7 +678,14 @@ def get_loan_applications(
             .all()
         )
 
-        return [serialize_loan_application_list_item(loan) for loan in loans]
+        total = query.count()
+
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "records": [serialize_loan_application_list_item(loan) for loan in loans],
+        }
     finally:
         db.close()
 
@@ -631,6 +714,9 @@ async def import_loan_applications(file: UploadFile = File(...)):
             status_code=http_status.HTTP_400_BAD_REQUEST,
             detail=str(exc),
         ) from exc
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -650,7 +736,7 @@ def export_loan_applications(
     try:
         query = db.query(LoanApplication)
         if is_subscriber_user(user):
-            query = query.filter(LoanApplication.created_by_user_id == user.id)
+            query = query.filter(LoanApplication.created_by == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
         records = query.order_by(LoanApplication.created_at.desc()).all()
 
@@ -690,7 +776,21 @@ def update_status(
     db = SessionLocal()
 
     try:
+        status = status.upper()
+        if status not in VALID_STATUSES:
+            raise HTTPException(
+                status_code=http_status.HTTP_400_BAD_REQUEST,
+                detail="Invalid status.",
+            )
+
         record = get_loan_application_or_404(db, application_no)
+        if status == "REVIEWED":
+            record.reviewed_by = user.id
+        if status == "APPROVED":
+            record.approved_by = user.id
+        if status == "RELEASED":
+            record.released_by = user.id
+
         enforce_loan_application_access(user, record)
         previous_status = record.status
 
@@ -701,11 +801,22 @@ def update_status(
             previous_status=previous_status,
             new_status=status,
             remarks=record.committee_remarks,
+            changed_by=getattr(user, "username", str(user.id)),
+        )
+        append_workflow_history_entry(
+            db,
+            record,
+            previous_status=previous_status,
+            new_status=status,
+            user=user,
+            reason=record.committee_remarks,
         )
 
         db.commit()
-
         return {"message": f"Status updated to {status}"}
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()
 
@@ -734,6 +845,7 @@ def update_loan_application(
     application_no: str,
     data: LoanApplicationCreate,
     user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+   
 ):
     db = SessionLocal()
 
@@ -756,21 +868,35 @@ def update_loan_application(
 
         record.application_no = scored_data.application_no
         apply_loan_application_fields(record, scored_data)
+        record.updated_by = user.id
         persist_score_details(db, record, scored_data)
         append_decision_audit_entry(
             db,
             record,
             previous_status=previous_status,
             new_status=scored_data.status,
-            remarks=scored_data.committee_remarks,
+            remarks=record.committee_remarks,
+            changed_by=getattr(user, "username", str(user.id)),
+        )
+        append_workflow_history_entry(
+            db,
+            record,
+            previous_status=previous_status,
+            new_status=scored_data.status,
+            user=user,
+            reason=record.committee_remarks,
         )
 
         db.commit()
-
+        db.refresh(record)
         return {
             "message": "Loan application updated",
             "application_no": record.application_no,
             "quant_scores": quant_scores,
         }
+
+    except Exception:
+        db.rollback()
+        raise
     finally:
         db.close()

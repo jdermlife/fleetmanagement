@@ -23,7 +23,35 @@ class LoanApplication(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     application_no = Column(String, unique=True, index=True)
-    created_by_user_id = Column(Integer, nullable=True, index=True)
+    created_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
+
+    updated_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
+
+    reviewed_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
+
+    approved_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
+
+    released_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
+
+    deleted_by = Column(
+    Integer,
+    ForeignKey("users.id")
+    )
 
     status = Column(String)
     product_type = Column(String)
