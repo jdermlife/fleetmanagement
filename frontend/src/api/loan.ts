@@ -2,6 +2,8 @@ import { api } from '../api'
 
 const LOAN_REPOSITORY_IMPORT_TIMEOUT_MS = 600000
 const LOAN_REPOSITORY_EXPORT_TIMEOUT_MS = 120000
+const LOAN_REPOSITORY_FETCH_TIMEOUT_MS = 30000
+const LOAN_REPOSITORY_FETCH_RETRIES = 1
 
 export type WorkflowStatus =
   | 'Draft'
@@ -492,23 +494,36 @@ export interface LoanApplicationsPageResponse {
 }
 
 export async function fetchDashboardStatistics(): Promise<DashboardStatistics> {
-  const response = await api.get<DashboardStatistics>('/dashboard/statistics')
+  const response = await api.get<DashboardStatistics>('/dashboard/statistics', {
+    timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,
+  })
   return response.data
 }
 
 async function fetchLoanApplicationsPage(
   params: LoanApplicationQueryParams = {},
 ): Promise<LoanApplicationsPageResponse> {
-  const response = await api.get<LoanApplicationsPageResponse>(LOAN_APPLICATIONS_PATH, {
-    params: {
-      date_from: params.dateFrom || undefined,
-      date_to: params.dateTo || undefined,
-      limit: params.limit,
-      offset: params.offset,
-      status: params.status && params.status !== 'All' ? params.status : undefined,
-    },
-  })
-  return response.data
+  for (let attempt = 0; attempt <= LOAN_REPOSITORY_FETCH_RETRIES; attempt += 1) {
+    try {
+      const response = await api.get<LoanApplicationsPageResponse>(LOAN_APPLICATIONS_PATH, {
+        params: {
+          date_from: params.dateFrom || undefined,
+          date_to: params.dateTo || undefined,
+          limit: params.limit,
+          offset: params.offset,
+          status: params.status && params.status !== 'All' ? params.status : undefined,
+        },
+        timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,
+      })
+      return response.data
+    } catch (error) {
+      if (attempt >= LOAN_REPOSITORY_FETCH_RETRIES) {
+        throw error
+      }
+    }
+  }
+
+  throw new Error('Failed to fetch loan applications page')
 }
 
 export async function fetchLoanApplications(
