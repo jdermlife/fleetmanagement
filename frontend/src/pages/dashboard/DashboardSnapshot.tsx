@@ -99,6 +99,8 @@ const asOfFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+const COVERAGE_MIN_RECORDS = 100;
+
 function formatDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
@@ -230,11 +232,18 @@ export default function DashboardSnapshot() {
 
     try {
       const dateRange = getDateRange(startDateValue, endDateValue);
-      const records = await fetchAllLoanApplications({
+      const rangeRecords = await fetchAllLoanApplications({
         ...dateRange,
-        maxRecords: 100,
       });
-      setApplications(records);
+
+      if (rangeRecords.length >= COVERAGE_MIN_RECORDS) {
+        setApplications(rangeRecords);
+      } else {
+        const minimumRecords = await fetchAllLoanApplications({
+          maxRecords: COVERAGE_MIN_RECORDS,
+        });
+        setApplications(minimumRecords);
+      }
       setDetailsLoaded(true);
     } catch (error) {
       setMessage(
@@ -628,7 +637,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Coverage notice: last 7 days or 100 records, whichever is lower.
+                Coverage notice: last 7 days or 100 records, whichever is higher.
               </p>
             </div>
 
