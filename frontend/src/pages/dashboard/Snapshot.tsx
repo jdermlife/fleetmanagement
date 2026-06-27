@@ -156,10 +156,11 @@ export default function DashboardSnapshot() {
     return asOfFormatter.format(safeDate);
   }, [endDate]);
   const summaryCards = useMemo(() => {
-    const totalApplications = dashboardSummary?.totalApplications ?? 0;
-    const approved = dashboardSummary?.approved ?? 0;
-    const pending = dashboardSummary?.pending ?? 0;
-    const rejected = dashboardSummary?.rejected ?? 0;
+    const overallPortfolioTotal = dashboardSummary?.totalApplications ?? 0;
+    const totalApplications = applications.length;
+    const approved = applications.filter((record) => getStatusBucket(record.status) === "approved").length;
+    const pending = applications.filter((record) => getStatusBucket(record.status) === "pending").length;
+    const rejected = applications.filter((record) => getStatusBucket(record.status) === "rejected").length;
 
     const highCreditRiskCount = applications.filter((record) => {
       const defaulted = getStatusBucket(record.status) === "defaulted";
@@ -196,9 +197,14 @@ export default function DashboardSnapshot() {
 
     return [
       {
+        label: "Overall Portfolio Total",
+        value: overallPortfolioTotal,
+        note: "Global total across all available records",
+      },
+      {
         label: "Total Applications",
         value: totalApplications,
-        note: "Loaded from the lightweight summary endpoint",
+        note: "Based on selected coverage (max 100 records)",
       },
       {
         label: "Approved",
