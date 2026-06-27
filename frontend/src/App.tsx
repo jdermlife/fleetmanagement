@@ -267,7 +267,7 @@ const adminMenuItems = visibleMenuLinks.filter(
                       <strong>{currentUser.username}</strong>
                     </div>
                     <Link className="app-auth-link" to="/account" onClick={closeAuthDropdown}>
-                      Account
+                      Login
                     </Link>
                     <button
                       type="button"
