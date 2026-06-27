@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { getErrorMessage } from "../../api";
-import { fetchDashboardStatistics } from "../../api/loan";
+import {
+  fetchAllLoanApplications,
+  fetchDashboardStatistics,
+  type LoanApplicationRecord,
+} from "../../api/loan";
 
 type MetricCardData = {
   accent: string;
@@ -33,7 +37,14 @@ const panelStyle: React.CSSProperties = {
   padding: "16px",
 };
 
+const asOfFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 export default function DashboardSnapshot() {
+  const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<{
     totalApplications: number;
     approved: number;
@@ -51,6 +62,9 @@ export default function DashboardSnapshot() {
       try {
         const summary = await fetchDashboardStatistics();
         setDashboardSummary(summary);
+
+        const records = await fetchAllLoanApplications();
+        setApplications(records);
       } catch (error) {
         setMessage(
           getErrorMessage(
@@ -66,31 +80,99 @@ export default function DashboardSnapshot() {
     void loadSummary();
   }, []);
 
-  const summaryCards = useMemo(
-    () => [
+  const asOfDateLabel = useMemo(() => asOfFormatter.format(new Date()), []);
+  const summaryCards = useMemo(() => {
+    const totalApplications = dashboardSummary?.totalApplications ?? 0;
+    const approved = dashboardSummary?.approved ?? 0;
+    const pending = dashboardSummary?.pending ?? 0;
+    const rejected = dashboardSummary?.rejected ?? 0;
+
+    const highCreditRiskCount = applications.filter((record) => {
+      const defaulted = getStatusBucket(record.status) === "defaulted";
+      const highAiRisk = normalizeRiskScore(record.ai_probability) >= 0.75;
+      return defaulted || highAiRisk;
+    }).length;
+
+    const fraudHighScoreCount = applications.filter((record) => {
+      const fraudScore = normalizeRiskScore(record.fraud_scores?.overall_fraud_score);
+      const fraudRiskLevel = record.fraud_scores?.fraud_risk_level?.toLowerCase() ?? "";
+      return (
+        fraudScore >= 0.75 ||
+        fraudRiskLevel.includes("high") ||
+        fraudRiskLevel.includes("critical")
+      );
+    }).length;
+
+    const behavioralRiskCount = applications.filter((record) => {
+      const behaviorScore = normalizeRiskScore(
+        record.psychometric_scores?.overall_psychometric_score,
+      );
+      const behaviorRiskLevel =
+        record.psychometric_scores?.psychometric_risk_level?.toLowerCase() ?? "";
+      return (
+        behaviorScore >= 0.75 ||
+        behaviorRiskLevel.includes("high") ||
+        behaviorRiskLevel.includes("critical")
+      );
+    }).length;
+
+    const socialRiskCount = applications.filter(
+      (record) => normalizeRiskScore(record.social_scores?.overall_social_score) >= 0.75,
+    ).length;
+
+    return [
       {
         label: "Total Applications",
-        value: dashboardSummary?.totalApplications ?? 0,
+        value: totalApplications,
         note: "Loaded from the lightweight summary endpoint",
       },
       {
         label: "Approved",
-        value: dashboardSummary?.approved ?? 0,
+        value: approved,
         note: "Approved records",
       },
       {
         label: "Pending",
-        value: dashboardSummary?.pending ?? 0,
+        value: pending,
         note: "Active pipeline records",
       },
       {
         label: "Rejected",
-        value: dashboardSummary?.rejected ?? 0,
+        value: rejected,
         note: "Closed-out decisions",
       },
-    ],
-    [dashboardSummary],
-  );
+      {
+        label: "High Credit Risk Count",
+        value: highCreditRiskCount,
+        note: "Defaulted or high AI risk",
+      },
+      {
+        label: "Fraud Accounts High Score",
+        value: fraudHighScoreCount,
+        note: "High/critical fraud risk",
+      },
+      {
+        label: "% Approval",
+        value: formatPercent(safeDivide(approved, totalApplications)),
+        note: "Approved divided by total applications",
+      },
+      {
+        label: "High Behavioral Risk Counts",
+        value: behavioralRiskCount,
+        note: "High psychometric risk or score",
+      },
+      {
+        label: "Social Risk Counts",
+        value: socialRiskCount,
+        note: "High social risk score",
+      },
+      {
+        label: "Recommended with Enhancement",
+        value: pending,
+        note: "Pending profiles suggested for enhancement",
+      },
+    ];
+  }, [applications, dashboardSummary]);
 
   return (
     <div
@@ -123,6 +205,9 @@ export default function DashboardSnapshot() {
             </h1>
             <p style={{ ...subtleTextStyle, marginTop: "8px", maxWidth: "760px", fontSize: "0.88rem" }}>
               Snapshot view with summary metrics only. Graphs have been removed.
+            </p>
+            <p style={{ ...subtleTextStyle, marginTop: "8px", maxWidth: "760px", fontSize: "0.82rem" }}>
+              Welcome back. Here is your quick portfolio overview for today.
             </p>
           </div>
 
@@ -164,6 +249,23 @@ export default function DashboardSnapshot() {
           </div>
         ) : (
           <>
+            <div style={{ marginBottom: "12px" }}>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid rgba(148,163,184,0.25)",
+                  borderRadius: "999px",
+                  color: "#334155",
+                  display: "inline-flex",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  padding: "10px 16px",
+                }}
+              >
+                As of date: {asOfDateLabel}
+              </div>
+            </div>
+
             <ResponsiveGrid minWidth={220}>
               {summaryCards.map((metric) => (
                 <MetricCard
@@ -189,6 +291,43 @@ export default function DashboardSnapshot() {
       </div>
     </div>
   );
+}
+
+function getStatusBucket(status: string): "approved" | "defaulted" | "draft" | "pending" | "rejected" {
+  const normalized = status.trim().toLowerCase();
+  if (normalized.includes("draft")) {
+    return "draft";
+  }
+  if (normalized.includes("reject")) {
+    return "rejected";
+  }
+  if (normalized.includes("default") || normalized.includes("delin")) {
+    return "defaulted";
+  }
+  if (
+    normalized.includes("approv") ||
+    normalized.includes("releas") ||
+    normalized.includes("active") ||
+    normalized.includes("closed")
+  ) {
+    return "approved";
+  }
+  return "pending";
+}
+
+function safeDivide(numerator: number, denominator: number): number {
+  return denominator === 0 ? 0 : numerator / denominator;
+}
+
+function formatPercent(value: number): string {
+  return `${(value * 100).toFixed(1)}%`;
+}
+
+function normalizeRiskScore(value: number | null | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return 0;
+  }
+  return value > 1 ? value / 100 : value;
 }
 
 function MetricCard({ metric }: { metric: MetricCardData }) {
