@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 import { getErrorMessage } from "../../api";
 import {
@@ -12,6 +12,17 @@ type MetricCardData = {
   detail: string;
   label: string;
   value: string;
+};
+
+type ChartSlice = {
+  color: string;
+  label: string;
+  value: number;
+};
+
+type TrendPoint = {
+  label: string;
+  value: number;
 };
 
 const sectionTitleStyle: React.CSSProperties = {
@@ -47,15 +58,26 @@ function formatDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function getLast7DaysRange(coveringDateInput: string): { dateFrom: string; dateTo: string } {
-  const parsed = new Date(`${coveringDateInput}T00:00:00`);
-  const coveringDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-  const sevenDaysAgo = new Date(coveringDate);
-  sevenDaysAgo.setDate(coveringDate.getDate() - 7);
+function getDefaultStartDate(): string {
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - 7);
+  return formatDateInput(startDate);
+}
+
+function getDateRange(startDateInput: string, endDateInput: string): { dateFrom: string; dateTo: string } {
+  const parsedStart = new Date(`${startDateInput}T00:00:00`);
+  const parsedEnd = new Date(`${endDateInput}T00:00:00`);
+
+  const safeStart = Number.isNaN(parsedStart.getTime()) ? new Date() : parsedStart;
+  const safeEnd = Number.isNaN(parsedEnd.getTime()) ? new Date() : parsedEnd;
+
+  const fromDate = safeStart <= safeEnd ? safeStart : safeEnd;
+  const toDate = safeStart <= safeEnd ? safeEnd : safeStart;
 
   return {
-    dateFrom: formatDateInput(sevenDaysAgo),
-    dateTo: formatDateInput(coveringDate),
+    dateFrom: formatDateInput(fromDate),
+    dateTo: formatDateInput(toDate),
   };
 }
 
@@ -67,19 +89,23 @@ export default function DashboardSnapshot() {
     pending: number;
     rejected: number;
   } | null>(null);
-  const [coveringDate, setCoveringDate] = useState(() => formatDateInput(new Date()));
+  const [startDate, setStartDate] = useState(() => getDefaultStartDate());
+  const [startTime, setStartTime] = useState("00:00");
+  const [endDate, setEndDate] = useState(() => formatDateInput(new Date()));
+  const [endTime, setEndTime] = useState("23:59");
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
+  const initialRangeRef = useRef({ startDate, endDate });
 
-  const loadSummary = async (dateValue: string) => {
+  const loadSummary = async (startDateValue: string, endDateValue: string) => {
     const summary = await fetchDashboardStatistics();
     setDashboardSummary(summary);
 
-    const dateRange = getLast7DaysRange(dateValue);
+    const dateRange = getDateRange(startDateValue, endDateValue);
     const records = await fetchAllLoanApplications({
       ...dateRange,
-      maxRecords: 200,
+      maxRecords: 100,
     });
     setApplications(records);
   };
@@ -90,7 +116,7 @@ export default function DashboardSnapshot() {
       setMessage("");
 
       try {
-        await loadSummary(coveringDate);
+        await loadSummary(initialRangeRef.current.startDate, initialRangeRef.current.endDate);
       } catch (error) {
         setMessage(
           getErrorMessage(
@@ -106,12 +132,12 @@ export default function DashboardSnapshot() {
     void loadInitialSummary();
   }, []);
 
-  const handleProcess = async () => {
+  const handleGenerateReport = async () => {
     setProcessing(true);
     setMessage("");
 
     try {
-      await loadSummary(coveringDate);
+      await loadSummary(startDate, endDate);
     } catch (error) {
       setMessage(
         getErrorMessage(
@@ -125,10 +151,10 @@ export default function DashboardSnapshot() {
   };
 
   const asOfDateLabel = useMemo(() => {
-    const parsed = new Date(`${coveringDate}T00:00:00`);
+    const parsed = new Date(`${endDate}T00:00:00`);
     const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
     return asOfFormatter.format(safeDate);
-  }, [coveringDate]);
+  }, [endDate]);
   const summaryCards = useMemo(() => {
     const totalApplications = dashboardSummary?.totalApplications ?? 0;
     const approved = dashboardSummary?.approved ?? 0;
@@ -222,6 +248,83 @@ export default function DashboardSnapshot() {
     ];
   }, [applications, dashboardSummary]);
 
+  const statusSlices = useMemo<ChartSlice[]>(() => {
+    const counts: Record<string, number> = {
+      Approved: 0,
+      Pending: 0,
+      Rejected: 0,
+      Defaulted: 0,
+      Draft: 0,
+    };
+
+    applications.forEach((record) => {
+      const bucket = getStatusBucket(record.status);
+      if (bucket === "approved") counts.Approved += 1;
+      if (bucket === "pending") counts.Pending += 1;
+      if (bucket === "rejected") counts.Rejected += 1;
+      if (bucket === "defaulted") counts.Defaulted += 1;
+      if (bucket === "draft") counts.Draft += 1;
+    });
+
+    return [
+      { color: "#16a34a", label: "Approved", value: counts.Approved },
+      { color: "#eab308", label: "Pending", value: counts.Pending },
+      { color: "#dc2626", label: "Rejected", value: counts.Rejected },
+      { color: "#ea580c", label: "Defaulted", value: counts.Defaulted },
+      { color: "#64748b", label: "Draft", value: counts.Draft },
+    ];
+  }, [applications]);
+
+  const aiRiskSlices = useMemo<ChartSlice[]>(() => {
+    let high = 0;
+    let medium = 0;
+    let low = 0;
+
+    applications.forEach((record) => {
+      const score = normalizeRiskScore(record.ai_probability);
+      if (score >= 0.75) {
+        high += 1;
+      } else if (score >= 0.4) {
+        medium += 1;
+      } else {
+        low += 1;
+      }
+    });
+
+    return [
+      { color: "#dc2626", label: "High AI Risk", value: high },
+      { color: "#f59e0b", label: "Medium AI Risk", value: medium },
+      { color: "#16a34a", label: "Low AI Risk", value: low },
+    ];
+  }, [applications]);
+
+  const dailyTrend = useMemo<TrendPoint[]>(() => {
+    const days: TrendPoint[] = [];
+    const end = new Date(`${endDate}T00:00:00`);
+    const safeEnd = Number.isNaN(end.getTime()) ? new Date() : end;
+
+    for (let i = 6; i >= 0; i -= 1) {
+      const day = new Date(safeEnd);
+      day.setDate(safeEnd.getDate() - i);
+      const key = formatDateInput(day);
+      days.push({ label: key.slice(5), value: 0 });
+    }
+
+    applications.forEach((record) => {
+      const createdAt = record.created_at;
+      if (!createdAt) {
+        return;
+      }
+      const key = createdAt.slice(5, 10);
+      const target = days.find((point) => point.label === key);
+      if (target) {
+        target.value += 1;
+      }
+    });
+
+    return days;
+  }, [applications, endDate]);
+
   return (
     <div
       style={{
@@ -298,6 +401,66 @@ export default function DashboardSnapshot() {
         ) : (
           <>
             <div style={{ ...panelStyle, marginBottom: "12px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "12px" }}>
+                <button
+                  type="button"
+                  style={{
+                    background: "#e74c3c",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: "#27ae60",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export Excel
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: "#3498db",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: "#8e44ad",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Print Report
+                </button>
+              </div>
+
               <div
                 style={{
                   alignItems: "center",
@@ -307,32 +470,85 @@ export default function DashboardSnapshot() {
                   justifyContent: "space-between",
                 }}
               >
-                <p style={{ ...subtleTextStyle, fontSize: "0.85rem", margin: 0 }}>
-                  Coverage notice: last 7 days or 200 records, whichever is lower.
-                </p>
                 <div style={{ alignItems: "center", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <label htmlFor="snapshot-covering-date" style={{ color: "#334155", fontSize: "0.82rem", fontWeight: 700 }}>
-                    Covering Date
-                  </label>
-                  <input
-                    id="snapshot-covering-date"
-                    type="date"
-                    value={coveringDate}
-                    onChange={(event) => setCoveringDate(event.target.value)}
-                    style={{
-                      border: "1px solid rgba(148,163,184,0.45)",
-                      borderRadius: "10px",
-                      color: "#0f172a",
-                      fontSize: "0.82rem",
-                      padding: "8px 10px",
-                    }}
-                  />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="snapshot-start-date" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      Start Date:
+                    </label>
+                    <input
+                      id="snapshot-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="snapshot-start-time" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      Start Time:
+                    </label>
+                    <input
+                      id="snapshot-start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(event) => setStartTime(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="snapshot-end-date" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      End Date:
+                    </label>
+                    <input
+                      id="snapshot-end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="snapshot-end-time" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      End Time:
+                    </label>
+                    <input
+                      id="snapshot-end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(event) => setEndTime(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => void handleProcess()}
+                    onClick={() => void handleGenerateReport()}
                     disabled={processing || loading}
                     style={{
-                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      background: "#2ecc71",
                       border: "none",
                       borderRadius: "10px",
                       color: "#fff",
@@ -340,13 +556,17 @@ export default function DashboardSnapshot() {
                       fontSize: "0.82rem",
                       fontWeight: 700,
                       opacity: processing || loading ? 0.7 : 1,
-                      padding: "8px 12px",
+                      padding: "12px 16px",
                     }}
                   >
-                    {processing ? "Processing..." : "Processed"}
+                    {processing ? "Generating..." : "Generate Report"}
                   </button>
                 </div>
               </div>
+
+              <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
+                Coverage notice: last 7 days or 100 records, whichever is lower.
+              </p>
             </div>
 
             <div style={{ marginBottom: "12px" }}>
@@ -380,12 +600,31 @@ export default function DashboardSnapshot() {
               ))}
             </ResponsiveGrid>
 
-            <div style={{ ...panelStyle, marginTop: "20px" }}>
-              <h2 style={{ ...sectionTitleStyle, fontSize: "1.1rem" }}>Charts Removed</h2>
-              <p style={{ ...subtleTextStyle, marginTop: "10px" }}>
-                Detailed graphical insights in Snapshot have been removed as requested.
-              </p>
-            </div>
+            <ResponsiveGrid minWidth={320} style={{ marginTop: "20px" }}>
+              <div style={panelStyle}>
+                <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>Status Distribution</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "8px", marginBottom: "12px" }}>
+                  Breakdown of captured records by workflow status.
+                </p>
+                <HorizontalBarChart slices={statusSlices} />
+              </div>
+
+              <div style={panelStyle}>
+                <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>AI Risk Mix</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "8px", marginBottom: "12px" }}>
+                  High, medium, and low risk grouping from AI probability.
+                </p>
+                <HorizontalBarChart slices={aiRiskSlices} />
+              </div>
+
+              <div style={{ ...panelStyle, gridColumn: "1 / -1" }}>
+                <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>7-Day Application Trend</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "8px", marginBottom: "12px" }}>
+                  Daily application activity within the selected reporting period.
+                </p>
+                <TrendBars points={dailyTrend} />
+              </div>
+            </ResponsiveGrid>
           </>
         )}
       </div>
@@ -481,6 +720,57 @@ function ResponsiveGrid({
       }}
     >
       {children}
+    </div>
+  );
+}
+
+function HorizontalBarChart({ slices }: { slices: ChartSlice[] }) {
+  const max = Math.max(1, ...slices.map((slice) => slice.value));
+
+  return (
+    <div style={{ display: "grid", gap: "10px" }}>
+      {slices.map((slice) => (
+        <div key={slice.label}>
+          <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span style={{ color: "#334155", fontSize: "0.8rem", fontWeight: 600 }}>{slice.label}</span>
+            <span style={{ color: "#0f172a", fontSize: "0.82rem", fontWeight: 700 }}>{slice.value.toLocaleString()}</span>
+          </div>
+          <div style={{ background: "#e2e8f0", borderRadius: "999px", height: "10px", overflow: "hidden" }}>
+            <div
+              style={{
+                background: slice.color,
+                borderRadius: "999px",
+                height: "100%",
+                width: `${(slice.value / max) * 100}%`,
+              }}
+            />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function TrendBars({ points }: { points: TrendPoint[] }) {
+  const max = Math.max(1, ...points.map((point) => point.value));
+
+  return (
+    <div style={{ alignItems: "end", display: "grid", gap: "10px", gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
+      {points.map((point) => (
+        <div key={point.label} style={{ textAlign: "center" }}>
+          <div
+            style={{
+              background: "linear-gradient(180deg, #38bdf8, #0ea5e9)",
+              borderRadius: "8px 8px 4px 4px",
+              height: `${Math.max(14, (point.value / max) * 120)}px`,
+              marginBottom: "6px",
+            }}
+            title={`${point.label}: ${point.value}`}
+          />
+          <div style={{ color: "#334155", fontSize: "0.72rem", fontWeight: 700 }}>{point.value}</div>
+          <div style={{ color: "#64748b", fontSize: "0.68rem" }}>{point.label}</div>
+        </div>
+      ))}
     </div>
   );
 }

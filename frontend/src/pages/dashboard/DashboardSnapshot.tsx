@@ -103,15 +103,26 @@ function formatDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
-function getLast7DaysRange(coveringDateInput: string): { dateFrom: string; dateTo: string } {
-  const parsed = new Date(`${coveringDateInput}T00:00:00`);
-  const coveringDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
-  const sevenDaysAgo = new Date(coveringDate);
-  sevenDaysAgo.setDate(coveringDate.getDate() - 7);
+function getDefaultStartDate(): string {
+  const endDate = new Date();
+  const startDate = new Date(endDate);
+  startDate.setDate(endDate.getDate() - 7);
+  return formatDateInput(startDate);
+}
+
+function getDateRange(startDateInput: string, endDateInput: string): { dateFrom: string; dateTo: string } {
+  const parsedStart = new Date(`${startDateInput}T00:00:00`);
+  const parsedEnd = new Date(`${endDateInput}T00:00:00`);
+
+  const safeStart = Number.isNaN(parsedStart.getTime()) ? new Date() : parsedStart;
+  const safeEnd = Number.isNaN(parsedEnd.getTime()) ? new Date() : parsedEnd;
+
+  const fromDate = safeStart <= safeEnd ? safeStart : safeEnd;
+  const toDate = safeStart <= safeEnd ? safeEnd : safeStart;
 
   return {
-    dateFrom: formatDateInput(sevenDaysAgo),
-    dateTo: formatDateInput(coveringDate),
+    dateFrom: formatDateInput(fromDate),
+    dateTo: formatDateInput(toDate),
   };
 }
 
@@ -203,22 +214,25 @@ export default function DashboardSnapshot() {
     pending: number;
     rejected: number;
   } | null>(null);
-  const [coveringDate, setCoveringDate] = useState(() => formatDateInput(new Date()));
+  const [startDate, setStartDate] = useState(() => getDefaultStartDate());
+  const [startTime, setStartTime] = useState("00:00");
+  const [endDate, setEndDate] = useState(() => formatDateInput(new Date()));
+  const [endTime, setEndTime] = useState("23:59");
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
 
-  const loadDetailedApplications = async (dateValue: string) => {
+  const loadDetailedApplications = async (startDateValue: string, endDateValue: string) => {
     setDetailsLoading(true);
     setMessage("");
 
     try {
-      const dateRange = getLast7DaysRange(dateValue);
+      const dateRange = getDateRange(startDateValue, endDateValue);
       const records = await fetchAllLoanApplications({
         ...dateRange,
-        maxRecords: 200,
+        maxRecords: 100,
       });
       setApplications(records);
       setDetailsLoaded(true);
@@ -262,13 +276,13 @@ export default function DashboardSnapshot() {
       return;
     }
 
-    void loadDetailedApplications(coveringDate);
-  }, [coveringDate, detailsLoaded]);
+    void loadDetailedApplications(startDate, endDate);
+  }, [detailsLoaded, endDate, startDate]);
 
-  const handleProcess = async () => {
+  const handleGenerateReport = async () => {
     setProcessing(true);
     try {
-      await loadDetailedApplications(coveringDate);
+      await loadDetailedApplications(startDate, endDate);
     } finally {
       setProcessing(false);
     }
@@ -276,10 +290,10 @@ export default function DashboardSnapshot() {
 
   const dashboard = useMemo(() => buildDashboardData(applications), [applications]);
   const asOfDateLabel = useMemo(() => {
-    const parsed = new Date(`${coveringDate}T00:00:00`);
+    const parsed = new Date(`${endDate}T00:00:00`);
     const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
     return asOfFormatter.format(safeDate);
-  }, [coveringDate]);
+  }, [endDate]);
   const summaryCards = useMemo(() => {
     const totalApplications = dashboardSummary?.totalApplications ?? 0;
     const approved = dashboardSummary?.approved ?? 0;
@@ -444,6 +458,66 @@ export default function DashboardSnapshot() {
         {!loading ? (
           <>
             <div style={{ ...panelStyle, marginBottom: "12px" }}>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "10px", marginBottom: "12px" }}>
+                <button
+                  type="button"
+                  style={{
+                    background: "#e74c3c",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export PDF
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: "#27ae60",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export Excel
+                </button>
+                <button
+                  type="button"
+                  style={{
+                    background: "#3498db",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Export CSV
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.print()}
+                  style={{
+                    background: "#8e44ad",
+                    border: "none",
+                    borderRadius: "8px",
+                    color: "#fff",
+                    fontSize: "0.82rem",
+                    fontWeight: 700,
+                    padding: "10px 16px",
+                  }}
+                >
+                  Print Report
+                </button>
+              </div>
+
               <div
                 style={{
                   alignItems: "center",
@@ -453,32 +527,85 @@ export default function DashboardSnapshot() {
                   justifyContent: "space-between",
                 }}
               >
-                <p style={{ ...subtleTextStyle, fontSize: "0.85rem", margin: 0 }}>
-                  Coverage notice: last 7 days or 200 records, whichever is lower.
-                </p>
                 <div style={{ alignItems: "center", display: "flex", gap: "8px", flexWrap: "wrap" }}>
-                  <label htmlFor="dashboard-covering-date" style={{ color: "#334155", fontSize: "0.82rem", fontWeight: 700 }}>
-                    Covering Date
-                  </label>
-                  <input
-                    id="dashboard-covering-date"
-                    type="date"
-                    value={coveringDate}
-                    onChange={(event) => setCoveringDate(event.target.value)}
-                    style={{
-                      border: "1px solid rgba(148,163,184,0.45)",
-                      borderRadius: "10px",
-                      color: "#0f172a",
-                      fontSize: "0.82rem",
-                      padding: "8px 10px",
-                    }}
-                  />
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="dashboard-start-date" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      Start Date:
+                    </label>
+                    <input
+                      id="dashboard-start-date"
+                      type="date"
+                      value={startDate}
+                      onChange={(event) => setStartDate(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="dashboard-start-time" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      Start Time:
+                    </label>
+                    <input
+                      id="dashboard-start-time"
+                      type="time"
+                      value={startTime}
+                      onChange={(event) => setStartTime(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="dashboard-end-date" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      End Date:
+                    </label>
+                    <input
+                      id="dashboard-end-date"
+                      type="date"
+                      value={endDate}
+                      onChange={(event) => setEndDate(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
+                  <div style={{ display: "flex", flexDirection: "column", gap: "4px" }}>
+                    <label htmlFor="dashboard-end-time" style={{ color: "#334155", fontSize: "0.78rem", fontWeight: 700 }}>
+                      End Time:
+                    </label>
+                    <input
+                      id="dashboard-end-time"
+                      type="time"
+                      value={endTime}
+                      onChange={(event) => setEndTime(event.target.value)}
+                      style={{
+                        border: "1px solid rgba(148,163,184,0.45)",
+                        borderRadius: "10px",
+                        color: "#0f172a",
+                        fontSize: "0.82rem",
+                        padding: "8px 10px",
+                      }}
+                    />
+                  </div>
                   <button
                     type="button"
-                    onClick={() => void handleProcess()}
+                    onClick={() => void handleGenerateReport()}
                     disabled={processing || detailsLoading}
                     style={{
-                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      background: "#2ecc71",
                       border: "none",
                       borderRadius: "10px",
                       color: "#fff",
@@ -486,13 +613,17 @@ export default function DashboardSnapshot() {
                       fontSize: "0.82rem",
                       fontWeight: 700,
                       opacity: processing || detailsLoading ? 0.7 : 1,
-                      padding: "8px 12px",
+                      padding: "12px 16px",
                     }}
                   >
-                    {processing ? "Processing..." : "Processed"}
+                    {processing ? "Generating..." : "Generate Report"}
                   </button>
                 </div>
               </div>
+
+              <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
+                Coverage notice: last 7 days or 100 records, whichever is lower.
+              </p>
             </div>
 
             <ResponsiveGrid minWidth={220}>
