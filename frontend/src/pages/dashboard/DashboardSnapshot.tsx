@@ -278,7 +278,24 @@ export default function DashboardSnapshot() {
       (loan) => (loan.social_scores?.overall_social_score ?? 0) >= 75,
     ).length;
 
-
+         <div style={{ marginTop: "18px", marginBottom: "6px" }}>
+              <div
+                style={{
+                  background: "#f8fafc",
+                  border: "1px solid rgba(148,163,184,0.25)",
+                  borderRadius: "999px",
+                  color: "#334155",
+                  display: "inline-flex",
+                  fontSize: "0.9rem",
+                  fontWeight: 700,
+                  gap: "8px",
+                  padding: "10px 16px",
+                }}
+              >
+                <span>As of - {asOfDateLabel}</span>
+                {detailsLoading ? <span style={{ color: "#64748b" }}>(Updating...)</span> : null}
+              </div>
+            </div>
 
     return [
       {
