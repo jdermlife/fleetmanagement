@@ -93,6 +93,12 @@ const monthFormatter = new Intl.DateTimeFormat("en-US", {
   year: "2-digit",
 });
 
+const asOfFormatter = new Intl.DateTimeFormat("en-US", {
+  day: "2-digit",
+  month: "short",
+  year: "numeric",
+});
+
 const sectionTitleStyle: React.CSSProperties = {
   color: "#1e293b",
   fontSize: "1.45rem",
@@ -183,7 +189,6 @@ export default function DashboardSnapshot() {
   } | null>(null);
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
-  const [detailLoadNonce, setDetailLoadNonce] = useState(0);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("");
 
@@ -211,13 +216,12 @@ export default function DashboardSnapshot() {
   }, []);
 
   useEffect(() => {
-    if (detailLoadNonce === 0 || detailsLoaded) {
+    if (detailsLoaded) {
       return;
     }
 
     const loadApplications = async () => {
       setDetailsLoading(true);
-      setLoading(true);
       setMessage("");
 
       try {
@@ -233,39 +237,74 @@ export default function DashboardSnapshot() {
         );
       } finally {
         setDetailsLoading(false);
-        setLoading(false);
       }
     };
 
     void loadApplications();
-  }, [detailLoadNonce, detailsLoaded]);
+  }, [detailsLoaded]);
 
   const dashboard = useMemo(() => buildDashboardData(applications), [applications]);
-  const summaryCards = useMemo(
-    () => [
+  const asOfDateLabel = useMemo(() => asOfFormatter.format(new Date()), []);
+  const summaryCards = useMemo(() => {
+    const totalApplications = dashboardSummary?.totalApplications ?? 0;
+    const approved = dashboardSummary?.approved ?? 0;
+    const pending = dashboardSummary?.pending ?? 0;
+    const rejected = dashboardSummary?.rejected ?? 0;
+
+    const highRiskCount = applications.filter((record) => {
+      const defaulted = getStatusBucket(record.status) === "defaulted";
+      const highAiRisk = normalizeRiskScore(record.ai_probability) >= 0.75;
+      return defaulted || highAiRisk;
+    }).length;
+
+    const fraudHighScoreCount = applications.filter((record) => {
+      const fraudScore = normalizeRiskScore(record.fraud_scores?.overall_fraud_score);
+      const fraudRiskLevel = record.fraud_scores?.fraud_risk_level?.toLowerCase() ?? "";
+      return (
+        fraudScore >= 0.75 ||
+        fraudRiskLevel.includes("high") ||
+        fraudRiskLevel.includes("critical")
+      );
+    }).length;
+
+    return [
       {
         label: "Total Applications",
-        value: dashboardSummary?.totalApplications ?? 0,
+        value: totalApplications,
         note: "Loaded from the lightweight summary endpoint",
       },
       {
         label: "Approved",
-        value: dashboardSummary?.approved ?? 0,
+        value: approved,
         note: "Approved records",
       },
       {
         label: "Pending",
-        value: dashboardSummary?.pending ?? 0,
+        value: pending,
         note: "Active pipeline records",
       },
       {
         label: "Rejected",
-        value: dashboardSummary?.rejected ?? 0,
+        value: rejected,
         note: "Closed-out decisions",
       },
-    ],
-    [dashboardSummary],
-  );
+      {
+        label: "High Risk Accounts",
+        value: highRiskCount,
+        note: "Defaulted or high AI risk (>=75%)",
+      },
+      {
+        label: "Fraud Accounts (High Score)",
+        value: fraudHighScoreCount,
+        note: "High/critical fraud risk or score >=75%",
+      },
+      {
+        label: "% Approval (Total Applications)",
+        value: formatPercent(safeDivide(approved, totalApplications)),
+        note: "Approved divided by total applications",
+      },
+    ];
+  }, [applications, dashboardSummary]);
 
   return (
     <div
@@ -357,27 +396,22 @@ export default function DashboardSnapshot() {
             </ResponsiveGrid>
 
             <div style={{ marginTop: "18px", marginBottom: "6px" }}>
-              <button
-                type="button"
-                onClick={() => setDetailLoadNonce((current) => current + 1)}
-                disabled={detailsLoading}
+              <div
                 style={{
-                  background: "#0f172a",
-                  border: "none",
+                  background: "#f8fafc",
+                  border: "1px solid rgba(148,163,184,0.25)",
                   borderRadius: "999px",
-                  color: "#fff",
-                  cursor: "pointer",
+                  color: "#334155",
+                  display: "inline-flex",
                   fontSize: "0.9rem",
                   fontWeight: 700,
+                  gap: "8px",
                   padding: "10px 16px",
                 }}
               >
-                {detailsLoading
-                  ? "Loading detailed analytics..."
-                  : detailsLoaded
-                    ? "Detailed analytics loaded"
-                    : "Load detailed analytics"}
-              </button>
+                <span>As of - {asOfDateLabel}</span>
+                {detailsLoading ? <span style={{ color: "#64748b" }}>(Updating...)</span> : null}
+              </div>
             </div>
 
             {detailsLoaded ? (
@@ -490,15 +524,7 @@ export default function DashboardSnapshot() {
                   </Panel>
                 </SectionGrid>
               </>
-            ) : (
-              <div style={{ ...panelStyle, marginTop: "20px" }}>
-                <h2 style={sectionTitleStyle}>Detailed analytics are paused</h2>
-                <p style={{ ...subtleTextStyle, marginTop: "10px" }}>
-                  The page loaded the lightweight summary only. Use the button above when you want
-                  the full repository analytics.
-                </p>
-              </div>
-            )}
+            ) : null}
           </>
         ) : null}
       </div>
@@ -1769,6 +1795,13 @@ function safeDivide(numerator: number, denominator: number): number {
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
+}
+
+function normalizeRiskScore(value: number | null | undefined): number {
+  if (!isFiniteNumber(value)) {
+    return 0;
+  }
+  return value > 1 ? value / 100 : value;
 }
 
 function isFiniteNumber(value: number | null | undefined): value is number {
