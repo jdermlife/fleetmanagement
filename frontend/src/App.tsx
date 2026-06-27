@@ -10,6 +10,7 @@ type MenuLink = {
 }
 
 const DashboardSnapshot = lazy(() => import('./pages/dashboard/DashboardSnapshot'))
+const Snapshot = lazy(() => import('./pages/dashboard/Snapshot'))
 const LendingScorecard = lazy(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
 const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
@@ -61,6 +62,7 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Dashboard Snapshot' },
+  { id: 'snapshot', label: 'Snapshot' },
   { id: 'lending-scorecard', label: 'Lending Scorecard' },
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
   { id: 'insurance-management', label: 'Insurance Management' },
@@ -607,6 +609,11 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/dashboard"
               element={<DashboardSnapshot />}
+            />
+
+            <Route
+              path="/snapshot"
+              element={<Snapshot />}
             />
 
             <Route
