@@ -637,7 +637,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Coverage notice: last 7 days or 100 records, whichever is higher.
+                Default Coverage: Last 7 days or 100 records, whichever is higher.
               </p>
             </div>
 

@@ -371,7 +371,7 @@ export default function DashboardSnapshot() {
               Dashboard Snapshot
             </h1>
             <p style={{ ...subtleTextStyle, marginTop: "8px", maxWidth: "760px", fontSize: "0.88rem" }}>
-              Snapshot view with summary metrics only. Graphs have been removed.
+              Snapshot view with summary metrics only. 
             </p>
             <p style={{ ...subtleTextStyle, marginTop: "8px", maxWidth: "760px", fontSize: "0.82rem" }}>
               Welcome back. Here is your quick portfolio overview for today.
@@ -581,7 +581,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Coverage notice: last 7 days or 100 records, whichever is higher.
+                Default Coverage: Last 7 days or 100 records, whichever is higher.
               </p>
             </div>
 
