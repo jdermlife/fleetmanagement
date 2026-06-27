@@ -573,6 +573,18 @@ const buildScorePayloadSections = (
       bankingRelationshipScore,
     ]),
   );
+  const socialRiskLevel =
+    overallSocialScore >= 70
+      ? 'Low'
+      : overallSocialScore >= 50
+        ? 'Medium'
+        : 'High';
+  const psychometricRiskLevel =
+    quantSummary.psychometricScoreValue >= 70
+      ? 'Low'
+      : quantSummary.psychometricScoreValue >= 50
+        ? 'Medium'
+        : 'High';
 
   const ltvScore = Math.round(clampScore(100 - calculations.ltv));
   const assetQualityScore = clampScore(
@@ -666,6 +678,7 @@ const buildScorePayloadSections = (
       },
     },
     social_scores: {
+      social_risk_level: socialRiskLevel,
       residence_stability_score: residenceStabilityScore,
       employment_stability_score: employmentStabilityScore,
       family_stability_score: familyStabilityScore,
@@ -674,6 +687,7 @@ const buildScorePayloadSections = (
       overall_social_score: overallSocialScore,
     },
     psychometric_scores: {
+      psychometric_risk_level: psychometricRiskLevel,
       discipline_score: traitScores[0],
       planning_score: traitScores[1],
       responsibility_score: traitScores[2],

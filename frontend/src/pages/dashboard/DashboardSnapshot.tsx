@@ -275,11 +275,8 @@ export default function DashboardSnapshot() {
 ).length;
 
     const socialHighRiskScoreCount = applications.filter(
-    loan =>
-        loan.psychometric_scores?.overall_psychometric_score >= 75 ||
-        loan.psychometric_scores?.psychometric_risk_level === "High" ||
-        loan.psychometric_scores?.psychometric_risk_level === "Critical"
-).length;
+      (loan) => (loan.social_scores?.overall_social_score ?? 0) >= 75,
+    ).length;
 
 
 

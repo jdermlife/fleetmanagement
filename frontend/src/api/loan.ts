@@ -287,6 +287,7 @@ export interface FraudScoreRecord {
 }
 
 export interface SocialScoreRecord {
+  social_risk_level: string
   id?: number
   created_at?: string
   residence_stability_score?: number | null
