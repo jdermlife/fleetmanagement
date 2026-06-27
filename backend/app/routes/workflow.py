@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal
 from app.fastapi_auth import CurrentUser, require_roles
 from app.models.loan_application import LoanApplication
+from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.workflow import loan_workflow, normalize_workflow_state
 
 
@@ -164,6 +165,7 @@ def transition_loan_workflow_state(
         )
 
         db.commit()
+        invalidate_dashboard_statistics_cache()
 
         return {
             "message": f"Status updated to {new_status}",

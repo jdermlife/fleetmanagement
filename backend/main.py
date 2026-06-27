@@ -1,10 +1,12 @@
 import os
 import json
 import asyncio
+import time
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
+from starlette.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 
 from app.database import Base, SessionLocal, engine
@@ -47,6 +49,7 @@ from app.services.audit_log_service import create_immutable_audit_constraints, w
 from app.services.notification_service import dispatch_queued_notifications
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.auth import TokenError, decode_token
+from logging_config import request_logger, backend_logger, error_logger
 
 from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
@@ -108,9 +111,17 @@ if origin_regex:
     cors_kwargs["allow_origin_regex"] = origin_regex
 
 app.add_middleware(CORSMiddleware, **cors_kwargs)
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 if RATE_LIMIT_ENABLED:
     app.add_middleware(RateLimitMiddleware)
+
+_service_start_time = time.time()
+_metrics = {
+    "http_requests_total": 0,
+    "http_requests_errors_total": 0,
+    "http_request_duration_seconds_sum": 0.0,
+}
 
 
 @app.middleware("http")
@@ -127,6 +138,40 @@ async def add_security_headers(request: Request, call_next):
         response.headers.setdefault("Strict-Transport-Security", "max-age=31536000; includeSubDomains")
 
     return response
+
+
+@app.middleware("http")
+async def request_timing_middleware(request: Request, call_next):
+    started = time.perf_counter()
+    response = None
+
+    try:
+        response = await call_next(request)
+        return response
+    except Exception as exc:
+        _metrics["http_requests_errors_total"] += 1
+        error_logger.error(
+            "Unhandled request error",
+            path=request.url.path,
+            method=request.method,
+            error=str(exc),
+        )
+        raise
+    finally:
+        elapsed = time.perf_counter() - started
+        _metrics["http_requests_total"] += 1
+        _metrics["http_request_duration_seconds_sum"] += elapsed
+
+        if response is not None:
+            response.headers["X-Process-Time"] = f"{elapsed:.4f}s"
+
+        request_logger.info(
+            "request_complete",
+            method=request.method,
+            path=request.url.path,
+            duration_ms=round(elapsed * 1000, 2),
+            status_code=getattr(response, "status_code", 500),
+        )
 
 
 def _infer_table_and_record(path: str) -> tuple[str, str | None]:
@@ -282,13 +327,6 @@ def ensure_loan_application_schema() -> None:
             text(
                 """
                 ALTER TABLE loan_applications
-                ADD COLUMN IF NOT EXISTS created_by_user_id INTEGER;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
                 ALTER TABLE loan_applications
                 ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
                 """
@@ -375,8 +413,8 @@ async def _notification_dispatcher_loop() -> None:
         db = SessionLocal()
         try:
             dispatch_queued_notifications(db, limit=notification_dispatch_batch_size)
-        except Exception:
-            pass
+        except Exception as exc:
+            backend_logger.error("Notification dispatcher loop failed", error=str(exc))
         finally:
             db.close()
 
@@ -412,6 +450,44 @@ def home():
 @app.get("/health")
 def health():
     return {
-        "status": "healthy"
+        "status": "healthy",
+        "uptime_seconds": int(time.time() - _service_start_time),
     }
+
+
+@app.get("/ready")
+def ready():
+    try:
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+        return {"status": "ready"}
+    except Exception as exc:
+        backend_logger.error("Readiness check failed", error=str(exc))
+        return Response(
+            content=json.dumps({"status": "not_ready", "error": str(exc)}),
+            media_type="application/json",
+            status_code=503,
+        )
+
+
+@app.get("/metrics")
+def metrics():
+    request_count = _metrics["http_requests_total"]
+    error_count = _metrics["http_requests_errors_total"]
+    duration_sum = _metrics["http_request_duration_seconds_sum"]
+    avg_duration = duration_sum / request_count if request_count else 0.0
+
+    lines = [
+        "# TYPE http_requests_total counter",
+        f"http_requests_total {request_count}",
+        "# TYPE http_requests_errors_total counter",
+        f"http_requests_errors_total {error_count}",
+        "# TYPE http_request_duration_seconds_sum counter",
+        f"http_request_duration_seconds_sum {duration_sum}",
+        "# TYPE http_request_duration_seconds_avg gauge",
+        f"http_request_duration_seconds_avg {avg_duration}",
+        "# TYPE app_uptime_seconds gauge",
+        f"app_uptime_seconds {int(time.time() - _service_start_time)}",
+    ]
+    return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
 

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 from app.database import SessionLocal
 from app.fastapi_auth import CurrentUser, get_current_user, require_roles
@@ -33,6 +33,14 @@ from app.services.notification_service import (
 )
 
 router = APIRouter(prefix="/notifications", tags=["notifications"])
+
+
+def _dispatch_notifications_job(limit: int) -> None:
+    db = SessionLocal()
+    try:
+        dispatch_queued_notifications(db, limit=limit)
+    finally:
+        db.close()
 
 
 @router.post(
@@ -198,13 +206,16 @@ def send_notifications(payload: NotificationSendRequest, user: CurrentUser | Non
     response_model=NotificationDispatchResponse,
     dependencies=[Depends(require_roles("admin", "operations", "credit_manager"))],
 )
-def dispatch_notifications(limit: int = Query(100, ge=1, le=1000)):
-    db = SessionLocal()
-    try:
-        result = dispatch_queued_notifications(db, limit=limit)
-        return NotificationDispatchResponse(**result)
-    finally:
-        db.close()
+def dispatch_notifications(
+    background_tasks: BackgroundTasks,
+    limit: int = Query(100, ge=1, le=1000),
+):
+    background_tasks.add_task(_dispatch_notifications_job, limit)
+    return NotificationDispatchResponse(
+        processed=0,
+        sent=0,
+        failed=0,
+    )
 
 
 @router.get("/me", response_model=list[NotificationResponse])

@@ -26,6 +26,7 @@ from app.models.loan_application import (
     SocialScore,
 )
 from app.schemas.loan_schema import LoanApplicationCreate
+from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.services.loan_repository_io import (
     apply_repository_filters,
     generate_csv_bytes,
@@ -589,6 +590,7 @@ def create_loan_application(
 
         db.commit()
         db.refresh(record)
+        invalidate_dashboard_statistics_cache()
 
         return {
             "message": "Loan application saved",
@@ -653,6 +655,7 @@ def compute_quant_scores(
 
         db.commit()
         db.refresh(record)
+        invalidate_dashboard_statistics_cache()
 
         return {
             "message": "QuantScores computed and stored",
@@ -713,6 +716,8 @@ async def import_loan_applications(file: UploadFile = File(...)):
         file_bytes = await file.read()
         rows = parse_upload_rows(file.filename or "upload.csv", file_bytes)
         result = upsert_loan_applications(db, rows)
+        if result.get("inserted", 0) > 0 or result.get("updated", 0) > 0:
+            invalidate_dashboard_statistics_cache()
 
         return {
             "message": (
@@ -820,6 +825,7 @@ def update_status(
         )
 
         db.commit()
+        invalidate_dashboard_statistics_cache()
         return {"message": f"Status updated to {status}"}
     except Exception:
         db.rollback()
@@ -896,6 +902,7 @@ def update_loan_application(
 
         db.commit()
         db.refresh(record)
+        invalidate_dashboard_statistics_cache()
         return {
             "message": "Loan application updated",
             "application_no": record.application_no,

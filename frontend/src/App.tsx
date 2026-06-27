@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState } from 'react'
+import { Suspense, lazy, useEffect, useState, type ComponentType } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
@@ -9,9 +9,26 @@ type MenuLink = {
   label: string
 }
 
-const DashboardSnapshot = lazy(() => import('./pages/dashboard/DashboardSnapshot'))
-const Snapshot = lazy(() => import('./pages/dashboard/Snapshot'))
-const LendingScorecard = lazy(() => import('./pages/scoring/LendingScorecard'))
+function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
+  importer: () => Promise<T>,
+) {
+  return lazy(async () => {
+    try {
+      return await importer()
+    } catch (error) {
+      // Refresh once to recover from stale chunk references after deployment.
+      if (typeof window !== 'undefined' && !sessionStorage.getItem('lazy-retry')) {
+        sessionStorage.setItem('lazy-retry', '1')
+        window.location.reload()
+      }
+      throw error
+    }
+  })
+}
+
+const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/DashboardSnapshot'))
+const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
+const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
 const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
 const CreditScoring = lazy(() => import('./pages/scoring/CreditScoring'))
