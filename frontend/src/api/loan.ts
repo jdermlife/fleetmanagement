@@ -298,6 +298,7 @@ export interface SocialScoreRecord {
 }
 
 export interface PsychometricScoreRecord {
+  psychometric_risk_level: string
   id?: number
   created_at?: string
   discipline_score?: number | null
@@ -430,6 +431,7 @@ export interface LoanApplicationPayload {
 }
 
 export interface LoanApplicationRecord extends LoanApplicationPayload {
+  psychometric_risk_level: string
   id?: number
   created_by_user_id?: number
   created_at?: string

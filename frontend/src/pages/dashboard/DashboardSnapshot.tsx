@@ -267,6 +267,22 @@ export default function DashboardSnapshot() {
       );
     }).length;
 
+    const psychometricHighScoreCount = applications.filter(
+    loan =>
+        loan.psychometric_scores?.overall_psychometric_score >= 75 ||
+        loan.psychometric_scores?.psychometric_risk_level === "High" ||
+        loan.psychometric_scores?.psychometric_risk_level === "Critical"
+).length;
+
+    const socialHighRiskScoreCount = applications.filter(
+    loan =>
+        loan.psychometric_scores?.overall_psychometric_score >= 75 ||
+        loan.psychometric_scores?.psychometric_risk_level === "High" ||
+        loan.psychometric_scores?.psychometric_risk_level === "Critical"
+).length;
+
+
+
     return [
       {
         label: "Total Applications",
@@ -289,7 +305,7 @@ export default function DashboardSnapshot() {
         note: "Closed-out decisions",
       },
       {
-        label: "High Risk Accounts",
+        label: "High Credit Risk Accounts",
         value: highRiskCount,
         note: "Defaulted or high AI risk (>=75%)",
       },
@@ -303,6 +319,22 @@ export default function DashboardSnapshot() {
         value: formatPercent(safeDivide(approved, totalApplications)),
         note: "Approved divided by total applications",
       },
+            {
+        label: "High Behavioral Risk Accounts",
+        value: psychometricHighScoreCount,
+        note: "High/critical behavioral risk or score >=75%",
+      },
+      {
+        label: "Social Risk Accounts (High Score)",
+        value: socialHighRiskScoreCount,
+        note: "High/critical social risk or score >=75%",
+      },
+      {
+        label: "% Recommended with Enhancement",
+        value: formatPercent(safeDivide(approved, totalApplications)),
+        note: "Approved divided by total applications",
+      },
+
     ];
   }, [applications, dashboardSummary]);
 
