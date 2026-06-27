@@ -99,6 +99,22 @@ const asOfFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+function formatDateInput(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function getLast7DaysRange(coveringDateInput: string): { dateFrom: string; dateTo: string } {
+  const parsed = new Date(`${coveringDateInput}T00:00:00`);
+  const coveringDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const sevenDaysAgo = new Date(coveringDate);
+  sevenDaysAgo.setDate(coveringDate.getDate() - 7);
+
+  return {
+    dateFrom: formatDateInput(sevenDaysAgo),
+    dateTo: formatDateInput(coveringDate),
+  };
+}
+
 const sectionTitleStyle: React.CSSProperties = {
   color: "#1e293b",
   fontSize: "1.45rem",
@@ -187,10 +203,36 @@ export default function DashboardSnapshot() {
     pending: number;
     rejected: number;
   } | null>(null);
+  const [coveringDate, setCoveringDate] = useState(() => formatDateInput(new Date()));
   const [detailsLoaded, setDetailsLoaded] = useState(false);
   const [detailsLoading, setDetailsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
+
+  const loadDetailedApplications = async (dateValue: string) => {
+    setDetailsLoading(true);
+    setMessage("");
+
+    try {
+      const dateRange = getLast7DaysRange(dateValue);
+      const records = await fetchAllLoanApplications({
+        ...dateRange,
+        maxRecords: 200,
+      });
+      setApplications(records);
+      setDetailsLoaded(true);
+    } catch (error) {
+      setMessage(
+        getErrorMessage(
+          error,
+          "Failed to load dashboard analytics. Please try again.",
+        ),
+      );
+    } finally {
+      setDetailsLoading(false);
+    }
+  };
 
   useEffect(() => {
     const loadSummary = async () => {
@@ -220,31 +262,24 @@ export default function DashboardSnapshot() {
       return;
     }
 
-    const loadApplications = async () => {
-      setDetailsLoading(true);
-      setMessage("");
+    void loadDetailedApplications(coveringDate);
+  }, [coveringDate, detailsLoaded]);
 
-      try {
-        const records = await fetchAllLoanApplications();
-        setApplications(records);
-        setDetailsLoaded(true);
-      } catch (error) {
-        setMessage(
-          getErrorMessage(
-            error,
-            "Failed to load dashboard analytics. Please try again.",
-          ),
-        );
-      } finally {
-        setDetailsLoading(false);
-      }
-    };
-
-    void loadApplications();
-  }, [detailsLoaded]);
+  const handleProcess = async () => {
+    setProcessing(true);
+    try {
+      await loadDetailedApplications(coveringDate);
+    } finally {
+      setProcessing(false);
+    }
+  };
 
   const dashboard = useMemo(() => buildDashboardData(applications), [applications]);
-  const asOfDateLabel = useMemo(() => asOfFormatter.format(new Date()), []);
+  const asOfDateLabel = useMemo(() => {
+    const parsed = new Date(`${coveringDate}T00:00:00`);
+    const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    return asOfFormatter.format(safeDate);
+  }, [coveringDate]);
   const summaryCards = useMemo(() => {
     const totalApplications = dashboardSummary?.totalApplications ?? 0;
     const approved = dashboardSummary?.approved ?? 0;
@@ -277,25 +312,6 @@ export default function DashboardSnapshot() {
     const socialHighRiskScoreCount = applications.filter(
       (loan) => (loan.social_scores?.overall_social_score ?? 0) >= 75,
     ).length;
-
-         <div style={{ marginTop: "18px", marginBottom: "6px" }}>
-              <div
-                style={{
-                  background: "#f8fafc",
-                  border: "1px solid rgba(148,163,184,0.25)",
-                  borderRadius: "999px",
-                  color: "#334155",
-                  display: "inline-flex",
-                  fontSize: "0.9rem",
-                  fontWeight: 700,
-                  gap: "8px",
-                  padding: "10px 16px",
-                }}
-              >
-                <span>As of - {asOfDateLabel}</span>
-                {detailsLoading ? <span style={{ color: "#64748b" }}>(Updating...)</span> : null}
-              </div>
-            </div>
 
     return [
       {
@@ -427,6 +443,58 @@ export default function DashboardSnapshot() {
 
         {!loading ? (
           <>
+            <div style={{ ...panelStyle, marginBottom: "12px" }}>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                  justifyContent: "space-between",
+                }}
+              >
+                <p style={{ ...subtleTextStyle, fontSize: "0.85rem", margin: 0 }}>
+                  Coverage notice: last 7 days or 200 records, whichever is lower.
+                </p>
+                <div style={{ alignItems: "center", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <label htmlFor="dashboard-covering-date" style={{ color: "#334155", fontSize: "0.82rem", fontWeight: 700 }}>
+                    Covering Date
+                  </label>
+                  <input
+                    id="dashboard-covering-date"
+                    type="date"
+                    value={coveringDate}
+                    onChange={(event) => setCoveringDate(event.target.value)}
+                    style={{
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      borderRadius: "10px",
+                      color: "#0f172a",
+                      fontSize: "0.82rem",
+                      padding: "8px 10px",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleProcess()}
+                    disabled={processing || detailsLoading}
+                    style={{
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      border: "none",
+                      borderRadius: "10px",
+                      color: "#fff",
+                      cursor: processing || detailsLoading ? "not-allowed" : "pointer",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      opacity: processing || detailsLoading ? 0.7 : 1,
+                      padding: "8px 12px",
+                    }}
+                  >
+                    {processing ? "Processing..." : "Processed"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <ResponsiveGrid minWidth={220}>
               {summaryCards.map((metric) => (
                 <MetricCard

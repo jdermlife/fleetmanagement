@@ -43,6 +43,22 @@ const asOfFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
 });
 
+function formatDateInput(date: Date): string {
+  return date.toISOString().slice(0, 10);
+}
+
+function getLast7DaysRange(coveringDateInput: string): { dateFrom: string; dateTo: string } {
+  const parsed = new Date(`${coveringDateInput}T00:00:00`);
+  const coveringDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+  const sevenDaysAgo = new Date(coveringDate);
+  sevenDaysAgo.setDate(coveringDate.getDate() - 7);
+
+  return {
+    dateFrom: formatDateInput(sevenDaysAgo),
+    dateTo: formatDateInput(coveringDate),
+  };
+}
+
 export default function DashboardSnapshot() {
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
   const [dashboardSummary, setDashboardSummary] = useState<{
@@ -51,20 +67,30 @@ export default function DashboardSnapshot() {
     pending: number;
     rejected: number;
   } | null>(null);
+  const [coveringDate, setCoveringDate] = useState(() => formatDateInput(new Date()));
   const [loading, setLoading] = useState(true);
+  const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
 
+  const loadSummary = async (dateValue: string) => {
+    const summary = await fetchDashboardStatistics();
+    setDashboardSummary(summary);
+
+    const dateRange = getLast7DaysRange(dateValue);
+    const records = await fetchAllLoanApplications({
+      ...dateRange,
+      maxRecords: 200,
+    });
+    setApplications(records);
+  };
+
   useEffect(() => {
-    const loadSummary = async () => {
+    const loadInitialSummary = async () => {
       setLoading(true);
       setMessage("");
 
       try {
-        const summary = await fetchDashboardStatistics();
-        setDashboardSummary(summary);
-
-        const records = await fetchAllLoanApplications();
-        setApplications(records);
+        await loadSummary(coveringDate);
       } catch (error) {
         setMessage(
           getErrorMessage(
@@ -77,10 +103,32 @@ export default function DashboardSnapshot() {
       }
     };
 
-    void loadSummary();
+    void loadInitialSummary();
   }, []);
 
-  const asOfDateLabel = useMemo(() => asOfFormatter.format(new Date()), []);
+  const handleProcess = async () => {
+    setProcessing(true);
+    setMessage("");
+
+    try {
+      await loadSummary(coveringDate);
+    } catch (error) {
+      setMessage(
+        getErrorMessage(
+          error,
+          "Failed to process dashboard coverage. Please try again.",
+        ),
+      );
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  const asOfDateLabel = useMemo(() => {
+    const parsed = new Date(`${coveringDate}T00:00:00`);
+    const safeDate = Number.isNaN(parsed.getTime()) ? new Date() : parsed;
+    return asOfFormatter.format(safeDate);
+  }, [coveringDate]);
   const summaryCards = useMemo(() => {
     const totalApplications = dashboardSummary?.totalApplications ?? 0;
     const approved = dashboardSummary?.approved ?? 0;
@@ -249,6 +297,58 @@ export default function DashboardSnapshot() {
           </div>
         ) : (
           <>
+            <div style={{ ...panelStyle, marginBottom: "12px" }}>
+              <div
+                style={{
+                  alignItems: "center",
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: "10px",
+                  justifyContent: "space-between",
+                }}
+              >
+                <p style={{ ...subtleTextStyle, fontSize: "0.85rem", margin: 0 }}>
+                  Coverage notice: last 7 days or 200 records, whichever is lower.
+                </p>
+                <div style={{ alignItems: "center", display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                  <label htmlFor="snapshot-covering-date" style={{ color: "#334155", fontSize: "0.82rem", fontWeight: 700 }}>
+                    Covering Date
+                  </label>
+                  <input
+                    id="snapshot-covering-date"
+                    type="date"
+                    value={coveringDate}
+                    onChange={(event) => setCoveringDate(event.target.value)}
+                    style={{
+                      border: "1px solid rgba(148,163,184,0.45)",
+                      borderRadius: "10px",
+                      color: "#0f172a",
+                      fontSize: "0.82rem",
+                      padding: "8px 10px",
+                    }}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => void handleProcess()}
+                    disabled={processing || loading}
+                    style={{
+                      background: "linear-gradient(135deg, #f59e0b, #d97706)",
+                      border: "none",
+                      borderRadius: "10px",
+                      color: "#fff",
+                      cursor: processing || loading ? "not-allowed" : "pointer",
+                      fontSize: "0.82rem",
+                      fontWeight: 700,
+                      opacity: processing || loading ? 0.7 : 1,
+                      padding: "8px 12px",
+                    }}
+                  >
+                    {processing ? "Processing..." : "Processed"}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div style={{ marginBottom: "12px" }}>
               <div
                 style={{

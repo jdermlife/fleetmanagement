@@ -537,21 +537,29 @@ export async function fetchLoanApplications(
 }
 
 export async function fetchAllLoanApplications(
-  params: Omit<LoanApplicationQueryParams, 'limit' | 'offset'> = {},
+  params: Omit<LoanApplicationQueryParams, 'limit' | 'offset'> & {
+    maxRecords?: number
+  } = {},
 ): Promise<LoanApplicationRecord[]> {
   const allRecords: LoanApplicationRecord[] = []
   const pageSize = 100
+  const maxRecords = typeof params.maxRecords === 'number' ? Math.max(0, params.maxRecords) : null
 
   for (let offset = 0; ; offset += pageSize) {
+    const remaining = maxRecords === null ? pageSize : maxRecords - allRecords.length
+    if (remaining <= 0) {
+      break
+    }
+
     const batch = await fetchLoanApplicationsPage({
       ...params,
-      limit: pageSize,
+      limit: Math.min(pageSize, remaining),
       offset,
     })
 
     allRecords.push(...batch.records)
 
-    if (batch.records.length < pageSize) {
+    if (batch.records.length < Math.min(pageSize, remaining)) {
       break
     }
   }
