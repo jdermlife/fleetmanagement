@@ -1,4 +1,4 @@
-import { Suspense, lazy, useEffect, useState, type ComponentType } from 'react'
+import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
@@ -117,6 +117,10 @@ const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 
 function isAuthPath(pathname: string) {
   return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}?`))
+}
+
+function authenticatedPage(children: ReactNode) {
+  return <ProtectedRoute>{children}</ProtectedRoute>
 }
 
 function App() {
@@ -621,16 +625,16 @@ const adminMenuItems = visibleMenuLinks.filter(
       <main className="content">
         <Suspense fallback={<div className="card">Loading page...</div>}>
           <Routes>
-            <Route path="/" element={<DashboardSnapshot />} />
+            <Route path="/" element={authenticatedPage(<DashboardSnapshot />)} />
 
             <Route
               path="/dashboard"
-              element={<DashboardSnapshot />}
+              element={authenticatedPage(<DashboardSnapshot />)}
             />
 
             <Route
               path="/snapshot"
-              element={<Snapshot />}
+              element={authenticatedPage(<Snapshot />)}
             />
 
             <Route
@@ -873,71 +877,71 @@ const adminMenuItems = visibleMenuLinks.filter(
             {/* AI ROUTES */}
             <Route
               path="/ai-dashboard"
-              element={<AIDashboard />}
+              element={authenticatedPage(<AIDashboard />)}
             />
 
             <Route
               path="/chat-assistant"
-              element={<ChatAssistant />}
+              element={authenticatedPage(<ChatAssistant />)}
             />
 
             <Route
               path="/voice-reports"
-              element={<VoiceReports />}
+              element={authenticatedPage(<VoiceReports />)}
             />
 
             <Route
               path="/ocr-scanner"
-              element={<OCRScanner />}
+              element={authenticatedPage(<OCRScanner />)}
             />
 
             <Route
               path="/maintenance-ai"
-              element={<MaintenanceAI />}
+              element={authenticatedPage(<MaintenanceAI />)}
             />
 
             <Route
               path="/risk-analysis"
-              element={<RiskAnalysis />}
+              element={authenticatedPage(<RiskAnalysis />)}
             />
 
             <Route
               path="/pdf-summarizer"
-              element={<PDFSummarizer />}
+              element={authenticatedPage(<PDFSummarizer />)}
             />
 
             <Route
               path="/meeting-minutes"
-              element={<MeetingMinutes />}
+              element={authenticatedPage(<MeetingMinutes />)}
             />
 
             <Route
               path="/send-email"
-              element={<SendEmail />}
+              element={authenticatedPage(<SendEmail />)}
             />
 
             <Route
               path="/attend-meeting"
-              element={<AttendMeeting />}
+              element={authenticatedPage(<AttendMeeting />)}
             />
 
             <Route
               path="/compliance-ai"
-              element={<ComplianceAI />}
+              element={authenticatedPage(<ComplianceAI />)}
             />
             <Route
                path="/ai/history"
-               element={<MeetingHistory />}
+               element={authenticatedPage(<MeetingHistory />)}
             />
 
             <Route
               path="/ai/history/:id"
-              element={<MeetingDetails />}
+              element={authenticatedPage(<MeetingDetails />)}
             />
 
             <Route
               path="/meeting-history"
-              element={<MeetingHistory />}
+              element={authenticatedPage(<MeetingHistory />)}
             />
 
             <Route

@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import axios from 'axios'
+
+import { api, getErrorMessage } from '../../api'
 
 export default function SendEmail() {
   const [recipient, setRecipient] = useState('')
@@ -14,8 +15,8 @@ export default function SendEmail() {
       setLoading(true)
       setMessage('')
 
-      const response = await axios.post(
-        `${import.meta.env.VITE_API_URL}/ai/send-minutes`,
+      const response = await api.post(
+        '/ai/send-minutes',
         {
           recipient,
           subject,
@@ -25,11 +26,7 @@ export default function SendEmail() {
 
       setMessage(response.data.message)
     } catch (error) {
-      console.error(error)
-
-      setMessage(
-        'Failed to send email.'
-      )
+      setMessage(getErrorMessage(error, 'Failed to send email.'))
     } finally {
       setLoading(false)
     }
