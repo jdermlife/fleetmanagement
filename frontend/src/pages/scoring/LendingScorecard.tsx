@@ -5,6 +5,7 @@ import { api, getErrorMessage } from '../../api';
 import {
   computeQuantScores,
   createLoanApplication,
+  type CreditScoreRecord,
   fetchLoanApplication,
   type QuantScoresSummary,
   updateLoanApplication,
@@ -92,6 +93,59 @@ interface DocumentParseReview {
   supportingDocuments: Partial<SupportingDocuments>;
   extractedData: ParsedSectionUpdates;
 }
+
+const mapBackendQuantSummary = (
+  summary:
+    | {
+        creditScore?: number;
+        fraudScore?: number;
+        socialScore?: number;
+        psychometricScore?: number;
+        relationshipScore?: number;
+        profitabilityScore?: number;
+        overallScore?: number;
+        finalGrade?: string;
+        decision?: string;
+      }
+    | null
+    | undefined,
+): QuantScoresSummary | null => {
+  if (!summary) {
+    return null;
+  }
+
+  return {
+    credit_score: Math.round(summary.creditScore ?? 0),
+    fraud_score: Math.round(summary.fraudScore ?? 0),
+    social_score: Math.round(summary.socialScore ?? 0),
+    psychometric_score: Math.round(summary.psychometricScore ?? 0),
+    relationship_score: Math.round(summary.relationshipScore ?? 0),
+    profitability_score: Math.round(summary.profitabilityScore ?? 0),
+    overall_score: Math.round(summary.overallScore ?? 0),
+    final_grade: summary.finalGrade ?? 'N/A',
+    decision: (summary.decision ?? 'PENDING').toUpperCase(),
+  };
+};
+
+const mapRecordQuantSummary = (
+  record: LoanApplicationRecord,
+): QuantScoresSummary | null => {
+  if (!record.overall_scores) {
+    return null;
+  }
+
+  return {
+    credit_score: Math.round(record.overall_scores.credit_score ?? 0),
+    fraud_score: Math.round(record.overall_scores.fraud_score ?? 0),
+    social_score: Math.round(record.overall_scores.social_score ?? 0),
+    psychometric_score: Math.round(record.overall_scores.psychometric_score ?? 0),
+    relationship_score: Math.round(record.overall_scores.relationship_score ?? 0),
+    profitability_score: Math.round(record.overall_scores.profitability_score ?? 0),
+    overall_score: Math.round(record.overall_scores.final_score ?? 0),
+    final_grade: record.overall_scores.final_grade ?? 'N/A',
+    decision: (record.overall_scores.final_decision ?? 'PENDING').toUpperCase(),
+  };
+};
 
 // --- Initial State Factory ---
 const createNewApplicationInstance = (): LoanApplication => ({
@@ -1029,6 +1083,7 @@ export default function LendingScorecard() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
+  const [backendCreditScores, setBackendCreditScores] = useState<CreditScoreRecord | null>(null);
   const [isComputingQuantScores, setIsComputingQuantScores] = useState(false);
 
   // --- Auto-Calculations (Memoized for Performance) ---
@@ -1104,6 +1159,11 @@ export default function LendingScorecard() {
   const setTransientMessage = useCallback((message: string) => {
     setSaveMessage(message);
     window.setTimeout(() => setSaveMessage(''), 3000);
+  }, []);
+
+  const invalidateBackendScoring = useCallback(() => {
+    setBackendQuantSummary(null);
+    setBackendCreditScores(null);
   }, []);
 
   const parseFormattedNumber = useCallback((value: string) => {
@@ -1569,8 +1629,12 @@ export default function LendingScorecard() {
     try {
       const payload = buildLoanPayload(formData.status);
       const result = await computeQuantScores(payload);
-      setBackendQuantSummary(result.summary);
-      setHasPersistedRecord(true);
+      setBackendQuantSummary(mapBackendQuantSummary(result.quant_scores));
+      if (result.application_no) {
+        await loadApplication(result.application_no);
+      } else {
+        setHasPersistedRecord(true);
+      }
       setTransientMessage(result.message || 'QuantScores computed and stored');
     } catch (error) {
       setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
@@ -1581,6 +1645,7 @@ export default function LendingScorecard() {
   };
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
+    invalidateBackendScoring();
     setFormData(prev => ({
       ...prev,
       [section]: {
@@ -1591,11 +1656,13 @@ export default function LendingScorecard() {
   };
 
   const addCoBorrower = () => {
+    invalidateBackendScoring();
     const newCb: CoBorrower = { id: Date.now().toString(), name: '', relationship: '', monthlyIncome: 0, debtObligations: 0, creditStanding: 'Good' };
     setFormData(prev => ({ ...prev, coBorrowers: [...prev.coBorrowers, newCb] }));
   };
 
   const updateCoBorrower = (id: string, field: keyof CoBorrower, value: string | number) => {
+    invalidateBackendScoring();
     setFormData(prev => ({
       ...prev,
       coBorrowers: prev.coBorrowers.map(cb => cb.id === id ? { ...cb, [field]: value } : cb)
@@ -1603,10 +1670,12 @@ export default function LendingScorecard() {
   };
 
   const removeCoBorrower = (id: string) => {
+    invalidateBackendScoring();
     setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
   };
 
   const addAdditionalCollateral = () => {
+    invalidateBackendScoring();
     const newCollateral: AdditionalCollateral = {
       id: `COL-${Date.now()}`,
       collateralType: '',
@@ -1633,6 +1702,7 @@ export default function LendingScorecard() {
     field: keyof AdditionalCollateral,
     value: string | number,
   ) => {
+    invalidateBackendScoring();
     setFormData((prev) => ({
       ...prev,
       additionalCollaterals: prev.additionalCollaterals.map((collateral) =>
@@ -1642,6 +1712,7 @@ export default function LendingScorecard() {
   };
 
   const removeAdditionalCollateral = (id: string) => {
+    invalidateBackendScoring();
     setFormData((prev) => ({
       ...prev,
       additionalCollaterals: prev.additionalCollaterals.filter(
@@ -1762,21 +1833,8 @@ export default function LendingScorecard() {
 
       setFormData(hydrateApplication(data));
       setHasPersistedRecord(true);
-      setBackendQuantSummary(
-        data.overall_scores
-          ? {
-              credit_score: Math.round(data.overall_scores.credit_score ?? 825),
-              fraud_score: Math.round(data.overall_scores.fraud_score ?? 76),
-              social_score: Math.round(data.overall_scores.social_score ?? 72),
-              psychometric_score: Math.round(data.overall_scores.psychometric_score ?? 81),
-              relationship_score: Math.round(data.overall_scores.relationship_score ?? 88),
-              profitability_score: Math.round(data.overall_scores.profitability_score ?? 79),
-              overall_score: Math.round(data.overall_scores.final_score ?? 82),
-              final_grade: data.overall_scores.final_grade ?? 'A-',
-              decision: (data.overall_scores.final_decision ?? 'APPROVE').toUpperCase(),
-            }
-          : null,
-      );
+      setBackendQuantSummary(mapRecordQuantSummary(data));
+      setBackendCreditScores(data.credit_scores ?? null);
       setDocumentReview(null);
       setReviewDocumentId(null);
       setStep(1);
@@ -1803,6 +1861,7 @@ export default function LendingScorecard() {
     setDocumentReview(null);
     setReviewDocumentId(null);
     setBackendQuantSummary(null);
+    setBackendCreditScores(null);
     setHasPersistedRecord(false);
     setStep(1);
     navigate('/lending-scorecard', { replace: true });
@@ -2312,11 +2371,11 @@ export default function LendingScorecard() {
     { label: 'Release', value: 'Released' },
   ];
   const automatedScoreItems = [
-    { label: 'Character', score: automatedScorecard.character, desc: 'Identity depth and borrower profile strength' },
-    { label: 'Capacity', score: automatedScorecard.capacity, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
-    { label: 'Capital', score: automatedScorecard.capital, desc: 'Supplemental liquidity and outside income support' },
-    { label: 'Collateral', score: automatedScorecard.collateral, desc: 'Asset coverage and loan-to-value resilience' },
-    { label: 'Conditions', score: automatedScorecard.conditions, desc: 'Purpose quality and overall loan context' },
+    { label: 'Character', score: backendCreditScores?.character_score ?? null, desc: 'Identity depth and borrower profile strength' },
+    { label: 'Capacity', score: backendCreditScores?.capacity_score ?? null, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
+    { label: 'Capital', score: backendCreditScores?.capital_score ?? null, desc: 'Supplemental liquidity and outside income support' },
+    { label: 'Collateral', score: backendCreditScores?.collateral_score ?? null, desc: 'Asset coverage and loan-to-value resilience' },
+    { label: 'Conditions', score: backendCreditScores?.conditions_score ?? null, desc: 'Purpose quality and overall loan context' },
   ];
   const advancedSignalItems = [
     {
@@ -2384,73 +2443,51 @@ export default function LendingScorecard() {
       })}`,
     },
   ];
-  const scorePayloadSections = useMemo(
-    () =>
-      buildScorePayloadSections(
-        formData,
-        calculations,
-        automatedScorecard,
-        creditRiskInsights,
-        aiRecommendation,
-      ),
-    [aiRecommendation, automatedScorecard, calculations, creditRiskInsights, formData],
-  );
-  const quantScoresSummary = scorePayloadSections.quantSummary;
-  const displayedQuantSummary = backendQuantSummary ?? {
-    credit_score: quantScoresSummary.creditBureauScoreValue,
-    fraud_score: quantScoresSummary.fraudScoreValue,
-    social_score: quantScoresSummary.socialScoreValue,
-    psychometric_score: quantScoresSummary.psychometricScoreValue ?? 81,
-    relationship_score: Math.round(scorePayloadSections.relationship_scores.relationship_score ?? 88),
-    profitability_score: Math.round(scorePayloadSections.profitability_scores.profitability_score ?? 79),
-    overall_score: Math.round(scorePayloadSections.overall_scores.final_score ?? 82),
-    final_grade: scorePayloadSections.overall_scores.final_grade ?? 'A-',
-    decision: (scorePayloadSections.overall_scores.final_decision ?? 'APPROVE').toUpperCase(),
-  };
+  const displayedQuantSummary = backendQuantSummary;
   const executiveSummaryItems = [
     {
       label: 'Credit Score',
-      value: displayedQuantSummary.credit_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.credit_score.toString() : 'Pending',
       note: 'Backend bureau-weighted composite',
     },
     {
       label: 'Fraud Score',
-      value: displayedQuantSummary.fraud_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
       note: 'Identity and anomaly screening',
     },
     {
       label: 'Social Score',
-      value: displayedQuantSummary.social_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.social_score.toString() : 'Pending',
       note: 'Community and digital footprint',
     },
     {
       label: 'Psychometric Score',
-      value: displayedQuantSummary.psychometric_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.psychometric_score.toString() : 'Pending',
       note: 'Behavioral consistency index',
     },
     {
       label: 'Relationship Score',
-      value: displayedQuantSummary.relationship_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.relationship_score.toString() : 'Pending',
       note: 'Existing banking depth and loyalty',
     },
     {
       label: 'Profitability Score',
-      value: displayedQuantSummary.profitability_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.profitability_score.toString() : 'Pending',
       note: 'Expected booking economics',
     },
     {
       label: 'Overall Score',
-      value: displayedQuantSummary.overall_score.toString(),
+      value: displayedQuantSummary ? displayedQuantSummary.overall_score.toString() : 'Pending',
       note: 'Backend final weighted score',
     },
     {
       label: 'Final Grade',
-      value: displayedQuantSummary.final_grade,
+      value: displayedQuantSummary ? displayedQuantSummary.final_grade : 'Pending',
       note: 'Committee-grade output',
     },
     {
       label: 'Decision',
-      value: displayedQuantSummary.decision,
+      value: displayedQuantSummary ? displayedQuantSummary.decision : 'Pending',
       note: 'Automated backend decision',
     },
   ];
@@ -2514,7 +2551,10 @@ export default function LendingScorecard() {
               },
     },
   ];
-  const corporateUnderwritingTotal = `${automatedScorecard.total}/50`;
+  const corporateUnderwritingTotal =
+    backendCreditScores?.total_credit_score !== undefined && backendCreditScores?.total_credit_score !== null
+      ? `${backendCreditScores.total_credit_score}/100`
+      : 'Pending';
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -3286,9 +3326,19 @@ export default function LendingScorecard() {
                         </p>
                       </div>
                       <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
-                        {isComputingQuantScores ? 'Computing' : 'Reviewed'}
+                        {isComputingQuantScores
+                          ? 'Computing'
+                          : displayedQuantSummary
+                            ? 'Backend Synced'
+                            : 'Awaiting Backend'}
                       </span>
                     </div>
+
+                    {!displayedQuantSummary && (
+                      <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                        Backend score output will appear here after QuantScores computation or after loading a previously scored application.
+                      </div>
+                    )}
 
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {executiveSummaryItems.map((item) => {
@@ -3500,7 +3550,11 @@ export default function LendingScorecard() {
                         </div>
                       </div>
                       <div className="space-y-3">
-                        {automatedScoreItems.map((c, i) => (
+                        {automatedScoreItems.map((c, i) => {
+                          const hasBackendScore = typeof c.score === 'number';
+                          const numericScore = hasBackendScore ? c.score : 0;
+
+                          return (
                           <div
                             key={i}
                             className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3"
@@ -3510,9 +3564,11 @@ export default function LendingScorecard() {
                                 <div className="flex items-center gap-2">
                                   <span
                                     className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
-                                      c.score >= 8
+                                      !hasBackendScore
+                                        ? 'bg-slate-200 text-slate-500'
+                                        : numericScore >= 8
                                         ? 'bg-emerald-100 text-emerald-700'
-                                        : c.score >= 6
+                                        : numericScore >= 6
                                           ? 'bg-amber-100 text-amber-700'
                                         : 'bg-rose-100 text-rose-700'
                                     }`}
@@ -3527,27 +3583,38 @@ export default function LendingScorecard() {
                               </div>
                               <div className="text-right">
                                 <p
-                                  className={`text-2xl font-semibold ${c.score >= 8 ? 'text-emerald-600' : c.score >= 6 ? 'text-amber-600' : 'text-rose-600'}`}
+                                  className={`text-2xl font-semibold ${
+                                    !hasBackendScore
+                                      ? 'text-slate-400'
+                                      : numericScore >= 8
+                                        ? 'text-emerald-600'
+                                        : numericScore >= 6
+                                          ? 'text-amber-600'
+                                          : 'text-rose-600'
+                                  }`}
                                 >
-                                  {c.score}
+                                  {hasBackendScore ? numericScore : 'Pending'}
                                   <span className="ml-1 text-sm font-medium text-slate-400">/10</span>
                                 </p>
                               </div>
                               <div className="h-2 overflow-hidden rounded-full bg-slate-200">
                                 <div
                                   className={`h-full rounded-full ${
-                                    c.score >= 8
+                                    !hasBackendScore
+                                      ? 'bg-slate-300'
+                                      : numericScore >= 8
                                       ? 'bg-emerald-500'
-                                      : c.score >= 6
+                                      : numericScore >= 6
                                         ? 'bg-amber-500'
                                         : 'bg-rose-500'
                                   }`}
-                                  style={{ width: `${c.score * 10}%` }}
+                                  style={{ width: `${hasBackendScore ? numericScore * 10 : 0}%` }}
                                 />
                               </div>
                             </div>
                           </div>
-                        ))}
+                        );
+                        })}
                       </div>
                     </div>
 

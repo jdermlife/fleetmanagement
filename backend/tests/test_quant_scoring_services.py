@@ -21,16 +21,26 @@ class StubEngine:
 class QuantScoringServiceTests(unittest.TestCase):
     def test_quant_score_summary_matches_expected_values(self) -> None:
         payload = SimpleNamespace(
+            product_type="Auto Loan",
             gov_id="",
             email="",
             phone="",
             loan_amount=0.0,
             interest_rate=0.0,
             term_months=12,
+            monthly_income=0.0,
+            other_income=0.0,
+            debt_obligations=0.0,
             requirements={
                 "optionalPsychometricQuestionnaire": {},
                 "bankingRelationships": {},
                 "enhancedDueDiligence": {},
+                "employmentInformation": {},
+                "addressInformation": {},
+                "applicantPersonal": {},
+                "supportingDocuments": {},
+                "collateralAssetDetails": {},
+                "productInformation": {},
             },
         )
 
@@ -39,18 +49,18 @@ class QuantScoringServiceTests(unittest.TestCase):
         self.assertEqual(
             result["quant_scores"],
             {
-                "creditScore": 825,
+                "creditScore": 10,
                 "fraudScore": 76,
                 "socialScore": 72,
                 "psychometricScore": 81,
                 "relationshipScore": 88,
                 "profitabilityScore": 79,
-                "overallScore": 82,
-                "finalGrade": "A-",
-                "decision": "APPROVE",
+                "overallScore": 53,
+                "finalGrade": "D",
+                "decision": "DECLINE",
             },
         )
-        self.assertEqual(result["overall_scores"]["final_decision"], "APPROVE")
+        self.assertEqual(result["overall_scores"]["final_decision"], "DECLINE")
         self.assertEqual(result["relationship_scores"]["relationship_score"], 88.0)
 
     def test_ai_orchestrator_calls_engines_in_expected_order(self) -> None:

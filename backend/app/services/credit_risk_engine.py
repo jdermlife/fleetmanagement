@@ -72,7 +72,7 @@ def _compute_credit_bureau_report(payload: Any, credit_scores: dict[str, Any]) -
 
     return {
         "bureau_name": "Quant Score Bureau Proxy",
-        "bureau_score": credit_scores["total_credit_score"],
+        "bureau_score": credit_scores.get("bureau_score", credit_scores["total_credit_score"]),
         "total_loans": total_loans,
         "active_loans": total_loans,
         "closed_loans": 0,

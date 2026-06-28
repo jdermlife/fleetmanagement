@@ -42,7 +42,7 @@ def get_test_payload():
     return {
         "application_no": f"APP-TEST-{uuid4().hex[:8].upper()}",
         "status": "DRAFT",
-        "product_type": "LOAN",
+        "product_type": "Auto Loan",
         "borrower_name": "Test Borrower",
         "email": "test@example.com",
         "phone": "555-1234",
@@ -65,13 +65,45 @@ def get_test_payload():
         "scorecard_total": 0,
         "ai_probability": 0.0,
         "requirements": {
-            "credit_score": 750,
-            "collateral_value": 500000,
-            "existing_debt": 50000,
-            "questionnaire_answers": {
-                "discipline": 8,
-                "planning": 7,
-                "responsibility": 9,
+            "applicantPersonal": {
+                "maritalStatus": "Single",
+                "numberOfDependents": 0,
+            },
+            "bankingRelationships": {
+                "currentBalance": 150000,
+                "accountNumber": "001",
+                "creditCardNumber": "CC-1",
+                "creditLimit": 200000,
+                "outstandingBalance": 40000,
+                "memberSince": "2020-01-01",
+                "loanLender": "Bank A",
+            },
+            "supportingDocuments": {
+                "utilityBill": True,
+                "bankStatements": True,
+            },
+            "enhancedDueDiligence": {
+                "numberOfActiveLoans": 1,
+            },
+            "employmentInformation": {
+                "employmentStatus": "Locally Employed",
+                "totalYearsWorking": "5",
+                "dateHired": "2020-01-01",
+                "monthlyLivingExpenses": 25000,
+            },
+            "addressInformation": {
+                "lengthOfStay": "5 years",
+            },
+            "collateralAssetDetails": {
+                "brand": "Toyota",
+                "year": "2026",
+                "assetType": "Passenger vehicle",
+                "appraisedValue": 1800000,
+            },
+            "productInformation": {
+                "autoSellingPrice": 1800000,
+                "autoVehicleClassification": "Passenger vehicle",
+                "autoYearModel": "2026",
             },
         },
     }
@@ -137,7 +169,7 @@ def test_get_loan_retrieves_persisted_scores(client, subscriber_headers):
 
 
 def test_compute_quant_scores_deterministic_values(client, subscriber_headers):
-    """Test that scoring engines return expected deterministic values."""
+    """Test that product-aware scoring returns the expected deterministic summary."""
     response = client.post(
         "/api/loan-applications/compute-quant-scores",
         json=get_test_payload(),
@@ -147,15 +179,14 @@ def test_compute_quant_scores_deterministic_values(client, subscriber_headers):
     assert response.status_code == 200
     summary = response.json()["quant_scores"]
 
-    # Current implementation returns fixed values - verify they match
-    assert summary["creditScore"] == 825
+    assert summary["creditScore"] == 89
     assert summary["fraudScore"] == 76
     assert summary["socialScore"] == 72
     assert summary["psychometricScore"] == 81
     assert summary["relationshipScore"] == 88
     assert summary["profitabilityScore"] == 79
-    assert summary["overallScore"] == 82
-    assert summary["finalGrade"] == "A-"
+    assert summary["overallScore"] == 85
+    assert summary["finalGrade"] == "A"
     assert summary["decision"] == "APPROVE"
 
 

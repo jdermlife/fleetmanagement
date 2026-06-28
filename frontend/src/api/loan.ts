@@ -457,8 +457,20 @@ export interface QuantScoresSummary {
   decision: string
 }
 
+export interface QuantScoresApiSummary {
+  creditScore: number
+  fraudScore: number
+  socialScore: number
+  psychometricScore: number
+  relationshipScore: number
+  profitabilityScore: number
+  overallScore: number
+  finalGrade: string
+  decision: string
+}
+
 export interface QuantScoresResponse extends LoanMutationResponse {
-  summary: QuantScoresSummary
+  quant_scores: QuantScoresApiSummary
 }
 
 export interface LoanBulkMutationResponse {
