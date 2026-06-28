@@ -96,7 +96,7 @@ return ( <div className="card"> <h1>AI Meeting Assistant</h1>
       onChange={(e) =>
         setMeetingTitle(e.target.value)
       }
-      placeholder="Fleet Operations Weekly Meeting"
+      placeholder="Operations Weekly Meeting"
     />
   </div>
 

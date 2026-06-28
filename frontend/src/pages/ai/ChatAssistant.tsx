@@ -4,7 +4,7 @@ function ChatAssistant() {
       <h1>Chat Assistant</h1>
 
       <p>
-        Chat-based AI assistant for fleet management support and inquiries.
+        Chat-based AI assistant for management support and inquiries.
       </p>
     </div>
   );

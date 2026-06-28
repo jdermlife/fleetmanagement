@@ -4,7 +4,7 @@ function VoiceReports() {
       <h1>Voice Reports</h1>
 
       <p>
-        Fleet AI command center.
+        AI command center.
       </p>
     </div>
   );

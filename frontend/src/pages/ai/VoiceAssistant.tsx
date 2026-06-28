@@ -4,7 +4,7 @@ function VoiceAssistant() {
       <h1>Voice Assistant</h1>
 
       <p>
-        Fleet AI command center.
+         AI command center.
       </p>
     </div>
   )

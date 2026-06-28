@@ -4,7 +4,7 @@ function MaintenanceAI() {
       <h1>Maintenance AI</h1>
 
       <p>
-        AI-powered maintenance scheduling and optimization for fleet operations.
+        AI-powered maintenance scheduling and optimization for operations.
       </p>
     </div>
   );

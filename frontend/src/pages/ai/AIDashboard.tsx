@@ -35,7 +35,7 @@ return (
 
 
   <p>
-    Fleet Management AI Assistant Dashboard
+    AI Assistant Dashboard
   </p>
 
   {/* STATISTICS */}
