@@ -18,3 +18,7 @@ def compute_credit_score(_: Any) -> dict[str, float | str]:
         "credit_grade": "A-",
         "model_version": "quant-engine-v1",
     }
+
+
+def evaluate(application: Any) -> dict[str, float | str]:
+    return compute_credit_score(application)

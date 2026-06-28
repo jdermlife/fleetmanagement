@@ -18,3 +18,7 @@ def compute_fraud_score(payload: Any) -> dict[str, float | str | dict[str, bool]
             "missing_phone": not bool(getattr(payload, "phone", "")),
         },
     }
+
+
+def evaluate(payload: Any) -> dict[str, float | str | dict[str, bool]]:
+    return compute_fraud_score(payload)

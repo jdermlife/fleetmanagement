@@ -97,15 +97,54 @@ def _compute_collateral_score(_: Any) -> dict[str, float]:
     }
 
 
-def compute_credit_risk_package(payload: Any) -> dict[str, Any]:
-    credit_scores = compute_credit_score(payload)
+def _normalize_score_100(value: Any) -> float:
+    numeric = _to_float(value, 0.0)
+    if numeric <= 0:
+        return 0.0
+    if numeric <= 100:
+        return numeric
+    return min(numeric / 10.0, 100.0)
+
+
+def evaluate(
+    payload: Any,
+    credit_scores: dict[str, Any],
+    fraud_scores: dict[str, Any] | None = None,
+) -> dict[str, Any]:
     relationship_scores = _compute_relationship_score(payload)
     credit_bureau_reports = _compute_credit_bureau_report(payload, credit_scores)
     collateral_scores = _compute_collateral_score(payload)
+    fraud_score = _normalize_score_100((fraud_scores or {}).get("overall_fraud_score"))
+    credit_score = _normalize_score_100(credit_scores.get("total_credit_score"))
+    collateral_score = _normalize_score_100(collateral_scores.get("overall_collateral_score"))
+    relationship_score = _normalize_score_100(
+        relationship_scores.get("relationship_score")
+    )
+    overall_credit_risk_score = round(
+        (
+            (credit_score * 0.50)
+            + (relationship_score * 0.20)
+            + (collateral_score * 0.20)
+            + (fraud_score * 0.10)
+        ),
+        2,
+    )
 
     return {
-        "credit_scores": credit_scores,
         "relationship_scores": relationship_scores,
         "credit_bureau_reports": credit_bureau_reports,
         "collateral_scores": collateral_scores,
+        "overall_credit_risk_score": overall_credit_risk_score,
+        "model_version": "ai-orchestrator-v1",
+    }
+
+
+def compute_credit_risk_package(payload: Any) -> dict[str, Any]:
+    credit_scores = compute_credit_score(payload)
+    risk_package = evaluate(payload, credit_scores)
+    return {
+        "credit_scores": credit_scores,
+        "relationship_scores": risk_package["relationship_scores"],
+        "credit_bureau_reports": risk_package["credit_bureau_reports"],
+        "collateral_scores": risk_package["collateral_scores"],
     }

@@ -16,3 +16,7 @@ def compute_psychometric_score(payload: Any) -> dict[str, float | dict[str, Any]
         "overall_psychometric_score": 81.0,
         "questionnaire_answers": questionnaire,
     }
+
+
+def evaluate(payload: Any) -> dict[str, float | dict[str, Any]]:
+    return compute_psychometric_score(payload)

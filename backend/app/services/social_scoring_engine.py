@@ -12,3 +12,7 @@ def compute_social_score(_: Any) -> dict[str, float]:
         "banking_relationship_score": 72.0,
         "overall_social_score": 72.0,
     }
+
+
+def evaluate(application: Any) -> dict[str, float]:
+    return compute_social_score(application)

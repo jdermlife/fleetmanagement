@@ -52,3 +52,7 @@ def compute_profitability_score(payload: Any) -> dict[str, float]:
         "projected_profit": projected_profit,
         "profitability_score": 79.0,
     }
+
+
+def evaluate(payload: Any) -> dict[str, float]:
+    return compute_profitability_score(payload)
