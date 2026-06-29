@@ -234,16 +234,9 @@ export default function DashboardSnapshot() {
       const dateRange = getDateRange(startDateValue, endDateValue);
       const rangeRecords = await fetchAllLoanApplications({
         ...dateRange,
+        maxRecords: COVERAGE_MIN_RECORDS,
       });
-
-      if (rangeRecords.length >= COVERAGE_MIN_RECORDS) {
-        setApplications(rangeRecords);
-      } else {
-        const minimumRecords = await fetchAllLoanApplications({
-          maxRecords: COVERAGE_MIN_RECORDS,
-        });
-        setApplications(minimumRecords);
-      }
+      setApplications(rangeRecords);
       setDetailsLoaded(true);
     } catch (error) {
       setMessage(
@@ -280,14 +273,6 @@ export default function DashboardSnapshot() {
     void loadSummary();
   }, []);
 
-  useEffect(() => {
-    if (detailsLoaded) {
-      return;
-    }
-
-    void loadDetailedApplications(startDate, endDate);
-  }, [detailsLoaded, endDate, startDate]);
-
   const handleGenerateReport = async () => {
     setProcessing(true);
     try {
@@ -305,10 +290,18 @@ export default function DashboardSnapshot() {
   }, [endDate]);
   const summaryCards = useMemo(() => {
     const overallPortfolioTotal = dashboardSummary?.totalApplications ?? 0;
-    const totalApplications = applications.length;
-    const approved = applications.filter((record) => getStatusBucket(record.status) === "approved").length;
-    const pending = applications.filter((record) => getStatusBucket(record.status) === "pending").length;
-    const rejected = applications.filter((record) => getStatusBucket(record.status) === "rejected").length;
+    const totalApplications = detailsLoaded
+      ? applications.length
+      : dashboardSummary?.totalApplications ?? 0;
+    const approved = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "approved").length
+      : dashboardSummary?.approved ?? 0;
+    const pending = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "pending").length
+      : dashboardSummary?.pending ?? 0;
+    const rejected = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "rejected").length
+      : dashboardSummary?.rejected ?? 0;
 
     const highRiskCount = applications.filter((record) => {
       const defaulted = getStatusBucket(record.status) === "defaulted";
@@ -395,7 +388,7 @@ export default function DashboardSnapshot() {
       },
 
     ];
-  }, [applications, dashboardSummary]);
+  }, [applications, dashboardSummary, detailsLoaded]);
 
   return (
     <div
@@ -637,7 +630,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Default Coverage: Last 7 days or 100 records, whichever is higher.
+                Initial load shows lightweight summary only. Generate Report loads up to 100 detailed records for the selected period.
               </p>
             </div>
 
@@ -784,7 +777,17 @@ export default function DashboardSnapshot() {
                   </Panel>
                 </SectionGrid>
               </>
-            ) : null}
+            ) : (
+              <div style={{ ...panelStyle, marginTop: "20px" }}>
+                <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>Detailed Analytics Deferred</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "8px" }}>
+                  The dashboard renders summary tiles first for a faster initial experience. Click Generate Report when you want to load deeper charts and detailed record analytics.
+                </p>
+                {detailsLoading ? (
+                  <p style={{ ...subtleTextStyle, marginTop: "8px" }}>Loading detailed analytics...</p>
+                ) : null}
+              </div>
+            )}
           </>
         ) : null}
       </div>

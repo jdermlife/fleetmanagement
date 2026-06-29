@@ -220,6 +220,11 @@ const adminMenuItems = visibleMenuLinks.filter(
       return
     }
 
+    if (currentUser) {
+      setAuthReady(true)
+      return
+    }
+
     const loadCurrentUser = async () => {
       try {
         const user = await fetchCurrentUser()
@@ -232,7 +237,7 @@ const adminMenuItems = visibleMenuLinks.filter(
     }
 
     void loadCurrentUser()
-  }, [location.pathname])
+  }, [currentUser, location.pathname])
 
   useEffect(() => {
     if (isAuthPath(location.pathname)) {

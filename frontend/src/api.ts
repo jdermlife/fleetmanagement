@@ -60,6 +60,8 @@ async function findHealthyApiBaseUrl(): Promise<string | null> {
 }
 
 let authToken: string | null = null
+let currentUserCache: AuthUser | null = null
+let currentUserRequest: Promise<AuthUser> | null = null
 
 export function setAuthToken(token: string | null) {
   authToken = token
@@ -67,6 +69,8 @@ export function setAuthToken(token: string | null) {
     api.defaults.headers.common['Authorization'] = `Bearer ${token}`
   } else {
     delete api.defaults.headers.common['Authorization']
+    currentUserCache = null
+    currentUserRequest = null
   }
   if (typeof window !== 'undefined') {
     if (token) {
@@ -276,9 +280,11 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   }
 
   setAuthToken(token)
+  currentUserCache = normalizeAuthUser(user)
+  currentUserRequest = null
   return {
     token,
-    user: normalizeAuthUser(user),
+    user: currentUserCache,
   }
 }
 
@@ -302,10 +308,27 @@ export async function refreshAuthToken(): Promise<string> {
 }
 
 export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
-  const response = await api.get<{
-    user: Record<string, unknown>
-  }>('/api/auth/me')
-  return normalizeAuthUser(response.data.user)
+  if (currentUserCache) {
+    return currentUserCache
+  }
+
+  if (currentUserRequest) {
+    return currentUserRequest
+  }
+
+  currentUserRequest = api
+    .get<{
+      user: Record<string, unknown>
+    }>('/api/auth/me')
+    .then((response) => {
+      currentUserCache = normalizeAuthUser(response.data.user)
+      return currentUserCache
+    })
+    .finally(() => {
+      currentUserRequest = null
+    })
+
+  return currentUserRequest
 }
 
 export interface AdminPermission {

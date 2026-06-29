@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { getErrorMessage } from "../../api";
 import {
@@ -95,29 +95,39 @@ export default function DashboardSnapshot() {
   const [startTime, setStartTime] = useState("00:00");
   const [endDate, setEndDate] = useState(() => formatDateInput(new Date()));
   const [endTime, setEndTime] = useState("23:59");
+  const [detailsLoaded, setDetailsLoaded] = useState(false);
+  const [detailsLoading, setDetailsLoading] = useState(false);
   const [loading, setLoading] = useState(true);
   const [processing, setProcessing] = useState(false);
   const [message, setMessage] = useState("");
-  const initialRangeRef = useRef({ startDate, endDate });
 
-  const loadSummary = async (startDateValue: string, endDateValue: string) => {
+  const loadSummary = async () => {
     const summary = await fetchDashboardStatistics();
     setDashboardSummary(summary);
+  };
 
-    const dateRange = getDateRange(startDateValue, endDateValue);
-    const rangeRecords = await fetchAllLoanApplications({
-      ...dateRange,
-    });
+  const loadDetailedApplications = async (startDateValue: string, endDateValue: string) => {
+    setDetailsLoading(true);
+    setMessage("");
 
-    if (rangeRecords.length >= COVERAGE_MIN_RECORDS) {
+    try {
+      const dateRange = getDateRange(startDateValue, endDateValue);
+      const rangeRecords = await fetchAllLoanApplications({
+        ...dateRange,
+        maxRecords: COVERAGE_MIN_RECORDS,
+      });
       setApplications(rangeRecords);
-      return;
+      setDetailsLoaded(true);
+    } catch (error) {
+      setMessage(
+        getErrorMessage(
+          error,
+          "Failed to load dashboard records. Please try again.",
+        ),
+      );
+    } finally {
+      setDetailsLoading(false);
     }
-
-    const minimumRecords = await fetchAllLoanApplications({
-      maxRecords: COVERAGE_MIN_RECORDS,
-    });
-    setApplications(minimumRecords);
   };
 
   useEffect(() => {
@@ -126,7 +136,7 @@ export default function DashboardSnapshot() {
       setMessage("");
 
       try {
-        await loadSummary(initialRangeRef.current.startDate, initialRangeRef.current.endDate);
+        await loadSummary();
       } catch (error) {
         setMessage(
           getErrorMessage(
@@ -147,12 +157,12 @@ export default function DashboardSnapshot() {
     setMessage("");
 
     try {
-      await loadSummary(startDate, endDate);
+      await loadDetailedApplications(startDate, endDate);
     } catch (error) {
       setMessage(
         getErrorMessage(
           error,
-          "Failed to process dashboard coverage. Please try again.",
+          "Failed to process dashboard records. Please try again.",
         ),
       );
     } finally {
@@ -167,10 +177,18 @@ export default function DashboardSnapshot() {
   }, [endDate]);
   const summaryCards = useMemo(() => {
     const overallPortfolioTotal = dashboardSummary?.totalApplications ?? 0;
-    const totalApplications = applications.length;
-    const approved = applications.filter((record) => getStatusBucket(record.status) === "approved").length;
-    const pending = applications.filter((record) => getStatusBucket(record.status) === "pending").length;
-    const rejected = applications.filter((record) => getStatusBucket(record.status) === "rejected").length;
+    const totalApplications = detailsLoaded
+      ? applications.length
+      : dashboardSummary?.totalApplications ?? 0;
+    const approved = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "approved").length
+      : dashboardSummary?.approved ?? 0;
+    const pending = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "pending").length
+      : dashboardSummary?.pending ?? 0;
+    const rejected = detailsLoaded
+      ? applications.filter((record) => getStatusBucket(record.status) === "rejected").length
+      : dashboardSummary?.rejected ?? 0;
 
     const highCreditRiskCount = applications.filter((record) => {
       const defaulted = getStatusBucket(record.status) === "defaulted";
@@ -262,7 +280,7 @@ export default function DashboardSnapshot() {
         note: "Pending profiles suggested for enhancement",
       },
     ];
-  }, [applications, dashboardSummary]);
+  }, [applications, dashboardSummary, detailsLoaded]);
 
   const statusSlices = useMemo<ChartSlice[]>(() => {
     const counts: Record<string, number> = {
@@ -581,7 +599,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Default Coverage: Last 7 days or 100 records, whichever is higher.
+                Initial load shows lightweight summary only. Generate Report loads up to 100 detailed records for the selected period.
               </p>
             </div>
 
@@ -616,6 +634,17 @@ export default function DashboardSnapshot() {
               ))}
             </ResponsiveGrid>
 
+            {!detailsLoaded ? (
+              <div style={{ ...panelStyle, marginTop: "20px" }}>
+                <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>Detailed Records Deferred</h2>
+                <p style={{ ...subtleTextStyle, marginTop: "8px" }}>
+                  Static dashboard layout is shown first for a faster initial render. Click Generate Report to load detailed repository records and populate charts.
+                </p>
+                {detailsLoading ? (
+                  <p style={{ ...subtleTextStyle, marginTop: "8px" }}>Loading detailed records...</p>
+                ) : null}
+              </div>
+            ) : (
             <ResponsiveGrid minWidth={320} style={{ marginTop: "20px" }}>
               <div style={panelStyle}>
                 <h2 style={{ ...sectionTitleStyle, fontSize: "1.05rem" }}>Status Distribution</h2>
@@ -641,6 +670,7 @@ export default function DashboardSnapshot() {
                 <TrendBars points={dailyTrend} />
               </div>
             </ResponsiveGrid>
+            )}
           </>
         )}
       </div>
