@@ -265,11 +265,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           {/* BRAND */}
           <div className="app-brand-block">
             <h2 className="app-brand-title">
-              CREDITWISER
+              CREDIT.WISER
             </h2>
 
             <p className="app-brand-subtitle">
-             Borrow Smart.Lend Wise.
+             Borrow Smart. Lend Right.
             </p>
           </div>
 
