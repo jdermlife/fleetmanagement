@@ -22,7 +22,7 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; homePhoneNumber: string; emailAddress: string; }
@@ -156,7 +156,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
+  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', homePhoneNumber: '', emailAddress: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
@@ -218,6 +218,9 @@ const buildLoanRequirements = (
       brand: application.collateral.brand,
       model: application.collateral.model,
       year: application.collateral.year,
+      vehicleMarketabilityCategory: application.collateral.vehicleMarketabilityCategory,
+      vehicleConditionCategory: application.collateral.vehicleConditionCategory,
+      vehicleTypeCategory: application.collateral.vehicleTypeCategory,
       insuranceProviderCompany:
         application.collateral.insuranceProviderCompany || derivedInsuranceSummary,
       policyNumber: application.collateral.policyNumber,
@@ -1087,7 +1090,8 @@ export default function LendingScorecard() {
   const [isComputingQuantScores, setIsComputingQuantScores] = useState(false);
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
-  const usesStructuredRetailCriteria = isPersonalLoan || isCreditCard;
+  const isAutoLoan = formData.loan.productType === 'Auto Loan';
+  const usesStructuredRetailCriteria = isPersonalLoan || isCreditCard || isAutoLoan;
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -1408,6 +1412,15 @@ export default function LendingScorecard() {
         brand: savedCollateralAssetDetails.brand ?? blankApplication.collateral.brand,
         model: savedCollateralAssetDetails.model ?? record.vehicle_info ?? blankApplication.collateral.model,
         year: savedCollateralAssetDetails.year ?? blankApplication.collateral.year,
+        vehicleMarketabilityCategory:
+          savedCollateralAssetDetails.vehicleMarketabilityCategory ??
+          blankApplication.collateral.vehicleMarketabilityCategory,
+        vehicleConditionCategory:
+          savedCollateralAssetDetails.vehicleConditionCategory ??
+          blankApplication.collateral.vehicleConditionCategory,
+        vehicleTypeCategory:
+          savedCollateralAssetDetails.vehicleTypeCategory ??
+          blankApplication.collateral.vehicleTypeCategory,
         appraisedValue: record.appraised_value,
         insuranceProviderCompany:
           savedCollateralAssetDetails.insuranceProviderCompany ??
@@ -3078,6 +3091,9 @@ export default function LendingScorecard() {
               {renderInput('collateral', 'brand', 'Brand')}
               {renderInput('collateral', 'model', 'Model')}
               {renderInput('collateral', 'year', 'Year')}
+              {isAutoLoan && renderSelect('collateral', 'vehicleMarketabilityCategory', 'Marketability of the Vehicle', ['Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)', 'Popular brands with moderate resale demand', 'Limited-market or low-demand brands', 'Obsolete or difficult-to-sell models'])}
+              {isAutoLoan && renderSelect('collateral', 'vehicleConditionCategory', 'Vehicle Age / Condition', ['Brand New', 'Used (1–3 years), Excellent Condition', 'Used (4–6 years), Good Condition', 'More than 6 years old or Fair/Poor Condition'])}
+              {isAutoLoan && renderSelect('collateral', 'vehicleTypeCategory', 'Vehicle Type', ['Passenger vehicle for personal use', 'SUV / MPV / Pickup in good condition', 'Commercial vehicle (van, light truck)', 'Heavy equipment / Specialized vehicles', 'Salvage, rebuilt, or unregistered vehicle'])}
               {renderInput('collateral', 'appraisedValue', 'Appraised Value', 'number')}
               {renderInput('collateral', 'insuranceProviderCompany', 'Insurance Provider / Company')}
               {renderInput('collateral', 'policyNumber', 'Policy Number')}

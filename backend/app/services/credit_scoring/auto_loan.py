@@ -14,12 +14,21 @@ from app.services.credit_scoring.common import (
 )
 
 
-def score_auto_loan_collateral(payload: Any) -> float:
+def compute_auto_loan_collateral_breakdown(payload: Any) -> dict[str, float]:
     collateral = requirements_section(payload, "collateralAssetDetails")
     product = requirements_section(payload, "productInformation")
 
+    explicit_marketability = safe_text(collateral.get("vehicleMarketabilityCategory")).lower()
     brand = safe_text(collateral.get("brand") or collateral.get("maker")).lower()
-    if brand in HIGH_DEMAND_AUTO_BRANDS:
+    if "high-demand" in explicit_marketability or "brand new, high-demand" in explicit_marketability:
+        marketability_score = 7.0
+    elif "moderate resale demand" in explicit_marketability or "popular brands" in explicit_marketability:
+        marketability_score = 5.0
+    elif "limited-market" in explicit_marketability or "low-demand brands" in explicit_marketability:
+        marketability_score = 3.0
+    elif "obsolete" in explicit_marketability or "difficult-to-sell" in explicit_marketability:
+        marketability_score = 0.0
+    elif brand in HIGH_DEMAND_AUTO_BRANDS:
         marketability_score = 7.0
     elif brand in POPULAR_AUTO_BRANDS:
         marketability_score = 5.0
@@ -44,11 +53,20 @@ def score_auto_loan_collateral(payload: Any) -> float:
     else:
         value_score = 0.0
 
+    explicit_condition = safe_text(collateral.get("vehicleConditionCategory")).lower()
     year_text = safe_text(collateral.get("year") or product.get("autoYearModel"))
     current_year = datetime.now(UTC).year
     vehicle_year = int(to_float(year_text, 0.0)) if year_text else 0
     vehicle_age = max(current_year - vehicle_year, 0) if vehicle_year else 99
-    if vehicle_age <= 0:
+    if "brand new" in explicit_condition:
+        age_score = 6.0
+    elif "1–3 years" in explicit_condition or "1-3 years" in explicit_condition:
+        age_score = 4.0
+    elif "4–6 years" in explicit_condition or "4-6 years" in explicit_condition:
+        age_score = 2.0
+    elif "fair/poor" in explicit_condition or "more than 6 years" in explicit_condition:
+        age_score = 0.0
+    elif vehicle_age <= 0:
         age_score = 6.0
     elif vehicle_age <= 3:
         age_score = 4.0
@@ -57,17 +75,39 @@ def score_auto_loan_collateral(payload: Any) -> float:
     else:
         age_score = 0.0
 
+    explicit_vehicle_type = safe_text(collateral.get("vehicleTypeCategory")).lower()
     vehicle_type = safe_text(collateral.get("assetType") or product.get("autoVehicleClassification")).lower()
-    type_score = score_from_keyword(
-        vehicle_type,
-        [
-            (("passenger", "sedan", "hatchback"), 5.0),
-            (("suv", "mpv", "pickup"), 4.0),
-            (("commercial", "van", "light truck"), 3.0),
-            (("heavy equipment", "specialized"), 1.0),
-            (("salvage", "rebuilt", "unregistered"), 0.0),
-        ],
-        fallback=0.0 if not vehicle_type else 3.0,
-    )
+    if "passenger vehicle" in explicit_vehicle_type:
+        type_score = 5.0
+    elif "suv" in explicit_vehicle_type or "mpv" in explicit_vehicle_type or "pickup" in explicit_vehicle_type:
+        type_score = 4.0
+    elif "commercial vehicle" in explicit_vehicle_type or "light truck" in explicit_vehicle_type:
+        type_score = 3.0
+    elif "heavy equipment" in explicit_vehicle_type or "specialized" in explicit_vehicle_type:
+        type_score = 1.0
+    elif "salvage" in explicit_vehicle_type or "rebuilt" in explicit_vehicle_type or "unregistered" in explicit_vehicle_type:
+        type_score = 0.0
+    else:
+        type_score = score_from_keyword(
+            vehicle_type,
+            [
+                (("passenger", "sedan", "hatchback"), 5.0),
+                (("suv", "mpv", "pickup"), 4.0),
+                (("commercial", "van", "light truck"), 3.0),
+                (("heavy equipment", "specialized"), 1.0),
+                (("salvage", "rebuilt", "unregistered"), 0.0),
+            ],
+            fallback=0.0 if not vehicle_type else 3.0,
+        )
 
-    return marketability_score + value_score + age_score + type_score
+    return {
+        "marketability_score": marketability_score,
+        "value_score": value_score,
+        "age_score": age_score,
+        "type_score": type_score,
+        "total_score": marketability_score + value_score + age_score + type_score,
+    }
+
+
+def score_auto_loan_collateral(payload: Any) -> float:
+    return compute_auto_loan_collateral_breakdown(payload)["total_score"]

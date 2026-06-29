@@ -50,3 +50,37 @@ class CreditRiskEngineTests(unittest.TestCase):
         self.assertEqual(result["relationship_scores"]["prior_loans"], 0)
         self.assertEqual(result["credit_bureau_reports"]["total_loans"], 0)
         self.assertEqual(result["credit_bureau_reports"]["outstanding_balance"], 0.0)
+
+    def test_credit_risk_package_uses_structured_auto_loan_collateral_inputs(self) -> None:
+        payload = SimpleNamespace(
+            product_type="Auto Loan",
+            loan_amount=1200000.0,
+            appraised_value=1800000.0,
+            requirements={
+                "bankingRelationships": {
+                    "memberSince": "2020-01-15",
+                    "accountNumber": "A123",
+                    "creditCardNumber": "CC123",
+                    "loanLender": "Lender A",
+                    "currentBalance": "1234.56",
+                    "loanCurrentBalance": "2500",
+                },
+                "enhancedDueDiligence": {
+                    "numberOfActiveLoans": "2",
+                },
+                "collateralAssetDetails": {
+                    "vehicleMarketabilityCategory": "Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)",
+                    "vehicleConditionCategory": "Brand New",
+                    "vehicleTypeCategory": "Passenger vehicle for personal use",
+                    "insuranceProviderCompany": "Insurer",
+                    "policyNumber": "POL-1",
+                },
+                "productInformation": {},
+            },
+        )
+
+        result = compute_credit_risk_package(payload)
+
+        self.assertGreater(result["collateral_scores"]["marketability_score"], 95.0)
+        self.assertGreater(result["collateral_scores"]["asset_quality_score"], 95.0)
+        self.assertEqual(result["collateral_scores"]["insurance_score"], 100.0)

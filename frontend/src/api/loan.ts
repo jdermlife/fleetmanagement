@@ -107,6 +107,9 @@ export interface LoanApplicationRequirements {
     brand: string
     model: string
     year: string
+    vehicleMarketabilityCategory: string
+    vehicleConditionCategory: string
+    vehicleTypeCategory: string
     insuranceProviderCompany: string
     policyNumber: string
     orNumber: string

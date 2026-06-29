@@ -94,6 +94,44 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["credit_grade"], "Platinum 2")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Auto Loan")
 
+    def test_auto_loan_prefers_structured_model_criteria_fields(self) -> None:
+        payload = build_payload("Auto Loan")
+        payload.requirements["bankingRelationships"].update(
+            {
+                "creditPaymentHistory": "Excellent handling (no past due)",
+                "accountHandling": "Excellent handling (no returned checks)",
+                "utilityCreditBureauStatus": "Very satisfactory to satisfactory",
+                "averageDailyBalance": 120000,
+            }
+        )
+        payload.requirements["employmentInformation"].update(
+            {
+                "employmentLocation": "Locally Employed",
+                "employerBusinessYears": 11,
+            }
+        )
+        payload.requirements["enhancedDueDiligence"].update(
+            {
+                "lifestyleIndicator": "Respectable lifestyle (no gambling, drinking, etc.)",
+            }
+        )
+        payload.requirements["collateralAssetDetails"].update(
+            {
+                "vehicleMarketabilityCategory": "Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)",
+                "vehicleConditionCategory": "Brand New",
+                "vehicleTypeCategory": "Passenger vehicle for personal use",
+            }
+        )
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["capacity_score"], 18.0)
+        self.assertEqual(result["character_score"], 25.0)
+        self.assertEqual(result["collateral_score"], 23.0)
+        self.assertEqual(result["conditions_score"], 25.0)
+        self.assertEqual(result["total_credit_score"], 91.0)
+        self.assertEqual(result["credit_grade"], "Platinum 2")
+
     def test_credit_card_uses_relationship_limit_scorecard(self) -> None:
         result = compute_credit_score(
             build_payload("Credit Card", loan_amount=120000.0, appraised_value=0.0)

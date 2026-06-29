@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
+from app.services.credit_scoring.auto_loan import compute_auto_loan_collateral_breakdown
 from app.services.credit_scoring_engine import compute_credit_score
 
 
@@ -24,6 +25,19 @@ def _requirements_section(payload: Any, key: str) -> dict[str, Any]:
     requirements = getattr(payload, "requirements", {}) or {}
     value = requirements.get(key, {})
     return value if isinstance(value, dict) else {}
+
+
+def _product_type_for_risk(payload: Any) -> str:
+    raw_value = getattr(payload, "product_type", None)
+    if isinstance(raw_value, str) and raw_value.strip():
+        return raw_value.strip()
+
+    product_info = _requirements_section(payload, "productInformation")
+    product_type = product_info.get("productType")
+    if isinstance(product_type, str):
+        return product_type.strip()
+
+    return ""
 
 
 def _normalize_customer_since(value: Any) -> date | None:
@@ -87,7 +101,40 @@ def _compute_credit_bureau_report(payload: Any, credit_scores: dict[str, Any]) -
     }
 
 
-def _compute_collateral_score(_: Any) -> dict[str, float]:
+def _compute_collateral_score(payload: Any) -> dict[str, float]:
+    if _product_type_for_risk(payload).lower() == "auto loan":
+        breakdown = compute_auto_loan_collateral_breakdown(payload)
+        appraised_value = _to_float(getattr(payload, "appraised_value", 0.0))
+        loan_amount = _to_float(getattr(payload, "loan_amount", 0.0))
+        if appraised_value > 0 and loan_amount > 0:
+            ltv_percent = (loan_amount / appraised_value) * 100.0
+            ltv_score = round(max(0.0, min(100.0, 100.0 - ltv_percent)), 2)
+        else:
+            ltv_score = round((breakdown["value_score"] / 7.0) * 100.0, 2)
+
+        marketability_score = round((breakdown["marketability_score"] / 7.0) * 100.0, 2)
+        age_score = round((breakdown["age_score"] / 6.0) * 100.0, 2)
+        type_score = round((breakdown["type_score"] / 5.0) * 100.0, 2)
+        asset_quality_score = round((age_score + type_score) / 2.0, 2)
+
+        requirements = _requirements_section(payload, "collateralAssetDetails")
+        insurance_present = bool(requirements.get("insuranceProviderCompany")) and bool(
+            requirements.get("policyNumber")
+        )
+        insurance_score = 100.0 if insurance_present else 40.0
+        overall_collateral_score = round(
+            (ltv_score + asset_quality_score + marketability_score + insurance_score) / 4.0,
+            2,
+        )
+
+        return {
+            "ltv_score": ltv_score,
+            "asset_quality_score": asset_quality_score,
+            "marketability_score": marketability_score,
+            "insurance_score": insurance_score,
+            "overall_collateral_score": overall_collateral_score,
+        }
+
     return {
         "ltv_score": 82.0,
         "asset_quality_score": 80.0,
