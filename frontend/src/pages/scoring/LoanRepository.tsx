@@ -248,6 +248,7 @@ export default function LoanRepository() {
       const searchParams = new URLSearchParams({
         limit: String(PAGE_SIZE),
         offset: String(offset),
+        summary: "true",
       });
 
       if (effectiveStatusFilter !== "All") {

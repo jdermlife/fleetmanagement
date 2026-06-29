@@ -2,8 +2,8 @@ import { api } from '../api'
 
 const LOAN_REPOSITORY_IMPORT_TIMEOUT_MS = 600000
 const LOAN_REPOSITORY_EXPORT_TIMEOUT_MS = 120000
-const LOAN_REPOSITORY_FETCH_TIMEOUT_MS = 30000
-const LOAN_REPOSITORY_FETCH_RETRIES = 1
+const LOAN_REPOSITORY_FETCH_TIMEOUT_MS = 60000
+const LOAN_REPOSITORY_FETCH_RETRIES = 2
 
 export type WorkflowStatus =
   | 'Draft'
@@ -487,6 +487,7 @@ export interface LoanApplicationQueryParams {
   dateTo?: string
   limit?: number
   offset?: number
+  summary?: boolean
   status?: 'All' | WorkflowStatus | string
 }
 
@@ -522,6 +523,7 @@ async function fetchLoanApplicationsPage(
           date_to: params.dateTo || undefined,
           limit: params.limit,
           offset: params.offset,
+          summary: params.summary || undefined,
           status: params.status && params.status !== 'All' ? params.status : undefined,
         },
         timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,

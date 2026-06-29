@@ -441,7 +441,7 @@ async def stop_notification_dispatcher() -> None:
 
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def home():
     return {
         "message": "QT Fleet API Running"
@@ -490,4 +490,3 @@ def metrics():
         f"app_uptime_seconds {int(time.time() - _service_start_time)}",
     ]
     return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
-

@@ -707,6 +707,7 @@ def get_loan_applications(
     date_to: str | None = Query(default=None),
     limit: int = Query(default=25, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
+    summary: bool = Query(default=False),
     user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = SessionLocal()
@@ -717,18 +718,21 @@ def get_loan_applications(
             query = query.filter(LoanApplication.created_by == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
         total = query.count()
-        loans = (
-            query.order_by(LoanApplication.created_at.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        )
+        loans_query = query.order_by(LoanApplication.created_at.desc()).offset(offset).limit(limit)
+        if not summary:
+            loans_query = loans_query.options(*LOAN_APPLICATION_LOAD_OPTIONS)
+        loans = loans_query.all()
 
         return {
             "total": total,
             "limit": limit,
             "offset": offset,
-            "records": [serialize_loan_application(loan) for loan in loans],
+            "records": [
+                serialize_loan_application_list_item(loan)
+                if summary
+                else serialize_loan_application(loan)
+                for loan in loans
+            ],
         }
     finally:
         db.close()
