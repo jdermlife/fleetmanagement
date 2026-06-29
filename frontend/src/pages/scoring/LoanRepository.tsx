@@ -267,7 +267,7 @@ export default function LoanRepository() {
         limit: number;
         offset: number;
         records: LoanApplicationRecord[];
-      }>(`/loan-applications?${searchParams.toString()}`);
+      }>(`/api/loan-applications?${searchParams.toString()}`);
 
       setApplications(response.data.records);
       setTotalApplications(response.data.total);

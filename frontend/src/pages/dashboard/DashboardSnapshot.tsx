@@ -630,7 +630,7 @@ export default function DashboardSnapshot() {
               </div>
 
               <p style={{ ...subtleTextStyle, fontSize: "0.83rem", margin: "10px 0 0" }}>
-                Initial load shows lightweight summary only. Generate Report loads up to 100 detailed records for the selected period.
+                Initial Dashboard Summary: 
               </p>
             </div>
 
