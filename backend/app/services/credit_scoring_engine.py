@@ -11,12 +11,15 @@ from app.services.credit_scoring import (
     normalize_product_type,
     parse_years,
     requirements_section,
+    score_account_handling,
     safe_text,
     score_auto_loan_collateral,
     score_credit_card_capital,
+    score_credit_payment_history,
     score_from_descending,
     score_home_loan_collateral,
     score_personal_loan_capital,
+    score_utility_credit_bureau_status,
     to_float,
     years_since,
 )
@@ -74,7 +77,10 @@ def _score_capacity(payload: Any) -> float:
         4: 2.0,
     }.get(household_members, 0.0)
 
-    avg_daily_balance = to_float(banking.get("currentBalance"), 0.0)
+    avg_daily_balance = max(
+        to_float(banking.get("averageDailyBalance"), 0.0),
+        to_float(banking.get("currentBalance"), 0.0),
+    )
     average_balance_score = score_from_descending(
         avg_daily_balance,
         [
@@ -104,7 +110,12 @@ def _score_character(payload: Any) -> float:
         or bool(safe_text(banking.get("creditCardNumber")))
         or bool(safe_text(banking.get("loanLender")))
     )
-    if adverse:
+    structured_credit_history_score = score_credit_payment_history(
+        safe_text(banking.get("creditPaymentHistory"))
+    )
+    if structured_credit_history_score != 0.0 or safe_text(banking.get("creditPaymentHistory")):
+        borrowing_score = structured_credit_history_score
+    elif adverse:
         borrowing_score = -10.0
     elif has_credit_history:
         borrowing_score = 10.0
@@ -112,7 +123,12 @@ def _score_character(payload: Any) -> float:
         borrowing_score = 0.0
 
     current_balance = to_float(banking.get("currentBalance"), 0.0)
-    if adverse and current_balance <= 0:
+    structured_account_handling_score = score_account_handling(
+        safe_text(banking.get("accountHandling"))
+    )
+    if structured_account_handling_score != 0.0 or safe_text(banking.get("accountHandling")):
+        deposit_score = structured_account_handling_score
+    elif adverse and current_balance <= 0:
         deposit_score = -5.0
     elif current_balance >= 100000.0:
         deposit_score = 5.0
@@ -125,7 +141,12 @@ def _score_character(payload: Any) -> float:
         bool(supporting.get(key))
         for key in ("utilityBill", "waterBill", "internetBill", "bankStatements")
     )
-    if adverse:
+    structured_utility_score = score_utility_credit_bureau_status(
+        safe_text(banking.get("utilityCreditBureauStatus"))
+    )
+    if structured_utility_score != 0.0 or safe_text(banking.get("utilityCreditBureauStatus")):
+        utility_score = structured_utility_score
+    elif adverse:
         utility_score = -6.0
     elif utility_docs_present:
         utility_score = 6.0
@@ -134,7 +155,13 @@ def _score_character(payload: Any) -> float:
     else:
         utility_score = 0.0
 
-    lifestyle_score = 0.0 if adverse else 4.0
+    lifestyle_indicator = safe_text(due_diligence.get("lifestyleIndicator")).lower()
+    if "respectable" in lifestyle_indicator:
+        lifestyle_score = 4.0
+    elif "adverse" in lifestyle_indicator or "signs" in lifestyle_indicator:
+        lifestyle_score = 0.0
+    else:
+        lifestyle_score = 0.0 if adverse else 4.0
     return borrowing_score + deposit_score + utility_score + lifestyle_score
 
 
@@ -142,20 +169,25 @@ def _score_condition(payload: Any) -> float:
     employment = requirements_section(payload, "employmentInformation")
     address = requirements_section(payload, "addressInformation")
 
+    employment_location = safe_text(employment.get("employmentLocation")).lower()
     employment_status = safe_text(employment.get("employmentStatus")).lower()
-    if any(keyword in employment_status for keyword in ("abroad", "overseas", "foreign", "ofw")):
+    if "not locally" in employment_location or any(keyword in employment_status for keyword in ("abroad", "overseas", "foreign", "ofw")):
         employment_score = 4.0
-    elif employment_status:
+    elif "locally" in employment_location or employment_status:
         employment_score = 8.0
     else:
         employment_score = 0.0
 
+    employer_business_years = max(
+        to_float(employment.get("employerBusinessYears"), 0.0),
+        0.0,
+    )
     service_years = max(
         parse_years(employment.get("totalYearsWorking")),
         years_since(safe_text(employment.get("dateHired"))),
     )
     employer_score = score_from_descending(
-        service_years,
+        employer_business_years if employer_business_years > 0 else service_years,
         [
             ScoreBand(10.0, 7.0),
             ScoreBand(5.0, 5.0),

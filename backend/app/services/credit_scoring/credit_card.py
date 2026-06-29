@@ -28,9 +28,20 @@ def score_credit_card_capital(payload: Any) -> float:
     else:
         utilization_score = 0.0
 
+    explicit_relationship_status = safe_text(
+        banking.get("creditCardRelationshipStatus")
+    ).lower()
     relationship_years = years_since(safe_text(banking.get("memberSince")))
     has_card_relationship = bool(safe_text(banking.get("creditCardNumber")))
-    if has_card_relationship and relationship_years > 5.0:
+    if "more than 5 years" in explicit_relationship_status:
+        card_relationship_score = 7.0
+    elif "2–5 years" in explicit_relationship_status or "2-5 years" in explicit_relationship_status:
+        card_relationship_score = 5.0
+    elif "less than 2 years" in explicit_relationship_status or "new cardholder" in explicit_relationship_status:
+        card_relationship_score = 3.0
+    elif "no previous" in explicit_relationship_status:
+        card_relationship_score = 0.0
+    elif has_card_relationship and relationship_years > 5.0:
         card_relationship_score = 7.0
     elif has_card_relationship and relationship_years >= 2.0:
         card_relationship_score = 5.0
@@ -49,7 +60,16 @@ def score_credit_card_capital(payload: Any) -> float:
         if safe_text(value)
     )
     current_balance = to_float(banking.get("currentBalance"), 0.0)
-    if products_count >= 2 and current_balance > 0:
+    banking_relationship_tier = safe_text(banking.get("bankingRelationshipTier")).lower()
+    if "premium/preferred" in banking_relationship_tier or "premium" in banking_relationship_tier:
+        banking_score = 6.0
+    elif "active savings/current account" in banking_relationship_tier or "regular transactions" in banking_relationship_tier:
+        banking_score = 4.0
+    elif "limited banking relationship" in banking_relationship_tier:
+        banking_score = 2.0
+    elif "no banking relationship" in banking_relationship_tier:
+        banking_score = 0.0
+    elif products_count >= 2 and current_balance > 0:
         banking_score = 6.0
     elif current_balance > 0:
         banking_score = 4.0
@@ -71,3 +91,38 @@ def score_credit_card_capital(payload: Any) -> float:
         limit_score = 0.0
 
     return utilization_score + card_relationship_score + banking_score + limit_score
+
+
+def score_credit_payment_history(value: str) -> float:
+    normalized = safe_text(value).lower()
+    if "excellent" in normalized or "no past due" in normalized:
+        return 10.0
+    if "satisfactory" in normalized:
+        return 5.0
+    if "no previous" in normalized:
+        return 0.0
+    if "not properly" in normalized or "delayed" in normalized:
+        return -10.0
+    return 0.0
+
+
+def score_account_handling(value: str) -> float:
+    normalized = safe_text(value).lower()
+    if "excellent" in normalized:
+        return 5.0
+    if "satisfactory" in normalized:
+        return 3.0
+    if "not properly" in normalized:
+        return -5.0
+    return 0.0
+
+
+def score_utility_credit_bureau_status(value: str) -> float:
+    normalized = safe_text(value).lower()
+    if "very satisfactory" in normalized or "satisfactory" in normalized:
+        return 6.0
+    if "dismissed" in normalized or "settled" in normalized:
+        return 3.0
+    if "not satisfactory" in normalized:
+        return -6.0
+    return 0.0

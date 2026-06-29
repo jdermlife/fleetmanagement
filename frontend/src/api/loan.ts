@@ -74,7 +74,9 @@ export interface LoanApplicationRequirements {
   }
   employmentInformation: {
     employmentStatus: string
+    employmentLocation: string
     employerBusinessName: string
+    employerBusinessYears: number
     officeAddress: string
     occupation: string
     position: string
@@ -145,6 +147,8 @@ export interface LoanApplicationRequirements {
   bankingRelationships: {
     creditCardIssuer: string
     creditCardNumber: string
+    creditPaymentHistory: string
+    creditCardRelationshipStatus: string
     creditLimit: number
     outstandingBalance: number
     memberSince: string
@@ -152,6 +156,12 @@ export interface LoanApplicationRequirements {
     accountType: string
     accountNumber: string
     currentBalance: number
+    averageSavingsBalance: number
+    averageDailyBalance: number
+    depositRegularity: string
+    bankingRelationshipTier: string
+    accountHandling: string
+    utilityCreditBureauStatus: string
     loanLender: string
     loanType: string
     loanCurrentBalance: number
@@ -196,6 +206,8 @@ export interface LoanApplicationRequirements {
     previousLendersAndExistingLoanAccounts: string
     numberOfActiveLoans: number
     previousLoanRestructuringDisclosures: string
+    lifestyleIndicator: string
+    secondaryIncomeProfile: string
     employmentReferencePerson: string
     hrContactInformation: string
     supervisorInformation: string

@@ -105,6 +105,42 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["credit_grade"], "Platinum 2")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Credit Card")
 
+    def test_credit_card_prefers_structured_model_criteria_fields(self) -> None:
+        payload = build_payload(
+            "Credit Card",
+            loan_amount=120000.0,
+            appraised_value=0.0,
+        )
+        payload.requirements["bankingRelationships"].update(
+            {
+                "creditCardRelationshipStatus": "Existing cardholder for more than 5 years with excellent payment history",
+                "bankingRelationshipTier": "Premium/Preferred banking customer with multiple products",
+                "creditPaymentHistory": "Excellent handling (no past due)",
+                "accountHandling": "Excellent handling (no returned checks)",
+                "utilityCreditBureauStatus": "Very satisfactory to satisfactory",
+                "averageDailyBalance": 120000,
+            }
+        )
+        payload.requirements["employmentInformation"].update(
+            {
+                "employmentLocation": "Locally Employed",
+                "employerBusinessYears": 11,
+            }
+        )
+        payload.requirements["enhancedDueDiligence"].update(
+            {
+                "lifestyleIndicator": "Respectable lifestyle (no gambling, drinking, etc.)",
+            }
+        )
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["capital_score"], 23.0)
+        self.assertEqual(result["character_score"], 25.0)
+        self.assertEqual(result["conditions_score"], 25.0)
+        self.assertEqual(result["total_credit_score"], 93.0)
+        self.assertEqual(result["credit_grade"], "Platinum 2")
+
     def test_personal_loan_uses_liquidity_and_secondary_income_scorecard(self) -> None:
         result = compute_credit_score(
             build_payload("Personal Loan", monthly_income=70000.0, other_income=15000.0, loan_amount=300000.0, appraised_value=0.0)
@@ -115,3 +151,43 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["total_credit_score"], 86.0)
         self.assertEqual(result["credit_grade"], "Gold 1")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Personal Loan")
+
+    def test_personal_loan_prefers_structured_model_criteria_fields(self) -> None:
+        payload = build_payload(
+            "Personal Loan",
+            monthly_income=70000.0,
+            other_income=15000.0,
+            loan_amount=300000.0,
+            appraised_value=0.0,
+        )
+        payload.requirements["bankingRelationships"].update(
+            {
+                "averageSavingsBalance": 600000,
+                "averageDailyBalance": 120000,
+                "depositRegularity": "Regular deposits",
+                "creditPaymentHistory": "Excellent handling (no past due)",
+                "accountHandling": "Excellent handling (no returned checks)",
+                "utilityCreditBureauStatus": "Very satisfactory to satisfactory",
+            }
+        )
+        payload.requirements["employmentInformation"].update(
+            {
+                "employmentLocation": "Locally Employed",
+                "employerBusinessYears": 11,
+            }
+        )
+        payload.requirements["enhancedDueDiligence"].update(
+            {
+                "lifestyleIndicator": "Respectable lifestyle (no gambling, drinking, etc.)",
+                "secondaryIncomeProfile": "Multiple stable income sources",
+            }
+        )
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["capacity_score"], 19.0)
+        self.assertEqual(result["character_score"], 25.0)
+        self.assertEqual(result["capital_score"], 23.0)
+        self.assertEqual(result["conditions_score"], 25.0)
+        self.assertEqual(result["total_credit_score"], 92.0)
+        self.assertEqual(result["credit_grade"], "Platinum 2")

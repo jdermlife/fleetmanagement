@@ -19,7 +19,12 @@ from app.services.credit_scoring.common import (
     to_float,
     years_since,
 )
-from app.services.credit_scoring.credit_card import score_credit_card_capital
+from app.services.credit_scoring.credit_card import (
+    score_account_handling,
+    score_credit_card_capital,
+    score_credit_payment_history,
+    score_utility_credit_bureau_status,
+)
 from app.services.credit_scoring.home_loan import score_home_loan_collateral
 from app.services.credit_scoring.personal_loan import score_personal_loan_capital
 
@@ -38,12 +43,15 @@ __all__ = [
     "parse_years",
     "requirements_section",
     "safe_text",
+    "score_account_handling",
     "score_auto_loan_collateral",
     "score_credit_card_capital",
+    "score_credit_payment_history",
     "score_from_descending",
     "score_from_keyword",
     "score_home_loan_collateral",
     "score_personal_loan_capital",
+    "score_utility_credit_bureau_status",
     "to_float",
     "years_since",
 ]
