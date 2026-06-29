@@ -101,12 +101,14 @@ function getGraphColor(label: WorkflowStatus | "Total Applications" | "Visible R
   }
 }
 
+const DEFAULT_STATUS_FILTER: "All" | WorkflowStatus = "Draft";
+const PAGE_SIZE = 10;
+
 export default function LoanRepository() {
   const navigate = useNavigate();
   const { hasRole, hasPermission } = useAuthorization();
   const [searchParams] = useSearchParams();
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const PAGE_SIZE = 25;
 
   const canCreateLoans = hasRole("admin") || hasPermission("create:loans");
   const canEditLoans = hasRole("admin") || hasPermission("edit:loans");
@@ -124,7 +126,13 @@ export default function LoanRepository() {
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
   const [statusFilter, setStatusFilter] = useState<"All" | WorkflowStatus>(
-    "All",
+    DEFAULT_STATUS_FILTER,
+  );
+  const [appliedSearchText, setAppliedSearchText] = useState("");
+  const [appliedDateFrom, setAppliedDateFrom] = useState("");
+  const [appliedDateTo, setAppliedDateTo] = useState("");
+  const [appliedStatusFilter, setAppliedStatusFilter] = useState<"All" | WorkflowStatus>(
+    DEFAULT_STATUS_FILTER,
   );
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
@@ -137,34 +145,34 @@ export default function LoanRepository() {
   const filteredApplications = useMemo(() => {
     return applications.filter((application) => {
       const matchesSearch =
-        searchText.length === 0 ||
+        appliedSearchText.length === 0 ||
         application.application_no
           .toLowerCase()
-          .includes(searchText.toLowerCase()) ||
+          .includes(appliedSearchText.toLowerCase()) ||
         application.borrower_name
           .toLowerCase()
-          .includes(searchText.toLowerCase());
+          .includes(appliedSearchText.toLowerCase());
 
       const matchesStatus =
-        statusFilter === "All" || application.status === statusFilter;
+        appliedStatusFilter === "All" || application.status === appliedStatusFilter;
 
       const createdAt = application.created_at
         ? new Date(application.created_at)
         : null;
       const matchesDateFrom =
-        !dateFrom ||
+        !appliedDateFrom ||
         (createdAt !== null &&
           !Number.isNaN(createdAt.getTime()) &&
-          createdAt >= new Date(`${dateFrom}T00:00:00`));
+          createdAt >= new Date(`${appliedDateFrom}T00:00:00`));
       const matchesDateTo =
-        !dateTo ||
+        !appliedDateTo ||
         (createdAt !== null &&
           !Number.isNaN(createdAt.getTime()) &&
-          createdAt <= new Date(`${dateTo}T23:59:59.999`));
+          createdAt <= new Date(`${appliedDateTo}T23:59:59.999`));
 
       return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
     });
-  }, [applications, dateFrom, dateTo, searchText, statusFilter]);
+  }, [applications, appliedDateFrom, appliedDateTo, appliedSearchText, appliedStatusFilter]);
 
   const stats = useMemo(
     () => ({
@@ -221,27 +229,37 @@ export default function LoanRepository() {
 
   const messageIsError = message.toLowerCase().includes("failed");
 
-  const loadApplications = async () => {
+  const loadApplications = async (
+    filters: {
+      dateFrom?: string;
+      dateTo?: string;
+      statusFilter?: "All" | WorkflowStatus;
+    } = {},
+    nextPage = page,
+  ) => {
     setLoading(true);
     setMessage("");
 
     try {
-      const offset = (page - 1) * PAGE_SIZE;
+      const effectiveStatusFilter = filters.statusFilter ?? appliedStatusFilter;
+      const effectiveDateFrom = filters.dateFrom ?? appliedDateFrom;
+      const effectiveDateTo = filters.dateTo ?? appliedDateTo;
+      const offset = (nextPage - 1) * PAGE_SIZE;
       const searchParams = new URLSearchParams({
         limit: String(PAGE_SIZE),
         offset: String(offset),
       });
 
-      if (statusFilter !== "All") {
-        searchParams.set("status", statusFilter);
+      if (effectiveStatusFilter !== "All") {
+        searchParams.set("status", effectiveStatusFilter);
       }
 
-      if (dateFrom) {
-        searchParams.set("date_from", dateFrom);
+      if (effectiveDateFrom) {
+        searchParams.set("date_from", effectiveDateFrom);
       }
 
-      if (dateTo) {
-        searchParams.set("date_to", dateTo);
+      if (effectiveDateTo) {
+        searchParams.set("date_to", effectiveDateTo);
       }
 
       const response = await api.get<{
@@ -258,6 +276,42 @@ export default function LoanRepository() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const applyFilters = async () => {
+    setAppliedSearchText(searchText);
+    setAppliedDateFrom(dateFrom);
+    setAppliedDateTo(dateTo);
+    setAppliedStatusFilter(statusFilter);
+    setPage(1);
+    await loadApplications(
+      {
+        dateFrom,
+        dateTo,
+        statusFilter,
+      },
+      1,
+    );
+  };
+
+  const resetFilters = async () => {
+    setSearchText("");
+    setDateFrom("");
+    setDateTo("");
+    setStatusFilter(DEFAULT_STATUS_FILTER);
+    setAppliedSearchText("");
+    setAppliedDateFrom("");
+    setAppliedDateTo("");
+    setAppliedStatusFilter(DEFAULT_STATUS_FILTER);
+    setPage(1);
+    await loadApplications(
+      {
+        dateFrom: "",
+        dateTo: "",
+        statusFilter: DEFAULT_STATUS_FILTER,
+      },
+      1,
+    );
   };
 
   const handleStatusUpdate = async (
@@ -330,15 +384,15 @@ export default function LoanRepository() {
 
     try {
       const blob = await exportLoanApplications({
-        dateFrom,
-        dateTo,
+        dateFrom: appliedDateFrom,
+        dateTo: appliedDateTo,
         format,
-        status: statusFilter,
+        status: appliedStatusFilter,
       });
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `loan-repository-${statusFilter.toLowerCase()}-${dateFrom || "start"}-${dateTo || "end"}.${format}`;
+      link.download = `loan-repository-${appliedStatusFilter.toLowerCase()}-${appliedDateFrom || "start"}-${appliedDateTo || "end"}.${format}`;
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -360,16 +414,18 @@ export default function LoanRepository() {
 
   useEffect(() => {
     void loadApplications();
-  }, [page, statusFilter, dateFrom, dateTo]);
+  }, [page, appliedStatusFilter, appliedDateFrom, appliedDateTo]);
 
   useEffect(() => {
     if (requestedStatus && statusOptions.includes(requestedStatus as WorkflowStatus)) {
       setStatusFilter(requestedStatus as WorkflowStatus);
+      setAppliedStatusFilter(requestedStatus as WorkflowStatus);
       setPage(1);
       return;
     }
 
-    setStatusFilter("All");
+    setStatusFilter(DEFAULT_STATUS_FILTER);
+    setAppliedStatusFilter(DEFAULT_STATUS_FILTER);
     setPage(1);
   }, [requestedStatus]);
 
@@ -426,8 +482,8 @@ export default function LoanRepository() {
                     );
                   })}
                   <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#cbd5e1" }}>
-                    <span>Active Filter: <strong style={{ color: "#fff" }}>{statusFilter}</strong></span>
-                    <span>{dateFrom || dateTo ? `${dateFrom || "Start"} to ${dateTo || "Present"}` : "All Dates"}</span>
+                    <span>Active Filter: <strong style={{ color: "#fff" }}>{appliedStatusFilter}</strong></span>
+                    <span>{appliedDateFrom || appliedDateTo ? `${appliedDateFrom || "Start"} to ${appliedDateTo || "Present"}` : "All Dates"}</span>
                   </div>
                 </div>
               </div>
@@ -523,10 +579,7 @@ export default function LoanRepository() {
                   <select
                     value={statusFilter}
                     onChange={(event) =>
-                      {
-                        setStatusFilter(event.target.value as "All" | WorkflowStatus);
-                        setPage(1);
-                      }
+                      setStatusFilter(event.target.value as "All" | WorkflowStatus)
                     }
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   >
@@ -547,7 +600,6 @@ export default function LoanRepository() {
                     value={dateFrom}
                     onChange={(event) => {
                       setDateFrom(event.target.value);
-                      setPage(1);
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
@@ -562,7 +614,6 @@ export default function LoanRepository() {
                     value={dateTo}
                     onChange={(event) => {
                       setDateTo(event.target.value);
-                      setPage(1);
                     }}
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
@@ -571,10 +622,24 @@ export default function LoanRepository() {
 
               <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 xl:flex-row xl:items-center xl:justify-between">
                 <div className="text-sm text-slate-500">
-                  Use import for bulk onboarding and exports for formal reporting packs.
+                  Default view loads the first 10 draft records. Use the filter button to retrieve a different result set.
                 </div>
 
                 <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap xl:justify-end">
+                  <button
+                    onClick={() => void applyFilters()}
+                    disabled={loading}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-amber-600 bg-amber-500 px-5 py-3 text-sm font-semibold tracking-wide text-white transition hover:bg-amber-600 disabled:opacity-50"
+                  >
+                    {loading ? "Processing..." : "Process Filters"}
+                  </button>
+                  <button
+                    onClick={() => void resetFilters()}
+                    disabled={loading}
+                    className="inline-flex min-h-[44px] items-center justify-center rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold tracking-wide text-slate-700 transition hover:bg-slate-100 disabled:opacity-50"
+                  >
+                    Reset
+                  </button>
                   <input
                     ref={fileInputRef}
                     type="file"
