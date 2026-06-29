@@ -1,0 +1,73 @@
+from __future__ import annotations
+
+from datetime import UTC, datetime
+from typing import Any
+
+from app.services.credit_scoring.common import (
+    HIGH_DEMAND_AUTO_BRANDS,
+    LOW_DEMAND_AUTO_BRANDS,
+    POPULAR_AUTO_BRANDS,
+    requirements_section,
+    safe_text,
+    score_from_keyword,
+    to_float,
+)
+
+
+def score_auto_loan_collateral(payload: Any) -> float:
+    collateral = requirements_section(payload, "collateralAssetDetails")
+    product = requirements_section(payload, "productInformation")
+
+    brand = safe_text(collateral.get("brand") or collateral.get("maker")).lower()
+    if brand in HIGH_DEMAND_AUTO_BRANDS:
+        marketability_score = 7.0
+    elif brand in POPULAR_AUTO_BRANDS:
+        marketability_score = 5.0
+    elif brand in LOW_DEMAND_AUTO_BRANDS:
+        marketability_score = 3.0
+    else:
+        marketability_score = 0.0 if not brand else 3.0
+
+    vehicle_value = max(
+        to_float(collateral.get("appraisedValue"), 0.0),
+        to_float(product.get("autoSellingPrice"), 0.0),
+        to_float(getattr(payload, "appraised_value", 0.0), 0.0),
+    )
+    if vehicle_value > 2500000.0:
+        value_score = 7.0
+    elif vehicle_value >= 1500001.0:
+        value_score = 5.0
+    elif vehicle_value >= 800001.0:
+        value_score = 3.0
+    elif vehicle_value >= 300001.0:
+        value_score = 1.0
+    else:
+        value_score = 0.0
+
+    year_text = safe_text(collateral.get("year") or product.get("autoYearModel"))
+    current_year = datetime.now(UTC).year
+    vehicle_year = int(to_float(year_text, 0.0)) if year_text else 0
+    vehicle_age = max(current_year - vehicle_year, 0) if vehicle_year else 99
+    if vehicle_age <= 0:
+        age_score = 6.0
+    elif vehicle_age <= 3:
+        age_score = 4.0
+    elif vehicle_age <= 6:
+        age_score = 2.0
+    else:
+        age_score = 0.0
+
+    vehicle_type = safe_text(collateral.get("assetType") or product.get("autoVehicleClassification")).lower()
+    type_score = score_from_keyword(
+        vehicle_type,
+        [
+            (("passenger", "sedan", "hatchback"), 5.0),
+            (("suv", "mpv", "pickup"), 4.0),
+            (("commercial", "van", "light truck"), 3.0),
+            (("heavy equipment", "specialized"), 1.0),
+            (("salvage", "rebuilt", "unregistered"), 0.0),
+        ],
+        fallback=0.0 if not vehicle_type else 3.0,
+    )
+
+    return marketability_score + value_score + age_score + type_score
