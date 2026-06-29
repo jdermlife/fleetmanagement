@@ -2,8 +2,8 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
 const RENDER_API_FALLBACKS = [
-  'https://fleetmanagement-api.onrender.com',
   'https://fleetmanagement-dq9t.onrender.com',
+  'https://fleetmanagement-api.onrender.com',
 ]
 
 const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')

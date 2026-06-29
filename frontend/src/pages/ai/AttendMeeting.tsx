@@ -12,7 +12,7 @@ message?: string;
 
 const API_URL =
 import.meta.env.VITE_API_URL ||
-"https://fleetmanagement-api.onrender.com";
+"https://fleetmanagement-dq9t.onrender.com";
 
 export default function AttendMeeting(): JSX.Element {
 const [meetingTitle, setMeetingTitle] = useState<string>("");

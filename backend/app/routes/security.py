@@ -29,6 +29,7 @@ from app.services.mfa_service import (
     verify_totp,
 )
 from app.services.security_bootstrap import seed_roles_and_permissions
+from security.rbac import ROLE_PERMISSIONS, Role as RBACRole
 from security.auth import SECRET_KEY, TokenError, create_token, decode_token, hash_password, verify_password
 
 try:
@@ -160,13 +161,37 @@ def _serialize_role(role: Role, *, include_permissions: bool = True) -> dict[str
     return payload
 
 
+def _resolved_role_names(user: User) -> list[str]:
+    return sorted(
+        {role.name for role in user.roles}
+        | ({user.role} if user.role else set())
+        | ({user.role_ref.name} if getattr(user, "role_ref", None) and user.role_ref.name else set())
+    )
+
+
+def _fallback_permissions_for_role_names(role_names: list[str]) -> list[str]:
+    permissions = set[str]()
+
+    for role_name in role_names:
+        normalized_role_name = role_name.strip().lower()
+        if not normalized_role_name:
+            continue
+        try:
+            rbac_role = RBACRole(normalized_role_name)
+        except ValueError:
+            continue
+        permissions.update(permission.value for permission in ROLE_PERMISSIONS.get(rbac_role, []))
+
+    return sorted(permissions)
+
+
 def _user_permissions(user: User, db: Session) -> list[str]:
     if is_admin_username_override(user.username):
         permission_rows = db.query(Permission.name).distinct().all()
         return sorted(row[0] for row in permission_rows)
 
     if not user.roles:
-        return []
+        return _fallback_permissions_for_role_names(_resolved_role_names(user))
     role_ids = [role.id for role in user.roles]
     permission_rows = (
         db.query(Permission.name)
@@ -175,15 +200,13 @@ def _user_permissions(user: User, db: Session) -> list[str]:
         .distinct()
         .all()
     )
-    return sorted(row[0] for row in permission_rows)
+    db_permissions = sorted(row[0] for row in permission_rows)
+    fallback_permissions = _fallback_permissions_for_role_names(_resolved_role_names(user))
+    return sorted(set(db_permissions) | set(fallback_permissions))
 
 
 def _serialize_user(user: User, db: Session) -> dict[str, object]:
-    role_names = sorted(
-        {role.name for role in user.roles}
-        | ({user.role} if user.role else set())
-        | ({user.role_ref.name} if getattr(user, "role_ref", None) and user.role_ref.name else set())
-    )
+    role_names = _resolved_role_names(user)
     if is_admin_username_override(user.username):
         role_names = sorted(set(role_names) | {"admin"})
 
@@ -285,9 +308,12 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.flush()
 
-    default_role = db.query(Role).filter(Role.name == "read_only_user").first()
+    default_role = db.query(Role).filter(Role.name == "subscriber").first()
+    if default_role is None:
+        default_role = db.query(Role).filter(Role.name == "read_only_user").first()
     if default_role:
         user.roles = [default_role]
+        user.role = default_role.name
 
     db.commit()
     db.refresh(user)

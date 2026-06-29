@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from io import BytesIO
+import csv
+import os
+from io import BytesIO, StringIO
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
@@ -28,15 +30,17 @@ from app.models.loan_application import (
 from app.schemas.loan_schema import LoanApplicationCreate
 from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.services.loan_repository_io import (
+    EXPORT_FIELDS,
     apply_repository_filters,
-    generate_csv_bytes,
     generate_xlsx_bytes,
+    normalize_export_value,
     parse_upload_rows,
     upsert_loan_applications,
 )
 from app.services.overall_scoring_engine import compute_quant_score_package
 
 router = APIRouter()
+MAX_LOAN_EXPORT_RECORDS = int(os.getenv("MAX_LOAN_EXPORT_RECORDS", "1500"))
 
 VALID_STATUSES = {
     "Draft",
@@ -145,6 +149,31 @@ def latest_record(records: list[Any]) -> Any:
             item.id or 0,
         ),
     )
+
+
+def stream_loan_csv_export(records) -> Any:
+    def row_iterator():
+        buffer = StringIO()
+        writer = csv.DictWriter(buffer, fieldnames=EXPORT_FIELDS)
+        writer.writeheader()
+        yield buffer.getvalue().encode("utf-8")
+        buffer.seek(0)
+        buffer.truncate(0)
+
+        for record in records:
+            writer.writerow(
+                {
+                    field: normalize_export_value(field, getattr(record, field, ""))
+                    for field in EXPORT_FIELDS
+                }
+            )
+            chunk = buffer.getvalue()
+            if chunk:
+                yield chunk.encode("utf-8")
+                buffer.seek(0)
+                buffer.truncate(0)
+
+    return row_iterator()
 
 
 def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]:
@@ -755,29 +784,54 @@ def export_loan_applications(
         if is_subscriber_user(user):
             query = query.filter(LoanApplication.created_by == user.id)
         query = apply_repository_filters(query, status, date_from, date_to)
-        records = query.order_by(LoanApplication.created_at.desc()).all()
-
         normalized_format = format.lower()
+        total_records = query.count()
+
+        if total_records > MAX_LOAN_EXPORT_RECORDS:
+            raise HTTPException(
+                status_code=http_status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+                detail=(
+                    f"Export exceeds the current limit of {MAX_LOAN_EXPORT_RECORDS} records. "
+                    "Please narrow the filters before exporting."
+                ),
+            )
+
         if normalized_format == "xlsx":
+            records = (
+                query.order_by(LoanApplication.created_at.desc())
+                .limit(MAX_LOAN_EXPORT_RECORDS)
+                .all()
+            )
             content = generate_xlsx_bytes(records)
             media_type = (
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
             extension = "xlsx"
+            return StreamingResponse(
+                BytesIO(content),
+                media_type=media_type,
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="loan-repository-export.{extension}"'
+                    )
+                },
+            )
         else:
-            content = generate_csv_bytes(records)
             media_type = "text/csv"
             extension = "csv"
-
-        return StreamingResponse(
-            BytesIO(content),
-            media_type=media_type,
-            headers={
-                "Content-Disposition": (
-                    f'attachment; filename="loan-repository-export.{extension}"'
-                )
-            },
-        )
+            records = (
+                query.order_by(LoanApplication.created_at.desc())
+                .yield_per(250)
+            )
+            return StreamingResponse(
+                stream_loan_csv_export(records),
+                media_type=media_type,
+                headers={
+                    "Content-Disposition": (
+                        f'attachment; filename="loan-repository-export.{extension}"'
+                    )
+                },
+            )
     finally:
         db.close()
 

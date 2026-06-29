@@ -42,6 +42,7 @@ load_dotenv()
 router = APIRouter()
 
 client: OpenAI | None = None
+UPLOAD_WRITE_CHUNK_SIZE = 1024 * 1024
 
 
 def get_openai_client() -> OpenAI:
@@ -92,7 +93,11 @@ async def transcribe(
             delete=False,
             suffix=suffix
         ) as tmp:
-            tmp.write(await audio.read())
+            while True:
+                chunk = await audio.read(UPLOAD_WRITE_CHUNK_SIZE)
+                if not chunk:
+                    break
+                tmp.write(chunk)
             tmp_path = tmp.name
 
         print("Filename:", audio.filename)

@@ -43,6 +43,7 @@ class Permission(str, Enum):
 
 class Role(str, Enum):
     ADMIN = "admin"
+    SUBSCRIBER = "subscriber"
     LOAN_OFFICER = "loan_officer"
     CREDIT_ANALYST = "credit_analyst"
     CREDIT_MANAGER = "credit_manager"
@@ -55,6 +56,19 @@ class Role(str, Enum):
 ROLE_PERMISSIONS: dict[Role, list[Permission]] = {
     # Admin: Full access to everything
     Role.ADMIN: [p for p in Permission],
+
+    # Subscriber: Can originate and manage their own loan applications.
+    Role.SUBSCRIBER: [
+        Permission.READ_LOANS,
+        Permission.CREATE_LOANS,
+        Permission.EDIT_LOANS,
+        Permission.EXPORT_LOANS,
+        Permission.READ_BORROWERS,
+        Permission.CREATE_BORROWERS,
+        Permission.EDIT_BORROWERS,
+        Permission.READ_SCORECARDS,
+        Permission.READ_ANALYTICS,
+    ],
     
     # Loan Officer: Create loans, manage borrowers, view scorecards
     Role.LOAN_OFFICER: [
