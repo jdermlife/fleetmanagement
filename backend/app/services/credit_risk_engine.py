@@ -135,6 +135,55 @@ def _compute_collateral_score(payload: Any) -> dict[str, float]:
             "overall_collateral_score": overall_collateral_score,
         }
 
+    if _product_type_for_risk(payload).lower() == "home loan":
+        collateral = _requirements_section(payload, "collateralInformation")
+        property_value = max(
+            _to_float(collateral.get("propertyAppraisedValue"), 0.0),
+            _to_float(getattr(payload, "appraised_value", 0.0), 0.0),
+        )
+        loan_amount = _to_float(getattr(payload, "loan_amount", 0.0))
+        if property_value > 0 and loan_amount > 0:
+            ltv_percent = (loan_amount / property_value) * 100.0
+            ltv_score = round(max(0.0, min(100.0, 100.0 - ltv_percent)), 2)
+        else:
+            ltv_score = 82.0
+
+        marketability_value = str(collateral.get("propertyMarketabilityCategory", "")).lower()
+        if "subdivision" in marketability_value or "condominium" in marketability_value:
+            marketability_score = 100.0
+        elif "lowcost" in marketability_value or "low cost" in marketability_value:
+            marketability_score = 57.14
+        elif "outside" in marketability_value:
+            marketability_score = 0.0
+        else:
+            marketability_score = 70.0
+
+        unit_model_value = str(collateral.get("houseUnitModelCategory", "")).lower()
+        if "single detached" in unit_model_value:
+            asset_quality_score = 100.0
+        elif "single attached" in unit_model_value or "condominium" in unit_model_value:
+            asset_quality_score = 66.67
+        elif "townhouse" in unit_model_value:
+            asset_quality_score = 33.33
+        elif "row house" in unit_model_value:
+            asset_quality_score = 0.0
+        else:
+            asset_quality_score = 66.67
+
+        insurance_score = 79.0
+        overall_collateral_score = round(
+            (ltv_score + marketability_score + asset_quality_score + insurance_score) / 4.0,
+            2,
+        )
+
+        return {
+            "ltv_score": ltv_score,
+            "asset_quality_score": asset_quality_score,
+            "marketability_score": marketability_score,
+            "insurance_score": insurance_score,
+            "overall_collateral_score": overall_collateral_score,
+        }
+
     return {
         "ltv_score": 82.0,
         "asset_quality_score": 80.0,

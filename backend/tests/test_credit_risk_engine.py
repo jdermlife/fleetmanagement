@@ -84,3 +84,37 @@ class CreditRiskEngineTests(unittest.TestCase):
         self.assertGreater(result["collateral_scores"]["marketability_score"], 95.0)
         self.assertGreater(result["collateral_scores"]["asset_quality_score"], 95.0)
         self.assertEqual(result["collateral_scores"]["insurance_score"], 100.0)
+
+    def test_credit_risk_package_uses_structured_home_loan_collateral_inputs(self) -> None:
+        payload = SimpleNamespace(
+            product_type="Home Loan",
+            loan_amount=1200000.0,
+            appraised_value=3500000.0,
+            requirements={
+                "bankingRelationships": {
+                    "memberSince": "2020-01-15",
+                    "accountNumber": "A123",
+                    "creditCardNumber": "CC123",
+                    "loanLender": "Lender A",
+                    "currentBalance": "1234.56",
+                    "loanCurrentBalance": "2500",
+                },
+                "enhancedDueDiligence": {
+                    "numberOfActiveLoans": "2",
+                },
+                "collateralInformation": {
+                    "propertyMarketabilityCategory": "Subdivision / Condominium (Class A,B,C)",
+                    "houseUnitModelCategory": "Single detached",
+                    "collateralOccupancyType": "Residential property used by borrower as primary residence",
+                },
+                "productInformation": {
+                    "homeCollateralType": "Single detached",
+                },
+            },
+        )
+
+        result = compute_credit_risk_package(payload)
+
+        self.assertGreater(result["collateral_scores"]["marketability_score"], 95.0)
+        self.assertGreater(result["collateral_scores"]["asset_quality_score"], 95.0)
+        self.assertGreater(result["collateral_scores"]["overall_collateral_score"], 85.0)

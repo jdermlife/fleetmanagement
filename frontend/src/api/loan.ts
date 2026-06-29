@@ -99,6 +99,9 @@ export interface LoanApplicationRequirements {
     lotNumber: string
     blockNumber: string
     tctCctNumber: string
+    propertyMarketabilityCategory: string
+    houseUnitModelCategory: string
+    collateralOccupancyType: string
     propertyAppraisedValue: number
   }
   collateralAssetDetails: {

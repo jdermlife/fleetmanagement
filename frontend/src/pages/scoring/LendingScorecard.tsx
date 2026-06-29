@@ -30,7 +30,7 @@ interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId:
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
 interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
 interface EmploymentInformation { employmentStatus: string; employmentLocation: string; employerBusinessName: string; employerBusinessYears: number; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
-interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyAppraisedValue: number; }
+interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyMarketabilityCategory: string; houseUnitModelCategory: string; collateralOccupancyType: string; propertyAppraisedValue: number; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditPaymentHistory: string; creditCardRelationshipStatus: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; averageSavingsBalance: number; averageDailyBalance: number; depositRegularity: string; bankingRelationshipTier: string; accountHandling: string; utilityCreditBureauStatus: string; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
@@ -163,7 +163,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
   otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
   employmentInformation: { employmentStatus: '', employmentLocation: '', employerBusinessName: '', employerBusinessYears: 0, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
-  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyAppraisedValue: 0 },
+  collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyMarketabilityCategory: '', houseUnitModelCategory: '', collateralOccupancyType: '', propertyAppraisedValue: 0 },
   additionalCollaterals: [],
   spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
@@ -192,7 +192,9 @@ const buildLoanRequirements = (
       homeDesiredLoanAmount: application.loan.amount,
       homeLoanTerm: application.loan.termMonths,
       homeCollateralType:
-        derivedVehicleInfo || application.collateralInformation.propertyAddress,
+        application.collateralInformation.houseUnitModelCategory ||
+        application.collateralInformation.propertyAddress ||
+        derivedVehicleInfo,
       autoPurpose: application.loan.purpose,
       autoVehicleClassification: application.collateral.assetType,
       autoUnitModel: application.collateral.model,
@@ -1088,10 +1090,11 @@ export default function LendingScorecard() {
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
   const [backendCreditScores, setBackendCreditScores] = useState<CreditScoreRecord | null>(null);
   const [isComputingQuantScores, setIsComputingQuantScores] = useState(false);
+  const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
   const isAutoLoan = formData.loan.productType === 'Auto Loan';
-  const usesStructuredRetailCriteria = isPersonalLoan || isCreditCard || isAutoLoan;
+  const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan;
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -3080,34 +3083,45 @@ export default function LendingScorecard() {
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
-              <p className="col-span-full -mt-2 text-sm italic text-slate-500">
-                Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
-              </p>
-              <div className="md:col-span-2">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
-              </div>
-              {renderSelect('collateral', 'assetType', 'Type', assetVehicleTypeOptions)}
-              {renderInput('collateral', 'maker', 'Maker')}
-              {renderInput('collateral', 'brand', 'Brand')}
-              {renderInput('collateral', 'model', 'Model')}
-              {renderInput('collateral', 'year', 'Year')}
+              {(isCreditCard || isPersonalLoan) && (
+                <p className="col-span-full -mt-2 text-sm italic text-slate-500">
+                  Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
+                </p>
+              )}
+              {isAutoLoan && (
+                <>
+                  <div className="md:col-span-2">
+                    <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
+                  </div>
+                  {renderSelect('collateral', 'assetType', 'Type', assetVehicleTypeOptions)}
+                  {renderInput('collateral', 'maker', 'Maker')}
+                  {renderInput('collateral', 'brand', 'Brand')}
+                  {renderInput('collateral', 'model', 'Model')}
+                  {renderInput('collateral', 'year', 'Year')}
+                </>
+              )}
               {isAutoLoan && renderSelect('collateral', 'vehicleMarketabilityCategory', 'Marketability of the Vehicle', ['Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)', 'Popular brands with moderate resale demand', 'Limited-market or low-demand brands', 'Obsolete or difficult-to-sell models'])}
               {isAutoLoan && renderSelect('collateral', 'vehicleConditionCategory', 'Vehicle Age / Condition', ['Brand New', 'Used (1–3 years), Excellent Condition', 'Used (4–6 years), Good Condition', 'More than 6 years old or Fair/Poor Condition'])}
               {isAutoLoan && renderSelect('collateral', 'vehicleTypeCategory', 'Vehicle Type', ['Passenger vehicle for personal use', 'SUV / MPV / Pickup in good condition', 'Commercial vehicle (van, light truck)', 'Heavy equipment / Specialized vehicles', 'Salvage, rebuilt, or unregistered vehicle'])}
-              {renderInput('collateral', 'appraisedValue', 'Appraised Value', 'number')}
-              {renderInput('collateral', 'insuranceProviderCompany', 'Insurance Provider / Company')}
-              {renderInput('collateral', 'policyNumber', 'Policy Number')}
-              {renderInput('collateral', 'orNumber', 'OR Number')}
-              {renderInput('collateral', 'crNumber', 'CR Number')}
-              <div className="md:col-span-2 border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information (if applicable)</h4>
-              </div>
-              {renderInput('collateralInformation', 'propertyAddress', 'Property Address')}
-              {renderInput('collateralInformation', 'registeredOwner', 'Registered Owner')}
-              {renderInput('collateralInformation', 'lotNumber', 'Lot Number')}
-              {renderInput('collateralInformation', 'blockNumber', 'Block Number')}
-              {renderInput('collateralInformation', 'tctCctNumber', 'TCT/CCT Number')}
-              {renderFormattedNumberInput('collateralInformation', 'propertyAppraisedValue', 'Property Appraised Value')}
+              {isAutoLoan && renderInput('collateral', 'appraisedValue', 'Appraised Value', 'number')}
+              {isAutoLoan && renderInput('collateral', 'insuranceProviderCompany', 'Insurance Provider / Company')}
+              {isAutoLoan && renderInput('collateral', 'policyNumber', 'Policy Number')}
+              {isAutoLoan && renderInput('collateral', 'orNumber', 'OR Number')}
+              {isAutoLoan && renderInput('collateral', 'crNumber', 'CR Number')}
+              {isHomeLoan && (
+                <div className="md:col-span-2 border-t pt-4 mt-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information</h4>
+                </div>
+              )}
+              {isHomeLoan && renderInput('collateralInformation', 'propertyAddress', 'Property Address')}
+              {isHomeLoan && renderInput('collateralInformation', 'registeredOwner', 'Registered Owner')}
+              {isHomeLoan && renderInput('collateralInformation', 'lotNumber', 'Lot Number')}
+              {isHomeLoan && renderInput('collateralInformation', 'blockNumber', 'Block Number')}
+              {isHomeLoan && renderInput('collateralInformation', 'tctCctNumber', 'TCT/CCT Number')}
+              {isHomeLoan && renderSelect('collateralInformation', 'propertyMarketabilityCategory', 'Marketability of the Property', ['Subdivision / Condominium (Class A,B,C)', 'Lowcost Subdivision / Condominium', 'Outside'])}
+              {isHomeLoan && renderSelect('collateralInformation', 'houseUnitModelCategory', 'House / Unit Model', ['Single detached', 'Single attached / Condominium', 'Townhouse', 'Row house'])}
+              {isHomeLoan && renderSelect('collateralInformation', 'collateralOccupancyType', 'Type of Collateral', ['Residential property used by borrower as primary residence', 'Residential property not used by borrower'])}
+              {isHomeLoan && renderFormattedNumberInput('collateralInformation', 'propertyAppraisedValue', 'Property Appraised Value')}
 
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <div className="flex items-center justify-between gap-3">
