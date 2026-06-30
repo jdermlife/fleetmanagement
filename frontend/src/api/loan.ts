@@ -49,8 +49,10 @@ export interface LoanApplicationRequirements {
   }
   contactInformation: {
     mobileNumber: string
+    mobileYearsUsed: string
     homePhoneNumber: string
     emailAddress: string
+    emailYearsUsed: string
   }
   governmentIds: {
     tin: string
@@ -71,6 +73,7 @@ export interface LoanApplicationRequirements {
     educationalAttainment: string
     numberOfVehiclesOwned: number
     recentPhotoUploaded: boolean
+    deviceVerified: boolean
   }
   employmentInformation: {
     employmentStatus: string
@@ -221,7 +224,9 @@ export interface LoanApplicationRequirements {
     sourceOfIncomeVerificationReferences: string
     lengthOfResidenceConfirmation: string
     utilityAccountReferences: string
+    digitalBankingUsage: string
     characterReferences: string
+    communityReputation: string
     professionalOrganizationMemberships: string
     professionalLicenses: string
     facebookProfile: string
@@ -254,6 +259,33 @@ export interface LoanApplicationRequirements {
     communityInvolvementInformation: string
     referencesFromEmployerOrCommunity: string
   }
+  fraudVerification: {
+    faceMatchScore: number
+    livenessDetection: string
+    incomeDocumentsStatus: string
+    employmentVerificationStatus: string
+    bankStatementVerificationStatus: string
+    payrollVerificationStatus: string
+    bankAccountOwnershipStatus: string
+  }
+  documentAnalysis: {
+    ocrAnalysisStatus: string
+  }
+  deviceRisk: {
+    deviceReputation: string
+    ipAddressRisk: string
+    deviceConsistency: string
+  }
+  fraudIntelligence: {
+    watchlistStatus: string
+    previousFraudRecords: string
+    applicationVelocity: string
+    fakeNationalId: boolean
+    forgedPayslip: boolean
+    forgedBankStatement: boolean
+    identityTheftIndicator: boolean
+    sanctionsPepMatch: boolean
+  }
   optionalPsychometricQuestionnaire: {
     question01: string
     question02: string
@@ -276,6 +308,7 @@ export interface LoanApplicationRequirements {
     question19: string
     question20: string
   }
+  psychometricAssessment: Record<string, string>
 }
 
 export interface CreditScoreRecord {

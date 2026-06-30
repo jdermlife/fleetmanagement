@@ -25,18 +25,23 @@ interface LoanDetails { amount: number; termMonths: number; interestRate: number
 interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
-interface ContactInformation { mobileNumber: string; homePhoneNumber: string; emailAddress: string; }
+interface ContactInformation { mobileNumber: string; mobileYearsUsed: string; homePhoneNumber: string; emailAddress: string; emailYearsUsed: string; }
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
-interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; }
+interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; deviceVerified: boolean; }
 interface EmploymentInformation { employmentStatus: string; employmentLocation: string; employerBusinessName: string; employerBusinessYears: number; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
 interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyMarketabilityCategory: string; houseUnitModelCategory: string; collateralOccupancyType: string; propertyAppraisedValue: number; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditPaymentHistory: string; creditCardRelationshipStatus: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; averageSavingsBalance: number; averageDailyBalance: number; depositRegularity: string; bankingRelationshipTier: string; accountHandling: string; utilityCreditBureauStatus: string; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
 interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
-interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; characterReferences: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; instagramProfile: string; xProfile: string; tikTokProfile: string; linkedInProfile: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
+interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; digitalBankingUsage: string; characterReferences: string; communityReputation: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; instagramProfile: string; xProfile: string; tikTokProfile: string; linkedInProfile: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
+interface FraudVerification { faceMatchScore: number; livenessDetection: string; incomeDocumentsStatus: string; employmentVerificationStatus: string; bankStatementVerificationStatus: string; payrollVerificationStatus: string; bankAccountOwnershipStatus: string; }
+interface DocumentAnalysis { ocrAnalysisStatus: string; }
+interface DeviceRisk { deviceReputation: string; ipAddressRisk: string; deviceConsistency: string; }
+interface FraudIntelligence { watchlistStatus: string; previousFraudRecords: string; applicationVelocity: string; fakeNationalId: boolean; forgedPayslip: boolean; forgedBankStatement: boolean; identityTheftIndicator: boolean; sanctionsPepMatch: boolean; }
 interface OptionalPsychometricQuestionnaire { question01: string; question02: string; question03: string; question04: string; question05: string; question06: string; question07: string; question08: string; question09: string; question10: string; question11: string; question12: string; question13: string; question14: string; question15: string; question16: string; question17: string; question18: string; question19: string; question20: string; }
+type PsychometricAssessment = Record<string, string>;
 interface DocumentItem { id: string; name: string; type: string; parsedData?: string; status: 'Pending' | 'Parsed' | 'Failed'; }
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
 interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; }
@@ -63,7 +68,12 @@ interface LoanApplication {
   signatures: Signatures;
   supportingDocuments: SupportingDocuments;
   enhancedDueDiligence: EnhancedDueDiligence;
+  fraudVerification: FraudVerification;
+  documentAnalysis: DocumentAnalysis;
+  deviceRisk: DeviceRisk;
+  fraudIntelligence: FraudIntelligence;
   optionalPsychometricQuestionnaire: OptionalPsychometricQuestionnaire;
+  psychometricAssessment: PsychometricAssessment;
   documents: DocumentItem[];
   committeeRemarks: string;
   routing: { creditOfficer: string; branchManager: string; creditCommittee: string; executiveApproval: boolean; };
@@ -158,10 +168,10 @@ const createNewApplicationInstance = (): LoanApplication => ({
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
   collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
-  contactInformation: { mobileNumber: '', homePhoneNumber: '', emailAddress: '' },
+  contactInformation: { mobileNumber: '', mobileYearsUsed: '', homePhoneNumber: '', emailAddress: '', emailYearsUsed: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
-  otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false },
+  otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false, deviceVerified: false },
   employmentInformation: { employmentStatus: '', employmentLocation: '', employerBusinessName: '', employerBusinessYears: 0, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
   collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyMarketabilityCategory: '', houseUnitModelCategory: '', collateralOccupancyType: '', propertyAppraisedValue: 0 },
   additionalCollaterals: [],
@@ -169,8 +179,13 @@ const createNewApplicationInstance = (): LoanApplication => ({
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
   supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
-  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', characterReferences: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', instagramProfile: '', xProfile: '', tikTokProfile: '', linkedInProfile: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
+  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', digitalBankingUsage: '', characterReferences: '', communityReputation: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', instagramProfile: '', xProfile: '', tikTokProfile: '', linkedInProfile: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
+  fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
+  documentAnalysis: { ocrAnalysisStatus: '' },
+  deviceRisk: { deviceReputation: '', ipAddressRisk: '', deviceConsistency: '' },
+  fraudIntelligence: { watchlistStatus: '', previousFraudRecords: '', applicationVelocity: '', fakeNationalId: false, forgedPayslip: false, forgedBankStatement: false, identityTheftIndicator: false, sanctionsPepMatch: false },
   optionalPsychometricQuestionnaire: { question01: '', question02: '', question03: '', question04: '', question05: '', question06: '', question07: '', question08: '', question09: '', question10: '', question11: '', question12: '', question13: '', question14: '', question15: '', question16: '', question17: '', question18: '', question19: '', question20: '' },
+  psychometricAssessment: createBlankPsychometricAssessment(),
   documents: [],
   committeeRemarks: '',
   routing: { creditOfficer: '', branchManager: '', creditCommittee: 'Pending', executiveApproval: false },
@@ -247,7 +262,12 @@ const buildLoanRequirements = (
     signatures: application.signatures,
     supportingDocuments: application.supportingDocuments,
     enhancedDueDiligence: application.enhancedDueDiligence,
+    fraudVerification: application.fraudVerification,
+    documentAnalysis: application.documentAnalysis,
+    deviceRisk: application.deviceRisk,
+    fraudIntelligence: application.fraudIntelligence,
     optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
+    psychometricAssessment: application.psychometricAssessment,
   };
 };
 
@@ -430,6 +450,113 @@ const psychometricResponseToPoints = (response: string) => {
   }
 };
 
+const psychometricAssessmentResponseToPoints = (response: string) => {
+  switch (response) {
+    case 'Strongly Agree':
+      return 4;
+    case 'Agree':
+      return 3;
+    case 'Neutral':
+      return 2;
+    case 'Disagree':
+      return 1;
+    case 'Strongly Disagree':
+      return 0;
+    default:
+      return 0;
+  }
+};
+
+const buildPsychometricAssessmentScores = (
+  assessment: PsychometricAssessment,
+  legacyQuestionnaire?: OptionalPsychometricQuestionnaire,
+) => {
+  const assessmentValues = psychometricAssessmentSections.flatMap((section) =>
+    section.questions.map((question) => psychometricAssessmentResponseToPoints(assessment[question.field] ?? '')),
+  );
+  const answeredAssessmentCount = assessmentValues.filter((value) => value > 0).length;
+
+  if (answeredAssessmentCount > 0) {
+    const sectionScores = psychometricAssessmentSections.map((section) => {
+      const rawScore = section.questions.reduce(
+        (sum, question) => sum + psychometricAssessmentResponseToPoints(assessment[question.field] ?? ''),
+        0,
+      );
+
+      return Math.round((rawScore / 20) * 100);
+    });
+
+    const groupedTraitScores = {
+      discipline: Math.round(averageScore([sectionScores[0], sectionScores[1], sectionScores[4]])),
+      planning: Math.round(averageScore([sectionScores[3], sectionScores[5]])),
+      responsibility: Math.round(averageScore([sectionScores[2], sectionScores[9]])),
+      honesty: Math.round(averageScore([sectionScores[6]])),
+      resilience: Math.round(averageScore([sectionScores[7], sectionScores[8]])),
+    };
+
+    return {
+      overallScore: Math.round(averageScore(sectionScores)),
+      traitScores: groupedTraitScores,
+      answers: { ...assessment },
+    };
+  }
+
+  const legacyAnswers = legacyQuestionnaire ?? {
+    question01: '', question02: '', question03: '', question04: '', question05: '',
+    question06: '', question07: '', question08: '', question09: '', question10: '',
+    question11: '', question12: '', question13: '', question14: '', question15: '',
+    question16: '', question17: '', question18: '', question19: '', question20: '',
+  };
+  const legacyValues = Object.values(legacyAnswers).map((response) => psychometricResponseToPoints(response));
+  const answeredLegacyCount = legacyValues.filter((value) => value > 0).length;
+
+  if (answeredLegacyCount === 0) {
+    return {
+      overallScore: null,
+      traitScores: {
+        discipline: null,
+        planning: null,
+        responsibility: null,
+        honesty: null,
+        resilience: null,
+      },
+      answers: { ...assessment },
+    };
+  }
+
+  const legacyTraitSlices = [
+    legacyValues.slice(0, 4),
+    legacyValues.slice(4, 8),
+    legacyValues.slice(8, 12),
+    legacyValues.slice(12, 16),
+    legacyValues.slice(16, 20),
+  ];
+  const legacyTraitScores = legacyTraitSlices.map((slice) => {
+    const valid = slice.filter((value) => value > 0);
+    if (valid.length === 0) {
+      return null;
+    }
+
+    return Math.round((averageScore(valid) / 5) * 100);
+  });
+
+  return {
+    overallScore: Math.round(
+      (legacyValues.filter((value) => value > 0).reduce((sum, value) => sum + value, 0) /
+        (answeredLegacyCount * 5)) *
+        100,
+    ),
+    traitScores: {
+      discipline: legacyTraitScores[0],
+      planning: legacyTraitScores[1],
+      responsibility: legacyTraitScores[2],
+      honesty: legacyTraitScores[3],
+      resilience: legacyTraitScores[4],
+    },
+    answers: { ...assessment, ...legacyAnswers },
+  };
+};
+
 const clampScore = (value: number, min = 0, max = 100) =>
   Math.max(min, Math.min(max, value));
 
@@ -491,11 +618,18 @@ const calculateQuantScoresSummary = (
     application.enhancedDueDiligence.communityInvolvementInformation,
     application.enhancedDueDiligence.referencesFromEmployerOrCommunity,
     application.enhancedDueDiligence.professionalOrganizationMemberships,
+    application.contactInformation.mobileYearsUsed,
+    application.contactInformation.emailYearsUsed,
+    application.enhancedDueDiligence.digitalBankingUsage,
+    application.enhancedDueDiligence.communityReputation,
   ].filter((value) => value.trim().length > 0).length;
 
   const socialScoreValue = Math.min(
     100,
-    socialSignals * 12 + (application.borrower.address ? 10 : 0),
+    socialSignals * 8 +
+      (application.borrower.address ? 10 : 0) +
+      (application.otherInformation.deviceVerified ? 10 : 0) +
+      (application.otherInformation.homeOwnership ? 8 : 0),
   );
   const bureauBase =
     520 +
@@ -507,17 +641,11 @@ const calculateQuantScoresSummary = (
     Math.min(850, Math.round(bureauBase)),
   );
 
-  const psychometricResponses = Object.values(application.optionalPsychometricQuestionnaire)
-    .map((response) => psychometricResponseToPoints(response))
-    .filter((score) => score > 0);
-  const psychometricScoreValue =
-    psychometricResponses.length > 0
-      ? Math.round(
-          (psychometricResponses.reduce((sum, score) => sum + score, 0) /
-            (psychometricResponses.length * 5)) *
-            100,
-        )
-      : null;
+  const psychometricAssessmentScores = buildPsychometricAssessmentScores(
+    application.psychometricAssessment,
+    application.optionalPsychometricQuestionnaire,
+  );
+  const psychometricScoreValue = psychometricAssessmentScores.overallScore;
 
   const aCreditScore =
     aiRecommendation.probability >= 85 && creditRiskInsights.riskScore < 35
@@ -560,25 +688,10 @@ const buildScorePayloadSections = (
     aiRecommendation,
     creditRiskInsights,
   );
-  const psychometricAnswers = application.optionalPsychometricQuestionnaire;
-  const psychometricResponseValues = Object.values(psychometricAnswers).map((response) =>
-    psychometricResponseToPoints(response),
+  const psychometricAssessmentScores = buildPsychometricAssessmentScores(
+    application.psychometricAssessment,
+    application.optionalPsychometricQuestionnaire,
   );
-  const traitSlices = [
-    psychometricResponseValues.slice(0, 4),
-    psychometricResponseValues.slice(4, 8),
-    psychometricResponseValues.slice(8, 12),
-    psychometricResponseValues.slice(12, 16),
-    psychometricResponseValues.slice(16, 20),
-  ];
-  const traitScores = traitSlices.map((slice) => {
-    const valid = slice.filter((value) => value > 0);
-    if (valid.length === 0) {
-      return null;
-    }
-
-    return Math.round((averageScore(valid) / 5) * 100);
-  });
 
   const identityScore = clampScore(
     (application.borrower.govId ? 35 : 0) +
@@ -747,13 +860,13 @@ const buildScorePayloadSections = (
     },
     psychometric_scores: {
       psychometric_risk_level: psychometricRiskLevel,
-      discipline_score: traitScores[0],
-      planning_score: traitScores[1],
-      responsibility_score: traitScores[2],
-      honesty_score: traitScores[3],
-      resilience_score: traitScores[4],
+      discipline_score: psychometricAssessmentScores.traitScores.discipline,
+      planning_score: psychometricAssessmentScores.traitScores.planning,
+      responsibility_score: psychometricAssessmentScores.traitScores.responsibility,
+      honesty_score: psychometricAssessmentScores.traitScores.honesty,
+      resilience_score: psychometricAssessmentScores.traitScores.resilience,
       overall_psychometric_score: quantSummary.psychometricScoreValue,
-      questionnaire_answers: { ...psychometricAnswers },
+      questionnaire_answers: { ...psychometricAssessmentScores.answers },
     },
     credit_bureau_reports: {
       bureau_name: 'Modeled Internal Bureau Proxy',
@@ -885,7 +998,9 @@ const hasRequiredEnhancedDueDiligence = (
   dueDiligence.sourceOfIncomeVerificationReferences.trim().length > 0 &&
   dueDiligence.lengthOfResidenceConfirmation.trim().length > 0 &&
   dueDiligence.utilityAccountReferences.trim().length > 0 &&
+  dueDiligence.digitalBankingUsage.trim().length > 0 &&
   dueDiligence.characterReferences.trim().length > 0 &&
+  dueDiligence.communityReputation.trim().length > 0 &&
   dueDiligence.professionalOrganizationMemberships.trim().length > 0 &&
   dueDiligence.professionalLicenses.trim().length > 0 &&
   dueDiligence.guarantorReferences.trim().length > 0 &&
@@ -917,32 +1032,6 @@ const hasRequiredAdditionalSupportingDocuments = (
   supportingDocuments.investmentStatements &&
   supportingDocuments.additionalSupportingDocuments;
 
-const psychometricQuestionnaireItems: Array<{
-  field: keyof OptionalPsychometricQuestionnaire;
-  question: string;
-}> = [
-  { field: 'question01', question: 'I create a plan before making a major financial decision.' },
-  { field: 'question02', question: 'I consistently pay obligations on or before their due dates.' },
-  { field: 'question03', question: 'I compare several options before borrowing money.' },
-  { field: 'question04', question: 'I set aside part of my income for savings or emergencies.' },
-  { field: 'question05', question: 'I avoid buying non-essential items when money is tight.' },
-  { field: 'question06', question: 'I stay calm and organized when facing financial pressure.' },
-  { field: 'question07', question: 'I prefer long-term financial stability over short-term spending.' },
-  { field: 'question08', question: 'I keep personal records such as bills, receipts, or payment schedules organized.' },
-  { field: 'question09', question: 'I ask questions and clarify terms before signing contracts.' },
-  { field: 'question10', question: 'I feel personally responsible for meeting every debt obligation I take on.' },
-  { field: 'question11', question: 'I usually follow through on commitments even when circumstances become difficult.' },
-  { field: 'question12', question: 'I review my income and expenses regularly.' },
-  { field: 'question13', question: 'I think ahead about how unexpected events could affect my finances.' },
-  { field: 'question14', question: 'I would rather delay a purchase than borrow beyond what I can comfortably repay.' },
-  { field: 'question15', question: 'People who know me would describe me as financially disciplined.' },
-  { field: 'question16', question: 'I am careful about sharing accurate information in financial applications.' },
-  { field: 'question17', question: 'I am comfortable seeking advice when I do not understand financial matters.' },
-  { field: 'question18', question: 'I prioritize household essentials before discretionary spending.' },
-  { field: 'question19', question: 'I can adjust my lifestyle if income temporarily declines.' },
-  { field: 'question20', question: 'I make financial decisions with my long-term goals in mind.' },
-];
-
 const psychometricResponseOptions = [
   'Strongly Disagree',
   'Disagree',
@@ -950,6 +1039,132 @@ const psychometricResponseOptions = [
   'Agree',
   'Strongly Agree',
 ];
+
+const psychometricAssessmentSections: Array<{
+  id: string;
+  title: string;
+  questions: Array<{ field: string; prompt: string }>;
+}> = [
+  {
+    id: 'A',
+    title: 'Financial Discipline',
+    questions: [
+      { field: 'q01', prompt: 'I prepare a monthly budget before spending my income.' },
+      { field: 'q02', prompt: 'I usually pay my bills before their due dates.' },
+      { field: 'q03', prompt: 'I regularly monitor my bank account balances.' },
+      { field: 'q04', prompt: 'I save part of my income every month.' },
+      { field: 'q05', prompt: 'I avoid buying things I cannot afford.' },
+    ],
+  },
+  {
+    id: 'B',
+    title: 'Savings Behavior',
+    questions: [
+      { field: 'q06', prompt: 'I maintain an emergency fund.' },
+      { field: 'q07', prompt: 'I save before making major purchases.' },
+      { field: 'q08', prompt: 'I can cover unexpected expenses without borrowing.' },
+      { field: 'q09', prompt: 'I have long-term financial goals.' },
+      { field: 'q10', prompt: 'I regularly review my savings progress.' },
+    ],
+  },
+  {
+    id: 'C',
+    title: 'Repayment Responsibility',
+    questions: [
+      { field: 'q11', prompt: 'I always try to repay my loans on time.' },
+      { field: 'q12', prompt: 'Keeping a good credit reputation is important to me.' },
+      { field: 'q13', prompt: 'I would rather reduce expenses than miss a loan payment.' },
+      { field: 'q14', prompt: 'I inform lenders early if I anticipate repayment difficulties.' },
+      { field: 'q15', prompt: 'I consider debt repayment a top financial priority.' },
+    ],
+  },
+  {
+    id: 'D',
+    title: 'Planning & Organization',
+    questions: [
+      { field: 'q16', prompt: 'I plan my finances at least six months ahead.' },
+      { field: 'q17', prompt: 'I think carefully before making major financial decisions.' },
+      { field: 'q18', prompt: 'I compare financing options before borrowing.' },
+      { field: 'q19', prompt: 'I consider future obligations before taking on new debt.' },
+      { field: 'q20', prompt: 'I keep important financial documents organized.' },
+    ],
+  },
+  {
+    id: 'E',
+    title: 'Self-Control & Impulse Management',
+    questions: [
+      { field: 'q21', prompt: 'I avoid impulse purchases.' },
+      { field: 'q22', prompt: 'I rarely buy something immediately without thinking.' },
+      { field: 'q23', prompt: 'I can delay gratification for long-term goals.' },
+      { field: 'q24', prompt: 'I resist pressure to spend beyond my budget.' },
+      { field: 'q25', prompt: 'I distinguish between wants and needs.' },
+    ],
+  },
+  {
+    id: 'F',
+    title: 'Risk Awareness',
+    questions: [
+      { field: 'q26', prompt: 'I understand the risks before borrowing money.' },
+      { field: 'q27', prompt: 'I read loan agreements carefully before signing.' },
+      { field: 'q28', prompt: 'I avoid taking financial risks I do not understand.' },
+      { field: 'q29', prompt: 'I consider worst-case scenarios before making financial commitments.' },
+      { field: 'q30', prompt: 'I prefer stable finances over risky opportunities.' },
+    ],
+  },
+  {
+    id: 'G',
+    title: 'Integrity & Consistency',
+    questions: [
+      { field: 'q31', prompt: 'I always provide accurate information in financial applications.' },
+      { field: 'q32', prompt: 'I would never hide important financial information from a lender.' },
+      { field: 'q33', prompt: 'I believe honesty is more important than getting a loan quickly.' },
+      { field: 'q34', prompt: 'I admit mistakes and try to correct them.' },
+      { field: 'q35', prompt: 'I believe financial commitments should always be honored.' },
+    ],
+  },
+  {
+    id: 'H',
+    title: 'Employment & Career Mindset',
+    questions: [
+      { field: 'q36', prompt: 'I continuously improve my professional skills.' },
+      { field: 'q37', prompt: 'I value long-term employment stability.' },
+      { field: 'q38', prompt: 'I actively plan my career growth.' },
+      { field: 'q39', prompt: 'I maintain good relationships with employers or clients.' },
+      { field: 'q40', prompt: 'I strive to maintain a reliable source of income.' },
+    ],
+  },
+  {
+    id: 'I',
+    title: 'Stress & Financial Resilience',
+    questions: [
+      { field: 'q41', prompt: 'I remain calm when facing financial challenges.' },
+      { field: 'q42', prompt: 'I look for practical solutions instead of avoiding financial problems.' },
+      { field: 'q43', prompt: 'I seek advice before making difficult financial decisions.' },
+      { field: 'q44', prompt: 'I believe I can recover from temporary financial setbacks.' },
+      { field: 'q45', prompt: 'I adjust my spending when my income changes.' },
+    ],
+  },
+  {
+    id: 'J',
+    title: 'Social Responsibility & Community Stability',
+    questions: [
+      { field: 'q46', prompt: 'I support my family within my financial means.' },
+      { field: 'q47', prompt: 'I fulfill my responsibilities to people who depend on me.' },
+      { field: 'q48', prompt: 'I value maintaining a good reputation in my community.' },
+      { field: 'q49', prompt: 'I avoid actions that could damage my financial credibility.' },
+      { field: 'q50', prompt: 'I believe financial responsibility is an important personal value.' },
+    ],
+  },
+];
+
+const createBlankPsychometricAssessment = (): PsychometricAssessment =>
+  psychometricAssessmentSections.reduce<PsychometricAssessment>((answers, section) => {
+    for (const question of section.questions) {
+      answers[question.field] = '';
+    }
+
+    return answers;
+  }, {});
 
 const mergeDefinedFields = <T extends object>(
   current: T,
@@ -1140,7 +1355,12 @@ export default function LendingScorecard() {
     | 'signatures'
     | 'supportingDocuments'
     | 'enhancedDueDiligence'
+    | 'fraudVerification'
+    | 'documentAnalysis'
+    | 'deviceRisk'
+    | 'fraudIntelligence'
     | 'optionalPsychometricQuestionnaire'
+    | 'psychometricAssessment'
     | 'disbursement'
     | 'finalChecklist';
   type FieldValue = string | number | boolean;
@@ -1162,7 +1382,12 @@ export default function LendingScorecard() {
     | Signatures
     | SupportingDocuments
     | EnhancedDueDiligence
+    | FraudVerification
+    | DocumentAnalysis
+    | DeviceRisk
+    | FraudIntelligence
     | OptionalPsychometricQuestionnaire
+    | PsychometricAssessment
     | Disbursement
     | FinalChecklist;
 
@@ -1556,9 +1781,29 @@ export default function LendingScorecard() {
               ? savedDueDiligence.socialMediaProfileLinks
               : blankApplication.enhancedDueDiligence.otherSocialMediaLinks,
       },
+      fraudVerification: {
+        ...blankApplication.fraudVerification,
+        ...(savedRequirements.fraudVerification ?? {}),
+      },
+      documentAnalysis: {
+        ...blankApplication.documentAnalysis,
+        ...(savedRequirements.documentAnalysis ?? {}),
+      },
+      deviceRisk: {
+        ...blankApplication.deviceRisk,
+        ...(savedRequirements.deviceRisk ?? {}),
+      },
+      fraudIntelligence: {
+        ...blankApplication.fraudIntelligence,
+        ...(savedRequirements.fraudIntelligence ?? {}),
+      },
       optionalPsychometricQuestionnaire: {
         ...blankApplication.optionalPsychometricQuestionnaire,
         ...savedRequirements.optionalPsychometricQuestionnaire,
+      },
+      psychometricAssessment: {
+        ...blankApplication.psychometricAssessment,
+        ...(savedRequirements.psychometricAssessment ?? {}),
       },
       committeeRemarks: record.committee_remarks,
       routing: {
@@ -2269,12 +2514,15 @@ export default function LendingScorecard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {usesStructuredRetailCriteria && renderSelect('employmentInformation', 'employmentLocation', 'Employment Location', ['Locally Employed', 'Not Locally Employed'])}
           {usesStructuredRetailCriteria && renderInput('employmentInformation', 'employerBusinessYears', 'Years in Business of Employer', 'number')}
+          {renderInput('contactInformation', 'mobileYearsUsed', 'Mobile Number Years in Use')}
+          {renderInput('contactInformation', 'emailYearsUsed', 'Email Address Years in Use')}
           {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
+          {renderCheckbox('otherInformation', 'deviceVerified', 'Device Verified / Registered')}
         </div>
       </div>
 
@@ -2287,6 +2535,7 @@ export default function LendingScorecard() {
           {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References (Optional)', 3)}
           {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
+          {renderSelect('enhancedDueDiligence', 'communityReputation', 'Community Reputation', ['Excellent references', 'Good references', 'Average', 'Limited information', 'Adverse information'])}
           {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
@@ -2305,6 +2554,7 @@ export default function LendingScorecard() {
       <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
         <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderSelect('enhancedDueDiligence', 'digitalBankingUsage', 'Digital Banking Usage', ['Frequent secure usage - Daily to weekly', 'Regular usage-Monthly', 'Occasional', 'Rare', 'None'])}
           {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
           {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
           {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
@@ -2318,31 +2568,45 @@ export default function LendingScorecard() {
 
       <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
         <div className="mb-3">
-          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Optional to Answer: 20-Question Psychometric Scoring Questionnaire</h5>
+          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Psychometric Assessment Model: 10 Sections / 50 Questions</h5>
           <p className="text-sm text-indigo-700/80">
-            This optional section helps profile planning, financial discipline, consistency, and repayment behavior.
+            This assessment now captures the full 10-section psychometric model used for backend scoring. Response scale: Strongly Agree = 4, Agree = 3, Neutral = 2, Disagree = 1, Strongly Disagree = 0.
           </p>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {psychometricQuestionnaireItems.map((item, index) => (
-            <div key={item.field} className="rounded-lg border border-indigo-100 bg-white p-3">
-              <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
-                {index + 1}. {item.question}
-              </label>
-              <select
-                value={String(getInputValue('optionalPsychometricQuestionnaire', item.field))}
-                onChange={(event) =>
-                  updateField('optionalPsychometricQuestionnaire', item.field, event.target.value)
-                }
-                className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                <option value="">Select...</option>
-                {psychometricResponseOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+        <div className="space-y-4">
+          {psychometricAssessmentSections.map((section) => (
+            <div key={section.id} className="rounded-lg border border-indigo-100 bg-white p-4">
+              <div className="mb-3">
+                <h6 className="font-semibold text-sm text-indigo-900">
+                  Section {section.id}: {section.title}
+                </h6>
+                <p className="text-xs text-slate-500">
+                  5 questions x 4 points = 20 maximum points for this section.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {section.questions.map((question, questionIndex) => (
+                  <div key={question.field} className="rounded-lg border border-indigo-100 bg-slate-50 p-3">
+                    <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+                      {questionIndex + 1}. {question.prompt}
+                    </label>
+                    <select
+                      value={String(getInputValue('psychometricAssessment', question.field))}
+                      onChange={(event) =>
+                        updateField('psychometricAssessment', question.field, event.target.value)
+                      }
+                      className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select...</option>
+                      {[...psychometricResponseOptions].reverse().map((option) => (
+                        <option key={option} value={option}>
+                          {option}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 ))}
-              </select>
+              </div>
             </div>
           ))}
         </div>
@@ -2354,6 +2618,66 @@ export default function LendingScorecard() {
           {renderCheckbox('enhancedDueDiligence', 'consentOpenBankingDataAccess', 'Consent for Open Banking Data Access')}
           {renderCheckbox('enhancedDueDiligence', 'consentEmploymentVerification', 'Consent for Employment Verification')}
           {renderCheckbox('enhancedDueDiligence', 'consentIdentityVerification', 'Consent for Identity Verification')}
+        </div>
+      </div>
+    </div>
+  );
+
+  const renderFraudVerificationSection = () => (
+    <div className="border-t pt-4 mt-4 space-y-6">
+      <div>
+        <h4 className="font-semibold text-sm text-gray-700 mb-2">Fraud Verification & Override Checks</h4>
+        <p className="text-sm text-slate-500">
+          These fields feed the FILSCORE fraud scoring engine directly and reduce reliance on backend fallback assumptions.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-rose-200 bg-rose-50 p-4">
+        <h5 className="font-semibold text-sm text-rose-800 mb-3">Identity Verification</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderInput('fraudVerification', 'faceMatchScore', 'Face Match Score (%)', 'number')}
+          {renderSelect('fraudVerification', 'livenessDetection', 'Liveness Detection', ['Passed', 'Manual review', 'Failed'])}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-rose-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Document Verification</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderSelect('fraudVerification', 'incomeDocumentsStatus', 'Income Documents', ['Verified', 'Minor discrepancies', 'Suspicious'])}
+          {renderSelect('fraudVerification', 'employmentVerificationStatus', 'Employment Verification', ['Verified', 'Partially verified', 'Cannot verify'])}
+          {renderSelect('fraudVerification', 'bankStatementVerificationStatus', 'Bank Statement Verification', ['Matches application', 'Minor variance', 'Significant inconsistency'])}
+          {renderSelect('documentAnalysis', 'ocrAnalysisStatus', 'OCR & AI Document Analysis', ['No signs of tampering', 'Minor anomalies', 'Suspected alteration'])}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-rose-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Financial & Banking Verification</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderSelect('fraudVerification', 'payrollVerificationStatus', 'Payroll Verification', ['Verified', 'Partial', 'None'])}
+          {renderSelect('fraudVerification', 'bankAccountOwnershipStatus', 'Bank Account Ownership', ['Verified', 'Manual verification', 'Failed'])}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-rose-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Device & Digital Risk</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderSelect('deviceRisk', 'deviceReputation', 'Device Reputation', ['Trusted', 'Unknown', 'Blacklisted'])}
+          {renderSelect('deviceRisk', 'ipAddressRisk', 'IP Address Risk', ['Normal', 'VPN/Proxy', 'High-risk'])}
+          {renderSelect('deviceRisk', 'deviceConsistency', 'Device Consistency', ['Same device', 'Multiple trusted devices', 'Multiple unknown devices'])}
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-rose-200 bg-white p-4">
+        <h5 className="font-semibold text-sm text-slate-700 mb-3">Fraud Intelligence & Hard Stops</h5>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {renderSelect('fraudIntelligence', 'watchlistStatus', 'Watchlist Screening', ['Clear', 'Manual review', 'Positive match'])}
+          {renderSelect('fraudIntelligence', 'previousFraudRecords', 'Previous Fraud Records', ['None', 'Minor alerts', 'Confirmed fraud'])}
+          {renderSelect('fraudIntelligence', 'applicationVelocity', 'Application Velocity', ['Normal', 'Multiple recent applications', 'Excessive activity'])}
+          {renderCheckbox('fraudIntelligence', 'fakeNationalId', 'Fake National ID')}
+          {renderCheckbox('fraudIntelligence', 'forgedPayslip', 'Forged Payslip')}
+          {renderCheckbox('fraudIntelligence', 'forgedBankStatement', 'Forged Bank Statement')}
+          {renderCheckbox('fraudIntelligence', 'identityTheftIndicator', 'Identity Theft Indicator')}
+          {renderCheckbox('fraudIntelligence', 'sanctionsPepMatch', 'Sanctions / PEP Match')}
         </div>
       </div>
     </div>
@@ -2968,6 +3292,7 @@ export default function LendingScorecard() {
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
               <div className="col-span-full">
                 {renderEnhancedDueDiligenceEmploymentSection()}
+                {renderFraudVerificationSection()}
               </div>
             </div>
           )}

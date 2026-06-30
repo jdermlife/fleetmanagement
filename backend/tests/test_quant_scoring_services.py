@@ -49,13 +49,13 @@ class QuantScoringServiceTests(unittest.TestCase):
         self.assertEqual(
             result["quant_scores"],
             {
-                "creditScore": 10,
-                "fraudScore": 76,
-                "socialScore": 72,
+                "creditScore": 7,
+                "fraudScore": 20,
+                "socialScore": 0,
                 "psychometricScore": 81,
                 "relationshipScore": 88,
                 "profitabilityScore": 79,
-                "overallScore": 53,
+                "overallScore": 36,
                 "finalGrade": "D",
                 "decision": "DECLINE",
             },
