@@ -2806,44 +2806,26 @@ export default function LendingScorecard() {
       note: 'Backend bureau-weighted composite',
     },
     {
-      label: 'Fraud Score',
-      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
-      note: 'Identity and anomaly screening',
-    },
-    {
       label: 'Social Score',
       value: displayedQuantSummary ? displayedQuantSummary.social_score.toString() : 'Pending',
       note: 'Community and digital footprint',
     },
     {
-      label: 'Psychometric Score',
+      label: 'Fraud Score',
+      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
+      note: 'Identity and anomaly screening',
+    },
+    {
+      label: 'Credit Value / Psychometric Score',
       value: displayedQuantSummary ? displayedQuantSummary.psychometric_score.toString() : 'Pending',
       note: 'Behavioral consistency index',
     },
     {
-      label: 'Relationship Score',
-      value: displayedQuantSummary ? displayedQuantSummary.relationship_score.toString() : 'Pending',
-      note: 'Existing banking depth and loyalty',
-    },
-    {
-      label: 'Profitability Score',
-      value: displayedQuantSummary ? displayedQuantSummary.profitability_score.toString() : 'Pending',
-      note: 'Expected booking economics',
-    },
-    {
-      label: 'Overall Score',
-      value: displayedQuantSummary ? displayedQuantSummary.overall_score.toString() : 'Pending',
-      note: 'Backend final weighted score',
-    },
-    {
-      label: 'Final Grade',
-      value: displayedQuantSummary ? displayedQuantSummary.final_grade : 'Pending',
-      note: 'Committee-grade output',
-    },
-    {
-      label: 'Decision',
-      value: displayedQuantSummary ? displayedQuantSummary.decision : 'Pending',
-      note: 'Automated backend decision',
+      label: 'Overall Enterprise Origination Profitability',
+      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
+      note: 'Projected enterprise origination return',
     },
   ];
   const capacityMetricItems = [
@@ -2975,7 +2957,7 @@ export default function LendingScorecard() {
         {/* Progress Stepper */}
         <div className="loan-stepper-shell bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
           <div className="loan-stepper-grid grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
-            {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'QuantScores', 'Approval', 'Release & Booking'].map((label, i) => (
+            {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'FILScore', 'Approval', 'Release & Booking'].map((label, i) => (
               <button
                 key={i}
                 onClick={() => void handleStepChange(i + 1)}
@@ -3689,7 +3671,7 @@ export default function LendingScorecard() {
                     <div className="mb-4 flex items-center justify-between gap-3">
                       <div>
                         <h4 className="m-0 text-sm font-semibold uppercase tracking-wide text-slate-700">
-                          QuantScores
+                          FILScore
                         </h4>
                         <p className="mt-1 text-xs text-slate-500">
                           Committee-ready top-line indicators
@@ -3706,20 +3688,24 @@ export default function LendingScorecard() {
 
                     {!displayedQuantSummary && (
                       <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-                        Backend score output will appear here after QuantScores computation or after loading a previously scored application.
+                        Backend score output will appear here after FILScore computation or after loading a previously scored application.
                       </div>
                     )}
 
                     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                       {executiveSummaryItems.map((item) => {
                         const valueTone =
-                          item.label === 'Origination Profitability' && item.value.includes('-')
+                          item.label === 'Overall Enterprise Origination Profitability' && item.value.includes('-')
                             ? 'text-rose-600'
-                            : item.label === 'Credit Bureau Score'
+                            : item.label === 'Credit Score'
                               ? 'text-blue-600'
-                              : item.label === 'A-Credit Score'
-                                ? 'text-emerald-600'
-                                : 'text-slate-800';
+                              : item.label === 'Social Score'
+                                ? 'text-cyan-700'
+                                : item.label === 'Fraud Score'
+                                  ? 'text-rose-700'
+                                  : item.label === 'Credit Value / Psychometric Score'
+                                    ? 'text-violet-700'
+                                    : 'text-emerald-700';
 
                         return (
                           <div
@@ -3729,8 +3715,8 @@ export default function LendingScorecard() {
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                               {item.label}
                             </p>
-                            <p className={`mt-3 text-4xl font-semibold leading-none ${valueTone}`}>
-                              {item.value}
+                            <p className={`mt-3 text-4xl font-bold leading-none ${valueTone}`}>
+                              <strong>{item.value}</strong>
                             </p>
                             <p className="mt-3 text-xs leading-4 text-slate-500">{item.note}</p>
                           </div>
