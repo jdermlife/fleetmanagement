@@ -83,7 +83,7 @@ const menuLinks: MenuLink[] = [
   { id: 'lending-scorecard', label: 'Lending Scorecard' },
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
   { id: 'insurance-management', label: 'Insurance Management' },
-  { id: 'credit-scoring', label: 'Collateral Management' },
+  { id: 'credit-scoring', label: 'Psychometric Scoring' },
   { id: 'subscriptions', label: 'Subscription Billing' },
 
   /* AI MENU */
