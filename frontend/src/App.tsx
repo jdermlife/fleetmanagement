@@ -265,7 +265,7 @@ const adminMenuItems = visibleMenuLinks.filter(
           {/* BRAND */}
           <div className="app-brand-block">
             <h2 className="app-brand-title">
-              CREDIT.WISER
+              FILSCORE
             </h2>
 
             <p className="app-brand-subtitle">
