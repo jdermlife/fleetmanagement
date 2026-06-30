@@ -80,9 +80,12 @@ class CreditScoringEngineTests(unittest.TestCase):
         result = compute_credit_score(build_payload("Home Loan"))
 
         self.assertEqual(result["capital_score"], 0.0)
-        self.assertEqual(result["collateral_score"], 25.0)
-        self.assertEqual(result["total_credit_score"], 91.0)
-        self.assertEqual(result["credit_grade"], "Platinum 2")
+        self.assertEqual(result["capacity_score"], 34.0)
+        self.assertEqual(result["character_score"], 15.0)
+        self.assertEqual(result["collateral_score"], 15.0)
+        self.assertEqual(result["conditions_score"], 14.0)
+        self.assertEqual(result["total_credit_score"], 78.0)
+        self.assertEqual(result["credit_grade"], "Gold 2")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Home Loan")
 
     def test_home_loan_prefers_structured_model_criteria_fields(self) -> None:
@@ -121,20 +124,23 @@ class CreditScoringEngineTests(unittest.TestCase):
 
         result = compute_credit_score(payload)
 
-        self.assertEqual(result["capacity_score"], 18.0)
-        self.assertEqual(result["character_score"], 25.0)
-        self.assertEqual(result["collateral_score"], 25.0)
-        self.assertEqual(result["conditions_score"], 25.0)
-        self.assertEqual(result["total_credit_score"], 93.0)
-        self.assertEqual(result["credit_grade"], "Platinum 2")
+        self.assertEqual(result["capacity_score"], 34.0)
+        self.assertEqual(result["character_score"], 15.0)
+        self.assertEqual(result["collateral_score"], 15.0)
+        self.assertEqual(result["conditions_score"], 15.0)
+        self.assertEqual(result["total_credit_score"], 79.0)
+        self.assertEqual(result["credit_grade"], "Gold 2")
 
     def test_auto_loan_uses_vehicle_scorecard(self) -> None:
         result = compute_credit_score(build_payload("Auto Loan"))
 
         self.assertEqual(result["capital_score"], 0.0)
-        self.assertEqual(result["collateral_score"], 23.0)
-        self.assertEqual(result["total_credit_score"], 89.0)
-        self.assertEqual(result["credit_grade"], "Platinum 2")
+        self.assertEqual(result["capacity_score"], 34.0)
+        self.assertEqual(result["character_score"], 15.0)
+        self.assertEqual(result["collateral_score"], 14.0)
+        self.assertEqual(result["conditions_score"], 14.0)
+        self.assertEqual(result["total_credit_score"], 77.0)
+        self.assertEqual(result["credit_grade"], "Gold 2")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Auto Loan")
 
     def test_auto_loan_prefers_structured_model_criteria_fields(self) -> None:
@@ -168,12 +174,12 @@ class CreditScoringEngineTests(unittest.TestCase):
 
         result = compute_credit_score(payload)
 
-        self.assertEqual(result["capacity_score"], 18.0)
-        self.assertEqual(result["character_score"], 25.0)
-        self.assertEqual(result["collateral_score"], 23.0)
-        self.assertEqual(result["conditions_score"], 25.0)
-        self.assertEqual(result["total_credit_score"], 91.0)
-        self.assertEqual(result["credit_grade"], "Platinum 2")
+        self.assertEqual(result["capacity_score"], 34.0)
+        self.assertEqual(result["character_score"], 15.0)
+        self.assertEqual(result["collateral_score"], 14.0)
+        self.assertEqual(result["conditions_score"], 15.0)
+        self.assertEqual(result["total_credit_score"], 78.0)
+        self.assertEqual(result["credit_grade"], "Gold 2")
 
     def test_credit_card_uses_relationship_limit_scorecard(self) -> None:
         result = compute_credit_score(
@@ -222,13 +228,32 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["total_credit_score"], 93.0)
         self.assertEqual(result["credit_grade"], "Platinum 2")
 
+    def test_credit_card_requested_limit_above_policy_max_scores_zero_for_limit_factor(self) -> None:
+        payload = build_payload(
+            "Credit Card",
+            loan_amount=250000.0,
+            appraised_value=0.0,
+        )
+        payload.requirements["productInformation"].update(
+            {
+                "policyMaximumCreditLimit": 200000.0,
+            }
+        )
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["capital_score"], 20.0)
+
     def test_personal_loan_uses_liquidity_and_secondary_income_scorecard(self) -> None:
         result = compute_credit_score(
             build_payload("Personal Loan", monthly_income=70000.0, other_income=15000.0, loan_amount=300000.0, appraised_value=0.0)
         )
 
+        self.assertEqual(result["capacity_score"], 19.0)
+        self.assertEqual(result["character_score"], 25.0)
         self.assertEqual(result["capital_score"], 19.0)
         self.assertEqual(result["collateral_score"], 0.0)
+        self.assertEqual(result["conditions_score"], 23.0)
         self.assertEqual(result["total_credit_score"], 86.0)
         self.assertEqual(result["credit_grade"], "Gold 1")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Personal Loan")

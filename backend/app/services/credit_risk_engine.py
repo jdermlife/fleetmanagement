@@ -112,9 +112,9 @@ def _compute_collateral_score(payload: Any) -> dict[str, float]:
         else:
             ltv_score = round((breakdown["value_score"] / 7.0) * 100.0, 2)
 
-        marketability_score = round((breakdown["marketability_score"] / 7.0) * 100.0, 2)
-        age_score = round((breakdown["age_score"] / 6.0) * 100.0, 2)
-        type_score = round((breakdown["type_score"] / 5.0) * 100.0, 2)
+        marketability_score = round((breakdown["marketability_score"] / 3.0) * 100.0, 2)
+        age_score = round((breakdown["age_score"] / 4.0) * 100.0, 2)
+        type_score = round((breakdown["type_score"] / 4.0) * 100.0, 2)
         asset_quality_score = round((age_score + type_score) / 2.0, 2)
 
         requirements = _requirements_section(payload, "collateralAssetDetails")

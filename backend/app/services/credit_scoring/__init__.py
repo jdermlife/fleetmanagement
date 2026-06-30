@@ -1,4 +1,9 @@
-from app.services.credit_scoring.auto_loan import score_auto_loan_collateral
+from app.services.credit_scoring.auto_loan import (
+    score_auto_loan_capacity,
+    score_auto_loan_character,
+    score_auto_loan_collateral,
+    score_auto_loan_condition,
+)
 from app.services.credit_scoring.common import (
     ADVERSE_KEYWORDS,
     GRADE_BANDS,
@@ -21,12 +26,25 @@ from app.services.credit_scoring.common import (
 )
 from app.services.credit_scoring.credit_card import (
     score_account_handling,
+    score_credit_card_capacity,
     score_credit_card_capital,
+    score_credit_card_character,
+    score_credit_card_condition,
     score_credit_payment_history,
     score_utility_credit_bureau_status,
 )
-from app.services.credit_scoring.home_loan import score_home_loan_collateral
-from app.services.credit_scoring.personal_loan import score_personal_loan_capital
+from app.services.credit_scoring.home_loan import (
+    score_home_loan_capacity,
+    score_home_loan_character,
+    score_home_loan_collateral,
+    score_home_loan_condition,
+)
+from app.services.credit_scoring.personal_loan import (
+    score_personal_loan_capacity,
+    score_personal_loan_capital,
+    score_personal_loan_character,
+    score_personal_loan_condition,
+)
 
 __all__ = [
     "ADVERSE_KEYWORDS",
@@ -44,13 +62,25 @@ __all__ = [
     "requirements_section",
     "safe_text",
     "score_account_handling",
+    "score_auto_loan_capacity",
+    "score_auto_loan_character",
     "score_auto_loan_collateral",
+    "score_auto_loan_condition",
+    "score_credit_card_capacity",
     "score_credit_card_capital",
+    "score_credit_card_character",
+    "score_credit_card_condition",
     "score_credit_payment_history",
     "score_from_descending",
     "score_from_keyword",
+    "score_home_loan_capacity",
+    "score_home_loan_character",
     "score_home_loan_collateral",
+    "score_home_loan_condition",
+    "score_personal_loan_capacity",
     "score_personal_loan_capital",
+    "score_personal_loan_character",
+    "score_personal_loan_condition",
     "score_utility_credit_bureau_status",
     "to_float",
     "years_since",

@@ -12,13 +12,25 @@ from app.services.credit_scoring import (
     parse_years,
     requirements_section,
     score_account_handling,
+    score_auto_loan_capacity,
+    score_auto_loan_character,
     safe_text,
     score_auto_loan_collateral,
+    score_credit_card_capacity,
     score_credit_card_capital,
+    score_credit_card_character,
+    score_credit_card_condition,
     score_credit_payment_history,
+    score_home_loan_capacity,
+    score_home_loan_character,
     score_from_descending,
+    score_auto_loan_condition,
+    score_home_loan_condition,
     score_home_loan_collateral,
+    score_personal_loan_capacity,
     score_personal_loan_capital,
+    score_personal_loan_character,
+    score_personal_loan_condition,
     score_utility_credit_bureau_status,
     to_float,
     years_since,
@@ -227,9 +239,28 @@ def _score_product_specific_sections(payload: Any, product_type: str) -> tuple[f
 
 def compute_credit_score(payload: Any) -> dict[str, float | str]:
     product_type = normalize_product_type(payload)
-    capacity_score = _score_capacity(payload)
-    character_score = _score_character(payload)
-    conditions_score = _score_condition(payload)
+
+    if product_type == "Home Loan":
+        capacity_score = score_home_loan_capacity(payload)
+        character_score = score_home_loan_character(payload)
+        conditions_score = score_home_loan_condition(payload)
+    elif product_type == "Auto Loan":
+        capacity_score = score_auto_loan_capacity(payload)
+        character_score = score_auto_loan_character(payload)
+        conditions_score = score_auto_loan_condition(payload)
+    elif product_type == "Credit Card":
+        capacity_score = score_credit_card_capacity(payload)
+        character_score = score_credit_card_character(payload)
+        conditions_score = score_credit_card_condition(payload)
+    elif product_type == "Personal Loan":
+        capacity_score = score_personal_loan_capacity(payload)
+        character_score = score_personal_loan_character(payload)
+        conditions_score = score_personal_loan_condition(payload)
+    else:
+        capacity_score = _score_capacity(payload)
+        character_score = _score_character(payload)
+        conditions_score = _score_condition(payload)
+
     capital_score, collateral_score = _score_product_specific_sections(payload, product_type)
 
     scorecard_total = round(
