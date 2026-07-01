@@ -343,7 +343,7 @@ const adminMenuItems = visibleMenuLinks.filter(
       width: '340px',
       maxHeight: '80vh',
       overflowY: 'auto',
-      background: '#0f172a',
+      background: 'var(--app-menu-panel-bg)',
       borderRadius: '14px',
       padding: '14px',
       display: 'flex',
@@ -353,15 +353,14 @@ const adminMenuItems = visibleMenuLinks.filter(
       zIndex: 99999,
     }}
   >
-
     {/* OPERATIONS */}
 
     <div
       onClick={() => setFleetOpen(!fleetOpen)}
       className="app-menu-group app-menu-group-fleet"
       style={{
-        background: '#1e293b',
-        color: '#fff',
+        background: 'var(--app-menu-group-fleet-bg)',
+        color: 'var(--app-menu-group-fleet-text)',
         padding: '12px',
         borderRadius: '8px',
         cursor: 'pointer',
@@ -380,11 +379,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-fleet"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--app-menu-link-bg)',
           }}
         >
           {page.label}
@@ -397,8 +396,8 @@ const adminMenuItems = visibleMenuLinks.filter(
       onClick={() => setAiOpen(!aiOpen)}
       className="app-menu-group app-menu-group-ai"
       style={{
-        background: '#083344',
-        color: '#67e8f9',
+        background: 'var(--app-menu-group-ai-bg)',
+        color: 'var(--app-menu-group-ai-text)',
         padding: '12px',
         borderRadius: '8px',
         cursor: 'pointer',
@@ -418,12 +417,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-ai"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background:
-              'linear-gradient(135deg,#0f766e,#0891b2)',
+            background: 'var(--app-menu-link-ai-bg)',
           }}
         >
           🤖 {page.label}
@@ -435,8 +433,8 @@ const adminMenuItems = visibleMenuLinks.filter(
         <div
           className="app-menu-group app-menu-group-account"
           style={{
-            background: '#3f1d5c',
-            color: '#f5e8ff',
+            background: 'var(--app-menu-group-admin-bg)',
+            color: 'var(--app-menu-group-admin-text)',
             padding: '12px',
             borderRadius: '8px',
             fontWeight: 'bold',
@@ -453,11 +451,11 @@ const adminMenuItems = visibleMenuLinks.filter(
             className="app-menu-link app-menu-link-account"
             style={{
               display: 'block',
-              color: '#fff',
+              color: 'var(--app-menu-link-text)',
               textDecoration: 'none',
               padding: '12px',
               borderRadius: '8px',
-              background: 'rgba(120, 76, 153, 0.35)',
+              background: 'var(--app-menu-link-admin-bg)',
             }}
           >
             {page.label}
@@ -472,8 +470,8 @@ const adminMenuItems = visibleMenuLinks.filter(
       onClick={() => setGovOpen(!govOpen)}
       className="app-menu-group app-menu-group-governance"
       style={{
-        background: '#7c2d12',
-        color: '#fed7aa',
+        background: 'var(--app-menu-group-governance-bg)',
+        color: 'var(--app-menu-group-governance-text)',
         padding: '12px',
         borderRadius: '8px',
         cursor: 'pointer',
@@ -493,12 +491,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-governance"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background:
-              'linear-gradient(135deg,#92400e,#b45309)',
+            background: 'var(--app-menu-link-governance-bg)',
           }}
         >
           🛡 {page.label}
@@ -508,8 +505,8 @@ const adminMenuItems = visibleMenuLinks.filter(
     <div
       className="app-menu-group app-menu-group-account"
       style={{
-        background: '#1f2937',
-        color: '#e2e8f0',
+        background: 'var(--app-menu-group-account-bg)',
+        color: 'var(--app-menu-group-account-text)',
         padding: '12px',
         borderRadius: '8px',
         fontWeight: 'bold',
@@ -527,11 +524,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-account"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--app-menu-link-bg)',
           }}
         >
           Account Settings
@@ -545,11 +542,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-account"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--app-menu-link-bg)',
             border: 'none',
             textAlign: 'left',
           }}
@@ -565,11 +562,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-account"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--app-menu-link-bg)',
           }}
         >
           Sign In
@@ -580,11 +577,11 @@ const adminMenuItems = visibleMenuLinks.filter(
           className="app-menu-link app-menu-link-account"
           style={{
             display: 'block',
-            color: '#fff',
+            color: 'var(--app-menu-link-text)',
             textDecoration: 'none',
             padding: '12px',
             borderRadius: '8px',
-            background: 'rgba(255,255,255,0.05)',
+            background: 'var(--app-menu-link-bg)',
           }}
         >
           Create Account
@@ -597,11 +594,11 @@ const adminMenuItems = visibleMenuLinks.filter(
       className="app-menu-link app-menu-link-account"
       style={{
         display: 'block',
-        color: '#fff',
+        color: 'var(--app-menu-link-text)',
         textDecoration: 'none',
         padding: '12px',
         borderRadius: '8px',
-        background: 'rgba(255,255,255,0.05)',
+        background: 'var(--app-menu-link-bg)',
       }}
     >
       Privacy Disclosures
@@ -612,11 +609,11 @@ const adminMenuItems = visibleMenuLinks.filter(
       className="app-menu-link app-menu-link-account"
       style={{
         display: 'block',
-        color: '#fff',
+        color: 'var(--app-menu-link-text)',
         textDecoration: 'none',
         padding: '12px',
         borderRadius: '8px',
-        background: 'rgba(255,255,255,0.05)',
+        background: 'var(--app-menu-link-bg)',
       }}
     >
       Terms & Consent

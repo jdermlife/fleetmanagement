@@ -8,6 +8,70 @@
   --text: #333333;
   --danger: #b42318;
   --success: #0f766e;
+  --app-menu-panel-bg: #0f172a;
+  --app-auth-dropdown-bg: #7a5607;
+  --app-menu-group-fleet-bg: #1e293b;
+  --app-menu-group-fleet-text: #ffffff;
+  --app-menu-group-ai-bg: #083344;
+  --app-menu-group-ai-text: #67e8f9;
+  --app-menu-group-admin-bg: #3f1d5c;
+  --app-menu-group-admin-text: #f5e8ff;
+  --app-menu-group-governance-bg: #7c2d12;
+  --app-menu-group-governance-text: #fed7aa;
+  --app-menu-group-account-bg: #1f2937;
+  --app-menu-group-account-text: #e2e8f0;
+  --app-menu-link-bg: rgba(255, 255, 255, 0.05);
+  --app-menu-link-text: #ffffff;
+  --app-menu-link-ai-bg: linear-gradient(135deg, #0f766e, #0891b2);
+  --app-menu-link-admin-bg: rgba(120, 76, 153, 0.35);
+  --app-menu-link-governance-bg: linear-gradient(135deg, #92400e, #b45309);
+  --app-theme-panel-bg: rgba(255, 255, 255, 0.06);
+  --app-theme-panel-border: rgba(255, 255, 255, 0.12);
+  --app-theme-panel-text: #f8fafc;
+  --app-theme-panel-muted: rgba(248, 250, 252, 0.72);
+  --app-theme-button-bg: rgba(255, 255, 255, 0.08);
+  --app-theme-button-text: #ffffff;
+  --app-theme-button-border: rgba(255, 255, 255, 0.14);
+  --app-theme-button-active-bg: #ffd700;
+  --app-theme-button-active-text: #1f2937;
+}
+
+:root[data-theme='civic'] {
+  --primary-gold: #ffd43b;
+  --secondary-gold: #f59e0b;
+  --dark-gold: #c81e1e;
+  --light-gold: #fff7cc;
+  --background: #ffffff;
+  --panel: #fffdf5;
+  --text: #12304f;
+  --danger: #c81e1e;
+  --success: #1d4ed8;
+  --app-menu-panel-bg: #11355e;
+  --app-auth-dropdown-bg: #b91c1c;
+  --app-menu-group-fleet-bg: #1d4ed8;
+  --app-menu-group-fleet-text: #ffffff;
+  --app-menu-group-ai-bg: #0f3d91;
+  --app-menu-group-ai-text: #fef08a;
+  --app-menu-group-admin-bg: #b91c1c;
+  --app-menu-group-admin-text: #fff7cc;
+  --app-menu-group-governance-bg: #facc15;
+  --app-menu-group-governance-text: #102a43;
+  --app-menu-group-account-bg: #ffffff;
+  --app-menu-group-account-text: #12304f;
+  --app-menu-link-bg: rgba(255, 255, 255, 0.14);
+  --app-menu-link-text: #ffffff;
+  --app-menu-link-ai-bg: linear-gradient(135deg, #2563eb, #dc2626);
+  --app-menu-link-admin-bg: rgba(255, 243, 199, 0.2);
+  --app-menu-link-governance-bg: linear-gradient(135deg, #facc15, #f59e0b);
+  --app-theme-panel-bg: rgba(255, 255, 255, 0.1);
+  --app-theme-panel-border: rgba(255, 255, 255, 0.18);
+  --app-theme-panel-text: #ffffff;
+  --app-theme-panel-muted: rgba(255, 255, 255, 0.78);
+  --app-theme-button-bg: rgba(255, 255, 255, 0.12);
+  --app-theme-button-text: #ffffff;
+  --app-theme-button-border: rgba(255, 255, 255, 0.18);
+  --app-theme-button-active-bg: #ffffff;
+  --app-theme-button-active-text: #12304f;
 }
 
 * {
@@ -25,6 +89,7 @@ body {
   margin: 0;
   padding: 0;
   line-height: 1.6;
+  transition: background-color 0.25s ease, color 0.25s ease;
 }
 
 #root {
@@ -225,7 +290,7 @@ textarea {
   padding: 10px;
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.24);
-  background: #7a5607;
+  background: var(--app-auth-dropdown-bg);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.25);
   z-index: 100000;
 }
@@ -305,6 +370,57 @@ textarea {
 
 .app-menu-panel {
   border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.app-theme-panel {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 10px;
+  background: var(--app-theme-panel-bg);
+  border: 1px solid var(--app-theme-panel-border);
+}
+
+.app-theme-copy {
+  display: grid;
+  gap: 2px;
+  color: var(--app-theme-panel-text);
+}
+
+.app-theme-kicker {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--app-theme-panel-muted);
+}
+
+.app-theme-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.app-theme-button {
+  min-height: 42px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid var(--app-theme-button-border);
+  background: var(--app-theme-button-bg);
+  color: var(--app-theme-button-text);
+  font-size: 0.8rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.app-theme-button:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.app-theme-button-active {
+  background: var(--app-theme-button-active-bg);
+  color: var(--app-theme-button-active-text);
+  border-color: transparent;
 }
 
 .app-menu-group {
@@ -599,6 +715,28 @@ textarea {
   font-size: 0.84rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.loan-save-action {
+  border-radius: 8px;
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.loan-save-action-idle {
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+  color: #475569;
+}
+
+.loan-save-action-idle:hover {
+  background: #e2e8f0;
+  color: #1f2937;
+}
+
+.loan-save-action-processing {
+  background: #f59e0b;
+  border: 1px solid #d97706;
+  color: #ffffff;
 }
 
 @media (max-width: 900px) {

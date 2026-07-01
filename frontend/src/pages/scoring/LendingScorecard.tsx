@@ -2739,7 +2739,7 @@ export default function LendingScorecard() {
   ];
   const advancedSignalItems = [
     {
-      label: 'Fraud Score',
+      label: 'Non-Starter Score',
       value: creditRiskInsights.fraudScore.toFixed(0),
       tone:
         creditRiskInsights.fraudScore >= 70
@@ -2808,7 +2808,7 @@ export default function LendingScorecard() {
     {
       label: 'Credit Score',
       value: displayedQuantSummary ? displayedQuantSummary.credit_score.toString() : 'Pending',
-      note: 'Backend bureau-weighted composite',
+      note: 'Bureau-weighted composite result',
     },
     {
       label: 'Social Score',
@@ -2816,7 +2816,7 @@ export default function LendingScorecard() {
       note: 'Community and digital footprint',
     },
     {
-      label: 'Fraud Score',
+      label: 'Fraud / Non-Starter Score',
       value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
       note: 'Identity and anomaly screening',
     },
@@ -2824,13 +2824,6 @@ export default function LendingScorecard() {
       label: 'Credit Value / Psychometric Score',
       value: displayedQuantSummary ? displayedQuantSummary.psychometric_score.toString() : 'Pending',
       note: 'Behavioral consistency index',
-    },
-    {
-      label: 'Overall Enterprise Origination Profitability',
-      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-      note: 'Projected enterprise origination return',
     },
   ];
   const capacityMetricItems = [
@@ -3177,16 +3170,16 @@ export default function LendingScorecard() {
                       <button
                         onClick={() => void handleFinalizeDocumentReview('Draft')}
                         disabled={isSaving}
-                        className="loan-inline-button loan-inline-button-secondary px-4 py-2 bg-slate-600 hover:bg-slate-500 rounded text-sm font-medium transition disabled:opacity-50"
+                        className={`loan-inline-button px-4 py-2 rounded text-sm font-medium transition disabled:opacity-50 loan-save-action ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
                       >
-                        Apply, Save as Draft
+                        {isSaving ? 'Processing Draft...' : 'Apply, Save as Draft'}
                       </button>
                       <button
                         onClick={() => void handleFinalizeDocumentReview('Credit Review')}
                         disabled={isSaving}
-                        className="loan-inline-button loan-inline-button-accent px-4 py-2 bg-indigo-600 hover:bg-indigo-500 rounded text-sm font-semibold transition disabled:opacity-50"
+                        className={`loan-inline-button px-4 py-2 rounded text-sm font-semibold transition disabled:opacity-50 ${isSaving ? 'loan-save-action loan-save-action-processing' : 'loan-inline-button-accent bg-indigo-600 hover:bg-indigo-500'}`}
                       >
-                        Apply, Save for Review
+                        {isSaving ? 'Processing Review...' : 'Apply, Save for Review'}
                       </button>
                       <button
                         onClick={() => {
@@ -3698,7 +3691,7 @@ export default function LendingScorecard() {
                           FILScore
                         </h4>
                         <p className="mt-1 text-xs text-slate-500">
-                          Committee-ready top-line indicators
+                          Top-line scorecard indicators
                         </p>
                       </div>
                       <span className="inline-flex items-center rounded-full bg-emerald-50 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-emerald-700">
@@ -3716,33 +3709,20 @@ export default function LendingScorecard() {
                       </div>
                     )}
 
-                    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
                       {executiveSummaryItems.map((item) => {
-                        const valueTone =
-                          item.label === 'Overall Enterprise Origination Profitability' && item.value.includes('-')
-                            ? 'text-rose-600'
-                            : item.label === 'Credit Score'
-                              ? 'text-blue-600'
-                              : item.label === 'Social Score'
-                                ? 'text-cyan-700'
-                                : item.label === 'Fraud Score'
-                                  ? 'text-rose-700'
-                                  : item.label === 'Credit Value / Psychometric Score'
-                                    ? 'text-violet-700'
-                                    : 'text-emerald-700';
-
                         return (
                           <div
                             key={item.label}
-                            className="rounded-xl border border-slate-200 bg-white px-4 py-3 shadow-sm"
+                            className="rounded-2xl border border-amber-200 bg-gradient-to-br from-amber-50 via-yellow-50 to-white px-4 py-4 shadow-sm"
                           >
-                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <p className="text-sm font-medium text-slate-700">
                               {item.label}
                             </p>
-                            <p className={`mt-3 text-4xl font-bold leading-none ${valueTone}`}>
+                            <p className="mt-4 text-4xl font-bold leading-none text-slate-900">
                               <strong>{item.value}</strong>
                             </p>
-                            <p className="mt-3 text-xs leading-4 text-slate-500">{item.note}</p>
+                            <p className="mt-3 text-xs leading-5 text-slate-600">{item.note}</p>
                           </div>
                         );
                       })}
@@ -4196,7 +4176,13 @@ export default function LendingScorecard() {
               ← Back
             </button>
             <div className="flex gap-3">
-              <button onClick={handleSaveDraft} disabled={isSaving} className="loan-footer-link inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide text-gray-600 transition hover:text-gray-800 disabled:opacity-50">Save Draft</button>
+              <button
+                onClick={handleSaveDraft}
+                disabled={isSaving}
+                className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
+              >
+                {isSaving ? 'Processing Draft...' : 'Save Draft'}
+              </button>
               <button onClick={() => void handleStepChange(Math.min(step + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
                 Next Step →
               </button>

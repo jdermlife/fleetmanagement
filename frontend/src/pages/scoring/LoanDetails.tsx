@@ -232,7 +232,7 @@ export default function LoanDetails() {
             </div>
 
             <div className="rounded border bg-rose-50 p-4">
-              <div className="text-xs uppercase tracking-wide text-rose-500">Fraud Score</div>
+              <div className="text-xs uppercase tracking-wide text-rose-500">Non-Starter Score</div>
               <div className="mt-1 text-2xl font-bold text-rose-700">
                 {formatScore(loan.fraud_scores?.overall_fraud_score)}
               </div>

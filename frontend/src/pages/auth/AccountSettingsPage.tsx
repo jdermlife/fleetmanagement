@@ -14,6 +14,15 @@ import {
   type SubscriptionPlan,
 } from '../../api'
 
+type ThemeId = 'classic' | 'civic'
+
+const THEME_STORAGE_KEY = 'fms:theme'
+
+const themeOptions: Array<{ id: ThemeId; label: string; description: string }> = [
+  { id: 'classic', label: 'Classic', description: 'Current gold-based FILSCORE look.' },
+  { id: 'civic', label: 'Blue/Red/Yellow/White', description: 'Brighter blue, red, yellow, and white palette.' },
+]
+
 export default function AccountSettingsPage() {
   const navigate = useNavigate()
   const [user, setUser] = useState<LoginResponse['user'] | null>(null)
@@ -31,6 +40,14 @@ export default function AccountSettingsPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('')
   const [subscriptionMessage, setSubscriptionMessage] = useState('')
+  const [theme, setTheme] = useState<ThemeId>(() => {
+    if (typeof window === 'undefined') {
+      return 'classic'
+    }
+
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+    return savedTheme === 'civic' ? 'civic' : 'classic'
+  })
 
   useEffect(() => {
     const token = getAuthToken()
@@ -59,6 +76,11 @@ export default function AccountSettingsPage() {
 
     void loadCurrentUser()
   }, [])
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme
+    window.localStorage.setItem(THEME_STORAGE_KEY, theme)
+  }, [theme])
 
   const handleLogout = async () => {
     await logout()
@@ -267,6 +289,32 @@ export default function AccountSettingsPage() {
         </div>
 
         {subscriptionMessage ? <p className="status-message">{subscriptionMessage}</p> : null}
+      </div>
+
+      <div className="card auth-helper-card">
+        <h3>Theme Settings</h3>
+        <p className="intro">
+          Choose which color look the app should use.
+        </p>
+        <div className="app-theme-grid">
+          {themeOptions.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              className={`app-theme-button${theme === option.id ? ' app-theme-button-active' : ''}`}
+              onClick={() => setTheme(option.id)}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+        <p className="status-message">
+          Active theme:{' '}
+          <strong>{themeOptions.find((option) => option.id === theme)?.label ?? 'Classic'}</strong>
+        </p>
+        <p className="status-message">
+          {themeOptions.find((option) => option.id === theme)?.description}
+        </p>
       </div>
 
       <form className="card auth-panel" onSubmit={handlePasswordChange}>
