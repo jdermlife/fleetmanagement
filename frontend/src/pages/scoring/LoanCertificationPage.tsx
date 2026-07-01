@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { fetchLoanApplication, type LoanApplicationRecord } from '../../api/loan'
 import { getErrorMessage } from '../../api'
+import { calculateCompositeInternalScore, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
   applicationNo: string
@@ -44,7 +45,12 @@ const buildCertificationSnapshot = (
     applicationNo,
     borrowerName: record.borrower_name?.trim() || 'Unnamed Borrower',
     issuedAt: new Date().toISOString(),
-    overallScore: record.overall_scores?.final_score ?? null,
+    overallScore: calculateCompositeInternalScore({
+      creditScore: record.overall_scores?.credit_score ?? null,
+      creditValueScore: record.overall_scores?.psychometric_score ?? null,
+      socialScore: record.overall_scores?.social_score ?? null,
+      nonStarterScore: record.overall_scores?.fraud_score ?? null,
+    }),
     label: finalGrade,
     decision: finalDecision,
     creditScore: record.overall_scores?.credit_score ?? null,
@@ -55,7 +61,10 @@ const buildCertificationSnapshot = (
   }
 }
 
-const formatScore = (value: number | null) => (typeof value === 'number' ? value.toFixed(0) : 'Pending')
+const formatScore = (value: number | null) => {
+  const scaledScore = toFilscore(value)
+  return typeof scaledScore === 'number' ? scaledScore.toFixed(0) : 'Pending'
+}
 
 export default function LoanCertificationPage() {
   const navigate = useNavigate()
@@ -285,7 +294,7 @@ export default function LoanCertificationPage() {
       </div>
       <div class="summary">
         <div class="summary-card">
-          <div class="summary-label">Final Score</div>
+          <div class="summary-label">Composite Score</div>
           <div class="summary-value">${formatScore(certification.overallScore)}</div>
         </div>
         <div class="summary-card">
@@ -299,7 +308,7 @@ export default function LoanCertificationPage() {
       </div>
       <div class="metrics">
         <div class="metric"><div class="metric-label">Credit Score</div><div class="metric-value">${formatScore(certification.creditScore)}</div></div>
-        <div class="metric"><div class="metric-label">Fraud / Non-Starter</div><div class="metric-value">${formatScore(certification.fraudScore)}</div></div>
+        <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-value">${formatScore(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
       </div>
@@ -402,7 +411,7 @@ export default function LoanCertificationPage() {
 
             <div className="loan-certification-summary-grid">
               <div className="loan-certification-summary-card">
-                <span className="loan-certification-summary-label">Final Score</span>
+                <span className="loan-certification-summary-label">Composite Score</span>
                 <strong className="loan-certification-summary-value">
                   {formatScore(certification.overallScore)}
                 </strong>
@@ -424,7 +433,7 @@ export default function LoanCertificationPage() {
             <div className="loan-certification-metrics-grid">
               {[
                 { label: 'Credit Score', value: formatScore(certification.creditScore) },
-                { label: 'Fraud / Non-Starter', value: formatScore(certification.fraudScore) },
+                { label: 'Non-Starter Score', value: formatScore(certification.fraudScore) },
                 { label: 'Social Score', value: formatScore(certification.socialScore) },
                 { label: 'Credit Value', value: formatScore(certification.creditValueScore) },
               ].map((item) => (

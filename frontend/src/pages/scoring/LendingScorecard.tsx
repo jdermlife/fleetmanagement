@@ -15,6 +15,7 @@ import {
   type ProductType,
   type WorkflowStatus,
 } from '../../api/loan';
+import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
@@ -2723,6 +2724,14 @@ export default function LendingScorecard() {
     { label: 'Release', value: 'Released' },
   ];
   const displayedQuantSummary = backendQuantSummary;
+  const compositeInternalScore = displayedQuantSummary
+    ? calculateCompositeInternalScore({
+        creditScore: displayedQuantSummary.credit_score,
+        creditValueScore: displayedQuantSummary.psychometric_score,
+        socialScore: displayedQuantSummary.social_score,
+        nonStarterScore: displayedQuantSummary.fraud_score,
+      })
+    : null;
   const borrowerDisplayName =
     formData.borrower.fullName.trim() ||
     [
@@ -2751,7 +2760,7 @@ export default function LendingScorecard() {
           applicationNo: formData.id,
           borrowerName: borrowerDisplayName,
           issuedAt: new Date().toISOString(),
-          overallScore: displayedQuantSummary.overall_score,
+          overallScore: compositeInternalScore,
           label: displayedQuantSummary.final_grade,
           decision: displayedQuantSummary.decision,
           creditScore: displayedQuantSummary.credit_score,
@@ -2767,22 +2776,41 @@ export default function LendingScorecard() {
   const executiveSummaryItems = [
     {
       label: 'Credit Score',
-      value: displayedQuantSummary ? displayedQuantSummary.credit_score.toString() : 'Pending',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.credit_score) !== null
+          ? toFilscore(displayedQuantSummary.credit_score)!.toString()
+          : 'Pending',
     },
     {
-      label: 'Non-Starter / Fraud Score',
-      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
+      label: 'Non-Starter Score',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.fraud_score) !== null
+          ? toFilscore(displayedQuantSummary.fraud_score)!.toString()
+          : 'Pending',
     },
     {
       label: 'Social Score',
-      value: displayedQuantSummary ? displayedQuantSummary.social_score.toString() : 'Pending',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.social_score) !== null
+          ? toFilscore(displayedQuantSummary.social_score)!.toString()
+          : 'Pending',
     },
     {
       label: 'Credit Value Score',
-      value: displayedQuantSummary ? displayedQuantSummary.psychometric_score.toString() : 'Pending',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.psychometric_score) !== null
+          ? toFilscore(displayedQuantSummary.psychometric_score)!.toString()
+          : 'Pending',
     },
   ];
   const scoringSignalItems = [
+    {
+      label: 'Composite Score',
+      value:
+        compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null
+          ? toFilscore(compositeInternalScore)!.toString()
+          : 'Pending',
+    },
     {
       label: 'AI Approval Probability',
       value: `${aiRecommendation.probability}%`,
@@ -2794,12 +2822,6 @@ export default function LendingScorecard() {
     {
       label: 'Non-Starter Score',
       value: creditRiskInsights.nonStarterScore.toFixed(0),
-    },
-    {
-      label: 'Origination Profitability',
-      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
     },
   ];
 
@@ -3669,6 +3691,19 @@ export default function LendingScorecard() {
           {step === 9 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
+              <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Origination Profitability
+                </p>
+                <p className="mt-2 text-2xl font-bold text-slate-900">
+                  PHP {creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+                    maximumFractionDigits: 0,
+                  })}
+                </p>
+                <p className="mt-1 text-xs text-slate-500">
+                  Margin {creditRiskInsights.originationMargin.toFixed(1)}%
+                </p>
+              </div>
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
                 <textarea 
