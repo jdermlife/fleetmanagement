@@ -14,14 +14,18 @@ import {
   type SubscriptionPlan,
 } from '../../api'
 
-type ThemeId = 'classic' | 'civic'
+type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
 const THEME_STORAGE_KEY = 'fms:theme'
 
 const themeOptions: Array<{ id: ThemeId; label: string; description: string }> = [
   { id: 'classic', label: 'Classic', description: 'Current gold-based FILSCORE look.' },
   { id: 'civic', label: 'Blue/Red/Yellow/White', description: 'Brighter blue, red, yellow, and white palette.' },
+  { id: 'philippine-flag', label: 'Philippine Flag', description: 'Royal blue, flag red, sun gold, and white inspired by the Philippine flag.' },
 ]
+
+const isThemeId = (value: string | null): value is ThemeId =>
+  value === 'classic' || value === 'civic' || value === 'philippine-flag'
 
 export default function AccountSettingsPage() {
   const navigate = useNavigate()
@@ -46,7 +50,7 @@ export default function AccountSettingsPage() {
     }
 
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
-    return savedTheme === 'civic' ? 'civic' : 'classic'
+    return isThemeId(savedTheme) ? savedTheme : 'classic'
   })
 
   useEffect(() => {

@@ -114,6 +114,8 @@ const menuLinks: MenuLink[] = [
 
 const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
+const THEME_STORAGE_KEY = 'fms:theme'
+const VALID_THEME_IDS = new Set(['classic', 'civic', 'philippine-flag'])
 
 function isAuthPath(pathname: string) {
   return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}?`))
@@ -250,6 +252,12 @@ const adminMenuItems = visibleMenuLinks.filter(
   useEffect(() => {
     setAuthDropdownOpen(false)
   }, [location.pathname])
+
+  useEffect(() => {
+    const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
+    document.documentElement.dataset.theme =
+      savedTheme && VALID_THEME_IDS.has(savedTheme) ? savedTheme : 'classic'
+  }, [])
 
   const handleTopbarLogout = async () => {
     await logout()

@@ -74,6 +74,44 @@
   --app-theme-button-active-text: #12304f;
 }
 
+:root[data-theme='philippine-flag'] {
+  --primary-gold: #fcd116;
+  --secondary-gold: #f4b400;
+  --dark-gold: #ce1126;
+  --light-gold: #fff8d6;
+  --background: #ffffff;
+  --panel: #fffdf7;
+  --text: #0f2547;
+  --danger: #b31224;
+  --success: #0038a8;
+  --app-menu-panel-bg: linear-gradient(180deg, #0038a8 0%, #002d84 50%, #ce1126 100%);
+  --app-auth-dropdown-bg: linear-gradient(180deg, #ce1126 0%, #a60f1f 100%);
+  --app-menu-group-fleet-bg: linear-gradient(135deg, #0038a8, #0b57d0);
+  --app-menu-group-fleet-text: #ffffff;
+  --app-menu-group-ai-bg: linear-gradient(135deg, #002d84, #0038a8);
+  --app-menu-group-ai-text: #fff8d6;
+  --app-menu-group-admin-bg: linear-gradient(135deg, #ce1126, #a60f1f);
+  --app-menu-group-admin-text: #fff8d6;
+  --app-menu-group-governance-bg: linear-gradient(135deg, #fcd116, #f4b400);
+  --app-menu-group-governance-text: #0f2547;
+  --app-menu-group-account-bg: #ffffff;
+  --app-menu-group-account-text: #0f2547;
+  --app-menu-link-bg: rgba(255, 255, 255, 0.14);
+  --app-menu-link-text: #ffffff;
+  --app-menu-link-ai-bg: linear-gradient(135deg, rgba(255, 248, 214, 0.18), rgba(255, 255, 255, 0.06));
+  --app-menu-link-admin-bg: rgba(255, 248, 214, 0.16);
+  --app-menu-link-governance-bg: linear-gradient(135deg, #fcd116, #ffd84a);
+  --app-theme-panel-bg: rgba(255, 255, 255, 0.14);
+  --app-theme-panel-border: rgba(255, 255, 255, 0.2);
+  --app-theme-panel-text: #ffffff;
+  --app-theme-panel-muted: rgba(255, 248, 214, 0.84);
+  --app-theme-button-bg: rgba(255, 255, 255, 0.12);
+  --app-theme-button-text: #ffffff;
+  --app-theme-button-border: rgba(255, 255, 255, 0.2);
+  --app-theme-button-active-bg: #fcd116;
+  --app-theme-button-active-text: #0f2547;
+}
+
 * {
   box-sizing: border-box;
 }
@@ -397,7 +435,7 @@ textarea {
 
 .app-theme-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 8px;
 }
 
