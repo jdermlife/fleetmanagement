@@ -34,6 +34,39 @@
   --app-theme-button-border: rgba(255, 255, 255, 0.14);
   --app-theme-button-active-bg: #ffd700;
   --app-theme-button-active-text: #1f2937;
+  --loan-step8-shell-bg: #ffffff;
+  --loan-step8-shell-border: #e2e8f0;
+  --loan-step8-header-bg: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+  --loan-step8-header-text: #ffffff;
+  --loan-step8-header-kicker: #bfdbfe;
+  --loan-step8-header-copy: #dbeafe;
+  --loan-step8-section-bg: #f8fafc;
+  --loan-step8-section-border: #e2e8f0;
+  --loan-step8-panel-bg: #ffffff;
+  --loan-step8-panel-border: #e2e8f0;
+  --loan-step8-panel-soft-bg: #f8fafc;
+  --loan-step8-title: #334155;
+  --loan-step8-muted: #64748b;
+  --loan-step8-status-bg: #ecfdf5;
+  --loan-step8-status-text: #047857;
+  --loan-step8-warning-bg: #fffbeb;
+  --loan-step8-warning-border: #fcd34d;
+  --loan-step8-warning-text: #92400e;
+  --loan-step8-summary-bg: linear-gradient(135deg, #fef3c7 0%, #fefce8 55%, #ffffff 100%);
+  --loan-step8-summary-border: #fcd34d;
+  --loan-step8-probability-bg: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+  --loan-step8-probability-border: #1e40af;
+  --loan-step8-probability-text: #ffffff;
+  --loan-step8-probability-muted: #dbeafe;
+  --loan-step8-probability-soft: rgba(255, 255, 255, 0.12);
+  --loan-step8-pill-bg: #f1f5f9;
+  --loan-step8-pill-text: #334155;
+  --loan-step8-note-pill-bg: #eff6ff;
+  --loan-step8-note-pill-border: #bfdbfe;
+  --loan-step8-note-pill-text: #1d4ed8;
+  --loan-step8-ring-positive: #57c27c;
+  --loan-step8-ring-warning: #f59e0b;
+  --loan-step8-ring-negative: #ef4444;
 }
 
 :root[data-theme='civic'] {
@@ -72,6 +105,39 @@
   --app-theme-button-border: rgba(255, 255, 255, 0.18);
   --app-theme-button-active-bg: #ffffff;
   --app-theme-button-active-text: #12304f;
+  --loan-step8-shell-bg: #ffffff;
+  --loan-step8-shell-border: rgba(29, 78, 216, 0.16);
+  --loan-step8-header-bg: linear-gradient(135deg, #1d4ed8 0%, #dc2626 100%);
+  --loan-step8-header-text: #ffffff;
+  --loan-step8-header-kicker: #fef08a;
+  --loan-step8-header-copy: #fefce8;
+  --loan-step8-section-bg: #fffdf5;
+  --loan-step8-section-border: rgba(250, 204, 21, 0.42);
+  --loan-step8-panel-bg: #ffffff;
+  --loan-step8-panel-border: rgba(29, 78, 216, 0.14);
+  --loan-step8-panel-soft-bg: #fffdf5;
+  --loan-step8-title: #12304f;
+  --loan-step8-muted: #4b5563;
+  --loan-step8-status-bg: rgba(255, 255, 255, 0.92);
+  --loan-step8-status-text: #1d4ed8;
+  --loan-step8-warning-bg: #fff7cc;
+  --loan-step8-warning-border: #facc15;
+  --loan-step8-warning-text: #92400e;
+  --loan-step8-summary-bg: linear-gradient(135deg, #fff7cc 0%, #ffffff 50%, rgba(220, 38, 38, 0.08) 100%);
+  --loan-step8-summary-border: rgba(250, 204, 21, 0.72);
+  --loan-step8-probability-bg: linear-gradient(135deg, #1d4ed8 0%, #b91c1c 100%);
+  --loan-step8-probability-border: #b91c1c;
+  --loan-step8-probability-text: #ffffff;
+  --loan-step8-probability-muted: #fef3c7;
+  --loan-step8-probability-soft: rgba(255, 255, 255, 0.14);
+  --loan-step8-pill-bg: #eff6ff;
+  --loan-step8-pill-text: #12304f;
+  --loan-step8-note-pill-bg: #fff7cc;
+  --loan-step8-note-pill-border: #facc15;
+  --loan-step8-note-pill-text: #12304f;
+  --loan-step8-ring-positive: #1d4ed8;
+  --loan-step8-ring-warning: #f59e0b;
+  --loan-step8-ring-negative: #dc2626;
 }
 
 :root[data-theme='philippine-flag'] {
@@ -110,6 +176,39 @@
   --app-theme-button-border: rgba(255, 255, 255, 0.2);
   --app-theme-button-active-bg: #fcd116;
   --app-theme-button-active-text: #0f2547;
+  --loan-step8-shell-bg: #ffffff;
+  --loan-step8-shell-border: rgba(0, 56, 168, 0.16);
+  --loan-step8-header-bg: linear-gradient(135deg, #0038a8 0%, #0038a8 58%, #ce1126 100%);
+  --loan-step8-header-text: #ffffff;
+  --loan-step8-header-kicker: #fff8d6;
+  --loan-step8-header-copy: rgba(255, 255, 255, 0.86);
+  --loan-step8-section-bg: #fffdf7;
+  --loan-step8-section-border: rgba(252, 209, 22, 0.42);
+  --loan-step8-panel-bg: #ffffff;
+  --loan-step8-panel-border: rgba(0, 56, 168, 0.12);
+  --loan-step8-panel-soft-bg: #fffdf7;
+  --loan-step8-title: #0f2547;
+  --loan-step8-muted: #546275;
+  --loan-step8-status-bg: #fff8d6;
+  --loan-step8-status-text: #0038a8;
+  --loan-step8-warning-bg: #fff8d6;
+  --loan-step8-warning-border: #fcd116;
+  --loan-step8-warning-text: #8b5e00;
+  --loan-step8-summary-bg: linear-gradient(135deg, #ffffff 0%, #fff8d6 56%, rgba(206, 17, 38, 0.08) 100%);
+  --loan-step8-summary-border: rgba(252, 209, 22, 0.72);
+  --loan-step8-probability-bg: linear-gradient(135deg, #0038a8 0%, #0038a8 58%, #ce1126 100%);
+  --loan-step8-probability-border: #002d84;
+  --loan-step8-probability-text: #ffffff;
+  --loan-step8-probability-muted: #fff8d6;
+  --loan-step8-probability-soft: rgba(255, 255, 255, 0.14);
+  --loan-step8-pill-bg: #eff6ff;
+  --loan-step8-pill-text: #0038a8;
+  --loan-step8-note-pill-bg: #fff8d6;
+  --loan-step8-note-pill-border: #fcd116;
+  --loan-step8-note-pill-text: #0f2547;
+  --loan-step8-ring-positive: #0038a8;
+  --loan-step8-ring-warning: #f4b400;
+  --loan-step8-ring-negative: #ce1126;
 }
 
 * {
@@ -775,6 +874,90 @@ textarea {
   background: #f59e0b;
   border: 1px solid #d97706;
   color: #ffffff;
+}
+
+.loan-step8-shell {
+  background: var(--loan-step8-shell-bg);
+  border-color: var(--loan-step8-shell-border);
+}
+
+.loan-step8-header {
+  background: var(--loan-step8-header-bg);
+  color: var(--loan-step8-header-text);
+}
+
+.loan-step8-header-kicker {
+  color: var(--loan-step8-header-kicker);
+}
+
+.loan-step8-header-copy {
+  color: var(--loan-step8-header-copy);
+}
+
+.loan-step8-section,
+.loan-step8-lower {
+  background: var(--loan-step8-section-bg);
+  border-color: var(--loan-step8-section-border);
+}
+
+.loan-step8-panel {
+  background: var(--loan-step8-panel-bg);
+  border-color: var(--loan-step8-panel-border);
+}
+
+.loan-step8-panel-soft {
+  background: var(--loan-step8-panel-soft-bg);
+  border-color: var(--loan-step8-panel-border);
+}
+
+.loan-step8-title {
+  color: var(--loan-step8-title);
+}
+
+.loan-step8-muted {
+  color: var(--loan-step8-muted);
+}
+
+.loan-step8-status-chip,
+.loan-step8-risk-pill {
+  background: var(--loan-step8-status-bg);
+  color: var(--loan-step8-status-text);
+}
+
+.loan-step8-warning {
+  background: var(--loan-step8-warning-bg);
+  border-color: var(--loan-step8-warning-border);
+  color: var(--loan-step8-warning-text);
+}
+
+.loan-step8-summary-card {
+  background: var(--loan-step8-summary-bg);
+  border-color: var(--loan-step8-summary-border);
+}
+
+.loan-step8-probability {
+  background: var(--loan-step8-probability-bg);
+  border-color: var(--loan-step8-probability-border);
+  color: var(--loan-step8-probability-text);
+}
+
+.loan-step8-probability-muted {
+  color: var(--loan-step8-probability-muted);
+}
+
+.loan-step8-probability-soft {
+  background: var(--loan-step8-probability-soft);
+}
+
+.loan-step8-pill {
+  background: var(--loan-step8-pill-bg);
+  color: var(--loan-step8-pill-text);
+}
+
+.loan-step8-note-pill {
+  background: var(--loan-step8-note-pill-bg);
+  border-color: var(--loan-step8-note-pill-border);
+  color: var(--loan-step8-note-pill-text);
 }
 
 @media (max-width: 900px) {
