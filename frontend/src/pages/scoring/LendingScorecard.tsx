@@ -5,7 +5,6 @@ import { api, getErrorMessage } from '../../api';
 import {
   computeQuantScores,
   createLoanApplication,
-  type CreditScoreRecord,
   fetchLoanApplication,
   type QuantScoresSummary,
   updateLoanApplication,
@@ -1304,8 +1303,6 @@ export default function LendingScorecard() {
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
-  const [backendCreditScores, setBackendCreditScores] = useState<CreditScoreRecord | null>(null);
-  const [isComputingQuantScores, setIsComputingQuantScores] = useState(false);
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
@@ -1400,7 +1397,6 @@ export default function LendingScorecard() {
 
   const invalidateBackendScoring = useCallback(() => {
     setBackendQuantSummary(null);
-    setBackendCreditScores(null);
   }, []);
 
   const parseFormattedNumber = useCallback((value: string) => {
@@ -1892,7 +1888,6 @@ export default function LendingScorecard() {
       return;
     }
 
-    setIsComputingQuantScores(true);
     setSaveMessage('');
 
     try {
@@ -1908,7 +1903,6 @@ export default function LendingScorecard() {
     } catch (error) {
       setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
     } finally {
-      setIsComputingQuantScores(false);
       setStep(nextStep);
     }
   };
@@ -2103,7 +2097,6 @@ export default function LendingScorecard() {
       setFormData(hydrateApplication(data));
       setHasPersistedRecord(true);
       setBackendQuantSummary(mapRecordQuantSummary(data));
-      setBackendCreditScores(data.credit_scores ?? null);
       setDocumentReview(null);
       setReviewDocumentId(null);
       setStep(1);
@@ -2130,7 +2123,6 @@ export default function LendingScorecard() {
     setDocumentReview(null);
     setReviewDocumentId(null);
     setBackendQuantSummary(null);
-    setBackendCreditScores(null);
     setHasPersistedRecord(false);
     setStep(1);
     navigate('/lending-scorecard', { replace: true });
@@ -2730,79 +2722,6 @@ export default function LendingScorecard() {
     { label: 'Approve', value: 'Approved' },
     { label: 'Release', value: 'Released' },
   ];
-  const automatedScoreItems = [
-    { label: 'Character', score: backendCreditScores?.character_score ?? null, desc: 'Identity depth and borrower profile strength' },
-    { label: 'Capacity', score: backendCreditScores?.capacity_score ?? null, desc: 'Repayment ability based on Debt Service Ratio (DSR) performance' },
-    { label: 'Capital', score: backendCreditScores?.capital_score ?? null, desc: 'Supplemental liquidity and outside income support' },
-    { label: 'Collateral', score: backendCreditScores?.collateral_score ?? null, desc: 'Asset coverage and loan-to-value resilience' },
-    { label: 'Conditions', score: backendCreditScores?.conditions_score ?? null, desc: 'Purpose quality and overall loan context' },
-  ];
-  const advancedSignalItems = [
-    {
-      label: 'Non-Starter Score',
-      value: creditRiskInsights.fraudScore.toFixed(0),
-      tone:
-        creditRiskInsights.fraudScore >= 70
-          ? 'text-emerald-700'
-          : creditRiskInsights.fraudScore >= 50
-            ? 'text-amber-600'
-            : 'text-rose-600',
-      note: 'Higher is better',
-    },
-    {
-      label: 'Non-starter Score',
-      value: creditRiskInsights.nonStarterScore.toFixed(0),
-      tone:
-        creditRiskInsights.nonStarterScore >= 70
-          ? 'text-emerald-700'
-          : creditRiskInsights.nonStarterScore >= 50
-            ? 'text-amber-600'
-            : 'text-rose-600',
-      note: 'Higher is better',
-    },
-    {
-      label: 'Risk Score',
-      value: creditRiskInsights.riskScore.toFixed(1),
-      tone:
-        creditRiskInsights.riskScore <= 35
-          ? 'text-emerald-700'
-          : creditRiskInsights.riskScore <= 60
-            ? 'text-amber-600'
-            : 'text-rose-600',
-      note: 'Lower is better',
-    },
-    {
-      label: 'Origination Profitability',
-      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-      tone:
-        creditRiskInsights.originationProfitability >= 0
-          ? 'text-emerald-700'
-          : 'text-rose-600',
-      note: `Margin ${creditRiskInsights.originationMargin.toFixed(1)}%`,
-    },
-  ];
-  const profitabilityBreakdown = [
-    {
-      label: 'Gross Interest Revenue',
-      value: `PHP ${creditRiskInsights.grossRevenue.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-    },
-    {
-      label: 'Expected Loss Reserve',
-      value: `PHP ${creditRiskInsights.expectedLoss.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-    },
-    {
-      label: 'Processing Cost',
-      value: `PHP ${creditRiskInsights.processingCost.toLocaleString(undefined, {
-        maximumFractionDigits: 0,
-      })}`,
-    },
-  ];
   const displayedQuantSummary = backendQuantSummary;
   const borrowerDisplayName =
     formData.borrower.fullName.trim() ||
@@ -2849,88 +2768,40 @@ export default function LendingScorecard() {
     {
       label: 'Credit Score',
       value: displayedQuantSummary ? displayedQuantSummary.credit_score.toString() : 'Pending',
-      note: 'Bureau-weighted composite result',
+    },
+    {
+      label: 'Non-Starter / Fraud Score',
+      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
     },
     {
       label: 'Social Score',
       value: displayedQuantSummary ? displayedQuantSummary.social_score.toString() : 'Pending',
-      note: 'Community and digital footprint',
     },
     {
-      label: 'Fraud / Non-Starter Score',
-      value: displayedQuantSummary ? displayedQuantSummary.fraud_score.toString() : 'Pending',
-      note: 'Identity and anomaly screening',
-    },
-    {
-      label: 'Credit Value / Psychometric Score',
+      label: 'Credit Value Score',
       value: displayedQuantSummary ? displayedQuantSummary.psychometric_score.toString() : 'Pending',
-      note: 'Behavioral consistency index',
     },
   ];
-  const capacityMetricItems = [
+  const scoringSignalItems = [
     {
-      label: 'Debt-to-Income Ratio (DTI)',
-      value: `${calculations.dti.toFixed(1)}%`,
-      formula: 'Formula: (Total Existing Debt / Total Income) x 100',
-      status:
-        calculations.dti <= 20
-          ? 'Prime Range'
-          : calculations.dti <= 35
-            ? 'Within Policy'
-            : 'Needs Review',
-      tone:
-        calculations.dti <= 20
-          ? {
-              badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-              value: 'text-emerald-700',
-              panel: 'border-emerald-200 bg-emerald-50',
-            }
-          : calculations.dti <= 35
-            ? {
-                badge: 'border-amber-200 bg-amber-50 text-amber-700',
-                value: 'text-amber-700',
-                panel: 'border-amber-200 bg-amber-50',
-              }
-            : {
-                badge: 'border-rose-200 bg-rose-50 text-rose-700',
-                value: 'text-rose-700',
-                panel: 'border-rose-200 bg-rose-50',
-              },
+      label: 'AI Approval Probability',
+      value: `${aiRecommendation.probability}%`,
     },
     {
-      label: 'Debt Service Ratio (DSR)',
-      value: `${calculations.dsr.toFixed(1)}%`,
-      formula: 'Formula: ((Existing Debt + Proposed Payment) / Total Income) x 100',
-      status:
-        calculations.dsr < 35
-          ? 'Strong Capacity'
-          : calculations.dsr <= 50
-            ? 'Watchlist Band'
-            : 'High Burden',
-      tone:
-        calculations.dsr < 35
-          ? {
-              badge: 'border-emerald-200 bg-emerald-50 text-emerald-700',
-              value: 'text-emerald-700',
-              panel: 'border-emerald-200 bg-emerald-50',
-            }
-          : calculations.dsr <= 50
-            ? {
-                badge: 'border-amber-200 bg-amber-50 text-amber-700',
-                value: 'text-amber-700',
-                panel: 'border-amber-200 bg-amber-50',
-              }
-            : {
-                badge: 'border-rose-200 bg-rose-50 text-rose-700',
-                value: 'text-rose-700',
-                panel: 'border-rose-200 bg-rose-50',
-              },
+      label: 'Risk Score',
+      value: creditRiskInsights.riskScore.toFixed(1),
+    },
+    {
+      label: 'Non-Starter Score',
+      value: creditRiskInsights.nonStarterScore.toFixed(0),
+    },
+    {
+      label: 'Origination Profitability',
+      value: `PHP ${creditRiskInsights.originationProfitability.toLocaleString(undefined, {
+        maximumFractionDigits: 0,
+      })}`,
     },
   ];
-  const corporateUnderwritingTotal =
-    backendCreditScores?.total_credit_score !== undefined && backendCreditScores?.total_credit_score !== null
-      ? `${backendCreditScores.total_credit_score}/100`
-      : 'Pending';
 
   return (
     <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
@@ -3716,329 +3587,79 @@ export default function LendingScorecard() {
                   Request Certification
                 </button>
               </div>
-              <div className="loan-step8-shell overflow-hidden rounded-2xl border shadow-lg">
-                <div className="loan-step8-header px-5 py-3">
-                  <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                    <div>
-                      <p className="loan-step8-header-kicker text-xs font-semibold uppercase tracking-widest">
-                        Approval Committee Brief
+              <div className="rounded-xl border border-slate-200 bg-white p-6">
+                <h3 className="mb-4 text-lg font-bold text-slate-800">Step 8: FILScore</h3>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {executiveSummaryItems.map((item) => (
+                    <div
+                      key={item.label}
+                      className="rounded-md border border-slate-200 bg-slate-50 p-4"
+                    >
+                      <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                      <p className="mt-3 text-3xl font-bold leading-none text-slate-900">
+                        {item.value}
                       </p>
-                      <h3 className="m-0 mt-1 text-xl font-semibold tracking-tight">
-                        Executive Assessment
-                      </h3>
                     </div>
-                    <p className="loan-step8-header-copy max-w-2xl text-xs leading-5 md:text-right">
-                      Consolidated summary of lending quality, fraud exposure, social standing,
-                      bureau strength, psychometric behavior, and origination returns.
+                  ))}
+                </div>
+
+                <div className="mt-6 border-t border-slate-200 pt-6">
+                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                    Scoring Signals
+                  </h4>
+                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                    {scoringSignalItems.map((item) => (
+                      <div
+                        key={item.label}
+                        className="rounded-md border border-slate-200 bg-slate-50 p-4"
+                      >
+                        <p className="text-sm font-medium text-slate-700">{item.label}</p>
+                        <p className="mt-3 text-2xl font-bold leading-none text-slate-900">
+                          {item.value}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mt-6 border-t border-slate-200 pt-6">
+                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                    Account Officer / Committee Notes
+                  </h4>
+                  <div className="grid gap-4 md:grid-cols-3">
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Credit Officer
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-900">
+                        {formData.routing.creditOfficer || 'Not assigned'}
+                      </p>
+                    </div>
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Branch Manager
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-900">
+                        {formData.routing.branchManager || 'Not assigned'}
+                      </p>
+                    </div>
+                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
+                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                        Committee Status
+                      </p>
+                      <p className="mt-2 text-sm font-medium text-slate-900">
+                        {formData.routing.creditCommittee || 'Pending'}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      Remarks
                     </p>
-                  </div>
-                </div>
-
-                <div className="grid gap-4 p-4 xl:grid-cols-2">
-                  <div className="loan-step8-section rounded-2xl border p-4">
-                    <div className="mb-4 flex items-center justify-between gap-3">
-                      <div>
-                        <h4 className="loan-step8-title m-0 text-sm font-semibold uppercase tracking-wide">
-                          FILScore
-                        </h4>
-                        <p className="loan-step8-muted mt-1 text-xs">
-                          Top-line scorecard indicators
-                        </p>
-                      </div>
-                      <span className="loan-step8-status-chip inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                        {isComputingQuantScores
-                          ? 'Computing'
-                          : displayedQuantSummary
-                            ? 'Backend Synced'
-                            : 'Awaiting Backend'}
-                      </span>
-                    </div>
-
-                    {!displayedQuantSummary && (
-                      <div className="loan-step8-warning mb-4 rounded-xl border px-4 py-3 text-sm">
-                        Backend score output will appear here after FILScore computation or after loading a previously scored application.
-                      </div>
-                    )}
-
-                    <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                      {executiveSummaryItems.map((item) => {
-                        return (
-                          <div
-                            key={item.label}
-                            className="loan-step8-summary-card rounded-2xl border px-4 py-4 shadow-sm"
-                          >
-                            <p className="loan-step8-title text-sm font-medium">
-                              {item.label}
-                            </p>
-                            <p className="mt-4 text-4xl font-bold leading-none text-slate-900">
-                              <strong>{item.value}</strong>
-                            </p>
-                            <p className="loan-step8-muted mt-3 text-xs leading-5">{item.note}</p>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  <div className="loan-step8-probability overflow-hidden rounded-2xl border shadow-lg">
-                    <div className="border-b border-white/10 px-5 py-4">
-                      <p className="loan-step8-probability-muted text-xs font-semibold uppercase tracking-widest">
-                        AI Approval Probability
-                      </p>
-                    </div>
-                    <div className="space-y-4 p-5">
-                      <div className="flex justify-center">
-                        <div className="relative flex h-36 w-36 items-center justify-center">
-                          <div
-                            className="h-full w-full rounded-full"
-                            style={{
-                              background: `conic-gradient(var(--loan-step8-ring-positive) ${aiRecommendation.probability * 3.6}deg, rgba(255,255,255,0.18) 0deg)`,
-                            }}
-                          />
-                          <div className="absolute inset-3.5 flex flex-col items-center justify-center rounded-full bg-white text-slate-900 shadow-inner">
-                            <span className="text-4xl font-semibold leading-none">
-                              {aiRecommendation.probability}%
-                            </span>
-                            <span className="loan-step8-risk-pill mt-2 rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                              Risk Level: {aiRecommendation.riskLevel}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                        <span className="loan-step8-probability-muted">Suggested Loan Amount</span>
-                        <span className="text-right font-semibold text-white">
-                          PHP {aiRecommendation.suggestedAmount.toLocaleString()}
-                        </span>
-                        <span className="loan-step8-probability-muted">Monthly Amortization</span>
-                        <span className="text-right font-semibold text-white">
-                          PHP {calculations.monthlyPayment.toFixed(2)}
-                        </span>
-                        <span className="loan-step8-probability-muted">Loan-to-Value (LTV)</span>
-                        <span className="text-right font-semibold text-white">
-                          {calculations.ltv.toFixed(1)}%
-                        </span>
-                      </div>
-
-                      <div className="loan-step8-probability-soft rounded-xl p-4">
-                        <h5 className="loan-step8-probability-muted m-0 text-xs font-semibold uppercase tracking-wide">
-                          Computation Log
-                        </h5>
-                        <ul className="mt-3 space-y-2">
-                          {aiRecommendation.computationLog.map((log, i) => (
-                            <li key={i} className="flex items-start gap-2 text-xs leading-5 text-white/90">
-                              <span className="mt-1.5 h-1.5 w-1.5 rounded-full" style={{ backgroundColor: 'var(--loan-step8-ring-positive)' }} />
-                              <span>{log}</span>
-                            </li>
-                          ))}
-                        </ul>
-                        <div className="mt-4 flex items-center justify-between border-t border-white/10 pt-3">
-                          <span className="loan-step8-probability-muted text-xs font-semibold uppercase tracking-wide">
-                            Final Probability
-                          </span>
-                          <span className="text-xl font-semibold text-white">
-                            {aiRecommendation.probability}%
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="loan-step8-lower grid gap-4 border-t p-4 xl:grid-cols-2">
-                  <div className="space-y-4">
-                    <div className="loan-step8-panel rounded-2xl border p-4 shadow-sm">
-                      <div className="mb-4">
-                        <h4 className="loan-step8-title m-0 text-sm font-semibold uppercase tracking-wide">
-                          Capacity Metrics
-                        </h4>
-                        <p className="loan-step8-muted mt-1 text-xs">
-                          Primary affordability ratios used to assess repayment pressure.
-                        </p>
-                      </div>
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {capacityMetricItems.map((metric) => {
-                          const ringColor =
-                            metric.status === 'Prime Range' || metric.status === 'Strong Capacity'
-                              ? '#57c27c'
-                              : metric.status === 'Within Policy' || metric.status === 'Watchlist Band'
-                                ? '#f59e0b'
-                                : '#ef4444';
-
-                          return (
-                            <div
-                              key={metric.label}
-                              className="loan-step8-panel-soft rounded-xl border p-4"
-                            >
-                              <p className="loan-step8-muted text-xs font-semibold uppercase tracking-wide">
-                                {metric.label}
-                              </p>
-                              <div className="mt-4 flex items-center gap-4">
-                                <div className="relative flex h-20 w-20 items-center justify-center">
-                                  <div
-                                    className="h-full w-full rounded-full"
-                                    style={{
-                                      background: `conic-gradient(${ringColor} 300deg, var(--loan-step8-panel-border) 0deg)`,
-                                    }}
-                                  />
-                                  <div className="absolute inset-2.5 flex items-center justify-center rounded-full bg-white text-sm font-semibold text-slate-800">
-                                    {metric.value}
-                                  </div>
-                                </div>
-                                <div className="min-w-0">
-                                  <span
-                                    className={`inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-semibold uppercase tracking-wide ${metric.tone.badge}`}
-                                  >
-                                    {metric.status}
-                                  </span>
-                                  <p className="loan-step8-muted mt-3 text-xs leading-4">
-                                    Formula:
-                                  </p>
-                                  <p className="loan-step8-muted mt-1 text-xs leading-4">
-                                    {metric.formula.replace('Formula: ', '')}
-                                  </p>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="loan-step8-panel rounded-2xl border p-4 shadow-sm">
-                      <div className="mb-4">
-                        <h4 className="loan-step8-title m-0 text-sm font-semibold uppercase tracking-wide">
-                          Advanced Scoring Signals
-                        </h4>
-                        <p className="loan-step8-muted mt-1 text-xs">
-                          Secondary screening signals for fraud resistance, profitability, and downstream risk.
-                        </p>
-                      </div>
-                      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-                        {advancedSignalItems.map((item) => (
-                          <div
-                            key={item.label}
-                            className="loan-step8-panel-soft rounded-xl border px-3 py-3"
-                          >
-                            <p className="loan-step8-muted text-xs font-semibold uppercase tracking-wide">
-                              {item.label}
-                            </p>
-                            <p className={`mt-2 text-2xl font-semibold ${item.tone}`}>{item.value}</p>
-                            <p className="loan-step8-muted mt-1 text-xs">{item.note}</p>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="mt-3 grid gap-3 sm:grid-cols-3">
-                        {profitabilityBreakdown.map((item) => (
-                          <div
-                            key={item.label}
-                            className="loan-step8-panel rounded-xl border px-3 py-3"
-                          >
-                            <p className="loan-step8-muted text-xs font-semibold uppercase tracking-wide">
-                              {item.label}
-                            </p>
-                            <p className="mt-2 text-lg font-semibold text-slate-800">{item.value}</p>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="loan-step8-panel rounded-2xl border p-4 shadow-sm">
-                      <div className="mb-4 flex items-center justify-between gap-3">
-                        <div>
-                          <h4 className="loan-step8-title m-0 text-sm font-semibold uppercase tracking-wide">
-                            Automated Lending Scorecard
-                          </h4>
-                          <p className="loan-step8-muted mt-1 text-xs">
-                            Weighted 5C indicators automatically derived from the application record.
-                          </p>
-                        </div>
-                        <div className="loan-step8-pill rounded-full px-3 py-1.5 text-sm font-semibold">
-                          {corporateUnderwritingTotal}
-                        </div>
-                      </div>
-                      <div className="space-y-3">
-                        {automatedScoreItems.map((c, i) => {
-                          const hasBackendScore = typeof c.score === 'number';
-                          const numericScore = hasBackendScore ? c.score : 0;
-
-                          return (
-                          <div
-                            key={i}
-                            className="loan-step8-panel-soft rounded-xl border px-4 py-3"
-                          >
-                            <div className="grid gap-3 md:grid-cols-3 md:items-center">
-                              <div className="min-w-0">
-                                <div className="flex items-center gap-2">
-                                  <span
-                                    className={`inline-flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-semibold ${
-                                      !hasBackendScore
-                                        ? 'bg-slate-200 text-slate-500'
-                                        : numericScore >= 8
-                                        ? 'bg-emerald-100 text-emerald-700'
-                                        : numericScore >= 6
-                                          ? 'bg-amber-100 text-amber-700'
-                                        : 'bg-rose-100 text-rose-700'
-                                    }`}
-                                  >
-                                    {i + 1}
-                                  </span>
-                                  <p className="loan-step8-muted text-xs font-bold uppercase tracking-wide">
-                                    {c.label}
-                                  </p>
-                                </div>
-                                <p className="loan-step8-muted mt-2 text-xs leading-4">{c.desc}</p>
-                              </div>
-                              <div className="text-right">
-                                <p
-                                  className={`text-2xl font-semibold ${
-                                    !hasBackendScore
-                                      ? 'text-slate-400'
-                                      : numericScore >= 8
-                                        ? 'text-emerald-600'
-                                        : numericScore >= 6
-                                          ? 'text-amber-600'
-                                          : 'text-rose-600'
-                                  }`}
-                                >
-                                  {hasBackendScore ? numericScore : 'Pending'}
-                                  <span className="ml-1 text-sm font-medium text-slate-400">/10</span>
-                                </p>
-                              </div>
-                              <div className="h-2 overflow-hidden rounded-full" style={{ backgroundColor: 'var(--loan-step8-panel-border)' }}>
-                                <div
-                                  className={`h-full rounded-full ${
-                                    !hasBackendScore
-                                      ? 'bg-slate-300'
-                                      : numericScore >= 8
-                                      ? 'bg-emerald-500'
-                                      : numericScore >= 6
-                                        ? 'bg-amber-500'
-                                        : 'bg-rose-500'
-                                  }`}
-                                  style={{ width: `${hasBackendScore ? numericScore * 10 : 0}%` }}
-                                />
-                              </div>
-                            </div>
-                          </div>
-                        );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="loan-step8-panel rounded-2xl border p-4 shadow-sm">
-                      <div className="loan-step8-note-pill inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                        Formal Committee Note
-                      </div>
-                      <p className="loan-step8-muted mt-4 text-sm leading-6">
-                        This panel combines repayment capacity, collateral adequacy, and AI-assisted
-                        decision support into a single review surface designed for credit officers and
-                        approval committee presentation.
-                      </p>
-                    </div>
+                    <p className="mt-2 text-sm leading-6 text-slate-900 whitespace-pre-wrap">
+                      {formData.committeeRemarks.trim() || 'No remarks entered.'}
+                    </p>
                   </div>
                 </div>
               </div>
