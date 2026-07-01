@@ -1811,6 +1811,111 @@ textarea {
 }
 
 /* ========================
+   LENDING PSYCHOMETRIC ADAPTATION
+   ======================== */
+.lending-psychometric-page {
+  max-width: 1380px;
+}
+
+.lending-psychometric-hero {
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.22), transparent 28%),
+    radial-gradient(circle at left center, rgba(234, 179, 8, 0.18), transparent 24%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 56%, #0f766e 100%);
+}
+
+.lending-psychometric-summary-grid strong {
+  font-size: clamp(1.25rem, 2.6vw, 2rem);
+  overflow-wrap: anywhere;
+}
+
+.lending-psychometric-layout {
+  align-items: start;
+}
+
+.lending-psychometric-form-panel {
+  display: grid;
+  gap: 22px;
+}
+
+.lending-psychometric-panel-header h2 {
+  margin-top: 4px;
+}
+
+.lending-psychometric-status-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.lending-psychometric-body {
+  display: grid;
+  gap: 18px;
+}
+
+.lending-psychometric-footer-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.lending-psychometric-toolbar-panel,
+.lending-psychometric-step-panel {
+  display: grid;
+  gap: 18px;
+}
+
+.lending-psychometric-toolbar-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.lending-psychometric-tool-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.lending-psychometric-step-list {
+  display: grid;
+  gap: 12px;
+}
+
+.lending-psychometric-step-button {
+  display: grid;
+  grid-template-columns: 40px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  min-height: 72px;
+  text-align: left;
+}
+
+.lending-psychometric-step-index {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.lending-psychometric-step-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.lending-psychometric-step-copy strong {
+  font-size: 0.88rem;
+  line-height: 1.2;
+}
+
+.lending-psychometric-step-copy span {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+/* ========================
    UI COMPONENTS (PRESERVED)
    ======================== */
 .container { max-width: 1200px; margin: 0 auto; }
@@ -1970,6 +2075,14 @@ th { color: var(--dark-gold); }
 
   .psychometric-side-panel {
     position: static;
+  }
+
+  .lending-psychometric-footer-actions {
+    flex-direction: column;
+  }
+
+  .lending-psychometric-step-button {
+    grid-template-columns: 36px minmax(0, 1fr);
   }
 
 .ai-card {

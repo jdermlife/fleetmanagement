@@ -2824,88 +2824,80 @@ export default function LendingScorecard() {
       value: creditRiskInsights.nonStarterScore.toFixed(0),
     },
   ];
+  const stepLabels = [
+    'Product Selection',
+    'Applicant Info',
+    'Employment & Income',
+    'Co-Borrower',
+    'Banking',
+    'Collateral',
+    'Documents',
+    'FILScore',
+    'Approval',
+    'Release & Booking',
+  ];
+  const currentStepLabel = stepLabels[Math.max(0, step - 1)] ?? 'Lending Workflow';
+  const completionPercent = Math.round((step / stepLabels.length) * 100);
 
   return (
-    <div className="lending-scorecard-page min-h-screen bg-gray-50 p-4 md:p-8 font-sans text-gray-800">
-      <div className="lending-scorecard-card max-w-5xl mx-auto bg-white rounded-xl shadow-lg overflow-hidden border border-gray-200">
-        
-        {/* Header & Workflow Status */}
-        <div className="loan-page-header bg-slate-800 text-white p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div className="loan-page-header-copy">
-            <h1 className="loan-page-title text-2xl font-semibold tracking-tight">Advanced Loan Origination System</h1>
-            <p className="loan-page-id mt-1 text-xs font-medium uppercase tracking-[0.12em] text-slate-400">Application ID: {formData.id}</p>
-          </div>
-          <div className="loan-page-status flex items-center gap-3">
-            <span className="loan-page-status-label text-xs font-medium uppercase tracking-[0.12em] text-slate-300">Current Status</span>
-            <span className={`loan-page-status-chip rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${getStatusColor(formData.status)}`}>
-              {formData.status}
-            </span>
-          </div>
+    <div className="psychometric-page lending-psychometric-page">
+      <section className="psychometric-hero lending-psychometric-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Advanced Origination Workflow</span>
+          <h1>Lending Scorecard</h1>
+          <p>
+            Run the end-to-end loan workflow across product intake, underwriting details,
+            FILScore review, approval, and release using the same structured workspace style as
+            the psychometric scoring page.
+          </p>
         </div>
 
-        {/* Global Pipeline Dashboard Navigation Bar */}
-        <div className="loan-toolbar bg-slate-100 border-b border-gray-200 px-6 py-3 flex flex-wrap gap-3 items-center justify-start">
-          <div className={`${topNavButtonClass} loan-toolbar-button-secondary flex items-center gap-2 border-slate-800 bg-slate-700 text-white`}>
-            <span className="text-[11px] font-semibold tracking-[0.12em] text-slate-200">Country</span>
-            <select
-              value={selectedCountryCode}
-              onChange={(event) => setSelectedCountryCode(event.target.value)}
-              className="min-w-[88px] border-0 bg-transparent p-0 text-sm font-semibold text-white focus:outline-none"
-              aria-label="Select country"
-            >
-              {countryOptions.map((option) => (
-                <option key={option} value={option} className="text-slate-800">
-                  {option}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button 
-            onClick={handleCreateNew}
-            className={`${topNavButtonClass} loan-toolbar-button-primary border-emerald-900 bg-emerald-800 text-white hover:bg-emerald-900 focus:ring-emerald-700`}
-          >
-            Create New Application
-          </button>
-          <button 
-            onClick={() => navigate('/loan-repository')}
-            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
-          >
-            Review Applications
-          </button>
-          <button 
-            onClick={() => navigate('/loan-repository?status=Credit%20Review')}
-            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
-          >
-            Approval Queue
-          </button>
-          <button 
-            onClick={() => navigate('/loan-repository?status=Released')}
-            className={`${topNavButtonClass} loan-toolbar-button-secondary border-slate-800 bg-slate-700 text-white hover:bg-slate-800 focus:ring-slate-700`}
-          >
-            Released Accounts
-          </button>
+        <div className="psychometric-hero-metric">
+          <span>Current Step</span>
+          <strong>{step}/{stepLabels.length}</strong>
+          <small>{currentStepLabel}</small>
         </div>
+      </section>
 
-        {/* Progress Stepper */}
-        <div className="loan-stepper-shell bg-slate-50 border-b border-gray-200 p-4 pt-6 overflow-x-auto">
-          <div className="loan-stepper-grid grid min-w-[1200px] grid-cols-10 gap-2 text-[11px] font-semibold tracking-[0.04em] text-slate-500">
-            {['Product Selection', 'Applicant Info', 'Employment & Income', 'Co-Borrower', 'Banking', 'Collateral', 'Documents', 'FILScore', 'Approval', 'Release & Booking'].map((label, i) => (
-              <button
-                key={i}
-                onClick={() => void handleStepChange(i + 1)}
-                className={`${stepperButtonClass} ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
-              >
-                <div className={`flex h-7 w-7 items-center justify-center rounded-full text-[11px] font-semibold ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {i + 1}
-                </div>
-                <span className="leading-snug">{label}</span>
-              </button>
-            ))}
-          </div>
-        </div>
+      <section className="psychometric-summary-grid lending-psychometric-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Application ID</span>
+          <strong>{formData.id}</strong>
+          <small>Live working reference</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Product</span>
+          <strong>{formData.loan.productType}</strong>
+          <small>{formData.loan.purpose || 'Purpose not yet entered'}</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Workflow Status</span>
+          <strong>{formData.status}</strong>
+          <small>{selectedWorkflowAction} ready as next action</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Progress</span>
+          <strong>{completionPercent}%</strong>
+          <small>{currentStepLabel}</small>
+        </article>
+      </section>
 
-        {/* Form Body */}
-        <div className="loan-page-body p-6 md:p-8 min-h-[400px]">
+      <section className="psychometric-layout lending-psychometric-layout">
+        <div className="psychometric-main">
+          <article className="psychometric-panel lending-psychometric-form-panel">
+            <div className="psychometric-panel-header lending-psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
+              </div>
+              <div className="lending-psychometric-status-row">
+                <span className={`loan-page-status-chip rounded-full px-4 py-1.5 text-xs font-semibold uppercase tracking-[0.12em] ${getStatusColor(formData.status)}`}>
+                  {formData.status}
+                </span>
+              </div>
+            </div>
+
+            <div className="loan-page-body lending-psychometric-body p-0 min-h-[400px]">
           {saveMessage && (
             <div
               className={`mb-4 rounded-md p-3 text-sm font-medium ${
@@ -3875,28 +3867,109 @@ export default function LendingScorecard() {
             </div>
           )}
         </div>
+            <div className="lending-psychometric-footer border-t border-slate-200 pt-6">
+              <div className="lending-psychometric-footer-actions">
+                <button
+                  onClick={() => void handleStepChange(Math.max(step - 1, 1))}
+                  disabled={step === 1}
+                  className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}
+                >
+                  Previous Step
+                </button>
+                <button
+                  onClick={handleSaveDraft}
+                  disabled={isSaving}
+                  className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
+                >
+                  {isSaving ? 'Processing Draft...' : 'Save Draft'}
+                </button>
+                <button
+                  onClick={() => void handleStepChange(Math.min(step + 1, 10))}
+                  className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}
+                >
+                  Next Step
+                </button>
+              </div>
+            </div>
+          </article>
+        </div>
 
-        {/* Footer Navigation */}
-        {step < 10 && (
-          <div className="bg-gray-50 p-6 border-t flex justify-between">
-            <button onClick={() => void handleStepChange(Math.max(step - 1, 1))} disabled={step === 1} className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}>
-              ← Back
-            </button>
-            <div className="flex gap-3">
+        <aside className="psychometric-side-panel lending-psychometric-side-panel">
+          <article className="psychometric-panel lending-psychometric-toolbar-panel">
+            <div className="lending-psychometric-toolbar-grid">
+              <div className="lending-psychometric-country">
+                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
+                  Country
+                </label>
+                <select
+                  value={selectedCountryCode}
+                  onChange={(event) => setSelectedCountryCode(event.target.value)}
+                  className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  aria-label="Select country"
+                >
+                  {countryOptions.map((option) => (
+                    <option key={option} value={option} className="text-slate-800">
+                      {option}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               <button
-                onClick={handleSaveDraft}
-                disabled={isSaving}
-                className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
+                onClick={handleCreateNew}
+                className={`${topNavButtonClass} loan-toolbar-button-primary lending-psychometric-tool-button`}
               >
-                {isSaving ? 'Processing Draft...' : 'Save Draft'}
+                Create New Application
               </button>
-              <button onClick={() => void handleStepChange(Math.min(step + 1, 10))} className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}>
-                Next Step →
+              <button
+                onClick={() => navigate('/loan-repository')}
+                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+              >
+                Review Applications
+              </button>
+              <button
+                onClick={() => navigate('/loan-repository?status=Credit%20Review')}
+                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+              >
+                Approval Queue
+              </button>
+              <button
+                onClick={() => navigate('/loan-repository?status=Released')}
+                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+              >
+                Released Accounts
               </button>
             </div>
-          </div>
-        )}
-      </div>
+          </article>
+
+          <article className="psychometric-panel lending-psychometric-step-panel">
+            <div className="psychometric-panel-header lending-psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate the scorecard</h2>
+              </div>
+            </div>
+
+            <div className="lending-psychometric-step-list">
+              {stepLabels.map((label, i) => (
+                <button
+                  key={label}
+                  onClick={() => void handleStepChange(i + 1)}
+                  className={`${stepperButtonClass} lending-psychometric-step-button ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                >
+                  <div className={`lending-psychometric-step-index ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                    {i + 1}
+                  </div>
+                  <div className="lending-psychometric-step-copy">
+                    <strong>{label}</strong>
+                    <span>{step === i + 1 ? 'Current step' : step > i + 1 ? 'Completed' : 'Pending'}</span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          </article>
+        </aside>
+      </section>
     </div>
   );
 }
