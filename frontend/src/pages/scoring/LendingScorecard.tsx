@@ -3797,42 +3797,80 @@ export default function LendingScorecard() {
 
                 <div className="mt-6 border-t border-slate-200 pt-6">
                   <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-800">
-                    Account Officer / Committee Notes
+                    Final Workflow Actions
                   </h4>
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                        Credit Officer
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-blue-900">
-                        {formData.routing.creditOfficer || 'Not assigned'}
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
-                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                        Branch Manager
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-blue-900">
-                        {formData.routing.branchManager || 'Not assigned'}
-                      </p>
-                    </div>
-                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4 md:col-span-2">
-                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                        Committee Status
-                      </p>
-                      <p className="mt-2 text-sm font-bold text-blue-900">
-                        {formData.routing.creditCommittee || 'Pending'}
-                      </p>
-                    </div>
-                  </div>
+                  <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
+                    <div className="grid gap-4">
+                      <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:items-end">
+                        <div>
+                          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-blue-700">
+                            Action: Change Status
+                          </label>
+                          <select
+                            value={selectedWorkflowAction}
+                            onChange={(event) => {
+                              setSelectedWorkflowAction(event.target.value as WorkflowStatus);
+                              setWorkflowActionState('idle');
+                              setCompletedWorkflowAction(null);
+                            }}
+                            className="loan-form-select w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            {workflowActionOptions.map((option) => (
+                              <option key={option.value} value={option.value}>
+                                {option.label}
+                              </option>
+                            ))}
+                          </select>
+                        </div>
 
-                  <div className="mt-4 rounded-md border border-blue-200 bg-blue-50/40 p-4">
-                    <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
-                      Remarks
-                    </p>
-                    <p className="mt-2 text-sm font-bold leading-6 text-blue-900 whitespace-pre-wrap">
-                      {formData.committeeRemarks.trim() || 'No remarks entered.'}
-                    </p>
+                        <div>
+                          <label className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-blue-700">
+                            Comments / Basis of Action
+                          </label>
+                          <textarea
+                            value={formData.committeeRemarks}
+                            onChange={(event) =>
+                              setFormData((prev) => ({
+                                ...prev,
+                                committeeRemarks: event.target.value,
+                              }))
+                            }
+                            rows={3}
+                            className="loan-form-input w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            placeholder="Enter comments or basis for the status change"
+                          />
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap gap-3">
+                        <button
+                          onClick={handleSelectedWorkflowAction}
+                          disabled={isSaving}
+                          className={`loan-inline-button inline-flex min-h-[42px] items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold tracking-wide transition disabled:opacity-50 ${workflowActionButtonClass}`}
+                        >
+                          {workflowActionButtonLabel}
+                        </button>
+                        <button
+                          onClick={() => void handleStepChange(Math.max(step - 1, 1))}
+                          className={`${footerButtonClass} loan-footer-button-secondary border border-gray-300 text-gray-700 hover:bg-gray-100`}
+                        >
+                          Previous Step
+                        </button>
+                        <button
+                          onClick={handleSaveDraft}
+                          disabled={isSaving}
+                          className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
+                        >
+                          {isSaving ? 'Processing Draft...' : 'Save Draft'}
+                        </button>
+                      </div>
+
+                      {workflowActionState === 'completed' && (
+                        <div className="rounded-md border border-emerald-300 bg-emerald-100 px-4 py-3 text-sm font-bold text-emerald-800">
+                          Completed: Record status changed to {completedWorkflowAction}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
