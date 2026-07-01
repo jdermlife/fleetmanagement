@@ -142,21 +142,21 @@
 
 :root[data-theme='philippine-flag'] {
   --primary-gold: #fcd116;
-  --secondary-gold: #f4b400;
-  --dark-gold: #ce1126;
+  --secondary-gold: #fde047;
+  --dark-gold: #0f766e;
   --light-gold: #fff8d6;
   --background: #ffffff;
-  --panel: #fffdf7;
+  --panel: #f8fffc;
   --text: #0f2547;
-  --danger: #b31224;
-  --success: #0038a8;
-  --app-menu-panel-bg: linear-gradient(180deg, #0038a8 0%, #002d84 50%, #ce1126 100%);
-  --app-auth-dropdown-bg: linear-gradient(180deg, #ce1126 0%, #a60f1f 100%);
+  --danger: #c2410c;
+  --success: #0f766e;
+  --app-menu-panel-bg: linear-gradient(180deg, #0038a8 0%, #0b57d0 42%, #0f766e 100%);
+  --app-auth-dropdown-bg: linear-gradient(180deg, #0f766e 0%, #0b5f55 100%);
   --app-menu-group-fleet-bg: linear-gradient(135deg, #0038a8, #0b57d0);
   --app-menu-group-fleet-text: #ffffff;
-  --app-menu-group-ai-bg: linear-gradient(135deg, #002d84, #0038a8);
+  --app-menu-group-ai-bg: linear-gradient(135deg, #0f766e, #0b8f78);
   --app-menu-group-ai-text: #fff8d6;
-  --app-menu-group-admin-bg: linear-gradient(135deg, #ce1126, #a60f1f);
+  --app-menu-group-admin-bg: linear-gradient(135deg, #0f4aa8, #0f766e);
   --app-menu-group-admin-text: #fff8d6;
   --app-menu-group-governance-bg: linear-gradient(135deg, #fcd116, #f4b400);
   --app-menu-group-governance-text: #0f2547;
@@ -164,7 +164,7 @@
   --app-menu-group-account-text: #0f2547;
   --app-menu-link-bg: rgba(255, 255, 255, 0.14);
   --app-menu-link-text: #ffffff;
-  --app-menu-link-ai-bg: linear-gradient(135deg, rgba(255, 248, 214, 0.18), rgba(255, 255, 255, 0.06));
+  --app-menu-link-ai-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.88), rgba(11, 143, 120, 0.82));
   --app-menu-link-admin-bg: rgba(255, 248, 214, 0.16);
   --app-menu-link-governance-bg: linear-gradient(135deg, #fcd116, #ffd84a);
   --app-theme-panel-bg: rgba(255, 255, 255, 0.14);
@@ -178,25 +178,25 @@
   --app-theme-button-active-text: #0f2547;
   --loan-step8-shell-bg: #ffffff;
   --loan-step8-shell-border: rgba(0, 56, 168, 0.16);
-  --loan-step8-header-bg: linear-gradient(135deg, #0038a8 0%, #0038a8 58%, #ce1126 100%);
+  --loan-step8-header-bg: linear-gradient(135deg, #0038a8 0%, #0b57d0 48%, #0f766e 100%);
   --loan-step8-header-text: #ffffff;
   --loan-step8-header-kicker: #fff8d6;
   --loan-step8-header-copy: rgba(255, 255, 255, 0.86);
-  --loan-step8-section-bg: #fffdf7;
-  --loan-step8-section-border: rgba(252, 209, 22, 0.42);
+  --loan-step8-section-bg: #f8fffc;
+  --loan-step8-section-border: rgba(15, 118, 110, 0.2);
   --loan-step8-panel-bg: #ffffff;
   --loan-step8-panel-border: rgba(0, 56, 168, 0.12);
-  --loan-step8-panel-soft-bg: #fffdf7;
+  --loan-step8-panel-soft-bg: #f6fffb;
   --loan-step8-title: #0f2547;
   --loan-step8-muted: #546275;
-  --loan-step8-status-bg: #fff8d6;
-  --loan-step8-status-text: #0038a8;
+  --loan-step8-status-bg: #dcfce7;
+  --loan-step8-status-text: #0f766e;
   --loan-step8-warning-bg: #fff8d6;
   --loan-step8-warning-border: #fcd116;
   --loan-step8-warning-text: #8b5e00;
-  --loan-step8-summary-bg: linear-gradient(135deg, #ffffff 0%, #fff8d6 56%, rgba(206, 17, 38, 0.08) 100%);
-  --loan-step8-summary-border: rgba(252, 209, 22, 0.72);
-  --loan-step8-probability-bg: linear-gradient(135deg, #0038a8 0%, #0038a8 58%, #ce1126 100%);
+  --loan-step8-summary-bg: linear-gradient(135deg, #ffffff 0%, #fff8d6 44%, rgba(15, 118, 110, 0.12) 100%);
+  --loan-step8-summary-border: rgba(252, 209, 22, 0.64);
+  --loan-step8-probability-bg: linear-gradient(135deg, #0038a8 0%, #0b57d0 52%, #0f766e 100%);
   --loan-step8-probability-border: #002d84;
   --loan-step8-probability-text: #ffffff;
   --loan-step8-probability-muted: #fff8d6;
@@ -206,9 +206,9 @@
   --loan-step8-note-pill-bg: #fff8d6;
   --loan-step8-note-pill-border: #fcd116;
   --loan-step8-note-pill-text: #0f2547;
-  --loan-step8-ring-positive: #0038a8;
+  --loan-step8-ring-positive: #0f766e;
   --loan-step8-ring-warning: #f4b400;
-  --loan-step8-ring-negative: #ce1126;
+  --loan-step8-ring-negative: #0038a8;
 }
 
 * {
@@ -876,6 +876,243 @@ textarea {
   color: #ffffff;
 }
 
+.loan-certification-page {
+  display: grid;
+  gap: 18px;
+  padding: 12px 0 32px;
+}
+
+.loan-certification-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.loan-certification-toolbar-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.loan-certification-button {
+  min-height: 42px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  transition: all 0.2s ease;
+}
+
+.loan-certification-button-primary {
+  background: #0038a8;
+  border: 1px solid #0038a8;
+  color: #ffffff;
+}
+
+.loan-certification-button-primary:hover {
+  background: #002d84;
+}
+
+.loan-certification-button-secondary {
+  background: #ffffff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+.loan-certification-button-secondary:hover {
+  background: #f8fafc;
+}
+
+.loan-certification-shell {
+  max-width: 1040px;
+  margin: 0 auto;
+}
+
+.loan-certification-frame {
+  position: relative;
+  border: 18px solid #0038a8;
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow: 0 20px 48px rgba(15, 37, 71, 0.16);
+  overflow: hidden;
+}
+
+.loan-certification-frame::before {
+  content: '';
+  position: absolute;
+  inset: 16px;
+  border: 4px solid #fcd116;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+.loan-certification-frame::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 16px;
+  background: linear-gradient(90deg, #0038a8 0%, #0b57d0 48%, #0f766e 100%);
+}
+
+.loan-certification-inner {
+  position: relative;
+  z-index: 1;
+  padding: 58px 64px 74px;
+  background:
+    radial-gradient(circle at top left, rgba(252, 209, 22, 0.24), transparent 22%),
+    radial-gradient(circle at top right, rgba(11, 87, 208, 0.12), transparent 24%),
+    linear-gradient(180deg, #ffffff 0%, #f8fffc 100%);
+}
+
+.loan-certification-kicker {
+  margin: 0;
+  text-align: center;
+  color: #0f766e;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.loan-certification-title {
+  margin: 12px 0 8px;
+  text-align: center;
+  color: #0038a8;
+  font-size: clamp(2rem, 4vw, 3rem);
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.loan-certification-reference {
+  margin: 0;
+  text-align: center;
+  color: #7a5a00;
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.loan-certification-name {
+  margin-top: 34px;
+  text-align: center;
+  color: #0f2547;
+  font-size: clamp(2rem, 4vw, 2.8rem);
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.loan-certification-copy {
+  max-width: 720px;
+  margin: 16px auto 0;
+  text-align: center;
+  color: #546275;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.loan-certification-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 30px;
+}
+
+.loan-certification-summary-card,
+.loan-certification-metric-card {
+  border-radius: 16px;
+  border: 1px solid rgba(0, 56, 168, 0.12);
+  background: linear-gradient(135deg, #ffffff 0%, #fff8d6 54%, rgba(15, 118, 110, 0.1) 100%);
+  padding: 18px;
+}
+
+.loan-certification-summary-label,
+.loan-certification-metric-label {
+  display: block;
+  color: #0f766e;
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.loan-certification-summary-value {
+  display: block;
+  margin-top: 14px;
+  color: #0038a8;
+  font-size: clamp(1.8rem, 3vw, 2.5rem);
+  font-weight: 700;
+}
+
+.loan-certification-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 24px;
+}
+
+.loan-certification-metric-value {
+  display: block;
+  margin-top: 10px;
+  color: #0f2547;
+  font-size: clamp(1.4rem, 2.5vw, 2rem);
+  font-weight: 700;
+}
+
+.loan-certification-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+  margin-top: 32px;
+}
+
+.loan-certification-meta {
+  display: grid;
+  gap: 10px;
+}
+
+.loan-certification-meta p,
+.loan-certification-loading {
+  margin: 0;
+  color: #546275;
+  font-size: 0.95rem;
+}
+
+.loan-certification-meta strong {
+  color: #0f2547;
+}
+
+.loan-certification-qr {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+}
+
+.loan-certification-qr img {
+  width: 164px;
+  height: 164px;
+  border-radius: 14px;
+  border: 8px solid #ffffff;
+  background: #ffffff;
+  box-shadow: 0 10px 24px rgba(15, 37, 71, 0.14);
+}
+
+.loan-certification-qr span {
+  color: #546275;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
 .loan-step8-shell {
   background: var(--loan-step8-shell-bg);
   border-color: var(--loan-step8-shell-border);
@@ -972,6 +1209,56 @@ textarea {
 
   .loan-stepper-grid {
     grid-template-columns: repeat(10, minmax(120px, 1fr));
+  }
+
+  .loan-certification-inner {
+    padding: 42px 26px 60px;
+  }
+
+  .loan-certification-summary-grid,
+  .loan-certification-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .loan-certification-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media print {
+  body {
+    background: #ffffff !important;
+  }
+
+  .sidebar,
+  .loan-certification-toolbar {
+    display: none !important;
+  }
+
+  .content {
+    padding: 0 !important;
+  }
+
+  .loan-certification-page {
+    padding: 0;
+  }
+
+  .loan-certification-shell {
+    max-width: none;
+  }
+
+  .loan-certification-frame {
+    box-shadow: none;
+    border-width: 14px;
+  }
+
+  .loan-certification-frame::before {
+    inset: 12px;
+  }
+
+  .loan-certification-inner {
+    padding: 44px 42px 58px;
   }
 }
 

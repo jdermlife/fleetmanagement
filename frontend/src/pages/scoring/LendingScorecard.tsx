@@ -2804,6 +2804,47 @@ export default function LendingScorecard() {
     },
   ];
   const displayedQuantSummary = backendQuantSummary;
+  const borrowerDisplayName =
+    formData.borrower.fullName.trim() ||
+    [
+      formData.applicantPersonal.firstName,
+      formData.applicantPersonal.middleName,
+      formData.applicantPersonal.lastName,
+    ]
+      .filter((value) => value.trim().length > 0)
+      .join(' ')
+      .trim() ||
+    'Unnamed Borrower';
+
+  const handleOpenCertification = () => {
+    if (!displayedQuantSummary) {
+      return;
+    }
+
+    const qrValue =
+      typeof window !== 'undefined'
+        ? `${window.location.origin}/loan-certification?applicationNo=${encodeURIComponent(formData.id)}`
+        : formData.id;
+
+    navigate(`/loan-certification?applicationNo=${encodeURIComponent(formData.id)}`, {
+      state: {
+        certificationData: {
+          applicationNo: formData.id,
+          borrowerName: borrowerDisplayName,
+          issuedAt: new Date().toISOString(),
+          overallScore: displayedQuantSummary.overall_score,
+          label: displayedQuantSummary.final_grade,
+          decision: displayedQuantSummary.decision,
+          creditScore: displayedQuantSummary.credit_score,
+          fraudScore: displayedQuantSummary.fraud_score,
+          socialScore: displayedQuantSummary.social_score,
+          creditValueScore: displayedQuantSummary.psychometric_score,
+          qrValue,
+        },
+      },
+    });
+  };
+
   const executiveSummaryItems = [
     {
       label: 'Credit Score',
@@ -3665,6 +3706,16 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleOpenCertification}
+                  disabled={!displayedQuantSummary}
+                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Request Certification
+                </button>
+              </div>
               <div className="loan-step8-shell overflow-hidden rounded-2xl border shadow-lg">
                 <div className="loan-step8-header px-5 py-3">
                   <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

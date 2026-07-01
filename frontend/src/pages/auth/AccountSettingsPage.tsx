@@ -21,7 +21,7 @@ const THEME_STORAGE_KEY = 'fms:theme'
 const themeOptions: Array<{ id: ThemeId; label: string; description: string }> = [
   { id: 'classic', label: 'Classic', description: 'Current gold-based FILSCORE look.' },
   { id: 'civic', label: 'Blue/Red/Yellow/White', description: 'Brighter blue, red, yellow, and white palette.' },
-  { id: 'philippine-flag', label: 'Philippine Flag', description: 'Royal blue, flag red, sun gold, and white inspired by the Philippine flag.' },
+  { id: 'philippine-flag', label: 'Philippine Flag', description: 'Predominantly royal blue and green with yellow highlights and white support tones.' },
 ]
 
 const isThemeId = (value: string | null): value is ThemeId =>

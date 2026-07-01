@@ -38,6 +38,7 @@ const VehicleDetailPage = lazy(() => import('./pages/vehicles/VehicleDetailPage'
 const VehicleMasterPage = lazy(() => import('./pages/vehicles/VehicleMasterPage'))
 const LoanRepository = lazy(() => import('./pages/scoring/LoanRepository'))
 const LoanDetails = lazy(() => import('./pages/scoring/LoanDetails'))
+const LoanCertificationPage = lazy(() => import('./pages/scoring/LoanCertificationPage'))
 const ApprovalQueue = lazy(() => import('./pages/scoring/ApprovalQueue'))
 const CreditReviewWorkbench = lazy(() => import('./pages/scoring/CreditReviewWorkbench'))
 const ReleasedAccounts = lazy(() => import('./pages/scoring/ReleasedAccounts'))
@@ -677,6 +678,14 @@ const adminMenuItems = visibleMenuLinks.filter(
               element={
                 <ProtectedRoute permissions={['read:loans']}>
                   <LoanDetails />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/loan-certification"
+              element={
+                <ProtectedRoute permissions={['read:loans']}>
+                  <LoanCertificationPage />
                 </ProtectedRoute>
               }
             />
