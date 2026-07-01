@@ -88,6 +88,8 @@ def normalize_product_type(payload: Any) -> str:
     mapping = {
         "home loan": "Home Loan",
         "auto loan": "Auto Loan",
+        "motorcycle loan": "Motorcycle Loan",
+        "motocycle loan": "Motorcycle Loan",
         "credit card": "Credit Card",
         "credit  card": "Credit Card",
         "personal loan": "Personal Loan",

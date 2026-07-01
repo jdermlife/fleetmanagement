@@ -118,3 +118,39 @@ class CreditRiskEngineTests(unittest.TestCase):
         self.assertGreater(result["collateral_scores"]["marketability_score"], 95.0)
         self.assertGreater(result["collateral_scores"]["asset_quality_score"], 95.0)
         self.assertGreater(result["collateral_scores"]["overall_collateral_score"], 85.0)
+
+    def test_credit_risk_package_uses_structured_motorcycle_collateral_inputs(self) -> None:
+        payload = SimpleNamespace(
+            product_type="Motorcycle Loan",
+            loan_amount=180000.0,
+            appraised_value=300000.0,
+            requirements={
+                "bankingRelationships": {
+                    "memberSince": "2020-01-15",
+                    "accountNumber": "A123",
+                    "creditCardNumber": "CC123",
+                    "loanLender": "Lender A",
+                    "currentBalance": "1234.56",
+                    "loanCurrentBalance": "2500",
+                },
+                "enhancedDueDiligence": {
+                    "numberOfActiveLoans": "2",
+                },
+                "collateralAssetDetails": {
+                    "brand": "Honda",
+                    "year": "2026",
+                    "appraisedValue": 300000.0,
+                    "vehicleMarketabilityCategory": "Honda, Yamaha, Suzuki, Kawasaki",
+                    "motorcycleIntendedUse": "Personal use",
+                    "insuranceProviderCompany": "Insurer",
+                    "policyNumber": "POL-1",
+                },
+                "productInformation": {},
+            },
+        )
+
+        result = compute_credit_risk_package(payload)
+
+        self.assertGreater(result["collateral_scores"]["marketability_score"], 95.0)
+        self.assertGreater(result["collateral_scores"]["asset_quality_score"], 95.0)
+        self.assertEqual(result["collateral_scores"]["insurance_score"], 100.0)

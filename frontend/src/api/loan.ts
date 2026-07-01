@@ -14,7 +14,7 @@ export type WorkflowStatus =
   | 'Rejected'
   | 'Released'
 
-export type ProductType = 'Home Loan' | 'Auto Loan' | 'Credit Card' | 'Personal Loan'
+export type ProductType = 'Home Loan' | 'Auto Loan' | 'Motorcycle Loan' | 'Credit Card' | 'Personal Loan'
 
 export interface LoanApplicationRequirements {
   productInformation: {
@@ -116,6 +116,7 @@ export interface LoanApplicationRequirements {
     vehicleMarketabilityCategory: string
     vehicleConditionCategory: string
     vehicleTypeCategory: string
+    motorcycleIntendedUse: string
     insuranceProviderCompany: string
     policyNumber: string
     orNumber: string

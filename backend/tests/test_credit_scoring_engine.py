@@ -68,6 +68,7 @@ def build_payload(product_type: str, **overrides):
                 "year": "2026",
                 "assetType": "Passenger vehicle",
                 "appraisedValue": 1800000,
+                "motorcycleIntendedUse": "",
             },
         },
     }
@@ -180,6 +181,58 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["conditions_score"], 15.0)
         self.assertEqual(result["total_credit_score"], 78.0)
         self.assertEqual(result["credit_grade"], "Gold 2")
+
+    def test_motorcycle_loan_uses_motorcycle_scorecard(self) -> None:
+        result = compute_credit_score(build_payload("Motorcycle Loan"))
+
+        self.assertEqual(result["capital_score"], 0.0)
+        self.assertEqual(result["capacity_score"], 27.0)
+        self.assertEqual(result["character_score"], 11.0)
+        self.assertEqual(result["collateral_score"], 12.0)
+        self.assertEqual(result["conditions_score"], 11.0)
+        self.assertEqual(result["total_credit_score"], 61.0)
+        self.assertEqual(result["credit_grade"], "Silver 2")
+        self.assertEqual(result["model_version"], "product-scorecard-v1:Motorcycle Loan")
+
+    def test_motorcycle_loan_prefers_structured_motorcycle_fields(self) -> None:
+        payload = build_payload("Motorcycle Loan", appraised_value=300000.0)
+        payload.requirements["bankingRelationships"].update(
+            {
+                "creditPaymentHistory": "Excellent handling (no past due)",
+                "accountHandling": "Excellent handling (no returned checks)",
+                "utilityCreditBureauStatus": "Very satisfactory to satisfactory",
+                "averageDailyBalance": 120000,
+            }
+        )
+        payload.requirements["employmentInformation"].update(
+            {
+                "employmentStatus": "Permanent Employee",
+                "employerBusinessYears": 11,
+            }
+        )
+        payload.requirements["enhancedDueDiligence"].update(
+            {
+                "secondaryIncomeProfile": "Multiple stable income sources",
+            }
+        )
+        payload.requirements["collateralAssetDetails"].update(
+            {
+                "brand": "Honda",
+                "year": "2026",
+                "appraisedValue": 300000.0,
+                "vehicleMarketabilityCategory": "Honda, Yamaha, Suzuki, Kawasaki",
+                "motorcycleIntendedUse": "Personal use",
+            }
+        )
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["capacity_score"], 27.0)
+        self.assertEqual(result["character_score"], 25.0)
+        self.assertEqual(result["collateral_score"], 20.0)
+        self.assertEqual(result["conditions_score"], 19.0)
+        self.assertEqual(result["total_credit_score"], 91.0)
+        self.assertEqual(result["credit_grade"], "Platinum 2")
 
     def test_credit_card_uses_relationship_limit_scorecard(self) -> None:
         result = compute_credit_score(

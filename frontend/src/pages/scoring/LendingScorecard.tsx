@@ -22,7 +22,7 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; mobileYearsUsed: string; homePhoneNumber: string; emailAddress: string; emailYearsUsed: string; }
@@ -166,7 +166,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
+  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', mobileYearsUsed: '', homePhoneNumber: '', emailAddress: '', emailYearsUsed: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
@@ -238,6 +238,7 @@ const buildLoanRequirements = (
       vehicleMarketabilityCategory: application.collateral.vehicleMarketabilityCategory,
       vehicleConditionCategory: application.collateral.vehicleConditionCategory,
       vehicleTypeCategory: application.collateral.vehicleTypeCategory,
+      motorcycleIntendedUse: application.collateral.motorcycleIntendedUse,
       insuranceProviderCompany:
         application.collateral.insuranceProviderCompany || derivedInsuranceSummary,
       policyNumber: application.collateral.policyNumber,
@@ -1309,7 +1310,8 @@ export default function LendingScorecard() {
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
   const isAutoLoan = formData.loan.productType === 'Auto Loan';
-  const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan;
+  const isMotorcycleLoan = formData.loan.productType === 'Motorcycle Loan';
+  const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -1649,6 +1651,9 @@ export default function LendingScorecard() {
         vehicleTypeCategory:
           savedCollateralAssetDetails.vehicleTypeCategory ??
           blankApplication.collateral.vehicleTypeCategory,
+        motorcycleIntendedUse:
+          savedCollateralAssetDetails.motorcycleIntendedUse ??
+          blankApplication.collateral.motorcycleIntendedUse,
         appraisedValue: record.appraised_value,
         insuranceProviderCompany:
           savedCollateralAssetDetails.insuranceProviderCompany ??
@@ -2530,7 +2535,7 @@ export default function LendingScorecard() {
         <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {usesStructuredRetailCriteria && renderSelect('enhancedDueDiligence', 'lifestyleIndicator', 'Lifestyle', ['Respectable lifestyle (no gambling, drinking, etc.)', 'Signs of adverse characteristics'])}
-          {isPersonalLoan && renderSelect('enhancedDueDiligence', 'secondaryIncomeProfile', 'Secondary Source of Income', ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'])}
+          {(isPersonalLoan || isMotorcycleLoan) && renderSelect('enhancedDueDiligence', 'secondaryIncomeProfile', 'Secondary Source of Income', ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'])}
           {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References (Optional)', 3)}
@@ -2995,7 +3000,7 @@ export default function LendingScorecard() {
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
-              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Credit Card', 'Personal Loan'])}
+              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Motorcycle Loan', 'Credit Card', 'Personal Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
@@ -3256,7 +3261,14 @@ export default function LendingScorecard() {
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Detailed Employment Information</h4>
               </div>
-              {renderSelect('employmentInformation', 'employmentStatus', 'Employment Status', ['Regular', 'Contractual', 'Project-Basis', 'Consulting', 'Part-time'])}
+              {renderSelect(
+                'employmentInformation',
+                'employmentStatus',
+                'Employment Status',
+                isMotorcycleLoan
+                  ? ['Permanent Employee', 'OFW', 'Government Employee', 'Business Owner', 'Self-employed', 'Contractual', 'Unemployed']
+                  : ['Regular', 'Contractual', 'Project-Basis', 'Consulting', 'Part-time'],
+              )}
               {renderInput('employmentInformation', 'employerBusinessName', 'Employer / Business Name')}
               {renderInput('employmentInformation', 'officeAddress', 'Office Address')}
               {renderInput('employmentInformation', 'occupation', 'Occupation')}
@@ -3395,12 +3407,21 @@ export default function LendingScorecard() {
                   Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
                 </p>
               )}
-              {isAutoLoan && (
+              {(isAutoLoan || isMotorcycleLoan) && (
                 <>
                   <div className="md:col-span-2">
-                    <h4 className="font-semibold text-sm text-gray-700 mb-3">Asset / Vehicle Information</h4>
+                    <h4 className="font-semibold text-sm text-gray-700 mb-3">
+                      {isMotorcycleLoan ? 'Motorcycle Information' : 'Asset / Vehicle Information'}
+                    </h4>
                   </div>
-                  {renderSelect('collateral', 'assetType', 'Type', assetVehicleTypeOptions)}
+                  {renderSelect(
+                    'collateral',
+                    'assetType',
+                    'Type',
+                    isMotorcycleLoan
+                      ? ['Motorcycle', 'Scooter', 'Underbone', 'Standard Bike', 'Delivery Bike']
+                      : assetVehicleTypeOptions,
+                  )}
                   {renderInput('collateral', 'maker', 'Maker')}
                   {renderInput('collateral', 'brand', 'Brand')}
                   {renderInput('collateral', 'model', 'Model')}
@@ -3415,6 +3436,9 @@ export default function LendingScorecard() {
               {isAutoLoan && renderInput('collateral', 'policyNumber', 'Policy Number')}
               {isAutoLoan && renderInput('collateral', 'orNumber', 'OR Number')}
               {isAutoLoan && renderInput('collateral', 'crNumber', 'CR Number')}
+              {isMotorcycleLoan && renderSelect('collateral', 'vehicleMarketabilityCategory', 'Motorcycle Brand & Marketability', ['Honda, Yamaha, Suzuki, Kawasaki', 'Other established brands', 'Low-demand brands', 'Unknown/obsolete'])}
+              {isMotorcycleLoan && renderFormattedNumberInput('collateral', 'appraisedValue', 'Motorcycle Value')}
+              {isMotorcycleLoan && renderSelect('collateral', 'motorcycleIntendedUse', 'Intended Use', ['Personal use', 'Personal & occasional business', 'Full-time delivery/ride-hailing', 'Commercial/high mileage'])}
               {isHomeLoan && (
                 <div className="md:col-span-2 border-t pt-4 mt-4">
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information</h4>

@@ -39,6 +39,13 @@ from app.services.credit_scoring.home_loan import (
     score_home_loan_collateral,
     score_home_loan_condition,
 )
+from app.services.credit_scoring.motorcycle_loan import (
+    compute_motorcycle_loan_collateral_breakdown,
+    score_motorcycle_loan_capacity,
+    score_motorcycle_loan_character,
+    score_motorcycle_loan_collateral,
+    score_motorcycle_loan_condition,
+)
 from app.services.credit_scoring.personal_loan import (
     score_personal_loan_capacity,
     score_personal_loan_capital,
@@ -77,6 +84,11 @@ __all__ = [
     "score_home_loan_character",
     "score_home_loan_collateral",
     "score_home_loan_condition",
+    "compute_motorcycle_loan_collateral_breakdown",
+    "score_motorcycle_loan_capacity",
+    "score_motorcycle_loan_character",
+    "score_motorcycle_loan_collateral",
+    "score_motorcycle_loan_condition",
     "score_personal_loan_capacity",
     "score_personal_loan_capital",
     "score_personal_loan_character",

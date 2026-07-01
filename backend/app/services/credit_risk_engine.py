@@ -4,6 +4,7 @@ from datetime import UTC, date, datetime
 from typing import Any
 
 from app.services.credit_scoring.auto_loan import compute_auto_loan_collateral_breakdown
+from app.services.credit_scoring.motorcycle_loan import compute_motorcycle_loan_collateral_breakdown
 from app.services.credit_scoring_engine import compute_credit_score
 
 
@@ -173,6 +174,39 @@ def _compute_collateral_score(payload: Any) -> dict[str, float]:
         insurance_score = 79.0
         overall_collateral_score = round(
             (ltv_score + marketability_score + asset_quality_score + insurance_score) / 4.0,
+            2,
+        )
+
+        return {
+            "ltv_score": ltv_score,
+            "asset_quality_score": asset_quality_score,
+            "marketability_score": marketability_score,
+            "insurance_score": insurance_score,
+            "overall_collateral_score": overall_collateral_score,
+        }
+
+    if _product_type_for_risk(payload).lower() == "motorcycle loan":
+        breakdown = compute_motorcycle_loan_collateral_breakdown(payload)
+        appraised_value = _to_float(getattr(payload, "appraised_value", 0.0))
+        loan_amount = _to_float(getattr(payload, "loan_amount", 0.0))
+        if appraised_value > 0 and loan_amount > 0:
+            ltv_percent = (loan_amount / appraised_value) * 100.0
+            ltv_score = round(max(0.0, min(100.0, 100.0 - ltv_percent)), 2)
+        else:
+            ltv_score = round((breakdown["value_score"] / 5.0) * 100.0, 2)
+
+        marketability_score = round((breakdown["marketability_score"] / 6.0) * 100.0, 2)
+        age_score = round((breakdown["age_score"] / 5.0) * 100.0, 2)
+        intended_use_score = round((breakdown["use_score"] / 4.0) * 100.0, 2)
+        asset_quality_score = round((age_score + intended_use_score) / 2.0, 2)
+
+        requirements = _requirements_section(payload, "collateralAssetDetails")
+        insurance_present = bool(requirements.get("insuranceProviderCompany")) and bool(
+            requirements.get("policyNumber")
+        )
+        insurance_score = 100.0 if insurance_present else 40.0
+        overall_collateral_score = round(
+            (ltv_score + asset_quality_score + marketability_score + insurance_score) / 4.0,
             2,
         )
 
