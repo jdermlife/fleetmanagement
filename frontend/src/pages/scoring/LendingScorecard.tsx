@@ -22,13 +22,13 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; useAsCollateral: boolean; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; mobileYearsUsed: string; homePhoneNumber: string; emailAddress: string; emailYearsUsed: string; }
 interface GovernmentIds { tin: string; sssGsisNumber: string; otherGovernmentId: string; idNumber: string; issueDate: string; expiryDate: string; }
 interface AddressInformation { presentAddress: string; permanentAddress: string; mailingAddress: string; lengthOfStay: string; }
-interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; deviceVerified: boolean; }
+interface OtherInformation { homeOwnership: string; educationalAttainment: string; numberOfVehiclesOwned: number; recentPhotoUploaded: boolean; deviceVerified: boolean; hasCoBorrower: boolean; }
 interface EmploymentInformation { employmentStatus: string; employmentLocation: string; employerBusinessName: string; employerBusinessYears: number; officeAddress: string; occupation: string; position: string; natureOfWorkBusiness: string; dateHired: string; officePhoneNumber: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyLivingExpenses: number; otherSourcesOfIncome: number; investmentIncome: number; businessIncome: number; pensionIncome: number; otherIncome: string; }
 interface CollateralInformation { propertyAddress: string; registeredOwner: string; lotNumber: string; blockNumber: string; tctCctNumber: string; propertyMarketabilityCategory: string; houseUnitModelCategory: string; collateralOccupancyType: string; propertyAppraisedValue: number; }
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
@@ -81,6 +81,26 @@ interface LoanApplication {
   finalChecklist?: FinalChecklist;
   releaseNotes?: string;
 }
+
+const createBlankSpouseInformation = (): SpouseInformation => ({
+  fullName: '',
+  dateOfBirth: '',
+  placeOfBirth: '',
+  citizenship: '',
+  mobileNumber: '',
+  presentAddress: '',
+  employerBusinessName: '',
+  officeAddress: '',
+  occupation: '',
+  position: '',
+  natureOfWork: '',
+  yearsWithEmployer: '',
+  previousEmployer: '',
+  totalYearsWorking: '',
+  grossMonthlyIncome: 0,
+  monthlyExpenses: 0,
+  otherIncomeSources: '',
+});
 
 type ParsedSectionUpdates = {
   borrower?: Partial<BorrowerInfo>;
@@ -166,16 +186,16 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
+  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', mobileYearsUsed: '', homePhoneNumber: '', emailAddress: '', emailYearsUsed: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
-  otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false, deviceVerified: false },
+  otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 0, recentPhotoUploaded: false, deviceVerified: false, hasCoBorrower: false },
   employmentInformation: { employmentStatus: '', employmentLocation: '', employerBusinessName: '', employerBusinessYears: 0, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyLivingExpenses: 0, otherSourcesOfIncome: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0, otherIncome: '' },
   collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyMarketabilityCategory: '', houseUnitModelCategory: '', collateralOccupancyType: '', propertyAppraisedValue: 0 },
   additionalCollaterals: [],
-  spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
+  spouseInformation: createBlankSpouseInformation(),
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
   supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
@@ -239,6 +259,7 @@ const buildLoanRequirements = (
       vehicleConditionCategory: application.collateral.vehicleConditionCategory,
       vehicleTypeCategory: application.collateral.vehicleTypeCategory,
       motorcycleIntendedUse: application.collateral.motorcycleIntendedUse,
+      useAsCollateral: application.collateral.useAsCollateral,
       insuranceProviderCompany:
         application.collateral.insuranceProviderCompany || derivedInsuranceSummary,
       policyNumber: application.collateral.policyNumber,
@@ -1291,7 +1312,6 @@ export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const requestedApplicationNo = searchParams.get('applicationNo');
-  const [selectedCountryCode, setSelectedCountryCode] = useState('PHL');
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
@@ -1302,6 +1322,8 @@ export default function LendingScorecard() {
   const [saveMessage, setSaveMessage] = useState('');
   const [hasPersistedRecord, setHasPersistedRecord] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [workflowActionState, setWorkflowActionState] = useState<'idle' | 'processing' | 'completed' | 'error'>('idle');
+  const [completedWorkflowAction, setCompletedWorkflowAction] = useState<WorkflowStatus | null>(null);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
   const isHomeLoan = formData.loan.productType === 'Home Loan';
@@ -1309,6 +1331,8 @@ export default function LendingScorecard() {
   const isCreditCard = formData.loan.productType === 'Credit Card';
   const isAutoLoan = formData.loan.productType === 'Auto Loan';
   const isMotorcycleLoan = formData.loan.productType === 'Motorcycle Loan';
+  const isMarried = formData.applicantPersonal.maritalStatus === 'Married';
+  const hasCoBorrowerSelected = formData.otherInformation.hasCoBorrower;
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
 
   // --- Auto-Calculations (Memoized for Performance) ---
@@ -1651,6 +1675,9 @@ export default function LendingScorecard() {
         motorcycleIntendedUse:
           savedCollateralAssetDetails.motorcycleIntendedUse ??
           blankApplication.collateral.motorcycleIntendedUse,
+        useAsCollateral:
+          savedCollateralAssetDetails.useAsCollateral ??
+          blankApplication.collateral.useAsCollateral,
         appraisedValue: record.appraised_value,
         insuranceProviderCompany:
           savedCollateralAssetDetails.insuranceProviderCompany ??
@@ -1938,6 +1965,30 @@ export default function LendingScorecard() {
     setFormData(prev => ({ ...prev, coBorrowers: prev.coBorrowers.filter(cb => cb.id !== id) }));
   };
 
+  const handleMaritalStatusChange = (value: string) => {
+    invalidateBackendScoring();
+    setFormData((prev) => ({
+      ...prev,
+      applicantPersonal: {
+        ...prev.applicantPersonal,
+        maritalStatus: value,
+      },
+      spouseInformation: value === 'Married' ? prev.spouseInformation : createBlankSpouseInformation(),
+    }));
+  };
+
+  const handleCoBorrowerSelectionChange = (value: boolean) => {
+    invalidateBackendScoring();
+    setFormData((prev) => ({
+      ...prev,
+      otherInformation: {
+        ...prev.otherInformation,
+        hasCoBorrower: value,
+      },
+      coBorrowers: value ? prev.coBorrowers : [],
+    }));
+  };
+
   const addAdditionalCollateral = () => {
     invalidateBackendScoring();
     const newCollateral: AdditionalCollateral = {
@@ -2011,7 +2062,7 @@ export default function LendingScorecard() {
   const persistLoanApplication = async (
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
-  ) => {
+  ): Promise<boolean> => {
     setIsSaving(true);
 
     try {
@@ -2024,10 +2075,12 @@ export default function LendingScorecard() {
       setHasPersistedRecord(true);
       setFormData({ ...applicationToSave, status: newStatus });
       setTransientMessage(result.message || `Application saved as ${newStatus}`);
+      return true;
     } catch (error) {
       setSaveMessage(
         getErrorMessage(error, 'Failed to save loan application.'),
       );
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -2036,7 +2089,7 @@ export default function LendingScorecard() {
   const changeWorkflowStatus = async (
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
-  ) => {
+  ): Promise<boolean> => {
     if (
       newStatus !== 'Draft' &&
       (!enhancedDueDiligenceComplete || !enhancedSupportingDocumentsComplete)
@@ -2044,17 +2097,15 @@ export default function LendingScorecard() {
       setSaveMessage(
         'Complete all required enhanced due diligence fields and supporting document declarations before moving beyond Draft.',
       );
-      return;
+      return false;
     }
 
     if (applicationOverride) {
-      await persistLoanApplication(newStatus, applicationOverride);
-      return;
+      return persistLoanApplication(newStatus, applicationOverride);
     }
 
     if (!hasPersistedRecord || formData.status === 'Draft') {
-      await persistLoanApplication(newStatus);
-      return;
+      return persistLoanApplication(newStatus);
     }
 
     setIsSaving(true);
@@ -2063,8 +2114,10 @@ export default function LendingScorecard() {
       const result = await updateLoanApplicationStatus(formData.id, newStatus);
       setFormData(prev => ({ ...prev, status: newStatus }));
       setTransientMessage(result.message || `Status updated to ${newStatus}`);
+      return true;
     } catch (error) {
       setSaveMessage(getErrorMessage(error, 'Failed to update status.'));
+      return false;
     } finally {
       setIsSaving(false);
     }
@@ -2075,7 +2128,18 @@ export default function LendingScorecard() {
   };
 
   const handleSelectedWorkflowAction = async () => {
-    await changeWorkflowStatus(selectedWorkflowAction);
+    setWorkflowActionState('processing');
+    const didSucceed = await changeWorkflowStatus(selectedWorkflowAction);
+    if (didSucceed) {
+      setCompletedWorkflowAction(selectedWorkflowAction);
+      setWorkflowActionState('completed');
+      window.setTimeout(() => {
+        setWorkflowActionState('idle');
+      }, 2500);
+      return;
+    }
+
+    setWorkflowActionState('error');
   };
 
   const handleFinalizeDocumentReview = async (newStatus: WorkflowStatus) => {
@@ -2084,9 +2148,11 @@ export default function LendingScorecard() {
     }
 
     const mergedApplication = mergeReviewIntoApplication(formData, documentReview);
-    await changeWorkflowStatus(newStatus, mergedApplication);
-    setDocumentReview(null);
-    setReviewDocumentId(null);
+    const didSucceed = await changeWorkflowStatus(newStatus, mergedApplication);
+    if (didSucceed) {
+      setDocumentReview(null);
+      setReviewDocumentId(null);
+    }
   };
 
   const loadApplication = useCallback(async (applicationNo: string) => {
@@ -2178,12 +2244,19 @@ export default function LendingScorecard() {
       {
         label: 'Co-Borrower',
         complete:
-          formData.coBorrowers.length === 0 ||
-          formData.coBorrowers.every(
-            (coBorrower) =>
-              coBorrower.name.trim().length > 0 &&
-              coBorrower.relationship.trim().length > 0 &&
-              coBorrower.monthlyIncome > 0,
+          (!isMarried && !hasCoBorrowerSelected) ||
+          (
+            (!isMarried || formData.spouseInformation.fullName.trim().length > 0) &&
+            (!hasCoBorrowerSelected ||
+              (
+                formData.coBorrowers.length > 0 &&
+                formData.coBorrowers.every(
+                  (coBorrower) =>
+                    coBorrower.name.trim().length > 0 &&
+                    coBorrower.relationship.trim().length > 0 &&
+                    coBorrower.monthlyIncome > 0,
+                )
+              ))
           ),
         optional: true,
       },
@@ -2225,7 +2298,7 @@ export default function LendingScorecard() {
         complete: enhancedDueDiligenceComplete,
       },
     ],
-    [enhancedDueDiligenceComplete, formData],
+    [enhancedDueDiligenceComplete, formData, hasCoBorrowerSelected, isMarried],
   );
   const documentPreparationCompletedCount = documentPreparationChecklist.filter(
     (item) => item.complete,
@@ -2308,7 +2381,11 @@ export default function LendingScorecard() {
       return rawValue ? 'true' : 'false';
     }
 
-    if (type === 'number' && rawValue === 0) {
+    if (
+      type === 'number' &&
+      rawValue === 0 &&
+      !(section === 'enhancedDueDiligence' && field === 'numberOfActiveLoans')
+    ) {
       return '';
     }
 
@@ -2708,7 +2785,6 @@ export default function LendingScorecard() {
   const topNavButtonClass = 'loan-toolbar-button';
   const stepperButtonClass = 'loan-stepper-button';
   const footerButtonClass = 'loan-footer-button';
-  const countryOptions = ['PHL', 'USA', 'SGP', 'MYS', 'THA', 'IDN', 'VNM'];
   const assetVehicleTypeOptions = [
     'Passenger Cars',
     'SUVs & Crossovers',
@@ -2824,6 +2900,28 @@ export default function LendingScorecard() {
       value: creditRiskInsights.nonStarterScore.toFixed(0),
     },
   ];
+  const workflowActionButtonClass =
+    workflowActionState === 'processing'
+      ? 'bg-amber-500 hover:bg-amber-500 border-amber-600 text-white'
+      : workflowActionState === 'completed'
+        ? 'bg-emerald-600 hover:bg-emerald-600 border-emerald-700 text-white'
+        : workflowActionState === 'error'
+          ? 'bg-red-600 hover:bg-red-600 border-red-700 text-white'
+          : selectedWorkflowAction === 'Approved'
+            ? 'bg-emerald-600 hover:bg-emerald-500 border-emerald-700 text-white'
+            : selectedWorkflowAction === 'Rejected'
+              ? 'bg-red-600 hover:bg-red-500 border-red-700 text-white'
+              : selectedWorkflowAction === 'Released'
+                ? 'bg-indigo-600 hover:bg-indigo-500 border-indigo-700 text-white'
+                : 'bg-blue-600 hover:bg-blue-500 border-blue-700 text-white';
+  const workflowActionButtonLabel =
+    workflowActionState === 'processing'
+      ? `Processing ${selectedWorkflowAction}...`
+      : workflowActionState === 'completed'
+        ? `Completed: ${completedWorkflowAction ?? selectedWorkflowAction}`
+        : workflowActionState === 'error'
+          ? `Retry ${selectedWorkflowAction}`
+          : `Save as ${selectedWorkflowAction}`;
   const stepLabels = [
     'Product Selection',
     'Applicant Info',
@@ -3144,7 +3242,33 @@ export default function LendingScorecard() {
               {renderSelect('applicantPersonal', 'gender', 'Gender', ['Male', 'Female'])}
               {renderInput('applicantPersonal', 'citizenship', 'Citizenship')}
               {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
-              {renderSelect('applicantPersonal', 'maritalStatus', 'Marital Status', ['Single', 'Married', 'Widow', 'Separated', 'Others'])}
+              <div className="mb-3">
+                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Civil Status</label>
+                <select
+                  value={formData.applicantPersonal.maritalStatus}
+                  onChange={(event) => handleMaritalStatusChange(event.target.value)}
+                  className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">Select Civil Status</option>
+                  <option value="Single">Single</option>
+                  <option value="Married">Married</option>
+                  <option value="Widow">Widow</option>
+                  <option value="Separated">Separated</option>
+                </select>
+              </div>
+              <div className="mb-3">
+                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Co-Borrower</label>
+                <select
+                  value={formData.otherInformation.hasCoBorrower ? 'With Co-Borrower' : 'No Co-Borrower'}
+                  onChange={(event) =>
+                    handleCoBorrowerSelectionChange(event.target.value === 'With Co-Borrower')
+                  }
+                  className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="No Co-Borrower">No Co-Borrower</option>
+                  <option value="With Co-Borrower">With Co-Borrower</option>
+                </select>
+              </div>
               {renderInput('applicantPersonal', 'mothersMaidenName', "Mother's Maiden Name")}
               {renderInput('contactInformation', 'mobileNumber', 'Mobile Number')}
               {renderInput('contactInformation', 'homePhoneNumber', 'Home Phone Number')}
@@ -3213,11 +3337,20 @@ export default function LendingScorecard() {
           {step === 4 && (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
-                <h3 className="text-lg font-bold text-slate-800">Step 4: Co-Borrower Information (Optional)</h3>
-                <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
+                <h3 className="text-lg font-bold text-slate-800">Step 4: Spouse / Co-Borrower Information</h3>
+                {hasCoBorrowerSelected && (
+                  <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
+                )}
               </div>
-              {formData.coBorrowers.length === 0 && <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>}
-              {formData.coBorrowers.map((cb, idx) => (
+              {!isMarried && !hasCoBorrowerSelected && (
+                <p className="text-gray-500 italic text-sm">
+                  Step 4 is not required because Civil Status is not Married and Co-Borrower is set to No Co-Borrower.
+                </p>
+              )}
+              {hasCoBorrowerSelected && formData.coBorrowers.length === 0 && (
+                <p className="text-gray-500 italic text-sm">No co-borrowers added. Click above to add.</p>
+              )}
+              {hasCoBorrowerSelected && formData.coBorrowers.map((cb, idx) => (
                 <div key={cb.id} className="bg-gray-50 p-4 rounded-lg border border-gray-200 relative">
                   <button onClick={() => removeCoBorrower(cb.id)} className="loan-icon-button absolute top-2 right-2 text-red-500 hover:text-red-700 text-sm font-bold">Remove</button>
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Co-Borrower #{idx + 1}</h4>
@@ -3247,43 +3380,45 @@ export default function LendingScorecard() {
                   </div>
                 </div>
               ))}
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse / Co-Borrower Information (Optional)</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {[
-                    ['spouseInformation', 'fullName', 'Full Name'],
-                    ['spouseInformation', 'dateOfBirth', 'Date of Birth'],
-                    ['spouseInformation', 'placeOfBirth', 'Place of Birth'],
-                    ['spouseInformation', 'citizenship', 'Citizenship'],
-                    ['spouseInformation', 'mobileNumber', 'Mobile Number'],
-                    ['spouseInformation', 'presentAddress', 'Present Address'],
-                    ['spouseInformation', 'employerBusinessName', 'Employer / Business Name'],
-                    ['spouseInformation', 'officeAddress', 'Office Address'],
-                    ['spouseInformation', 'occupation', 'Occupation'],
-                    ['spouseInformation', 'position', 'Position'],
-                    ['spouseInformation', 'natureOfWork', 'Nature of Work'],
-                    ['spouseInformation', 'yearsWithEmployer', 'Years with Employer'],
-                    ['spouseInformation', 'previousEmployer', 'Previous Employer'],
-                    ['spouseInformation', 'totalYearsWorking', 'Total Years Working'],
-                    ['spouseInformation', 'grossMonthlyIncome', 'Gross Monthly Income'],
-                    ['spouseInformation', 'monthlyExpenses', 'Monthly Expenses'],
-                    ['spouseInformation', 'otherIncomeSources', 'Other Income Sources'],
-                  ].map(([section, field, label]) => (
-                    field === 'grossMonthlyIncome'
-                      ? renderFormattedNumberInput(
-                          section as EditableSection,
-                          field,
-                          label,
-                        )
-                      : renderInput(
-                      section as EditableSection,
-                      field,
-                      label,
-                      field === 'dateOfBirth' ? 'date' : field === 'grossMonthlyIncome' || field === 'monthlyExpenses' ? 'number' : 'text',
-                    )
-                  ))}
+              {isMarried && (
+                <div className="border-t pt-4 mt-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Spouse Information</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {[
+                      ['spouseInformation', 'fullName', 'Full Name'],
+                      ['spouseInformation', 'dateOfBirth', 'Date of Birth'],
+                      ['spouseInformation', 'placeOfBirth', 'Place of Birth'],
+                      ['spouseInformation', 'citizenship', 'Citizenship'],
+                      ['spouseInformation', 'mobileNumber', 'Mobile Number'],
+                      ['spouseInformation', 'presentAddress', 'Present Address'],
+                      ['spouseInformation', 'employerBusinessName', 'Employer / Business Name'],
+                      ['spouseInformation', 'officeAddress', 'Office Address'],
+                      ['spouseInformation', 'occupation', 'Occupation'],
+                      ['spouseInformation', 'position', 'Position'],
+                      ['spouseInformation', 'natureOfWork', 'Nature of Work'],
+                      ['spouseInformation', 'yearsWithEmployer', 'Years with Employer'],
+                      ['spouseInformation', 'previousEmployer', 'Previous Employer'],
+                      ['spouseInformation', 'totalYearsWorking', 'Total Years Working'],
+                      ['spouseInformation', 'grossMonthlyIncome', 'Gross Monthly Income'],
+                      ['spouseInformation', 'monthlyExpenses', 'Monthly Expenses'],
+                      ['spouseInformation', 'otherIncomeSources', 'Other Income Sources'],
+                    ].map(([section, field, label]) => (
+                      field === 'grossMonthlyIncome'
+                        ? renderFormattedNumberInput(
+                            section as EditableSection,
+                            field,
+                            label,
+                          )
+                        : renderInput(
+                        section as EditableSection,
+                        field,
+                        label,
+                        field === 'dateOfBirth' ? 'date' : field === 'grossMonthlyIncome' || field === 'monthlyExpenses' ? 'number' : 'text',
+                      )
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
 
@@ -3355,9 +3490,33 @@ export default function LendingScorecard() {
               {isAutoLoan && renderInput('collateral', 'policyNumber', 'Policy Number')}
               {isAutoLoan && renderInput('collateral', 'orNumber', 'OR Number')}
               {isAutoLoan && renderInput('collateral', 'crNumber', 'CR Number')}
-              {isMotorcycleLoan && renderSelect('collateral', 'vehicleMarketabilityCategory', 'Motorcycle Brand & Marketability', ['Honda, Yamaha, Suzuki, Kawasaki', 'Other established brands', 'Low-demand brands', 'Unknown/obsolete'])}
               {isMotorcycleLoan && renderFormattedNumberInput('collateral', 'appraisedValue', 'Motorcycle Value')}
               {isMotorcycleLoan && renderSelect('collateral', 'motorcycleIntendedUse', 'Intended Use', ['Personal use', 'Personal & occasional business', 'Full-time delivery/ride-hailing', 'Commercial/high mileage'])}
+              {isMotorcycleLoan && (
+                <div className="md:col-span-2 rounded-md border border-slate-200 bg-slate-50 p-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Collateral Use</h4>
+                  <div className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+                    <label className="flex items-center text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={formData.collateral.useAsCollateral}
+                        onChange={() => updateField('collateral', 'useAsCollateral', true)}
+                        className="mr-3 h-4 w-4"
+                      />
+                      <span className="text-gray-700">To be used as collateral</span>
+                    </label>
+                    <label className="flex items-center text-sm cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={!formData.collateral.useAsCollateral}
+                        onChange={() => updateField('collateral', 'useAsCollateral', false)}
+                        className="mr-3 h-4 w-4"
+                      />
+                      <span className="text-gray-700">Not to be used as collateral</span>
+                    </label>
+                  </div>
+                </div>
+              )}
               {isHomeLoan && (
                 <div className="md:col-span-2 border-t pt-4 mt-4">
                   <h4 className="font-semibold text-sm text-gray-700 mb-3">Home Loan / Property Information</h4>
@@ -3602,15 +3761,15 @@ export default function LendingScorecard() {
                 </button>
               </div>
               <div className="rounded-xl border border-slate-200 bg-white p-6">
-                <h3 className="mb-4 text-lg font-bold text-slate-800">Step 8: FILScore</h3>
-                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                <h3 className="mb-4 text-lg font-bold text-blue-900">Step 8: FILScore</h3>
+                <div className="grid gap-4 md:grid-cols-2">
                   {executiveSummaryItems.map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-md border border-slate-200 bg-slate-50 p-4"
+                      className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
                     >
-                      <p className="text-sm font-medium text-slate-700">{item.label}</p>
-                      <p className="mt-3 text-3xl font-bold leading-none text-slate-900">
+                      <p className="text-sm font-bold text-blue-800">{item.label}</p>
+                      <p className="mt-3 text-3xl font-bold leading-none text-blue-900">
                         {item.value}
                       </p>
                     </div>
@@ -3618,17 +3777,17 @@ export default function LendingScorecard() {
                 </div>
 
                 <div className="mt-6 border-t border-slate-200 pt-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-800">
                     Scoring Signals
                   </h4>
-                  <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid gap-4 md:grid-cols-2">
                     {scoringSignalItems.map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-md border border-slate-200 bg-slate-50 p-4"
+                        className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
                       >
-                        <p className="text-sm font-medium text-slate-700">{item.label}</p>
-                        <p className="mt-3 text-2xl font-bold leading-none text-slate-900">
+                        <p className="text-sm font-bold text-blue-800">{item.label}</p>
+                        <p className="mt-3 text-2xl font-bold leading-none text-blue-900">
                           {item.value}
                         </p>
                       </div>
@@ -3637,41 +3796,41 @@ export default function LendingScorecard() {
                 </div>
 
                 <div className="mt-6 border-t border-slate-200 pt-6">
-                  <h4 className="mb-3 text-sm font-semibold uppercase tracking-wide text-slate-700">
+                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-800">
                     Account Officer / Committee Notes
                   </h4>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
                         Credit Officer
                       </p>
-                      <p className="mt-2 text-sm font-medium text-slate-900">
+                      <p className="mt-2 text-sm font-bold text-blue-900">
                         {formData.routing.creditOfficer || 'Not assigned'}
                       </p>
                     </div>
-                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
                         Branch Manager
                       </p>
-                      <p className="mt-2 text-sm font-medium text-slate-900">
+                      <p className="mt-2 text-sm font-bold text-blue-900">
                         {formData.routing.branchManager || 'Not assigned'}
                       </p>
                     </div>
-                    <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-                      <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4 md:col-span-2">
+                      <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
                         Committee Status
                       </p>
-                      <p className="mt-2 text-sm font-medium text-slate-900">
+                      <p className="mt-2 text-sm font-bold text-blue-900">
                         {formData.routing.creditCommittee || 'Pending'}
                       </p>
                     </div>
                   </div>
 
-                  <div className="mt-4 rounded-md border border-slate-200 bg-slate-50 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  <div className="mt-4 rounded-md border border-blue-200 bg-blue-50/40 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-blue-700">
                       Remarks
                     </p>
-                    <p className="mt-2 text-sm leading-6 text-slate-900 whitespace-pre-wrap">
+                    <p className="mt-2 text-sm font-bold leading-6 text-blue-900 whitespace-pre-wrap">
                       {formData.committeeRemarks.trim() || 'No remarks entered.'}
                     </p>
                   </div>
@@ -3820,9 +3979,11 @@ export default function LendingScorecard() {
                     </label>
                     <select
                       value={selectedWorkflowAction}
-                      onChange={(event) =>
-                        setSelectedWorkflowAction(event.target.value as WorkflowStatus)
-                      }
+                      onChange={(event) => {
+                        setSelectedWorkflowAction(event.target.value as WorkflowStatus);
+                        setWorkflowActionState('idle');
+                        setCompletedWorkflowAction(null);
+                      }}
                       className="loan-form-select w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       {workflowActionOptions.map((option) => (
@@ -3854,12 +4015,18 @@ export default function LendingScorecard() {
                   <button
                     onClick={handleSelectedWorkflowAction}
                     disabled={isSaving}
-                    className="loan-inline-button loan-inline-button-accent inline-flex min-h-[42px] items-center justify-center rounded-md bg-indigo-600 px-4 py-2 text-sm font-semibold tracking-wide text-white transition hover:bg-indigo-500 disabled:opacity-50"
+                    className={`loan-inline-button inline-flex min-h-[42px] items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold tracking-wide transition disabled:opacity-50 ${workflowActionButtonClass}`}
                   >
-                    Save as
+                    {workflowActionButtonLabel}
                   </button>
 
-                  {formData.status === 'Released' && (
+                  {workflowActionState === 'completed' && (
+                    <span className="rounded border border-emerald-600 bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-800">
+                      Completed: Record status changed to {completedWorkflowAction}
+                    </span>
+                  )}
+
+                  {formData.status === 'Released' && workflowActionState !== 'completed' && (
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">Application Successfully Released</span>
                   )}
                 </div>
@@ -3897,24 +4064,6 @@ export default function LendingScorecard() {
         <aside className="psychometric-side-panel lending-psychometric-side-panel">
           <article className="psychometric-panel lending-psychometric-toolbar-panel">
             <div className="lending-psychometric-toolbar-grid">
-              <div className="lending-psychometric-country">
-                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
-                  Country
-                </label>
-                <select
-                  value={selectedCountryCode}
-                  onChange={(event) => setSelectedCountryCode(event.target.value)}
-                  className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  aria-label="Select country"
-                >
-                  {countryOptions.map((option) => (
-                    <option key={option} value={option} className="text-slate-800">
-                      {option}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
               <button
                 onClick={handleCreateNew}
                 className={`${topNavButtonClass} loan-toolbar-button-primary lending-psychometric-tool-button`}

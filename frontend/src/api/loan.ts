@@ -117,6 +117,7 @@ export interface LoanApplicationRequirements {
     vehicleConditionCategory: string
     vehicleTypeCategory: string
     motorcycleIntendedUse: string
+    useAsCollateral: boolean
     insuranceProviderCompany: string
     policyNumber: string
     orNumber: string
