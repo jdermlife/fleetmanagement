@@ -138,7 +138,7 @@ export default function LoanCertificationPage() {
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <title>Certification ${certification.applicationNo}</title>
+  <title>${APP_NAME} ${certification.applicationNo}</title>
   <style>
     @page {
       size: A4 portrait;
@@ -365,7 +365,7 @@ export default function LoanCertificationPage() {
       <div class="brand-header">
         <img class="brand-mark" src="${brandLogoDataUri}" alt="${APP_NAME} logo" />
         <div class="kicker">Certification of Lending Assessment</div>
-        <h1>${APP_NAME} Certification</h1>
+        <h1>${APP_NAME}</h1>
       </div>
       <h2>Reference ${certification.applicationNo}</h2>
       <div class="name">${certification.borrowerName}</div>
@@ -485,7 +485,7 @@ export default function LoanCertificationPage() {
               />
               <div className="loan-certification-brand-copy">
                 <p className="loan-certification-kicker">Certification of Lending Assessment</p>
-                <h1 className="loan-certification-title">{APP_NAME} Certification</h1>
+                <h1 className="loan-certification-title">{APP_NAME}</h1>
               </div>
             </div>
             <p className="loan-certification-reference">
