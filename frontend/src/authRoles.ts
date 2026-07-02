@@ -12,12 +12,12 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
   {
     value: 'borrower',
     label: 'Subscriber Borrower',
-    description: 'Access the lending scorecard steps 1 to 8 and the certification only.',
+    description: 'Access the lending scorecard steps 1 to 8 for Filscore and Credit Score assessment and certification. The certification only.',
   },
   {
     value: 'lender',
     label: 'Subscriber Lender',
-    description: 'Access the current subscriber workspace and permissions.',
+    description: 'Access Lending Workspace.',
   },
 ]
 

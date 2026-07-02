@@ -55,7 +55,7 @@ export default function RegisterPage() {
     <div className="standalone-card auth-screen">
       <h1>Create Account</h1>
       <p className="intro">
-        Register a user account for the Credit  and Filscore Score or  the Lending workspace. Review the legal disclosures
+        Register a user account for  Filscore and Credit Score or  the Lending Workspace. Review the legal disclosures
         before continuing.
       </p>
 
