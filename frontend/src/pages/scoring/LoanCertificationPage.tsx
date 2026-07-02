@@ -86,7 +86,7 @@ const formatScore = (value: number | null) => {
 const formatBand = (value: number | null) => {
   const scaledScore = toFilscore(value)
   const band = getFilscoreBand(scaledScore)
-  return band ? `${band.grade} • ${band.internalGrade}` : 'FILSCORE / Grade / Internal Grade'
+  return band ? `${band.grade} : ${band.internalGrade}` : 'FILSCORE : Grade : Internal Grade'
 }
 
 export default function LoanCertificationPage() {
@@ -179,7 +179,7 @@ export default function LoanCertificationPage() {
       background: #0f766e;
     }
     .content {
-      padding: 38px 42px 46px;
+      padding: 34px 36px 40px;
       position: relative;
       z-index: 1;
     }
@@ -190,8 +190,8 @@ export default function LoanCertificationPage() {
       gap: 10px;
     }
     .brand-mark {
-      width: 88px;
-      height: 88px;
+      width: 96px;
+      height: 96px;
       object-fit: contain;
     }
     .kicker {
@@ -203,10 +203,10 @@ export default function LoanCertificationPage() {
       font-size: 12px;
     }
     h1 {
-      margin: 8px 0 6px;
+      margin: 6px 0 4px;
       text-align: center;
       color: #0038a8;
-      font-size: 32px;
+      font-size: 28px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -233,62 +233,77 @@ export default function LoanCertificationPage() {
       color: #4c5f78;
     }
     .summary {
-      margin-top: 20px;
+      margin-top: 22px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 12px;
+      gap: 16px;
     }
     .summary-card {
-      border: 1px solid rgba(0, 56, 168, 0.12);
-      border-radius: 14px;
-      padding: 14px;
-      background: linear-gradient(135deg, #ffffff 0%, #fff8d6 54%, rgba(15, 118, 110, 0.08) 100%);
-      text-align: center;
+      min-height: 102px;
+      border: 1px solid rgba(163, 184, 200, 0.52);
+      border-radius: 18px;
+      padding: 18px 18px 16px;
+      background:
+        radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
+        linear-gradient(135deg, #fffdf3 0%, #fff7d3 48%, #eef8f7 100%);
+      text-align: left;
+      display: grid;
+      align-content: space-between;
     }
     .summary-label {
-      font-size: 11px;
+      font-size: 12px;
       text-transform: uppercase;
-      letter-spacing: 0.16em;
+      letter-spacing: 0.18em;
       color: #0f766e;
       font-weight: 700;
     }
     .summary-value {
-      margin-top: 10px;
-      font-size: 28px;
+      margin-top: 18px;
+      font-size: 38px;
       font-weight: 700;
-      color: #0038a8;
+      line-height: 1;
+      color: #0d3ea3;
+      overflow-wrap: anywhere;
     }
     .metrics {
-      margin-top: 18px;
+      margin-top: 16px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
+      gap: 16px;
     }
     .metric {
-      border-radius: 12px;
-      border: 1px solid rgba(15, 118, 110, 0.16);
-      background: #f8fffc;
-      padding: 14px 16px;
+      min-height: 116px;
+      border-radius: 18px;
+      border: 1px solid rgba(163, 184, 200, 0.52);
+      background:
+        radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
+        radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
+        linear-gradient(135deg, #fffdf3 0%, #fff7d3 48%, #eef8f7 100%);
+      padding: 18px;
+      display: grid;
+      align-content: space-between;
     }
     .metric-label {
       font-size: 12px;
-      color: #546275;
+      color: #0f766e;
       text-transform: uppercase;
-      letter-spacing: 0.12em;
+      letter-spacing: 0.18em;
       font-weight: 700;
     }
     .metric-band {
-      margin-top: 6px;
-      color: #0f766e;
-      font-size: 10px;
-      letter-spacing: 0.06em;
+      margin-top: 8px;
+      color: #0d3ea3;
+      font-size: 11px;
+      letter-spacing: 0.12em;
       text-transform: uppercase;
       font-weight: 700;
     }
     .metric-value {
-      margin-top: 6px;
+      margin-top: 18px;
       color: #0f2547;
-      font-size: 24px;
+      font-size: 30px;
+      line-height: 1;
       font-weight: 700;
     }
     .footer {
@@ -338,8 +353,8 @@ export default function LoanCertificationPage() {
         box-shadow: none;
       }
       .brand-mark {
-        width: 76px;
-        height: 76px;
+        width: 82px;
+        height: 82px;
       }
     }
   </style>
