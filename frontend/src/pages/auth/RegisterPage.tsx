@@ -3,6 +3,10 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { getErrorMessage, register } from '../../api'
+import {
+  REGISTER_SUBSCRIBER_OPTIONS,
+  type RegisterSubscriberType,
+} from '../../authRoles'
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -10,6 +14,7 @@ export default function RegisterPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
@@ -23,6 +28,11 @@ export default function RegisterPage() {
       return
     }
 
+    if (!subscriberType) {
+      setMessage('Please select whether this account is for a borrower or a lender.')
+      return
+    }
+
     if (!acceptedTerms || !acceptedPrivacy) {
       setMessage('Review and accept the terms and privacy disclosures to continue.')
       return
@@ -32,7 +42,7 @@ export default function RegisterPage() {
     setMessage('')
 
     try {
-      await register({ username, email, password })
+      await register({ username, email, password, subscriberType })
       navigate('/login?created=1')
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
@@ -95,6 +105,32 @@ export default function RegisterPage() {
             required
           />
         </label>
+
+        <fieldset className="auth-role-fieldset">
+          <legend>Subscriber type</legend>
+          <p className="auth-role-copy">
+            Select the workspace access this new account should receive.
+          </p>
+          <div className="auth-role-options">
+            {REGISTER_SUBSCRIBER_OPTIONS.map((option) => (
+              <label key={option.value} className="auth-role-option">
+                <input
+                  type="radio"
+                  name="subscriber-type"
+                  value={option.value}
+                  checked={subscriberType === option.value}
+                  onChange={(event) =>
+                    setSubscriberType(event.target.value as RegisterSubscriberType)
+                  }
+                />
+                <span>
+                  <strong>{option.label}</strong>
+                  <small>{option.description}</small>
+                </span>
+              </label>
+            ))}
+          </div>
+        </fieldset>
 
         <label className="checkbox-label">
           <input

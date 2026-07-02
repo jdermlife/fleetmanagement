@@ -15,7 +15,7 @@ import {
   type ProductType,
   type WorkflowStatus,
 } from '../../api/loan';
-import { calculateCompositeInternalScore, getFilscoreBand, toFilscore } from './filscoreScale';
+import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
@@ -2851,26 +2851,34 @@ export default function LendingScorecard() {
 
   const executiveSummaryItems = [
     {
-      label: `${formData.loan.productType || 'Product'} Credit Score`,
-      filscore: displayedQuantSummary ? toFilscore(displayedQuantSummary.credit_score) : null,
+      label: 'Credit Score',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.credit_score) !== null
+          ? toFilscore(displayedQuantSummary.credit_score)!.toString()
+          : 'Pending',
     },
     {
       label: 'Non-Starter Score',
-      filscore: displayedQuantSummary ? toFilscore(displayedQuantSummary.fraud_score) : null,
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.fraud_score) !== null
+          ? toFilscore(displayedQuantSummary.fraud_score)!.toString()
+          : 'Pending',
     },
     {
       label: 'Social Score',
-      filscore: displayedQuantSummary ? toFilscore(displayedQuantSummary.social_score) : null,
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.social_score) !== null
+          ? toFilscore(displayedQuantSummary.social_score)!.toString()
+          : 'Pending',
     },
     {
-      label: 'Credit Value Score',
-      filscore: displayedQuantSummary ? toFilscore(displayedQuantSummary.psychometric_score) : null,
+      label: 'Credit Values Score',
+      value:
+        displayedQuantSummary && toFilscore(displayedQuantSummary.psychometric_score) !== null
+          ? toFilscore(displayedQuantSummary.psychometric_score)!.toString()
+          : 'Pending',
     },
-  ].map((item) => ({
-    ...item,
-    value: typeof item.filscore === 'number' ? item.filscore.toString() : 'Pending',
-    band: getFilscoreBand(item.filscore),
-  }));
+  ];
   const scoringSignalItems = [
     {
       label: 'Composite Score',
@@ -3758,14 +3766,9 @@ export default function LendingScorecard() {
                   {executiveSummaryItems.map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-md border border-amber-200 bg-amber-50 p-4"
+                      className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
                     >
                       <p className="text-sm font-bold text-blue-800">{item.label}</p>
-                      <p className="mt-2 text-xs font-medium text-blue-700">
-                        {item.band
-                          ? `${item.band.grade} • ${item.band.internalGrade}`
-                          : 'FILSCORE / Grade / Internal Grade'}
-                      </p>
                       <p className="mt-3 text-3xl font-bold leading-none text-blue-900">
                         {item.value}
                       </p>
@@ -3781,7 +3784,7 @@ export default function LendingScorecard() {
                     {scoringSignalItems.map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-md border border-amber-200 bg-amber-50 p-4"
+                        className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
                       >
                         <p className="text-sm font-bold text-blue-800">{item.label}</p>
                         <p className="mt-3 text-2xl font-bold leading-none text-blue-900">

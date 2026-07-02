@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import os
 from datetime import datetime, timedelta, timezone
+from typing import Literal
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -57,6 +58,7 @@ class RegisterRequest(BaseModel):
     username: str = Field(min_length=3)
     email: str
     password: str = Field(min_length=8)
+    subscriber_type: Literal["borrower", "lender"]
 
 
 class ChangePasswordRequest(BaseModel):
@@ -125,6 +127,10 @@ class AssignPermissionsRequest(BaseModel):
 
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
+REGISTERABLE_SUBSCRIBER_ROLES = {
+    "borrower": RBACRole.SUBSCRIBER_BORROWER.value,
+    "lender": RBACRole.SUBSCRIBER_LENDER.value,
+}
 
 
 def get_db():
@@ -272,6 +278,10 @@ def _verify_refresh_token(token: str) -> dict[str, object]:
     return payload
 
 
+def _resolve_registration_role(subscriber_type: Literal["borrower", "lender"]) -> str:
+    return REGISTERABLE_SUBSCRIBER_ROLES[subscriber_type]
+
+
 def _ensure_role_assignments(user: User, db: Session, role_names: list[str]) -> None:
     resolved_roles = []
     for role_name in role_names:
@@ -296,11 +306,13 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     if existing:
         raise HTTPException(status_code=409, detail="Username or email already exists")
 
+    registration_role = _resolve_registration_role(request.subscriber_type)
+
     user = User(
         username=request.username,
         email=request.email,
         password_hash=hash_password(request.password),
-        role="SUBSCRIBER",
+        role=registration_role,
         is_active=True,
         account_status="ACTIVE",
         email_verified=False,
@@ -308,7 +320,9 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.flush()
 
-    default_role = db.query(Role).filter(Role.name == "subscriber").first()
+    default_role = db.query(Role).filter(Role.name == registration_role).first()
+    if default_role is None:
+        default_role = db.query(Role).filter(Role.name == RBACRole.SUBSCRIBER.value).first()
     if default_role is None:
         default_role = db.query(Role).filter(Role.name == "read_only_user").first()
     if default_role:

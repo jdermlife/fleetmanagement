@@ -3,8 +3,10 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { getErrorMessage, login } from '../../api'
+import { isBorrowerSubscriberRole } from '../../authRoles'
 
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
+const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/loan-certification'])
 
 function getDefaultRedirectPath() {
   const storedPath = window.localStorage.getItem(LAST_ROUTE_STORAGE_KEY)
@@ -26,8 +28,11 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      await login({ username, password })
-      navigate(redirectTo)
+      const response = await login({ username, password })
+      const nextPath = isBorrowerSubscriberRole(response.user.role)
+        ? (BORROWER_ALLOWED_REDIRECTS.has(redirectTo) ? redirectTo : '/lending-scorecard')
+        : redirectTo
+      navigate(nextPath)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to sign in right now.'))
     } finally {
@@ -40,6 +45,9 @@ export default function LoginPage() {
       <h1>Sign In</h1>
       <p className="intro">
         Access your fleet, lending, and governance workspace with your existing account.
+      </p>
+      <p className="auth-role-copy">
+        New users choose Borrower or Lender during account registration.
       </p>
 
       <form className="stack-panel auth-panel" onSubmit={handleSubmit}>

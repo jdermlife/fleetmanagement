@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { fetchLoanApplication, type LoanApplicationRecord } from '../../api/loan'
 import { getErrorMessage } from '../../api'
+import { APP_NAME, brandLogoDataUri } from '../../brand'
 import { calculateCompositeInternalScore, getFilscoreBand, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
@@ -22,6 +23,20 @@ type CertificationSnapshot = {
 
 type LocationState = {
   certificationData?: CertificationSnapshot
+}
+
+const normalizeProductType = (value?: string | null) => {
+  if (typeof value !== 'string') {
+    return ''
+  }
+
+  const trimmedValue = value.trim()
+  return trimmedValue && trimmedValue.toLowerCase() !== 'undefined' ? trimmedValue : ''
+}
+
+const getCreditScoreLabel = (productType?: string | null) => {
+  const normalizedProductType = normalizeProductType(productType)
+  return normalizedProductType ? `Credit Score - ${normalizedProductType}` : 'Credit Score'
 }
 
 const buildVerificationUrl = (applicationNo: string) => {
@@ -45,7 +60,7 @@ const buildCertificationSnapshot = (
   return {
     applicationNo,
     borrowerName: record.borrower_name?.trim() || 'Unnamed Borrower',
-    productType: record.product_type || 'Product',
+    productType: normalizeProductType(record.product_type),
     issuedAt: new Date().toISOString(),
     overallScore: calculateCompositeInternalScore({
       creditScore: record.overall_scores?.credit_score ?? null,
@@ -125,27 +140,33 @@ export default function LoanCertificationPage() {
   <meta charset="UTF-8" />
   <title>Certification ${certification.applicationNo}</title>
   <style>
+    @page {
+      size: A4 portrait;
+      margin: 10mm;
+    }
     body {
       margin: 0;
-      padding: 32px;
+      padding: 18px;
       background: #f3f7ff;
       color: #0f2547;
       font-family: Arial, sans-serif;
     }
     .sheet {
-      max-width: 920px;
+      max-width: 860px;
       margin: 0 auto;
       background: #ffffff;
-      border: 16px solid #0038a8;
+      border: 14px solid #0038a8;
       box-shadow: 0 18px 40px rgba(15, 37, 71, 0.15);
       position: relative;
       overflow: hidden;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .sheet::before {
       content: "";
       position: absolute;
-      inset: 16px;
-      border: 4px solid #fcd116;
+      inset: 14px;
+      border: 3px solid #fcd116;
       pointer-events: none;
     }
     .sheet::after {
@@ -158,9 +179,20 @@ export default function LoanCertificationPage() {
       background: #0f766e;
     }
     .content {
-      padding: 54px 60px 72px;
+      padding: 38px 42px 46px;
       position: relative;
       z-index: 1;
+    }
+    .brand-header {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+    }
+    .brand-mark {
+      width: 88px;
+      height: 88px;
+      object-fit: contain;
     }
     .kicker {
       text-align: center;
@@ -171,10 +203,10 @@ export default function LoanCertificationPage() {
       font-size: 12px;
     }
     h1 {
-      margin: 10px 0 8px;
+      margin: 8px 0 6px;
       text-align: center;
       color: #0038a8;
-      font-size: 38px;
+      font-size: 32px;
       letter-spacing: 0.04em;
       text-transform: uppercase;
     }
@@ -186,29 +218,30 @@ export default function LoanCertificationPage() {
       font-weight: 700;
     }
     .name {
-      margin-top: 34px;
+      margin-top: 24px;
       text-align: center;
-      font-size: 34px;
+      font-size: 28px;
       font-weight: 700;
       color: #0f2547;
     }
     .subcopy {
-      margin: 12px auto 0;
-      max-width: 680px;
+      margin: 10px auto 0;
+      max-width: 620px;
       text-align: center;
-      line-height: 1.7;
+      line-height: 1.55;
+      font-size: 14px;
       color: #4c5f78;
     }
     .summary {
-      margin-top: 28px;
+      margin-top: 20px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      gap: 12px;
     }
     .summary-card {
       border: 1px solid rgba(0, 56, 168, 0.12);
-      border-radius: 16px;
-      padding: 18px;
+      border-radius: 14px;
+      padding: 14px;
       background: linear-gradient(135deg, #ffffff 0%, #fff8d6 54%, rgba(15, 118, 110, 0.08) 100%);
       text-align: center;
     }
@@ -220,22 +253,22 @@ export default function LoanCertificationPage() {
       font-weight: 700;
     }
     .summary-value {
-      margin-top: 12px;
-      font-size: 34px;
+      margin-top: 10px;
+      font-size: 28px;
       font-weight: 700;
       color: #0038a8;
     }
     .metrics {
-      margin-top: 26px;
+      margin-top: 18px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 14px;
+      gap: 12px;
     }
     .metric {
-      border-radius: 14px;
+      border-radius: 12px;
       border: 1px solid rgba(15, 118, 110, 0.16);
       background: #f8fffc;
-      padding: 16px 18px;
+      padding: 14px 16px;
     }
     .metric-label {
       font-size: 12px;
@@ -245,32 +278,32 @@ export default function LoanCertificationPage() {
       font-weight: 700;
     }
     .metric-band {
-      margin-top: 8px;
+      margin-top: 6px;
       color: #0f766e;
-      font-size: 11px;
-      letter-spacing: 0.08em;
+      font-size: 10px;
+      letter-spacing: 0.06em;
       text-transform: uppercase;
       font-weight: 700;
     }
     .metric-value {
-      margin-top: 8px;
+      margin-top: 6px;
       color: #0f2547;
-      font-size: 28px;
+      font-size: 24px;
       font-weight: 700;
     }
     .footer {
-      margin-top: 28px;
+      margin-top: 18px;
       display: flex;
       justify-content: space-between;
-      gap: 20px;
-      align-items: flex-end;
+      gap: 16px;
+      align-items: flex-start;
     }
     .meta {
       display: grid;
-      gap: 10px;
+      gap: 8px;
     }
     .meta-line {
-      font-size: 13px;
+      font-size: 12px;
       color: #4c5f78;
     }
     .meta-line strong {
@@ -280,32 +313,49 @@ export default function LoanCertificationPage() {
       text-align: center;
     }
     .qr img {
-      width: 150px;
-      height: 150px;
+      width: 118px;
+      height: 118px;
       border-radius: 12px;
-      border: 6px solid #ffffff;
+      border: 5px solid #ffffff;
       box-shadow: 0 10px 24px rgba(15, 37, 71, 0.12);
       background: #ffffff;
     }
     .qr p {
-      margin: 10px 0 0;
+      margin: 8px 0 0;
       color: #546275;
-      font-size: 11px;
+      font-size: 10px;
       text-transform: uppercase;
       letter-spacing: 0.14em;
       font-weight: 700;
+    }
+    @media print {
+      body {
+        padding: 0;
+        background: #ffffff;
+      }
+      .sheet {
+        max-width: none;
+        box-shadow: none;
+      }
+      .brand-mark {
+        width: 76px;
+        height: 76px;
+      }
     }
   </style>
 </head>
 <body>
   <section class="sheet">
     <div class="content">
-      <div class="kicker">Certification of Lending Assessment</div>
-      <h1>FILSCORE Certification</h1>
+      <div class="brand-header">
+        <img class="brand-mark" src="${brandLogoDataUri}" alt="${APP_NAME} logo" />
+        <div class="kicker">Certification of Lending Assessment</div>
+        <h1>${APP_NAME} Certification</h1>
+      </div>
       <h2>Reference ${certification.applicationNo}</h2>
       <div class="name">${certification.borrowerName}</div>
       <div class="subcopy">
-        This certifies that the referenced application has completed the FILSCORE assessment workflow
+        This certifies that the referenced application has completed the ${APP_NAME} assessment workflow
         and the following summarized score results were recorded for credit evaluation.
       </div>
       <div class="summary">
@@ -323,7 +373,7 @@ export default function LoanCertificationPage() {
         </div>
       </div>
       <div class="metrics">
-        <div class="metric"><div class="metric-label">${certification.productType} Credit Score</div><div class="metric-band">${formatBand(certification.creditScore)}</div><div class="metric-value">${formatScore(certification.creditScore)}</div></div>
+        <div class="metric"><div class="metric-label">${getCreditScoreLabel(certification.productType)}</div><div class="metric-band">${formatBand(certification.creditScore)}</div><div class="metric-value">${formatScore(certification.creditScore)}</div></div>
         <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${formatBand(certification.fraudScore)}</div><div class="metric-value">${formatScore(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${formatBand(certification.socialScore)}</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${formatBand(certification.creditValueScore)}</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
@@ -412,8 +462,17 @@ export default function LoanCertificationPage() {
       <section className="loan-certification-shell">
         <div className="loan-certification-frame">
           <div className="loan-certification-inner">
-            <p className="loan-certification-kicker">Certification of Lending Assessment</p>
-            <h1 className="loan-certification-title">FILSCORE Certification</h1>
+            <div className="loan-certification-brand">
+              <img
+                className="loan-certification-brand-mark"
+                src={brandLogoDataUri}
+                alt={`${APP_NAME} logo`}
+              />
+              <div className="loan-certification-brand-copy">
+                <p className="loan-certification-kicker">Certification of Lending Assessment</p>
+                <h1 className="loan-certification-title">{APP_NAME} Certification</h1>
+              </div>
+            </div>
             <p className="loan-certification-reference">
               Reference No. <strong>{certification.applicationNo}</strong>
             </p>
@@ -421,7 +480,7 @@ export default function LoanCertificationPage() {
             <div className="loan-certification-name">{certification.borrowerName}</div>
 
             <p className="loan-certification-copy">
-              This certifies that the above application completed the FILSCORE assessment workflow and
+              This certifies that the above application completed the {APP_NAME} assessment workflow and
               the summarized results below were generated for credit evaluation and certification use.
             </p>
 
@@ -449,7 +508,7 @@ export default function LoanCertificationPage() {
             <div className="loan-certification-metrics-grid">
               {[
                 {
-                  label: `${certification.productType} Credit Score`,
+                  label: getCreditScoreLabel(certification.productType),
                   value: formatScore(certification.creditScore),
                   band: formatBand(certification.creditScore),
                 },

@@ -44,6 +44,8 @@ class Permission(str, Enum):
 class Role(str, Enum):
     ADMIN = "admin"
     SUBSCRIBER = "subscriber"
+    SUBSCRIBER_BORROWER = "subscriber_borrower"
+    SUBSCRIBER_LENDER = "subscriber_lender"
     LOAN_OFFICER = "loan_officer"
     CREDIT_ANALYST = "credit_analyst"
     CREDIT_MANAGER = "credit_manager"
@@ -59,6 +61,30 @@ ROLE_PERMISSIONS: dict[Role, list[Permission]] = {
 
     # Subscriber: Can originate and manage their own loan applications.
     Role.SUBSCRIBER: [
+        Permission.READ_LOANS,
+        Permission.CREATE_LOANS,
+        Permission.EDIT_LOANS,
+        Permission.EXPORT_LOANS,
+        Permission.READ_BORROWERS,
+        Permission.CREATE_BORROWERS,
+        Permission.EDIT_BORROWERS,
+        Permission.READ_SCORECARDS,
+        Permission.READ_ANALYTICS,
+    ],
+
+    # Subscriber Borrower: limited origination flow and certification access only.
+    Role.SUBSCRIBER_BORROWER: [
+        Permission.READ_LOANS,
+        Permission.CREATE_LOANS,
+        Permission.EDIT_LOANS,
+        Permission.READ_BORROWERS,
+        Permission.CREATE_BORROWERS,
+        Permission.EDIT_BORROWERS,
+        Permission.READ_SCORECARDS,
+    ],
+
+    # Subscriber Lender: same access profile as the current subscriber role.
+    Role.SUBSCRIBER_LENDER: [
         Permission.READ_LOANS,
         Permission.CREATE_LOANS,
         Permission.EDIT_LOANS,

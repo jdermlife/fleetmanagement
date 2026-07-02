@@ -38,9 +38,16 @@ from app.services.loan_repository_io import (
     upsert_loan_applications,
 )
 from app.services.overall_scoring_engine import compute_quant_score_package
+from security.rbac import Role as RBACRole
 
 router = APIRouter()
 MAX_LOAN_EXPORT_RECORDS = int(os.getenv("MAX_LOAN_EXPORT_RECORDS", "1500"))
+LOAN_ACCESS_ROLES = (
+    "Admin",
+    "Subscriber",
+    RBACRole.SUBSCRIBER_BORROWER.value,
+    RBACRole.SUBSCRIBER_LENDER.value,
+)
 
 VALID_STATUSES = {
     "Draft",
@@ -104,7 +111,11 @@ def is_admin_user(user: CurrentUser) -> bool:
 
 
 def is_subscriber_user(user: CurrentUser) -> bool:
-    return user.role.lower() == "subscriber"
+    return user.role.lower() in {
+        RBACRole.SUBSCRIBER.value,
+        RBACRole.SUBSCRIBER_BORROWER.value,
+        RBACRole.SUBSCRIBER_LENDER.value,
+    }
 
 
 def enforce_loan_application_access(user: CurrentUser, record: LoanApplication) -> None:
@@ -573,7 +584,7 @@ def apply_loan_application_fields(record: LoanApplication, data: LoanApplication
 )
 def create_loan_application(
     data: LoanApplicationCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
     db = SessionLocal()
 
@@ -638,7 +649,7 @@ def create_loan_application(
 )
 def compute_quant_scores(
     data: LoanApplicationCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
     db = SessionLocal()
 
@@ -779,7 +790,7 @@ def export_loan_applications(
     date_from: str | None = Query(default=None),
     date_to: str | None = Query(default=None),
     format: str = Query(default="csv"),
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
     db = SessionLocal()
 
@@ -846,7 +857,7 @@ def export_loan_applications(
 def update_status(
     application_no: str,
     status: str,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
     db = SessionLocal()
 
@@ -897,7 +908,7 @@ def update_status(
 )
 def get_loan_application(
     application_no: str,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
     db = SessionLocal()
 
@@ -915,7 +926,7 @@ def get_loan_application(
 def update_loan_application(
     application_no: str,
     data: LoanApplicationCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
    
 ):
     db = SessionLocal()

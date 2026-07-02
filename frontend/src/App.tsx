@@ -2,6 +2,14 @@ import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode
 import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
+import {
+  SUBSCRIBER_BORROWER_ROLE,
+  SUBSCRIBER_LENDER_ROLE,
+  SUBSCRIBER_ROLE,
+  isBorrowerSubscriberRole,
+  isLenderSubscriberRole,
+} from './authRoles'
+import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 
 type MenuLink = {
@@ -122,8 +130,11 @@ function isAuthPath(pathname: string) {
   return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}?`))
 }
 
-function authenticatedPage(children: ReactNode) {
-  return <ProtectedRoute>{children}</ProtectedRoute>
+function authenticatedPage(
+  children: ReactNode,
+  roles: string[] = ['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE],
+) {
+  return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>
 }
 
 function App() {
@@ -185,15 +196,18 @@ const subscriberAlwaysVisibleMenus = [
   'lease-scorecard',
 ]
 
-const isSubscriber = currentUser?.role?.toLowerCase() === 'subscriber'
+const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
+const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
 
-const visibleMenuLinks = isSubscriber
-  ? menuLinks.filter(
-      (item) =>
-        subscriberAlwaysVisibleMenus.includes(item.id) ||
-        !subscriberHiddenMenus.includes(item.id),
-    )
-  : menuLinks
+const visibleMenuLinks = isBorrowerSubscriber
+  ? menuLinks.filter((item) => item.id === 'lending-scorecard')
+  : isLenderSubscriber
+    ? menuLinks.filter(
+        (item) =>
+          subscriberAlwaysVisibleMenus.includes(item.id) ||
+          !subscriberHiddenMenus.includes(item.id),
+      )
+    : menuLinks
 
 const fleetMenus = visibleMenuLinks.filter(
   (item) =>
@@ -273,13 +287,13 @@ const adminMenuItems = visibleMenuLinks.filter(
         <div className="app-topbar-row">
           {/* BRAND */}
           <div className="app-brand-block">
-            <h2 className="app-brand-title">
-              FILSCORE
-            </h2>
-
-            <p className="app-brand-subtitle">
-             Borrow Smart. Lend Right.
-            </p>
+            <div className="app-brand-lockup">
+              <img className="app-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
+              <div className="app-brand-text">
+                <h2 className="app-brand-title">{APP_NAME}</h2>
+                <p className="app-brand-subtitle">{APP_TAGLINE}</p>
+              </div>
+            </div>
           </div>
 
           <div className="app-auth-summary">
@@ -651,7 +665,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/lending-scorecard"
               element={
-                <ProtectedRoute roles={['admin', 'subscriber']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <LendingScorecard />
                 </ProtectedRoute>
               }
@@ -660,7 +674,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/loan-repository"
               element={
-                <ProtectedRoute permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
                   <LoanRepository />
                 </ProtectedRoute>
               }
@@ -668,7 +682,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/loan-applications"
               element={
-                <ProtectedRoute permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
                   <LoanRepository />
                 </ProtectedRoute>
               }
@@ -676,7 +690,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/loan-details/:applicationNo"
               element={
-                <ProtectedRoute permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
                   <LoanDetails />
                 </ProtectedRoute>
               }
@@ -684,7 +698,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/loan-certification"
               element={
-                <ProtectedRoute permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
                   <LoanCertificationPage />
                 </ProtectedRoute>
               }
@@ -719,33 +733,33 @@ const adminMenuItems = visibleMenuLinks.filter(
 
             <Route
               path="/loan-dashboard"
-              element={<LegacyLoanDashboard />}
+              element={authenticatedPage(<LegacyLoanDashboard />)}
             />
 
             <Route
               path="/borrower-profile"
-              element={<LegacyBorrowerProfile />}
+              element={authenticatedPage(<LegacyBorrowerProfile />)}
             />
 
             <Route
               path="/credit-committee-review"
-              element={<LegacyCreditCommitteeReview />}
+              element={authenticatedPage(<LegacyCreditCommitteeReview />)}
             />
 
             <Route
               path="/scoring-audit-trail-panel"
-              element={<LegacyScoringAuditTrailPanel />}
+              element={authenticatedPage(<LegacyScoringAuditTrailPanel />)}
             />
 
             <Route
               path="/scoring/audit-trail-panel"
-              element={<LegacyScoringAuditTrailPanel />}
+              element={authenticatedPage(<LegacyScoringAuditTrailPanel />)}
             />
 
             <Route
               path="/lease-scorecard"
               element={
-                <ProtectedRoute roles={['admin', 'subscriber']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
                   <LeaseScorecardPage />
                 </ProtectedRoute>
               }
@@ -844,7 +858,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/subscription-payment"
               element={
-                <ProtectedRoute roles={['admin', 'subscriber']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
                   <SubscriptionPaymentPage />
                 </ProtectedRoute>
               }
@@ -985,12 +999,12 @@ const adminMenuItems = visibleMenuLinks.filter(
 
             <Route
               path="/account"
-              element={<AccountSettingsPage />}
+              element={authenticatedPage(<AccountSettingsPage />)}
             />
 
             <Route
               path="/settings"
-              element={<AccountSettingsPage />}
+              element={authenticatedPage(<AccountSettingsPage />)}
             />
 
             <Route

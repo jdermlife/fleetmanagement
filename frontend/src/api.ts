@@ -263,6 +263,7 @@ export interface RegisterRequest {
   username: string
   email: string
   password: string
+  subscriberType: 'borrower' | 'lender'
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -289,7 +290,12 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
-  const response = await api.post('/api/auth/register', data)
+  const response = await api.post('/api/auth/register', {
+    username: data.username,
+    email: data.email,
+    password: data.password,
+    subscriber_type: data.subscriberType,
+  })
   const responseData = response.data as Record<string, unknown>
   const rawUser =
     (responseData.user as Record<string, unknown> | undefined) ??

@@ -382,9 +382,28 @@ textarea {
 }
 
 .app-brand-block {
+  flex: 1 1 320px;
+  min-width: 0;
+}
+
+.app-brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+}
+
+.app-brand-mark {
+  width: 58px;
+  height: 58px;
+  flex: 0 0 auto;
+  object-fit: contain;
+  filter: drop-shadow(0 8px 16px rgba(15, 37, 71, 0.2));
+}
+
+.app-brand-text {
   display: grid;
   gap: 4px;
-  flex: 1 1 320px;
   min-width: 0;
 }
 
@@ -970,6 +989,24 @@ textarea {
     linear-gradient(180deg, #ffffff 0%, #f8fffc 100%);
 }
 
+.loan-certification-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.loan-certification-brand-mark {
+  width: 92px;
+  height: 92px;
+  object-fit: contain;
+}
+
+.loan-certification-brand-copy {
+  display: grid;
+  gap: 12px;
+}
+
 .loan-certification-kicker {
   margin: 0;
   text-align: center;
@@ -1225,6 +1262,15 @@ textarea {
     padding: 42px 26px 60px;
   }
 
+  .app-brand-lockup {
+    align-items: flex-start;
+  }
+
+  .app-brand-mark {
+    width: 50px;
+    height: 50px;
+  }
+
   .loan-certification-summary-grid,
   .loan-certification-metrics-grid {
     grid-template-columns: 1fr;
@@ -1234,9 +1280,23 @@ textarea {
     flex-direction: column;
     align-items: flex-start;
   }
+
+  .loan-certification-brand-mark {
+    width: 76px;
+    height: 76px;
+  }
+
+  .loan-certification-brand-copy {
+    gap: 8px;
+  }
 }
 
 @media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
   body {
     background: #ffffff !important;
   }
@@ -1260,15 +1320,113 @@ textarea {
 
   .loan-certification-frame {
     box-shadow: none;
-    border-width: 14px;
+    border-width: 12px;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .loan-certification-frame::before {
-    inset: 12px;
+    inset: 10px;
   }
 
   .loan-certification-inner {
-    padding: 44px 42px 58px;
+    padding: 28px 30px 34px;
+  }
+
+  .loan-certification-title {
+    margin: 8px 0 4px;
+    font-size: 1.9rem;
+  }
+
+  .loan-certification-brand {
+    gap: 8px;
+  }
+
+  .loan-certification-brand-mark {
+    width: 72px;
+    height: 72px;
+  }
+
+  .loan-certification-reference {
+    font-size: 0.86rem;
+  }
+
+  .loan-certification-name {
+    margin-top: 20px;
+    font-size: 2rem;
+  }
+
+  .loan-certification-copy {
+    margin-top: 10px;
+    font-size: 0.86rem;
+    line-height: 1.45;
+  }
+
+  .loan-certification-summary-grid {
+    margin-top: 18px;
+    gap: 10px;
+  }
+
+  .loan-certification-metrics-grid {
+    margin-top: 14px;
+    gap: 10px;
+  }
+
+  .loan-certification-summary-card,
+  .loan-certification-metric-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .loan-certification-summary-label,
+  .loan-certification-metric-label {
+    font-size: 0.58rem;
+    letter-spacing: 0.12em;
+  }
+
+  .loan-certification-metric-band {
+    margin-top: 4px;
+    font-size: 0.55rem;
+    letter-spacing: 0.06em;
+  }
+
+  .loan-certification-summary-value {
+    margin-top: 8px;
+    font-size: 1.35rem;
+  }
+
+  .loan-certification-metric-value {
+    margin-top: 6px;
+    font-size: 1.15rem;
+  }
+
+  .loan-certification-footer {
+    margin-top: 18px;
+    gap: 16px;
+    align-items: flex-start;
+  }
+
+  .loan-certification-meta {
+    gap: 6px;
+  }
+
+  .loan-certification-meta p,
+  .loan-certification-loading {
+    font-size: 0.78rem;
+  }
+
+  .loan-certification-qr {
+    gap: 6px;
+  }
+
+  .loan-certification-qr img {
+    width: 108px;
+    height: 108px;
+    border-width: 6px;
+  }
+
+  .loan-certification-qr span {
+    font-size: 0.56rem;
   }
 }
 
@@ -1943,6 +2101,15 @@ textarea { min-height: 100px; }
 label { display: block; margin-bottom: 12px; }
 .checkbox-label { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
 .checkbox-label input { width: auto; }
+.auth-role-fieldset { margin: 0; padding: 14px 16px 16px; border: 1px solid rgba(148, 163, 184, 0.35); border-radius: 12px; }
+.auth-role-fieldset legend { padding: 0 6px; font-weight: 700; color: #0f172a; }
+.auth-role-copy { margin: 0; color: #64748b; font-size: 0.92rem; }
+.auth-role-options { display: grid; gap: 10px; margin-top: 12px; }
+.auth-role-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; background: rgba(248, 250, 252, 0.8); }
+.auth-role-option input { width: auto; margin-top: 2px; }
+.auth-role-option span { display: grid; gap: 4px; }
+.auth-role-option strong { color: #0f172a; }
+.auth-role-option small { color: #64748b; line-height: 1.45; }
 .vehicle-grid, .access-grid, .fuel-management .fuel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .stack-panel { display: grid; gap: 20px; }
 .backup-code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
