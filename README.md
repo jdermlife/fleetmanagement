@@ -143,6 +143,7 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 
 - DevOps requirements and runbook: `DEVOPS_REQUIREMENTS.md`
 - CI/CD pipeline: `.github/workflows/ci-cd-deploy.yml`
+- Global launch readiness audit: `GLOBAL_LAUNCH_READINESS.md`
 - Daily backup scripts:
    - `ops/backup/run_daily_backup.sh`
    - `ops/backup/run_daily_backup.ps1`

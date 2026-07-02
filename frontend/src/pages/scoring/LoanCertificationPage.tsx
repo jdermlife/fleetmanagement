@@ -146,17 +146,18 @@ export default function LoanCertificationPage() {
     }
     body {
       margin: 0;
-      padding: 18px;
-      background: #f3f7ff;
+      padding: 12px;
+      background: #ffffff;
       color: #0f2547;
       font-family: Arial, sans-serif;
     }
     .sheet {
-      max-width: 860px;
+      max-width: 760px;
       margin: 0 auto;
       background: #ffffff;
-      border: 14px solid #0038a8;
-      box-shadow: 0 18px 40px rgba(15, 37, 71, 0.15);
+      border: 8px solid #0038a8;
+      border-radius: 8px;
+      box-shadow: 0 12px 28px rgba(15, 37, 71, 0.1);
       position: relative;
       overflow: hidden;
       page-break-inside: avoid;
@@ -165,21 +166,13 @@ export default function LoanCertificationPage() {
     .sheet::before {
       content: "";
       position: absolute;
-      inset: 14px;
-      border: 3px solid #fcd116;
+      inset: 8px;
+      border: 2px solid #f4d36a;
+      border-radius: 4px;
       pointer-events: none;
     }
-    .sheet::after {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      height: 16px;
-      background: #0f766e;
-    }
     .content {
-      padding: 34px 36px 40px;
+      padding: 18px 20px 22px;
       position: relative;
       z-index: 1;
     }
@@ -187,62 +180,64 @@ export default function LoanCertificationPage() {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 10px;
+      gap: 4px;
     }
     .brand-mark {
-      width: 96px;
-      height: 96px;
+      width: 46px;
+      height: 46px;
       object-fit: contain;
     }
     .kicker {
       text-align: center;
       color: #0f766e;
       font-weight: 700;
-      letter-spacing: 0.22em;
+      letter-spacing: 0.16em;
       text-transform: uppercase;
-      font-size: 12px;
+      font-size: 7px;
     }
     h1 {
-      margin: 6px 0 4px;
+      margin: 4px 0 2px;
       text-align: center;
       color: #0038a8;
-      font-size: 28px;
-      letter-spacing: 0.04em;
+      font-size: 22px;
+      letter-spacing: 0.14em;
       text-transform: uppercase;
     }
     h2 {
       margin: 0;
       text-align: center;
       color: #7a5a00;
-      font-size: 18px;
+      font-size: 10px;
       font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
     }
     .name {
-      margin-top: 24px;
+      margin-top: 10px;
       text-align: center;
-      font-size: 28px;
+      font-size: 18px;
       font-weight: 700;
       color: #0f2547;
     }
     .subcopy {
-      margin: 10px auto 0;
-      max-width: 620px;
+      margin: 6px auto 0;
+      max-width: 540px;
       text-align: center;
-      line-height: 1.55;
-      font-size: 14px;
+      line-height: 1.4;
+      font-size: 9px;
       color: #4c5f78;
     }
     .summary {
-      margin-top: 22px;
+      margin-top: 12px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 16px;
+      gap: 8px;
     }
     .summary-card {
-      min-height: 102px;
+      min-height: 80px;
       border: 1px solid rgba(163, 184, 200, 0.52);
-      border-radius: 18px;
-      padding: 18px 18px 16px;
+      border-radius: 12px;
+      padding: 9px 11px;
       background:
         radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
         radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
@@ -252,95 +247,101 @@ export default function LoanCertificationPage() {
       align-content: space-between;
     }
     .summary-label {
-      font-size: 12px;
+      font-size: 7px;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.2em;
       color: #0f766e;
       font-weight: 700;
     }
     .summary-value {
-      margin-top: 18px;
-      font-size: 38px;
+      margin-top: 8px;
+      font-size: 21px;
       font-weight: 700;
       line-height: 1;
       color: #0d3ea3;
       overflow-wrap: anywhere;
     }
     .metrics {
-      margin-top: 16px;
+      margin-top: 8px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
+      gap: 8px;
     }
     .metric {
-      min-height: 116px;
-      border-radius: 18px;
+      min-height: 84px;
+      border-radius: 12px;
       border: 1px solid rgba(163, 184, 200, 0.52);
       background:
         radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
         radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
         linear-gradient(135deg, #fffdf3 0%, #fff7d3 48%, #eef8f7 100%);
-      padding: 18px;
+      padding: 9px 11px;
       display: grid;
       align-content: space-between;
     }
     .metric-label {
-      font-size: 12px;
+      font-size: 7px;
       color: #0f766e;
       text-transform: uppercase;
-      letter-spacing: 0.18em;
+      letter-spacing: 0.2em;
       font-weight: 700;
     }
     .metric-band {
-      margin-top: 8px;
+      margin-top: 3px;
       color: #0d3ea3;
-      font-size: 11px;
-      letter-spacing: 0.12em;
+      font-size: 7px;
+      letter-spacing: 0.08em;
       text-transform: uppercase;
       font-weight: 700;
     }
     .metric-value {
-      margin-top: 18px;
+      margin-top: 6px;
       color: #0f2547;
-      font-size: 30px;
+      font-size: 17px;
       line-height: 1;
       font-weight: 700;
     }
     .footer {
-      margin-top: 18px;
+      margin-top: 10px;
       display: flex;
       justify-content: space-between;
-      gap: 16px;
-      align-items: flex-start;
+      gap: 8px;
+      align-items: flex-end;
     }
     .meta {
       display: grid;
-      gap: 8px;
+      gap: 3px;
+      padding-bottom: 4px;
     }
     .meta-line {
-      font-size: 12px;
+      font-size: 9px;
       color: #4c5f78;
+      line-height: 1.3;
     }
     .meta-line strong {
       color: #0f2547;
     }
     .qr {
+      display: grid;
+      justify-items: center;
+      gap: 3px;
+      min-width: 110px;
       text-align: center;
     }
     .qr img {
-      width: 118px;
-      height: 118px;
-      border-radius: 12px;
-      border: 5px solid #ffffff;
-      box-shadow: 0 10px 24px rgba(15, 37, 71, 0.12);
+      width: 88px;
+      height: 88px;
+      border-radius: 6px;
+      border: 3px solid #ffffff;
+      box-shadow: 0 6px 14px rgba(15, 37, 71, 0.08);
       background: #ffffff;
     }
     .qr p {
-      margin: 8px 0 0;
+      margin: 2px 0 0;
       color: #546275;
-      font-size: 10px;
+      font-size: 7px;
       text-transform: uppercase;
-      letter-spacing: 0.14em;
+      letter-spacing: 0.16em;
       font-weight: 700;
     }
     @media print {
@@ -353,8 +354,8 @@ export default function LoanCertificationPage() {
         box-shadow: none;
       }
       .brand-mark {
-        width: 82px;
-        height: 82px;
+        width: 40px;
+        height: 40px;
       }
     }
   </style>
@@ -367,7 +368,7 @@ export default function LoanCertificationPage() {
         <div class="kicker">Certification of Lending Assessment</div>
         <h1>${APP_NAME}</h1>
       </div>
-      <h2>Reference ${certification.applicationNo}</h2>
+      <h2>Reference No. ${certification.applicationNo}</h2>
       <div class="name">${certification.borrowerName}</div>
       <div class="subcopy">
         This certifies that the referenced application has completed the ${APP_NAME} assessment workflow
@@ -395,9 +396,10 @@ export default function LoanCertificationPage() {
       </div>
       <div class="footer">
         <div class="meta">
-          <div class="meta-line"><strong>Issued:</strong> ${new Date(certification.issuedAt).toLocaleString()}</div>
+          <div class="meta-line"><strong>Info Provided:</strong> ${new Date(certification.issuedAt).toLocaleString()}</div>
           <div class="meta-line"><strong>Reference Number:</strong> ${certification.applicationNo}</div>
           <div class="meta-line"><strong>Borrower Name:</strong> ${certification.borrowerName}</div>
+          <div class="meta-line"><strong>Verification Link:</strong> Open certification</div>
         </div>
         <div class="qr">
           <img src="${buildQrImageUrl(certification.qrValue)}" alt="Certification QR Code" />
