@@ -55,7 +55,7 @@ export default function RegisterPage() {
     <div className="standalone-card auth-screen">
       <h1>Create Account</h1>
       <p className="intro">
-        Register a user account for the fleet and lending workspace. Review the legal disclosures
+        Register a user account for the Credit  and Filscore Score or  the Lending workspace. Review the legal disclosures
         before continuing.
       </p>
 
@@ -109,7 +109,7 @@ export default function RegisterPage() {
         <fieldset className="auth-role-fieldset">
           <legend>Subscriber type</legend>
           <p className="auth-role-copy">
-            Select the workspace access this new account should receive.
+            Select the  access this new account should receive.
           </p>
           <div className="auth-role-options">
             {REGISTER_SUBSCRIBER_OPTIONS.map((option) => (
@@ -150,7 +150,7 @@ export default function RegisterPage() {
             onChange={(event) => setAcceptedPrivacy(event.target.checked)}
           />
           <span>
-            I reviewed the <Link to="/privacy">Privacy Disclosures</Link>.
+            I reviewed and accept the <Link to="/privacy">Privacy Disclosures</Link>.
           </span>
         </label>
 

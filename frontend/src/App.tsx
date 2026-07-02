@@ -716,7 +716,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/credit-review-workbench"
               element={
-                <ProtectedRoute permissions={['read:loans', 'edit:loans', 'approve:loans']}>
+                <ProtectedRoute permissions={['approve:loans']}>
                   <CreditReviewWorkbench />
                 </ProtectedRoute>
               }
@@ -725,7 +725,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/released-accounts"
               element={
-                <ProtectedRoute permissions={['final_approve:loans', 'read:loans']}>
+                <ProtectedRoute permissions={['final_approve:loans']}>
                   <ReleasedAccounts />
                 </ProtectedRoute>
               }
@@ -877,7 +877,7 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/risk-management"
               element={
-                <ProtectedRoute permissions={['read:audit_logs', 'read:analytics']}>
+                <ProtectedRoute permissions={['read:audit_logs']}>
                   <div className="card">
                     <h1>Risk Management</h1>
 

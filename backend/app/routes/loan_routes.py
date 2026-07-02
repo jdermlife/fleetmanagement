@@ -38,7 +38,8 @@ from app.services.loan_repository_io import (
     upsert_loan_applications,
 )
 from app.services.overall_scoring_engine import compute_quant_score_package
-from security.rbac import Role as RBACRole
+from security.rbac import Permission as RBACPermission
+from security.rbac import Role as RBACRole, has_permission
 
 router = APIRouter()
 MAX_LOAN_EXPORT_RECORDS = int(os.getenv("MAX_LOAN_EXPORT_RECORDS", "1500"))
@@ -129,6 +130,41 @@ def enforce_loan_application_access(user: CurrentUser, record: LoanApplication) 
         status_code=http_status.HTTP_403_FORBIDDEN,
         detail="You are not allowed to access this loan application",
     )
+
+
+def user_has_loan_permission(user: CurrentUser, permission: RBACPermission) -> bool:
+    if is_admin_user(user):
+        return True
+
+    try:
+        return has_permission(user.role.lower(), permission)
+    except ValueError:
+        return False
+
+
+def enforce_loan_permission(user: CurrentUser, permission: RBACPermission, detail: str) -> None:
+    if user_has_loan_permission(user, permission):
+        return
+
+    raise HTTPException(
+        status_code=http_status.HTTP_403_FORBIDDEN,
+        detail=detail,
+    )
+
+
+def enforce_loan_status_transition_permission(user: CurrentUser, status: str) -> None:
+    if status == "Approved":
+        enforce_loan_permission(
+            user,
+            RBACPermission.APPROVE_LOANS,
+            "You do not have permission to approve loan applications",
+        )
+    elif status == "Released":
+        enforce_loan_permission(
+            user,
+            RBACPermission.FINAL_APPROVE_LOANS,
+            "You do not have permission to release loan applications",
+        )
 
 
 def model_to_payload(model: Any) -> dict[str, Any]:
@@ -795,6 +831,11 @@ def export_loan_applications(
     db = SessionLocal()
 
     try:
+        enforce_loan_permission(
+            user,
+            RBACPermission.EXPORT_LOANS,
+            "You do not have permission to export loan applications",
+        )
         query = db.query(LoanApplication)
         if is_subscriber_user(user):
             query = query.filter(LoanApplication.created_by == user.id)
@@ -865,6 +906,7 @@ def update_status(
         status = normalize_status(status)
 
         record = get_loan_application_or_404(db, application_no)
+        enforce_loan_status_transition_permission(user, status)
         if status == "Reviewed":
             record.reviewed_by = user.id
         if status == "Approved":

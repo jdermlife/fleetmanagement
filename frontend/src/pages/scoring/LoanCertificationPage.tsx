@@ -540,7 +540,7 @@ export default function LoanCertificationPage() {
                   band: formatBand(certification.socialScore),
                 },
                 {
-                  label: 'Credit Value Score',
+                  label: 'Credit Values Score',
                   value: formatScore(certification.creditValueScore),
                   band: formatBand(certification.creditValueScore),
                 },
