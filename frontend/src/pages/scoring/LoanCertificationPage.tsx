@@ -3,11 +3,12 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 
 import { fetchLoanApplication, type LoanApplicationRecord } from '../../api/loan'
 import { getErrorMessage } from '../../api'
-import { calculateCompositeInternalScore, toFilscore } from './filscoreScale'
+import { calculateCompositeInternalScore, getFilscoreBand, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
   applicationNo: string
   borrowerName: string
+  productType: string
   issuedAt: string
   overallScore: number | null
   label: string
@@ -44,6 +45,7 @@ const buildCertificationSnapshot = (
   return {
     applicationNo,
     borrowerName: record.borrower_name?.trim() || 'Unnamed Borrower',
+    productType: record.product_type || 'Product',
     issuedAt: new Date().toISOString(),
     overallScore: calculateCompositeInternalScore({
       creditScore: record.overall_scores?.credit_score ?? null,
@@ -64,6 +66,12 @@ const buildCertificationSnapshot = (
 const formatScore = (value: number | null) => {
   const scaledScore = toFilscore(value)
   return typeof scaledScore === 'number' ? scaledScore.toFixed(0) : 'Pending'
+}
+
+const formatBand = (value: number | null) => {
+  const scaledScore = toFilscore(value)
+  const band = getFilscoreBand(scaledScore)
+  return band ? `${band.grade} • ${band.internalGrade}` : 'FILSCORE / Grade / Internal Grade'
 }
 
 export default function LoanCertificationPage() {
@@ -236,6 +244,14 @@ export default function LoanCertificationPage() {
       letter-spacing: 0.12em;
       font-weight: 700;
     }
+    .metric-band {
+      margin-top: 8px;
+      color: #0f766e;
+      font-size: 11px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      font-weight: 700;
+    }
     .metric-value {
       margin-top: 8px;
       color: #0f2547;
@@ -307,10 +323,10 @@ export default function LoanCertificationPage() {
         </div>
       </div>
       <div class="metrics">
-        <div class="metric"><div class="metric-label">Credit Score</div><div class="metric-value">${formatScore(certification.creditScore)}</div></div>
-        <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-value">${formatScore(certification.fraudScore)}</div></div>
-        <div class="metric"><div class="metric-label">Social Score</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
-        <div class="metric"><div class="metric-label">Credit Value</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
+        <div class="metric"><div class="metric-label">${certification.productType} Credit Score</div><div class="metric-band">${formatBand(certification.creditScore)}</div><div class="metric-value">${formatScore(certification.creditScore)}</div></div>
+        <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${formatBand(certification.fraudScore)}</div><div class="metric-value">${formatScore(certification.fraudScore)}</div></div>
+        <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${formatBand(certification.socialScore)}</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
+        <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${formatBand(certification.creditValueScore)}</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
       </div>
       <div class="footer">
         <div class="meta">
@@ -432,13 +448,30 @@ export default function LoanCertificationPage() {
 
             <div className="loan-certification-metrics-grid">
               {[
-                { label: 'Credit Score', value: formatScore(certification.creditScore) },
-                { label: 'Non-Starter Score', value: formatScore(certification.fraudScore) },
-                { label: 'Social Score', value: formatScore(certification.socialScore) },
-                { label: 'Credit Value', value: formatScore(certification.creditValueScore) },
+                {
+                  label: `${certification.productType} Credit Score`,
+                  value: formatScore(certification.creditScore),
+                  band: formatBand(certification.creditScore),
+                },
+                {
+                  label: 'Non-Starter Score',
+                  value: formatScore(certification.fraudScore),
+                  band: formatBand(certification.fraudScore),
+                },
+                {
+                  label: 'Social Score',
+                  value: formatScore(certification.socialScore),
+                  band: formatBand(certification.socialScore),
+                },
+                {
+                  label: 'Credit Value Score',
+                  value: formatScore(certification.creditValueScore),
+                  band: formatBand(certification.creditValueScore),
+                },
               ].map((item) => (
                 <div key={item.label} className="loan-certification-metric-card">
                   <span className="loan-certification-metric-label">{item.label}</span>
+                  <span className="loan-certification-metric-band">{item.band}</span>
                   <strong className="loan-certification-metric-value">{item.value}</strong>
                 </div>
               ))}

@@ -1043,6 +1043,16 @@ textarea {
   text-transform: uppercase;
 }
 
+.loan-certification-metric-band {
+  display: block;
+  margin-top: 8px;
+  color: #0038a8;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
 .loan-certification-summary-value {
   display: block;
   margin-top: 14px;
