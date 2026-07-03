@@ -49,7 +49,7 @@ export default function ReleasedAccounts() {
 							<thead className="bg-slate-100 text-slate-700">
 								<tr>
 									<th className="px-4 py-3 text-left">Application</th>
-									<th className="px-4 py-3 text-left">Borrower</th>
+									<th className="px-4 py-3 text-left">Applicant / Borrower</th>
 									<th className="px-4 py-3 text-left">Loan Amount</th>
 									<th className="px-4 py-3 text-left">Created</th>
 								</tr>

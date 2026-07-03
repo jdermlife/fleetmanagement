@@ -104,7 +104,7 @@ export default function LoanDetails() {
         </div>
 
         <div className="mt-6 rounded bg-white p-6 shadow">
-          <h2 className="mb-4 text-lg font-bold">Borrower Information</h2>
+          <h2 className="mb-4 text-lg font-bold">Applicant / Borrower Information</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
               Full Name

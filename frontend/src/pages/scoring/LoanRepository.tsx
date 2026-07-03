@@ -568,7 +568,7 @@ export default function LoanRepository() {
                   <input
                     value={searchText}
                     onChange={(event) => setSearchText(event.target.value)}
-                    placeholder="Search by application number or borrower"
+                    placeholder="Search by application number or applicant / borrower"
                     className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
                   />
                 </label>
@@ -744,7 +744,7 @@ export default function LoanRepository() {
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Application No</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Created At</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Product</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Borrower</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Applicant / Borrower</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Email</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Phone</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Gov ID</th>

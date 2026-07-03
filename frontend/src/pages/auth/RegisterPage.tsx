@@ -29,7 +29,7 @@ export default function RegisterPage() {
     }
 
     if (!subscriberType) {
-      setMessage('Please select whether this account is for a borrower or a lender.')
+      setMessage('Please select whether this account is for an applicant / borrower or a lender.')
       return
     }
 

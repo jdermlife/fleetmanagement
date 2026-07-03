@@ -47,7 +47,7 @@ export default function LoginPage() {
         Access your fleet, lending, and governance workspace with your existing account.
       </p>
       <p className="auth-role-copy">
-        New users choose Borrower or Lender during account registration.
+        New users choose Applicant / Borrower or Lender during account registration.
       </p>
 
       <form className="stack-panel auth-panel" onSubmit={handleSubmit}>

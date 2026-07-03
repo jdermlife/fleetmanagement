@@ -11,7 +11,7 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
 }> = [
   {
     value: 'borrower',
-    label: 'Subscriber Borrower',
+    label: 'Subscriber Applicant / Borrower',
     description: 'Access the lending scorecard steps 1 to 8 for Filscore and Credit Score assessment and certification. The certification only.',
   },
   {

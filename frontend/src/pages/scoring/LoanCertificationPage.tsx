@@ -59,7 +59,7 @@ const buildCertificationSnapshot = (
 
   return {
     applicationNo,
-    borrowerName: record.borrower_name?.trim() || 'Unnamed Borrower',
+    borrowerName: record.borrower_name?.trim() || 'Unnamed Applicant / Borrower',
     productType: normalizeProductType(record.product_type),
     issuedAt: new Date().toISOString(),
     overallScore: calculateCompositeInternalScore({
@@ -437,7 +437,7 @@ export default function LoanCertificationPage() {
           <div class="meta-line"><strong>Info Provided:</strong> ${new Date(certification.issuedAt).toLocaleString()}</div>
           <div class="meta-line"><strong>Reference Number:</strong> ${certification.applicationNo}</div>
           <div class="meta-line"><strong>Product Being Applied For:</strong> ${certification.productType || 'Not Specified'}</div>
-          <div class="meta-line"><strong>Borrower Name:</strong> ${certification.borrowerName}</div>
+          <div class="meta-line"><strong>Applicant / Borrower Name:</strong> ${certification.borrowerName}</div>
           <div class="meta-line"><strong>Verification Link:</strong> Open certification</div>
         </div>
         <div class="qr">
@@ -598,7 +598,7 @@ export default function LoanCertificationPage() {
             <div className="loan-certification-footer">
               <div className="loan-certification-meta">
                 <p><strong>Issued:</strong> {new Date(certification.issuedAt).toLocaleString()}</p>
-                <p><strong>Borrower:</strong> {certification.borrowerName}</p>
+                <p><strong>Applicant / Borrower:</strong> {certification.borrowerName}</p>
                 <p><strong>Reference Number:</strong> {certification.applicationNo}</p>
                 <p><strong>Product Being Applied For:</strong> {certification.productType || 'Not Specified'}</p>
                 <p><strong>Verification Link:</strong> <Link to={`/loan-certification?applicationNo=${encodeURIComponent(certification.applicationNo)}`}>Open certification</Link></p>

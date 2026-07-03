@@ -1251,7 +1251,7 @@ const reviewSectionConfigs: Array<{
 }> = [
   {
     key: 'borrower',
-    title: 'Borrower Information',
+    title: 'Applicant / Borrower Information',
     fields: [
       { key: 'fullName', label: 'Full Legal Name' },
       { key: 'email', label: 'Email Address', type: 'email' },
@@ -2278,7 +2278,7 @@ export default function LendingScorecard() {
   );
   // --- Validation for Step 10 ---
   const validationChecks = useMemo(() => [
-    { label: 'Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
+    { label: 'Applicant / Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
     { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && calculations.totalCollateralValue > 0 },
     { label: 'Debt Service Ratio (DSR) is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
@@ -2976,7 +2976,7 @@ export default function LendingScorecard() {
       .filter((value) => value.trim().length > 0)
       .join(' ')
       .trim() ||
-    'Unnamed Borrower';
+    'Unnamed Applicant / Borrower';
 
   const handleOpenCertification = () => {
     if (!displayedQuantSummary) {
@@ -3707,7 +3707,7 @@ export default function LendingScorecard() {
               {isHomeLoan && renderInput('collateralInformation', 'tctCctNumber', 'TCT/CCT Number')}
               {isHomeLoan && renderSelect('collateralInformation', 'propertyMarketabilityCategory', 'Marketability of the Property', ['Subdivision / Condominium (Class A,B,C)', 'Lowcost Subdivision / Condominium', 'Outside'])}
               {isHomeLoan && renderSelect('collateralInformation', 'houseUnitModelCategory', 'House / Unit Model', ['Single detached', 'Single attached / Condominium', 'Townhouse', 'Row house'])}
-              {isHomeLoan && renderSelect('collateralInformation', 'collateralOccupancyType', 'Type of Collateral', ['Residential property used by borrower as primary residence', 'Residential property not used by borrower'])}
+              {isHomeLoan && renderSelect('collateralInformation', 'collateralOccupancyType', 'Type of Collateral', ['Residential property used by applicant / borrower as primary residence', 'Residential property not used by applicant / borrower'])}
               {isHomeLoan && renderFormattedNumberInput('collateralInformation', 'propertyAppraisedValue', 'Property Appraised Value')}
 
               <div className="md:col-span-2 border-t pt-4 mt-4">
@@ -4094,7 +4094,7 @@ export default function LendingScorecard() {
                   {[
                     ['signatures', 'applicantSignature', 'Applicant Signature'],
                     ['signatures', 'spouseOrCoBorrowerSignature', 'Spouse / Co-Borrower Signature'],
-                    ['signatures', 'borrowerSignatureAutoLoanInsurance', 'Borrower Signature (Auto Loan Insurance)'],
+                    ['signatures', 'borrowerSignatureAutoLoanInsurance', 'Applicant / Borrower Signature (Auto Loan Insurance)'],
                     ['signatures', 'extensionCardholderSignature', 'Extension Cardholder Signature'],
                   ].map(([section, field, label]) => renderInput(section as EditableSection, field, label))}
                 </div>
