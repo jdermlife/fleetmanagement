@@ -1457,8 +1457,8 @@ textarea {
 
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 10mm;
+    size: A5 portrait;
+    margin: 7mm;
   }
 
   body {
@@ -1484,113 +1484,113 @@ textarea {
 
   .loan-certification-frame {
     box-shadow: none;
-    border-width: 12px;
+    border-width: 8px;
     break-inside: avoid;
     page-break-inside: avoid;
   }
 
   .loan-certification-frame::before {
-    inset: 10px;
+    inset: 6px;
   }
 
   .loan-certification-inner {
-    padding: 18px 18px 20px;
+    padding: 12px 12px 14px;
   }
 
   .loan-certification-title {
     margin: 2px 0 0;
-    font-size: 1.25rem;
+    font-size: 1rem;
   }
 
   .loan-certification-brand {
-    gap: 4px;
+    gap: 3px;
   }
 
   .loan-certification-brand-mark {
-    width: 42px;
-    height: 42px;
+    width: 32px;
+    height: 32px;
   }
 
   .loan-certification-reference {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
   }
 
   .loan-certification-name {
-    margin-top: 10px;
-    font-size: 1.45rem;
-  }
-
-  .loan-certification-copy {
-    margin-top: 8px;
-    font-size: 0.62rem;
-    line-height: 1.4;
-  }
-
-  .loan-certification-summary-grid {
-    margin-top: 12px;
-    gap: 8px;
-  }
-
-  .loan-certification-metrics-grid {
-    margin-top: 8px;
-    gap: 8px;
-  }
-
-  .loan-certification-summary-card,
-  .loan-certification-metric-card {
-    padding: 10px;
-    border-radius: 12px;
-  }
-
-  .loan-certification-summary-label,
-  .loan-certification-metric-label {
-    font-size: 0.45rem;
-    letter-spacing: 0.18em;
-  }
-
-  .loan-certification-metric-band {
-    margin-top: 4px;
-    font-size: 0.42rem;
-    letter-spacing: 0.06em;
-  }
-
-  .loan-certification-summary-value {
     margin-top: 8px;
     font-size: 1.1rem;
   }
 
-  .loan-certification-metric-value {
+  .loan-certification-copy {
     margin-top: 6px;
-    font-size: 0.95rem;
+    font-size: 0.54rem;
+    line-height: 1.4;
+  }
+
+  .loan-certification-summary-grid {
+    margin-top: 8px;
+    gap: 6px;
+  }
+
+  .loan-certification-metrics-grid {
+    margin-top: 6px;
+    gap: 6px;
+  }
+
+  .loan-certification-summary-card,
+  .loan-certification-metric-card {
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .loan-certification-summary-label,
+  .loan-certification-metric-label {
+    font-size: 0.4rem;
+    letter-spacing: 0.16em;
+  }
+
+  .loan-certification-metric-band {
+    margin-top: 3px;
+    font-size: 0.38rem;
+    letter-spacing: 0.06em;
+  }
+
+  .loan-certification-summary-value {
+    margin-top: 6px;
+    font-size: 0.92rem;
+  }
+
+  .loan-certification-metric-value {
+    margin-top: 4px;
+    font-size: 0.82rem;
   }
 
   .loan-certification-footer {
-    margin-top: 10px;
-    gap: 10px;
+    margin-top: 8px;
+    gap: 6px;
     align-items: flex-end;
   }
 
   .loan-certification-meta {
-    gap: 4px;
+    gap: 2px;
   }
 
   .loan-certification-meta p,
   .loan-certification-loading {
-    font-size: 0.56rem;
+    font-size: 0.46rem;
   }
 
   .loan-certification-qr {
-    gap: 4px;
+    gap: 2px;
   }
 
   .loan-certification-qr img {
-    width: 74px;
-    height: 74px;
-    border-width: 3px;
+    width: 58px;
+    height: 58px;
+    border-width: 2px;
   }
 
   .loan-certification-qr span {
-    font-size: 0.38rem;
+    font-size: 0.32rem;
   }
 }
 

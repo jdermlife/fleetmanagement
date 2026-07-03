@@ -50,6 +50,15 @@ The backend runs on `http://localhost:5000`.
 3. Create a `.env.local` file:
    ```
    VITE_API_URL=http://localhost:5000
+   VITE_PAYMENT_DEFAULT_CHANNEL=Bank Transfer
+   VITE_PAYMENT_BANK_NAME=Your Bank Name
+   VITE_PAYMENT_BANK_ACCOUNT_NAME=Your Business Name
+   VITE_PAYMENT_BANK_ACCOUNT_NO=000000000000
+   VITE_PAYMENT_GCASH_NUMBER=09XXXXXXXXX
+   VITE_PAYMENT_GCASH_NAME=Your GCash Name
+   VITE_PAYMENT_MAYA_NUMBER=09XXXXXXXXX
+   VITE_PAYMENT_MAYA_NAME=Your Maya Name
+   VITE_PAYMENT_SUPPORT_EMAIL=support@example.com
    ```
 4. Start the dev server: `npm run dev`
 
@@ -121,6 +130,15 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 | TOKEN_EXPIRY_HOURS | JWT expiration time | 24 |
 | RATE_LIMIT_REQUESTS | Max requests per window | 100 |
 | RATE_LIMIT_WINDOW | Rate limit window (seconds) | 60 |
+| VITE_PAYMENT_DEFAULT_CHANNEL | Default channel shown on the subscription payment page | Bank Transfer |
+| VITE_PAYMENT_BANK_NAME | Bank name shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_BANK_ACCOUNT_NAME | Bank account name shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_BANK_ACCOUNT_NO | Bank account number shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_GCASH_NUMBER | GCash number shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_GCASH_NAME | GCash account name shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_MAYA_NUMBER | Maya number shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_MAYA_NAME | Maya account name shown on the subscription payment page | Placeholder |
+| VITE_PAYMENT_SUPPORT_EMAIL | Support contact shown on the subscription payment page | Placeholder |
 
 ## Security Notes
 

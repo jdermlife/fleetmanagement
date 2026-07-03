@@ -178,23 +178,24 @@ export default function LoanCertificationPage() {
   <title>${APP_NAME} ${certification.applicationNo}</title>
   <style>
     @page {
-      size: A4 portrait;
-      margin: 10mm;
+      size: A5 portrait;
+      margin: 7mm;
     }
     body {
       margin: 0;
-      padding: 12px;
+      padding: 6px;
       background: #ffffff;
       color: #0f2547;
       font-family: Arial, sans-serif;
     }
     .sheet {
-      max-width: 760px;
+      width: 100%;
+      max-width: 100%;
       margin: 0 auto;
       background: #ffffff;
-      border: 8px solid #0038a8;
+      border: 6px solid #0038a8;
       border-radius: 8px;
-      box-shadow: 0 12px 28px rgba(15, 37, 71, 0.1);
+      box-shadow: 0 8px 18px rgba(15, 37, 71, 0.08);
       position: relative;
       overflow: hidden;
       page-break-inside: avoid;
@@ -203,13 +204,13 @@ export default function LoanCertificationPage() {
     .sheet::before {
       content: "";
       position: absolute;
-      inset: 8px;
+      inset: 6px;
       border: 2px solid #f4d36a;
       border-radius: 4px;
       pointer-events: none;
     }
     .content {
-      padding: 18px 20px 22px;
+      padding: 12px 14px 14px;
       position: relative;
       z-index: 1;
     }
@@ -220,8 +221,8 @@ export default function LoanCertificationPage() {
       gap: 4px;
     }
     .brand-mark {
-      width: 46px;
-      height: 46px;
+      width: 36px;
+      height: 36px;
       object-fit: contain;
     }
     .kicker {
@@ -233,10 +234,10 @@ export default function LoanCertificationPage() {
       font-size: 7px;
     }
     h1 {
-      margin: 4px 0 2px;
+      margin: 3px 0 2px;
       text-align: center;
       color: #0038a8;
-      font-size: 22px;
+      font-size: 16px;
       letter-spacing: 0.14em;
       text-transform: uppercase;
     }
@@ -244,37 +245,37 @@ export default function LoanCertificationPage() {
       margin: 0;
       text-align: center;
       color: #7a5a00;
-      font-size: 10px;
+      font-size: 7px;
       font-weight: 700;
       letter-spacing: 0.1em;
       text-transform: uppercase;
     }
     .name {
-      margin-top: 10px;
+      margin-top: 8px;
       text-align: center;
-      font-size: 18px;
+      font-size: 13px;
       font-weight: 700;
       color: #0f2547;
     }
     .subcopy {
-      margin: 6px auto 0;
-      max-width: 540px;
+      margin: 4px auto 0;
+      max-width: 420px;
       text-align: center;
       line-height: 1.4;
-      font-size: 9px;
+      font-size: 7px;
       color: #4c5f78;
     }
     .summary {
-      margin-top: 12px;
+      margin-top: 8px;
       display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
-      gap: 8px;
+      gap: 6px;
     }
     .summary-card {
-      min-height: 80px;
+      min-height: 60px;
       border: 1px solid rgba(163, 184, 200, 0.52);
       border-radius: 12px;
-      padding: 9px 11px;
+      padding: 7px 8px;
       background:
         radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
         radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
@@ -284,74 +285,74 @@ export default function LoanCertificationPage() {
       align-content: space-between;
     }
     .summary-label {
-      font-size: 7px;
+      font-size: 6px;
       text-transform: uppercase;
       letter-spacing: 0.2em;
       color: #0f766e;
       font-weight: 700;
     }
     .summary-value {
-      margin-top: 8px;
-      font-size: 21px;
+      margin-top: 6px;
+      font-size: 15px;
       font-weight: 700;
       line-height: 1;
       color: #0d3ea3;
       overflow-wrap: anywhere;
     }
     .metrics {
-      margin-top: 8px;
+      margin-top: 6px;
       display: grid;
       grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 8px;
+      gap: 6px;
     }
     .metric {
-      min-height: 84px;
+      min-height: 64px;
       border-radius: 12px;
       border: 1px solid rgba(163, 184, 200, 0.52);
       background:
         radial-gradient(circle at bottom right, rgba(15, 118, 110, 0.1), transparent 34%),
         radial-gradient(circle at top right, rgba(250, 204, 21, 0.2), transparent 40%),
         linear-gradient(135deg, #fffdf3 0%, #fff7d3 48%, #eef8f7 100%);
-      padding: 9px 11px;
+      padding: 7px 8px;
       display: grid;
       align-content: space-between;
     }
     .metric-label {
-      font-size: 7px;
+      font-size: 6px;
       color: #0f766e;
       text-transform: uppercase;
       letter-spacing: 0.2em;
       font-weight: 700;
     }
     .metric-band {
-      margin-top: 3px;
+      margin-top: 2px;
       color: #0d3ea3;
-      font-size: 7px;
+      font-size: 6px;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-weight: 700;
     }
     .metric-value {
-      margin-top: 6px;
+      margin-top: 4px;
       color: #0f2547;
-      font-size: 17px;
+      font-size: 13px;
       line-height: 1;
       font-weight: 700;
     }
     .footer {
-      margin-top: 10px;
+      margin-top: 8px;
       display: flex;
       justify-content: space-between;
-      gap: 8px;
+      gap: 6px;
       align-items: flex-end;
     }
     .meta {
       display: grid;
-      gap: 3px;
-      padding-bottom: 4px;
+      gap: 2px;
+      padding-bottom: 2px;
     }
     .meta-line {
-      font-size: 9px;
+      font-size: 7px;
       color: #4c5f78;
       line-height: 1.3;
     }
@@ -361,13 +362,13 @@ export default function LoanCertificationPage() {
     .qr {
       display: grid;
       justify-items: center;
-      gap: 3px;
-      min-width: 110px;
+      gap: 2px;
+      min-width: 86px;
       text-align: center;
     }
     .qr img {
-      width: 88px;
-      height: 88px;
+      width: 68px;
+      height: 68px;
       border-radius: 6px;
       border: 3px solid #ffffff;
       box-shadow: 0 6px 14px rgba(15, 37, 71, 0.08);
@@ -376,7 +377,7 @@ export default function LoanCertificationPage() {
     .qr p {
       margin: 2px 0 0;
       color: #546275;
-      font-size: 7px;
+      font-size: 6px;
       text-transform: uppercase;
       letter-spacing: 0.16em;
       font-weight: 700;
@@ -388,11 +389,12 @@ export default function LoanCertificationPage() {
       }
       .sheet {
         max-width: none;
+        width: 100%;
         box-shadow: none;
       }
       .brand-mark {
-        width: 40px;
-        height: 40px;
+        width: 32px;
+        height: 32px;
       }
     }
   </style>
