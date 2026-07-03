@@ -1,5 +1,6 @@
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
 import { getErrorMessage, loginWithGoogle, register } from '../../api'
@@ -8,52 +9,20 @@ import {
   type RegisterSubscriberType,
 } from '../../authRoles'
 
-const GOOGLE_SCRIPT_ID = 'google-identity-services-script'
-
-type GoogleCredentialResponse = {
-  credential?: string
-}
-
-type GoogleAccountsId = {
-  initialize: (config: {
-    client_id: string
-    callback: (response: GoogleCredentialResponse) => void
-  }) => void
-  renderButton: (
-    element: HTMLElement,
-    options: {
-      theme?: 'outline' | 'filled_blue' | 'filled_black'
-      size?: 'small' | 'medium' | 'large'
-      text?: 'signin_with' | 'signup_with' | 'continue_with'
-      shape?: 'rectangular' | 'pill' | 'circle' | 'square'
-      width?: number
-    },
-  ) => void
-}
-
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        id?: GoogleAccountsId
-      }
-    }
-  }
-}
-
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const googleButtonRef = useRef<HTMLDivElement | null>(null)
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+  const isGoogleConfigured = googleClientId.length > 0
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
+  const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share' | ''>('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [googleReady, setGoogleReady] = useState(false)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -73,11 +42,22 @@ export default function RegisterPage() {
       return
     }
 
+    if (!lenderDataSharingChoice) {
+      setMessage('Please choose whether lenders can view your information and score for offers.')
+      return
+    }
+
     setIsSaving(true)
     setMessage('')
 
     try {
-      await register({ username, email, password, subscriberType })
+      await register({
+        username,
+        email,
+        password,
+        subscriberType,
+        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+      })
       navigate('/login?created=1')
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
@@ -86,80 +66,43 @@ export default function RegisterPage() {
     }
   }
 
-  useEffect(() => {
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim()
-    if (!googleClientId || typeof window === 'undefined') {
-      setGoogleReady(false)
+  const handleGoogleSuccess = async (response: CredentialResponse) => {
+    const idToken = response.credential
+    if (!idToken) {
+      setMessage('Google sign-up did not return a valid credential.')
       return
     }
 
-    const initializeGoogleButton = () => {
-      const accounts = window.google?.accounts?.id
-      if (!accounts || !googleButtonRef.current) {
-        return
-      }
-
-      accounts.initialize({
-        client_id: googleClientId,
-        callback: async (response: GoogleCredentialResponse) => {
-          const idToken = response.credential
-          if (!idToken) {
-            setMessage('Google sign-up did not return a valid credential.')
-            return
-          }
-
-          if (!subscriberType) {
-            setMessage('Select borrower or lender before continuing with Google.')
-            return
-          }
-
-          if (!acceptedTerms || !acceptedPrivacy) {
-            setMessage('Review and accept the terms and privacy disclosures to continue.')
-            return
-          }
-
-          setIsSaving(true)
-          setMessage('')
-          try {
-            await loginWithGoogle({
-              idToken,
-              subscriberType,
-            })
-            navigate('/dashboard')
-          } catch (error) {
-            setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
-          } finally {
-            setIsSaving(false)
-          }
-        },
-      })
-
-      googleButtonRef.current.innerHTML = ''
-      accounts.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'signup_with',
-        shape: 'rectangular',
-        width: 300,
-      })
-      setGoogleReady(true)
-    }
-
-    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID) as HTMLScriptElement | null
-    if (existingScript) {
-      initializeGoogleButton()
+    if (!subscriberType) {
+      setMessage('Select borrower or lender before continuing with Google.')
       return
     }
 
-    const script = document.createElement('script')
-    script.id = GOOGLE_SCRIPT_ID
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    script.onload = initializeGoogleButton
-    script.onerror = () => setMessage('Unable to load Google Sign-Up right now. Please try again.')
-    document.head.appendChild(script)
-  }, [acceptedPrivacy, acceptedTerms, navigate, subscriberType])
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setMessage('Review and accept the terms and privacy disclosures to continue.')
+      return
+    }
+
+    if (!lenderDataSharingChoice) {
+      setMessage('Choose your lender data-sharing preference before continuing with Google.')
+      return
+    }
+
+    setIsSaving(true)
+    setMessage('')
+    try {
+      await loginWithGoogle({
+        idToken,
+        subscriberType,
+        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+      })
+      navigate('/dashboard')
+    } catch (error) {
+      setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   return (
     <div className="standalone-card auth-screen">
@@ -242,6 +185,41 @@ export default function RegisterPage() {
           </div>
         </fieldset>
 
+        <fieldset className="auth-role-fieldset">
+          <legend>Lender Offer Preference</legend>
+          <p className="auth-role-copy">
+            Choose whether lenders may view your information and score to offer financing.
+          </p>
+          <div className="auth-role-options">
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="lender-data-sharing"
+                value="share"
+                checked={lenderDataSharingChoice === 'share'}
+                onChange={() => setLenderDataSharingChoice('share')}
+              />
+              <span>
+                <strong>Okay to share information and score for lender offers</strong>
+                <small>Lenders can use your profile and score to send relevant offers.</small>
+              </span>
+            </label>
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="lender-data-sharing"
+                value="do_not_share"
+                checked={lenderDataSharingChoice === 'do_not_share'}
+                onChange={() => setLenderDataSharingChoice('do_not_share')}
+              />
+              <span>
+                <strong>Do not share information and score for lender offers</strong>
+                <small>Your information is not used for lender offer matching.</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
         <label className="checkbox-label">
           <input
             type="checkbox"
@@ -278,10 +256,25 @@ export default function RegisterPage() {
 
       <div className="stack-panel auth-panel" aria-live="polite">
         <p className="auth-role-copy">Or create your account using Google.</p>
-        <div ref={googleButtonRef} />
-        {!googleReady ? (
+        {isGoogleConfigured ? (
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+            text="signup_with"
+            size="large"
+            theme="outline"
+            shape="rectangular"
+          />
+        ) : null}
+        {!isGoogleConfigured ? (
           <p className="status-message">Google Sign-Up is available when configured.</p>
         ) : null}
+      </div>
+
+      <div className="auth-support-links">
+        <Link to="/subscription-fees">Subscription Fees</Link>
+        <Link to="/privacy">Privacy Disclosures</Link>
+        <Link to="/terms">Terms & Consent</Link>
       </div>
     </div>
   )

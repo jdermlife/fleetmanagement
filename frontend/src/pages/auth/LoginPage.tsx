@@ -1,6 +1,7 @@
 import axios from 'axios'
+import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { getErrorMessage, login, loginWithGoogle } from '../../api'
@@ -12,38 +13,6 @@ import {
 
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/loan-certification'])
-const GOOGLE_SCRIPT_ID = 'google-identity-services-script'
-
-type GoogleCredentialResponse = {
-  credential?: string
-}
-
-type GoogleAccountsId = {
-  initialize: (config: {
-    client_id: string
-    callback: (response: GoogleCredentialResponse) => void
-  }) => void
-  renderButton: (
-    element: HTMLElement,
-    options: {
-      theme?: 'outline' | 'filled_blue' | 'filled_black'
-      size?: 'small' | 'medium' | 'large'
-      text?: 'signin_with' | 'signup_with' | 'continue_with'
-      shape?: 'rectangular' | 'pill' | 'circle' | 'square'
-      width?: number
-    },
-  ) => void
-}
-
-declare global {
-  interface Window {
-    google?: {
-      accounts?: {
-        id?: GoogleAccountsId
-      }
-    }
-  }
-}
 
 function getDefaultRedirectPath() {
   const storedPath = window.localStorage.getItem(LAST_ROUTE_STORAGE_KEY)
@@ -53,14 +22,15 @@ function getDefaultRedirectPath() {
 export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const googleButtonRef = useRef<HTMLDivElement | null>(null)
   const redirectTo = searchParams.get('redirect') || getDefaultRedirectPath()
+  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+  const isGoogleConfigured = googleClientId.length > 0
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
+  const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share' | ''>('')
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
-  const [googleReady, setGoogleReady] = useState(false)
   const [showGoogleRoleHint, setShowGoogleRoleHint] = useState(false)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -82,88 +52,52 @@ export default function LoginPage() {
     }
   }
 
-  useEffect(() => {
-    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim()
-    if (!googleClientId || typeof window === 'undefined') {
-      setGoogleReady(false)
+  const handleGoogleSuccess = async (response: CredentialResponse) => {
+    const idToken = response.credential
+    if (!idToken) {
+      setMessage('Google sign-in did not return a valid credential.')
       return
     }
 
-    const initializeGoogleButton = () => {
-      const accounts = window.google?.accounts?.id
-      if (!accounts || !googleButtonRef.current) {
-        return
+    setIsSaving(true)
+    setMessage('')
+    setShowGoogleRoleHint(false)
+    try {
+      const loginResponse = await loginWithGoogle({
+        idToken,
+        subscriberType: subscriberType || undefined,
+        lenderDataSharingConsent:
+          lenderDataSharingChoice === ''
+            ? undefined
+            : lenderDataSharingChoice === 'share',
+      })
+      const nextPath = isBorrowerSubscriberRole(loginResponse.user.role)
+        ? (BORROWER_ALLOWED_REDIRECTS.has(redirectTo) ? redirectTo : '/lending-scorecard')
+        : redirectTo
+      navigate(nextPath)
+    } catch (error) {
+      if (axios.isAxiosError(error)) {
+        const detail =
+          typeof error.response?.data === 'object' && error.response?.data !== null
+            ? (error.response.data as { detail?: unknown }).detail
+            : undefined
+
+        if (
+          error.response?.status === 400 &&
+          typeof detail === 'string' &&
+          (
+            detail.toLowerCase().includes('first-time google sign-in') ||
+            detail.toLowerCase().includes('data-sharing preference')
+          )
+        ) {
+          setShowGoogleRoleHint(true)
+        }
       }
-
-      accounts.initialize({
-        client_id: googleClientId,
-        callback: async (response: GoogleCredentialResponse) => {
-          const idToken = response.credential
-          if (!idToken) {
-            setMessage('Google sign-in did not return a valid credential.')
-            return
-          }
-
-          setIsSaving(true)
-          setMessage('')
-          setShowGoogleRoleHint(false)
-          try {
-            const loginResponse = await loginWithGoogle({
-              idToken,
-              subscriberType: subscriberType || undefined,
-            })
-            const nextPath = isBorrowerSubscriberRole(loginResponse.user.role)
-              ? (BORROWER_ALLOWED_REDIRECTS.has(redirectTo) ? redirectTo : '/lending-scorecard')
-              : redirectTo
-            navigate(nextPath)
-          } catch (error) {
-            if (axios.isAxiosError(error)) {
-              const detail =
-                typeof error.response?.data === 'object' && error.response?.data !== null
-                  ? (error.response.data as { detail?: unknown }).detail
-                  : undefined
-
-              if (
-                error.response?.status === 400 &&
-                typeof detail === 'string' &&
-                detail.toLowerCase().includes('first-time google sign-in')
-              ) {
-                setShowGoogleRoleHint(true)
-              }
-            }
-            setMessage(getErrorMessage(error, 'Unable to sign in with Google right now.'))
-          } finally {
-            setIsSaving(false)
-          }
-        },
-      })
-
-      googleButtonRef.current.innerHTML = ''
-      accounts.renderButton(googleButtonRef.current, {
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',
-        shape: 'rectangular',
-        width: 300,
-      })
-      setGoogleReady(true)
+      setMessage(getErrorMessage(error, 'Unable to sign in with Google right now.'))
+    } finally {
+      setIsSaving(false)
     }
-
-    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID) as HTMLScriptElement | null
-    if (existingScript) {
-      initializeGoogleButton()
-      return
-    }
-
-    const script = document.createElement('script')
-    script.id = GOOGLE_SCRIPT_ID
-    script.src = 'https://accounts.google.com/gsi/client'
-    script.async = true
-    script.defer = true
-    script.onload = initializeGoogleButton
-    script.onerror = () => setMessage('Unable to load Google Sign-In right now. Please try again.')
-    document.head.appendChild(script)
-  }, [navigate, redirectTo])
+  }
 
   return (
     <div className="standalone-card auth-screen">
@@ -246,14 +180,58 @@ export default function LoginPage() {
             ))}
           </div>
         </fieldset>
-        <div ref={googleButtonRef} />
-        {!googleReady ? (
+        <fieldset className="auth-role-fieldset">
+          <legend>First-time Google data sharing (optional for existing users)</legend>
+          <p className="auth-role-copy">
+            Choose whether lenders can view your profile and score for offers.
+          </p>
+          <div className="auth-role-options">
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="google-lender-data-sharing"
+                value="share"
+                checked={lenderDataSharingChoice === 'share'}
+                onChange={() => setLenderDataSharingChoice('share')}
+              />
+              <span>
+                <strong>Okay to share for lender offers</strong>
+                <small>Lenders can view your profile and score for matching offers.</small>
+              </span>
+            </label>
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="google-lender-data-sharing"
+                value="do_not_share"
+                checked={lenderDataSharingChoice === 'do_not_share'}
+                onChange={() => setLenderDataSharingChoice('do_not_share')}
+              />
+              <span>
+                <strong>Do not share for lender offers</strong>
+                <small>Your profile and score are excluded from lender offer matching.</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+        {isGoogleConfigured ? (
+          <GoogleLogin
+            onSuccess={handleGoogleSuccess}
+            onError={() => setMessage('Unable to load Google Sign-In right now. Please try again.')}
+            text="continue_with"
+            size="large"
+            theme="outline"
+            shape="rectangular"
+          />
+        ) : null}
+        {!isGoogleConfigured ? (
           <p className="status-message">Google Sign-In is available when configured.</p>
         ) : null}
       </div>
 
       <div className="auth-support-links">
         <Link to="/account">Account Settings</Link>
+        <Link to="/subscription-fees">Subscription Fees</Link>
         <Link to="/privacy">Privacy Disclosures</Link>
         <Link to="/terms">Terms & Consent</Link>
       </div>

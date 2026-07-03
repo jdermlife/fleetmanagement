@@ -65,6 +65,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const AccountSettingsPage = lazy(() => import('./pages/auth/AccountSettingsPage'))
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
+const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPage'))
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
@@ -147,6 +148,21 @@ function App() {
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
   const [govOpen, setGovOpen] = useState(true)
+
+  const handleMobileBack = () => {
+    if (window.history.length > 1) {
+      navigate(-1)
+      return
+    }
+
+    if (currentUser) {
+      navigate('/dashboard')
+      return
+    }
+
+    navigate('/login')
+  }
+
   const closeMenu = () => {
     setMenuOpen(false)
   }
@@ -285,6 +301,15 @@ const adminMenuItems = visibleMenuLinks.filter(
       {/* TOP NAVIGATION */}
       <header className="sidebar">
         <div className="app-topbar-row">
+          <button
+            type="button"
+            className="app-mobile-back-inline"
+            onClick={handleMobileBack}
+            aria-label="Go back"
+          >
+            Back
+          </button>
+
           {/* BRAND */}
           <div className="app-brand-block">
             <div className="app-brand-lockup">
@@ -611,6 +636,21 @@ const adminMenuItems = visibleMenuLinks.filter(
         </Link>
       </>
     )}
+    <Link
+      to="/subscription-fees"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription Fees
+    </Link>
     <Link
       to="/privacy"
       onClick={closeMenu}
@@ -1015,6 +1055,11 @@ const adminMenuItems = visibleMenuLinks.filter(
             <Route
               path="/terms"
               element={<TermsPage />}
+            />
+
+            <Route
+              path="/subscription-fees"
+              element={<SubscriptionFeesPage />}
             />
 
             <Route

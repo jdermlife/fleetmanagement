@@ -22,6 +22,7 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@neondatabase/serverless": "^1.1.0",
+    "@react-oauth/google": "^0.13.5",
     "axios": "^1.16.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

@@ -215,6 +215,7 @@ export interface LoginRequest {
 export interface GoogleLoginRequest {
   idToken: string
   subscriberType?: 'borrower' | 'lender'
+  lenderDataSharingConsent?: boolean
 }
 
 export interface LoginResponse {
@@ -234,6 +235,8 @@ export interface AuthUser {
   updatedAt: string
   lastLoginAt: string | null
   mfaEnabled?: boolean
+  lenderDataSharingConsent?: boolean
+  lenderDataSharingConsentRecordedAt?: string | null
 }
 
 function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
@@ -261,6 +264,12 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
     lastLoginAt: (raw.lastLoginAt ?? raw.last_login_at ?? null) as string | null,
     mfaEnabled: Boolean(raw.mfaEnabled ?? raw.mfa_enabled ?? false),
+    lenderDataSharingConsent: Boolean(
+      raw.lenderDataSharingConsent ?? raw.lender_data_sharing_consent ?? false,
+    ),
+    lenderDataSharingConsentRecordedAt: (
+      raw.lenderDataSharingConsentRecordedAt ?? raw.lender_data_sharing_consent_recorded_at ?? null
+    ) as string | null,
   }
 }
 
@@ -269,6 +278,7 @@ export interface RegisterRequest {
   email: string
   password: string
   subscriberType: 'borrower' | 'lender'
+  lenderDataSharingConsent: boolean
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
@@ -298,6 +308,7 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
+    lender_data_sharing_consent: payload.lenderDataSharingConsent,
   })
   const responseData = response.data as Record<string, unknown>
   const token =
@@ -327,6 +338,7 @@ export async function register(data: RegisterRequest): Promise<LoginResponse['us
     email: data.email,
     password: data.password,
     subscriber_type: data.subscriberType,
+    lender_data_sharing_consent: data.lenderDataSharingConsent,
   })
   const responseData = response.data as Record<string, unknown>
   const rawUser =
@@ -367,6 +379,25 @@ export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
     })
 
   return currentUserRequest
+}
+
+export async function updateAccountPreferences(payload: {
+  lenderDataSharingConsent: boolean
+}): Promise<{ message: string; user: LoginResponse['user'] }> {
+  const response = await api.patch<{
+    message: string
+    user: Record<string, unknown>
+  }>('/api/auth/preferences', {
+    lender_data_sharing_consent: payload.lenderDataSharingConsent,
+  })
+
+  const normalizedUser = normalizeAuthUser(response.data.user)
+  currentUserCache = normalizedUser
+
+  return {
+    message: response.data.message,
+    user: normalizedUser,
+  }
 }
 
 export interface AdminPermission {

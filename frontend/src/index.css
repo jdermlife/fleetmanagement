@@ -370,6 +370,30 @@ textarea {
   z-index: 1;
   overflow-x: hidden;
 }
+
+.app-mobile-back-inline {
+  display: none;
+  min-height: 40px;
+  min-width: 86px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.14);
+  color: #ffffff;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.app-mobile-back-inline:hover,
+.app-mobile-back-inline:focus {
+  background: rgba(255, 255, 255, 0.24);
+}
+
+.app-mobile-back-inline::before {
+  content: '\2190';
+  margin-right: 8px;
+}
 .standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
 .app-topbar-row {
@@ -1268,6 +1292,13 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .app-mobile-back-inline {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
   .loan-page-header {
     flex-direction: column;
     align-items: flex-start;

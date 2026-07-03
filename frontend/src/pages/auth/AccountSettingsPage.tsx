@@ -10,6 +10,7 @@ import {
   getErrorMessage,
   listSubscriptionPlans,
   logout,
+  updateAccountPreferences,
   type LoginResponse,
   type SubscriptionPlan,
 } from '../../api'
@@ -33,6 +34,7 @@ export default function AccountSettingsPage() {
   const [loadMessage, setLoadMessage] = useState('')
   const [passwordMessage, setPasswordMessage] = useState('')
   const [deleteMessage, setDeleteMessage] = useState('')
+  const [preferencesMessage, setPreferencesMessage] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -41,9 +43,13 @@ export default function AccountSettingsPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
+  const [isUpdatingPreferences, setIsUpdatingPreferences] = useState(false)
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('')
   const [subscriptionMessage, setSubscriptionMessage] = useState('')
+  const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share'>(
+    'do_not_share',
+  )
   const [theme, setTheme] = useState<ThemeId>(() => {
     if (typeof window === 'undefined') {
       return 'classic'
@@ -67,6 +73,7 @@ export default function AccountSettingsPage() {
           listSubscriptionPlans(),
         ])
         setUser(currentUser)
+        setLenderDataSharingChoice(currentUser.lenderDataSharingConsent ? 'share' : 'do_not_share')
         setPlans(planRows)
         if (planRows.length > 0) {
           setSelectedPlanId(planRows[0].id)
@@ -172,6 +179,23 @@ export default function AccountSettingsPage() {
       return
     }
     navigate(`/subscription-payment?planId=${selectedPlan.id}`)
+  }
+
+  const handleSavePreferences = async () => {
+    setIsUpdatingPreferences(true)
+    setPreferencesMessage('')
+
+    try {
+      const response = await updateAccountPreferences({
+        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+      })
+      setUser(response.user)
+      setPreferencesMessage('Preference saved successfully.')
+    } catch (error) {
+      setPreferencesMessage(getErrorMessage(error, 'Unable to save your preference right now.'))
+    } finally {
+      setIsUpdatingPreferences(false)
+    }
   }
 
   if (isLoading) {
@@ -293,6 +317,62 @@ export default function AccountSettingsPage() {
         </div>
 
         {subscriptionMessage ? <p className="status-message">{subscriptionMessage}</p> : null}
+      </div>
+
+      <div className="card auth-helper-card">
+        <h3>Lender Offer Preference</h3>
+        <p className="intro">
+          Choose whether lenders may view your information and score to send offers.
+        </p>
+
+        <fieldset className="auth-role-fieldset">
+          <legend>Data sharing</legend>
+          <div className="auth-role-options">
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="account-lender-data-sharing"
+                value="share"
+                checked={lenderDataSharingChoice === 'share'}
+                onChange={() => setLenderDataSharingChoice('share')}
+              />
+              <span>
+                <strong>Okay to share information and score for lender offers</strong>
+                <small>Lenders can use your profile and score to send relevant offers.</small>
+              </span>
+            </label>
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="account-lender-data-sharing"
+                value="do_not_share"
+                checked={lenderDataSharingChoice === 'do_not_share'}
+                onChange={() => setLenderDataSharingChoice('do_not_share')}
+              />
+              <span>
+                <strong>Do not share information and score for lender offers</strong>
+                <small>Your information is excluded from lender offer matching.</small>
+              </span>
+            </label>
+          </div>
+        </fieldset>
+
+        <p className="status-message">
+          Last recorded:{' '}
+          <strong>
+            {user.lenderDataSharingConsentRecordedAt
+              ? new Date(user.lenderDataSharingConsentRecordedAt).toLocaleString()
+              : 'Not recorded'}
+          </strong>
+        </p>
+
+        <div className="form-actions">
+          <button type="button" onClick={handleSavePreferences} disabled={isUpdatingPreferences}>
+            {isUpdatingPreferences ? 'Saving...' : 'Save Preference'}
+          </button>
+        </div>
+
+        {preferencesMessage ? <p className="status-message">{preferencesMessage}</p> : null}
       </div>
 
       <div className="card auth-helper-card">

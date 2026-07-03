@@ -60,16 +60,22 @@ class RegisterRequest(BaseModel):
     email: str
     password: str = Field(min_length=8)
     subscriber_type: Literal["borrower", "lender"]
+    lender_data_sharing_consent: bool
 
 
 class GoogleTokenLoginRequest(BaseModel):
     id_token: str = Field(min_length=10)
     subscriber_type: Literal["borrower", "lender"] | None = None
+    lender_data_sharing_consent: bool | None = None
 
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
     new_password: str = Field(min_length=8)
+
+
+class UpdatePreferencesRequest(BaseModel):
+    lender_data_sharing_consent: bool
 
 
 class MfaVerifyRequest(BaseModel):
@@ -238,6 +244,8 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "subscription_id": user.subscription_id,
         "api_access": user.api_access,
         "email_verified": user.email_verified,
+        "lender_data_sharing_consent": user.lender_data_sharing_consent,
+        "lender_data_sharing_consent_recorded_at": user.lender_data_sharing_consent_recorded_at,
         "last_login_ip": user.last_login_ip,
         "last_login_device": user.last_login_device,
         "total_login_count": user.total_login_count,
@@ -391,6 +399,8 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
         is_active=True,
         account_status="ACTIVE",
         email_verified=False,
+        lender_data_sharing_consent=request.lender_data_sharing_consent,
+        lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
     )
     db.add(user)
     db.flush()
@@ -498,6 +508,11 @@ def login_with_google_token(
                 status_code=400,
                 detail="Select borrower or lender for first-time Google sign-in",
             )
+        if payload.lender_data_sharing_consent is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Select data-sharing preference for first-time Google sign-in",
+            )
 
         role_key = payload.subscriber_type
         role_name = _resolve_registration_role(role_key)
@@ -513,6 +528,8 @@ def login_with_google_token(
             account_status="ACTIVE",
             email_verified=True,
             email_verified_at=datetime.now(timezone.utc),
+            lender_data_sharing_consent=payload.lender_data_sharing_consent,
+            lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
         )
         db.add(user)
         db.flush()
@@ -608,6 +625,28 @@ def get_me(user: CurrentUser = Depends(require_authenticated_user), db: Session 
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
     return {"user": _serialize_user(db_user, db)}
+
+
+@router.patch("/preferences")
+def update_preferences(
+    payload: UpdatePreferencesRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    set_rls_context(db, user.id, user.role)
+    db_user = db.query(User).filter(User.id == user.id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    db_user.lender_data_sharing_consent = payload.lender_data_sharing_consent
+    db_user.lender_data_sharing_consent_recorded_at = datetime.now(timezone.utc)
+    db.commit()
+    db.refresh(db_user)
+
+    return {
+        "message": "Preferences updated",
+        "user": _serialize_user(db_user, db),
+    }
 
 
 @router.post("/password/change")

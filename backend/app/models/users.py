@@ -46,6 +46,8 @@ class User(Base):
 	password_reset_expires = Column(DateTime(timezone=True))
 	password_expires_at = Column(DateTime(timezone=True))
 	force_password_change = Column(Boolean, nullable=False, default=False)
+	lender_data_sharing_consent = Column(Boolean, nullable=False, default=False)
+	lender_data_sharing_consent_recorded_at = Column(DateTime(timezone=True))
 
 	last_login_at = Column(DateTime(timezone=True))
 	failed_login_attempts = Column(Integer, nullable=False, default=0)

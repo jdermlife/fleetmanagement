@@ -1,5 +1,6 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
+import { GoogleOAuthProvider } from '@react-oauth/google'
 import { BrowserRouter } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
 import { StatusBar, Style } from '@capacitor/status-bar'
@@ -25,10 +26,22 @@ const setupNativeMobileRuntime = async () => {
 
 void setupNativeMobileRuntime()
 
+const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+
+const appNode = (
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>
+)
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <App />
-    </BrowserRouter>
+    {googleClientId
+      ? (
+        <GoogleOAuthProvider clientId={googleClientId}>
+          {appNode}
+        </GoogleOAuthProvider>
+      )
+      : appNode}
   </React.StrictMode>,
 )

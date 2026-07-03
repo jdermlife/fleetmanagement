@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 
 import { getErrorMessage } from "../../api";
 import {
@@ -396,18 +397,37 @@ export default function DashboardSnapshot() {
             </p>
           </div>
 
-          <div
-            style={{
-              background: "linear-gradient(135deg, #fff2b3, #ffd24d)",
-              borderRadius: "999px",
-              color: "#6d4c00",
-              fontSize: "0.76rem",
-              fontWeight: 700,
-              padding: "8px 12px",
-              whiteSpace: "nowrap",
-            }}
-          >
-            Portfolio Summary
+          <div style={{ display: "grid", gap: "8px", justifyItems: "end" }}>
+            <div
+              style={{
+                background: "linear-gradient(135deg, #fff2b3, #ffd24d)",
+                borderRadius: "999px",
+                color: "#6d4c00",
+                fontSize: "0.76rem",
+                fontWeight: 700,
+                padding: "8px 12px",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Portfolio Summary
+            </div>
+            <Link
+              to="/subscription-fees"
+              style={{
+                alignItems: "center",
+                background: "#0038a8",
+                borderRadius: "999px",
+                color: "#ffffff",
+                display: "inline-flex",
+                fontSize: "0.76rem",
+                fontWeight: 700,
+                padding: "8px 12px",
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              View Subscription Fees
+            </Link>
           </div>
         </section>
 
