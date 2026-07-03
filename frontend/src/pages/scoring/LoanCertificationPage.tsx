@@ -98,6 +98,7 @@ export default function LoanCertificationPage() {
   )
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
+  const [isToolbarHidden, setIsToolbarHidden] = useState(false)
   const applicationNo = searchParams.get('applicationNo')
 
   useEffect(() => {
@@ -123,6 +124,42 @@ export default function LoanCertificationPage() {
 
     void loadCertification()
   }, [applicationNo, certification])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return
+    }
+
+    const TOP_ANCHOR_PX = 64
+    const HIDE_DELTA_PX = 16
+    const SHOW_DELTA_PX = -10
+    let lastY = window.scrollY
+
+    const handleScroll = () => {
+      const currentY = window.scrollY
+      const delta = currentY - lastY
+
+      if (currentY <= TOP_ANCHOR_PX) {
+        setIsToolbarHidden(false)
+        lastY = currentY
+        return
+      }
+
+      if (delta >= HIDE_DELTA_PX) {
+        setIsToolbarHidden(true)
+      } else if (delta <= SHOW_DELTA_PX) {
+        setIsToolbarHidden(false)
+      }
+
+      lastY = currentY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll)
+    }
+  }, [])
 
   const qrImageUrl = useMemo(
     () => (certification ? buildQrImageUrl(certification.qrValue) : ''),
@@ -450,7 +487,7 @@ export default function LoanCertificationPage() {
 
   return (
     <div className="loan-certification-page">
-      <div className="loan-certification-toolbar">
+      <div className={`loan-certification-toolbar${isToolbarHidden ? ' loan-certification-toolbar-hidden' : ''}`}>
         <button
           type="button"
           className="loan-certification-button loan-certification-button-secondary"
