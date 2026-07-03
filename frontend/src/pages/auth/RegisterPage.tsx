@@ -249,7 +249,7 @@ export default function RegisterPage() {
             onChange={(event) => setAcceptedTerms(event.target.checked)}
           />
           <span>
-            I reviewed the <Link to="/terms">Terms & Consent</Link>.
+            I reviewed and accept the <Link to="/terms">Terms & Consent</Link>.
           </span>
         </label>
 
