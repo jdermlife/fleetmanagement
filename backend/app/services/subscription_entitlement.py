@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
 from sqlalchemy import func, text
@@ -78,7 +78,8 @@ def _has_sufficient_payment_for_month(
 
 def evaluate_loan_record_create_entitlement(db: Session, user: CurrentUser) -> dict[str, object]:
     normalized_role = user.role.lower()
-    now = datetime.utcnow()
+    # Keep UTC semantics without using deprecated datetime.utcnow().
+    now = datetime.now(timezone.utc).replace(tzinfo=None)
 
     if normalized_role == "admin" or normalized_role not in SUBSCRIPTION_BILLED_ROLES:
         return {

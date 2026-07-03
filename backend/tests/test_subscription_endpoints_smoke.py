@@ -272,3 +272,30 @@ def test_subscriber_can_update_own_subscription_amendment_fields_smoke(
     assert payload["subscription_type"] == "PAID"
     assert payload["renewal_count"] == 3
     assert payload["current_users"] == 4
+
+
+def test_entitlement_endpoint_admin_allowed_smoke(client: TestClient, admin_headers):
+    response = client.get(
+        "/api/subscriptions/entitlement/loan-record-create",
+        headers=admin_headers,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["allowed"] is True
+    assert payload["reason"] == "ROLE_NOT_BILLED"
+
+
+def test_entitlement_endpoint_subscriber_no_active_subscription_smoke(
+    client: TestClient,
+    subscriber_headers,
+):
+    response = client.get(
+        "/api/subscriptions/entitlement/loan-record-create",
+        headers=subscriber_headers,
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["allowed"] is False
+    assert payload["reason"] == "NO_ACTIVE_SUBSCRIPTION"

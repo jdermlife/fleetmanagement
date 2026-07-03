@@ -18,14 +18,14 @@ def _loan_record(created_by: int):
 
 def test_admin_can_access_any_record():
     admin = CurrentUser(id=1, username="admin", role="ADMIN")
-    target_record = _loan_record(created_by_user_id=999)
+    target_record = _loan_record(created_by=999)
 
     enforce_loan_application_access(admin, target_record)
 
 
 def test_subscriber_can_access_own_record():
     subscriber = CurrentUser(id=42, username="subscriber", role="SUBSCRIBER")
-    own_record = _loan_record(created_by_user_id=42)
+    own_record = _loan_record(created_by=42)
 
     enforce_loan_application_access(subscriber, own_record)
 

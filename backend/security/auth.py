@@ -22,7 +22,7 @@ def _resolve_secret_key() -> str:
 
     environment = os.getenv("ENVIRONMENT", "development").lower()
     if environment in {"development", "dev", "test", "testing"}:
-        return "dev-insecure-secret-change-me"
+           return "dev-insecure-secret-change-me-please-override-in-production-2026"
 
     raise RuntimeError("SECRET_KEY or JWT_SECRET must be configured")
 
