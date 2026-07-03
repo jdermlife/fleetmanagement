@@ -59,6 +59,7 @@ The backend runs on `http://localhost:5000`.
    VITE_PAYMENT_MAYA_NUMBER=09XXXXXXXXX
    VITE_PAYMENT_MAYA_NAME=Your Maya Name
    VITE_PAYMENT_SUPPORT_EMAIL=support@example.com
+   VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id
    ```
 4. Start the dev server: `npm run dev`
 

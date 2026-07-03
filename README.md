@@ -184,6 +184,8 @@ docker compose -f docker-compose.yml.txt up -d backend prometheus grafana
 | REDIS_URL | Redis connection string for distributed limits | empty |
 | FRONTEND_ORIGIN_REGEX | Optional strict CORS regex override | empty |
 | ENABLE_API_DOCS | Expose Swagger/ReDoc/OpenAPI endpoints | true in development, false in production |
+| GOOGLE_OAUTH_CLIENT_ID | Google OAuth Web client ID used by backend token verification | empty |
+| VITE_GOOGLE_CLIENT_ID | Google OAuth Web client ID exposed to frontend Sign-In widget | empty |
 | SENTRY_DSN | Sentry DSN for error monitoring | empty (disabled) |
 | SENTRY_ENVIRONMENT | Sentry environment name | development |
 | SENTRY_RELEASE | Sentry release identifier | empty |

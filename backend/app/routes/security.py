@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import hashlib
+import importlib
 import os
+import re
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import uuid4
@@ -38,7 +40,6 @@ try:
 except ImportError:  # pragma: no cover - handled in runtime checks
     jwt = None
 
-
 router = APIRouter(prefix="/auth", tags=["security"])
 admin_router = APIRouter(prefix="/admin", tags=["security-admin"])
 
@@ -59,6 +60,11 @@ class RegisterRequest(BaseModel):
     email: str
     password: str = Field(min_length=8)
     subscriber_type: Literal["borrower", "lender"]
+
+
+class GoogleTokenLoginRequest(BaseModel):
+    id_token: str = Field(min_length=10)
+    subscriber_type: Literal["borrower", "lender"] | None = None
 
 
 class ChangePasswordRequest(BaseModel):
@@ -127,6 +133,7 @@ class AssignPermissionsRequest(BaseModel):
 
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
+GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
 REGISTERABLE_SUBSCRIBER_ROLES = {
     "borrower": RBACRole.SUBSCRIBER_BORROWER.value,
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
@@ -295,6 +302,74 @@ def _ensure_role_assignments(user: User, db: Session, role_names: list[str]) -> 
         user.role = resolved_roles[0].name
 
 
+def _username_from_google_email(email: str) -> str:
+    local_part = email.split("@", 1)[0].strip().lower()
+    sanitized = re.sub(r"[^a-z0-9._-]", "_", local_part)
+    sanitized = sanitized.strip("._-")
+    return sanitized[:90] or "google_user"
+
+
+def _generate_unique_username(db: Session, base_username: str) -> str:
+    candidate = base_username[:100]
+    suffix = 1
+    while db.query(User.id).filter(User.username == candidate).first() is not None:
+        candidate = f"{base_username[:90]}_{suffix}"
+        suffix += 1
+    return candidate[:100]
+
+
+def _ensure_default_role(user: User, db: Session, role_name: str) -> None:
+    default_role = db.query(Role).filter(Role.name == role_name).first()
+    if default_role is None:
+        default_role = db.query(Role).filter(Role.name == RBACRole.SUBSCRIBER.value).first()
+    if default_role is None:
+        default_role = db.query(Role).filter(Role.name == "read_only_user").first()
+    if default_role:
+        user.roles = [default_role]
+        user.role = default_role.name
+
+
+def _build_login_payload(user: User, request: Request, db: Session) -> dict[str, object]:
+    access_token = create_token(user.id, user.username, user.role)
+    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(user)
+
+    session = AuthSession(
+        user_id=user.id,
+        refresh_token_hash=refresh_hash,
+        jti=refresh_jti,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        expires_at=refresh_exp,
+    )
+    db.add(session)
+
+    user.last_login_at = datetime.now(timezone.utc)
+    user.failed_login_attempts = 0
+    user.locked_until = None
+    user.total_login_count = (user.total_login_count or 0) + 1
+    user.last_login_ip = request.client.host if request.client else None
+    user.last_login_device = request.headers.get("User-Agent")
+
+    db.commit()
+    db.refresh(user)
+
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "user": _serialize_user(user, db),
+    }
+
+
+def _load_google_auth_dependencies():
+    try:
+        google_requests_module = importlib.import_module("google.auth.transport.requests")
+        google_id_token_module = importlib.import_module("google.oauth2.id_token")
+        return google_requests_module, google_id_token_module
+    except ImportError as exc:
+        raise HTTPException(status_code=500, detail="Google Sign-In dependency is not installed") from exc
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     set_rls_context(db, None, "admin")
@@ -386,35 +461,82 @@ def login(
         if not mfa_ok:
             raise HTTPException(status_code=401, detail="MFA required or invalid MFA code")
 
-    access_token = create_token(user.id, user.username, user.role)
-    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(user)
+    return _build_login_payload(user, request, db)
 
-    session = AuthSession(
-        user_id=user.id,
-        refresh_token_hash=refresh_hash,
-        jti=refresh_jti,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("User-Agent"),
-        expires_at=refresh_exp,
-    )
-    db.add(session)
 
-    user.last_login_at = datetime.now(timezone.utc)
-    user.failed_login_attempts = 0
-    user.locked_until = None
-    user.total_login_count = (user.total_login_count or 0) + 1
-    user.last_login_ip = request.client.host if request.client else None
-    user.last_login_device = request.headers.get("User-Agent")
+@router.post("/google-token")
+def login_with_google_token(
+    payload: GoogleTokenLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    set_rls_context(db, None, "admin")
+    google_requests, google_id_token = _load_google_auth_dependencies()
 
-    db.commit()
-    db.refresh(user)
+    if not GOOGLE_OAUTH_CLIENT_ID:
+        raise HTTPException(status_code=503, detail="Google Sign-In is not configured")
 
-    return {
-        "access_token": access_token,
-        "refresh_token": refresh_token,
-        "token_type": "bearer",
-        "user": _serialize_user(user, db),
-    }
+    try:
+        token_data = google_id_token.verify_oauth2_token(
+            payload.id_token,
+            google_requests.Request(),
+            GOOGLE_OAUTH_CLIENT_ID,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=401, detail="Invalid Google token") from exc
+
+    email = str(token_data.get("email") or "").strip().lower()
+    email_verified = bool(token_data.get("email_verified"))
+    if not email or not email_verified:
+        raise HTTPException(status_code=401, detail="Google account email is missing or unverified")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        if payload.subscriber_type is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Select borrower or lender for first-time Google sign-in",
+            )
+
+        role_key = payload.subscriber_type
+        role_name = _resolve_registration_role(role_key)
+        requested_username = _username_from_google_email(email)
+        unique_username = _generate_unique_username(db, requested_username)
+
+        user = User(
+            username=unique_username,
+            email=email,
+            password_hash=hash_password(f"google_oauth_{uuid4().hex}"),
+            role=role_name,
+            is_active=True,
+            account_status="ACTIVE",
+            email_verified=True,
+            email_verified_at=datetime.now(timezone.utc),
+        )
+        db.add(user)
+        db.flush()
+        _ensure_default_role(user, db, role_name)
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is disabled")
+
+    if user.is_deleted:
+        raise HTTPException(status_code=403, detail="Account is deleted")
+
+    if user.account_status and user.account_status.upper() != "ACTIVE":
+        raise HTTPException(status_code=403, detail=f"Account status is {user.account_status}")
+
+    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        raise HTTPException(status_code=423, detail="Account is locked")
+
+    if not user.email_verified:
+        user.email_verified = True
+        user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
+
+    return _build_login_payload(user, request, db)
 
 
 @router.post("/refresh")

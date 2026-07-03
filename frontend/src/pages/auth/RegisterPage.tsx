@@ -1,15 +1,49 @@
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { getErrorMessage, register } from '../../api'
+import { getErrorMessage, loginWithGoogle, register } from '../../api'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
 } from '../../authRoles'
 
+const GOOGLE_SCRIPT_ID = 'google-identity-services-script'
+
+type GoogleCredentialResponse = {
+  credential?: string
+}
+
+type GoogleAccountsId = {
+  initialize: (config: {
+    client_id: string
+    callback: (response: GoogleCredentialResponse) => void
+  }) => void
+  renderButton: (
+    element: HTMLElement,
+    options: {
+      theme?: 'outline' | 'filled_blue' | 'filled_black'
+      size?: 'small' | 'medium' | 'large'
+      text?: 'signin_with' | 'signup_with' | 'continue_with'
+      shape?: 'rectangular' | 'pill' | 'circle' | 'square'
+      width?: number
+    },
+  ) => void
+}
+
+declare global {
+  interface Window {
+    google?: {
+      accounts?: {
+        id?: GoogleAccountsId
+      }
+    }
+  }
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const googleButtonRef = useRef<HTMLDivElement | null>(null)
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,6 +53,7 @@ export default function RegisterPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
+  const [googleReady, setGoogleReady] = useState(false)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -51,11 +86,86 @@ export default function RegisterPage() {
     }
   }
 
+  useEffect(() => {
+    const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim()
+    if (!googleClientId || typeof window === 'undefined') {
+      setGoogleReady(false)
+      return
+    }
+
+    const initializeGoogleButton = () => {
+      const accounts = window.google?.accounts?.id
+      if (!accounts || !googleButtonRef.current) {
+        return
+      }
+
+      accounts.initialize({
+        client_id: googleClientId,
+        callback: async (response: GoogleCredentialResponse) => {
+          const idToken = response.credential
+          if (!idToken) {
+            setMessage('Google sign-up did not return a valid credential.')
+            return
+          }
+
+          if (!subscriberType) {
+            setMessage('Select borrower or lender before continuing with Google.')
+            return
+          }
+
+          if (!acceptedTerms || !acceptedPrivacy) {
+            setMessage('Review and accept the terms and privacy disclosures to continue.')
+            return
+          }
+
+          setIsSaving(true)
+          setMessage('')
+          try {
+            await loginWithGoogle({
+              idToken,
+              subscriberType,
+            })
+            navigate('/dashboard')
+          } catch (error) {
+            setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
+          } finally {
+            setIsSaving(false)
+          }
+        },
+      })
+
+      googleButtonRef.current.innerHTML = ''
+      accounts.renderButton(googleButtonRef.current, {
+        theme: 'outline',
+        size: 'large',
+        text: 'signup_with',
+        shape: 'rectangular',
+        width: 300,
+      })
+      setGoogleReady(true)
+    }
+
+    const existingScript = document.getElementById(GOOGLE_SCRIPT_ID) as HTMLScriptElement | null
+    if (existingScript) {
+      initializeGoogleButton()
+      return
+    }
+
+    const script = document.createElement('script')
+    script.id = GOOGLE_SCRIPT_ID
+    script.src = 'https://accounts.google.com/gsi/client'
+    script.async = true
+    script.defer = true
+    script.onload = initializeGoogleButton
+    script.onerror = () => setMessage('Unable to load Google Sign-Up right now. Please try again.')
+    document.head.appendChild(script)
+  }, [acceptedPrivacy, acceptedTerms, navigate, subscriberType])
+
   return (
     <div className="standalone-card auth-screen">
       <h1>Create Account</h1>
       <p className="intro">
-        Register a user account for  Filscore and Credit Score or  the Lending Workspace. Review the legal disclosures
+        Register a user account.  Review and accet the legal disclosures before 
         before continuing.
       </p>
 
@@ -165,6 +275,14 @@ export default function RegisterPage() {
 
         {message ? <p className="status-message status-error">{message}</p> : null}
       </form>
+
+      <div className="stack-panel auth-panel" aria-live="polite">
+        <p className="auth-role-copy">Or create your account using Google.</p>
+        <div ref={googleButtonRef} />
+        {!googleReady ? (
+          <p className="status-message">Google Sign-Up is available when configured.</p>
+        ) : null}
+      </div>
     </div>
   )
 }

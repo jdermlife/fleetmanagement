@@ -212,6 +212,11 @@ export interface LoginRequest {
   password: string
 }
 
+export interface GoogleLoginRequest {
+  idToken: string
+  subscriberType?: 'borrower' | 'lender'
+}
+
 export interface LoginResponse {
   token: string
   user: AuthUser
@@ -283,6 +288,33 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   setAuthToken(token)
   currentUserCache = normalizeAuthUser(user)
   currentUserRequest = null
+  return {
+    token,
+    user: currentUserCache,
+  }
+}
+
+export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
+  const response = await api.post('/api/auth/google-token', {
+    id_token: payload.idToken,
+    subscriber_type: payload.subscriberType,
+  })
+  const responseData = response.data as Record<string, unknown>
+  const token =
+    (typeof responseData.token === 'string' ? responseData.token : null) ??
+    (typeof responseData.access_token === 'string'
+      ? responseData.access_token
+      : null)
+  const user = responseData.user as Record<string, unknown> | undefined
+
+  if (!token || !user) {
+    throw new Error('Unexpected Google login response received from the backend.')
+  }
+
+  setAuthToken(token)
+  currentUserCache = normalizeAuthUser(user)
+  currentUserRequest = null
+
   return {
     token,
     user: currentUserCache,
