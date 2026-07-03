@@ -406,6 +406,7 @@ export default function LoanCertificationPage() {
         <h1>${APP_NAME}</h1>
       </div>
       <h2>Reference No. ${certification.applicationNo}</h2>
+      <h2>Product Being Applied For: ${certification.productType || 'Not Specified'}</h2>
       <div class="name">${certification.borrowerName}</div>
       <div class="subcopy">
         This certifies that the referenced application has completed the ${APP_NAME} assessment workflow
@@ -435,6 +436,7 @@ export default function LoanCertificationPage() {
         <div class="meta">
           <div class="meta-line"><strong>Info Provided:</strong> ${new Date(certification.issuedAt).toLocaleString()}</div>
           <div class="meta-line"><strong>Reference Number:</strong> ${certification.applicationNo}</div>
+          <div class="meta-line"><strong>Product Being Applied For:</strong> ${certification.productType || 'Not Specified'}</div>
           <div class="meta-line"><strong>Borrower Name:</strong> ${certification.borrowerName}</div>
           <div class="meta-line"><strong>Verification Link:</strong> Open certification</div>
         </div>
@@ -530,6 +532,9 @@ export default function LoanCertificationPage() {
             <p className="loan-certification-reference">
               Reference No. <strong>{certification.applicationNo}</strong>
             </p>
+            <p className="loan-certification-reference">
+              Product Being Applied For: <strong>{certification.productType || 'Not Specified'}</strong>
+            </p>
 
             <div className="loan-certification-name">{certification.borrowerName}</div>
 
@@ -595,6 +600,7 @@ export default function LoanCertificationPage() {
                 <p><strong>Issued:</strong> {new Date(certification.issuedAt).toLocaleString()}</p>
                 <p><strong>Borrower:</strong> {certification.borrowerName}</p>
                 <p><strong>Reference Number:</strong> {certification.applicationNo}</p>
+                <p><strong>Product Being Applied For:</strong> {certification.productType || 'Not Specified'}</p>
                 <p><strong>Verification Link:</strong> <Link to={`/loan-certification?applicationNo=${encodeURIComponent(certification.applicationNo)}`}>Open certification</Link></p>
               </div>
 

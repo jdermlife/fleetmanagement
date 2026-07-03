@@ -30,6 +30,7 @@ from app.schemas.subscription_schema import (
     SubscriptionUpdate,
     SubscriptionUsageCreate,
 )
+from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -73,6 +74,11 @@ def _serialize_plan(plan: SubscriptionPlan) -> dict:
         "sla_hours": plan.sla_hours,
         "color_code": plan.color_code,
         "icon_name": plan.icon_name,
+        "free_record_limit_lifetime": plan.free_record_limit_lifetime,
+        "free_days_from_start": plan.free_days_from_start,
+        "minimum_monthly_fee": float(plan.minimum_monthly_fee) if plan.minimum_monthly_fee is not None else None,
+        "per_record_fee": float(plan.per_record_fee) if plan.per_record_fee is not None else None,
+        "role_code": plan.role_code,
         "ai_enabled": plan.ai_enabled,
         "api_enabled": plan.api_enabled,
         "reporting_enabled": plan.reporting_enabled,
@@ -80,6 +86,19 @@ def _serialize_plan(plan: SubscriptionPlan) -> dict:
         "created_at": plan.created_at,
         "updated_at": plan.updated_at,
     }
+
+
+@router.get("/entitlement/loan-record-create")
+def get_loan_record_creation_entitlement(
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    db = _session_with_rls(user)
+    try:
+        return evaluate_loan_record_create_entitlement(db, user)
+    finally:
+        db.close()
 
 
 def _serialize_subscription(subscription: Subscription) -> dict:

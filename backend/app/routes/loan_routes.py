@@ -29,6 +29,7 @@ from app.models.loan_application import (
 )
 from app.schemas.loan_schema import LoanApplicationCreate
 from app.routes.dashboard import invalidate_dashboard_statistics_cache
+from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 from app.services.loan_repository_io import (
     EXPORT_FIELDS,
     apply_repository_filters,
@@ -638,6 +639,12 @@ def create_loan_application(
                 detail="Application already exists",
             )
 
+        entitlement = evaluate_loan_record_create_entitlement(db, user)
+        if not entitlement.get("allowed", False):
+            raise HTTPException(
+                status_code=http_status.HTTP_402_PAYMENT_REQUIRED,
+                detail=str(entitlement.get("message") or "Payment required before creating a new record."),
+            )
         record = LoanApplication(
             application_no=scored_data.application_no,
             created_by=user.id
@@ -702,6 +709,13 @@ def compute_quant_scores(
             enforce_loan_application_access(user, record)
 
         if record is None:
+            entitlement = evaluate_loan_record_create_entitlement(db, user)
+            if not entitlement.get("allowed", False):
+                raise HTTPException(
+                    status_code=http_status.HTTP_402_PAYMENT_REQUIRED,
+                    detail=str(entitlement.get("message") or "Payment required before creating a new record."),
+                )
+
             record = LoanApplication(
                 application_no=scored_data.application_no,
                 created_by=user.id,

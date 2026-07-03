@@ -5,7 +5,9 @@ import { api, getErrorMessage } from '../../api';
 import {
   computeQuantScores,
   createLoanApplication,
+  fetchLoanCreationEntitlement,
   fetchLoanApplication,
+  type LoanCreationEntitlementResponse,
   type QuantScoresSummary,
   updateLoanApplication,
   updateLoanApplicationStatus,
@@ -346,6 +348,9 @@ const calculateCreditRiskInsights = (
   calculations: ReturnType<typeof calculateLoanMetrics>,
   automatedTotal: number,
 ) => {
+  const canonicalEmail = getCanonicalBorrowerEmail(application);
+  const canonicalPhone = getCanonicalBorrowerPhone(application);
+  const canonicalAddress = getCanonicalBorrowerAddress(application);
   const parsedDocsCount = application.documents.filter(
     (doc) => doc.status === 'Parsed',
   ).length;
@@ -359,9 +364,9 @@ const calculateCreditRiskInsights = (
     Math.min(
       100,
       (application.borrower.govId ? 30 : 0) +
-        (application.borrower.email ? 10 : 0) +
-        (application.borrower.phone ? 10 : 0) +
-        (application.borrower.address ? 10 : 0) +
+        (canonicalEmail ? 10 : 0) +
+        (canonicalPhone ? 10 : 0) +
+        (canonicalAddress ? 10 : 0) +
         Math.round(docsCoverage * 35) +
         (application.applicantPersonal.dateOfBirth ? 5 : 0),
     ),
@@ -630,6 +635,7 @@ const calculateQuantScoresSummary = (
   aiRecommendation: ReturnType<typeof calculateAiRecommendation>,
   creditRiskInsights: ReturnType<typeof calculateCreditRiskInsights>,
 ) => {
+  const canonicalAddress = getCanonicalBorrowerAddress(application);
   const socialSignals = [
     application.enhancedDueDiligence.facebookProfile,
     application.enhancedDueDiligence.instagramProfile,
@@ -649,7 +655,7 @@ const calculateQuantScoresSummary = (
   const socialScoreValue = Math.min(
     100,
     socialSignals * 8 +
-      (application.borrower.address ? 10 : 0) +
+      (canonicalAddress ? 10 : 0) +
       (application.otherInformation.deviceVerified ? 10 : 0) +
       (application.otherInformation.homeOwnership ? 8 : 0),
   );
@@ -703,6 +709,9 @@ const buildScorePayloadSections = (
   creditRiskInsights: ReturnType<typeof calculateCreditRiskInsights>,
   aiRecommendation: ReturnType<typeof calculateAiRecommendation>,
 ) => {
+  const canonicalEmail = getCanonicalBorrowerEmail(application);
+  const canonicalPhone = getCanonicalBorrowerPhone(application);
+  const canonicalAddress = getCanonicalBorrowerAddress(application);
   const quantSummary = calculateQuantScoresSummary(
     application,
     calculations,
@@ -717,13 +726,13 @@ const buildScorePayloadSections = (
 
   const identityScore = clampScore(
     (application.borrower.govId ? 35 : 0) +
-      (application.borrower.email ? 20 : 0) +
-      (application.borrower.phone ? 20 : 0) +
+      (canonicalEmail ? 20 : 0) +
+      (canonicalPhone ? 20 : 0) +
       (application.applicantPersonal.dateOfBirth ? 15 : 0) +
-      (application.contactInformation.mobileNumber ? 10 : 0),
+      (canonicalPhone ? 10 : 0),
   );
   const documentScore = Math.round(clampScore(creditRiskInsights.docsCoverage * 100));
-  const geoLocationScore = application.borrower.address ? 85 : 25;
+  const geoLocationScore = canonicalAddress ? 85 : 25;
   const deviceScore = 50;
   const duplicateApplicationScore = 100;
   const fraudRiskLevel =
@@ -736,7 +745,7 @@ const buildScorePayloadSections = (
   const residenceStabilityScore = clampScore(
     (application.addressInformation.lengthOfStay ? 60 : 35) +
       (application.otherInformation.homeOwnership ? 20 : 0) +
-      (application.borrower.address ? 20 : 0),
+      (canonicalAddress ? 20 : 0),
   );
   const employmentStabilityScore = clampScore(
     (application.employmentInformation.totalYearsWorking ? 65 : 40) +
@@ -866,7 +875,7 @@ const buildScorePayloadSections = (
       fraud_risk_level: fraudRiskLevel,
       fraud_flags: {
         missing_government_id: !application.borrower.govId,
-        missing_address: !application.borrower.address,
+        missing_address: !canonicalAddress,
         parsed_documents_count: creditRiskInsights.parsedDocsCount,
         document_coverage_ratio: Number(creditRiskInsights.docsCoverage.toFixed(2)),
       },
@@ -972,6 +981,24 @@ const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
 
   return Math.max(age, 0);
 };
+
+const composeApplicantFullName = (applicant: ApplicantPersonal) =>
+  [applicant.firstName, applicant.middleName, applicant.lastName]
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .join(' ');
+
+const getCanonicalBorrowerEmail = (application: LoanApplication) =>
+  application.borrower.email.trim() ||
+  application.contactInformation.emailAddress.trim();
+
+const getCanonicalBorrowerPhone = (application: LoanApplication) =>
+  application.contactInformation.mobileNumber.trim() ||
+  application.borrower.phone.trim();
+
+const getCanonicalBorrowerAddress = (application: LoanApplication) =>
+  application.addressInformation.presentAddress.trim() ||
+  application.borrower.address.trim();
 
 const buildCollateralVehicleInfo = (collateral: Collateral) =>
   [
@@ -1326,6 +1353,8 @@ export default function LendingScorecard() {
   const [completedWorkflowAction, setCompletedWorkflowAction] = useState<WorkflowStatus | null>(null);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
+  const [loanCreationEntitlement, setLoanCreationEntitlement] = useState<LoanCreationEntitlementResponse | null>(null);
+  const [isLoadingLoanEntitlement, setIsLoadingLoanEntitlement] = useState(false);
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
@@ -1334,6 +1363,7 @@ export default function LendingScorecard() {
   const isMarried = formData.applicantPersonal.maritalStatus === 'Married';
   const hasCoBorrowerSelected = formData.otherInformation.hasCoBorrower;
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
+  const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -1846,6 +1876,9 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     application: LoanApplication = formData,
   ): LoanApplicationPayload => {
+    const canonicalEmail = getCanonicalBorrowerEmail(application);
+    const canonicalPhone = getCanonicalBorrowerPhone(application);
+    const canonicalAddress = getCanonicalBorrowerAddress(application);
     const payloadCalculations = calculateLoanMetrics(application);
     const payloadScorecard = calculateAutomatedScorecard(
       application,
@@ -1875,10 +1908,10 @@ export default function LendingScorecard() {
       status: newStatus,
       product_type: application.loan.productType,
       borrower_name: application.borrower.fullName,
-      email: application.borrower.email,
-      phone: application.borrower.phone,
+      email: canonicalEmail,
+      phone: canonicalPhone,
       gov_id: application.borrower.govId,
-      address: application.borrower.address,
+      address: canonicalAddress,
       monthly_income: application.employment.monthlyIncome,
       other_income: application.employment.otherIncome,
       debt_obligations: application.employment.debtObligations,
@@ -2063,6 +2096,28 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
   ): Promise<boolean> => {
+    if (!hasPersistedRecord) {
+      const entitlement = loanCreationEntitlement ?? await (async () => {
+        try {
+          return await fetchLoanCreationEntitlement();
+        } catch {
+          return null;
+        }
+      })();
+
+      if (entitlement) {
+        setLoanCreationEntitlement(entitlement);
+      }
+
+      if (entitlement && !entitlement.allowed) {
+        setSaveMessage(
+          entitlement.message ||
+            `Payment required before creating a new record. Amount due this month: PHP ${entitlement.amount_due_this_month.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
+        );
+        return false;
+      }
+    }
+
     setIsSaving(true);
 
     try {
@@ -2075,6 +2130,7 @@ export default function LendingScorecard() {
       setHasPersistedRecord(true);
       setFormData({ ...applicationToSave, status: newStatus });
       setTransientMessage(result.message || `Application saved as ${newStatus}`);
+      await refreshLoanCreationEntitlement();
       return true;
     } catch (error) {
       setSaveMessage(
@@ -2182,6 +2238,22 @@ export default function LendingScorecard() {
 
     void loadApplication(requestedApplicationNo);
   }, [loadApplication, requestedApplicationNo]);
+
+  const refreshLoanCreationEntitlement = useCallback(async () => {
+    setIsLoadingLoanEntitlement(true);
+    try {
+      const entitlement = await fetchLoanCreationEntitlement();
+      setLoanCreationEntitlement(entitlement);
+    } catch {
+      setLoanCreationEntitlement(null);
+    } finally {
+      setIsLoadingLoanEntitlement(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    void refreshLoanCreationEntitlement();
+  }, [refreshLoanCreationEntitlement]);
 
   // --- Global Nav Actions ---
   const handleCreateNew = () => {
@@ -2369,6 +2441,92 @@ export default function LendingScorecard() {
       }));
     }
   }, [formData.applicantPersonal.age, formData.applicantPersonal.dateOfBirth]);
+  useEffect(() => {
+    const derivedFullName = composeApplicantFullName(formData.applicantPersonal);
+    const canonicalMobileNumber = formData.contactInformation.mobileNumber.trim();
+    const legacyPhoneNumber = formData.borrower.phone.trim();
+    const canonicalPresentAddress = formData.addressInformation.presentAddress.trim();
+    const legacyBorrowerAddress = formData.borrower.address.trim();
+    const canonicalBorrowerEmail = formData.borrower.email.trim();
+    const supplementalIncome =
+      formData.employmentInformation.otherSourcesOfIncome +
+      formData.employmentInformation.investmentIncome +
+      formData.employmentInformation.businessIncome +
+      formData.employmentInformation.pensionIncome;
+    const derivedGrossMonthlyIncome =
+      formData.employment.monthlyIncome + Math.max(0, supplementalIncome);
+
+    setFormData((prev) => {
+      let changed = false;
+      let borrower = prev.borrower;
+      let contactInformation = prev.contactInformation;
+      let addressInformation = prev.addressInformation;
+      let employmentInformation = prev.employmentInformation;
+
+      if (derivedFullName && prev.borrower.fullName !== derivedFullName) {
+        borrower = { ...borrower, fullName: derivedFullName };
+        changed = true;
+      }
+
+      if (canonicalMobileNumber && prev.borrower.phone !== canonicalMobileNumber) {
+        borrower = { ...borrower, phone: canonicalMobileNumber };
+        changed = true;
+      } else if (!canonicalMobileNumber && legacyPhoneNumber && prev.contactInformation.mobileNumber !== legacyPhoneNumber) {
+        contactInformation = { ...contactInformation, mobileNumber: legacyPhoneNumber };
+        changed = true;
+      }
+
+      if (canonicalPresentAddress && prev.borrower.address !== canonicalPresentAddress) {
+        borrower = { ...borrower, address: canonicalPresentAddress };
+        changed = true;
+      } else if (!canonicalPresentAddress && legacyBorrowerAddress && prev.addressInformation.presentAddress !== legacyBorrowerAddress) {
+        addressInformation = { ...addressInformation, presentAddress: legacyBorrowerAddress };
+        changed = true;
+      }
+
+      if (canonicalBorrowerEmail && prev.contactInformation.emailAddress !== canonicalBorrowerEmail) {
+        contactInformation = { ...contactInformation, emailAddress: canonicalBorrowerEmail };
+        changed = true;
+      } else if (!canonicalBorrowerEmail && prev.contactInformation.emailAddress.trim()) {
+        borrower = { ...borrower, email: prev.contactInformation.emailAddress.trim() };
+        changed = true;
+      }
+
+      if (prev.employmentInformation.grossMonthlyIncome !== derivedGrossMonthlyIncome) {
+        employmentInformation = {
+          ...employmentInformation,
+          grossMonthlyIncome: derivedGrossMonthlyIncome,
+        };
+        changed = true;
+      }
+
+      if (!changed) {
+        return prev;
+      }
+
+      return {
+        ...prev,
+        borrower,
+        contactInformation,
+        addressInformation,
+        employmentInformation,
+      };
+    });
+  }, [
+    formData.addressInformation.presentAddress,
+    formData.applicantPersonal,
+    formData.borrower.address,
+    formData.borrower.email,
+    formData.borrower.phone,
+    formData.contactInformation.emailAddress,
+    formData.contactInformation.mobileNumber,
+    formData.employment.monthlyIncome,
+    formData.employmentInformation.businessIncome,
+    formData.employmentInformation.investmentIncome,
+    formData.employmentInformation.otherSourcesOfIncome,
+    formData.employmentInformation.pensionIncome,
+    formData.employmentInformation.grossMonthlyIncome,
+  ]);
   const saveMessageIsError = saveMessage.toLowerCase().includes('failed');
   const getInputValue = (
     section: EditableSection,
@@ -2835,6 +2993,7 @@ export default function LendingScorecard() {
         certificationData: {
           applicationNo: formData.id,
           borrowerName: borrowerDisplayName,
+          productType: formData.loan.productType,
           issuedAt: new Date().toISOString(),
           overallScore: compositeInternalScore,
           label: displayedQuantSummary.final_grade,
@@ -2850,6 +3009,10 @@ export default function LendingScorecard() {
   };
 
   const executiveSummaryItems = [
+    {
+      label: 'Product Being Applied For',
+      value: formData.loan.productType || 'Pending',
+    },
     {
       label: 'Credit Score',
       value:
@@ -3011,6 +3174,23 @@ export default function LendingScorecard() {
           {isLoadingApplication && (
             <div className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
               Loading application record...
+            </div>
+          )}
+
+          {!hasPersistedRecord && loanCreationEntitlement && (
+            <div
+              className={`mb-4 rounded-md border p-3 text-sm ${
+                loanCreationEntitlement.allowed
+                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
+                  : 'border-amber-300 bg-amber-50 text-amber-900'
+              }`}
+            >
+              <p className="font-semibold">
+                {isLoadingLoanEntitlement ? 'Checking subscription entitlement...' : loanCreationEntitlement.message}
+              </p>
+              <p className="mt-1 text-xs opacity-90">
+                Free usage: {Math.max(0, loanCreationEntitlement.free_limit - loanCreationEntitlement.records_in_free_window)} remaining out of {loanCreationEntitlement.free_limit} within {loanCreationEntitlement.free_days} day(s). This month due: PHP {loanCreationEntitlement.amount_due_this_month.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
+              </p>
             </div>
           )}
 
@@ -3193,14 +3373,14 @@ export default function LendingScorecard() {
                     <div className="mt-5 flex flex-wrap gap-3">
                       <button
                         onClick={() => void handleFinalizeDocumentReview('Draft')}
-                        disabled={isSaving}
+                        disabled={isSaving || creationLocked}
                         className={`loan-inline-button px-4 py-2 rounded text-sm font-medium transition disabled:opacity-50 loan-save-action ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
                       >
                         {isSaving ? 'Processing Draft...' : 'Apply, Save as Draft'}
                       </button>
                       <button
                         onClick={() => void handleFinalizeDocumentReview('Credit Review')}
-                        disabled={isSaving}
+                        disabled={isSaving || creationLocked}
                         className={`loan-inline-button px-4 py-2 rounded text-sm font-semibold transition disabled:opacity-50 ${isSaving ? 'loan-save-action loan-save-action-processing' : 'loan-inline-button-accent bg-indigo-600 hover:bg-indigo-500'}`}
                       >
                         {isSaving ? 'Processing Review...' : 'Apply, Save for Review'}
@@ -3225,11 +3405,9 @@ export default function LendingScorecard() {
           {step === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 2: Applicant Information</h3>
-              {renderInput('borrower', 'fullName', 'Full Legal Name')}
+              {renderInput('borrower', 'fullName', 'Full Legal Name (Auto-generated)', 'text', true)}
               {renderInput('borrower', 'email', 'Email Address', 'email')}
-              {renderInput('borrower', 'phone', 'Contact Number', 'tel')}
               {renderInput('borrower', 'govId', 'Government ID Number')}
-              {renderInput('borrower', 'address', 'Complete Residential Address')}
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Additional Personal Information</h4>
               </div>
@@ -3321,7 +3499,7 @@ export default function LendingScorecard() {
               {renderInput('employmentInformation', 'officePhoneNumber', 'Office Phone Number')}
               {renderInput('employmentInformation', 'previousEmployer', 'Previous Employer')}
               {renderInput('employmentInformation', 'totalYearsWorking', 'Total Years Working')}
-              {renderFormattedNumberInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income')}
+              {renderFormattedNumberInput('employmentInformation', 'grossMonthlyIncome', 'Gross Monthly Income (Auto-calculated)', true)}
               {renderInput('employmentInformation', 'monthlyLivingExpenses', 'Monthly Living Expenses', 'number')}
               {renderFormattedNumberInput('employmentInformation', 'otherSourcesOfIncome', 'Other Sources of Income')}
               {renderFormattedNumberInput('employmentInformation', 'investmentIncome', 'Investment Income')}
@@ -3845,7 +4023,7 @@ export default function LendingScorecard() {
                       <div className="flex flex-wrap gap-3">
                         <button
                           onClick={handleSelectedWorkflowAction}
-                          disabled={isSaving}
+                          disabled={isSaving || creationLocked}
                           className={`loan-inline-button inline-flex min-h-[42px] items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold tracking-wide transition disabled:opacity-50 ${workflowActionButtonClass}`}
                         >
                           {workflowActionButtonLabel}
@@ -3858,7 +4036,7 @@ export default function LendingScorecard() {
                         </button>
                         <button
                           onClick={handleSaveDraft}
-                          disabled={isSaving}
+                          disabled={isSaving || creationLocked}
                           className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
                         >
                           {isSaving ? 'Processing Draft...' : 'Save Draft'}
@@ -3895,13 +4073,11 @@ export default function LendingScorecard() {
               </div>
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
-                <textarea 
-                  value={formData.committeeRemarks}
-                  onChange={(e) => setFormData(prev => ({ ...prev, committeeRemarks: e.target.value }))}
-                  rows={4}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
-                  placeholder="Enter conditions, stipulations, or approval notes here..."
-                />
+                <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                  {formData.committeeRemarks.trim().length > 0
+                    ? formData.committeeRemarks
+                    : 'No remarks yet. Use Step 8 to update this field.'}
+                </div>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderInput('routing', 'creditOfficer', 'Assigned Credit Officer')}
@@ -4038,21 +4214,16 @@ export default function LendingScorecard() {
                     </label>
                     <textarea
                       value={formData.committeeRemarks}
-                      onChange={(event) =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          committeeRemarks: event.target.value,
-                        }))
-                      }
+                      readOnly
                       rows={2}
-                      className="loan-form-input w-full rounded-md border border-slate-500 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                      placeholder="Enter comments or basis for the status change"
+                      className="loan-form-input w-full rounded-md border border-slate-500 bg-slate-100 px-3 py-2 text-sm text-slate-800"
+                      placeholder="Use Step 8 to edit comments"
                     />
                   </div>
 
                   <button
                     onClick={handleSelectedWorkflowAction}
-                    disabled={isSaving}
+                    disabled={isSaving || creationLocked}
                     className={`loan-inline-button inline-flex min-h-[42px] items-center justify-center rounded-md border px-4 py-2 text-sm font-semibold tracking-wide transition disabled:opacity-50 ${workflowActionButtonClass}`}
                   >
                     {workflowActionButtonLabel}
@@ -4083,7 +4254,7 @@ export default function LendingScorecard() {
                 </button>
                 <button
                   onClick={handleSaveDraft}
-                  disabled={isSaving}
+                  disabled={isSaving || creationLocked}
                   className={`loan-footer-link loan-save-action inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold tracking-wide disabled:opacity-50 ${isSaving ? 'loan-save-action-processing' : 'loan-save-action-idle'}`}
                 >
                   {isSaving ? 'Processing Draft...' : 'Save Draft'}

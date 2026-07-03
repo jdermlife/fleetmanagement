@@ -41,5 +41,6 @@ from app.models.subscription import (  # noqa: F401
     SubscriptionInvoice,
     SubscriptionPayment,
     SubscriptionPlan,
+    SubscriptionRecordUsageEvent,
     SubscriptionUsage,
 )

@@ -203,7 +203,7 @@ def build_pdf(output_path: Path) -> None:
         form,
         y,
         [
-            ("borrower_full_name", "Full Legal Name"),
+            ("borrower_full_name", "Full Legal Name (Optional if First/Middle/Last completed)"),
             ("borrower_email", "Email Address"),
             ("borrower_phone", "Contact Number"),
             ("borrower_gov_id", "Government ID Number"),
@@ -263,7 +263,7 @@ def build_pdf(output_path: Path) -> None:
             ("previous_employer", "Previous Employer"),
             ("total_years_working", "Total Years Working"),
             ("primary_monthly_income", "Primary Monthly Income (PHP)"),
-            ("other_income", "Other Sources of Income (PHP)"),
+            ("other_income", "Other Income Summary (PHP)"),
             ("debt_obligations", "Existing Monthly Debt Obligations (PHP)"),
             ("gross_monthly_income", "Gross Monthly Income (PHP)"),
             ("monthly_living_expenses", "Monthly Living Expenses (PHP)"),

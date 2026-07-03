@@ -49,6 +49,11 @@ class SubscriptionPlan(Base):
     sla_hours = Column(Integer, nullable=False, default=48)
     color_code = Column(String(20))
     icon_name = Column(String(100))
+    free_record_limit_lifetime = Column(Integer, nullable=False, default=0)
+    free_days_from_start = Column(Integer, nullable=False, default=0)
+    minimum_monthly_fee = Column(Numeric(12, 2), nullable=False, default=0)
+    per_record_fee = Column(Numeric(12, 2), nullable=False, default=0)
+    role_code = Column(String(50))
     ai_enabled = Column(Boolean, nullable=False, default=True)
     api_enabled = Column(Boolean, nullable=False, default=True)
     reporting_enabled = Column(Boolean, nullable=False, default=True)
@@ -64,6 +69,22 @@ class SubscriptionPlan(Base):
         CheckConstraint(
             "support_level IN ('STANDARD','PRIORITY','PREMIUM','ENTERPRISE')",
             name="chk_support_level",
+        ),
+        CheckConstraint(
+            "free_record_limit_lifetime >= 0",
+            name="ck_subscription_plans_free_record_limit_non_negative",
+        ),
+        CheckConstraint(
+            "free_days_from_start >= 0",
+            name="ck_subscription_plans_free_days_non_negative",
+        ),
+        CheckConstraint(
+            "minimum_monthly_fee >= 0",
+            name="ck_subscription_plans_minimum_monthly_fee_non_negative",
+        ),
+        CheckConstraint(
+            "per_record_fee >= 0",
+            name="ck_subscription_plans_per_record_fee_non_negative",
         ),
     )
 
@@ -205,6 +226,19 @@ class SubscriptionUsage(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     subscription = relationship("Subscription", back_populates="usage_entries", lazy="selectin")
+
+
+class SubscriptionRecordUsageEvent(Base):
+    __tablename__ = "subscription_record_usage_events"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    record_type = Column(String(50), nullable=False, default="loan_application")
+    record_ref = Column(String(100))
+    event_ts = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    billing_month = Column(Date, nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
 class SubscriptionEvent(Base):

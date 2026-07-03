@@ -526,6 +526,20 @@ export interface QuantScoresResponse extends LoanMutationResponse {
   quant_scores: QuantScoresApiSummary
 }
 
+export interface LoanCreationEntitlementResponse {
+  allowed: boolean
+  reason: string
+  message: string
+  role_code: string
+  records_in_free_window: number
+  records_this_month: number
+  free_limit: number
+  free_days: number
+  free_window_active: boolean
+  amount_due_this_month: number
+  has_paid_current_period: boolean
+}
+
 export interface LoanBulkMutationResponse {
   inserted: number
   message: string
@@ -724,6 +738,13 @@ export async function computeQuantScores(
   const response = await api.post<QuantScoresResponse>(
     `${LOAN_APPLICATIONS_PATH}/compute-quant-scores`,
     payload,
+  )
+  return response.data
+}
+
+export async function fetchLoanCreationEntitlement(): Promise<LoanCreationEntitlementResponse> {
+  const response = await api.get<LoanCreationEntitlementResponse>(
+    '/api/subscriptions/entitlement/loan-record-create',
   )
   return response.data
 }

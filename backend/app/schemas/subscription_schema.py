@@ -31,6 +31,11 @@ class SubscriptionPlanCreate(BaseModel):
     sla_hours: int = 48
     color_code: str | None = None
     icon_name: str | None = None
+    free_record_limit_lifetime: int = 0
+    free_days_from_start: int = 0
+    minimum_monthly_fee: float = 0
+    per_record_fee: float = 0
+    role_code: str | None = None
     ai_enabled: bool = True
     api_enabled: bool = True
     reporting_enabled: bool = True
@@ -99,6 +104,11 @@ class SubscriptionPlanUpdate(BaseModel):
     sla_hours: int | None = None
     color_code: str | None = None
     icon_name: str | None = None
+    free_record_limit_lifetime: int | None = None
+    free_days_from_start: int | None = None
+    minimum_monthly_fee: float | None = None
+    per_record_fee: float | None = None
+    role_code: str | None = None
     ai_enabled: bool | None = None
     api_enabled: bool | None = None
     reporting_enabled: bool | None = None
