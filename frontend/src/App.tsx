@@ -94,7 +94,6 @@ const menuLinks: MenuLink[] = [
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'credit-scoring', label: 'Psychometric Scoring' },
-  { id: 'subscriptions', label: 'Subscription Billing' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
@@ -584,6 +583,21 @@ const shouldShowBackButton = !['/', '/dashboard', '/login'].includes(location.pa
         </Link>
       </>
     )}
+    <Link
+      to="/subscriptions"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription Billing
+    </Link>
     <Link
       to="/subscription-fees"
       onClick={closeMenu}
