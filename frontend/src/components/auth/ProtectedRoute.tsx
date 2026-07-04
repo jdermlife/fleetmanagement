@@ -28,8 +28,8 @@ export default function ProtectedRoute({
   if (!hasAnyRole(roles) || !hasAnyPermission(permissions)) {
     return (
       <div className="card">
-        <h2>Access denied</h2>
-        <p>You do not have permission to view this page.</p>
+        <h2>Please Upgrade Your Subscription</h2>
+        <p>This page is for Multiple Applications</p>
       </div>
     )
   }

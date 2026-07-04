@@ -3,11 +3,16 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { getErrorMessage, loginWithGoogle, register } from '../../api'
+import { getErrorMessage, login, loginWithGoogle, register } from '../../api'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
+  isBorrowerSubscriberRole,
 } from '../../authRoles'
+
+function getDefaultHomePathForRole(role?: string | null) {
+  return isBorrowerSubscriberRole(role) ? '/lending-scorecard' : '/dashboard'
+}
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -58,7 +63,8 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
-      navigate('/login?created=1')
+      const loginResponse = await login({ username, password })
+      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
     } finally {
@@ -91,12 +97,12 @@ export default function RegisterPage() {
     setIsSaving(true)
     setMessage('')
     try {
-      await loginWithGoogle({
+      const loginResponse = await loginWithGoogle({
         idToken,
         subscriberType,
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
-      navigate('/dashboard')
+      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {

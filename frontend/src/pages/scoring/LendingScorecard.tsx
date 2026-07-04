@@ -3311,9 +3311,8 @@ export default function LendingScorecard() {
           <span className="psychometric-eyebrow">Advanced Origination Workflow</span>
           <h1>Lending Scorecard</h1>
           <p>
-            Run the end-to-end loan workflow across product intake, underwriting details,
-            FILScore review, approval, and release using the same structured workspace style as
-            the psychometric scoring page.
+            Run the end-to-end loan workflow across product intake, underwriting details, and
+            FILScore certification
           </p>
         </div>
 

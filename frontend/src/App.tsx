@@ -239,7 +239,7 @@ const adminMenuItems = visibleMenuLinks.filter(
   (item) => adminMenus.includes(item.id),
 )
 
-const shouldShowBackButton = !['/', '/dashboard', '/login'].includes(location.pathname)
+const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
 
   useEffect(() => {
     const token = getAuthToken()
