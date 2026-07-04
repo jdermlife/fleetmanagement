@@ -3292,7 +3292,7 @@ export default function LendingScorecard() {
   const stepLabels = [
     'Product Selection',
     'Applicant Info',
-    'Employment & Income',
+    'Employment, Income and Credit Values',
     'Co-Borrower',
     'Banking',
     'Collateral',
@@ -3424,13 +3424,6 @@ export default function LendingScorecard() {
                   </div>
                   <div className="shrink-0">
                     <div className="flex flex-wrap gap-3">
-                      <a
-                        href="/loan-application-intake-form.pdf"
-                        download
-                        className="loan-inline-button loan-inline-button-secondary inline-flex min-h-[42px] items-center justify-center px-4 py-2 text-sm font-semibold"
-                      >
-                        Download PDF Form
-                      </a>
                       <input
                         type="file"
                         id="step1DocumentUpload"
@@ -3671,7 +3664,7 @@ export default function LendingScorecard() {
 
           {step === 3 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment & Income</h3>
+              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment, Income and Credit Values</h3>
               {renderInput('employment', 'history', 'Employment History (Current Employer)')}
               {renderFormattedNumberInput('employment', 'monthlyIncome', 'Primary Monthly Income')}
               {renderFormattedNumberInput('employment', 'otherIncome', 'Other Sources of Income')}

@@ -5,6 +5,7 @@ import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import { getErrorMessage, login, loginWithGoogle } from '../../api'
+import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
@@ -13,6 +14,49 @@ import {
 
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/loan-certification'])
+
+function getMostRecentBorrowerApplication(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+  if (records.length === 0) {
+    return null
+  }
+
+  const recordsWithTimestamp = records
+    .map((record) => {
+      const timestampSource = record.updated_at || record.created_at
+      const timestamp = timestampSource ? Date.parse(timestampSource) : Number.NaN
+      return {
+        record,
+        timestamp,
+      }
+    })
+    .filter((entry) => Number.isFinite(entry.timestamp))
+    .sort((left, right) => right.timestamp - left.timestamp)
+
+  if (recordsWithTimestamp.length > 0) {
+    return recordsWithTimestamp[0].record
+  }
+
+  return records[0]
+}
+
+async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> {
+  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
+    return redirectTo
+  }
+
+  try {
+    const applications = await fetchLoanApplications({ limit: 25 })
+    const mostRecentApplication = getMostRecentBorrowerApplication(applications)
+
+    if (mostRecentApplication?.application_no) {
+      return `/lending-scorecard?applicationNo=${encodeURIComponent(mostRecentApplication.application_no)}`
+    }
+  } catch {
+    // Fallback to a fresh draft flow when the lookup fails.
+  }
+
+  return '/lending-scorecard'
+}
 
 function getDefaultRedirectPath() {
   const storedPath = window.localStorage.getItem(LAST_ROUTE_STORAGE_KEY)
@@ -42,7 +86,7 @@ export default function LoginPage() {
     try {
       const response = await login({ username, password })
       const nextPath = isBorrowerSubscriberRole(response.user.role)
-        ? (BORROWER_ALLOWED_REDIRECTS.has(redirectTo) ? redirectTo : '/lending-scorecard')
+        ? await resolveBorrowerRedirectPath(redirectTo)
         : redirectTo
       navigate(nextPath)
     } catch (error) {
@@ -72,7 +116,7 @@ export default function LoginPage() {
             : lenderDataSharingChoice === 'share',
       })
       const nextPath = isBorrowerSubscriberRole(loginResponse.user.role)
-        ? (BORROWER_ALLOWED_REDIRECTS.has(redirectTo) ? redirectTo : '/lending-scorecard')
+        ? await resolveBorrowerRedirectPath(redirectTo)
         : redirectTo
       navigate(nextPath)
     } catch (error) {

@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
-import { Routes, Route, Link, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
 import {
@@ -154,7 +154,7 @@ function App() {
     }
 
     if (currentUser) {
-      navigate('/dashboard')
+      navigate(defaultHomePath)
       return
     }
 
@@ -208,6 +208,7 @@ const subscriberAlwaysVisibleMenus = [
 
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
 const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
+const defaultHomePath = isBorrowerSubscriber ? '/lending-scorecard' : '/dashboard'
 
 const visibleMenuLinks = isBorrowerSubscriber
   ? menuLinks.filter((item) => item.id === 'lending-scorecard')
@@ -652,11 +653,22 @@ const shouldShowBackButton = !['/', '/dashboard', '/login'].includes(location.pa
       <main className="content">
         <Suspense fallback={<div className="card">Loading page...</div>}>
           <Routes>
-            <Route path="/" element={authenticatedPage(<DashboardSnapshot />)} />
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <DashboardSnapshot />}
+                </ProtectedRoute>
+              }
+            />
 
             <Route
               path="/dashboard"
-              element={authenticatedPage(<DashboardSnapshot />)}
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <DashboardSnapshot />}
+                </ProtectedRoute>
+              }
             />
 
             <Route
