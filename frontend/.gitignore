@@ -51,3 +51,4 @@ frontend/.run-*.err.log
 *.log
 
 .vercel
+.env*.local

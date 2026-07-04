@@ -16,7 +16,7 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
   },
   {
     value: 'lender',
-    label: 'Subscriber Multiple Applicants / Lender',
+    label: 'Subscriber Multiple Applicants / Borrowers',
     description: 'Access Lending Workspace.',
   },
 ]

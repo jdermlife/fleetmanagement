@@ -142,7 +142,6 @@ function App() {
   const navigate = useNavigate()
   const location = useLocation()
   const [menuOpen, setMenuOpen] = useState(false)
-  const [authDropdownOpen, setAuthDropdownOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
@@ -165,10 +164,6 @@ function App() {
 
   const closeMenu = () => {
     setMenuOpen(false)
-  }
-
-  const closeAuthDropdown = () => {
-    setAuthDropdownOpen(false)
   }
 
 const aiMenus = [
@@ -244,6 +239,8 @@ const adminMenuItems = visibleMenuLinks.filter(
   (item) => adminMenus.includes(item.id),
 )
 
+const shouldShowBackButton = !['/', '/dashboard', '/login'].includes(location.pathname)
+
   useEffect(() => {
     const token = getAuthToken()
 
@@ -281,10 +278,6 @@ const adminMenuItems = visibleMenuLinks.filter(
   }, [location.pathname])
 
   useEffect(() => {
-    setAuthDropdownOpen(false)
-  }, [location.pathname])
-
-  useEffect(() => {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
     document.documentElement.dataset.theme =
       savedTheme && VALID_THEME_IDS.has(savedTheme) ? savedTheme : 'classic'
@@ -301,14 +294,16 @@ const adminMenuItems = visibleMenuLinks.filter(
       {/* TOP NAVIGATION */}
       <header className="sidebar">
         <div className="app-topbar-row">
-          <button
-            type="button"
-            className="app-mobile-back-inline"
-            onClick={handleMobileBack}
-            aria-label="Go back"
-          >
-            Back
-          </button>
+          {shouldShowBackButton ? (
+            <button
+              type="button"
+              className="app-mobile-back-inline"
+              onClick={handleMobileBack}
+              aria-label="Go back"
+            >
+              Back
+            </button>
+          ) : null}
 
           {/* BRAND */}
           <div className="app-brand-block">
@@ -321,62 +316,15 @@ const adminMenuItems = visibleMenuLinks.filter(
             </div>
           </div>
 
-          <div className="app-auth-summary">
-            <button
-              type="button"
-              className="app-auth-action"
-              onClick={() => setAuthDropdownOpen((prev) => !prev)}
-              aria-haspopup="menu"
-              aria-expanded={authDropdownOpen}
-            >
-              {authReady && currentUser ? currentUser.username : 'Account'}
-            </button>
-
-            {authDropdownOpen && (
-              <div className="app-auth-dropdown" role="menu">
-                {authReady && currentUser ? (
-                  <>
-                    <div className="app-auth-chip">
-                      <span className="app-auth-chip-label">Signed In</span>
-                      <strong>{currentUser.username}</strong>
-                    </div>
-                    <Link className="app-auth-link" to="/account" onClick={closeAuthDropdown}>
-                      Login
-                    </Link>
-                    <button
-                      type="button"
-                      className="app-auth-action"
-                      onClick={() => {
-                        closeAuthDropdown()
-                        void handleTopbarLogout()
-                      }}
-                    >
-                      Sign Out
-                    </button>
-                  </>
-                ) : (
-                  <>
-                    <Link className="app-auth-link" to="/login" onClick={closeAuthDropdown}>
-                      Sign In
-                    </Link>
-                    <Link className="app-auth-link" to="/register" onClick={closeAuthDropdown}>
-                      Register
-                    </Link>
-                  </>
-                )}
-              </div>
-            )}
-          </div>
-
           {/* HAMBURGER BUTTON */}
           <button
             onClick={() => setMenuOpen(!menuOpen)}
             type="button"
             className="app-menu-toggle"
-            aria-label="Toggle application menu"
+            aria-label="Toggle account and application menu"
             aria-expanded={menuOpen}
           >
-            ☰
+            {authReady && currentUser ? `${currentUser.username} • Menu` : 'Account • Menu'}
           </button>
         </div>
 

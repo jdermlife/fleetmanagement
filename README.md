@@ -23,7 +23,7 @@ Production-grade fleet management platform with enterprise security features.
 ### Prerequisites
 
 - Python 3.11 or 3.12 and pip (for backend)
-- Node.js 16+ and npm (for frontend)
+- Node.js 20.19+ (or 22.12+) and npm (for frontend)
 - PostgreSQL connection (Neon cloud, local instance, or other provider)
 
 ### Backend
