@@ -477,21 +477,17 @@ const psychometricResponseToPoints = (response: string) => {
   }
 };
 
-const psychometricAssessmentResponseToPoints = (response: string) => {
-  switch (response) {
-    case 'Strongly Agree':
-      return 4;
-    case 'Agree':
-      return 3;
-    case 'Neutral':
-      return 2;
-    case 'Disagree':
-      return 1;
-    case 'Strongly Disagree':
-      return 0;
-    default:
-      return 0;
+const psychometricAssessmentResponseToPoints = (
+  response: string,
+  options: string[],
+) => {
+  const optionIndex = options.findIndex((option) => option === response);
+
+  if (optionIndex < 0) {
+    return 0;
   }
+
+  return 5 - optionIndex;
 };
 
 const buildPsychometricAssessmentScores = (
@@ -499,18 +495,28 @@ const buildPsychometricAssessmentScores = (
   legacyQuestionnaire?: OptionalPsychometricQuestionnaire,
 ) => {
   const assessmentValues = psychometricAssessmentSections.flatMap((section) =>
-    section.questions.map((question) => psychometricAssessmentResponseToPoints(assessment[question.field] ?? '')),
+    section.questions.map((question) =>
+      psychometricAssessmentResponseToPoints(
+        assessment[question.field] ?? '',
+        question.options,
+      ),
+    ),
   );
   const answeredAssessmentCount = assessmentValues.filter((value) => value > 0).length;
 
   if (answeredAssessmentCount > 0) {
     const sectionScores = psychometricAssessmentSections.map((section) => {
       const rawScore = section.questions.reduce(
-        (sum, question) => sum + psychometricAssessmentResponseToPoints(assessment[question.field] ?? ''),
+        (sum, question) =>
+          sum +
+          psychometricAssessmentResponseToPoints(
+            assessment[question.field] ?? '',
+            question.options,
+          ),
         0,
       );
 
-      return Math.round((rawScore / 20) * 100);
+      return Math.round((rawScore / 25) * 100);
     });
 
     const groupedTraitScores = {
@@ -1081,127 +1087,325 @@ const hasRequiredAdditionalSupportingDocuments = (
   supportingDocuments.investmentStatements &&
   supportingDocuments.additionalSupportingDocuments;
 
-const psychometricResponseOptions = [
-  'Strongly Disagree',
-  'Disagree',
-  'Neutral',
-  'Agree',
-  'Strongly Agree',
-];
-
 const psychometricAssessmentSections: Array<{
   id: string;
   title: string;
-  questions: Array<{ field: string; prompt: string }>;
+  questions: Array<{ field: string; prompt: string; options: string[] }>;
 }> = [
   {
     id: 'A',
-    title: 'Financial Discipline',
+    title: 'Budgeting & Planning',
     questions: [
-      { field: 'q01', prompt: 'I prepare a monthly budget before spending my income.' },
-      { field: 'q02', prompt: 'I usually pay my bills before their due dates.' },
-      { field: 'q03', prompt: 'I regularly monitor my bank account balances.' },
-      { field: 'q04', prompt: 'I save part of my income every month.' },
-      { field: 'q05', prompt: 'I avoid buying things I cannot afford.' },
+      {
+        field: 'q01',
+        prompt: 'How far ahead do you plan your finances?',
+        options: ['1 month', '2 months', '3 months', '4 months', '5+ months'],
+      },
+      {
+        field: 'q02',
+        prompt: 'When preparing a budget, how often do you update it?',
+        options: ['Weekly', 'Monthly', 'Quarterly', 'Annually', 'Never'],
+      },
+      {
+        field: 'q03',
+        prompt: 'If you receive extra income, how do you handle it?',
+        options: [
+          'Add to savings',
+          'Allocate to bills',
+          'Partial savings/spending',
+          'Spend immediately',
+          'No plan',
+        ],
+      },
+      {
+        field: 'q04',
+        prompt: 'How often do you track your expenses?',
+        options: ['Daily', 'Weekly', 'Monthly', 'Occasionally', 'Never'],
+      },
+      {
+        field: 'q05',
+        prompt: 'When setting financial goals, how far ahead do you plan?',
+        options: ['1 year', '2-3 years', '4-5 years', '6-10 years', 'No goals'],
+      },
     ],
   },
   {
     id: 'B',
-    title: 'Savings Behavior',
+    title: 'Emergency Fund & Savings',
     questions: [
-      { field: 'q06', prompt: 'I maintain an emergency fund.' },
-      { field: 'q07', prompt: 'I save before making major purchases.' },
-      { field: 'q08', prompt: 'I can cover unexpected expenses without borrowing.' },
-      { field: 'q09', prompt: 'I have long-term financial goals.' },
-      { field: 'q10', prompt: 'I regularly review my savings progress.' },
+      {
+        field: 'q06',
+        prompt: 'If you lost your income today, how long could your emergency fund cover expenses?',
+        options: ['1 month', '2-3 months', '4-6 months', '7-12 months', 'More than 12 months'],
+      },
+      {
+        field: 'q07',
+        prompt: 'How often do you deposit into your emergency fund?',
+        options: ['Monthly', 'Quarterly', 'Annually', 'Occasionally', 'Never'],
+      },
+      {
+        field: 'q08',
+        prompt: 'When faced with a major purchase, how do you prepare?',
+        options: ['Save fully', 'Save most', 'Save partly', 'Borrow mostly', 'Buy immediately on credit'],
+      },
+      {
+        field: 'q09',
+        prompt: 'How quickly can you cover unexpected expenses without borrowing?',
+        options: ['Immediately', 'Within 1 month', 'Within 2-3 months', 'Within 6 months', 'Cannot without borrowing'],
+      },
+      {
+        field: 'q10',
+        prompt: 'How often do you review your savings progress?',
+        options: ['Monthly', 'Quarterly', 'Annually', 'Occasionally', 'Never'],
+      },
     ],
   },
   {
     id: 'C',
-    title: 'Repayment Responsibility',
+    title: 'Loan Repayment Discipline',
     questions: [
-      { field: 'q11', prompt: 'I always try to repay my loans on time.' },
-      { field: 'q12', prompt: 'Keeping a good credit reputation is important to me.' },
-      { field: 'q13', prompt: 'I would rather reduce expenses than miss a loan payment.' },
-      { field: 'q14', prompt: 'I inform lenders early if I anticipate repayment difficulties.' },
-      { field: 'q15', prompt: 'I consider debt repayment a top financial priority.' },
+      {
+        field: 'q11',
+        prompt: 'If you anticipate difficulty repaying a loan, when do you inform your lender?',
+        options: ['Immediately', '1 month before', '2 months before', 'After missing payment', 'Never'],
+      },
+      {
+        field: 'q12',
+        prompt: 'How often do you pay loans before the due date?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q13',
+        prompt: 'If faced with financial stress, how do you prioritize loan repayment?',
+        options: ['Cut expenses first', 'Adjust savings', 'Delay purchases', 'Delay bills', 'Miss loan payment'],
+      },
+      {
+        field: 'q14',
+        prompt: 'How important is maintaining a good credit reputation to you?',
+        options: ['Extremely', 'Very', 'Moderate', 'Slight', 'Not important'],
+      },
+      {
+        field: 'q15',
+        prompt: 'When repaying loans, how consistent are you?',
+        options: ['Always on time', 'Mostly on time', 'Occasionally late', 'Frequently late', 'Never on time'],
+      },
     ],
   },
   {
     id: 'D',
-    title: 'Planning & Organization',
+    title: 'Risk Awareness',
     questions: [
-      { field: 'q16', prompt: 'I plan my finances at least six months ahead.' },
-      { field: 'q17', prompt: 'I think carefully before making major financial decisions.' },
-      { field: 'q18', prompt: 'I compare financing options before borrowing.' },
-      { field: 'q19', prompt: 'I consider future obligations before taking on new debt.' },
-      { field: 'q20', prompt: 'I keep important financial documents organized.' },
+      {
+        field: 'q16',
+        prompt: 'When offered a high-risk investment, how do you respond?',
+        options: ['Decline immediately', 'Decline after evaluation', 'Invest small portion', 'Invest large portion', 'Invest fully'],
+      },
+      {
+        field: 'q17',
+        prompt: 'How carefully do you read loan agreements before signing?',
+        options: ['Every detail', 'Key sections', 'Skim', 'Glance quickly', 'Never read'],
+      },
+      {
+        field: 'q18',
+        prompt: 'How often do you avoid risks you do not understand?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q19',
+        prompt: 'Before making commitments, how often do you consider worst-case scenarios?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q20',
+        prompt: 'Do you prefer stable finances or risky opportunities?',
+        options: ['Strongly prefer stability', 'Prefer stability', 'Neutral', 'Prefer risk', 'Strongly prefer risk'],
+      },
     ],
   },
   {
     id: 'E',
-    title: 'Self-Control & Impulse Management',
+    title: 'Integrity & Honesty',
     questions: [
-      { field: 'q21', prompt: 'I avoid impulse purchases.' },
-      { field: 'q22', prompt: 'I rarely buy something immediately without thinking.' },
-      { field: 'q23', prompt: 'I can delay gratification for long-term goals.' },
-      { field: 'q24', prompt: 'I resist pressure to spend beyond my budget.' },
-      { field: 'q25', prompt: 'I distinguish between wants and needs.' },
+      {
+        field: 'q21',
+        prompt: 'When completing financial applications, how accurate is your information?',
+        options: ['Always accurate', 'Mostly accurate', 'Sometimes inaccurate', 'Frequently inaccurate', 'Never accurate'],
+      },
+      {
+        field: 'q22',
+        prompt: 'Would you hide important financial information from a lender?',
+        options: ['Strongly disagree', 'Disagree', 'Neutral', 'Agree', 'Strongly agree'],
+      },
+      {
+        field: 'q23',
+        prompt: 'Is honesty more important than getting a loan quickly?',
+        options: ['Strongly agree', 'Agree', 'Neutral', 'Disagree', 'Strongly disagree'],
+      },
+      {
+        field: 'q24',
+        prompt: 'When you make financial mistakes, how do you respond?',
+        options: ['Correct immediately', 'Correct soon', 'Correct occasionally', 'Rarely correct', 'Never correct'],
+      },
+      {
+        field: 'q25',
+        prompt: 'Do you believe financial commitments should always be honored?',
+        options: ['Strongly agree', 'Agree', 'Neutral', 'Disagree', 'Strongly disagree'],
+      },
     ],
   },
   {
     id: 'F',
-    title: 'Risk Awareness',
+    title: 'Resilience & Adaptability',
     questions: [
-      { field: 'q26', prompt: 'I understand the risks before borrowing money.' },
-      { field: 'q27', prompt: 'I read loan agreements carefully before signing.' },
-      { field: 'q28', prompt: 'I avoid taking financial risks I do not understand.' },
-      { field: 'q29', prompt: 'I consider worst-case scenarios before making financial commitments.' },
-      { field: 'q30', prompt: 'I prefer stable finances over risky opportunities.' },
+      {
+        field: 'q26',
+        prompt: 'If your income decreases by 20%, how quickly do you adjust spending?',
+        options: ['Within 1 week', 'Within 1 month', 'Within 2 months', 'Within 3 months', 'Never adjust'],
+      },
+      {
+        field: 'q27',
+        prompt: 'When facing financial challenges, how calm do you remain?',
+        options: ['Always calm', 'Often calm', 'Sometimes calm', 'Rarely calm', 'Never calm'],
+      },
+      {
+        field: 'q28',
+        prompt: 'When facing problems, how often do you look for solutions instead of avoiding them?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q29',
+        prompt: 'Before making difficult financial decisions, how often do you seek advice?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q30',
+        prompt: 'Do you believe you can recover from financial setbacks?',
+        options: ['Strongly agree', 'Agree', 'Neutral', 'Disagree', 'Strongly disagree'],
+      },
     ],
   },
   {
     id: 'G',
-    title: 'Integrity & Consistency',
+    title: 'Social Responsibility',
     questions: [
-      { field: 'q31', prompt: 'I always provide accurate information in financial applications.' },
-      { field: 'q32', prompt: 'I would never hide important financial information from a lender.' },
-      { field: 'q33', prompt: 'I believe honesty is more important than getting a loan quickly.' },
-      { field: 'q34', prompt: 'I admit mistakes and try to correct them.' },
-      { field: 'q35', prompt: 'I believe financial commitments should always be honored.' },
+      {
+        field: 'q31',
+        prompt: 'How consistently do you support your family within your means?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q32',
+        prompt: 'How consistently do you fulfill responsibilities to dependents?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q33',
+        prompt: 'How important is maintaining a good reputation in your community?',
+        options: ['Extremely', 'Very', 'Moderate', 'Slight', 'Not important'],
+      },
+      {
+        field: 'q34',
+        prompt: 'How often do you avoid actions that could damage your financial credibility?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q35',
+        prompt: 'Do you believe financial responsibility is a core personal value?',
+        options: ['Strongly agree', 'Agree', 'Neutral', 'Disagree', 'Strongly disagree'],
+      },
     ],
   },
   {
     id: 'H',
-    title: 'Employment & Career Mindset',
+    title: 'Self-Control & Impulse Management',
     questions: [
-      { field: 'q36', prompt: 'I continuously improve my professional skills.' },
-      { field: 'q37', prompt: 'I value long-term employment stability.' },
-      { field: 'q38', prompt: 'I actively plan my career growth.' },
-      { field: 'q39', prompt: 'I maintain good relationships with employers or clients.' },
-      { field: 'q40', prompt: 'I strive to maintain a reliable source of income.' },
+      {
+        field: 'q36',
+        prompt: 'When you see something you want to buy, how long do you wait before purchasing?',
+        options: ['5+ days', '2-3 days', '1 day', 'Same day', 'Immediately'],
+      },
+      {
+        field: 'q37',
+        prompt: 'How often do you avoid impulse purchases?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q38',
+        prompt: 'How often can you delay gratification for long-term goals?',
+        options: ['Always (12+ months)', 'Often (6-12 months)', 'Sometimes (3-6 months)', 'Rarely (<3 months)', 'Never'],
+      },
+      {
+        field: 'q39',
+        prompt: 'When pressured to spend beyond budget, how do you respond?',
+        options: ['Always resist', 'Often resist', 'Sometimes resist', 'Rarely resist', 'Never resist'],
+      },
+      {
+        field: 'q40',
+        prompt: 'How clearly do you distinguish between wants and needs?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
     ],
   },
   {
     id: 'I',
-    title: 'Stress & Financial Resilience',
+    title: 'Employment & Career Mindset',
     questions: [
-      { field: 'q41', prompt: 'I remain calm when facing financial challenges.' },
-      { field: 'q42', prompt: 'I look for practical solutions instead of avoiding financial problems.' },
-      { field: 'q43', prompt: 'I seek advice before making difficult financial decisions.' },
-      { field: 'q44', prompt: 'I believe I can recover from temporary financial setbacks.' },
-      { field: 'q45', prompt: 'I adjust my spending when my income changes.' },
+      {
+        field: 'q41',
+        prompt: 'How often do you improve your professional skills?',
+        options: ['Every year', 'Every 2-3 years', 'Occasionally', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q42',
+        prompt: 'How important is long-term employment stability to you?',
+        options: ['Extremely', 'Very', 'Moderate', 'Slight', 'Not important'],
+      },
+      {
+        field: 'q43',
+        prompt: 'How actively do you plan your career growth?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q44',
+        prompt: 'How consistently do you maintain good relationships with employers/clients?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
+      {
+        field: 'q45',
+        prompt: 'How strongly do you strive to maintain a reliable source of income?',
+        options: ['Always', 'Often', 'Sometimes', 'Rarely', 'Never'],
+      },
     ],
   },
   {
     id: 'J',
-    title: 'Social Responsibility & Community Stability',
+    title: 'Additional Situational Discipline',
     questions: [
-      { field: 'q46', prompt: 'I support my family within my financial means.' },
-      { field: 'q47', prompt: 'I fulfill my responsibilities to people who depend on me.' },
-      { field: 'q48', prompt: 'I value maintaining a good reputation in my community.' },
-      { field: 'q49', prompt: 'I avoid actions that could damage my financial credibility.' },
-      { field: 'q50', prompt: 'I believe financial responsibility is an important personal value.' },
+      {
+        field: 'q46',
+        prompt: 'If you receive a salary increase, how do you allocate it?',
+        options: ['Save fully', 'Save most', 'Split save/spend', 'Spend mostly', 'Spend all'],
+      },
+      {
+        field: 'q47',
+        prompt: 'If you lose your job, how quickly do you seek new income?',
+        options: ['Immediately', 'Within 1 month', 'Within 2-3 months', 'Within 6 months', 'No plan'],
+      },
+      {
+        field: 'q48',
+        prompt: 'When offered a loan, how carefully do you compare lenders?',
+        options: ['Always compare thoroughly', 'Often compare', 'Sometimes compare', 'Rarely compare', 'Never compare'],
+      },
+      {
+        field: 'q49',
+        prompt: 'If you face multiple bills, how do you prioritize payments?',
+        options: ['Pay essentials first', 'Pay loans first', 'Pay savings first', 'Pay lifestyle first', 'No prioritization'],
+      },
+      {
+        field: 'q50',
+        prompt: 'When setting financial goals, how often do you review progress?',
+        options: ['Monthly', 'Quarterly', 'Annually', 'Occasionally', 'Never'],
+      },
     ],
   },
 ];
@@ -2803,7 +3007,7 @@ export default function LendingScorecard() {
         <div className="mb-3">
           <h5 className="font-semibold text-sm text-indigo-800 mb-1">Psychometric Assessment Model: 10 Sections / 50 Questions</h5>
           <p className="text-sm text-indigo-700/80">
-            This assessment now captures the full 10-section psychometric model used for backend scoring. Response scale: Strongly Agree = 4, Agree = 3, Neutral = 2, Disagree = 1, Strongly Disagree = 0.
+            This assessment now captures the full 10-section psychometric model used for backend scoring. Scoring is based on answer order: first option = 5 points, second = 4, third = 3, fourth = 2, fifth = 1.
           </p>
         </div>
         <div className="space-y-4">
@@ -2831,7 +3035,7 @@ export default function LendingScorecard() {
                       className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                     >
                       <option value="">Select...</option>
-                      {[...psychometricResponseOptions].reverse().map((option) => (
+                      {question.options.map((option) => (
                         <option key={option} value={option}>
                           {option}
                         </option>
