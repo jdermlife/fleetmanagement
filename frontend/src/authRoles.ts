@@ -11,12 +11,12 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
 }> = [
   {
     value: 'borrower',
-    label: 'Subscriber Applicant / Borrower',
+    label: 'Subscriber Single Applicant / Borrower',
     description: 'Access the lending scorecard steps for assessment and scoring.',
   },
   {
     value: 'lender',
-    label: 'Subscriber Lender',
+    label: 'Subscriber Multiple Applicants / Lender',
     description: 'Access Lending Workspace.',
   },
 ]
