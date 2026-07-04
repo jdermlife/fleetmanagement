@@ -152,6 +152,9 @@ export default function AccountSettingsPage() {
     if (plan.yearly_price && plan.yearly_price > 0) {
       return plan.yearly_price / 12
     }
+    if (plan.minimum_monthly_fee && plan.minimum_monthly_fee > 0) {
+      return plan.minimum_monthly_fee
+    }
     return 0
   }
 

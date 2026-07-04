@@ -17,6 +17,9 @@ function monthlyEquivalent(plan: SubscriptionPlan): number {
   if (plan.yearly_price && plan.yearly_price > 0) {
     return plan.yearly_price / 12
   }
+  if (plan.minimum_monthly_fee && plan.minimum_monthly_fee > 0) {
+    return plan.minimum_monthly_fee
+  }
   return 0
 }
 
@@ -130,10 +133,14 @@ export default function SubscriptionPaymentPage() {
     [paymentMethod],
   )
 
-  const dueAmount = useMemo(
-    () => monthlyEquivalent(selectedSubscriptionPlan ?? selectedPlan ?? (undefined as never)),
-    [selectedPlan, selectedSubscriptionPlan],
-  )
+  const dueAmount = useMemo(() => {
+    const activePlan = selectedSubscriptionPlan ?? selectedPlan
+    if (!activePlan) {
+      return 0
+    }
+
+    return monthlyEquivalent(activePlan)
+  }, [selectedPlan, selectedSubscriptionPlan])
 
   useEffect(() => {
     if (!paymentAmount && dueAmount > 0) {

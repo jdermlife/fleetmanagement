@@ -584,6 +584,8 @@ export interface SubscriptionPlan {
   billing_cycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
   monthly_price: number | null
   yearly_price: number | null
+  minimum_monthly_fee: number | null
+  per_record_fee: number | null
   currency: string
   max_users: number | null
   max_vehicles: number | null
