@@ -1722,6 +1722,15 @@ export default function LendingScorecard() {
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
   const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
   const isBorrowerSubscriber = isBorrowerSubscriberRole(user?.role);
+  const reviewApplicationsPath = (isBorrowerSubscriber || isSingleApplicant)
+    ? '/loan-certification'
+    : '/loan-repository';
+  const queuePath = isBorrowerSubscriber
+    ? '/loan-certification'
+    : '/loan-repository?status=Credit%20Review';
+  const releasedAccountsPath = isBorrowerSubscriber
+    ? '/loan-certification'
+    : '/loan-repository?status=Released';
   const maxVisibleStep = isBorrowerSubscriber ? 8 : 10;
 
   // --- Auto-Calculations (Memoized for Performance) ---
@@ -4756,23 +4765,27 @@ export default function LendingScorecard() {
                 Create New Application
               </button>
               <button
-                onClick={() => navigate('/loan-repository')}
+                onClick={() => navigate(reviewApplicationsPath)}
                 className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
               >
-                Review Applications
+                {isBorrowerSubscriber || isSingleApplicant ? 'Review Application' : 'Review Applications'}
               </button>
-              <button
-                onClick={() => navigate('/loan-repository?status=Credit%20Review')}
-                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
-              >
-                Approval Queue
-              </button>
-              <button
-                onClick={() => navigate('/loan-repository?status=Released')}
-                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
-              >
-                Released Accounts
-              </button>
+              {!isBorrowerSubscriber && (
+                <button
+                  onClick={() => navigate(queuePath)}
+                  className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+                >
+                  Approval Queue
+                </button>
+              )}
+              {!isBorrowerSubscriber && (
+                <button
+                  onClick={() => navigate(releasedAccountsPath)}
+                  className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+                >
+                  Released Accounts
+                </button>
+              )}
             </div>
           </article>
 
