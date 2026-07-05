@@ -17,6 +17,8 @@ import {
   type ProductType,
   type WorkflowStatus,
 } from '../../api/loan';
+import { useAuthorization } from '../../hooks/useAuthorization';
+import { isBorrowerSubscriberRole } from '../../authRoles';
 import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
@@ -37,7 +39,7 @@ interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirt
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditPaymentHistory: string; creditCardRelationshipStatus: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; averageSavingsBalance: number; averageDailyBalance: number; depositRegularity: string; bankingRelationshipTier: string; accountHandling: string; utilityCreditBureauStatus: string; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
 interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
-interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; digitalBankingUsage: string; characterReferences: string; communityReputation: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; instagramProfile: string; xProfile: string; tikTokProfile: string; linkedInProfile: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
+interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; digitalBankingUsage: string; characterReferences: string; communityReputation: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; facebookProfileDateOpened: string; instagramProfile: string; instagramProfileDateOpened: string; xProfile: string; xProfileDateOpened: string; tikTokProfile: string; tikTokProfileDateOpened: string; linkedInProfile: string; linkedInProfileDateOpened: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
 interface FraudVerification { faceMatchScore: number; livenessDetection: string; incomeDocumentsStatus: string; employmentVerificationStatus: string; bankStatementVerificationStatus: string; payrollVerificationStatus: string; bankAccountOwnershipStatus: string; }
 interface DocumentAnalysis { ocrAnalysisStatus: string; }
 interface DeviceRisk { deviceReputation: string; ipAddressRisk: string; deviceConsistency: string; }
@@ -201,7 +203,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
   supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
-  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', digitalBankingUsage: '', characterReferences: '', communityReputation: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', instagramProfile: '', xProfile: '', tikTokProfile: '', linkedInProfile: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
+  enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', digitalBankingUsage: '', characterReferences: '', communityReputation: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', facebookProfileDateOpened: '', instagramProfile: '', instagramProfileDateOpened: '', xProfile: '', xProfileDateOpened: '', tikTokProfile: '', tikTokProfileDateOpened: '', linkedInProfile: '', linkedInProfileDateOpened: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
   fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
   documentAnalysis: { ocrAnalysisStatus: '' },
   deviceRisk: { deviceReputation: '', ipAddressRisk: '', deviceConsistency: '' },
@@ -634,6 +636,164 @@ const normalizeCustomerSince = (value: string) => {
   return parsedDate.toISOString().slice(0, 10);
 };
 
+const getCanonicalCardIssuer = (issuer: string): string | null => {
+  const normalizedIssuer = issuer.trim().toLowerCase();
+
+  if (!normalizedIssuer) {
+    return null;
+  }
+
+  if (normalizedIssuer.includes('visa')) {
+    return 'VISA';
+  }
+
+  if (normalizedIssuer.includes('master')) {
+    return 'MASTERCARD';
+  }
+
+  if (normalizedIssuer.includes('american express') || normalizedIssuer.includes('amex')) {
+    return 'AMEX';
+  }
+
+  if (normalizedIssuer.includes('discover')) {
+    return 'DISCOVER';
+  }
+
+  if (normalizedIssuer.includes('jcb')) {
+    return 'JCB';
+  }
+
+  if (normalizedIssuer.includes('diners')) {
+    return 'DINERS';
+  }
+
+  if (normalizedIssuer.includes('unionpay') || normalizedIssuer.includes('union pay')) {
+    return 'UNIONPAY';
+  }
+
+  return null;
+};
+
+const detectCardIssuerFromNumber = (digits: string): string | null => {
+  if (/^4\d{12}(\d{3}){0,2}$/.test(digits)) {
+    return 'VISA';
+  }
+
+  if (/^(5[1-5]\d{14}|2(2[2-9]\d{12}|[3-6]\d{13}|7[01]\d{12}|720\d{12}))$/.test(digits)) {
+    return 'MASTERCARD';
+  }
+
+  if (/^3[47]\d{13}$/.test(digits)) {
+    return 'AMEX';
+  }
+
+  if (/^(6011\d{12}|65\d{14}|64[4-9]\d{13})$/.test(digits)) {
+    return 'DISCOVER';
+  }
+
+  if (/^35(2[89]|[3-8][0-9])\d{12}$/.test(digits)) {
+    return 'JCB';
+  }
+
+  if (/^(30[0-5]\d{11}|36\d{12}|3[89]\d{12})$/.test(digits)) {
+    return 'DINERS';
+  }
+
+  if (/^62\d{14,17}$/.test(digits)) {
+    return 'UNIONPAY';
+  }
+
+  return null;
+};
+
+const isValidLuhnNumber = (digits: string): boolean => {
+  let checksum = 0;
+  let shouldDouble = false;
+
+  for (let i = digits.length - 1; i >= 0; i -= 1) {
+    let current = Number.parseInt(digits.charAt(i), 10);
+
+    if (shouldDouble) {
+      current *= 2;
+      if (current > 9) {
+        current -= 9;
+      }
+    }
+
+    checksum += current;
+    shouldDouble = !shouldDouble;
+  }
+
+  return checksum % 10 === 0;
+};
+
+const validateCreditCardInformation = (
+  cardIssuer: string,
+  cardNumber: string,
+): string | null => {
+  const normalizedIssuer = cardIssuer.trim();
+  const digits = cardNumber.replace(/\D/g, '');
+
+  if (!normalizedIssuer && !digits) {
+    return null;
+  }
+
+  if (normalizedIssuer && !digits) {
+    return 'Card number is required when card issuer is provided.';
+  }
+
+  if (!normalizedIssuer && digits) {
+    return 'Card issuer is required when card number is provided.';
+  }
+
+  if (digits.length < 13 || digits.length > 19) {
+    return 'Card number must be between 13 and 19 digits.';
+  }
+
+  if (!isValidLuhnNumber(digits)) {
+    return 'Card number failed internal checksum validation.';
+  }
+
+  const issuerFromNumber = detectCardIssuerFromNumber(digits);
+  const issuerFromInput = getCanonicalCardIssuer(normalizedIssuer);
+
+  if (issuerFromInput && issuerFromNumber && issuerFromInput !== issuerFromNumber) {
+    return 'Card issuer does not match the card number prefix.';
+  }
+
+  return null;
+};
+
+const validateBankAccountInformation = (
+  bankBranch: string,
+  accountNumber: string,
+): string | null => {
+  const normalizedBankBranch = bankBranch.trim();
+  const normalizedAccountNumber = accountNumber.replace(/[\s-]/g, '');
+
+  if (!normalizedBankBranch && !normalizedAccountNumber) {
+    return null;
+  }
+
+  if (normalizedBankBranch && !normalizedAccountNumber) {
+    return 'Account number is required when bank/branch is provided.';
+  }
+
+  if (!normalizedBankBranch && normalizedAccountNumber) {
+    return 'Bank/branch is required when account number is provided.';
+  }
+
+  if (!/^\d{8,20}$/.test(normalizedAccountNumber)) {
+    return 'Account number must contain 8 to 20 digits.';
+  }
+
+  if (/^(\d)\1+$/.test(normalizedAccountNumber)) {
+    return 'Account number format appears invalid. Please verify and try again.';
+  }
+
+  return null;
+};
+
 const calculateQuantScoresSummary = (
   application: LoanApplication,
   calculations: ReturnType<typeof calculateLoanMetrics>,
@@ -1053,7 +1213,6 @@ const hasRequiredEnhancedDueDiligence = (
   dueDiligence.sourceOfIncomeVerificationReferences.trim().length > 0 &&
   dueDiligence.lengthOfResidenceConfirmation.trim().length > 0 &&
   dueDiligence.utilityAccountReferences.trim().length > 0 &&
-  dueDiligence.digitalBankingUsage.trim().length > 0 &&
   dueDiligence.characterReferences.trim().length > 0 &&
   dueDiligence.communityReputation.trim().length > 0 &&
   dueDiligence.professionalOrganizationMemberships.trim().length > 0 &&
@@ -1068,14 +1227,6 @@ const hasRequiredEnhancedDueDiligence = (
   dueDiligence.consentOpenBankingDataAccess &&
   dueDiligence.consentEmploymentVerification &&
   dueDiligence.consentIdentityVerification &&
-  dueDiligence.financialBehaviorQuestionnaireResponses.trim().length > 0 &&
-  dueDiligence.riskAppetiteQuestionnaireResponses.trim().length > 0 &&
-  dueDiligence.businessOutlookQuestionnaireResponses.trim().length > 0 &&
-  dueDiligence.futureFinancialPlansQuestionnaire.trim().length > 0 &&
-  dueDiligence.spendingBehaviorQuestionnaire.trim().length > 0 &&
-  dueDiligence.householdBudgetingQuestionnaire.trim().length > 0 &&
-  dueDiligence.emergencyPreparednessQuestionnaire.trim().length > 0 &&
-  dueDiligence.characterAndIntegrityAssessmentAnswers.trim().length > 0 &&
   dueDiligence.communityInvolvementInformation.trim().length > 0 &&
   dueDiligence.referencesFromEmployerOrCommunity.trim().length > 0;
 
@@ -1490,7 +1641,7 @@ const reviewSectionConfigs: Array<{
     fields: [
       { key: 'tin', label: 'TIN' },
       { key: 'sssGsisNumber', label: 'SSS / GSIS Number' },
-      { key: 'idNumber', label: 'ID Number' },
+      { key: 'idNumber', label: 'Other - ID Number' },
       { key: 'issueDate', label: 'Issue Date', type: 'date' },
       { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
     ],
@@ -1542,6 +1693,7 @@ const reviewSectionConfigs: Array<{
 export default function LendingScorecard() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const { user } = useAuthorization();
   const requestedApplicationNo = searchParams.get('applicationNo');
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
@@ -1558,7 +1710,7 @@ export default function LendingScorecard() {
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
   const [loanCreationEntitlement, setLoanCreationEntitlement] = useState<LoanCreationEntitlementResponse | null>(null);
-  const [isLoadingLoanEntitlement, setIsLoadingLoanEntitlement] = useState(false);
+  const [showLoanStatement, setShowLoanStatement] = useState(false);
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
@@ -1566,8 +1718,11 @@ export default function LendingScorecard() {
   const isMotorcycleLoan = formData.loan.productType === 'Motorcycle Loan';
   const isMarried = formData.applicantPersonal.maritalStatus === 'Married';
   const hasCoBorrowerSelected = formData.otherInformation.hasCoBorrower;
+  const isSingleApplicant = !isMarried && !hasCoBorrowerSelected;
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
   const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
+  const isBorrowerSubscriber = isBorrowerSubscriberRole(user?.role);
+  const maxVisibleStep = isBorrowerSubscriber ? 8 : 10;
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -1576,6 +1731,22 @@ export default function LendingScorecard() {
   const automatedScorecard = useMemo(
     () => calculateAutomatedScorecard(formData, calculations),
     [calculations, formData],
+  );
+  const creditCardValidationError = useMemo(
+    () =>
+      validateCreditCardInformation(
+        formData.bankingRelationships.creditCardIssuer,
+        formData.bankingRelationships.creditCardNumber,
+      ),
+    [formData.bankingRelationships.creditCardIssuer, formData.bankingRelationships.creditCardNumber],
+  );
+  const bankAccountValidationError = useMemo(
+    () =>
+      validateBankAccountInformation(
+        formData.bankingRelationships.bankBranch,
+        formData.bankingRelationships.accountNumber,
+      ),
+    [formData.bankingRelationships.bankBranch, formData.bankingRelationships.accountNumber],
   );
 
   const creditRiskInsights = useMemo(
@@ -1593,6 +1764,62 @@ export default function LendingScorecard() {
     () => calculateAiRecommendation(formData, calculations, automatedScorecard.total),
     [calculations, automatedScorecard.total, formData],
   );
+
+  const formatCurrency = useCallback(
+    (amount: number) =>
+      `PHP ${amount.toLocaleString(undefined, {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2,
+      })}`,
+    [],
+  );
+
+  const loanStatementRows = useMemo(() => {
+    const principal = Math.max(0, formData.loan.amount || 0);
+    const months = Math.max(1, Math.round(formData.loan.termMonths || 1));
+    const monthlyRate = Math.max(0, formData.loan.interestRate || 0) / 100 / 12;
+
+    if (principal <= 0) {
+      return [] as Array<{
+        periodLabel: string;
+        beginningBalance: number;
+        principalPayment: number;
+        interestPayment: number;
+        endingBalance: number;
+      }>;
+    }
+
+    const monthlyPayment =
+      monthlyRate === 0
+        ? principal / months
+        : (principal * monthlyRate) / (1 - Math.pow(1 + monthlyRate, -months));
+
+    const startDate = new Date();
+    let runningBalance = principal;
+
+    return Array.from({ length: months }, (_, index) => {
+      const rowDate = new Date(startDate.getFullYear(), startDate.getMonth() + index, 1);
+      const periodLabel = rowDate.toLocaleString(undefined, {
+        month: 'short',
+        year: 'numeric',
+      });
+
+      const interestPayment = monthlyRate === 0 ? 0 : runningBalance * monthlyRate;
+      const principalPayment = Math.min(monthlyPayment - interestPayment, runningBalance);
+      const endingBalance = Math.max(runningBalance - principalPayment, 0);
+
+      const row = {
+        periodLabel,
+        beginningBalance: runningBalance,
+        principalPayment,
+        interestPayment,
+        endingBalance,
+      };
+
+      runningBalance = endingBalance;
+      return row;
+    });
+  }, [formData.loan.amount, formData.loan.interestRate, formData.loan.termMonths]);
 
   // --- Handlers ---
   type EditableSection =
@@ -2148,8 +2375,10 @@ export default function LendingScorecard() {
   };
 
   const handleStepChange = async (nextStep: number) => {
+    const boundedNextStep = Math.max(1, Math.min(nextStep, maxVisibleStep));
+
     if (nextStep !== 8) {
-      setStep(nextStep);
+      setStep(boundedNextStep);
       return;
     }
 
@@ -2168,9 +2397,15 @@ export default function LendingScorecard() {
     } catch (error) {
       setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
     } finally {
-      setStep(nextStep);
+      setStep(boundedNextStep);
     }
   };
+
+  useEffect(() => {
+    if (isBorrowerSubscriber && step > maxVisibleStep) {
+      setStep(maxVisibleStep);
+    }
+  }, [isBorrowerSubscriber, maxVisibleStep, step]);
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
     invalidateBackendScoring();
@@ -2300,6 +2535,11 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
   ): Promise<boolean> => {
+    if (creditCardValidationError || bankAccountValidationError) {
+      setSaveMessage(creditCardValidationError || bankAccountValidationError || 'Validation failed.');
+      return false;
+    }
+
     if (!hasPersistedRecord) {
       const entitlement = loanCreationEntitlement ?? await (async () => {
         try {
@@ -2315,8 +2555,7 @@ export default function LendingScorecard() {
 
       if (entitlement && !entitlement.allowed) {
         setSaveMessage(
-          entitlement.message ||
-            `Payment required before creating a new record. Amount due this month: PHP ${entitlement.amount_due_this_month.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
+          'New record creation is currently unavailable.',
         );
         return false;
       }
@@ -2350,6 +2589,11 @@ export default function LendingScorecard() {
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
   ): Promise<boolean> => {
+    if (creditCardValidationError || bankAccountValidationError) {
+      setSaveMessage(creditCardValidationError || bankAccountValidationError || 'Validation failed.');
+      return false;
+    }
+
     if (
       newStatus !== 'Draft' &&
       (!enhancedDueDiligenceComplete || !enhancedSupportingDocumentsComplete)
@@ -2444,14 +2688,11 @@ export default function LendingScorecard() {
   }, [loadApplication, requestedApplicationNo]);
 
   const refreshLoanCreationEntitlement = useCallback(async () => {
-    setIsLoadingLoanEntitlement(true);
     try {
       const entitlement = await fetchLoanCreationEntitlement();
       setLoanCreationEntitlement(entitlement);
     } catch {
       setLoanCreationEntitlement(null);
-    } finally {
-      setIsLoadingLoanEntitlement(false);
     }
   }, []);
 
@@ -2790,12 +3031,20 @@ export default function LendingScorecard() {
     );
   };
 
-  const renderInput = (section: EditableSection, field: string, label: string, type = 'text', disabled = false) => (
+  const renderInput = (
+    section: EditableSection,
+    field: string,
+    label: string,
+    type = 'text',
+    disabled = false,
+    placeholder?: string,
+  ) => (
     <div className="mb-3">
       <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">{label}</label>
       <input
         type={type}
         disabled={disabled}
+        placeholder={placeholder}
         value={getInputValue(section, field, type)}
         onChange={(e) => updateField(section, field, type === 'number' ? parseFloat(e.target.value) || 0 : e.target.value)}
         className={`loan-form-input w-full px-3 py-2 border rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${disabled ? 'bg-gray-100 text-gray-500' : 'border-gray-300'}`}
@@ -2953,9 +3202,9 @@ export default function LendingScorecard() {
           {usesStructuredRetailCriteria && renderInput('employmentInformation', 'employerBusinessYears', 'Years in Business of Employer', 'number')}
           {renderInput('contactInformation', 'mobileYearsUsed', 'Mobile Number Years in Use')}
           {renderInput('contactInformation', 'emailYearsUsed', 'Email Address Years in Use')}
-          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person and Contact No.', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information and Contact No.', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information and Contact No.', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
@@ -2968,46 +3217,36 @@ export default function LendingScorecard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {usesStructuredRetailCriteria && renderSelect('enhancedDueDiligence', 'lifestyleIndicator', 'Lifestyle', ['Respectable lifestyle (no gambling, drinking, etc.)', 'Signs of adverse characteristics'])}
           {(isPersonalLoan || isMotorcycleLoan) && renderSelect('enhancedDueDiligence', 'secondaryIncomeProfile', 'Secondary Source of Income', ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'])}
-          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References (Optional)', 3)}
-          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References and CONTACT NUMBERS', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References and CONTACT NUMBERS', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References and CONTACT NUMBERS (Optional)', 3)}
+          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community and CONTACT NUMBERS', 3, true)}
           {renderSelect('enhancedDueDiligence', 'communityReputation', 'Community Reputation', ['Excellent references', 'Good references', 'Average', 'Limited information', 'Adverse information'])}
           {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
-          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile')}
-          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile')}
-          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile')}
-          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile')}
-          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile')}
+          {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile Links')}
+          {renderInput('enhancedDueDiligence', 'facebookProfileDateOpened', 'Facebook Profile Date Opened', 'date')}
+          {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile Links')}
+          {renderInput('enhancedDueDiligence', 'instagramProfileDateOpened', 'Instagram Profile Date Opened', 'date')}
+          {renderInput('enhancedDueDiligence', 'xProfile', 'X / Twitter Profile Links')}
+          {renderInput('enhancedDueDiligence', 'xProfileDateOpened', 'X / Twitter Profile Date Opened', 'date')}
+          {renderInput('enhancedDueDiligence', 'tikTokProfile', 'TikTok Profile Links')}
+          {renderInput('enhancedDueDiligence', 'tikTokProfileDateOpened', 'TikTok Profile Date Opened', 'date')}
+          {renderInput('enhancedDueDiligence', 'linkedInProfile', 'LinkedIn Profile Links')}
+          {renderInput('enhancedDueDiligence', 'linkedInProfileDateOpened', 'LinkedIn Profile Date Opened', 'date')}
           {renderTextarea('enhancedDueDiligence', 'otherSocialMediaLinks', 'Other Social Media Links', 2)}
           {renderInput('enhancedDueDiligence', 'businessWebsite', 'Business Website (If Self-Employed / Optional)')}
         </div>
       </div>
 
-      <div className="rounded-lg border border-slate-200 bg-slate-50 p-4">
-        <h5 className="font-semibold text-sm text-slate-700 mb-3">Questionnaires and Behavioral Assessment</h5>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {renderSelect('enhancedDueDiligence', 'digitalBankingUsage', 'Digital Banking Usage', ['Frequent secure usage - Daily to weekly', 'Regular usage-Monthly', 'Occasional', 'Rare', 'None'])}
-          {renderTextarea('enhancedDueDiligence', 'financialBehaviorQuestionnaireResponses', 'Financial Behavior Questionnaire Responses', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'riskAppetiteQuestionnaireResponses', 'Risk Appetite Questionnaire Responses', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'businessOutlookQuestionnaireResponses', 'Business Outlook Questionnaire Responses', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'futureFinancialPlansQuestionnaire', 'Future Financial Plans Questionnaire', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'spendingBehaviorQuestionnaire', 'Spending Behavior Questionnaire', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'householdBudgetingQuestionnaire', 'Household Budgeting Questionnaire', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'emergencyPreparednessQuestionnaire', 'Emergency Preparedness Questionnaire', 4, true)}
-          {renderTextarea('enhancedDueDiligence', 'characterAndIntegrityAssessmentAnswers', 'Character and Integrity Assessment Answers', 4, true)}
-        </div>
-      </div>
-
       <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4">
         <div className="mb-3">
-          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Psychometric Assessment Model: 10 Sections / 50 Questions</h5>
+          <h5 className="font-semibold text-sm text-indigo-800 mb-1">Credit Values Assessment Model</h5>
           <p className="text-sm text-indigo-700/80">
-            This assessment now captures the full 10-section psychometric model used for backend scoring. Scoring is based on answer order: first option = 5 points, second = 4, third = 3, fourth = 2, fifth = 1.
+            This assessment must be completed in one instance. No saving and reverting back.
           </p>
         </div>
         <div className="space-y-4">
@@ -3289,7 +3528,7 @@ export default function LendingScorecard() {
         : workflowActionState === 'error'
           ? `Retry ${selectedWorkflowAction}`
           : `Save as ${selectedWorkflowAction}`;
-  const stepLabels = [
+  const allStepLabels = [
     'Product Selection',
     'Applicant Info',
     'Employment, Income and Credit Values',
@@ -3301,6 +3540,7 @@ export default function LendingScorecard() {
     'Approval',
     'Release & Booking',
   ];
+  const stepLabels = isBorrowerSubscriber ? allStepLabels.slice(0, maxVisibleStep) : allStepLabels;
   const currentStepLabel = stepLabels[Math.max(0, step - 1)] ?? 'Lending Workflow';
   const completionPercent = Math.round((step / stepLabels.length) * 100);
 
@@ -3377,23 +3617,6 @@ export default function LendingScorecard() {
           {isLoadingApplication && (
             <div className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
               Loading application record...
-            </div>
-          )}
-
-          {!hasPersistedRecord && loanCreationEntitlement && (
-            <div
-              className={`mb-4 rounded-md border p-3 text-sm ${
-                loanCreationEntitlement.allowed
-                  ? 'border-emerald-200 bg-emerald-50 text-emerald-800'
-                  : 'border-amber-300 bg-amber-50 text-amber-900'
-              }`}
-            >
-              <p className="font-semibold">
-                {isLoadingLoanEntitlement ? 'Checking subscription entitlement...' : loanCreationEntitlement.message}
-              </p>
-              <p className="mt-1 text-xs opacity-90">
-                Free usage: {Math.max(0, loanCreationEntitlement.free_limit - loanCreationEntitlement.records_in_free_window)} remaining out of {loanCreationEntitlement.free_limit} within {loanCreationEntitlement.free_days} day(s). This month due: PHP {loanCreationEntitlement.amount_due_this_month.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.
-              </p>
             </div>
           )}
 
@@ -3603,7 +3826,7 @@ export default function LendingScorecard() {
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 2: Applicant Information</h3>
               {renderInput('borrower', 'fullName', 'Full Legal Name (Auto-generated)', 'text', true)}
               {renderInput('borrower', 'email', 'Email Address', 'email')}
-              {renderInput('borrower', 'govId', 'Government ID Number')}
+              {renderInput('borrower', 'govId', 'Government ID Number', 'text', false, 'issuer / ID number/ expiration date')}
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Additional Personal Information</h4>
               </div>
@@ -3640,7 +3863,7 @@ export default function LendingScorecard() {
                   className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="No Co-Borrower">No Co-Borrower</option>
-                  <option value="With Co-Borrower">With Co-Borrower</option>
+                  <option value="With Co-Borrower">With Co-Borrower- Fill out Details in Step 4</option>
                 </select>
               </div>
               {renderInput('applicantPersonal', 'mothersMaidenName', "Mother's Maiden Name")}
@@ -3648,7 +3871,7 @@ export default function LendingScorecard() {
               {renderInput('contactInformation', 'homePhoneNumber', 'Home Phone Number')}
               {renderInput('governmentIds', 'tin', 'TIN')}
               {renderInput('governmentIds', 'sssGsisNumber', 'SSS / GSIS Number')}
-              {renderInput('governmentIds', 'idNumber', 'ID Number')}
+              {renderInput('governmentIds', 'idNumber', 'Other - ID Number')}
               {renderInput('governmentIds', 'issueDate', 'Issue Date', 'date')}
               {renderInput('governmentIds', 'expiryDate', 'Expiry Date', 'date')}
               {renderInput('addressInformation', 'presentAddress', 'Present Address')}
@@ -3703,7 +3926,7 @@ export default function LendingScorecard() {
               {renderInput('employmentInformation', 'pensionIncome', 'Pension Income', 'number')}
               <div className="col-span-full">
                 {renderEnhancedDueDiligenceEmploymentSection()}
-                {renderFraudVerificationSection()}
+                {!(isBorrowerSubscriber || isSingleApplicant) && renderFraudVerificationSection()}
               </div>
             </div>
           )}
@@ -3802,8 +4025,13 @@ export default function LendingScorecard() {
               <div className="md:col-span-2 border-b pb-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Existing Credit Card Information</h4>
               </div>
-              {renderInput('bankingRelationships', 'creditCardIssuer', 'Card Issuer')}
+              {renderSelect('bankingRelationships', 'creditCardIssuer', 'Card Issuer', ['Visa', 'Mastercard', 'American Express', 'Discover', 'JCB', 'Diners Club', 'UnionPay'])}
               {renderInput('bankingRelationships', 'creditCardNumber', 'Card Number')}
+              {creditCardValidationError && (
+                <div className="md:col-span-2 -mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                  Internal card verification: {creditCardValidationError}
+                </div>
+              )}
               {renderInput('bankingRelationships', 'creditLimit', 'Credit Limit', 'number')}
               {renderInput('bankingRelationships', 'outstandingBalance', 'Outstanding Balance', 'number')}
               {renderInput('bankingRelationships', 'memberSince', 'Member Since', 'date')}
@@ -3813,6 +4041,11 @@ export default function LendingScorecard() {
               {renderInput('bankingRelationships', 'bankBranch', 'Bank / Branch')}
               {renderInput('bankingRelationships', 'accountType', 'Account Type')}
               {renderInput('bankingRelationships', 'accountNumber', 'Account Number')}
+              {bankAccountValidationError && (
+                <div className="md:col-span-2 -mt-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
+                  Internal bank verification: {bankAccountValidationError}
+                </div>
+              )}
               {renderInput('bankingRelationships', 'currentBalance', 'Current Balance', 'number')}
               <div className="md:col-span-2 border-t pt-4 mt-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Existing Loan Information</h4>
@@ -4020,50 +4253,52 @@ export default function LendingScorecard() {
                     />
                   </div>
                 </div>
-                <div className="overflow-x-auto">
-                  <div className="flex min-w-max gap-2">
-                    {documentPreparationChecklist.map((item) => (
-                      <div
-                        key={item.label}
-                        className={`min-w-[128px] rounded-lg border px-3 py-2 text-center ${
-                          item.complete
-                            ? 'border-emerald-200 bg-white text-emerald-700'
-                            : 'border-rose-200 bg-white text-rose-700'
-                        }`}
-                      >
-                        <div className="text-base font-bold leading-none">
-                          {item.complete ? '✓' : '✕'}
-                        </div>
-                        <div className="mt-1 text-[11px] font-semibold uppercase tracking-[0.14em]">
+                <div className="grid grid-cols-2 gap-2">
+                  {documentPreparationChecklist.map((item) => (
+                    <div
+                      key={item.label}
+                      className={`rounded-lg border px-3 py-2 ${
+                        item.complete
+                          ? 'border-emerald-200 bg-white text-emerald-700'
+                          : 'border-amber-300 bg-amber-50 text-amber-800'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="text-[10px] font-semibold uppercase tracking-[0.12em]">
                           {item.label}
                         </div>
-                        <div className="mt-1 text-[10px] text-slate-500">
-                          {item.optional ? 'Optional' : item.complete ? 'Complete' : 'Incomplete'}
+                        <div className="text-sm font-bold leading-none">
+                          {item.complete ? '✓' : '✕'}
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="mt-1 text-[10px] text-slate-600">
+                        {item.optional ? 'Optional' : item.complete ? 'Complete' : 'Incomplete'}
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
-              <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
-                <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
-                  <svg
-                    className="mb-2 text-gray-400"
-                    style={{ width: 40, height: 40, maxWidth: 40, maxHeight: 40 }}
-                    fill="none"
-                    stroke="currentColor"
-                    viewBox="0 0 24 24"
-                    aria-hidden="true"
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
-                  </svg>
-                  <span className="text-sm font-medium text-blue-600">Click to upload documents</span>
-                  <span className="text-xs text-gray-500 mt-1">Payslips, bank statements, and IDs as image files only</span>
-                </label>
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
+                  <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
+                  <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
+                    <svg
+                      className="mb-2 text-gray-400"
+                      style={{ width: 40, height: 40, maxWidth: 40, maxHeight: 40 }}
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                      aria-hidden="true"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path>
+                    </svg>
+                    <span className="text-sm font-medium text-blue-600">Click to upload documents</span>
+                    <span className="text-xs text-gray-500 mt-1">Payslips, bank statements, and IDs as image files only</span>
+                  </label>
+                </div>
               </div>
               
-              <div className="space-y-2 mt-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4 space-y-2 mt-4">
                 {formData.documents.map(doc => (
                   <div key={doc.id} className="flex items-center justify-between bg-white border border-gray-200 p-3 rounded-md shadow-sm">
                     <div className="flex items-center gap-3">
@@ -4085,9 +4320,9 @@ export default function LendingScorecard() {
                 ))}
               </div>
 
-              <div className="border-t pt-4 mt-4">
+              <div className="rounded-lg border border-slate-200 bg-white p-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Required Supporting Documents</h4>
-                <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid grid-cols-2 gap-2">
                   {[
                     ['supportingDocuments', 'validGovernmentId', 'Valid Government ID'],
                     ['supportingDocuments', 'passportIfApplicable', 'Passport (if applicable)'],
@@ -4124,7 +4359,14 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <div className="space-y-6">
-              <div className="flex justify-end">
+              <div className="flex flex-wrap justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setShowLoanStatement((prev) => !prev)}
+                  className="loan-inline-button loan-inline-button-primary"
+                >
+                  {showLoanStatement ? 'Hide Loan Statement' : 'Generate Loan Statement'}
+                </button>
                 <button
                   type="button"
                   onClick={handleOpenCertification}
@@ -4134,34 +4376,34 @@ export default function LendingScorecard() {
                   Request Certification
                 </button>
               </div>
-              <div className="rounded-xl border border-slate-200 bg-white p-6">
-                <h3 className="mb-4 text-lg font-bold text-blue-900">Step 8: FILScore</h3>
-                <div className="grid gap-4 md:grid-cols-2">
+              <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
+                <h3 className="mb-4 text-lg font-bold text-amber-900">Step 8: FILScore</h3>
+                <div className="grid grid-cols-2 gap-4">
                   {executiveSummaryItems.map((item) => (
                     <div
                       key={item.label}
-                      className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
+                      className="rounded-md border border-amber-300 bg-amber-50 p-4"
                     >
-                      <p className="text-sm font-bold text-blue-800">{item.label}</p>
-                      <p className="mt-3 text-3xl font-bold leading-none text-blue-900">
+                      <p className="text-sm font-bold text-amber-800">{item.label}</p>
+                      <p className="mt-3 text-3xl font-bold leading-none text-amber-900">
                         {item.value}
                       </p>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 border-t border-slate-200 pt-6">
-                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-800">
+                <div className="border-t border-slate-200 pt-6">
+                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
                     Scoring Signals
                   </h4>
-                  <div className="grid gap-4 md:grid-cols-2">
+                  <div className="grid grid-cols-2 gap-4">
                     {scoringSignalItems.map((item) => (
                       <div
                         key={item.label}
-                        className="rounded-md border border-blue-200 bg-blue-50/40 p-4"
+                        className="rounded-md border border-amber-300 bg-amber-50 p-4"
                       >
-                        <p className="text-sm font-bold text-blue-800">{item.label}</p>
-                        <p className="mt-3 text-2xl font-bold leading-none text-blue-900">
+                        <p className="text-sm font-bold text-amber-800">{item.label}</p>
+                        <p className="mt-3 text-2xl font-bold leading-none text-amber-900">
                           {item.value}
                         </p>
                       </div>
@@ -4169,11 +4411,49 @@ export default function LendingScorecard() {
                   </div>
                 </div>
 
-                <div className="mt-6 border-t border-slate-200 pt-6">
-                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-blue-800">
+                {showLoanStatement && (
+                  <div className="border-t border-slate-200 pt-6">
+                    <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
+                      Loan Statement
+                    </h4>
+
+                    <div className="mb-3 rounded-md border border-amber-300 bg-amber-50 p-4 text-sm text-slate-700">
+                      <p><strong>Applicant / Borrower:</strong> {borrowerDisplayName}</p>
+                      <p><strong>Product:</strong> {formData.loan.productType}</p>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-md border border-slate-200">
+                      <table className="min-w-full bg-white">
+                        <thead>
+                          <tr>
+                            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Month / Year</th>
+                            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Total Balance Prior</th>
+                            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Principal and Interest for Payment</th>
+                            <th className="px-3 py-2 text-xs font-bold uppercase tracking-wide text-slate-600">Remaining Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {loanStatementRows.map((row, index) => (
+                            <tr key={`${row.periodLabel}-${index}`}>
+                              <td className="px-3 py-2 text-sm text-slate-700">{row.periodLabel}</td>
+                              <td className="px-3 py-2 text-sm text-slate-700">{formatCurrency(row.beginningBalance)}</td>
+                              <td className="px-3 py-2 text-sm text-slate-700">
+                                Principal: {formatCurrency(row.principalPayment)} | Interest: {formatCurrency(row.interestPayment)}
+                              </td>
+                              <td className="px-3 py-2 text-sm text-slate-700">{formatCurrency(row.endingBalance)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                )}
+
+                <div className="border-t border-slate-200 pt-6">
+                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
                     Final Workflow Actions
                   </h4>
-                  <div className="rounded-md border border-blue-200 bg-blue-50/40 p-4">
+                  <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
                     <div className="grid gap-4">
                       <div className="grid gap-4 md:grid-cols-[220px_minmax(0,1fr)] md:items-end">
                         <div>
@@ -4251,7 +4531,7 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {step === 9 && (
+          {!isBorrowerSubscriber && step === 9 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -4299,7 +4579,7 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {step === 10 && (
+          {!isBorrowerSubscriber && step === 10 && (
             <div className="space-y-4">
               <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
               <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
@@ -4456,7 +4736,7 @@ export default function LendingScorecard() {
                   {isSaving ? 'Processing Draft...' : 'Save Draft'}
                 </button>
                 <button
-                  onClick={() => void handleStepChange(Math.min(step + 1, 10))}
+                  onClick={() => void handleStepChange(Math.min(step + 1, maxVisibleStep))}
                   className={`${footerButtonClass} loan-footer-button-primary bg-blue-600 text-white shadow-sm hover:bg-blue-700`}
                 >
                   Next Step

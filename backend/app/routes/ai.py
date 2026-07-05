@@ -394,7 +394,10 @@ async def send_minutes(data: dict):
     }
 
 
-@router.post("/ai/loan-documents/parse", dependencies=[Depends(require_roles("Admin", "Manager"))])
+@router.post(
+    "/ai/loan-documents/parse",
+    dependencies=[Depends(require_roles("Admin", "Manager", "Subscriber", "subscriber_borrower", "borrower"))],
+)
 async def parse_loan_document(
     file: UploadFile = File(...),
     current_user: CurrentUser | None = Depends(get_current_user),
