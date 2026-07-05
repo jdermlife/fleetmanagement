@@ -10,7 +10,7 @@ import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
-const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/loan-certification'])
+const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard'])
 
 function getMostRecentBorrowerApplication(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
   if (records.length === 0) {
@@ -37,8 +37,15 @@ function getMostRecentBorrowerApplication(records: LoanApplicationRecord[]): Loa
 }
 
 async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> {
-  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
+  if (redirectTo.startsWith('/lending-scorecard')) {
     return redirectTo
+  }
+
+  const [, redirectQuery = ''] = redirectTo.split('?', 2)
+  const redirectApplicationNo = new URLSearchParams(redirectQuery).get('applicationNo')
+
+  if (redirectApplicationNo) {
+    return `/lending-scorecard?applicationNo=${encodeURIComponent(redirectApplicationNo)}`
   }
 
   try {
@@ -49,7 +56,11 @@ async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> 
       return `/lending-scorecard?applicationNo=${encodeURIComponent(mostRecentApplication.application_no)}`
     }
   } catch {
-    // Fallback to a fresh draft flow when the lookup fails.
+    // Fallback to scorecard when the lookup fails.
+  }
+
+  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
+    return redirectTo
   }
 
   return '/lending-scorecard'
