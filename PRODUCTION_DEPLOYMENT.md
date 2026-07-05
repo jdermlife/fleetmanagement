@@ -30,7 +30,10 @@ This checklist outlines the steps and verification points to move the Fleet Mana
 1. Generate strong SECRET_KEY (32+ chars) for JWT signing
 2. Obtain or provision PostgreSQL database URL with credentials
 3. Generate strong API keys for external services (OpenAI, email, etc.)
-4. Store all secrets in secure vault (do not commit to code)
+4. Configure social sign-in credentials:
+  - GOOGLE_OAUTH_CLIENT_ID
+  - APPLE_OAUTH_CLIENT_ID
+5. Store all secrets in secure vault (do not commit to code)
 
 ### Environment Configuration
 
@@ -55,6 +58,11 @@ export RATE_LIMIT_WINDOW="60"
 # CORS & Origins
 export FRONTEND_ORIGINS="https://yourdomain.com,https://app.yourdomain.com"
 
+# Social Sign-In
+export GOOGLE_OAUTH_CLIENT_ID="<your-google-web-client-id>"
+export APPLE_OAUTH_CLIENT_ID="<your-apple-service-id>"
+export APPLE_JWKS_CACHE_TTL_SECONDS="3600"
+
 # AI Services (if enabled)
 export OPENAI_API_KEY="<your-openai-api-key>"
 
@@ -68,7 +76,21 @@ export SMTP_PASSWORD="<your-app-password>"
 #### Frontend (.env.production)
 ```
 VITE_API_URL=https://api.yourdomain.com
+VITE_GOOGLE_CLIENT_ID=<your-google-web-client-id>
+VITE_APPLE_CLIENT_ID=<your-apple-service-id>
+VITE_APPLE_REDIRECT_URI=https://app.yourdomain.com
 ```
+
+### Apple Sign-In Production Checklist
+
+1. Apple Developer Console: Service ID created and Sign in with Apple enabled.
+2. Return URL registered to the production frontend domain (matches VITE_APPLE_REDIRECT_URI).
+3. APPLE_OAUTH_CLIENT_ID and VITE_APPLE_CLIENT_ID are identical.
+4. Frontend and backend deployed with updated environment variables.
+5. Functional verification completed:
+  - Existing Apple user can sign in.
+  - First-time Apple sign-in without subscriber type is rejected with 400.
+  - First-time Apple sign-in succeeds after selecting subscriber type and lender data-sharing preference.
 
 ### Infrastructure
 
@@ -138,6 +160,10 @@ npm run build
    - Manager cannot perform admin operations
 4. Loan repository list pagination works with `limit` and `offset` parameters
 5. All critical workflows execute without errors
+6. Social sign-in verification:
+  - Google sign-in works for existing users.
+  - Apple sign-in works for existing users.
+  - First-time social sign-in enforces subscriber type and lender data-sharing preference.
 
 ### Performance Baseline
 - Record p50, p95, p99 latencies for key endpoints

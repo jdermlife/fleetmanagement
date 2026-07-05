@@ -60,6 +60,8 @@ The backend runs on `http://localhost:5000`.
    VITE_PAYMENT_MAYA_NAME=Your Maya Name
    VITE_PAYMENT_SUPPORT_EMAIL=support@example.com
    VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id
+   VITE_APPLE_CLIENT_ID=your-apple-service-id
+   VITE_APPLE_REDIRECT_URI=http://localhost:5173
    ```
 4. Start the dev server: `npm run dev`
 
@@ -98,6 +100,20 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 - **Manager**: Read/write vehicles, fuel logs, drivers, scorecards, audit logs
 - **Driver**: Read-only access to vehicles and fuel logs
 - **Viewer**: Read-only access to vehicles and fuel logs
+
+### Apple Sign-In Setup
+
+To enable Apple Sign-In in the web UI:
+
+1. Create an Apple Service ID in Apple Developer Console.
+2. Enable Sign in with Apple for the Service ID.
+3. Register your frontend Return URL (for example `http://localhost:5173`).
+4. Set frontend env values:
+   - `VITE_APPLE_CLIENT_ID=your-apple-service-id`
+   - `VITE_APPLE_REDIRECT_URI=http://localhost:5173`
+5. Ensure backend `APPLE_OAUTH_CLIENT_ID` matches `VITE_APPLE_CLIENT_ID`.
+
+For first-time Apple sign-in, users must select subscriber type and lender data-sharing preference.
 
 ## API Endpoints
 
@@ -140,6 +156,9 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 | VITE_PAYMENT_MAYA_NUMBER | Maya number shown on the subscription payment page | Placeholder |
 | VITE_PAYMENT_MAYA_NAME | Maya account name shown on the subscription payment page | Placeholder |
 | VITE_PAYMENT_SUPPORT_EMAIL | Support contact shown on the subscription payment page | Placeholder |
+| VITE_GOOGLE_CLIENT_ID | Google OAuth Web client ID for Google Sign-In | Placeholder |
+| VITE_APPLE_CLIENT_ID | Apple Service ID for Apple Sign-In | Placeholder |
+| VITE_APPLE_REDIRECT_URI | Apple Sign-In redirect URI registered in Apple console | Placeholder |
 
 ## Security Notes
 

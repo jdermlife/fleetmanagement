@@ -3,7 +3,8 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { getErrorMessage, login, loginWithGoogle, register } from '../../api'
+import { getErrorMessage, login, loginWithApple, loginWithGoogle, register } from '../../api'
+import { requestAppleSignInToken } from '../../appleAuth'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
@@ -17,7 +18,10 @@ function getDefaultHomePathForRole(role?: string | null) {
 export default function RegisterPage() {
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || ''
+  const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim() || undefined
   const isGoogleConfigured = googleClientId.length > 0
+  const isAppleConfigured = appleClientId.length > 0
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -105,6 +109,47 @@ export default function RegisterPage() {
       navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleAppleSignUp = async () => {
+    if (!subscriberType) {
+      setMessage('Select borrower or lender before continuing with Apple.')
+      return
+    }
+
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setMessage('Review and accept the terms and privacy disclosures to continue.')
+      return
+    }
+
+    if (!lenderDataSharingChoice) {
+      setMessage('Choose your lender data-sharing preference before continuing with Apple.')
+      return
+    }
+
+    if (!isAppleConfigured) {
+      setMessage('Apple Sign-Up is available when configured.')
+      return
+    }
+
+    setIsSaving(true)
+    setMessage('')
+    try {
+      const appleTokenResult = await requestAppleSignInToken({
+        clientId: appleClientId,
+        redirectURI: appleRedirectUri,
+      })
+      const loginResponse = await loginWithApple({
+        idToken: appleTokenResult.idToken,
+        subscriberType,
+        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+      })
+      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
+    } catch (error) {
+      setMessage(getErrorMessage(error, 'Unable to continue with Apple right now.'))
     } finally {
       setIsSaving(false)
     }
@@ -274,6 +319,21 @@ export default function RegisterPage() {
         ) : null}
         {!isGoogleConfigured ? (
           <p className="status-message">Google Sign-Up is available when configured.</p>
+        ) : null}
+
+        <p className="auth-role-copy">Or create your account using Apple.</p>
+        <button
+          type="button"
+          className="auth-link-button"
+          onClick={() => {
+            void handleAppleSignUp()
+          }}
+          disabled={isSaving || !isAppleConfigured}
+        >
+          Continue with Apple
+        </button>
+        {!isAppleConfigured ? (
+          <p className="status-message">Apple Sign-Up is available when configured.</p>
         ) : null}
       </div>
 

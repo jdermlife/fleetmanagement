@@ -218,6 +218,12 @@ export interface GoogleLoginRequest {
   lenderDataSharingConsent?: boolean
 }
 
+export interface AppleLoginRequest {
+  idToken: string
+  subscriberType?: 'borrower' | 'lender'
+  lenderDataSharingConsent?: boolean
+}
+
 export interface LoginResponse {
   token: string
   user: AuthUser
@@ -320,6 +326,34 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 
   if (!token || !user) {
     throw new Error('Unexpected Google login response received from the backend.')
+  }
+
+  setAuthToken(token)
+  currentUserCache = normalizeAuthUser(user)
+  currentUserRequest = null
+
+  return {
+    token,
+    user: currentUserCache,
+  }
+}
+
+export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
+  const response = await api.post('/api/auth/apple-token', {
+    id_token: payload.idToken,
+    subscriber_type: payload.subscriberType,
+    lender_data_sharing_consent: payload.lenderDataSharingConsent,
+  })
+  const responseData = response.data as Record<string, unknown>
+  const token =
+    (typeof responseData.token === 'string' ? responseData.token : null) ??
+    (typeof responseData.access_token === 'string'
+      ? responseData.access_token
+      : null)
+  const user = responseData.user as Record<string, unknown> | undefined
+
+  if (!token || !user) {
+    throw new Error('Unexpected Apple login response received from the backend.')
   }
 
   setAuthToken(token)

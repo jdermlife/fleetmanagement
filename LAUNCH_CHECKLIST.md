@@ -74,6 +74,27 @@
 - **Owner Sign-off**: _________________ Date: _______
 - [ ] COMPLETE
 
+### 1.6 Configure Social Sign-In Identifiers
+- **Owner**: Security/DevOps Lead
+- **Task**: Configure Google and Apple sign-in identifiers for backend verification and frontend providers
+- **Required Values**:
+  - `GOOGLE_OAUTH_CLIENT_ID`
+  - `APPLE_OAUTH_CLIENT_ID`
+  - `VITE_GOOGLE_CLIENT_ID`
+  - `VITE_APPLE_CLIENT_ID`
+  - `VITE_APPLE_REDIRECT_URI`
+- **Validation**:
+  ```bash
+  echo $GOOGLE_OAUTH_CLIENT_ID
+  echo $APPLE_OAUTH_CLIENT_ID
+  echo $VITE_GOOGLE_CLIENT_ID
+  echo $VITE_APPLE_CLIENT_ID
+  echo $VITE_APPLE_REDIRECT_URI
+  ```
+- **Evidence**: Secret manager and deployment environment screenshots (values redacted)
+- **Owner Sign-off**: _________________ Date: _______
+- [ ] COMPLETE
+
 ---
 
 ## Section 2: CI/CD Pipeline Configuration
@@ -85,6 +106,8 @@
   - `SECRET_KEY`: JWT signing key (from 1.1)
   - `DATABASE_URL`: PostgreSQL URL (from 1.2)
   - `REDIS_URL`: Redis URL (from 1.3)
+  - `GOOGLE_OAUTH_CLIENT_ID`: Google OAuth web client ID
+  - `APPLE_OAUTH_CLIENT_ID`: Apple Service ID for backend token verification
   - `BACKEND_DEPLOY_WEBHOOK_URL`: Render.com or equivalent
   - `FRONTEND_DEPLOY_WEBHOOK_URL`: Vercel, Netlify, or CDN URL
 - **Evidence**: Screenshot of secrets page (values redacted)
@@ -193,11 +216,27 @@
 - **Task**: Set up static hosting (Vercel, Netlify, S3+CloudFront, etc.)
 - **Requirements**:
   - Node 18 build environment
-  - Environment file: `frontend/.env.production` with `VITE_API_URL=https://api.yourdomain.com`
+  - Environment file: `frontend/.env.production` with:
+    - `VITE_API_URL=https://api.yourdomain.com`
+    - `VITE_GOOGLE_CLIENT_ID=<your-google-web-client-id>`
+    - `VITE_APPLE_CLIENT_ID=<your-apple-service-id>`
+    - `VITE_APPLE_REDIRECT_URI=https://app.yourdomain.com`
   - Build command: `npm ci && npm run build`
   - Output directory: `dist/`
   - Cache headers: Set long TTL for asset files, short/no-cache for index.html
 - **Evidence**: Frontend build and deployment successful
+- **Owner Sign-off**: _________________ Date: _______
+- [ ] COMPLETE
+
+### 4.5 Validate Social Sign-In in Production
+- **Owner**: QA Lead / Security Lead
+- **Task**: Verify Google and Apple sign-in behavior for existing and first-time users
+- **Validation Cases**:
+  1. Existing Google user login succeeds.
+  2. Existing Apple user login succeeds.
+  3. First-time social login without subscriber type returns HTTP 400.
+  4. First-time social login with subscriber type and lender data-sharing preference succeeds.
+- **Evidence**: API logs/screenshots showing expected status codes and successful session creation
 - **Owner Sign-off**: _________________ Date: _______
 - [ ] COMPLETE
 

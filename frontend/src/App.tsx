@@ -147,7 +147,11 @@ function App() {
   const [aiOpen, setAiOpen] = useState(true)
   const [govOpen, setGovOpen] = useState(true)
 
-  const handleMobileBack = () => {
+  const closeMenu = () => {
+    setMenuOpen(false)
+  }
+
+  const handleTopbarBack = () => {
     if (window.history.length > 1) {
       navigate(-1)
       return
@@ -161,8 +165,8 @@ function App() {
     navigate('/login')
   }
 
-  const closeMenu = () => {
-    setMenuOpen(false)
+  const handleTopbarForward = () => {
+    navigate(1)
   }
 
 const aiMenus = [
@@ -294,17 +298,6 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
       {/* TOP NAVIGATION */}
       <header className="sidebar">
         <div className="app-topbar-row">
-          {shouldShowBackButton ? (
-            <button
-              type="button"
-              className="app-mobile-back-inline"
-              onClick={handleMobileBack}
-              aria-label="Go back"
-            >
-              Back
-            </button>
-          ) : null}
-
           {/* BRAND */}
           <div className="app-brand-block">
             <div className="app-brand-lockup">
@@ -316,16 +309,41 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             </div>
           </div>
 
-          {/* HAMBURGER BUTTON */}
-          <button
-            onClick={() => setMenuOpen(!menuOpen)}
-            type="button"
-            className="app-menu-toggle"
-            aria-label="Toggle account and application menu"
-            aria-expanded={menuOpen}
-          >
-            {authReady && currentUser ? `${currentUser.username} • Menu` : 'Account • Menu'}
-          </button>
+          <div className="app-topbar-actions">
+            {/* HAMBURGER BUTTON */}
+            <button
+              onClick={() => setMenuOpen(!menuOpen)}
+              type="button"
+              className="app-menu-toggle"
+              aria-label="Toggle account and application menu"
+              aria-expanded={menuOpen}
+            >
+              {authReady && currentUser ? `${currentUser.username} • Menu` : 'Account • Menu'}
+            </button>
+
+            {shouldShowBackButton ? (
+              <div className="app-mini-nav" aria-label="Page navigation controls">
+                <button
+                  type="button"
+                  className="app-mini-nav-button"
+                  onClick={handleTopbarBack}
+                  aria-label="Go back"
+                  title="Back"
+                >
+                  &larr;
+                </button>
+                <button
+                  type="button"
+                  className="app-mini-nav-button"
+                  onClick={handleTopbarForward}
+                  aria-label="Go forward"
+                  title="Next"
+                >
+                  &rarr;
+                </button>
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/* DROPDOWN MENU */}

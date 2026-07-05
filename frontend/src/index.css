@@ -405,6 +405,44 @@ textarea {
   gap: 18px;
 }
 
+.app-topbar-actions {
+  position: relative;
+  display: inline-flex;
+  justify-content: flex-end;
+  margin-left: auto;
+}
+
+.app-mini-nav {
+  position: absolute;
+  top: calc(100% + 2px);
+  right: 6px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 10001;
+}
+
+.app-mini-nav-button {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  background: rgba(255, 255, 255, 0.15);
+  color: #ffffff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.66rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.app-mini-nav-button:hover,
+.app-mini-nav-button:focus {
+  background: rgba(255, 255, 255, 0.28);
+}
+
 .app-brand-block {
   flex: 1 1 320px;
   min-width: 0;
@@ -2362,8 +2400,12 @@ th { color: var(--dark-gold); }
     justify-content: flex-start;
   }
 
-  .app-menu-toggle {
+  .app-topbar-actions {
     margin-left: auto;
+  }
+
+  .app-menu-toggle {
+    margin-left: 0;
   }
 
   .sidebar-dropdown {

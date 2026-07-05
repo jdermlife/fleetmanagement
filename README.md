@@ -62,6 +62,8 @@ For production deployments, keep startup migrations disabled and run schema chan
 3. Create a `.env.local` file:
    ```
    VITE_API_URL=http://localhost:5000
+   VITE_APPLE_CLIENT_ID=your-apple-service-id
+   VITE_APPLE_REDIRECT_URI=http://localhost:5173
    ```
 4. Start the dev server: `npm run dev`
 
@@ -81,6 +83,21 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 - **Manager**: Read/write vehicles, fuel logs, drivers, scorecards, audit logs
 - **Driver**: Read-only access to vehicles and fuel logs
 - **Viewer**: Read-only access to vehicles and fuel logs
+
+### Apple Sign-In Setup
+
+Configure Apple Sign-In in Apple Developer Console and mirror those values in backend and frontend environment variables.
+
+1. In Apple Developer Console, create or use a Service ID for web sign-in.
+2. Enable Sign in with Apple for that Service ID.
+3. Add your frontend callback URL as a Return URL (for example `http://localhost:5173`).
+4. Set matching environment variables:
+   - Backend: `APPLE_OAUTH_CLIENT_ID=your-apple-service-id`
+   - Frontend: `VITE_APPLE_CLIENT_ID=your-apple-service-id`
+   - Frontend: `VITE_APPLE_REDIRECT_URI=http://localhost:5173`
+5. Keep the backend and frontend client IDs identical.
+
+For first-time Apple sign-in, the API requires subscriber type and lender data-sharing preference before creating the account.
 
 ## API Endpoints
 
@@ -186,6 +203,10 @@ docker compose -f docker-compose.yml.txt up -d backend prometheus grafana
 | ENABLE_API_DOCS | Expose Swagger/ReDoc/OpenAPI endpoints | true in development, false in production |
 | GOOGLE_OAUTH_CLIENT_ID | Google OAuth Web client ID used by backend token verification | empty |
 | VITE_GOOGLE_CLIENT_ID | Google OAuth Web client ID exposed to frontend Sign-In widget | empty |
+| APPLE_OAUTH_CLIENT_ID | Apple Service ID used by backend Apple token verification | empty |
+| APPLE_JWKS_CACHE_TTL_SECONDS | TTL (seconds) for cached Apple JWKS public keys | 3600 |
+| VITE_APPLE_CLIENT_ID | Apple Service ID exposed to frontend Apple Sign-In flow | empty |
+| VITE_APPLE_REDIRECT_URI | Frontend Apple Sign-In redirect URI registered in Apple console | empty |
 | SENTRY_DSN | Sentry DSN for error monitoring | empty (disabled) |
 | SENTRY_ENVIRONMENT | Sentry environment name | development |
 | SENTRY_RELEASE | Sentry release identifier | empty |

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import hashlib
 import importlib
+import json
 import os
 import re
 from datetime import datetime, timedelta, timezone
@@ -10,6 +11,7 @@ from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
+import requests
 from sqlalchemy import and_
 from sqlalchemy.orm import Session
 
@@ -64,6 +66,12 @@ class RegisterRequest(BaseModel):
 
 
 class GoogleTokenLoginRequest(BaseModel):
+    id_token: str = Field(min_length=10)
+    subscriber_type: Literal["borrower", "lender"] | None = None
+    lender_data_sharing_consent: bool | None = None
+
+
+class AppleTokenLoginRequest(BaseModel):
     id_token: str = Field(min_length=10)
     subscriber_type: Literal["borrower", "lender"] | None = None
     lender_data_sharing_consent: bool | None = None
@@ -140,6 +148,11 @@ class AssignPermissionsRequest(BaseModel):
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
+APPLE_OAUTH_CLIENT_ID = os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
+APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
+APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
+APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))
+_APPLE_JWKS_CACHE: dict[str, object] = {"expires_at": datetime.fromtimestamp(0, timezone.utc), "keys": []}
 REGISTERABLE_SUBSCRIBER_ROLES = {
     "borrower": RBACRole.SUBSCRIBER_BORROWER.value,
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
@@ -378,6 +391,74 @@ def _load_google_auth_dependencies():
         raise HTTPException(status_code=500, detail="Google Sign-In dependency is not installed") from exc
 
 
+def _load_apple_sign_in_keys() -> list[dict[str, object]]:
+    now = datetime.now(timezone.utc)
+    cached_expires_at = _APPLE_JWKS_CACHE.get("expires_at")
+    cached_keys = _APPLE_JWKS_CACHE.get("keys")
+
+    if isinstance(cached_expires_at, datetime) and cached_expires_at > now and isinstance(cached_keys, list):
+        return [item for item in cached_keys if isinstance(item, dict)]
+
+    try:
+        response = requests.get(APPLE_JWKS_URL, timeout=10)
+        response.raise_for_status()
+        payload = response.json()
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=503, detail="Unable to fetch Apple Sign-In keys") from exc
+
+    keys_payload = payload.get("keys") if isinstance(payload, dict) else None
+    if not isinstance(keys_payload, list):
+        raise HTTPException(status_code=503, detail="Invalid Apple Sign-In keys response")
+
+    keys = [item for item in keys_payload if isinstance(item, dict)]
+    _APPLE_JWKS_CACHE["keys"] = keys
+    _APPLE_JWKS_CACHE["expires_at"] = now + timedelta(seconds=APPLE_JWKS_CACHE_TTL_SECONDS)
+    return keys
+
+
+def _verify_apple_id_token(id_token: str) -> dict[str, object]:
+    if jwt is None:
+        raise HTTPException(status_code=500, detail="PyJWT dependency missing")
+    if not APPLE_OAUTH_CLIENT_ID:
+        raise HTTPException(status_code=503, detail="Apple Sign-In is not configured")
+
+    try:
+        unverified_header = jwt.get_unverified_header(id_token)
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=401, detail="Invalid Apple token header") from exc
+
+    key_id = unverified_header.get("kid")
+    algorithm = str(unverified_header.get("alg") or "")
+    if not key_id or algorithm != "RS256":
+        raise HTTPException(status_code=401, detail="Unsupported Apple token header")
+
+    keys = _load_apple_sign_in_keys()
+    matching_key = next((item for item in keys if item.get("kid") == key_id), None)
+    if matching_key is None:
+        _APPLE_JWKS_CACHE["expires_at"] = datetime.fromtimestamp(0, timezone.utc)
+        keys = _load_apple_sign_in_keys()
+        matching_key = next((item for item in keys if item.get("kid") == key_id), None)
+        if matching_key is None:
+            raise HTTPException(status_code=401, detail="Unable to validate Apple token signature")
+
+    try:
+        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(matching_key))
+        decoded = jwt.decode(
+            id_token,
+            public_key,
+            algorithms=["RS256"],
+            audience=APPLE_OAUTH_CLIENT_ID,
+            issuer=APPLE_OAUTH_ISSUER,
+        )
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=401, detail="Invalid or expired Apple token") from exc
+
+    if not isinstance(decoded, dict):
+        raise HTTPException(status_code=401, detail="Invalid Apple token payload")
+
+    return decoded
+
+
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     set_rls_context(db, None, "admin")
@@ -523,6 +604,83 @@ def login_with_google_token(
             username=unique_username,
             email=email,
             password_hash=hash_password(f"google_oauth_{uuid4().hex}"),
+            role=role_name,
+            is_active=True,
+            account_status="ACTIVE",
+            email_verified=True,
+            email_verified_at=datetime.now(timezone.utc),
+            lender_data_sharing_consent=payload.lender_data_sharing_consent,
+            lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
+        )
+        db.add(user)
+        db.flush()
+        _ensure_default_role(user, db, role_name)
+        db.commit()
+        db.refresh(user)
+
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is disabled")
+
+    if user.is_deleted:
+        raise HTTPException(status_code=403, detail="Account is deleted")
+
+    if user.account_status and user.account_status.upper() != "ACTIVE":
+        raise HTTPException(status_code=403, detail=f"Account status is {user.account_status}")
+
+    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
+        raise HTTPException(status_code=423, detail="Account is locked")
+
+    if not user.email_verified:
+        user.email_verified = True
+        user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
+
+    return _build_login_payload(user, request, db)
+
+
+@router.post("/apple-token")
+def login_with_apple_token(
+    payload: AppleTokenLoginRequest,
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    set_rls_context(db, None, "admin")
+    token_data = _verify_apple_id_token(payload.id_token)
+
+    email = str(token_data.get("email") or "").strip().lower()
+    email_verified_claim = token_data.get("email_verified")
+    email_verified = email_verified_claim in {True, "true", "1", 1}
+
+    if not email:
+        raise HTTPException(
+            status_code=400,
+            detail="Apple account email is required. Share email on first Apple sign-in.",
+        )
+
+    if not email_verified:
+        raise HTTPException(status_code=401, detail="Apple account email is missing or unverified")
+
+    user = db.query(User).filter(User.email == email).first()
+
+    if user is None:
+        if payload.subscriber_type is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Select borrower or lender for first-time Apple sign-in",
+            )
+        if payload.lender_data_sharing_consent is None:
+            raise HTTPException(
+                status_code=400,
+                detail="Select data-sharing preference for first-time Apple sign-in",
+            )
+
+        role_name = _resolve_registration_role(payload.subscriber_type)
+        requested_username = _username_from_google_email(email)
+        unique_username = _generate_unique_username(db, requested_username)
+
+        user = User(
+            username=unique_username,
+            email=email,
+            password_hash=hash_password(f"apple_oauth_{uuid4().hex}"),
             role=role_name,
             is_active=True,
             account_status="ACTIVE",
