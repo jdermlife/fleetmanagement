@@ -2378,6 +2378,17 @@ th { color: var(--dark-gold); }
 }
 .auth-link-button:hover { background: #fff4bf; }
 
+.auth-apple-button {
+  gap: 8px;
+}
+
+.auth-apple-icon {
+  width: 14px;
+  height: 14px;
+  display: block;
+  flex-shrink: 0;
+}
+
 /* ========================
    RESPONSIVE (≤960px)
    ======================== */

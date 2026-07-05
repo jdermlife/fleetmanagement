@@ -113,6 +113,12 @@ export default function ResetPasswordPage() {
       </form>
 
       {message ? <p className="status-message">{message}</p> : null}
+
+      <div className="auth-support-links">
+        <Link to="/subscription-fees">Subscription Fees</Link>
+        <Link to="/privacy">Privacy Disclosures</Link>
+        <Link to="/terms">Terms & Consent</Link>
+      </div>
     </div>
   )
 }
