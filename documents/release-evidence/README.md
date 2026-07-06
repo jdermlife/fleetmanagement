@@ -26,6 +26,10 @@ Use it to store proof for the remaining red blockers before:
   Step-by-step process for creating the first iOS archive and TestFlight upload.
 - `ios-artifact-verification-and-evidence-fill-guide.md`
   Post-build instructions for verifying the iOS archive/TestFlight upload and recording evidence.
+- `ios-testflight-upload-status-checklist.md`
+  Short post-upload status capture for the first TestFlight submission.
+- `ios-qa-session-sheet.md`
+  Prefilled iPhone/TestFlight QA starter sheet using the expected build metadata.
 - `signed-build-evidence.md`
   Record Android and iOS release build details and artifact locations.
 - `screenshot-asset-checklist.md`
@@ -36,6 +40,8 @@ Use it to store proof for the remaining red blockers before:
   Step-by-step tester script for running and recording the device QA pass.
 - `android-first-signed-build-qa-checklist.md`
   Short sanity pass for the first signed Android build before broader QA.
+- `android-qa-session-sheet.md`
+  Prefilled Android QA starter sheet using the current signed release artifact metadata.
 - `ios-first-testflight-build-qa-checklist.md`
   Short sanity pass for the first TestFlight build before broader QA.
 - `reviewer-demo-account-evidence.md`

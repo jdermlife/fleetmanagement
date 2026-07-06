@@ -10,6 +10,7 @@ For the full script, use:
 
 Record final results in:
 
+- `documents/release-evidence/android-qa-session-sheet.md`
 - `documents/release-evidence/device-qa-matrix.md`
 - `documents/release-evidence/signed-build-evidence.md`
 

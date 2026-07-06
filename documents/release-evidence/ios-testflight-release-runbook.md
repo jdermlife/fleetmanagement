@@ -19,9 +19,9 @@ TestFlight.
 - Bundle ID:
   `com.fms.mobile`
 - Marketing version:
-  `1.0`
+  `1.0.1`
 - Build number:
-  `1`
+  `2`
 - Deployment target:
   `iOS 15.0`
 
@@ -147,6 +147,7 @@ Once the build is visible in TestFlight:
 1. add internal testers
 2. install on real iPhone hardware
 3. start recording results in:
+   - `documents/release-evidence/ios-testflight-upload-status-checklist.md`
    - `documents/release-evidence/ios-first-testflight-build-qa-checklist.md`
    - `documents/release-evidence/device-qa-matrix.md`
 

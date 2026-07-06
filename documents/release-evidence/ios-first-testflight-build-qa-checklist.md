@@ -11,6 +11,7 @@ For the full script, use:
 
 Record final results in:
 
+- `documents/release-evidence/ios-qa-session-sheet.md`
 - `documents/release-evidence/device-qa-matrix.md`
 - `documents/release-evidence/signed-build-evidence.md`
 - `documents/release-evidence/reviewer-demo-account-evidence.md`

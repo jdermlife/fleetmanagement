@@ -56,7 +56,7 @@ Related evidence folder:
 
 ## Known Blockers Still Outside This Package
 
-1. No proven signed Android `AAB` or iOS release archive exists in the repo.
+1. No proven iOS release archive or TestFlight upload exists in the repo yet.
 2. Real-device QA evidence is still missing.
 3. Public store metadata assets are still incomplete:
    screenshots, support URL, published privacy-policy URL, review notes,
@@ -68,6 +68,6 @@ Related evidence folder:
 
 1. Finalize `privacy-data-inventory.md` with legal/product review.
 2. Replace placeholder public URLs in `frontend/store-metadata.template.json`.
-3. Create signed Android and iOS release artifacts.
-4. Run device QA and record results in `reviewer-access-and-qa-template.md`.
+3. Create the first iOS/TestFlight release artifact.
+4. Run Android and iPhone device QA and record results in the release-evidence package.
 5. Copy the approved answers into Play Console and App Store Connect.
