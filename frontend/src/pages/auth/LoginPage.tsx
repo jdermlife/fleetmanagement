@@ -226,6 +226,18 @@ export default function LoginPage() {
           />
         </label>
 
+        <div className="form-actions">
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? 'Signing In...' : 'Sign In'}
+          </button>
+          <Link className="auth-link-button" to="/register">
+            Create Account
+          </Link>
+          <Link className="auth-link-button" to="/forgot-password">
+            Forgot Password
+          </Link>
+        </div>
+
         <div className="stack-panel auth-panel" aria-live="polite">
           <p className="auth-role-copy">Or continue using your Google account.</p>
           {isGoogleConfigured ? (
@@ -261,18 +273,6 @@ export default function LoginPage() {
           {!isAppleConfigured ? (
             <p className="status-message">Apple Sign-In is available when configured.</p>
           ) : null}
-        </div>
-
-        <div className="form-actions">
-          <button type="submit" disabled={isSaving}>
-            {isSaving ? 'Signing In...' : 'Sign In'}
-          </button>
-          <Link className="auth-link-button" to="/register">
-            Create Account
-          </Link>
-          <Link className="auth-link-button" to="/forgot-password">
-            Forgot Password
-          </Link>
         </div>
 
         {message ? <p className="status-message status-error">{message}</p> : null}

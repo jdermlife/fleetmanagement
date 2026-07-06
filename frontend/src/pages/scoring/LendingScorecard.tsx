@@ -1722,9 +1722,7 @@ export default function LendingScorecard() {
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
   const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
   const isBorrowerSubscriber = isBorrowerSubscriberRole(user?.role);
-  const reviewApplicationsPath = (isBorrowerSubscriber || isSingleApplicant)
-    ? '/loan-certification'
-    : '/loan-repository';
+  const reviewApplicationsPath = '/loan-repository';
   const queuePath = isBorrowerSubscriber
     ? '/loan-certification'
     : '/loan-repository?status=Credit%20Review';
