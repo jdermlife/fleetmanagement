@@ -704,6 +704,15 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             />
 
             <Route
+              path="/lending-scorecard/filscore"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <LendingScorecard />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
               path="/loan-repository"
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>

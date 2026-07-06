@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { api, getErrorMessage } from '../../api';
 import {
@@ -1691,6 +1691,7 @@ const reviewSectionConfigs: Array<{
 
 // --- Main Component ---
 export default function LendingScorecard() {
+  const location = useLocation();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuthorization();
@@ -1699,7 +1700,8 @@ export default function LendingScorecard() {
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
   const [selectedWorkflowAction, setSelectedWorkflowAction] = useState<WorkflowStatus>('Credit Review');
-  const [step, setStep] = useState(1);
+  const isFilscoreRoute = location.pathname === '/lending-scorecard/filscore';
+  const [step, setStep] = useState(() => (isFilscoreRoute ? 8 : 1));
   const [formData, setFormData] = useState<LoanApplication>(createNewApplicationInstance());
   const [isParsing, setIsParsing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -1730,6 +1732,16 @@ export default function LendingScorecard() {
     ? '/loan-certification'
     : '/loan-repository?status=Released';
   const maxVisibleStep = isBorrowerSubscriber ? 8 : 10;
+
+  const getApplicationQuery = () => {
+    const applicationNo = formData.id || requestedApplicationNo;
+
+    if (!applicationNo) {
+      return '';
+    }
+
+    return `?applicationNo=${encodeURIComponent(applicationNo)}`;
+  };
 
   // --- Auto-Calculations (Memoized for Performance) ---
   const calculations = useMemo(() => calculateLoanMetrics(formData), [formData]);
@@ -2385,8 +2397,15 @@ export default function LendingScorecard() {
     const boundedNextStep = Math.max(1, Math.min(nextStep, maxVisibleStep));
 
     if (nextStep !== 8) {
+      if (isFilscoreRoute) {
+        navigate(`/lending-scorecard${getApplicationQuery()}`);
+      }
       setStep(boundedNextStep);
       return;
+    }
+
+    if (!isFilscoreRoute) {
+      navigate(`/lending-scorecard/filscore${getApplicationQuery()}`);
     }
 
     setSaveMessage('');
@@ -2413,6 +2432,12 @@ export default function LendingScorecard() {
       setStep(maxVisibleStep);
     }
   }, [isBorrowerSubscriber, maxVisibleStep, step]);
+
+  useEffect(() => {
+    if (isFilscoreRoute && step !== 8) {
+      setStep(8);
+    }
+  }, [isFilscoreRoute, step]);
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
     invalidateBackendScoring();
@@ -4767,6 +4792,12 @@ export default function LendingScorecard() {
                 className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
               >
                 {isBorrowerSubscriber || isSingleApplicant ? 'Review Application' : 'Review Applications'}
+              </button>
+              <button
+                onClick={() => void handleStepChange(8)}
+                className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
+              >
+                Open FILScore Page
               </button>
               {!isBorrowerSubscriber && (
                 <button
