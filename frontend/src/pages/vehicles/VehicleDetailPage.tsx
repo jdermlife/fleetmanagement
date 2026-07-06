@@ -20,26 +20,24 @@ function VehicleDetailPage() {
     setError('')
 
     try {
-    const [vehiclesResponse, databaseResponse] = await Promise.all([
-  api.get('/vehicles'),
-  api.get<DatabaseStatus>('/database/status'),
-])
+      const [vehiclesResponse, databaseResponse] = await Promise.all([
+        api.get('/vehicles'),
+        api.get<DatabaseStatus>('/database/status'),
+      ])
 
-console.log('VEHICLES API:', vehiclesResponse.data)
+      const vehiclesData =
+        vehiclesResponse.data?.data ||
+        vehiclesResponse.data?.vehicles ||
+        vehiclesResponse.data ||
+        []
 
-const vehiclesData =
-  vehiclesResponse.data?.data ||
-  vehiclesResponse.data?.vehicles ||
-  vehiclesResponse.data ||
-  []
+      const nextVehicles = Array.isArray(vehiclesData)
+        ? vehiclesData
+        : []
 
-const safeVehicles = Array.isArray(vehiclesData)
-  ? vehiclesData
-  : []
-
-setVehicles(safeVehicles)
-setDatabaseStatus(databaseResponse.data)
-setSelectedVehicleId(safeVehicles[0]?.id ?? null)
+      setVehicles(nextVehicles)
+      setDatabaseStatus(databaseResponse.data)
+      setSelectedVehicleId(nextVehicles[0]?.id ?? null)
     } catch (loadError: unknown) {
       setError(getErrorMessage(loadError, 'Unable to load vehicle detail information right now.'))
     } finally {
@@ -47,16 +45,12 @@ setSelectedVehicleId(safeVehicles[0]?.id ?? null)
     }
   }
 
-const safeVehicles = Array.isArray(vehicles)
-  ? vehicles
-  : [];
-
 const selectedVehicle = useMemo(
-  () =>
-    safeVehicles.find(
-      (vehicle) => vehicle.id === selectedVehicleId
-    ) ?? null,
-  [safeVehicles, selectedVehicleId]
+  () => {
+    const safeVehicles = Array.isArray(vehicles) ? vehicles : []
+    return safeVehicles.find((vehicle) => vehicle.id === selectedVehicleId) ?? null
+  },
+  [vehicles, selectedVehicleId]
 )
 
   return (
@@ -82,18 +76,10 @@ const selectedVehicle = useMemo(
             <select
               value={selectedVehicleId ?? ''}
               onChange={(event) => setSelectedVehicleId(Number(event.target.value))}
-              disabled={
-              (Array.isArray(vehicles)
-               ? vehicles
-              : []).length === 0
-}
+              disabled={vehicles.length === 0}
             >
               {vehicles.length === 0 ? <option value="">No vehicles found</option> : null}
-             {(
-              Array.isArray(vehicles)
-              ? vehicles
-                : []
-                ).map((vehicle) => (
+              {vehicles.map((vehicle) => (
                 <option key={vehicle.id} value={vehicle.id}>
                   {vehicle.make} {vehicle.model} ({vehicle.year})
                 </option>

@@ -1,52 +1,66 @@
-import { useState, useRef } from "react";
+import { useRef, useState } from 'react'
+
+import { getApiBaseUrl, getAuthToken } from '../../api'
 
 export default function MeetingRecorder() {
-  const [recording, setRecording] = useState(false);
+  const [recording, setRecording] = useState(false)
 
-  const mediaRecorderRef = useRef<any>(null);
-  const chunksRef = useRef<any[]>([]);
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const chunksRef = useRef<BlobPart[]>([])
 
   const startRecording = async () => {
     const stream = await navigator.mediaDevices.getUserMedia({
-      audio: true
-    });
+      audio: true,
+    })
 
-    const recorder = new MediaRecorder(stream);
+    const recorder = new MediaRecorder(stream)
+    chunksRef.current = []
 
     recorder.ondataavailable = (event) => {
-      chunksRef.current.push(event.data);
-    };
+      chunksRef.current.push(event.data)
+    }
 
-    recorder.start();
+    recorder.start()
 
-    mediaRecorderRef.current = recorder;
+    mediaRecorderRef.current = recorder
 
-    setRecording(true);
-  };
+    setRecording(true)
+  }
 
   const stopRecording = () => {
-    mediaRecorderRef.current.stop();
+    const recorder = mediaRecorderRef.current
+    if (!recorder) {
+      return
+    }
 
-    mediaRecorderRef.current.onstop = async () => {
+    recorder.onstop = async () => {
       const blob = new Blob(chunksRef.current, {
-        type: "audio/webm"
-      });
+        type: 'audio/webm',
+      })
 
-      const formData = new FormData();
+      const formData = new FormData()
+      const token = getAuthToken()
 
-      formData.append("audio", blob);
+      formData.append('audio', blob)
 
       await fetch(
-        `${import.meta.env.VITE_API_URL}/ai/transcribe`,
+        `${getApiBaseUrl()}/ai/transcribe`,
         {
-          method: "POST",
-          body: formData
+          method: 'POST',
+          headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+          body: formData,
         }
-      );
-    };
+      )
 
-    setRecording(false);
-  };
+      recorder.stream.getTracks().forEach((track) => {
+        track.stop()
+      })
+    }
+
+    recorder.stop()
+
+    setRecording(false)
+  }
 
   return (
     <div>
@@ -60,5 +74,5 @@ export default function MeetingRecorder() {
         </button>
       )}
     </div>
-  );
+  )
 }

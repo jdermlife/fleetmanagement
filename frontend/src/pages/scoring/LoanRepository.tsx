@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 
 import { api, getErrorMessage } from "../../api";
@@ -187,7 +187,7 @@ export default function LoanRepository() {
         {} as Record<WorkflowStatus, number>,
       ),
     }),
-    [applications],
+    [applications, totalApplications],
   );
 
   const summaryCards = useMemo(
@@ -229,7 +229,7 @@ export default function LoanRepository() {
 
   const messageIsError = message.toLowerCase().includes("failed");
 
-  const loadApplications = async (
+  const loadApplications = useCallback(async (
     filters: {
       dateFrom?: string;
       dateTo?: string;
@@ -277,7 +277,7 @@ export default function LoanRepository() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [appliedDateFrom, appliedDateTo, appliedStatusFilter, page]);
 
   const applyFilters = async () => {
     setAppliedSearchText(searchText);
@@ -415,7 +415,7 @@ export default function LoanRepository() {
 
   useEffect(() => {
     void loadApplications();
-  }, [page, appliedStatusFilter, appliedDateFrom, appliedDateTo]);
+  }, [loadApplications]);
 
   useEffect(() => {
     if (requestedStatus && statusOptions.includes(requestedStatus as WorkflowStatus)) {

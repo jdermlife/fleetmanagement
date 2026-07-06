@@ -5,6 +5,8 @@ const RENDER_API_FALLBACKS = [
   'https://fleetmanagement-dq9t.onrender.com',
   'https://fleetmanagement-api.onrender.com',
 ]
+const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
+const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 
 const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
   .split(',')
@@ -60,40 +62,82 @@ async function findHealthyApiBaseUrl(): Promise<string | null> {
 }
 
 let authToken: string | null = null
+let refreshToken: string | null = null
 let currentUserCache: AuthUser | null = null
 let currentUserRequest: Promise<AuthUser> | null = null
+let refreshTokenRequest: Promise<string> | null = null
 
-export function setAuthToken(token: string | null) {
-  authToken = token
-  if (token) {
-    api.defaults.headers.common['Authorization'] = `Bearer ${token}`
+function clearCachedAuthState() {
+  currentUserCache = null
+  currentUserRequest = null
+}
+
+function syncStoredSession(nextAccessToken: string | null, nextRefreshToken: string | null) {
+  authToken = nextAccessToken
+  refreshToken = nextRefreshToken
+
+  if (nextAccessToken) {
+    api.defaults.headers.common['Authorization'] = `Bearer ${nextAccessToken}`
   } else {
     delete api.defaults.headers.common['Authorization']
-    currentUserCache = null
-    currentUserRequest = null
+    clearCachedAuthState()
   }
+
   if (typeof window !== 'undefined') {
-    if (token) {
-      localStorage.setItem('auth_token', token)
+    if (nextAccessToken) {
+      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, nextAccessToken)
     } else {
-      localStorage.removeItem('auth_token')
+      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+    }
+
+    if (nextRefreshToken) {
+      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, nextRefreshToken)
+    } else {
+      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
     }
   }
 }
 
+export function setAuthToken(token: string | null) {
+  syncStoredSession(token, token ? refreshToken : null)
+}
+
 export function getAuthToken(): string | null {
   if (typeof window !== 'undefined' && !authToken) {
-    authToken = localStorage.getItem('auth_token')
+    authToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
   }
   return authToken
 }
 
+export function getRefreshToken(): string | null {
+  if (typeof window !== 'undefined' && !refreshToken) {
+    refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  }
+  return refreshToken
+}
+
 // Initialize token from storage on load
 if (typeof window !== 'undefined') {
-  const storedToken = localStorage.getItem('auth_token')
-  if (storedToken) {
-    setAuthToken(storedToken)
+  const storedAuthToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  if (storedAuthToken || storedRefreshToken) {
+    syncStoredSession(storedAuthToken, storedRefreshToken)
   }
+}
+
+function shouldSkipSessionRefresh(url?: string): boolean {
+  if (!url) {
+    return false
+  }
+
+  return [
+    '/api/auth/login',
+    '/api/auth/google-token',
+    '/api/auth/apple-token',
+    '/api/auth/register',
+    '/api/auth/refresh',
+    '/api/auth/logout',
+  ].some((path) => url.includes(path))
 }
 
 // Request interceptor
@@ -120,7 +164,7 @@ api.interceptors.response.use(
     }
     return response
   },
-  (error: AxiosError) => {
+  async (error: AxiosError) => {
     if (isDevelopment) {
       console.error('[API] Response error:', {
         status: error.response?.status,
@@ -129,6 +173,32 @@ api.interceptors.response.use(
         message: error.message,
       })
     }
+
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined
+    const refreshTokenCandidate = getRefreshToken()
+
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      refreshTokenCandidate &&
+      !shouldSkipSessionRefresh(originalRequest.url)
+    ) {
+      originalRequest._retry = true
+
+      try {
+        const nextAccessToken = await refreshAuthToken()
+        if (originalRequest.headers) {
+          const requestHeaders = originalRequest.headers as Record<string, unknown>
+          requestHeaders.Authorization = `Bearer ${nextAccessToken}`
+        }
+        return await api.request(originalRequest)
+      } catch (refreshError) {
+        syncStoredSession(null, null)
+        return Promise.reject(refreshError)
+      }
+    }
+
     return Promise.reject(error)
   }
 )
@@ -226,6 +296,7 @@ export interface AppleLoginRequest {
 
 export interface LoginResponse {
   token: string
+  refreshToken: string
   user: AuthUser
 }
 
@@ -287,25 +358,52 @@ export interface RegisterRequest {
   lenderDataSharingConsent: boolean
 }
 
+function extractSessionTokens(responseData: Record<string, unknown>): {
+  accessToken: string | null
+  refreshToken: string | null
+} {
+  return {
+    accessToken:
+      (typeof responseData.token === 'string' ? responseData.token : null) ??
+      (typeof responseData.access_token === 'string' ? responseData.access_token : null),
+    refreshToken:
+      (typeof responseData.refreshToken === 'string' ? responseData.refreshToken : null) ??
+      (typeof responseData.refresh_token === 'string' ? responseData.refresh_token : null),
+  }
+}
+
+function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
+  accessToken: string
+  refreshToken: string
+} {
+  const tokens = extractSessionTokens(responseData)
+
+  if (!tokens.accessToken || !tokens.refreshToken) {
+    throw new Error('Unexpected authentication tokens received from the backend.')
+  }
+
+  syncStoredSession(tokens.accessToken, tokens.refreshToken)
+  return {
+    accessToken: tokens.accessToken,
+    refreshToken: tokens.refreshToken,
+  }
+}
+
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const response = await api.post('/api/auth/login', credentials)
   const responseData = response.data as Record<string, unknown>
-  const token =
-    (typeof responseData.token === 'string' ? responseData.token : null) ??
-    (typeof responseData.access_token === 'string'
-      ? responseData.access_token
-      : null)
   const user = responseData.user as Record<string, unknown> | undefined
 
-  if (!token || !user) {
+  if (!user) {
     throw new Error('Unexpected login response received from the backend.')
   }
 
-  setAuthToken(token)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
   currentUserCache = normalizeAuthUser(user)
   currentUserRequest = null
   return {
-    token,
+    token: accessToken,
+    refreshToken,
     user: currentUserCache,
   }
 }
@@ -317,23 +415,19 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
   })
   const responseData = response.data as Record<string, unknown>
-  const token =
-    (typeof responseData.token === 'string' ? responseData.token : null) ??
-    (typeof responseData.access_token === 'string'
-      ? responseData.access_token
-      : null)
   const user = responseData.user as Record<string, unknown> | undefined
 
-  if (!token || !user) {
+  if (!user) {
     throw new Error('Unexpected Google login response received from the backend.')
   }
 
-  setAuthToken(token)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
   currentUserCache = normalizeAuthUser(user)
   currentUserRequest = null
 
   return {
-    token,
+    token: accessToken,
+    refreshToken,
     user: currentUserCache,
   }
 }
@@ -345,23 +439,19 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
   })
   const responseData = response.data as Record<string, unknown>
-  const token =
-    (typeof responseData.token === 'string' ? responseData.token : null) ??
-    (typeof responseData.access_token === 'string'
-      ? responseData.access_token
-      : null)
   const user = responseData.user as Record<string, unknown> | undefined
 
-  if (!token || !user) {
+  if (!user) {
     throw new Error('Unexpected Apple login response received from the backend.')
   }
 
-  setAuthToken(token)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
   currentUserCache = normalizeAuthUser(user)
   currentUserRequest = null
 
   return {
-    token,
+    token: accessToken,
+    refreshToken,
     user: currentUserCache,
   }
 }
@@ -382,13 +472,45 @@ export async function register(data: RegisterRequest): Promise<LoginResponse['us
 }
 
 export async function logout(): Promise<void> {
-  setAuthToken(null)
+  const currentRefreshToken = getRefreshToken()
+
+  try {
+    if (currentRefreshToken) {
+      await api.post('/api/auth/logout', {
+        refresh_token: currentRefreshToken,
+      })
+    }
+  } catch {
+    // Clear the local session even if the backend session is already expired.
+  } finally {
+    syncStoredSession(null, null)
+  }
 }
 
 export async function refreshAuthToken(): Promise<string> {
-  const response = await api.post<{ token: string }>('/api/auth/refresh')
-  setAuthToken(response.data.token)
-  return response.data.token
+  if (refreshTokenRequest) {
+    return refreshTokenRequest
+  }
+
+  const currentRefreshToken = getRefreshToken()
+  if (!currentRefreshToken) {
+    syncStoredSession(null, null)
+    throw new Error('Unable to refresh the session because no refresh token is available.')
+  }
+
+  refreshTokenRequest = api
+    .post<Record<string, unknown>>('/api/auth/refresh', {
+      refresh_token: currentRefreshToken,
+    })
+    .then((response) => {
+      const { accessToken } = syncSessionFromAuthResponse(response.data)
+      return accessToken
+    })
+    .finally(() => {
+      refreshTokenRequest = null
+    })
+
+  return refreshTokenRequest
 }
 
 export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
@@ -568,7 +690,7 @@ export async function requestPasswordReset(emailOrUsername: string): Promise<{
     message: string
     reset_token?: string
     user_id?: number
-  }>('/auth/password-reset-request', {
+  }>('/api/auth/password-reset-request', {
     email_or_username: emailOrUsername,
   })
   return response.data
@@ -580,7 +702,7 @@ export async function confirmPasswordReset(
   newPassword: string,
 ): Promise<{ message: string }> {
   const response = await api.post<{ message: string }>(
-    '/auth/password-reset-confirm',
+    '/api/auth/password-reset-confirm',
     {
       user_id: userId,
       reset_token: resetToken,
@@ -594,7 +716,7 @@ export async function changePassword(
   currentPassword: string,
   newPassword: string,
 ): Promise<{ message: string }> {
-  const response = await api.post<{ message: string }>('api/auth/password-change', {
+  const response = await api.post<{ message: string }>('/api/auth/password/change', {
     current_password: currentPassword,
     new_password: newPassword,
   })
@@ -608,6 +730,76 @@ export async function deleteAccount(
     current_password: currentPassword,
   })
   return response.data
+}
+
+export interface MeetingRecord {
+  id: number
+  meeting_title: string
+  meeting_date: string | null
+  created_at: string | null
+}
+
+export interface MeetingDetailsRecord extends MeetingRecord {
+  transcript: string
+  summary: string
+  action_items: string
+}
+
+export interface MeetingTranscriptResponse {
+  transcript: string
+}
+
+export interface MeetingMinutesResponse {
+  id?: number
+  summary?: string
+  message?: string
+}
+
+export async function transcribeMeetingAudio(audioFile: File): Promise<MeetingTranscriptResponse> {
+  const formData = new FormData()
+  formData.append('audio', audioFile)
+
+  const response = await api.post<MeetingTranscriptResponse>('/ai/transcribe', formData, {
+    headers: {
+      'Content-Type': 'multipart/form-data',
+    },
+  })
+  return response.data
+}
+
+export async function generateMeetingMinutes(payload: {
+  meetingTitle: string
+  meetingDate: string
+  transcript: string
+}): Promise<MeetingMinutesResponse> {
+  const response = await api.post<MeetingMinutesResponse>('/ai/minutes', {
+    meeting_title: payload.meetingTitle,
+    meeting_date: payload.meetingDate,
+    transcript: payload.transcript,
+  })
+  return response.data
+}
+
+export async function listMeetings(): Promise<MeetingRecord[]> {
+  const response = await api.get<MeetingRecord[]>('/ai/meetings')
+  return response.data
+}
+
+export async function searchMeetingsByTitle(search: string): Promise<MeetingRecord[]> {
+  const response = await api.get<MeetingRecord[]>(`/ai/meetings/search/${encodeURIComponent(search)}`)
+  return response.data
+}
+
+export async function fetchMeetingDetails(meetingId: string): Promise<MeetingDetailsRecord> {
+  const response = await api.get<MeetingDetailsRecord>(`/ai/meetings/${meetingId}`)
+  return response.data
+}
+
+export async function downloadMeetingPdf(meetingId: string): Promise<string> {
+  const response = await api.get<Blob>(`/ai/meetings/${meetingId}/pdf`, {
+    responseType: 'blob',
+  })
+  return URL.createObjectURL(response.data)
 }
 
 export interface SubscriptionPlan {

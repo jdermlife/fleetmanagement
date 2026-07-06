@@ -5,6 +5,7 @@ import importlib
 import json
 import os
 import re
+import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
 from uuid import uuid4
@@ -33,6 +34,7 @@ from app.services.mfa_service import (
     verify_backup_code,
     verify_totp,
 )
+from app.services.email_service import send_email
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.rbac import ROLE_PERMISSIONS, Role as RBACRole
 from security.auth import SECRET_KEY, TokenError, create_token, decode_token, hash_password, verify_password
@@ -79,6 +81,20 @@ class AppleTokenLoginRequest(BaseModel):
 
 class ChangePasswordRequest(BaseModel):
     current_password: str
+    new_password: str = Field(min_length=8)
+
+
+class DeleteAccountRequest(BaseModel):
+    current_password: str
+
+
+class PasswordResetRequest(BaseModel):
+    email_or_username: str = Field(min_length=3)
+
+
+class PasswordResetConfirmRequest(BaseModel):
+    user_id: int
+    reset_token: str = Field(min_length=12)
     new_password: str = Field(min_length=8)
 
 
@@ -157,6 +173,7 @@ REGISTERABLE_SUBSCRIBER_ROLES = {
     "borrower": RBACRole.SUBSCRIBER_BORROWER.value,
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
 }
+PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRY_MINUTES", "30"))
 
 
 def get_db():
@@ -380,6 +397,21 @@ def _build_login_payload(user: User, request: Request, db: Session) -> dict[str,
         "token_type": "bearer",
         "user": _serialize_user(user, db),
     }
+
+
+def _hash_reset_token(token: str) -> str:
+    return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
+
+def _generate_password_reset_token() -> str:
+    return secrets.token_urlsafe(32)
+
+
+def _can_send_password_reset_email() -> bool:
+    return all(
+        os.getenv(env_var, "").strip()
+        for env_var in ("SMTP_SERVER", "SMTP_PORT", "SMTP_USERNAME", "SMTP_PASSWORD")
+    )
 
 
 def _load_google_auth_dependencies():
@@ -807,6 +839,104 @@ def update_preferences(
     }
 
 
+@router.post("/password-reset-request")
+def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+    normalized_identifier = payload.email_or_username.strip().lower()
+    if not normalized_identifier:
+        raise HTTPException(status_code=400, detail="Username or email is required")
+
+    user = (
+        db.query(User)
+        .filter((User.username == normalized_identifier) | (User.email == normalized_identifier))
+        .first()
+    )
+
+    if user is None:
+        user = (
+            db.query(User)
+            .filter((User.username == payload.email_or_username.strip()) | (User.email == payload.email_or_username.strip()))
+            .first()
+        )
+
+    response_payload: dict[str, object] = {
+        "message": "If the account exists, a password reset token has been issued.",
+    }
+
+    if user is None or user.is_deleted:
+        return response_payload
+
+    reset_token = _generate_password_reset_token()
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=PASSWORD_RESET_TOKEN_EXPIRY_MINUTES)
+    user.password_reset_token = _hash_reset_token(reset_token)
+    user.password_reset_token_expires = expires_at
+    db.commit()
+
+    reset_email_sent = False
+    if _can_send_password_reset_email():
+        try:
+            send_email(
+                user.email,
+                "FMS password reset",
+                (
+                    "Use this password reset token to update your FMS account password.\n\n"
+                    f"User ID: {user.id}\n"
+                    f"Reset token: {reset_token}\n"
+                    f"Expires at: {expires_at.isoformat()}\n"
+                ),
+            )
+            reset_email_sent = True
+        except Exception:
+            reset_email_sent = False
+
+    if os.getenv("ENVIRONMENT", "development").lower() != "production":
+        response_payload["reset_token"] = reset_token
+        response_payload["user_id"] = user.id
+        if not reset_email_sent:
+            response_payload["message"] = (
+                "Password reset token created for development use."
+            )
+
+    return response_payload
+
+
+@router.post("/password-reset-confirm")
+def confirm_password_reset(payload: PasswordResetConfirmRequest, db: Session = Depends(get_db)):
+    user = db.query(User).filter(User.id == payload.user_id).first()
+    if user is None or user.is_deleted:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not user.password_reset_token or not user.password_reset_token_expires:
+        raise HTTPException(status_code=400, detail="Password reset token is missing or has already been used")
+
+    expires_at = user.password_reset_token_expires
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+
+    if expires_at < datetime.now(timezone.utc):
+        user.password_reset_token = None
+        user.password_reset_token_expires = None
+        db.commit()
+        raise HTTPException(status_code=400, detail="Password reset token has expired")
+
+    if not secrets.compare_digest(user.password_reset_token, _hash_reset_token(payload.reset_token)):
+        raise HTTPException(status_code=401, detail="Password reset token is invalid")
+
+    now = datetime.now(timezone.utc)
+    user.password_hash = hash_password(payload.new_password)
+    user.password_changed_at = now
+    user.password_reset_token = None
+    user.password_reset_token_expires = None
+    user.failed_login_attempts = 0
+    user.locked_until = None
+
+    for session in user.sessions:
+        if session.revoked_at is None:
+            session.revoked_at = now
+
+    db.commit()
+    return {"message": "Password reset successfully"}
+
+
 @router.post("/password/change")
 def change_password(
     payload: ChangePasswordRequest,
@@ -821,8 +951,40 @@ def change_password(
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     db_user.password_hash = hash_password(payload.new_password)
+    db_user.password_changed_at = datetime.now(timezone.utc)
+    for session in db_user.sessions:
+        if session.revoked_at is None:
+            session.revoked_at = datetime.now(timezone.utc)
     db.commit()
     return {"message": "Password changed"}
+
+
+@router.post("/delete-account")
+def delete_account(
+    payload: DeleteAccountRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    db_user = db.query(User).filter(User.id == user.id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if not verify_password(payload.current_password, db_user.password_hash):
+        raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    now = datetime.now(timezone.utc)
+    db_user.is_active = False
+    db_user.is_deleted = True
+    db_user.account_status = "DELETED"
+    db_user.deleted_at = now
+    db_user.deleted_by = db_user.id
+
+    for session in db_user.sessions:
+        if session.revoked_at is None:
+            session.revoked_at = now
+
+    db.commit()
+    return {"message": "Account disabled successfully"}
 
 
 @router.post("/mfa/setup")

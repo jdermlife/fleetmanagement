@@ -1,28 +1,59 @@
 import { useEffect, useState } from 'react'
-import { useParams, Link } from 'react-router-dom'
-import axios from 'axios'
+import { Link, useParams } from 'react-router-dom'
+
+import {
+  downloadMeetingPdf,
+  fetchMeetingDetails,
+  getErrorMessage,
+  type MeetingDetailsRecord,
+} from '../../api'
 
 export default function MeetingDetails() {
-  const { id } = useParams()
-
-  const [meeting, setMeeting] = useState<any>(null)
+  const { id } = useParams<{ id: string }>()
+  const [meeting, setMeeting] = useState<MeetingDetailsRecord | null>(null)
   const [loading, setLoading] = useState(true)
+  const [message, setMessage] = useState('')
+  const [isExporting, setIsExporting] = useState(false)
 
   useEffect(() => {
-    loadMeeting()
+    const loadMeeting = async () => {
+      if (!id) {
+        setMessage('Meeting not found.')
+        setLoading(false)
+        return
+      }
+
+      try {
+        setMessage('')
+        const response = await fetchMeetingDetails(id)
+        setMeeting(response)
+      } catch (error) {
+        setMeeting(null)
+        setMessage(getErrorMessage(error, 'Failed to load meeting details.'))
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    void loadMeeting()
   }, [id])
 
-  const loadMeeting = async () => {
-    try {
-      const response = await axios.get(
-        `${import.meta.env.VITE_API_URL}/ai/meetings/${id}`
-      )
+  const handleExportPdf = async () => {
+    if (!id) {
+      setMessage('Meeting not found.')
+      return
+    }
 
-      setMeeting(response.data)
+    try {
+      setIsExporting(true)
+      setMessage('')
+      const downloadUrl = await downloadMeetingPdf(id)
+      window.open(downloadUrl, '_blank', 'noopener,noreferrer')
+      window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 60_000)
     } catch (error) {
-      console.error('Failed to load meeting:', error)
+      setMessage(getErrorMessage(error, 'Failed to export the meeting PDF.'))
     } finally {
-      setLoading(false)
+      setIsExporting(false)
     }
   }
 
@@ -37,7 +68,7 @@ export default function MeetingDetails() {
   if (!meeting) {
     return (
       <div style={{ padding: '24px' }}>
-        Meeting not found.
+        {message || 'Meeting not found.'}
       </div>
     )
   }
@@ -52,24 +83,23 @@ export default function MeetingDetails() {
           fontWeight: 'bold',
         }}
       >
-        ← Back to Meeting History
+        Back to Meeting History
       </Link>
 
       <h1 style={{ marginTop: '20px' }}>
-        📋 {meeting.meeting_title}
+        {meeting.meeting_title}
       </h1>
 
-      {/* PDF BUTTON */}
       <div
         style={{
           marginTop: '12px',
           marginBottom: '20px',
         }}
       >
-        <a
-          href={`${import.meta.env.VITE_API_URL}/ai/meetings/${id}/pdf`}
-          target="_blank"
-          rel="noopener noreferrer"
+        <button
+          type="button"
+          onClick={() => void handleExportPdf()}
+          disabled={isExporting}
           style={{
             background: '#0891b2',
             color: '#fff',
@@ -77,23 +107,25 @@ export default function MeetingDetails() {
             borderRadius: '8px',
             textDecoration: 'none',
             fontWeight: 'bold',
+            border: 'none',
+            cursor: isExporting ? 'wait' : 'pointer',
           }}
         >
-          📄 Export PDF
-        </a>
+          {isExporting ? 'Exporting PDF...' : 'Export PDF'}
+        </button>
       </div>
+
+      {message ? <p className="status-message">{message}</p> : null}
 
       <p>
         <strong>Meeting Date:</strong>{' '}
-        {meeting.meeting_date}
+        {meeting.meeting_date || 'N/A'}
       </p>
 
       <p>
         <strong>Created:</strong>{' '}
-        {meeting.created_at}
+        {meeting.created_at || 'N/A'}
       </p>
-
-      {/* SUMMARY */}
 
       <div
         style={{
@@ -103,8 +135,7 @@ export default function MeetingDetails() {
           marginTop: '20px',
         }}
       >
-        <h2>📝 Summary</h2>
-
+        <h2>Summary</h2>
         <pre
           style={{
             whiteSpace: 'pre-wrap',
@@ -115,8 +146,6 @@ export default function MeetingDetails() {
         </pre>
       </div>
 
-      {/* ACTION ITEMS */}
-
       <div
         style={{
           background: '#ecfeff',
@@ -125,8 +154,7 @@ export default function MeetingDetails() {
           marginTop: '20px',
         }}
       >
-        <h2>✅ Action Items</h2>
-
+        <h2>Action Items</h2>
         <pre
           style={{
             whiteSpace: 'pre-wrap',
@@ -137,8 +165,6 @@ export default function MeetingDetails() {
         </pre>
       </div>
 
-      {/* TRANSCRIPT */}
-
       <div
         style={{
           background: '#fafafa',
@@ -148,8 +174,7 @@ export default function MeetingDetails() {
           marginBottom: '40px',
         }}
       >
-        <h2>🎤 Transcript</h2>
-
+        <h2>Transcript</h2>
         <pre
           style={{
             whiteSpace: 'pre-wrap',
