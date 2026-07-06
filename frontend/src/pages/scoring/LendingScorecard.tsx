@@ -17,6 +17,18 @@ import {
   type ProductType,
   type WorkflowStatus,
 } from '../../api/loan';
+import {
+  CREDIT_POLICY_THRESHOLDS,
+  isAcceptableDsr,
+  isApproveBand,
+  isLowRiskProbability,
+  isMediumRiskProbability,
+  isReviewRecommendationProbability,
+  isSafeLtv,
+  isStrongDsr,
+  isWorkflowAutoApproveProbability,
+  isWorkflowAutoRejectProbability,
+} from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
 import { isBorrowerSubscriberRole } from '../../authRoles';
 import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
@@ -430,20 +442,28 @@ const calculateAiRecommendation = (
   let baseProb = 70;
   const computationLog = ['Base Probability: 70%'];
 
-  if (calculations.dsr < 35) {
+  if (isStrongDsr(calculations.dsr)) {
     baseProb += 15;
-    computationLog.push('+15% (Strong Debt Service Ratio (DSR) < 35%)');
-  } else if (calculations.dsr > 50) {
+    computationLog.push(
+      `+15% (Strong Debt Service Ratio (DSR) < ${CREDIT_POLICY_THRESHOLDS.dsr.strongMax}%)`,
+    );
+  } else if (calculations.dsr > CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax) {
     baseProb -= 20;
-    computationLog.push('-20% (High Debt Service Ratio (DSR) > 50%)');
+    computationLog.push(
+      `-20% (High Debt Service Ratio (DSR) > ${CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax}%)`,
+    );
   }
 
-  if (calculations.ltv < 80) {
+  if (isSafeLtv(calculations.ltv)) {
     baseProb += 10;
-    computationLog.push('+10% (Safe Loan-to-Value Ratio (LTV) < 80%)');
-  } else if (calculations.ltv > 95) {
+    computationLog.push(
+      `+10% (Safe Loan-to-Value Ratio (LTV) < ${CREDIT_POLICY_THRESHOLDS.ltv.safeMax}%)`,
+    );
+  } else if (calculations.ltv > CREDIT_POLICY_THRESHOLDS.ltv.riskyMin) {
     baseProb -= 15;
-    computationLog.push('-15% (Risky Loan-to-Value Ratio (LTV) > 95%)');
+    computationLog.push(
+      `-15% (Risky Loan-to-Value Ratio (LTV) > ${CREDIT_POLICY_THRESHOLDS.ltv.riskyMin}%)`,
+    );
   }
 
   if (automatedTotal >= 40) {
@@ -455,9 +475,13 @@ const calculateAiRecommendation = (
 
   return {
     probability: finalProb,
-    riskLevel: finalProb > 80 ? 'Low' : finalProb > 50 ? 'Medium' : 'High',
+    riskLevel: isLowRiskProbability(finalProb)
+      ? 'Low'
+      : isMediumRiskProbability(finalProb)
+        ? 'Medium'
+        : 'High',
     suggestedAmount:
-      finalProb > 80 ? application.loan.amount : application.loan.amount * 0.8,
+      isApproveBand(finalProb) ? application.loan.amount : application.loan.amount * 0.8,
     computationLog,
   };
 };
@@ -994,9 +1018,9 @@ const buildScorePayloadSections = (
   );
 
   const recommendation =
-    aiRecommendation.probability > 80
+    isApproveBand(aiRecommendation.probability)
       ? 'Approve'
-      : aiRecommendation.probability > 60
+      : isReviewRecommendationProbability(aiRecommendation.probability)
         ? 'Review'
         : 'Decline';
 
@@ -2757,7 +2781,10 @@ export default function LendingScorecard() {
   const validationChecks = useMemo(() => [
     { label: 'Applicant / Borrower Identity Verified', passed: !!formData.borrower.fullName && !!formData.borrower.govId },
     { label: 'Loan Amount & Collateral Valid', passed: formData.loan.amount > 0 && calculations.totalCollateralValue > 0 },
-    { label: 'Debt Service Ratio (DSR) is within acceptable limits (< 50%)', passed: calculations.dsr < 50 },
+    {
+      label: `Debt Service Ratio (DSR) is within acceptable limits (< ${CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax}%)`,
+      passed: isAcceptableDsr(calculations.dsr),
+    },
     { label: 'Required Documents Uploaded & Parsed', passed: formData.documents.length >= 2 && formData.documents.every(d => d.status === 'Parsed') },
     { label: 'Product selected', passed: !!formData.loan.productType },
     { label: 'Enhanced due diligence fields completed', passed: enhancedDueDiligenceComplete },
@@ -2877,11 +2904,14 @@ export default function LendingScorecard() {
     }
 
     if (formData.status === 'Credit Review') {
-      if (aiRecommendation.probability < 50 || creditRiskInsights.riskScore > 60) {
+      if (
+        isWorkflowAutoRejectProbability(aiRecommendation.probability) ||
+        creditRiskInsights.riskScore > CREDIT_POLICY_THRESHOLDS.workflow.creditReviewRejectRiskScoreMax
+      ) {
         return 'Rejected';
       }
 
-      if (allValidationChecksPassed && aiRecommendation.probability >= 70) {
+      if (allValidationChecksPassed && isWorkflowAutoApproveProbability(aiRecommendation.probability)) {
         return 'Approved';
       }
 

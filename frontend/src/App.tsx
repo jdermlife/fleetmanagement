@@ -40,6 +40,11 @@ const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScor
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
 const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
 const CreditScoring = lazy(() => import('./pages/scoring/CreditScoring'))
+const BudgetExpenseTrackerPage = lazy(() => import('./pages/scoring/BudgetExpenseTrackerPage'))
+const LoanMonitoringPage = lazy(() => import('./pages/scoring/LoanMonitoringPage'))
+const BillReminderPage = lazy(() => import('./pages/scoring/BillReminderPage'))
+const CollateralMonitoringPage = lazy(() => import('./pages/scoring/CollateralMonitoringPage'))
+const NetWorthPositioningPage = lazy(() => import('./pages/scoring/NetWorthPositioningPage'))
 const AuditTrailPanel = lazy(() => import('./pages/audit/AuditTrailPanel'))
 const FuelManagement = lazy(() => import('./pages/fuel/FuelManagement'))
 const VehicleDetailPage = lazy(() => import('./pages/vehicles/VehicleDetailPage'))
@@ -95,6 +100,11 @@ const menuLinks: MenuLink[] = [
   { id: 'lease-scorecard', label: 'Lease Scorecard' },
   { id: 'insurance-management', label: 'Insurance Management' },
   { id: 'credit-scoring', label: 'Psychometric Scoring' },
+  { id: 'budget-expense-tracker', label: 'Budget & Expense Tracker' },
+  { id: 'loan-monitoring', label: 'Loan Monitoring' },
+  { id: 'bill-reminder', label: 'Bill Reminder' },
+  { id: 'collateral-monitoring', label: 'Collateral Monitoring' },
+  { id: 'net-worth-positioning', label: 'Net Worth Positioning' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
@@ -198,8 +208,16 @@ const adminMenus = [
 ]
 
 const subscriberHiddenMenus = [
+  'snapshot',
+  'lease-scorecard',
   'insurance-management',
   'credit-scoring',
+  'ai-dashboard',
+  'ocr-scanner',
+  'voice-reports',
+  'audit-trail',
+  'risk-management',
+  'compliance',
   'subscriptions',
   'admin-users',
   'admin-roles',
@@ -208,7 +226,20 @@ const subscriberHiddenMenus = [
 
 const subscriberAlwaysVisibleMenus = [
   'lending-scorecard',
-  'lease-scorecard',
+  'budget-expense-tracker',
+  'loan-monitoring',
+  'bill-reminder',
+  'collateral-monitoring',
+  'net-worth-positioning',
+]
+
+const borrowerVisibleMenus = [
+  'lending-scorecard',
+  'budget-expense-tracker',
+  'loan-monitoring',
+  'bill-reminder',
+  'collateral-monitoring',
+  'net-worth-positioning',
 ]
 
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
@@ -216,7 +247,7 @@ const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
 const defaultHomePath = isBorrowerSubscriber ? '/lending-scorecard' : '/dashboard'
 
 const visibleMenuLinks = isBorrowerSubscriber
-  ? menuLinks.filter((item) => item.id === 'lending-scorecard')
+  ? menuLinks.filter((item) => borrowerVisibleMenus.includes(item.id))
   : isLenderSubscriber
     ? menuLinks.filter(
         (item) =>
@@ -245,6 +276,7 @@ const adminMenuItems = visibleMenuLinks.filter(
 )
 
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
+const isSignedIn = authReady && Boolean(currentUser)
 
   useEffect(() => {
     const token = getAuthToken()
@@ -288,6 +320,12 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
       savedTheme && VALID_THEME_IDS.has(savedTheme) ? savedTheme : 'classic'
   }, [])
 
+  useEffect(() => {
+    if (!currentUser) {
+      setMenuOpen(false)
+    }
+  }, [currentUser])
+
   const handleTopbarLogout = async () => {
     await logout()
     setCurrentUser(null)
@@ -312,15 +350,17 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
 
           <div className="app-topbar-actions">
             {/* HAMBURGER BUTTON */}
-            <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              type="button"
-              className="app-menu-toggle"
-              aria-label="Toggle account and application menu"
-              aria-expanded={menuOpen}
-            >
-              {authReady && currentUser ? `${currentUser.username} • Menu` : 'Account • Menu'}
-            </button>
+            {isSignedIn ? (
+              <button
+                onClick={() => setMenuOpen(!menuOpen)}
+                type="button"
+                className="app-menu-toggle"
+                aria-label="Toggle account and application menu"
+                aria-expanded={menuOpen}
+              >
+                {`${currentUser?.username ?? 'Account'} • Menu`}
+              </button>
+            ) : null}
 
             {shouldShowBackButton ? (
               <div className="app-mini-nav" aria-label="Page navigation controls">
@@ -348,7 +388,7 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
         </div>
 
         {/* DROPDOWN MENU */}
-{menuOpen && (
+    {isSignedIn && menuOpen && (
   <div
     className="app-menu-panel"
     style={{
@@ -899,6 +939,51 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
               element={
                 <ProtectedRoute roles={['admin']} permissions={['read:scorecards', 'read:analytics']}>
                   <CreditScoring />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/budget-expense-tracker"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <BudgetExpenseTrackerPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/loan-monitoring"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <LoanMonitoringPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/bill-reminder"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <BillReminderPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/collateral-monitoring"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <CollateralMonitoringPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/net-worth-positioning"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <NetWorthPositioningPage />
                 </ProtectedRoute>
               }
             />
