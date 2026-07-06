@@ -3,7 +3,7 @@ export default function AboutFilscorePage() {
     <div className="standalone-card auth-screen">
       <h1>About FILSCORE</h1>
       <p className="intro">
-        FILSCORE is the lending and credit workflow experience inside the broader FMS Mobile
+        FILSCORE is the  credit workflow experience inside the  FMS Mobile
         workspace.
       </p>
 
@@ -11,7 +11,7 @@ export default function AboutFilscorePage() {
         <section className="card auth-helper-card">
           <h3>What FILSCORE Does</h3>
           <p>
-            FILSCORE helps authorized teams manage borrower intake, credit workflow decisions,
+            FILSCORE helps individual  or  teams manage borrower intake, credit workflow decisions,
             supporting documents, scorecard analysis, and audit-aware lending operations from a
             single application.
           </p>
@@ -31,8 +31,7 @@ export default function AboutFilscorePage() {
         <section className="card auth-helper-card">
           <h3>Who It Is For</h3>
           <p>
-            The current product is intended for authorized business, fleet, lending, and
-            credit-operations use cases rather than general consumer use.
+            The current product is mainly intended for applicant borrowers as  general consumer use.
           </p>
         </section>
       </div>

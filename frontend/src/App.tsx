@@ -446,43 +446,47 @@ const isSignedIn = authReady && Boolean(currentUser)
         </Link>
       ))}
 
-    {/* AI TOOLS */}
+    {!isBorrowerSubscriber && !isLenderSubscriber && (
+      <>
+        {/* AI TOOLS */}
 
-    <div
-      onClick={() => setAiOpen(!aiOpen)}
-      className="app-menu-group app-menu-group-ai"
-      style={{
-        background: 'var(--app-menu-group-ai-bg)',
-        color: 'var(--app-menu-group-ai-text)',
-        padding: '12px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        marginTop: '10px',
-      }}
-    >
-      🤖 AI TOOLS {aiOpen ? '▲' : '▼'}
-    </div>
-
-    {aiOpen &&
-      aiMenuItems.map((page) => (
-        <Link
-          key={page.id}
-          to={`/${page.id}`}
-          onClick={closeMenu}
-          className="app-menu-link app-menu-link-ai"
+        <div
+          onClick={() => setAiOpen(!aiOpen)}
+          className="app-menu-group app-menu-group-ai"
           style={{
-            display: 'block',
-            color: 'var(--app-menu-link-text)',
-            textDecoration: 'none',
+            background: 'var(--app-menu-group-ai-bg)',
+            color: 'var(--app-menu-group-ai-text)',
             padding: '12px',
             borderRadius: '8px',
-            background: 'var(--app-menu-link-ai-bg)',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            marginTop: '10px',
           }}
         >
-          🤖 {page.label}
-        </Link>
-      ))}
+          🤖 AI TOOLS {aiOpen ? '▲' : '▼'}
+        </div>
+
+        {aiOpen &&
+          aiMenuItems.map((page) => (
+            <Link
+              key={page.id}
+              to={`/${page.id}`}
+              onClick={closeMenu}
+              className="app-menu-link app-menu-link-ai"
+              style={{
+                display: 'block',
+                color: 'var(--app-menu-link-text)',
+                textDecoration: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'var(--app-menu-link-ai-bg)',
+              }}
+            >
+              🤖 {page.label}
+            </Link>
+          ))}
+      </>
+    )}
 
     {adminMenuItems.length > 0 && (
       <>
@@ -520,43 +524,47 @@ const isSignedIn = authReady && Boolean(currentUser)
       </>
     )}
 
-    {/* GOVERNANCE */}
+    {!isBorrowerSubscriber && !isLenderSubscriber && (
+      <>
+        {/* GOVERNANCE */}
 
-    <div
-      onClick={() => setGovOpen(!govOpen)}
-      className="app-menu-group app-menu-group-governance"
-      style={{
-        background: 'var(--app-menu-group-governance-bg)',
-        color: 'var(--app-menu-group-governance-text)',
-        padding: '12px',
-        borderRadius: '8px',
-        cursor: 'pointer',
-        fontWeight: 'bold',
-        marginTop: '10px',
-      }}
-    >
-      🛡 GOVERNANCE & COMPLIANCE {govOpen ? '▲' : '▼'}
-    </div>
-
-    {govOpen &&
-      govMenuItems.map((page) => (
-        <Link
-          key={page.id}
-          to={`/${page.id}`}
-          onClick={closeMenu}
-          className="app-menu-link app-menu-link-governance"
+        <div
+          onClick={() => setGovOpen(!govOpen)}
+          className="app-menu-group app-menu-group-governance"
           style={{
-            display: 'block',
-            color: 'var(--app-menu-link-text)',
-            textDecoration: 'none',
+            background: 'var(--app-menu-group-governance-bg)',
+            color: 'var(--app-menu-group-governance-text)',
             padding: '12px',
             borderRadius: '8px',
-            background: 'var(--app-menu-link-governance-bg)',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            marginTop: '10px',
           }}
         >
-          🛡 {page.label}
-        </Link>
-      ))}
+          🛡 GOVERNANCE & COMPLIANCE {govOpen ? '▲' : '▼'}
+        </div>
+
+        {govOpen &&
+          govMenuItems.map((page) => (
+            <Link
+              key={page.id}
+              to={`/${page.id}`}
+              onClick={closeMenu}
+              className="app-menu-link app-menu-link-governance"
+              style={{
+                display: 'block',
+                color: 'var(--app-menu-link-text)',
+                textDecoration: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'var(--app-menu-link-governance-bg)',
+              }}
+            >
+              🛡 {page.label}
+            </Link>
+          ))}
+      </>
+    )}
 
     <div
       className="app-menu-group app-menu-group-account"
@@ -992,7 +1000,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscriptions"
               element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <SubscriptionManagementPage />
                 </ProtectedRoute>
               }
