@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class AIFeedbackRequest(BaseModel):
@@ -11,6 +11,8 @@ class AIFeedbackRequest(BaseModel):
 
 
 class AIFeedbackResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     request_id: int | None
     response_id: int | None
@@ -18,9 +20,6 @@ class AIFeedbackResponse(BaseModel):
     rating: int
     feedback_text: str | None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class AIGovernanceStatsResponse(BaseModel):
@@ -33,6 +32,8 @@ class AIGovernanceStatsResponse(BaseModel):
 
 
 class AIRequestAuditResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int | None
     endpoint: str
@@ -46,11 +47,10 @@ class AIRequestAuditResponse(BaseModel):
     error_message: str | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True
-
 
 class AIResponseAuditResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     request_id: int
     user_id: int | None
@@ -62,5 +62,3 @@ class AIResponseAuditResponse(BaseModel):
     latency_ms: int | None
     created_at: datetime
 
-    class Config:
-        from_attributes = True

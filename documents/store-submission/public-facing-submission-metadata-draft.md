@@ -45,14 +45,23 @@ Replace these before submission:
 
 - Support URL:
   `https://your-public-domain.example/support`
+  Source route in app:
+  `/support`
 - Marketing URL:
   `https://your-public-domain.example`
 - Privacy Policy URL:
   `https://your-public-domain.example/privacy`
+  Source route in app:
+  `/privacy`
 - Terms URL:
   `https://your-public-domain.example/terms`
+  Source route in app:
+  `/terms`
 - Support email:
   `admin@quantech.international`
+
+The current frontend now includes these public-facing routes, but they still
+need to be deployed on a real public domain before store submission.
 
 ## Reviewer Notes Draft
 

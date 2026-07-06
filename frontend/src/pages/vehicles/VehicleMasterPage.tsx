@@ -79,7 +79,7 @@ function VehicleMasterPage() {
           <h3>PostgreSQL Hookup Guide</h3>
           <ol className="vehicle-master-steps">
             <li>Set backend `DATABASE_URL` to your PostgreSQL connection string.</li>
-            <li>Restart the Flask backend so it reinitializes the storage adapter.</li>
+            <li>Restart the FastAPI backend so it reinitializes the storage adapter.</li>
             <li>Refresh this page and confirm the engine switches from `sqlite` to `postgresql`.</li>
           </ol>
           <p className="vehicle-master-note">

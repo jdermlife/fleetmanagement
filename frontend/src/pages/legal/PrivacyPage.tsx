@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 const privacySections = [
   {
     title: '1. Overview',
@@ -127,6 +129,15 @@ export default function PrivacyPage() {
             ) : null}
           </section>
         ))}
+        <section className="card auth-helper-card">
+          <h3>Related Help</h3>
+          <p>
+            For support, reviewer access coordination, or account follow-up, visit the public support page.
+          </p>
+          <p>
+            <Link to="/support">Support</Link>
+          </p>
+        </section>
       </div>
     </div>
   )

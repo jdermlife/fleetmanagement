@@ -6,9 +6,6 @@ import os
 import time
 from dataclasses import dataclass
 from datetime import datetime, timedelta, timezone
-from enum import Enum
-from typing import Any
-
 try:
     import jwt
 except ImportError:
@@ -100,31 +97,3 @@ def decode_token(token: str) -> TokenPayload:
         raise TokenError("Token has expired")
     except jwt.InvalidTokenError:
         raise TokenError("Invalid token")
-
-
-def token_required(fn):
-    from functools import wraps
-    from flask import request, jsonify
-    
-    @wraps(fn)
-    def decorated(*args, **kwargs):
-        auth_header = request.headers.get("Authorization", "")
-        if not auth_header.startswith("Bearer "):
-            return jsonify({"error": "Please Login.Missing or invalid Authorization header"}), 401
-        
-        token = auth_header[7:]
-        try:
-            payload = decode_token(token)
-        except TokenError:
-            return jsonify({"error": "Invalid or expired token"}), 401
-        except RuntimeError:
-            return jsonify({"error": "Authentication not configured"}), 500
-        
-        request.current_user = {
-            "id": payload.sub,
-            "username": payload.username,
-            "role": payload.role,
-        }
-        return fn(*args, **kwargs)
-    
-    return decorated

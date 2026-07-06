@@ -1,9 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from functools import wraps
-from typing import Any
-
 
 class Permission(str, Enum):
     # Loan Management
@@ -181,46 +178,6 @@ ROLE_PERMISSIONS: dict[Role, list[Permission]] = {
         Permission.READ_DRIVERS,
     ],
 }
-
-
-def role_required(*required_roles: Role):
-    def decorator(fn):
-        @wraps(fn)
-        def decorated(*args, **kwargs):
-            from flask import request, jsonify
-            
-            if not hasattr(request, "current_user"):
-                return jsonify({"error": "Authentication required"}), 401
-            
-            user_role = request.current_user.get("role")
-            if user_role not in [r.value for r in required_roles]:
-                return jsonify({"error": "Insufficient permissions"}), 403
-            
-            return fn(*args, **kwargs)
-        return decorated
-    return decorator
-
-
-def permission_required(permission: Permission):
-    def decorator(fn):
-        @wraps(fn)
-        def decorated(*args, **kwargs):
-            from flask import request, jsonify
-            
-            if not hasattr(request, "current_user"):
-                return jsonify({"error": "Authentication required"}), 401
-            
-            user_role = request.current_user.get("role")
-            role = Role(user_role) if user_role in [r.value for r in Role] else None
-            
-            if role and permission not in ROLE_PERMISSIONS.get(role, []):
-                return jsonify({"error": "Insufficient permissions"}), 403
-            
-            return fn(*args, **kwargs)
-        return decorated
-    return decorator
-
-
 def has_permission(role: Role | str, permission: Permission) -> bool:
     role = Role(role) if isinstance(role, str) else role
     return permission in ROLE_PERMISSIONS.get(role, [])

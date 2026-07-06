@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
+import tests._warning_filters  # noqa: F401
+
 from app.services.fraud_scoring_engine import compute_fraud_score
 
 

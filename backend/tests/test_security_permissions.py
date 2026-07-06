@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
+import tests._warning_filters  # noqa: F401
+
 from app.routes.security import (
     _fallback_permissions_for_role_names,
     _resolve_registration_role,

@@ -2,6 +2,7 @@ import os
 import json
 import asyncio
 import time
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -14,6 +15,11 @@ from app.fastapi_rate_limit import RATE_LIMIT_ENABLED, RateLimitMiddleware
 from app.models.loan_application import LoanApplication  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.ai_governance import AIRequest, AIResponse, AIFeedback  # noqa: F401
+from app.models.vehicles import Vehicle  # noqa: F401
+from app.models.fuel_logs import FuelLog  # noqa: F401
+from app.models.maintenance_logs import MaintenanceRecord  # noqa: F401
+from app.models.insurance_records import InsuranceRecord  # noqa: F401
+from app.models.gps_tracking import GpsTrackingRecord  # noqa: F401
 from app.models.document import Document, DocumentVersion, DocumentTag, DocumentSignature  # noqa: F401
 from app.models.notification import (
     Notification,
@@ -44,6 +50,7 @@ from app.routes.documents import router as documents_router
 from app.routes.audit_logs import router as audit_logs_router
 from app.routes.notifications import router as notifications_router
 from app.routes.security import router as security_router, admin_router as security_admin_router
+from app.routes.fleet_operations import router as fleet_operations_router
 from app.observability import setup_observability
 from app.services.audit_log_service import create_immutable_audit_constraints, write_audit_log
 from app.services.notification_service import dispatch_queued_notifications
@@ -60,18 +67,157 @@ environment = os.getenv("ENVIRONMENT", "development").lower()
 is_production = environment == "production"
 api_docs_enabled = os.getenv("ENABLE_API_DOCS", "false" if is_production else "true").lower() == "true"
 
-app = FastAPI(
-    docs_url="/docs" if api_docs_enabled else None,
-    redoc_url="/redoc" if api_docs_enabled else None,
-    openapi_url="/openapi.json" if api_docs_enabled else None,
-)
-setup_observability(app)
-
 auto_run_schema_migrations = os.getenv("AUTO_RUN_SCHEMA_MIGRATIONS", "false").lower() == "true"
 notification_dispatcher_enabled = os.getenv("NOTIFICATION_DISPATCHER_ENABLED", "true").lower() == "true"
 notification_dispatch_interval_seconds = int(os.getenv("NOTIFICATION_DISPATCH_INTERVAL_SECONDS", "30"))
 notification_dispatch_batch_size = int(os.getenv("NOTIFICATION_DISPATCH_BATCH_SIZE", "100"))
 notification_dispatcher_task: asyncio.Task | None = None
+
+
+async def _notification_dispatcher_loop() -> None:
+    while True:
+        db = SessionLocal()
+        try:
+            dispatch_queued_notifications(db, limit=notification_dispatch_batch_size)
+        except Exception as exc:
+            backend_logger.error("Notification dispatcher loop failed", error=str(exc))
+        finally:
+            db.close()
+
+        await asyncio.sleep(notification_dispatch_interval_seconds)
+
+
+def _ensure_loan_application_schema() -> None:
+    if not auto_run_schema_migrations:
+        return
+
+    Base.metadata.create_all(bind=engine)
+
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS product_type VARCHAR;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS requirements JSONB;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE loan_applications
+                ALTER TABLE loan_applications
+                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                UPDATE loan_applications
+                SET created_at = NOW()
+                WHERE created_at IS NULL;
+                """
+            )
+        )
+
+        from app.workflow import create_workflow_tables
+
+        create_workflow_tables(connection)
+        create_immutable_audit_constraints(connection)
+        connection.execute(
+            text(
+                """
+                ALTER TABLE notifications
+                ADD COLUMN IF NOT EXISTS attempts_count INTEGER DEFAULT 0;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE notifications
+                ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 5;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE notifications
+                ADD COLUMN IF NOT EXISTS next_attempt_at TIMESTAMPTZ DEFAULT NOW();
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE notifications
+                ADD COLUMN IF NOT EXISTS dead_lettered_at TIMESTAMPTZ;
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                ALTER TABLE notifications
+                ADD COLUMN IF NOT EXISTS dead_letter_reason TEXT;
+                """
+            )
+        )
+
+    session = SessionLocal()
+    try:
+        seed_roles_and_permissions(session)
+    except Exception:
+        session.rollback()
+    finally:
+        session.close()
+
+
+def _ensure_workflow_history_table() -> None:
+    from app.workflow import create_workflow_tables
+
+    with engine.begin() as connection:
+        create_workflow_tables(connection)
+
+
+@asynccontextmanager
+async def lifespan(_app: FastAPI):
+    global notification_dispatcher_task
+
+    _ensure_loan_application_schema()
+    _ensure_workflow_history_table()
+
+    if notification_dispatcher_enabled and notification_dispatcher_task is None:
+        notification_dispatcher_task = asyncio.create_task(_notification_dispatcher_loop())
+
+    try:
+        yield
+    finally:
+        if notification_dispatcher_task:
+            notification_dispatcher_task.cancel()
+            try:
+                await notification_dispatcher_task
+            except asyncio.CancelledError:
+                pass
+            notification_dispatcher_task = None
+
+app = FastAPI(
+    docs_url="/docs" if api_docs_enabled else None,
+    redoc_url="/redoc" if api_docs_enabled else None,
+    openapi_url="/openapi.json" if api_docs_enabled else None,
+    lifespan=lifespan,
+)
+setup_observability(app)
 
 default_origins = [
     "http://localhost:3000",
@@ -278,6 +424,7 @@ async def immutable_audit_log_middleware(request: Request, call_next):
 app.include_router(driver_router)
 app.include_router(dashboard_router)
 app.include_router(ai_router)
+app.include_router(fleet_operations_router)
 app.include_router(lease_router)
 app.include_router(database_router)
 app.include_router(workflow_router)
@@ -297,148 +444,6 @@ app.include_router(
     subscriptions_router,
     prefix="/api",
 )
-
-
-@app.on_event("startup")
-def ensure_loan_application_schema() -> None:
-    if not auto_run_schema_migrations:
-        return
-
-    Base.metadata.create_all(bind=engine)
-
-    with engine.begin() as connection:
-        connection.execute(
-            text(
-                """
-                ALTER TABLE loan_applications
-                ADD COLUMN IF NOT EXISTS product_type VARCHAR;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE loan_applications
-                ADD COLUMN IF NOT EXISTS requirements JSONB;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE loan_applications
-                ALTER TABLE loan_applications
-                ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                UPDATE loan_applications
-                SET created_at = NOW()
-                WHERE created_at IS NULL;
-                """
-            )
-        )
-        
-        # Create workflow history table
-        from app.workflow import create_workflow_tables
-        create_workflow_tables(connection)
-
-        # Enforce append-only (immutable) behavior for audit_logs.
-        create_immutable_audit_constraints(connection)
-
-        # Keep notification schema forward-compatible in existing environments.
-        connection.execute(
-            text(
-                """
-                ALTER TABLE notifications
-                ADD COLUMN IF NOT EXISTS attempts_count INTEGER DEFAULT 0;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE notifications
-                ADD COLUMN IF NOT EXISTS max_attempts INTEGER DEFAULT 5;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE notifications
-                ADD COLUMN IF NOT EXISTS next_attempt_at TIMESTAMPTZ DEFAULT NOW();
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE notifications
-                ADD COLUMN IF NOT EXISTS dead_lettered_at TIMESTAMPTZ;
-                """
-            )
-        )
-        connection.execute(
-            text(
-                """
-                ALTER TABLE notifications
-                ADD COLUMN IF NOT EXISTS dead_letter_reason TEXT;
-                """
-            )
-        )
-
-    session = SessionLocal()
-    try:
-        seed_roles_and_permissions(session)
-    except Exception:
-        session.rollback()
-    finally:
-        session.close()
-
-
-@app.on_event("startup")
-def ensure_workflow_history_table() -> None:
-    from app.workflow import create_workflow_tables
-
-    with engine.begin() as connection:
-        create_workflow_tables(connection)
-
-
-async def _notification_dispatcher_loop() -> None:
-    while True:
-        db = SessionLocal()
-        try:
-            dispatch_queued_notifications(db, limit=notification_dispatch_batch_size)
-        except Exception as exc:
-            backend_logger.error("Notification dispatcher loop failed", error=str(exc))
-        finally:
-            db.close()
-
-        await asyncio.sleep(notification_dispatch_interval_seconds)
-
-
-@app.on_event("startup")
-async def start_notification_dispatcher() -> None:
-    global notification_dispatcher_task
-    if notification_dispatcher_enabled and notification_dispatcher_task is None:
-        notification_dispatcher_task = asyncio.create_task(_notification_dispatcher_loop())
-
-
-@app.on_event("shutdown")
-async def stop_notification_dispatcher() -> None:
-    global notification_dispatcher_task
-    if notification_dispatcher_task:
-        notification_dispatcher_task.cancel()
-        try:
-            await notification_dispatcher_task
-        except asyncio.CancelledError:
-            pass
-        notification_dispatcher_task = None
-
 
 
 @app.api_route("/", methods=["GET", "HEAD"])
@@ -490,12 +495,3 @@ def metrics():
         f"app_uptime_seconds {int(time.time() - _service_start_time)}",
     ]
     return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
-
-
-def create_app(test_config: dict[str, object] | None = None):
-    # Legacy unittest modules still exercise the older Flask surface through
-    # create_app(). Keep that compatibility hook while the FastAPI app remains
-    # the primary runtime export from this module.
-    from app.main_flaskold import create_app as create_flask_app
-
-    return create_flask_app(test_config)

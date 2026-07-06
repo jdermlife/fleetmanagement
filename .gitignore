@@ -47,6 +47,10 @@ frontend/node_modules/
 frontend/dist/
 frontend/.run-*.log
 frontend/.run-*.err.log
+frontend/android/keystore.properties
+frontend/android/local.properties
+frontend/android/*.jks
+frontend/android/*.keystore
 
 *.log
 

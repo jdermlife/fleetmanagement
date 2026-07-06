@@ -1,3 +1,5 @@
+import { Link } from 'react-router-dom'
+
 export default function TermsPage() {
   return (
     <div className="standalone-card auth-screen">
@@ -49,6 +51,10 @@ export default function TermsPage() {
             Users can manage account access from the in-app account settings flow where available.
             Privacy, deletion, and support requests may also be sent to{' '}
             <a href="mailto:admin@quantech.international">admin@quantech.international</a>.
+          </p>
+          <p>
+            Public support page:{' '}
+            <Link to="/support">Support</Link>
           </p>
         </section>
       </div>

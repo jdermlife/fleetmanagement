@@ -42,6 +42,15 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_fastapi_auth_smoke.py -v
 
+      - name: Run modern backend unittest suites
+        working-directory: ./backend
+        run: |
+          python -m unittest discover -s tests -p test_security_permissions.py -v
+          python -m unittest discover -s tests -p test_credit_risk_engine.py -v
+          python -m unittest discover -s tests -p test_credit_scoring_engine.py -v
+          python -m unittest discover -s tests -p test_fraud_scoring_engine.py -v
+          python -m unittest discover -s tests -p test_social_scoring_engine.py -v
+
       - name: Validate core module syntax
         working-directory: ./backend
         run: |
@@ -51,14 +60,18 @@ jobs:
             app/database.py \
             app/fastapi_auth.py \
             app/fastapi_rate_limit.py \
+            app/routes/fleet_operations.py \
             app/routes/drivers.py \
             app/routes/lease.py \
             app/routes/database.py \
             app/routes/loan_routes.py \
             app/routes/ai.py
 
-      - name: Run existing backend tests
+      - name: Run modern backend pytest suites
         working-directory: ./backend
         run: |
-          python -m unittest discover -s tests -p test_app.py -v
+          PYTHONPATH=. pytest tests/test_loan_repository_io.py -q
+          PYTHONPATH=. pytest tests/test_subscription_authorization.py -q
+          PYTHONPATH=. pytest tests/test_subscription_endpoints_smoke.py -q
+          PYTHONPATH=. pytest tests/test_fleet_operations_smoke.py -q
 

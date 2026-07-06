@@ -65,6 +65,7 @@ const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const AccountSettingsPage = lazy(() => import('./pages/auth/AccountSettingsPage'))
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
+const SupportPage = lazy(() => import('./pages/legal/SupportPage'))
 const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPage'))
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
@@ -633,6 +634,21 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
       Subscription Fees
     </Link>
     <Link
+      to="/support"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Support
+    </Link>
+    <Link
       to="/privacy"
       onClick={closeMenu}
       className="app-menu-link app-menu-link-account"
@@ -1046,6 +1062,11 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             <Route
               path="/settings"
               element={authenticatedPage(<AccountSettingsPage />)}
+            />
+
+            <Route
+              path="/support"
+              element={<SupportPage />}
             />
 
             <Route

@@ -2,8 +2,9 @@
 
 from datetime import datetime
 from typing import List, Optional
-from pydantic import BaseModel, Field
 from enum import Enum
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 # Enums
@@ -41,7 +42,9 @@ class EntityTypeEnum(str, Enum):
 # Document Version Schemas
 class DocumentVersionResponse(BaseModel):
     """Response for a single document version."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     version_number: int
     file_hash: str
@@ -53,14 +56,13 @@ class DocumentVersionResponse(BaseModel):
     is_signed: bool
     created_at: datetime
     
-    class Config:
-        from_attributes = True
-
 
 # Document Signature Schemas
 class DocumentSignatureResponse(BaseModel):
     """Response for document signature."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     signature_type: str
     signed_by: str
@@ -70,9 +72,6 @@ class DocumentSignatureResponse(BaseModel):
     invalidation_reason: Optional[str]
     certificate_id: Optional[str]
     
-    class Config:
-        from_attributes = True
-
 
 class DocumentSignRequest(BaseModel):
     """Request to digitally sign a document."""
@@ -94,14 +93,13 @@ class DocumentSignResponse(BaseModel):
 # Document Tag Schemas
 class DocumentTagResponse(BaseModel):
     """Response for a document tag."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     tag: str
     created_at: datetime
     
-    class Config:
-        from_attributes = True
-
 
 # Main Document Schemas
 class DocumentUploadRequest(BaseModel):
@@ -117,7 +115,9 @@ class DocumentUploadRequest(BaseModel):
 
 class DocumentResponse(BaseModel):
     """Response for a document (current version only)."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     entity_type: EntityTypeEnum
     entity_id: int
@@ -133,13 +133,12 @@ class DocumentResponse(BaseModel):
     tags: List[DocumentTagResponse]
     signatures: List[DocumentSignatureResponse]
     
-    class Config:
-        from_attributes = True
-
 
 class DocumentListResponse(BaseModel):
     """Response for listing documents."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     entity_type: EntityTypeEnum
     entity_id: int
@@ -153,24 +152,22 @@ class DocumentListResponse(BaseModel):
     is_expiring_soon: bool = Field(description="True if expires within 30 days")
     created_by: Optional[str]
     
-    class Config:
-        from_attributes = True
-
 
 class DocumentHistoryResponse(BaseModel):
     """Response for document history/versions."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     document_id: int
     total_versions: int
     versions: List[DocumentVersionResponse]
     
-    class Config:
-        from_attributes = True
-
 
 class DocumentExpiryResponse(BaseModel):
     """Response for expiry status."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     document_type: DocumentTypeEnum
     original_filename: str
@@ -180,13 +177,12 @@ class DocumentExpiryResponse(BaseModel):
     entity_type: EntityTypeEnum
     entity_id: int
     
-    class Config:
-        from_attributes = True
-
 
 class DocumentSearchResponse(BaseModel):
     """Response for document search results."""
-    
+
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     entity_type: EntityTypeEnum
     entity_id: int
@@ -196,9 +192,6 @@ class DocumentSearchResponse(BaseModel):
     created_at: datetime
     match_reason: str = Field(description="Why this matched search (e.g., 'tag match', 'filename match')")
     
-    class Config:
-        from_attributes = True
-
 
 class BulkDocumentExpiryResponse(BaseModel):
     """Response for bulk expiry check."""

@@ -3,6 +3,8 @@ from __future__ import annotations
 import unittest
 from types import SimpleNamespace
 
+import tests._warning_filters  # noqa: F401
+
 from app.services.social_scoring_engine import compute_social_score
 
 
@@ -87,4 +89,3 @@ class SocialScoringEngineTests(unittest.TestCase):
 
         self.assertEqual(result["overall_social_score"], 0.0)
         self.assertEqual(result["social_grade"], "Red 2")
-

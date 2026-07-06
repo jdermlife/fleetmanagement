@@ -1,6 +1,11 @@
 # from app.models.loan_application import LoanApplication
 
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.vehicles import Vehicle  # noqa: F401
+from app.models.fuel_logs import FuelLog  # noqa: F401
+from app.models.maintenance_logs import MaintenanceRecord  # noqa: F401
+from app.models.insurance_records import InsuranceRecord  # noqa: F401
+from app.models.gps_tracking import GpsTrackingRecord  # noqa: F401
 
 from app.models.ai_governance import (  # noqa: F401
     AIRequest,

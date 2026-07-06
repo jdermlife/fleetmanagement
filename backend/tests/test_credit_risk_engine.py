@@ -4,6 +4,8 @@ import unittest
 from datetime import date
 from types import SimpleNamespace
 
+import tests._warning_filters  # noqa: F401
+
 from app.services.credit_risk_engine import compute_credit_risk_package
 
 

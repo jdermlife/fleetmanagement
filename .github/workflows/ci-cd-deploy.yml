@@ -36,12 +36,25 @@ jobs:
         run: |
           python -m unittest discover -s tests -p test_fastapi_auth_smoke.py -v
 
+      - name: Run backend verification suites
+        run: |
+          python -m unittest discover -s tests -p test_security_permissions.py -v
+          python -m unittest discover -s tests -p test_credit_risk_engine.py -v
+          python -m unittest discover -s tests -p test_credit_scoring_engine.py -v
+          python -m unittest discover -s tests -p test_fraud_scoring_engine.py -v
+          python -m unittest discover -s tests -p test_social_scoring_engine.py -v
+          PYTHONPATH=. pytest tests/test_loan_repository_io.py -q
+          PYTHONPATH=. pytest tests/test_subscription_authorization.py -q
+          PYTHONPATH=. pytest tests/test_subscription_endpoints_smoke.py -q
+          PYTHONPATH=. pytest tests/test_fleet_operations_smoke.py -q
+
       - name: Compile critical modules
         run: |
           python -m py_compile \
             main.py \
             app/database.py \
             app/fastapi_auth.py \
+            app/routes/fleet_operations.py \
             app/routes/workflow.py \
             app/routes/documents.py \
             app/routes/notifications.py \

@@ -18,7 +18,16 @@ def test_export_fields_match_loan_application_table_columns() -> None:
 def test_upsert_fields_exclude_export_only_columns() -> None:
     assert "id" not in UPSERT_FIELDS
     assert "updated_at" not in UPSERT_FIELDS
-    assert set(EXPORT_FIELDS) - set(UPSERT_FIELDS) == {"id", "updated_at"}
+    assert set(EXPORT_FIELDS) - set(UPSERT_FIELDS) == {
+        "id",
+        "created_by",
+        "updated_by",
+        "reviewed_by",
+        "approved_by",
+        "released_by",
+        "deleted_by",
+        "updated_at",
+    }
 
 
 def test_generate_csv_bytes_includes_all_loan_application_columns() -> None:

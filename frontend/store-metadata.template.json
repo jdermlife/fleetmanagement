@@ -6,10 +6,17 @@
     "primaryCategory": "Business",
     "secondaryCategory": "Productivity",
     "supportEmail": "admin@quantech.international",
+    "inAppSupportRoute": "/support",
     "supportUrl": "https://your-public-domain.example/support",
     "marketingUrl": "https://your-public-domain.example",
     "privacyPolicyUrl": "https://your-public-domain.example/privacy",
-    "termsUrl": "https://your-public-domain.example/terms"
+    "termsUrl": "https://your-public-domain.example/terms",
+    "publicPagesChecklist": {
+      "supportRouteImplemented": true,
+      "privacyRouteImplemented": true,
+      "termsRouteImplemented": true,
+      "publicDomainDeployed": false
+    }
   },
   "googlePlay": {
     "applicationId": "com.fms.mobile",

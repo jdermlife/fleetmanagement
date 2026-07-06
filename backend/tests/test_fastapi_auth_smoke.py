@@ -5,6 +5,8 @@ import os
 import sys
 import unittest
 
+import tests._warning_filters  # noqa: F401
+
 
 class FastAPIAuthSmokeTests(unittest.TestCase):
     @classmethod

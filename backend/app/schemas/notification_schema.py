@@ -1,7 +1,7 @@
 from datetime import datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.notification import NotificationChannel, NotificationPriority, NotificationStatus
 
@@ -22,6 +22,8 @@ class NotificationTemplateUpdate(BaseModel):
 
 
 class NotificationTemplateResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     name: str
     event_type: str
@@ -31,9 +33,6 @@ class NotificationTemplateResponse(BaseModel):
     is_active: bool
     created_by: str | None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class NotificationPreferenceUpdate(BaseModel):
@@ -47,6 +46,8 @@ class NotificationPreferenceUpdate(BaseModel):
 
 
 class NotificationPreferenceResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     event_type: str
@@ -58,9 +59,6 @@ class NotificationPreferenceResponse(BaseModel):
     quiet_hours_start: str | None
     quiet_hours_end: str | None
     created_at: datetime
-
-    class Config:
-        from_attributes = True
 
 
 class NotificationSendRecipient(BaseModel):
@@ -83,6 +81,8 @@ class NotificationSendRequest(BaseModel):
 
 
 class NotificationResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     user_id: int
     event_type: str
@@ -106,9 +106,6 @@ class NotificationResponse(BaseModel):
     sent_at: datetime | None
     read_at: datetime | None
 
-    class Config:
-        from_attributes = True
-
 
 class NotificationDispatchResponse(BaseModel):
     processed: int
@@ -128,6 +125,8 @@ class NotificationUnreadCountResponse(BaseModel):
 
 
 class NotificationDeadLetterResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
     id: int
     notification_id: int
     event_type: str
@@ -138,5 +137,3 @@ class NotificationDeadLetterResponse(BaseModel):
     payload_snapshot: str | None
     dead_lettered_at: datetime
 
-    class Config:
-        from_attributes = True

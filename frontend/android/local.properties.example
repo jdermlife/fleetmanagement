@@ -1,0 +1,6 @@
+# Copy this file to `local.properties` in `frontend/android/`
+# and set `sdk.dir` to your real Android SDK location.
+#
+# Do not commit the real `local.properties` file.
+
+sdk.dir=C:\\Users\\YOUR_USER\\AppData\\Local\\Android\\Sdk
