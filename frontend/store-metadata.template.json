@@ -1,15 +1,15 @@
 {
   "app": {
     "name": "FMS Mobile",
-    "shortDescription": "Enterprise fleet and lending operations in one secure mobile workspace.",
-    "fullDescription": "FMS Mobile helps teams manage fleet operations, lending workflows, and audit-ready compliance from anywhere. Features include role-based access, secure authentication, operational dashboards, and workflow traceability.",
+    "shortDescription": "Secure fleet, lending, and credit workflow operations in one mobile workspace.",
+    "fullDescription": "FMS Mobile helps authorized teams manage fleet operations, borrower records, loan workflows, supporting documents, and audit-ready credit processes from a single secure mobile workspace. Current features include role-based access, secure authentication, loan origination support, document handling, meeting-audio transcription workflows, and operational dashboards for credit, compliance, and workflow visibility.",
     "primaryCategory": "Business",
     "secondaryCategory": "Productivity",
-    "supportEmail": "support@example.com",
-    "supportUrl": "https://example.com/support",
-    "marketingUrl": "https://example.com",
-    "privacyPolicyUrl": "https://example.com/privacy",
-    "termsUrl": "https://example.com/terms"
+    "supportEmail": "admin@quantech.international",
+    "supportUrl": "https://your-public-domain.example/support",
+    "marketingUrl": "https://your-public-domain.example",
+    "privacyPolicyUrl": "https://your-public-domain.example/privacy",
+    "termsUrl": "https://your-public-domain.example/terms"
   },
   "googlePlay": {
     "applicationId": "com.fms.mobile",
@@ -24,6 +24,19 @@
       "dataEncryptedInTransit": true,
       "userCanRequestDeletion": true
     },
+    "listingNotes": {
+      "reviewFocus": [
+        "Authenticated fleet and lending workflows",
+        "Loan application and borrower record handling",
+        "Audio transcription and meeting-minutes workflows for authorized users"
+      ],
+      "requiredAssets": [
+        "Phone screenshots",
+        "Feature graphic if required by marketing",
+        "Privacy policy URL",
+        "Support URL"
+      ]
+    },
     "release": {
       "track": "internal",
       "rolloutPercent": 5
@@ -37,11 +50,11 @@
       "contactFirstName": "",
       "contactLastName": "",
       "contactPhone": "",
-      "contactEmail": "",
+      "contactEmail": "admin@quantech.international",
       "demoAccountRequired": true,
       "demoUsername": "",
       "demoPassword": "",
-      "notes": ""
+      "notes": "Provide App Review with a working demo account, plus notes covering login, account deletion, AI meeting workflows, document parsing, and any role-restricted features."
     },
     "privacyNutritionLabels": {
       "tracking": "To be completed",

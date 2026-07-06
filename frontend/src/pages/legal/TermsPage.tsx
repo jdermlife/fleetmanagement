@@ -35,11 +35,20 @@ export default function TermsPage() {
         </section>
 
         <section className="card auth-helper-card">
-          <h3>Store Submission Notes</h3>
+          <h3>AI and Audio Features</h3>
           <p>
-            Replace this summary with your finalized legal language, governing entity details,
-            jurisdiction clauses, retention periods, and customer-support contact information before
-            publication.
+            AI-assisted features may process uploaded images, borrower documents, meeting audio, and
+            related text content to generate summaries, parsing suggestions, or operational outputs.
+            Use these tools only for information you are authorized to submit and review.
+          </p>
+        </section>
+
+        <section className="card auth-helper-card">
+          <h3>Account Deletion and Support</h3>
+          <p>
+            Users can manage account access from the in-app account settings flow where available.
+            Privacy, deletion, and support requests may also be sent to{' '}
+            <a href="mailto:admin@quantech.international">admin@quantech.international</a>.
           </p>
         </section>
       </div>
