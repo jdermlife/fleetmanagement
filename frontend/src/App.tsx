@@ -715,7 +715,7 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             <Route
               path="/loan-repository"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
                   <LoanRepository />
                 </ProtectedRoute>
               }
@@ -723,7 +723,7 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             <Route
               path="/loan-applications"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
                   <LoanRepository />
                 </ProtectedRoute>
               }
@@ -731,7 +731,7 @@ const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'
             <Route
               path="/loan-details/:applicationNo"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
                   <LoanDetails />
                 </ProtectedRoute>
               }
