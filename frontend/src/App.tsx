@@ -68,6 +68,7 @@ const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
 const ResetPasswordPage = lazy(() => import('./pages/auth/ResetPasswordPage'))
 const AccountSettingsPage = lazy(() => import('./pages/auth/AccountSettingsPage'))
+const AboutFilscorePage = lazy(() => import('./pages/legal/AboutFilscorePage'))
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
 const SupportPage = lazy(() => import('./pages/legal/SupportPage'))
@@ -1147,6 +1148,11 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/settings"
               element={authenticatedPage(<AccountSettingsPage />)}
+            />
+
+            <Route
+              path="/about-filscore"
+              element={<AboutFilscorePage />}
             />
 
             <Route

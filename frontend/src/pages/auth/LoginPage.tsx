@@ -283,6 +283,7 @@ export default function LoginPage() {
         <Link to="/subscription-fees">Subscription Fees</Link>
         <Link to="/privacy">Privacy Disclosures</Link>
         <Link to="/terms">Terms & Consent</Link>
+        <Link to="/about-filscore">About</Link>
       </div>
     </div>
   )
