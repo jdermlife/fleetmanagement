@@ -16,9 +16,9 @@ Fill this with help from:
 
 ## Demo Account
 
-- Username: Maker123S
-- Password: Maker123slendwise
-- Role:maker
+- Username: Admin123
+- Password: Admin123lendwise
+- Role: admin
 - MFA required:na
 - Account creation date:6.
 - Last validated date: not yet
