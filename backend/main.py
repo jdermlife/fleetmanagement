@@ -490,3 +490,12 @@ def metrics():
         f"app_uptime_seconds {int(time.time() - _service_start_time)}",
     ]
     return Response(content="\n".join(lines) + "\n", media_type="text/plain; version=0.0.4")
+
+
+def create_app(test_config: dict[str, object] | None = None):
+    # Legacy unittest modules still exercise the older Flask surface through
+    # create_app(). Keep that compatibility hook while the FastAPI app remains
+    # the primary runtime export from this module.
+    from app.main_flaskold import create_app as create_flask_app
+
+    return create_flask_app(test_config)

@@ -16,6 +16,14 @@ if (keystorePropertiesFile.exists()) {
     }
 }
 
+def isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName?.toLowerCase()?.contains('release')
+}
+
+if (isReleaseBuildRequested && !hasReleaseKeystore) {
+    throw new GradleException("Release builds require a configured keystore.properties file. Refusing to fall back to a debug signing key.")
+}
+
 android {
     namespace = "com.fms.mobile"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -44,9 +52,9 @@ android {
     }
     buildTypes {
         release {
+            debuggable false
             minifyEnabled false
-            // Falls back to debug signing if release keystore is not configured yet.
-            signingConfig hasReleaseKeystore ? signingConfigs.release : signingConfigs.debug
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
