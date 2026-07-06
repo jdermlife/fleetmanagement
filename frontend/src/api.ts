@@ -802,6 +802,49 @@ export async function downloadMeetingPdf(meetingId: string): Promise<string> {
   return URL.createObjectURL(response.data)
 }
 
+export interface CreditAdvisorRequestPayload {
+  productType?: string
+  monthlyIncome?: number
+  debtObligations?: number
+  loanAmount?: number
+  appraisedValue?: number
+  dti?: number
+  dsr?: number
+  ltv?: number
+  finalScore?: number
+  finalDecision?: string
+  borrowerNotes?: string
+}
+
+export interface CreditAdvisorResult {
+  provider: string
+  model: string
+  advice: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  latency_ms: number
+}
+
+export async function generateCreditAdvisorPlan(
+  payload: CreditAdvisorRequestPayload,
+): Promise<CreditAdvisorResult> {
+  const response = await api.post<CreditAdvisorResult>('/ai/credit-advisor', {
+    product_type: payload.productType,
+    monthly_income: payload.monthlyIncome,
+    debt_obligations: payload.debtObligations,
+    loan_amount: payload.loanAmount,
+    appraised_value: payload.appraisedValue,
+    dti: payload.dti,
+    dsr: payload.dsr,
+    ltv: payload.ltv,
+    final_score: payload.finalScore,
+    final_decision: payload.finalDecision,
+    borrower_notes: payload.borrowerNotes,
+  })
+  return response.data
+}
+
 export interface SubscriptionPlan {
   id: number
   plan_code: string

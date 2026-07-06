@@ -3,11 +3,15 @@
 Use this file to track the actual review credentials and review-environment proof
 used for Play Console and App Store Connect.
 
+Fill this with help from:
+
+- `documents/release-evidence/reviewer-demo-account-fill-guide.md`
+
 ## Review Contact
 
-- Contact name:
-- Contact email:
-- Contact phone:
+- Contact name:  Jorge Dioneda  
+- Contact email: jdioneda@gmail.com
+- Contact phone: 63 9985472359
 - Time zone:
 
 ## Demo Account

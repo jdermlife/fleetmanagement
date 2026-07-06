@@ -311,6 +311,22 @@ export interface LoanApplicationRequirements {
     question20: string
   }
   psychometricAssessment: Record<string, string>
+  releaseReadiness?: {
+    finalChecklist?: {
+      allRequiredDocumentsProvided: boolean
+      allSignaturesCollected: boolean
+      creditCommitteeApproved: boolean
+      executiveApprovalObtained: boolean
+      collateralDocumentationReady: boolean
+      creditImprovementActionsTracked: boolean
+    }
+    releaseNotes?: string
+    advisorChecklist?: Array<{
+      id: string
+      text: string
+      done: boolean
+    }>
+  }
 }
 
 export interface CreditScoreRecord {

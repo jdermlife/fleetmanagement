@@ -1,7 +1,12 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { api, getErrorMessage } from '../../api';
+import {
+  api,
+  generateCreditAdvisorPlan,
+  getErrorMessage,
+  type CreditAdvisorResult,
+} from '../../api';
 import {
   computeQuantScores,
   createLoanApplication,
@@ -60,7 +65,8 @@ interface OptionalPsychometricQuestionnaire { question01: string; question02: st
 type PsychometricAssessment = Record<string, string>;
 interface DocumentItem { id: string; name: string; type: string; parsedData?: string; status: 'Pending' | 'Parsed' | 'Failed'; }
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
-interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; }
+interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; creditImprovementActionsTracked: boolean; }
+interface AdvisorChecklistItem { id: string; text: string; done: boolean; }
 
 interface LoanApplication {
   id: string;
@@ -96,6 +102,7 @@ interface LoanApplication {
   disbursement: Disbursement;
   finalChecklist?: FinalChecklist;
   releaseNotes?: string;
+  advisorChecklist: AdvisorChecklistItem[];
 }
 
 const createBlankSpouseInformation = (): SpouseInformation => ({
@@ -226,12 +233,14 @@ const createNewApplicationInstance = (): LoanApplication => ({
   committeeRemarks: '',
   routing: { creditOfficer: '', branchManager: '', creditCommittee: 'Pending', executiveApproval: false },
   disbursement: { bankAccount: '', accountNumber: '', disbursementDate: '', bookingDate: '', startRepaymentDate: '', firstPaymentDate: '' },
-  finalChecklist: { allRequiredDocumentsProvided: false, allSignaturesCollected: false, creditCommitteeApproved: false, executiveApprovalObtained: false, collateralDocumentationReady: false },
+  finalChecklist: { allRequiredDocumentsProvided: false, allSignaturesCollected: false, creditCommitteeApproved: false, executiveApprovalObtained: false, collateralDocumentationReady: false, creditImprovementActionsTracked: false },
   releaseNotes: '',
+  advisorChecklist: [],
 });
 
 const buildLoanRequirements = (
   application: LoanApplication,
+  advisorChecklist: AdvisorChecklistItem[] = application.advisorChecklist,
 ): LoanApplicationRequirements => {
   const derivedVehicleInfo = buildCollateralVehicleInfo(application.collateral);
   const derivedInsuranceSummary = buildCollateralInsuranceSummary(application.collateral);
@@ -306,6 +315,11 @@ const buildLoanRequirements = (
     fraudIntelligence: application.fraudIntelligence,
     optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
     psychometricAssessment: application.psychometricAssessment,
+    releaseReadiness: {
+      finalChecklist: application.finalChecklist,
+      releaseNotes: application.releaseNotes || '',
+      advisorChecklist,
+    },
   };
 };
 
@@ -1713,6 +1727,34 @@ const reviewSectionConfigs: Array<{
   },
 ];
 
+const extractTopAdvisorActions = (advice: string): string[] => {
+  if (!advice.trim()) {
+    return [];
+  }
+
+  const lines = advice
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  const headingIndex = lines.findIndex((line) => /top\s*5\s*actions/i.test(line));
+  const candidateLines = headingIndex >= 0 ? lines.slice(headingIndex + 1) : lines;
+
+  const actions = candidateLines
+    .filter((line) => /^(-|\*|\d+\.|\d+\))/i.test(line))
+    .map((line) => line.replace(/^(-|\*|\d+\.|\d+\))\s*/i, '').trim())
+    .filter((line) => line.length > 0)
+    .slice(0, 5);
+
+  if (actions.length > 0) {
+    return actions;
+  }
+
+  return candidateLines
+    .filter((line) => line.length > 15)
+    .slice(0, 5);
+};
+
 // --- Main Component ---
 export default function LendingScorecard() {
   const location = useLocation();
@@ -1737,6 +1779,11 @@ export default function LendingScorecard() {
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
   const [loanCreationEntitlement, setLoanCreationEntitlement] = useState<LoanCreationEntitlementResponse | null>(null);
   const [showLoanStatement, setShowLoanStatement] = useState(false);
+  const [advisorLoading, setAdvisorLoading] = useState(false);
+  const [advisorAdvice, setAdvisorAdvice] = useState('');
+  const [advisorError, setAdvisorError] = useState('');
+  const [advisorMeta, setAdvisorMeta] = useState<Pick<CreditAdvisorResult, 'provider' | 'model' | 'total_tokens' | 'latency_ms'> | null>(null);
+  const [advisorNotice, setAdvisorNotice] = useState('');
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
@@ -2129,6 +2176,34 @@ export default function LendingScorecard() {
       (savedRequirements.collateralAssetDetails ?? {}) as Partial<
         LoanApplicationRequirements['collateralAssetDetails']
       >;
+    const savedReleaseReadiness =
+      (savedRequirements.releaseReadiness ?? {}) as Partial<
+        NonNullable<LoanApplicationRequirements['releaseReadiness']>
+      >;
+    const savedAdvisorChecklist = Array.isArray(savedReleaseReadiness.advisorChecklist)
+      ? savedReleaseReadiness.advisorChecklist
+          .map((item, index) => {
+            if (!item || typeof item !== 'object') {
+              return null;
+            }
+
+            const id =
+              typeof item.id === 'string' && item.id.trim().length > 0
+                ? item.id
+                : `advisor-action-${index + 1}`;
+            const text = typeof item.text === 'string' ? item.text.trim() : '';
+            if (!text) {
+              return null;
+            }
+
+            return {
+              id,
+              text,
+              done: Boolean(item.done),
+            };
+          })
+          .filter((item): item is AdvisorChecklistItem => item !== null)
+      : [];
 
     return {
       ...blankApplication,
@@ -2343,6 +2418,18 @@ export default function LendingScorecard() {
         ...blankApplication.routing,
         executiveApproval: record.executive_approval,
       },
+      finalChecklist: {
+        ...blankApplication.finalChecklist,
+        ...(savedReleaseReadiness.finalChecklist ?? {}),
+      },
+      releaseNotes:
+        typeof savedReleaseReadiness.releaseNotes === 'string'
+          ? savedReleaseReadiness.releaseNotes
+          : blankApplication.releaseNotes,
+      advisorChecklist:
+        savedAdvisorChecklist.length > 0
+          ? savedAdvisorChecklist
+          : blankApplication.advisorChecklist,
     };
   }, [parseFormattedNumber]);
 
@@ -2402,7 +2489,7 @@ export default function LendingScorecard() {
       ltv: payloadCalculations.ltv,
       scorecard_total: payloadScorecard.total,
       ai_probability: payloadAiRecommendation.probability,
-      requirements: buildLoanRequirements(application),
+      requirements: buildLoanRequirements(application, application.advisorChecklist),
       credit_scores: payloadScoreSections.credit_scores,
       fraud_scores: payloadScoreSections.fraud_scores,
       social_scores: payloadScoreSections.social_scores,
@@ -2664,6 +2751,10 @@ export default function LendingScorecard() {
       return persistLoanApplication(newStatus, applicationOverride);
     }
 
+    if (step === 10) {
+      return persistLoanApplication(newStatus);
+    }
+
     if (!hasPersistedRecord || formData.status === 'Draft') {
       return persistLoanApplication(newStatus);
     }
@@ -2685,6 +2776,94 @@ export default function LendingScorecard() {
 
   const handleSaveDraft = async () => {
     await persistLoanApplication('Draft');
+  };
+
+  const handleGenerateCreditAdvisorPlan = async () => {
+    setAdvisorLoading(true);
+    setAdvisorError('');
+    setAdvisorNotice('');
+
+    try {
+      const result = await generateCreditAdvisorPlan({
+        productType: formData.loan.productType,
+        monthlyIncome: calculations.totalIncome,
+        debtObligations: calculations.totalExistingDebt,
+        loanAmount: formData.loan.amount,
+        appraisedValue: calculations.totalCollateralValue,
+        dti: calculations.dti,
+        dsr: calculations.dsr,
+        ltv: calculations.ltv,
+        finalScore: backendQuantSummary?.overall_score,
+        finalDecision: formData.status,
+        borrowerNotes: formData.committeeRemarks,
+      });
+
+      setAdvisorAdvice(result.advice || 'No advisory output was returned by the AI provider.');
+      setAdvisorMeta({
+        provider: result.provider,
+        model: result.model,
+        total_tokens: result.total_tokens,
+        latency_ms: result.latency_ms,
+      });
+
+      const extractedActions = extractTopAdvisorActions(result.advice || '');
+      if (extractedActions.length > 0) {
+        setFormData((prev) => ({
+          ...prev,
+          advisorChecklist: extractedActions.map((item, index) => ({
+            id: `advisor-action-${index + 1}`,
+            text: item,
+            done: false,
+          })),
+        }));
+      }
+    } catch (error) {
+      setAdvisorError(getErrorMessage(error, 'Unable to generate credit advisor guidance right now.'));
+    } finally {
+      setAdvisorLoading(false);
+    }
+  };
+
+  const handleCopyAdvisorPlan = async () => {
+    if (!advisorAdvice.trim()) {
+      setAdvisorNotice('Generate a plan first before copying.');
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(advisorAdvice);
+      setAdvisorNotice('Advisory plan copied to clipboard.');
+    } catch {
+      const fallbackTextArea = document.createElement('textarea');
+      fallbackTextArea.value = advisorAdvice;
+      fallbackTextArea.setAttribute('readonly', '');
+      fallbackTextArea.style.position = 'absolute';
+      fallbackTextArea.style.left = '-9999px';
+      document.body.appendChild(fallbackTextArea);
+      fallbackTextArea.select();
+      document.execCommand('copy');
+      document.body.removeChild(fallbackTextArea);
+      setAdvisorNotice('Advisory plan copied using fallback clipboard support.');
+    }
+  };
+
+  const handleApplyTopActionsToChecklist = () => {
+    const extractedActions = extractTopAdvisorActions(advisorAdvice);
+
+    if (extractedActions.length === 0) {
+      setAdvisorNotice('No actionable items found. Generate or refine advisory text first.');
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      advisorChecklist: extractedActions.map((item, index) => ({
+        id: `advisor-action-${index + 1}`,
+        text: item,
+        done: false,
+      })),
+    }));
+    setAdvisorNotice('Top actions were added to the checklist.');
   };
 
   const handleSelectedWorkflowAction = async () => {
@@ -2888,8 +3067,17 @@ export default function LendingScorecard() {
       formData.finalChecklist?.allSignaturesCollected &&
       formData.finalChecklist?.creditCommitteeApproved &&
       formData.finalChecklist?.executiveApprovalObtained &&
-      formData.finalChecklist?.collateralDocumentationReady,
+      formData.finalChecklist?.collateralDocumentationReady &&
+      formData.finalChecklist?.creditImprovementActionsTracked,
   );
+  const advisorChecklistCompletedCount = formData.advisorChecklist.filter(
+    (item) => item.done,
+  ).length;
+  const advisorChecklistTotalCount = formData.advisorChecklist.length;
+  const advisorChecklistCompletionPercent =
+    advisorChecklistTotalCount > 0
+      ? Math.round((advisorChecklistCompletedCount / advisorChecklistTotalCount) * 100)
+      : 0;
   const suggestedWorkflowAction = useMemo<WorkflowStatus>(() => {
     if (formData.status === 'Released') {
       return 'Released';
@@ -2933,6 +3121,27 @@ export default function LendingScorecard() {
   useEffect(() => {
     setSelectedWorkflowAction(suggestedWorkflowAction);
   }, [suggestedWorkflowAction]);
+
+  useEffect(() => {
+    const advisorChecklistComplete =
+      formData.advisorChecklist.length > 0 &&
+      formData.advisorChecklist.every((item) => item.done);
+
+    if (
+      formData.finalChecklist?.creditImprovementActionsTracked ===
+      advisorChecklistComplete
+    ) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      finalChecklist: {
+        ...prev.finalChecklist,
+        creditImprovementActionsTracked: advisorChecklistComplete,
+      },
+    }));
+  }, [formData.advisorChecklist, formData.finalChecklist?.creditImprovementActionsTracked]);
   useEffect(() => {
     const calculatedAge = calculateAgeFromDateOfBirth(
       formData.applicantPersonal.dateOfBirth,
@@ -4676,6 +4885,101 @@ export default function LendingScorecard() {
                 </div>
               </div>
 
+              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 mb-4">
+                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+                  <h4 className="font-bold text-indigo-900 text-sm uppercase">AI Credit Advisor</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => void handleGenerateCreditAdvisorPlan()}
+                      disabled={advisorLoading}
+                      className="loan-inline-button inline-flex min-h-[38px] items-center justify-center rounded-md border border-indigo-700 bg-indigo-700 px-3 py-1.5 text-xs font-semibold tracking-wide text-white transition hover:bg-indigo-600 disabled:opacity-50"
+                    >
+                      {advisorLoading ? 'Generating Plan...' : 'Generate Improvement Plan'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleCopyAdvisorPlan()}
+                      disabled={advisorLoading || !advisorAdvice.trim()}
+                      className="loan-inline-button inline-flex min-h-[38px] items-center justify-center rounded-md border border-indigo-300 bg-white px-3 py-1.5 text-xs font-semibold tracking-wide text-indigo-800 transition hover:bg-indigo-100 disabled:opacity-50"
+                    >
+                      Copy Plan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleApplyTopActionsToChecklist()}
+                      disabled={advisorLoading || !advisorAdvice.trim()}
+                      className="loan-inline-button inline-flex min-h-[38px] items-center justify-center rounded-md border border-emerald-300 bg-emerald-100 px-3 py-1.5 text-xs font-semibold tracking-wide text-emerald-800 transition hover:bg-emerald-200 disabled:opacity-50"
+                    >
+                      Apply Top Actions to Checklist
+                    </button>
+                  </div>
+                </div>
+
+                <p className="text-xs text-indigo-800/90 mb-3">
+                  Uses current DTI, DSR, LTV, income, debt, and workflow posture to propose priority actions for improving credit readiness.
+                </p>
+
+                {advisorError ? (
+                  <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 mb-3">
+                    {advisorError}
+                  </div>
+                ) : null}
+
+                {advisorMeta ? (
+                  <div className="text-xs text-indigo-800/80 mb-3">
+                    Provider: {advisorMeta.provider} | Model: {advisorMeta.model} | Tokens: {advisorMeta.total_tokens} | Latency: {advisorMeta.latency_ms}ms
+                  </div>
+                ) : null}
+
+                {advisorNotice ? (
+                  <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 mb-3">
+                    {advisorNotice}
+                  </div>
+                ) : null}
+
+                <textarea
+                  value={advisorAdvice}
+                  onChange={(event) => setAdvisorAdvice(event.target.value)}
+                  rows={12}
+                  className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Generated AI advisory plan will appear here."
+                />
+
+                {formData.advisorChecklist.length > 0 ? (
+                  <div className="mt-4 rounded-md border border-emerald-200 bg-white p-3">
+                    <div className="mb-2 flex items-center justify-between gap-2">
+                      <h5 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Advisor Action Checklist</h5>
+                      <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
+                        {advisorChecklistCompletedCount}/{advisorChecklistTotalCount} done ({advisorChecklistCompletionPercent}%)
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {formData.advisorChecklist.map((item) => (
+                        <label key={item.id} className="flex items-start gap-2 text-sm text-slate-700 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={item.done}
+                            onChange={(event) => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                advisorChecklist: prev.advisorChecklist.map((checkItem) =>
+                                  checkItem.id === item.id
+                                    ? { ...checkItem, done: event.target.checked }
+                                    : checkItem,
+                                ),
+                              }));
+                            }}
+                            className="mt-0.5 h-4 w-4"
+                          />
+                          <span className={item.done ? 'line-through text-slate-500' : ''}>{item.text}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                ) : null}
+              </div>
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {renderInput('disbursement', 'bankAccount', 'Disbursement Bank Account')}
                 {renderInput('disbursement', 'accountNumber', 'Account Number')}
@@ -4707,6 +5011,16 @@ export default function LendingScorecard() {
                   <label className="flex items-center text-sm cursor-pointer">
                     <input type="checkbox" checked={formData.finalChecklist?.collateralDocumentationReady || false} onChange={(e) => updateField('finalChecklist', 'collateralDocumentationReady', e.target.checked)} className="mr-3 h-4 w-4" />
                     <span className="text-gray-700">Collateral documentation ready</span>
+                  </label>
+                  <label className="flex items-center text-sm cursor-not-allowed">
+                    <input
+                      type="checkbox"
+                      checked={formData.finalChecklist?.creditImprovementActionsTracked || false}
+                      disabled
+                      readOnly
+                      className="mr-3 h-4 w-4"
+                    />
+                    <span className="text-gray-700">Advisor top actions completed (auto-tracked)</span>
                   </label>
                 </div>
               </div>

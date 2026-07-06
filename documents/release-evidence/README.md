@@ -40,6 +40,8 @@ Use it to store proof for the remaining red blockers before:
   Short sanity pass for the first TestFlight build before broader QA.
 - `reviewer-demo-account-evidence.md`
   Capture reviewer/demo credentials, access notes, and validation status.
+- `reviewer-demo-account-fill-guide.md`
+  Step-by-step guide for preparing the reviewer/demo-account package.
 
 ## What This Folder Should Eventually Hold
 

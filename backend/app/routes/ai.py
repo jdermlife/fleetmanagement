@@ -23,6 +23,8 @@ from app.schemas.ai_governance_schema import (
     AIGovernanceStatsResponse,
     AIRequestAuditResponse,
     AIResponseAuditResponse,
+    CreditAdvisorRequest,
+    CreditAdvisorResponse,
 )
 from app.models.ai_governance import AIRequest, AIResponse
 from app.models.meeting_minutes import MeetingMinutes
@@ -36,6 +38,7 @@ from app.services.ai_governance_service import (
     governance_stats,
 )
 from app.services.pdf_service import generate_minutes_pdf
+from app.services.ai_provider import generate_text_with_fallback
 
 load_dotenv()
 
@@ -71,6 +74,90 @@ def _extract_json_payload(content: str) -> dict[str, Any]:
         normalized = normalized.strip()
 
     return json.loads(normalized)
+
+
+@router.post(
+    "/ai/credit-advisor",
+    response_model=CreditAdvisorResponse,
+    dependencies=[Depends(require_roles("Admin", "Manager", "Subscriber", "subscriber_lender", "subscriber_borrower", "borrower"))],
+)
+async def credit_advisor(
+    payload: CreditAdvisorRequest,
+    current_user: CurrentUser | None = Depends(get_current_user),
+):
+    system_prompt = (
+        "You are a conservative credit advisor for a lending platform. "
+        "Give practical, ethical, and compliant guidance to improve credit readiness. "
+        "Do not guarantee approval. Keep advice specific and prioritized."
+    )
+
+    user_prompt = (
+        "Create a concise credit-improvement plan based on this borrower profile.\\n"
+        "Return plain text with sections:\\n"
+        "1) Current Profile\\n"
+        "2) Top 5 Actions (prioritized)\\n"
+        "3) 30/60/90 Day Plan\\n"
+        "4) Warning Flags\\n"
+        "5) Score Improvement Outlook (directional only)\\n\\n"
+        f"Profile JSON:\\n{payload.model_dump_json(indent=2)}"
+    )
+
+    governance_db = SessionLocal()
+    started_at = time.perf_counter()
+    request_log = create_ai_request(
+        governance_db,
+        user_id=current_user.id if current_user else None,
+        endpoint="/ai/credit-advisor",
+        prompt=user_prompt,
+        model=os.getenv("AI_PROVIDER_MODE", "openai"),
+        request_metadata={
+            "feature": "credit_advisor",
+            "provider_mode": os.getenv("AI_PROVIDER_MODE", "openai"),
+        },
+    )
+
+    try:
+        result = generate_text_with_fallback(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+            openai_model=os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini"),
+            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+        )
+
+        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+        finalize_ai_success(
+            governance_db,
+            request_id=request_log.id,
+            user_id=current_user.id if current_user else None,
+            model=f"{result.provider}:{result.model}",
+            response_text=result.content,
+            response_json=None,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            total_tokens=result.total_tokens,
+            latency_ms=result.latency_ms if result.latency_ms > 0 else elapsed_ms,
+        )
+
+        return CreditAdvisorResponse(
+            provider=result.provider,
+            model=result.model,
+            advice=result.content,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            total_tokens=result.total_tokens,
+            latency_ms=result.latency_ms if result.latency_ms > 0 else elapsed_ms,
+        )
+    except Exception as exc:
+        finalize_ai_failure(governance_db, request_id=request_log.id, error_message=str(exc))
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "Credit advisor is unavailable. Verify AI provider settings "
+                "for OPENAI_API_KEY and/or OLLAMA_BASE_URL."
+            ),
+        ) from exc
+    finally:
+        governance_db.close()
 
 
 @router.post("/ai/transcribe", dependencies=[Depends(require_roles("Admin", "Manager"))])

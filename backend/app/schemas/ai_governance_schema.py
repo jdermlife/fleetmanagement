@@ -62,3 +62,27 @@ class AIResponseAuditResponse(BaseModel):
     latency_ms: int | None
     created_at: datetime
 
+
+class CreditAdvisorRequest(BaseModel):
+    product_type: str | None = None
+    monthly_income: float | None = None
+    debt_obligations: float | None = None
+    loan_amount: float | None = None
+    appraised_value: float | None = None
+    dti: float | None = None
+    dsr: float | None = None
+    ltv: float | None = None
+    final_score: float | None = None
+    final_decision: str | None = None
+    borrower_notes: str | None = None
+
+
+class CreditAdvisorResponse(BaseModel):
+    provider: str
+    model: str
+    advice: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    latency_ms: int
+

@@ -42,6 +42,9 @@ Related evidence folder:
   - `frontend/android/app/build.gradle`
   - `frontend/android/app/src/main/AndroidManifest.xml`
   - `frontend/ios/App/App/Info.plist`
+- Android signed release evidence now exists locally:
+  - `frontend/android/app/build/outputs/bundle/release/app-release.aab`
+  - `documents/release-evidence/signed-build-evidence.md`
 - Backend verification currently includes passing modern suites for:
   - security permissions
   - credit risk / scoring
