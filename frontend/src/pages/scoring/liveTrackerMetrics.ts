@@ -11,6 +11,60 @@ import {
 import type { TrackerItem } from './FinancialTrackerTemplate';
 
 type DecisionBand = 'approve' | 'review' | 'decline' | 'unknown';
+type BudgetStatus = 'maintain' | 'watch' | 'attention';
+
+export type BudgetFlowItem = {
+  id: string;
+  label: string;
+  amount: number;
+  share: number;
+  note: string;
+};
+
+export type BudgetComparisonItem = {
+  id: string;
+  label: string;
+  actual: number;
+  budget: number;
+  variance: number;
+  attainment: number;
+  status: BudgetStatus;
+  note: string;
+};
+
+export type BudgetIndicator = {
+  id: string;
+  label: string;
+  value: number;
+  target: number;
+  attainment: number;
+  status: BudgetStatus;
+  note: string;
+};
+
+export type BudgetDashboardSnapshot = {
+  periodLabel: string;
+  dateLabel: string;
+  sourceLabel: string;
+  sourceApplicationNo: string;
+  healthScore: number;
+  performanceBand: string;
+  totalIncome: number;
+  totalKnownExpenses: number;
+  totalExpenseBudget: number;
+  netCashflow: number;
+  trackedAreas: number;
+  budgetReadyCount: number;
+  watchlistCount: number;
+  needsAttentionCount: number;
+  actionLabel: string;
+  budgetSetupLabel: string;
+  expenseLoggingLabel: string;
+  incomeItems: BudgetFlowItem[];
+  expenseItems: BudgetComparisonItem[];
+  comparisonItems: BudgetComparisonItem[];
+  indicators: BudgetIndicator[];
+};
 
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
@@ -137,8 +191,49 @@ function getDebt(record: LoanApplicationRecord): number {
   return safeNumber(record.debt_obligations);
 }
 
+function getSupplementalIncome(record: LoanApplicationRecord): number {
+  return Math.max(
+    safeNumber(record.other_income),
+    safeNumber(record.requirements?.employmentInformation?.otherSourcesOfIncome),
+  );
+}
+
+function getInvestmentIncome(record: LoanApplicationRecord): number {
+  return safeNumber(record.requirements?.employmentInformation?.investmentIncome);
+}
+
+function getBusinessIncome(record: LoanApplicationRecord): number {
+  return safeNumber(record.requirements?.employmentInformation?.businessIncome);
+}
+
+function getPensionIncome(record: LoanApplicationRecord): number {
+  return safeNumber(record.requirements?.employmentInformation?.pensionIncome);
+}
+
+function getMortgageExpense(record: LoanApplicationRecord): number {
+  return safeNumber(record.requirements?.bankingRelationships?.loanMonthlyAmortization);
+}
+
+function getOtherDebtExpense(record: LoanApplicationRecord): number {
+  return Math.max(0, getDebt(record) - getMortgageExpense(record));
+}
+
+function getTotalIncome(record: LoanApplicationRecord): number {
+  return (
+    getIncome(record) +
+    getSupplementalIncome(record) +
+    getInvestmentIncome(record) +
+    getBusinessIncome(record) +
+    getPensionIncome(record)
+  );
+}
+
+function getTotalKnownExpenses(record: LoanApplicationRecord): number {
+  return getLivingExpenses(record) + getMortgageExpense(record) + getOtherDebtExpense(record);
+}
+
 function getCashflowSurplus(record: LoanApplicationRecord): number {
-  return getIncome(record) - getLivingExpenses(record) - getDebt(record);
+  return getTotalIncome(record) - getTotalKnownExpenses(record);
 }
 
 function percentWhere(records: LoanApplicationRecord[], matcher: (record: LoanApplicationRecord) => boolean): number {
@@ -155,6 +250,293 @@ function scoreFromRatio(numerator: number, denominator: number): number {
     return 0;
   }
   return clamp((numerator / denominator) * 100, 0, 100);
+}
+
+function formatBudgetStatus(actual: number, budget: number, higherIsBetter = false): BudgetStatus {
+  if (budget <= 0) {
+    return 'attention';
+  }
+
+  if (higherIsBetter) {
+    if (actual >= budget) {
+      return 'maintain';
+    }
+
+    if (actual >= budget * 0.7) {
+      return 'watch';
+    }
+
+    return 'attention';
+  }
+
+  if (actual <= budget) {
+    return 'maintain';
+  }
+
+  if (actual <= budget * 1.12) {
+    return 'watch';
+  }
+
+  return 'attention';
+}
+
+function getBudgetPerformanceBand(score: number): string {
+  if (score >= 85) {
+    return 'Maintain';
+  }
+
+  if (score >= 70) {
+    return 'Controlled';
+  }
+
+  if (score >= 55) {
+    return 'Watchlist';
+  }
+
+  return 'Needs Attention';
+}
+
+function getMostRecentFinancialRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+  const candidates = records.filter((record) => {
+    return getTotalIncome(record) > 0 || getTotalKnownExpenses(record) > 0;
+  });
+
+  if (!candidates.length) {
+    return null;
+  }
+
+  return [...candidates].sort((left, right) => {
+    const rightTimestamp = Date.parse(right.updated_at ?? right.created_at ?? '') || 0;
+    const leftTimestamp = Date.parse(left.updated_at ?? left.created_at ?? '') || 0;
+    return rightTimestamp - leftTimestamp;
+  })[0] ?? null;
+}
+
+function toMonthLabel(date: Date): string {
+  return date.toLocaleString(undefined, { month: 'long' });
+}
+
+function toMonthYearLabel(date: Date): string {
+  return date.toLocaleString(undefined, { month: 'short', year: 'numeric' });
+}
+
+function buildBudgetIndicator(
+  id: string,
+  label: string,
+  value: number,
+  target: number,
+  note: string,
+  higherIsBetter = false,
+): BudgetIndicator {
+  const status = formatBudgetStatus(value, target, higherIsBetter);
+  const attainment = higherIsBetter
+    ? scoreFromRatio(value, target)
+    : clamp(100 - Math.max(0, ((value - target) / Math.max(target, 1)) * 100), 0, 100);
+
+  return {
+    id,
+    label,
+    value,
+    target,
+    attainment,
+    status,
+    note,
+  };
+}
+
+export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord[]): BudgetDashboardSnapshot {
+  const sourceRecord = getMostRecentFinancialRecord(records);
+  const sourceDate = sourceRecord
+    ? new Date(sourceRecord.updated_at ?? sourceRecord.created_at ?? Date.now())
+    : new Date();
+
+  const totalIncome = sourceRecord ? getTotalIncome(sourceRecord) : 0;
+  const livingExpenses = sourceRecord ? getLivingExpenses(sourceRecord) : 0;
+  const mortgageExpense = sourceRecord ? getMortgageExpense(sourceRecord) : 0;
+  const otherDebtExpense = sourceRecord ? getOtherDebtExpense(sourceRecord) : 0;
+  const totalKnownExpenses = livingExpenses + mortgageExpense + otherDebtExpense;
+  const netCashflow = totalIncome - totalKnownExpenses;
+  const nonPrimaryIncome = sourceRecord
+    ? getSupplementalIncome(sourceRecord) +
+      getInvestmentIncome(sourceRecord) +
+      getBusinessIncome(sourceRecord) +
+      getPensionIncome(sourceRecord)
+    : 0;
+
+  const livingBudget = totalIncome * 0.45;
+  const mortgageBudget = totalIncome * 0.28;
+  const otherDebtBudget = totalIncome * 0.12;
+  const totalExpenseBudget = totalIncome * 0.65;
+  const reserveBudget = totalIncome * 0.1;
+
+  const incomeItems: BudgetFlowItem[] = [
+    {
+      id: 'employment-income',
+      label: 'Employment Income',
+      amount: sourceRecord ? getIncome(sourceRecord) : 0,
+      share: scoreFromRatio(sourceRecord ? getIncome(sourceRecord) : 0, totalIncome),
+      note: 'Declared monthly salary or gross employment income.',
+    },
+    {
+      id: 'supplemental-income',
+      label: 'Other Income',
+      amount: sourceRecord ? getSupplementalIncome(sourceRecord) : 0,
+      share: scoreFromRatio(sourceRecord ? getSupplementalIncome(sourceRecord) : 0, totalIncome),
+      note: 'Other recurring income declared on the application.',
+    },
+    {
+      id: 'investment-income',
+      label: 'Investment Income',
+      amount: sourceRecord ? getInvestmentIncome(sourceRecord) : 0,
+      share: scoreFromRatio(sourceRecord ? getInvestmentIncome(sourceRecord) : 0, totalIncome),
+      note: 'Income from declared investments and portfolio returns.',
+    },
+    {
+      id: 'business-pension-income',
+      label: 'Business and Pension',
+      amount: sourceRecord ? getBusinessIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+      share: scoreFromRatio(
+        sourceRecord ? getBusinessIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+        totalIncome,
+      ),
+      note: 'Business operations, retirement, and similar recurring inflows.',
+    },
+  ];
+
+  const expenseItems: BudgetComparisonItem[] = [
+    {
+      id: 'living-expenses',
+      label: 'Living Expenses',
+      actual: livingExpenses,
+      budget: livingBudget,
+      variance: livingBudget - livingExpenses,
+      attainment: clamp(100 - Math.max(0, ((livingExpenses - livingBudget) / Math.max(livingBudget, 1)) * 100), 0, 100),
+      status: formatBudgetStatus(livingExpenses, livingBudget),
+      note: 'Monthly living expenses should stay within 45% of total income.',
+    },
+    {
+      id: 'mortgage-expenses',
+      label: 'Mortgage / Amortization',
+      actual: mortgageExpense,
+      budget: mortgageBudget,
+      variance: mortgageBudget - mortgageExpense,
+      attainment: clamp(100 - Math.max(0, ((mortgageExpense - mortgageBudget) / Math.max(mortgageBudget, 1)) * 100), 0, 100),
+      status: formatBudgetStatus(mortgageExpense, mortgageBudget),
+      note: 'Housing-related debt is healthiest when held within 28% of income.',
+    },
+    {
+      id: 'other-debt-expenses',
+      label: 'Other Debt Commitments',
+      actual: otherDebtExpense,
+      budget: otherDebtBudget,
+      variance: otherDebtBudget - otherDebtExpense,
+      attainment: clamp(100 - Math.max(0, ((otherDebtExpense - otherDebtBudget) / Math.max(otherDebtBudget, 1)) * 100), 0, 100),
+      status: formatBudgetStatus(otherDebtExpense, otherDebtBudget),
+      note: 'Non-mortgage debt should stay below 12% of total income.',
+    },
+  ];
+
+  const comparisonItems: BudgetComparisonItem[] = [
+    ...expenseItems,
+    {
+      id: 'known-expense-total',
+      label: 'Total Known Outflow',
+      actual: totalKnownExpenses,
+      budget: totalExpenseBudget,
+      variance: totalExpenseBudget - totalKnownExpenses,
+      attainment: clamp(100 - Math.max(0, ((totalKnownExpenses - totalExpenseBudget) / Math.max(totalExpenseBudget, 1)) * 100), 0, 100),
+      status: formatBudgetStatus(totalKnownExpenses, totalExpenseBudget),
+      note: 'Combined household outflow should generally remain within 65% of income.',
+    },
+    {
+      id: 'reserve-headroom',
+      label: 'Reserve Headroom',
+      actual: Math.max(0, netCashflow),
+      budget: reserveBudget,
+      variance: Math.max(0, netCashflow) - reserveBudget,
+      attainment: scoreFromRatio(Math.max(0, netCashflow), reserveBudget),
+      status: formatBudgetStatus(Math.max(0, netCashflow), reserveBudget, true),
+      note: 'Maintain at least a 10% residual buffer after known obligations.',
+    },
+  ];
+
+  const indicators: BudgetIndicator[] = [
+    buildBudgetIndicator(
+      'income-coverage',
+      'Income Coverage',
+      totalIncome,
+      Math.max(totalKnownExpenses, 1),
+      'Measures whether reported inflows cover the known monthly obligations.',
+      true,
+    ),
+    buildBudgetIndicator(
+      'expense-ratio',
+      'Expense Ratio',
+      scoreFromRatio(totalKnownExpenses, totalIncome),
+      65,
+      'Keep known expenses under 65% of total income.',
+    ),
+    buildBudgetIndicator(
+      'mortgage-ratio',
+      'Mortgage Ratio',
+      scoreFromRatio(mortgageExpense, totalIncome),
+      28,
+      'Maintain housing and amortization payments within 28% of income.',
+    ),
+    buildBudgetIndicator(
+      'other-debt-ratio',
+      'Other Debt Ratio',
+      scoreFromRatio(otherDebtExpense, totalIncome),
+      12,
+      'Other debt should remain lean to preserve cash flow.',
+    ),
+    buildBudgetIndicator(
+      'surplus-ratio',
+      'Surplus Ratio',
+      scoreFromRatio(Math.max(0, netCashflow), totalIncome),
+      10,
+      'Healthy budgets keep at least 10% of income available after known expenses.',
+      true,
+    ),
+    buildBudgetIndicator(
+      'income-diversity',
+      'Income Diversity',
+      scoreFromRatio(nonPrimaryIncome, totalIncome),
+      15,
+      'Supplementary and investment income improve resilience when above 15% of inflows.',
+      true,
+    ),
+  ];
+
+  const healthScore = Math.round(mean(indicators.map((indicator) => indicator.attainment)));
+  const budgetReadyCount = comparisonItems.filter((item) => item.status === 'maintain').length;
+  const watchlistCount = indicators.filter((indicator) => indicator.status === 'watch').length;
+  const needsAttentionCount = indicators.filter((indicator) => indicator.status === 'attention').length;
+  const performanceBand = getBudgetPerformanceBand(healthScore);
+
+  return {
+    periodLabel: toMonthLabel(sourceDate),
+    dateLabel: toMonthYearLabel(sourceDate),
+    sourceLabel: sourceRecord ? 'Application-derived household budget snapshot' : 'Waiting for application financial data',
+    sourceApplicationNo: sourceRecord?.application_no ?? 'No application selected',
+    healthScore,
+    performanceBand,
+    totalIncome,
+    totalKnownExpenses,
+    totalExpenseBudget,
+    netCashflow,
+    trackedAreas: comparisonItems.length,
+    budgetReadyCount,
+    watchlistCount,
+    needsAttentionCount,
+    actionLabel: needsAttentionCount > 0 ? 'Rebalance' : 'Maintain',
+    budgetSetupLabel: `${budgetReadyCount}/${comparisonItems.length} lines within budget`,
+    expenseLoggingLabel: sourceRecord ? `Source ${sourceRecord.application_no}` : 'Awaiting source record',
+    incomeItems,
+    expenseItems,
+    comparisonItems,
+    indicators,
+  };
 }
 
 export function buildBudgetExpenseTrackerItems(records: LoanApplicationRecord[]): TrackerItem[] {
