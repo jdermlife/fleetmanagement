@@ -2,7 +2,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
 const RENDER_API_FALLBACKS = [
-  'https://fleetmanagement-api.onrender.com',
+  'https://fleetmanagement-dq9t.onrender.com',
 ]
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'

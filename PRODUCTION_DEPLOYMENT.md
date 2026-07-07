@@ -56,7 +56,8 @@ export RATE_LIMIT_REQUESTS="100"
 export RATE_LIMIT_WINDOW="60"
 
 # CORS & Origins
-export FRONTEND_ORIGINS="https://fleetmanagement.vercel.app"
+export FRONTEND_ORIGINS="https://fleetmanagement.vercel.app,https://fleetmanagement-flame.vercel.app"
+export FRONTEND_ORIGIN_REGEX="^https://fleetmanagement(?:-[a-z0-9-]+)?(?:-jdionedas-projects)?\\.vercel\\.app$"
 
 # Social Sign-In
 export GOOGLE_OAUTH_CLIENT_ID="<your-google-web-client-id>"

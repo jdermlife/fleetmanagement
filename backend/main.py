@@ -248,7 +248,9 @@ if is_production:
     if not configured_origins:
         raise RuntimeError("FRONTEND_ORIGINS must be configured in production")
     if os.getenv("RATE_LIMIT_BACKEND", "memory").lower() != "redis":
-        raise RuntimeError("RATE_LIMIT_BACKEND must be redis in production")
+        backend_logger.warning(
+            "RATE_LIMIT_BACKEND is not redis in production; using in-memory rate limiting fallback",
+        )
 
 origins = list(dict.fromkeys([*default_origins, *configured_origins]))
 
