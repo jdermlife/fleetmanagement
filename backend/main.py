@@ -249,8 +249,21 @@ if origin_regex:
 app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
-if RATE_LIMIT_ENABLED:
+
+redis_url = os.getenv("RATE_LIMIT_REDIS_URL", "")
+
+if (
+    RATE_LIMIT_ENABLED
+    and redis_url
+    and (
+        redis_url.startswith("redis://")
+        or redis_url.startswith("rediss://")
+    )
+):
     app.add_middleware(RateLimitMiddleware)
+    print("Redis Rate Limiter Enabled")
+else:
+    print("Redis Rate Limiter Disabled")
 
 _service_start_time = time.time()
 _metrics = {
