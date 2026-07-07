@@ -50,6 +50,7 @@ The backend runs on `http://localhost:5000`.
 3. Create a `.env.local` file:
    ```
    VITE_API_URL=http://localhost:5000
+   VITE_GOOGLE_ALLOWED_HOSTS=localhost,127.0.0.1,fleetmanagement.vercel.app,staging.fleetmanagement.vercel.app
    VITE_PAYMENT_DEFAULT_CHANNEL=Bank Transfer
    VITE_PAYMENT_BANK_NAME=Your Bank Name
    VITE_PAYMENT_BANK_ACCOUNT_NAME=Your Business Name

@@ -10,6 +10,7 @@ import {
   type RegisterSubscriberType,
   isBorrowerSubscriberRole,
 } from '../../authRoles'
+import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 function getDefaultHomePathForRole(role?: string | null) {
   return isBorrowerSubscriberRole(role) ? '/lending-scorecard' : '/dashboard'
@@ -20,7 +21,9 @@ export default function RegisterPage() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || ''
   const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim() || undefined
+  const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
+  const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
   const isAppleConfigured = appleClientId.length > 0
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
@@ -307,7 +310,7 @@ export default function RegisterPage() {
 
       <div className="stack-panel auth-panel" aria-live="polite">
         <p className="auth-role-copy">Or create your account using Google.</p>
-        {isGoogleConfigured ? (
+        {isGoogleEnabled ? (
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
             onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
@@ -317,8 +320,10 @@ export default function RegisterPage() {
             shape="rectangular"
           />
         ) : null}
-        {!isGoogleConfigured ? (
-          <p className="status-message">Google Sign-Up is available when configured.</p>
+        {!isGoogleEnabled ? (
+          isGoogleConfigured
+            ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
+            : <p className="status-message">Google Sign-Up is available when configured.</p>
         ) : null}
 
         <p className="auth-role-copy">Or create your account using Apple.</p>

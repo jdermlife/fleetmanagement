@@ -8,6 +8,7 @@ import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../a
 import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
+import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard'])
@@ -78,7 +79,9 @@ export default function LoginPage() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || ''
   const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim() || undefined
+  const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
+  const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
   const isAppleConfigured = appleClientId.length > 0
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -240,7 +243,7 @@ export default function LoginPage() {
 
         <div className="stack-panel auth-panel" aria-live="polite">
           <p className="auth-role-copy">Or continue using your Google account.</p>
-          {isGoogleConfigured ? (
+          {isGoogleEnabled ? (
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setMessage('Unable to load Google Sign-In right now. Please try again.')}
@@ -250,8 +253,10 @@ export default function LoginPage() {
               shape="rectangular"
             />
           ) : null}
-          {!isGoogleConfigured ? (
-            <p className="status-message">Google Sign-In is available when configured.</p>
+          {!isGoogleEnabled ? (
+            isGoogleConfigured
+              ? <p className="status-message">Google Sign-In is enabled on approved domains only.</p>
+              : <p className="status-message">Google Sign-In is available when configured.</p>
           ) : null}
           <p className="auth-role-copy">Or continue using your Apple account.</p>
           <button
