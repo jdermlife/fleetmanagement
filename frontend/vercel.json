@@ -1,6 +1,10 @@
 {
   "rewrites": [
     {
+      "source": "/backend/:path*",
+      "destination": "https://fleetmanagement-dq9t.onrender.com/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

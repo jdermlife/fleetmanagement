@@ -10,6 +10,7 @@ from fastapi.responses import Response
 from starlette.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 
+from app.cors import get_allowed_frontend_origins, get_configured_frontend_origins, get_frontend_origin_regex
 from app.database import Base, SessionLocal, engine
 from app.fastapi_rate_limit import RATE_LIMIT_ENABLED, RateLimitMiddleware
 from app.models.loan_application import LoanApplication  # noqa: F401
@@ -219,26 +220,8 @@ app = FastAPI(
 )
 setup_observability(app)
 
-default_origins = [
-    "http://localhost:3000",
-    "http://localhost:5173",
-    "http://127.0.0.1:5173",
-    "https://fleetmanagement.vercel.app",
-    "https://fleetmanagement-flame.vercel.app",
-    "https://fleetmanagement-n8u4pr3bu-jdionedas-projects.vercel.app",
-]
-
-default_origin_regex = (
-    r"^https://fleetmanagement(?:-[a-z0-9-]+)?(?:-jdionedas-projects)?\.vercel\.app$"
-)
-
-configured_origins = [
-    origin.strip()
-    for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
-    if origin.strip()
-]
-
-origin_regex = os.getenv("FRONTEND_ORIGIN_REGEX", "").strip() or default_origin_regex
+configured_origins = get_configured_frontend_origins()
+origin_regex = get_frontend_origin_regex()
 
 if is_production:
     if os.getenv("ENFORCE_AUTH", "true").lower() != "true":
@@ -252,7 +235,7 @@ if is_production:
             "RATE_LIMIT_BACKEND is not redis in production; using in-memory rate limiting fallback",
         )
 
-origins = list(dict.fromkeys([*default_origins, *configured_origins]))
+origins = get_allowed_frontend_origins(configured_origins)
 
 cors_kwargs = {
     "allow_origins": origins,

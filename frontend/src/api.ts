@@ -1,6 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
+const PRODUCTION_API_PROXY_FALLBACK = '/backend'
 const RENDER_API_FALLBACKS = [
   'https://fleetmanagement-dq9t.onrender.com',
 ]
@@ -13,18 +14,29 @@ const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
   .filter(Boolean)
 
 const isDevelopment = import.meta.env.DEV
+const productionProxyCandidates = isDevelopment ? [] : [PRODUCTION_API_PROXY_FALLBACK]
 
 const apiBaseUrlCandidates = Array.from(
   new Set([
+    ...productionProxyCandidates,
     ...configuredBaseUrls,
     ...(configuredBaseUrls.length === 0 && isDevelopment ? [LOCAL_API_FALLBACK] : []),
     ...RENDER_API_FALLBACKS,
   ])
 )
 
-let activeApiBaseUrl = apiBaseUrlCandidates[0] ?? LOCAL_API_FALLBACK
+const healthCheckClient = axios.create({
+  timeout: 6000,
+  headers: {
+    'Content-Type': 'application/json',
+  },
+})
+
+let activeApiBaseUrl =
+  apiBaseUrlCandidates[0] ?? (isDevelopment ? LOCAL_API_FALLBACK : PRODUCTION_API_PROXY_FALLBACK)
 
 let apiBaseUrlResolutionRequest: Promise<void> | null = null
+let apiBaseUrlResolved = false
 
 export const api = axios.create({
   baseURL: activeApiBaseUrl,
@@ -36,19 +48,20 @@ export const api = axios.create({
 
 function setActiveApiBaseUrl(url: string): void {
   if (activeApiBaseUrl === url) {
+    apiBaseUrlResolved = true
     return
   }
 
   activeApiBaseUrl = url
   api.defaults.baseURL = url
+  apiBaseUrlResolved = true
 }
 
 async function findHealthyApiBaseUrl(): Promise<string | null> {
   for (const candidate of apiBaseUrlCandidates) {
     try {
-      const response = await api.get('/health', {
+      const response = await healthCheckClient.get('/health', {
         baseURL: candidate,
-        timeout: 6000,
       })
 
       if (response.status === 200) {
@@ -63,6 +76,10 @@ async function findHealthyApiBaseUrl(): Promise<string | null> {
 }
 
 async function ensureHealthyApiBaseUrl(): Promise<void> {
+  if (apiBaseUrlResolved) {
+    return
+  }
+
   if (apiBaseUrlResolutionRequest) {
     await apiBaseUrlResolutionRequest
     return
@@ -72,7 +89,10 @@ async function ensureHealthyApiBaseUrl(): Promise<void> {
     const healthyBaseUrl = await findHealthyApiBaseUrl()
     if (healthyBaseUrl) {
       setActiveApiBaseUrl(healthyBaseUrl)
+      return
     }
+
+    apiBaseUrlResolved = true
   })().finally(() => {
     apiBaseUrlResolutionRequest = null
   })
@@ -161,7 +181,8 @@ function shouldSkipSessionRefresh(url?: string): boolean {
 
 // Request interceptor
 api.interceptors.request.use(
-  (config) => {
+  async (config) => {
+    await ensureHealthyApiBaseUrl()
     if (isDevelopment) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
     }
