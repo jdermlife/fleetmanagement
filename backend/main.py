@@ -227,13 +227,17 @@ default_origins = [
     "https://fleetmanagement-n8u4pr3bu-jdionedas-projects.vercel.app",
 ]
 
+default_origin_regex = (
+    r"^https://fleetmanagement(?:-[a-z0-9-]+)?(?:-jdionedas-projects)?\.vercel\.app$"
+)
+
 configured_origins = [
     origin.strip()
     for origin in os.getenv("FRONTEND_ORIGINS", "").split(",")
     if origin.strip()
 ]
 
-origin_regex = os.getenv("FRONTEND_ORIGIN_REGEX", "").strip()
+origin_regex = os.getenv("FRONTEND_ORIGIN_REGEX", "").strip() or default_origin_regex
 
 if is_production:
     if os.getenv("ENFORCE_AUTH", "true").lower() != "true":
