@@ -14,7 +14,7 @@ export default function BackendConnectionStatus() {
         if (!isHealthy) {
           setError(`Backend at ${apiUrl} is not responding`)
         }
-      } catch (err) {
+      } catch {
         setIsConnected(false)
         setError(`Cannot reach backend at ${apiUrl}`)
       }

@@ -2,7 +2,6 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
 const RENDER_API_FALLBACKS = [
-  'https://fleetmanagement-dq9t.onrender.com',
   'https://fleetmanagement-api.onrender.com',
 ]
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
@@ -13,17 +12,19 @@ const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
   .map((origin) => origin.trim().replace(/\/$/, ''))
   .filter(Boolean)
 
+const isDevelopment = import.meta.env.DEV
+
 const apiBaseUrlCandidates = Array.from(
   new Set([
     ...configuredBaseUrls,
-    ...(configuredBaseUrls.length === 0 ? [LOCAL_API_FALLBACK] : []),
+    ...(configuredBaseUrls.length === 0 && isDevelopment ? [LOCAL_API_FALLBACK] : []),
     ...RENDER_API_FALLBACKS,
   ])
 )
 
 let activeApiBaseUrl = apiBaseUrlCandidates[0] ?? LOCAL_API_FALLBACK
 
-const isDevelopment = import.meta.env.DEV
+let apiBaseUrlResolutionRequest: Promise<void> | null = null
 
 export const api = axios.create({
   baseURL: activeApiBaseUrl,
@@ -59,6 +60,24 @@ async function findHealthyApiBaseUrl(): Promise<string | null> {
   }
 
   return null
+}
+
+async function ensureHealthyApiBaseUrl(): Promise<void> {
+  if (apiBaseUrlResolutionRequest) {
+    await apiBaseUrlResolutionRequest
+    return
+  }
+
+  apiBaseUrlResolutionRequest = (async () => {
+    const healthyBaseUrl = await findHealthyApiBaseUrl()
+    if (healthyBaseUrl) {
+      setActiveApiBaseUrl(healthyBaseUrl)
+    }
+  })().finally(() => {
+    apiBaseUrlResolutionRequest = null
+  })
+
+  await apiBaseUrlResolutionRequest
 }
 
 let authToken: string | null = null
@@ -390,6 +409,7 @@ function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/login', credentials)
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -409,6 +429,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
+  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
@@ -433,6 +454,7 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 }
 
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
+  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/apple-token', {
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
@@ -457,6 +479,7 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
+  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/register', {
     username: data.username,
     email: data.email,
