@@ -435,59 +435,17 @@ export default function LoanRepository() {
       <div className="mx-auto max-w-7xl">
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-[0_20px_50px_rgba(15,23,42,0.08)]">
           <div className="border-b border-slate-700 bg-slate-900 p-6 text-white md:p-8">
-            <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
-              <div className="space-y-2">
-                <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                  Credit Operations
-                </p>
-                <h1 className="text-3xl font-semibold tracking-tight text-white">
-                  Loan Repository
-                </h1>
-                <p className="max-w-3xl text-sm text-slate-300 md:text-base">
-                  Centralized loan origination monitoring, workflow oversight, and
-                  records management for credit operations teams.
-                </p>
-              </div>
-
-              <div
-                style={{
-                  minWidth: "320px",
-                  width: "100%",
-                  maxWidth: "440px",
-                  background: "rgba(255,255,255,0.08)",
-                  border: "1px solid rgba(255,255,255,0.12)",
-                  borderRadius: "20px",
-                  padding: "18px",
-                  boxShadow: "inset 0 1px 0 rgba(255,255,255,0.05)",
-                }}
-              >
-                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#94a3b8", marginBottom: "14px" }}>
-                  Repository Record Counts
-                </div>
-                <div style={{ display: "grid", gap: "14px" }}>
-                  {recordsCountItems.map((item) => {
-                    const width = `${Math.max(8, (item.value / maxRecordCountValue) * 100)}%`;
-                    const barColor = getGraphColor(item.label);
-
-                    return (
-                      <div key={item.label}>
-                        <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginBottom: "6px", alignItems: "baseline" }}>
-                          <span style={{ fontSize: "13px", fontWeight: 700, color: "#e2e8f0" }}>{item.label}</span>
-                          <span style={{ fontSize: "26px", lineHeight: 1, fontWeight: 700, color: "#ffffff" }}>{item.value}</span>
-                        </div>
-                        <div style={{ height: "12px", borderRadius: "999px", background: "rgba(148,163,184,0.18)", overflow: "hidden" }}>
-                          <div style={{ width, height: "100%", borderRadius: "999px", background: `linear-gradient(90deg, ${barColor}, ${barColor}CC)` }} />
-                        </div>
-                        <div style={{ marginTop: "6px", fontSize: "11px", color: "#cbd5e1" }}>{item.note}</div>
-                      </div>
-                    );
-                  })}
-                  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#cbd5e1" }}>
-                    <span>Active Filter: <strong style={{ color: "#fff" }}>{appliedStatusFilter}</strong></span>
-                    <span>{appliedDateFrom || appliedDateTo ? `${appliedDateFrom || "Start"} to ${appliedDateTo || "Present"}` : "All Dates"}</span>
-                  </div>
-                </div>
-              </div>
+            <div className="space-y-2">
+              <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
+                Credit Operations
+              </p>
+              <h1 className="text-3xl font-semibold tracking-tight text-white">
+                Loan Repository
+              </h1>
+              <p className="max-w-3xl text-sm text-slate-300 md:text-base">
+                Centralized loan origination monitoring, workflow oversight, and
+                records management for credit operations teams.
+              </p>
             </div>
           </div>
 
@@ -495,52 +453,161 @@ export default function LoanRepository() {
             <div className="mb-3 flex items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  Portfolio Snapshot
+                  Portfolio Snapshot and Repository Counts
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Status volumes arranged for quick executive review.
+                  Half-page vertical bar views arranged for quick executive review.
                 </p>
               </div>
             </div>
 
-            <div
-              style={{
-                display: "grid",
-                gap: "14px",
-                padding: "18px",
-                background: "#ffffff",
-                border: "1px solid #e2e8f0",
-                borderRadius: "20px",
-                boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
-              }}
-            >
-              {summaryCards.map((card) => {
-                const width = `${Math.max(6, (card.value / maxPortfolioValue) * 100)}%`;
-                const barColor = getGraphColor(card.label as WorkflowStatus | "Total Applications");
+            <div className="grid gap-4 xl:grid-cols-2">
+              <div
+                style={{
+                  width: "100%",
+                  display: "grid",
+                  gap: "18px",
+                  padding: "18px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "20px",
+                  boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+                }}
+              >
+                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#64748b" }}>
+                  Repository Record Counts
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(76px, 1fr))",
+                    gap: "14px",
+                    alignItems: "end",
+                    minHeight: "250px",
+                  }}
+                >
+                  {recordsCountItems.map((item) => {
+                    const height = `${Math.max(18, (item.value / maxRecordCountValue) * 100)}%`;
+                    const barColor = getGraphColor(item.label);
 
-                return (
-                  <div key={card.label} style={{ display: "grid", gap: "8px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "baseline" }}>
-                      <div>
-                        <div style={{ fontSize: "13px", fontWeight: 700, color: "#1e293b" }}>{card.label}</div>
-                        <div style={{ fontSize: "11px", color: "#64748b" }}>{card.note}</div>
-                      </div>
-                      <div style={{ fontSize: "26px", lineHeight: 1, fontWeight: 700, color: barColor }}>{card.value}</div>
-                    </div>
-                    <div style={{ height: "16px", borderRadius: "999px", background: "#e2e8f0", overflow: "hidden" }}>
+                    return (
                       <div
+                        key={item.label}
                         style={{
-                          width,
-                          height: "100%",
-                          borderRadius: "999px",
-                          background: `linear-gradient(90deg, ${barColor}, ${barColor}CC)`,
-                          boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.18)",
+                          display: "grid",
+                          gap: "10px",
+                          justifyItems: "center",
+                          minWidth: 0,
                         }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+                      >
+                        <div style={{ fontSize: "22px", lineHeight: 1, fontWeight: 700, color: "#1e293b" }}>{item.value}</div>
+                        <div
+                          style={{
+                            width: "100%",
+                            maxWidth: "74px",
+                            height: "160px",
+                            borderRadius: "18px",
+                            background: "#e2e8f0",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "flex-end",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "100%",
+                              height,
+                              borderRadius: "18px 18px 0 0",
+                              background: `linear-gradient(180deg, ${barColor}, ${barColor}CC)`,
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: "grid", gap: "4px", textAlign: "center" }}>
+                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b", lineHeight: 1.25 }}>{item.label}</span>
+                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.35 }}>{item.note}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#64748b" }}>
+                  <span>Active Filter: <strong style={{ color: "#1e293b" }}>{appliedStatusFilter}</strong></span>
+                  <span>{appliedDateFrom || appliedDateTo ? `${appliedDateFrom || "Start"} to ${appliedDateTo || "Present"}` : "All Dates"}</span>
+                </div>
+              </div>
+
+              <div
+                style={{
+                  width: "100%",
+                  display: "grid",
+                  gap: "18px",
+                  padding: "18px",
+                  background: "#ffffff",
+                  border: "1px solid #e2e8f0",
+                  borderRadius: "20px",
+                  boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
+                }}
+              >
+                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#64748b" }}>
+                  Portfolio Snapshot
+                </div>
+                <div
+                  style={{
+                    display: "grid",
+                    gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))",
+                    gap: "14px",
+                    alignItems: "end",
+                    minHeight: "250px",
+                  }}
+                >
+                  {summaryCards.map((card) => {
+                    const height = `${Math.max(18, (card.value / maxPortfolioValue) * 100)}%`;
+                    const barColor = getGraphColor(card.label as WorkflowStatus | "Total Applications");
+
+                    return (
+                      <div
+                        key={card.label}
+                        style={{
+                          display: "grid",
+                          gap: "10px",
+                          justifyItems: "center",
+                          minWidth: 0,
+                        }}
+                      >
+                        <div style={{ fontSize: "22px", lineHeight: 1, fontWeight: 700, color: barColor }}>{card.value}</div>
+                        <div
+                          style={{
+                            width: "100%",
+                            maxWidth: "76px",
+                            height: "164px",
+                            borderRadius: "18px",
+                            background: "#e2e8f0",
+                            overflow: "hidden",
+                            display: "flex",
+                            alignItems: "flex-end",
+                            justifyContent: "center",
+                          }}
+                        >
+                          <div
+                            style={{
+                              width: "100%",
+                              height,
+                              borderRadius: "18px 18px 0 0",
+                              background: `linear-gradient(180deg, ${barColor}, ${barColor}CC)`,
+                              boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.18)",
+                            }}
+                          />
+                        </div>
+                        <div style={{ display: "grid", gap: "4px", textAlign: "center" }}>
+                          <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b", lineHeight: 1.25 }}>{card.label}</div>
+                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.35 }}>{card.note}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
             </div>
           </div>
 

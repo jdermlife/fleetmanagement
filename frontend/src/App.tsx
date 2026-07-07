@@ -756,7 +756,11 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/snapshot"
-              element={authenticatedPage(<Snapshot />)}
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <Snapshot />}
+                </ProtectedRoute>
+              }
             />
 
             <Route
@@ -780,24 +784,24 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/loan-repository"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
-                  <LoanRepository />
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanRepository />}
                 </ProtectedRoute>
               }
             />
             <Route
               path="/loan-applications"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
-                  <LoanRepository />
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanRepository />}
                 </ProtectedRoute>
               }
             />
             <Route
               path="/loan-details/:applicationNo"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
-                  <LoanDetails />
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
+                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanDetails />}
                 </ProtectedRoute>
               }
             />
