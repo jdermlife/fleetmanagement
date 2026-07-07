@@ -66,6 +66,104 @@ export type BudgetDashboardSnapshot = {
   indicators: BudgetIndicator[];
 };
 
+export type MonitoringStageItem = {
+  id: string;
+  label: string;
+  count: number;
+  share: number;
+  status: BudgetStatus;
+  note: string;
+};
+
+export type MonitoringControlItem = {
+  id: string;
+  label: string;
+  actual: number;
+  target: number;
+  variance: number;
+  attainment: number;
+  status: BudgetStatus;
+  note: string;
+  unit: 'percent' | 'days' | 'score';
+};
+
+export type LoanMonitoringSnapshot = {
+  periodLabel: string;
+  dateLabel: string;
+  sourceLabel: string;
+  sourceApplicationNo: string;
+  healthScore: number;
+  performanceBand: string;
+  portfolioCount: number;
+  openPipelineCount: number;
+  releasedCount: number;
+  watchlistCount: number;
+  attentionCount: number;
+  actionLabel: string;
+  averageOpenAgeDays: number;
+  averageFinalScore: number;
+  pipelineItems: MonitoringStageItem[];
+  controlItems: MonitoringControlItem[];
+  indicators: BudgetIndicator[];
+};
+
+export type BillReminderSnapshot = {
+  periodLabel: string;
+  dateLabel: string;
+  sourceLabel: string;
+  sourceApplicationNo: string;
+  healthScore: number;
+  performanceBand: string;
+  portfolioCount: number;
+  activeCycleCount: number;
+  readyToPayCount: number;
+  watchlistCount: number;
+  attentionCount: number;
+  actionLabel: string;
+  averageSurplusRatio: number;
+  scheduleItems: MonitoringStageItem[];
+  controlItems: MonitoringControlItem[];
+  indicators: BudgetIndicator[];
+};
+
+export type CollateralMonitoringSnapshot = {
+  periodLabel: string;
+  dateLabel: string;
+  sourceLabel: string;
+  sourceApplicationNo: string;
+  healthScore: number;
+  performanceBand: string;
+  collateralizedCount: number;
+  insuredCount: number;
+  watchlistCount: number;
+  attentionCount: number;
+  actionLabel: string;
+  averageLtv: number;
+  averageCollateralScore: number;
+  inventoryItems: MonitoringStageItem[];
+  controlItems: MonitoringControlItem[];
+  indicators: BudgetIndicator[];
+};
+
+export type NetWorthPositioningSnapshot = {
+  periodLabel: string;
+  dateLabel: string;
+  sourceLabel: string;
+  sourceApplicationNo: string;
+  healthScore: number;
+  performanceBand: string;
+  portfolioCount: number;
+  strongPositionCount: number;
+  watchlistCount: number;
+  attentionCount: number;
+  actionLabel: string;
+  averageNetCashflow: number;
+  averageAssetStrength: number;
+  positioningItems: MonitoringStageItem[];
+  controlItems: MonitoringControlItem[];
+  indicators: BudgetIndicator[];
+};
+
 function clamp(value: number, minimum: number, maximum: number) {
   return Math.min(maximum, Math.max(minimum, value));
 }
@@ -82,6 +180,10 @@ function mean(values: number[]): number {
     return 0;
   }
   return values.reduce((sum, value) => sum + value, 0) / values.length;
+}
+
+function countWhere(records: LoanApplicationRecord[], matcher: (record: LoanApplicationRecord) => boolean): number {
+  return records.filter(matcher).length;
 }
 
 function asPercent(value: number): number {
@@ -296,6 +398,34 @@ function getBudgetPerformanceBand(score: number): string {
   return 'Needs Attention';
 }
 
+function getLoanMonitoringPerformanceBand(score: number): string {
+  if (score >= 85) {
+    return 'Stable';
+  }
+
+  if (score >= 70) {
+    return 'Controlled';
+  }
+
+  if (score >= 55) {
+    return 'Watchlist';
+  }
+
+  return 'Needs Attention';
+}
+
+function getMostRecentRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+  if (!records.length) {
+    return null;
+  }
+
+  return [...records].sort((left, right) => {
+    const rightTimestamp = Date.parse(right.updated_at ?? right.created_at ?? '') || 0;
+    const leftTimestamp = Date.parse(left.updated_at ?? left.created_at ?? '') || 0;
+    return rightTimestamp - leftTimestamp;
+  })[0] ?? null;
+}
+
 function getMostRecentFinancialRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
   const candidates = records.filter((record) => {
     return getTotalIncome(record) > 0 || getTotalKnownExpenses(record) > 0;
@@ -320,7 +450,7 @@ function toMonthYearLabel(date: Date): string {
   return date.toLocaleString(undefined, { month: 'short', year: 'numeric' });
 }
 
-function buildBudgetIndicator(
+function buildGoalIndicator(
   id: string,
   label: string,
   value: number,
@@ -341,6 +471,1041 @@ function buildBudgetIndicator(
     attainment,
     status,
     note,
+  };
+}
+
+function isOpenMonitoringStatus(record: LoanApplicationRecord): boolean {
+  const status = normalizeStatus(record.status);
+  return status === 'submitted' || status === 'under review' || status === 'credit review';
+}
+
+function getRecordAgeInDays(record: LoanApplicationRecord, referenceTimeMs = Date.now()): number {
+  const timestamp = Date.parse(record.created_at ?? record.updated_at ?? '') || 0;
+  if (timestamp <= 0) {
+    return 0;
+  }
+
+  const ageMs = Math.max(0, referenceTimeMs - timestamp);
+  return ageMs / (1000 * 60 * 60 * 24);
+}
+
+function getAverageOpenAgeDays(records: LoanApplicationRecord[], referenceTimeMs = Date.now()): number {
+  const openRecords = records.filter(isOpenMonitoringStatus);
+  if (!openRecords.length) {
+    return 0;
+  }
+
+  return mean(openRecords.map((record) => getRecordAgeInDays(record, referenceTimeMs)));
+}
+
+function getDataCompleteness(record: LoanApplicationRecord): boolean {
+  return (
+    safeNumber(record.dsr) > 0 &&
+    safeNumber(record.dti) > 0 &&
+    getFinalScore(record) !== null
+  );
+}
+
+function buildMonitoringControlItem(
+  id: string,
+  label: string,
+  actual: number,
+  target: number,
+  note: string,
+  unit: 'percent' | 'days' | 'score',
+  higherIsBetter = false,
+): MonitoringControlItem {
+  const status = formatBudgetStatus(actual, target, higherIsBetter);
+  const attainment = higherIsBetter
+    ? scoreFromRatio(actual, target)
+    : clamp(100 - Math.max(0, ((actual - target) / Math.max(target, 1)) * 100), 0, 100);
+
+  return {
+    id,
+    label,
+    actual,
+    target,
+    variance: actual - target,
+    attainment,
+    status,
+    note,
+    unit,
+  };
+}
+
+export function buildLoanMonitoringSnapshot(records: LoanApplicationRecord[]): LoanMonitoringSnapshot {
+  const latestRecord = getMostRecentRecord(records);
+  const referenceDate = latestRecord
+    ? new Date(latestRecord.updated_at ?? latestRecord.created_at ?? Date.now())
+    : new Date();
+  const referenceTimeMs = referenceDate.getTime();
+
+  const submittedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'submitted');
+  const underReviewCount = countWhere(records, (record) => normalizeStatus(record.status) === 'under review');
+  const creditReviewCount = countWhere(records, (record) => normalizeStatus(record.status) === 'credit review');
+  const approvedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'approved');
+  const releasedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'released');
+  const rejectedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'rejected');
+  const openPipelineCount = countWhere(records, isOpenMonitoringStatus);
+
+  const approvalRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'approve');
+  const reviewRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'review');
+  const declineRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'decline');
+  const dsrCompliance = percentWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    return dsrPercent > 0 && isAcceptableDsr(dsrPercent);
+  });
+  const safeLtvCoverage = percentWhere(records, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return ltvPercent > 0 && isSafeLtv(ltvPercent);
+  });
+  const elevatedLtvRate = percentWhere(records, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return isElevatedLtv(ltvPercent);
+  });
+  const riskyLtvRate = percentWhere(records, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return isRiskyLtv(ltvPercent);
+  });
+  const staleOpenPipelineShare = openPipelineCount
+    ? (countWhere(records, (record) => isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 7) / openPipelineCount) * 100
+    : 0;
+  const severeOpenPipelineShare = openPipelineCount
+    ? (countWhere(records, (record) => isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 14) / openPipelineCount) * 100
+    : 0;
+  const dataCompleteness = percentWhere(records, getDataCompleteness);
+  const averageOpenAgeDays = getAverageOpenAgeDays(records, referenceTimeMs);
+  const averageFinalScore = mean(
+    records
+      .map((record) => getFinalScore(record))
+      .filter((score): score is number => score !== null),
+  );
+
+  const watchlistCount = countWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return (
+      getEffectiveDecisionBand(record) === 'review' ||
+      (dsrPercent > 0 && !isAcceptableDsr(dsrPercent)) ||
+      isElevatedLtv(ltvPercent) ||
+      (isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 7)
+    );
+  });
+
+  const attentionCount = countWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return (
+      getEffectiveDecisionBand(record) === 'decline' ||
+      isRiskyLtv(ltvPercent) ||
+      dsrPercent >= 60 ||
+      (isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 14)
+    );
+  });
+
+  const pipelineItems: MonitoringStageItem[] = [
+    {
+      id: 'submitted',
+      label: 'Submitted',
+      count: submittedCount,
+      share: scoreFromRatio(submittedCount, records.length),
+      status: 'watch',
+      note: 'Fresh applications waiting to enter formal review.',
+    },
+    {
+      id: 'under-review',
+      label: 'Under Review',
+      count: underReviewCount,
+      share: scoreFromRatio(underReviewCount, records.length),
+      status: 'watch',
+      note: 'Cases actively being analyzed by underwriting or risk teams.',
+    },
+    {
+      id: 'credit-review',
+      label: 'Credit Review',
+      count: creditReviewCount,
+      share: scoreFromRatio(creditReviewCount, records.length),
+      status: 'attention',
+      note: 'Escalated cases needing tighter decision oversight and SLA control.',
+    },
+    {
+      id: 'approved',
+      label: 'Approved',
+      count: approvedCount,
+      share: scoreFromRatio(approvedCount, records.length),
+      status: 'maintain',
+      note: 'Applications cleared for approval but not yet released.',
+    },
+    {
+      id: 'released',
+      label: 'Released',
+      count: releasedCount,
+      share: scoreFromRatio(releasedCount, records.length),
+      status: 'maintain',
+      note: 'Finalized accounts contributing to portfolio conversion.',
+    },
+    {
+      id: 'rejected',
+      label: 'Rejected',
+      count: rejectedCount,
+      share: scoreFromRatio(rejectedCount, records.length),
+      status: 'attention',
+      note: 'Declined cases useful for exception tracking and policy refinement.',
+    },
+  ];
+
+  const controlItems: MonitoringControlItem[] = [
+    buildMonitoringControlItem(
+      'approve-band-coverage',
+      'Approve Band Coverage',
+      approvalRate,
+      55,
+      'Healthy portfolios sustain strong approve-band throughput without relaxing policy discipline.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'review-band-containment',
+      'Review Band Containment',
+      reviewRate,
+      25,
+      'Review-band concentration should stay contained so exceptions do not dominate the pipeline.',
+      'percent',
+    ),
+    buildMonitoringControlItem(
+      'dsr-compliance',
+      'DSR Compliance (< 50%)',
+      dsrCompliance,
+      75,
+      'Global underwriting practice favors strong capacity coverage across the monitored book.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'safe-ltv-coverage',
+      'Safe LTV Coverage (< 80%)',
+      safeLtvCoverage,
+      60,
+      'Collateral-backed lending should maintain strong safe-LTV representation.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'stale-open-pipeline',
+      'Stale Open Pipeline (> 7 days)',
+      staleOpenPipelineShare,
+      15,
+      'Operational best practice is to prevent review queues from aging beyond one week.',
+      'percent',
+    ),
+    buildMonitoringControlItem(
+      'data-completeness',
+      'Decision Data Completeness',
+      dataCompleteness,
+      95,
+      'Portfolio monitoring is more reliable when DTI, DSR, and final score data are present.',
+      'percent',
+      true,
+    ),
+  ];
+
+  const indicators: BudgetIndicator[] = [
+    buildGoalIndicator(
+      'avg-open-age',
+      'Average Open Age',
+      averageOpenAgeDays,
+      7,
+      'Average days an open case remains in the active review pipeline.',
+    ),
+    buildGoalIndicator(
+      'watchlist-share',
+      'Watchlist Share',
+      scoreFromRatio(watchlistCount, records.length),
+      25,
+      'Share of loans that require closer monitoring due to policy or aging flags.',
+    ),
+    buildGoalIndicator(
+      'attention-share',
+      'Critical Attention Share',
+      scoreFromRatio(attentionCount, records.length),
+      10,
+      'Critical concentration of loans with severe underwriting or pipeline issues.',
+    ),
+    buildGoalIndicator(
+      'critical-aged-pipeline',
+      'Critical Aged Pipeline',
+      severeOpenPipelineShare,
+      5,
+      'Critical open cases older than 14 days should remain a very small share of the queue.',
+    ),
+    buildGoalIndicator(
+      'average-final-score',
+      'Average Final Score',
+      averageFinalScore,
+      75,
+      'Average underwriting quality across monitored loan records.',
+      true,
+    ),
+    buildGoalIndicator(
+      'decline-concentration',
+      'Decline Concentration',
+      declineRate,
+      20,
+      'Decline concentration should remain controlled to signal healthy origination quality.',
+    ),
+    buildGoalIndicator(
+      'elevated-ltv-exposure',
+      'Elevated LTV Exposure',
+      elevatedLtvRate,
+      15,
+      'Exposure to elevated LTV should remain contained before it becomes a blocker issue.',
+    ),
+    buildGoalIndicator(
+      'risky-ltv-exposure',
+      'Risky LTV Exposure',
+      riskyLtvRate,
+      5,
+      'Exposure to LTV above the high-risk threshold should stay minimal.',
+    ),
+  ];
+
+  const healthScore = Math.round(mean([...controlItems.map((item) => item.attainment), ...indicators.map((item) => item.attainment)]));
+
+  return {
+    periodLabel: toMonthLabel(referenceDate),
+    dateLabel: toMonthYearLabel(referenceDate),
+    sourceLabel: latestRecord ? 'Portfolio monitoring derived from the live Loan Repository' : 'Waiting for monitored loan records',
+    sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
+    healthScore,
+    performanceBand: getLoanMonitoringPerformanceBand(healthScore),
+    portfolioCount: records.length,
+    openPipelineCount,
+    releasedCount,
+    watchlistCount,
+    attentionCount,
+    actionLabel: attentionCount > 0 ? 'Escalate' : watchlistCount > 0 ? 'Monitor' : 'Maintain',
+    averageOpenAgeDays,
+    averageFinalScore,
+    pipelineItems,
+    controlItems,
+    indicators,
+  };
+}
+
+export function buildBillReminderSnapshot(records: LoanApplicationRecord[]): BillReminderSnapshot {
+  const latestRecord = getMostRecentRecord(records);
+  const referenceDate = latestRecord
+    ? new Date(latestRecord.updated_at ?? latestRecord.created_at ?? Date.now())
+    : new Date();
+  const referenceTimeMs = referenceDate.getTime();
+
+  const readyToPayCount = countWhere(records, (record) => {
+    const income = getIncome(record);
+    if (income <= 0) {
+      return false;
+    }
+    return scoreFromRatio(Math.max(0, getCashflowSurplus(record)), income) >= 15;
+  });
+
+  const lowStressCount = countWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    return dsrPercent > 0 && isAcceptableDsr(dsrPercent);
+  });
+
+  const strongStressCount = countWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    return dsrPercent > 0 && isStrongDsr(dsrPercent);
+  });
+
+  const activeCycleCount = countWhere(records, (record) => {
+    const status = normalizeStatus(record.status);
+    return status === 'submitted' || status === 'under review' || status === 'credit review' || status === 'approved' || status === 'released';
+  });
+
+  const missedRiskCount = countWhere(records, (record) => normalizeStatus(record.status) === 'rejected');
+  const billDataCoverageCount = countWhere(records, (record) => getIncome(record) > 0);
+  const dueSoonWatchCount = countWhere(records, (record) => {
+    const ageDays = getRecordAgeInDays(record, referenceTimeMs);
+    return isOpenMonitoringStatus(record) && ageDays > 5;
+  });
+  const escalatedReminderCount = countWhere(records, (record) => {
+    const dsrPercent = asPercent(safeNumber(record.dsr));
+    return (
+      normalizeStatus(record.status) === 'credit review' ||
+      (dsrPercent > 0 && dsrPercent >= 60) ||
+      getCashflowSurplus(record) < 0
+    );
+  });
+
+  const readyToPayRate = scoreFromRatio(readyToPayCount, records.length);
+  const lowStressRate = scoreFromRatio(lowStressCount, records.length);
+  const strongStressRate = scoreFromRatio(strongStressCount, records.length);
+  const activePaymentCycleRate = scoreFromRatio(activeCycleCount, records.length);
+  const missedRiskControl = clamp(100 - scoreFromRatio(missedRiskCount, records.length), 0, 100);
+  const billDataCoverage = scoreFromRatio(billDataCoverageCount, records.length);
+  const dueSoonWatchRate = activeCycleCount > 0 ? scoreFromRatio(dueSoonWatchCount, activeCycleCount) : 0;
+  const escalatedReminderRate = scoreFromRatio(escalatedReminderCount, records.length);
+  const averageSurplusRatio = mean(
+    records.map((record) => {
+      const income = getIncome(record);
+      if (income <= 0) {
+        return 0;
+      }
+      return scoreFromRatio(Math.max(0, getCashflowSurplus(record)), income);
+    }),
+  );
+
+  const scheduleItems: MonitoringStageItem[] = [
+    {
+      id: 'ready-now',
+      label: 'Ready to Pay',
+      count: readyToPayCount,
+      share: readyToPayRate,
+      status: 'maintain',
+      note: 'Accounts with enough monthly surplus to sustain scheduled obligations.',
+    },
+    {
+      id: 'active-cycle',
+      label: 'Active Cycle',
+      count: activeCycleCount,
+      share: activePaymentCycleRate,
+      status: 'watch',
+      note: 'Accounts currently moving through the active payment or processing cycle.',
+    },
+    {
+      id: 'strong-capacity',
+      label: 'Strong Capacity',
+      count: strongStressCount,
+      share: strongStressRate,
+      status: 'maintain',
+      note: 'Accounts with strong debt-service room below the 35% pressure zone.',
+    },
+    {
+      id: 'due-soon-watch',
+      label: 'Due Soon Watch',
+      count: dueSoonWatchCount,
+      share: dueSoonWatchRate,
+      status: 'watch',
+      note: 'Open-cycle accounts aging beyond five days and needing follow-up.',
+    },
+    {
+      id: 'escalated-reminders',
+      label: 'Escalated',
+      count: escalatedReminderCount,
+      share: escalatedReminderRate,
+      status: 'attention',
+      note: 'High-stress or credit-review accounts that require immediate reminder handling.',
+    },
+    {
+      id: 'rejected-history',
+      label: 'Rejected',
+      count: missedRiskCount,
+      share: scoreFromRatio(missedRiskCount, records.length),
+      status: 'attention',
+      note: 'Rejected records are tracked as part of repayment-risk and communication history.',
+    },
+  ];
+
+  const controlItems: MonitoringControlItem[] = [
+    buildMonitoringControlItem(
+      'payment-readiness',
+      'Payment Readiness',
+      readyToPayRate,
+      80,
+      'Global servicing teams favor a strong share of accounts with surplus buffer before obligations fall due.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'debt-service-room',
+      'Debt Service Room (< 50%)',
+      lowStressRate,
+      75,
+      'Policy-aligned share of accounts with acceptable debt-service pressure.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'strong-service-room',
+      'Strong Service Room (< 35%)',
+      strongStressRate,
+      45,
+      'Best-practice reminder queues prioritize accounts with strong repayment headroom.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'active-cycle-coverage',
+      'Active Cycle Coverage',
+      activePaymentCycleRate,
+      85,
+      'Reminder operations should maintain high visibility across active-cycle accounts.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'missed-risk-control',
+      'Missed-Payment Risk Control',
+      missedRiskControl,
+      90,
+      'Inverse concentration of higher-risk outcomes inside the billing portfolio.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'billing-data-coverage',
+      'Billing Data Coverage',
+      billDataCoverage,
+      95,
+      'Reminder quality depends on strong coverage of income and obligation data.',
+      'percent',
+      true,
+    ),
+  ];
+
+  const indicators: BudgetIndicator[] = [
+    buildGoalIndicator(
+      'average-surplus-ratio',
+      'Average Surplus Ratio',
+      averageSurplusRatio,
+      15,
+      'Average percentage of monthly surplus available before the next due cycle.',
+      true,
+    ),
+    buildGoalIndicator(
+      'due-soon-watch-share',
+      'Due Soon Watch Share',
+      dueSoonWatchRate,
+      20,
+      'Share of active-cycle accounts that have aged into due-soon follow-up status.',
+    ),
+    buildGoalIndicator(
+      'escalated-reminder-share',
+      'Escalated Reminder Share',
+      escalatedReminderRate,
+      10,
+      'Escalated reminder accounts should stay a small share of the total billing book.',
+    ),
+    buildGoalIndicator(
+      'negative-cashflow-share',
+      'Negative Cashflow Share',
+      scoreFromRatio(countWhere(records, (record) => getCashflowSurplus(record) < 0), records.length),
+      15,
+      'Negative monthly cashflow is a leading stress signal for reminder and collections teams.',
+    ),
+  ];
+
+  const healthScore = Math.round(mean([...controlItems.map((item) => item.attainment), ...indicators.map((item) => item.attainment)]));
+
+  return {
+    periodLabel: toMonthLabel(referenceDate),
+    dateLabel: toMonthYearLabel(referenceDate),
+    sourceLabel: latestRecord ? 'Reminder readiness derived from the live Loan Repository' : 'Waiting for reminder-ready loan records',
+    sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
+    healthScore,
+    performanceBand: getLoanMonitoringPerformanceBand(healthScore),
+    portfolioCount: records.length,
+    activeCycleCount,
+    readyToPayCount,
+    watchlistCount: dueSoonWatchCount,
+    attentionCount: escalatedReminderCount,
+    actionLabel: escalatedReminderCount > 0 ? 'Escalate' : dueSoonWatchCount > 0 ? 'Follow Up' : 'Maintain',
+    averageSurplusRatio,
+    scheduleItems,
+    controlItems,
+    indicators,
+  };
+}
+
+export function buildCollateralMonitoringSnapshot(records: LoanApplicationRecord[]): CollateralMonitoringSnapshot {
+  const latestRecord = getMostRecentRecord(records);
+  const referenceDate = latestRecord
+    ? new Date(latestRecord.updated_at ?? latestRecord.created_at ?? Date.now())
+    : new Date();
+
+  const collateralizedRecords = records.filter((record) => safeNumber(record.appraised_value) > 0 || safeNumber(record.ltv) > 0);
+  const collateralizedCount = collateralizedRecords.length;
+  const safeLtvCount = countWhere(collateralizedRecords, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return ltvPercent > 0 && isSafeLtv(ltvPercent);
+  });
+  const elevatedLtvCount = countWhere(collateralizedRecords, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return isElevatedLtv(ltvPercent);
+  });
+  const riskyLtvCount = countWhere(collateralizedRecords, (record) => {
+    const ltvPercent = asPercent(safeNumber(record.ltv));
+    return isRiskyLtv(ltvPercent);
+  });
+  const insuredCount = countWhere(collateralizedRecords, (record) => {
+    const provider = record.requirements?.collateralAssetDetails?.insuranceProviderCompany;
+    return Boolean(provider?.trim()) || safeNumber(record.collateral_scores?.insurance_score) > 0;
+  });
+  const marketableCount = countWhere(collateralizedRecords, (record) => {
+    return Boolean(record.requirements?.collateralInformation?.propertyMarketabilityCategory?.trim())
+      || safeNumber(record.collateral_scores?.marketability_score) > 0;
+  });
+  const assetQualityCount = countWhere(collateralizedRecords, (record) => {
+    return Boolean(record.requirements?.collateralAssetDetails?.vehicleConditionCategory?.trim())
+      || safeNumber(record.collateral_scores?.asset_quality_score) > 0;
+  });
+
+  const ltvSafeCoverage = scoreFromRatio(safeLtvCount, collateralizedCount);
+  const elevatedLtvControl = clamp(100 - scoreFromRatio(elevatedLtvCount, collateralizedCount), 0, 100);
+  const highLtvBlockerControl = clamp(100 - scoreFromRatio(riskyLtvCount, collateralizedCount), 0, 100);
+
+  const insuranceCoverage = mean(
+    collateralizedRecords.map((record) => {
+      const explicitInsuranceScore = safeNumber(record.collateral_scores?.insurance_score);
+      if (explicitInsuranceScore > 0) {
+        return asPercent(explicitInsuranceScore);
+      }
+      const provider = record.requirements?.collateralAssetDetails?.insuranceProviderCompany;
+      return provider ? 100 : 0;
+    }),
+  );
+
+  const assetQuality = mean(
+    collateralizedRecords.map((record) => {
+      const explicitScore = safeNumber(record.collateral_scores?.asset_quality_score);
+      if (explicitScore > 0) {
+        return asPercent(explicitScore);
+      }
+      return record.requirements?.collateralAssetDetails?.vehicleConditionCategory ? 100 : 0;
+    }),
+  );
+
+  const marketability = mean(
+    collateralizedRecords.map((record) => {
+      const explicitScore = safeNumber(record.collateral_scores?.marketability_score);
+      if (explicitScore > 0) {
+        return asPercent(explicitScore);
+      }
+      return record.requirements?.collateralInformation?.propertyMarketabilityCategory ? 100 : 0;
+    }),
+  );
+
+  const overallCollateral = mean(
+    collateralizedRecords.map((record) => {
+      const explicitScore = safeNumber(record.collateral_scores?.overall_collateral_score);
+      if (explicitScore > 0) {
+        return asPercent(explicitScore);
+      }
+      return mean([ltvSafeCoverage, insuranceCoverage, assetQuality, marketability]);
+    }),
+  );
+
+  const averageLtv = mean(
+    collateralizedRecords
+      .map((record) => asPercent(safeNumber(record.ltv)))
+      .filter((value) => value > 0),
+  );
+
+  const inventoryItems: MonitoringStageItem[] = [
+    {
+      id: 'safe-ltv',
+      label: 'Safe LTV',
+      count: safeLtvCount,
+      share: ltvSafeCoverage,
+      status: 'maintain',
+      note: 'Collateralized records sitting within the safe LTV threshold.',
+    },
+    {
+      id: 'insured',
+      label: 'Insured',
+      count: insuredCount,
+      share: scoreFromRatio(insuredCount, collateralizedCount),
+      status: 'maintain',
+      note: 'Collateral records with insurance backing captured in the file.',
+    },
+    {
+      id: 'marketable',
+      label: 'Marketable',
+      count: marketableCount,
+      share: scoreFromRatio(marketableCount, collateralizedCount),
+      status: 'watch',
+      note: 'Records with explicit marketability evidence or marketability score coverage.',
+    },
+    {
+      id: 'asset-quality',
+      label: 'Asset Quality Ready',
+      count: assetQualityCount,
+      share: scoreFromRatio(assetQualityCount, collateralizedCount),
+      status: 'watch',
+      note: 'Collateral records with condition or quality signals ready for review.',
+    },
+    {
+      id: 'elevated-ltv',
+      label: 'Elevated LTV',
+      count: elevatedLtvCount,
+      share: scoreFromRatio(elevatedLtvCount, collateralizedCount),
+      status: 'watch',
+      note: 'Collateral exposures at or above the elevated LTV threshold.',
+    },
+    {
+      id: 'high-risk-ltv',
+      label: 'High Risk LTV',
+      count: riskyLtvCount,
+      share: scoreFromRatio(riskyLtvCount, collateralizedCount),
+      status: 'attention',
+      note: 'High-risk collateral blockers requiring escalation or stronger mitigants.',
+    },
+  ];
+
+  const controlItems: MonitoringControlItem[] = [
+    buildMonitoringControlItem(
+      'ltv-safety',
+      'Safe LTV Coverage (< 80%)',
+      ltvSafeCoverage,
+      55,
+      'Global secured-lending practice favors a healthy base of safe-LTV exposures.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'elevated-ltv-control',
+      'Elevated LTV Control (>= 90%)',
+      elevatedLtvControl,
+      75,
+      'Elevated-LTV concentrations should remain controlled before breaching blocker zones.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'high-ltv-blocker',
+      'High-LTV Blocker Control (>= 95%)',
+      highLtvBlockerControl,
+      85,
+      'High-risk LTV tail should stay tightly managed inside the collateral book.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'insurance-coverage',
+      'Insurance Coverage Completeness',
+      insuranceCoverage,
+      80,
+      'Collateral coverage is stronger when insurance support is consistently documented.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'asset-quality',
+      'Asset Quality Readiness',
+      assetQuality,
+      75,
+      'Condition and quality evidence should be broadly available across the collateral base.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'marketability',
+      'Marketability Strength',
+      marketability,
+      75,
+      'Marketability capture helps liquidation planning and residual-value confidence.',
+      'percent',
+      true,
+    ),
+  ];
+
+  const indicators: BudgetIndicator[] = [
+    buildGoalIndicator(
+      'average-ltv',
+      'Average LTV',
+      averageLtv,
+      80,
+      'Average collateral leverage across records with LTV data.',
+    ),
+    buildGoalIndicator(
+      'uninsured-share',
+      'Uninsured Share',
+      scoreFromRatio(Math.max(collateralizedCount - insuredCount, 0), collateralizedCount),
+      20,
+      'Share of collateralized records without insurance coverage evidence.',
+    ),
+    buildGoalIndicator(
+      'high-risk-ltv-share',
+      'High-Risk LTV Share',
+      scoreFromRatio(riskyLtvCount, collateralizedCount),
+      5,
+      'Critical share of collateral records above the high-risk LTV threshold.',
+    ),
+    buildGoalIndicator(
+      'overall-collateral-score',
+      'Overall Collateral Score',
+      overallCollateral,
+      80,
+      'Composite collateral integrity signal from score data and fallback fields.',
+      true,
+    ),
+  ];
+
+  const healthScore = Math.round(mean([...controlItems.map((item) => item.attainment), ...indicators.map((item) => item.attainment)]));
+
+  return {
+    periodLabel: toMonthLabel(referenceDate),
+    dateLabel: toMonthYearLabel(referenceDate),
+    sourceLabel: latestRecord ? 'Collateral monitoring derived from the live Loan Repository' : 'Waiting for collateral records',
+    sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
+    healthScore,
+    performanceBand: getLoanMonitoringPerformanceBand(healthScore),
+    collateralizedCount,
+    insuredCount,
+    watchlistCount: elevatedLtvCount,
+    attentionCount: riskyLtvCount,
+    actionLabel: riskyLtvCount > 0 ? 'Escalate' : elevatedLtvCount > 0 ? 'Mitigate' : 'Maintain',
+    averageLtv,
+    averageCollateralScore: overallCollateral,
+    inventoryItems,
+    controlItems,
+    indicators,
+  };
+}
+
+export function buildNetWorthPositioningSnapshot(records: LoanApplicationRecord[]): NetWorthPositioningSnapshot {
+  const latestRecord = getMostRecentRecord(records);
+  const referenceDate = latestRecord
+    ? new Date(latestRecord.updated_at ?? latestRecord.created_at ?? Date.now())
+    : new Date();
+
+  const assetStrengthValues = records.map((record) => {
+    const appraised = safeNumber(record.appraised_value);
+    const loanAmount = safeNumber(record.loan_amount);
+    if (appraised <= 0) {
+      return 0;
+    }
+    return scoreFromRatio(Math.max(0, appraised - loanAmount), appraised);
+  });
+
+  const debtCompressionValues = records.map((record) => {
+    const income = getIncome(record);
+    if (income <= 0) {
+      return 0;
+    }
+    const debtRatio = scoreFromRatio(getDebt(record), income);
+    return clamp(100 - debtRatio, 0, 100);
+  });
+
+  const liquidityBufferValues = records.map((record) => {
+    const income = getIncome(record);
+    if (income <= 0) {
+      return 0;
+    }
+    return scoreFromRatio(Math.max(0, getCashflowSurplus(record)), income);
+  });
+
+  const equityCushionValues = records.map((record) => {
+    const loanAmount = safeNumber(record.loan_amount);
+    const appraised = safeNumber(record.appraised_value);
+    if (loanAmount <= 0) {
+      return 0;
+    }
+    return scoreFromRatio(Math.max(0, appraised - loanAmount), loanAmount);
+  });
+
+  const assetStrength = mean(assetStrengthValues);
+  const debtCompression = mean(debtCompressionValues);
+  const liquidityBuffer = mean(liquidityBufferValues);
+  const equityCushion = mean(equityCushionValues);
+  const stabilityIndex = mean([assetStrength, debtCompression, liquidityBuffer, equityCushion]);
+
+  const approveBandCoverage = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'approve');
+  const reviewBandCoverage = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'review');
+  const declineBandControl = 100 - percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'decline');
+  const strongPositionCount = countWhere(records, (record) => {
+    return (
+      getEffectiveDecisionBand(record) === 'approve' &&
+      getCashflowSurplus(record) > 0 &&
+      safeNumber(record.appraised_value) > safeNumber(record.loan_amount)
+    );
+  });
+  const watchlistCount = countWhere(records, (record) => {
+    return (
+      getEffectiveDecisionBand(record) === 'review' ||
+      getCashflowSurplus(record) <= 0 ||
+      safeNumber(record.loan_amount) >= safeNumber(record.appraised_value)
+    );
+  });
+  const attentionCount = countWhere(records, (record) => {
+    return (
+      getEffectiveDecisionBand(record) === 'decline' ||
+      asPercent(safeNumber(record.dsr)) >= 60 ||
+      safeNumber(record.loan_amount) > safeNumber(record.appraised_value)
+    );
+  });
+
+  const averageNetCashflow = mean(records.map((record) => getCashflowSurplus(record)));
+
+  const positioningItems: MonitoringStageItem[] = [
+    {
+      id: 'approve-band',
+      label: 'Approve Band',
+      count: countWhere(records, (record) => getEffectiveDecisionBand(record) === 'approve'),
+      share: approveBandCoverage,
+      status: 'maintain',
+      note: 'Records already positioned in the stronger underwriting outcome band.',
+    },
+    {
+      id: 'review-band',
+      label: 'Review Band',
+      count: countWhere(records, (record) => getEffectiveDecisionBand(record) === 'review'),
+      share: reviewBandCoverage,
+      status: 'watch',
+      note: 'Accounts needing closer balance-sheet scrutiny before stronger positioning.',
+    },
+    {
+      id: 'positive-cashflow',
+      label: 'Positive Cashflow',
+      count: countWhere(records, (record) => getCashflowSurplus(record) > 0),
+      share: scoreFromRatio(countWhere(records, (record) => getCashflowSurplus(record) > 0), records.length),
+      status: 'maintain',
+      note: 'Accounts retaining positive monthly surplus after obligations.',
+    },
+    {
+      id: 'equity-cushion',
+      label: 'Equity Cushion',
+      count: countWhere(records, (record) => safeNumber(record.appraised_value) > safeNumber(record.loan_amount)),
+      share: scoreFromRatio(countWhere(records, (record) => safeNumber(record.appraised_value) > safeNumber(record.loan_amount)), records.length),
+      status: 'maintain',
+      note: 'Records where asset values still sit above financed exposure.',
+    },
+    {
+      id: 'watchlist-position',
+      label: 'Watchlist Position',
+      count: watchlistCount,
+      share: scoreFromRatio(watchlistCount, records.length),
+      status: 'watch',
+      note: 'Records with weaker liquidity or thinner asset cushion that need monitoring.',
+    },
+    {
+      id: 'attention-position',
+      label: 'Attention Position',
+      count: attentionCount,
+      share: scoreFromRatio(attentionCount, records.length),
+      status: 'attention',
+      note: 'Accounts showing material leverage, weak cashflow, or decline-band outcomes.',
+    },
+  ];
+
+  const controlItems: MonitoringControlItem[] = [
+    buildMonitoringControlItem(
+      'approve-band-coverage',
+      'Approve Band Coverage (>= 80)',
+      approveBandCoverage,
+      60,
+      'Healthy books sustain strong positioning in the policy approve band.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'review-band-coverage',
+      'Review Band Coverage (65 to 79)',
+      reviewBandCoverage,
+      30,
+      'Review-band exposure should stay bounded so marginal profiles do not dominate the mix.',
+      'percent',
+    ),
+    buildMonitoringControlItem(
+      'decline-band-control',
+      'Decline Band Control (< 65)',
+      declineBandControl,
+      80,
+      'Inverse concentration of weaker positioning under the decline threshold.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'asset-strength',
+      'Asset Strength',
+      assetStrength,
+      35,
+      'Measures how much unencumbered asset cushion remains against financed value.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'debt-compression',
+      'Debt Compression Score',
+      debtCompression,
+      70,
+      'Inverse debt pressure based on income and monthly obligations.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'liquidity-buffer',
+      'Liquidity Buffer',
+      liquidityBuffer,
+      25,
+      'Healthy positioning keeps enough surplus available for resilience and shocks.',
+      'percent',
+      true,
+    ),
+    buildMonitoringControlItem(
+      'equity-cushion',
+      'Equity Cushion',
+      equityCushion,
+      30,
+      'Loan-to-asset distance is stronger when equity cushion stays comfortably positive.',
+      'percent',
+      true,
+    ),
+  ];
+
+  const indicators: BudgetIndicator[] = [
+    buildGoalIndicator(
+      'stability-index',
+      'Net Worth Stability Index',
+      stabilityIndex,
+      75,
+      'Composite signal of assets, debt pressure, liquidity, and equity positioning.',
+      true,
+    ),
+    buildGoalIndicator(
+      'strong-position-share',
+      'Strong Position Share',
+      scoreFromRatio(strongPositionCount, records.length),
+      50,
+      'Share of accounts with healthy cashflow, asset cushion, and approve-band posture.',
+      true,
+    ),
+    buildGoalIndicator(
+      'watchlist-position-share',
+      'Watchlist Position Share',
+      scoreFromRatio(watchlistCount, records.length),
+      25,
+      'Balance-sheet watchlist concentration should stay contained.',
+    ),
+    buildGoalIndicator(
+      'average-net-cashflow',
+      'Average Net Cashflow',
+      averageNetCashflow,
+      10000,
+      'Average monthly surplus across the monitored book.',
+      true,
+    ),
+  ];
+
+  const healthScore = Math.round(mean([...controlItems.map((item) => item.attainment), ...indicators.map((item) => item.attainment)]));
+
+  return {
+    periodLabel: toMonthLabel(referenceDate),
+    dateLabel: toMonthYearLabel(referenceDate),
+    sourceLabel: latestRecord ? 'Net-worth positioning derived from the live Loan Repository' : 'Waiting for net-worth position records',
+    sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
+    healthScore,
+    performanceBand: getLoanMonitoringPerformanceBand(healthScore),
+    portfolioCount: records.length,
+    strongPositionCount,
+    watchlistCount,
+    attentionCount,
+    actionLabel: attentionCount > 0 ? 'Reposition' : watchlistCount > 0 ? 'Review' : 'Maintain',
+    averageNetCashflow,
+    averageAssetStrength: assetStrength,
+    positioningItems,
+    controlItems,
+    indicators,
   };
 }
 
@@ -461,7 +1626,7 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
   ];
 
   const indicators: BudgetIndicator[] = [
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'income-coverage',
       'Income Coverage',
       totalIncome,
@@ -469,28 +1634,28 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
       'Measures whether reported inflows cover the known monthly obligations.',
       true,
     ),
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'expense-ratio',
       'Expense Ratio',
       scoreFromRatio(totalKnownExpenses, totalIncome),
       65,
       'Keep known expenses under 65% of total income.',
     ),
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'mortgage-ratio',
       'Mortgage Ratio',
       scoreFromRatio(mortgageExpense, totalIncome),
       28,
       'Maintain housing and amortization payments within 28% of income.',
     ),
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'other-debt-ratio',
       'Other Debt Ratio',
       scoreFromRatio(otherDebtExpense, totalIncome),
       12,
       'Other debt should remain lean to preserve cash flow.',
     ),
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'surplus-ratio',
       'Surplus Ratio',
       scoreFromRatio(Math.max(0, netCashflow), totalIncome),
@@ -498,7 +1663,7 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
       'Healthy budgets keep at least 10% of income available after known expenses.',
       true,
     ),
-    buildBudgetIndicator(
+    buildGoalIndicator(
       'income-diversity',
       'Income Diversity',
       scoreFromRatio(nonPrimaryIncome, totalIncome),

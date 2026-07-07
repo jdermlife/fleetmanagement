@@ -2321,6 +2321,60 @@ textarea {
     linear-gradient(135deg, #172033 0%, #1f2a44 58%, #8b6b12 100%);
 }
 
+.loan-monitoring-dashboard-page {
+  max-width: 1380px;
+}
+
+.loan-monitoring-dashboard-hero {
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.24), transparent 24%),
+    radial-gradient(circle at bottom left, rgba(250, 204, 21, 0.16), transparent 24%),
+    linear-gradient(135deg, #0f172a 0%, #132a4a 56%, #0f766e 100%);
+}
+
+.loan-monitoring-dashboard-scorecard {
+  background: rgba(9, 38, 68, 0.34);
+}
+
+.bill-reminder-dashboard-page,
+.collateral-dashboard-page,
+.networth-dashboard-page {
+  max-width: 1380px;
+}
+
+.bill-reminder-dashboard-hero {
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.22), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(234, 179, 8, 0.18), transparent 24%),
+    linear-gradient(135deg, #11253f 0%, #1d4b6b 54%, #0f766e 100%);
+}
+
+.bill-reminder-dashboard-scorecard {
+  background: rgba(12, 53, 80, 0.34);
+}
+
+.collateral-dashboard-hero {
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.2), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.16), transparent 24%),
+    linear-gradient(135deg, #16281f 0%, #254036 52%, #7c5f10 100%);
+}
+
+.collateral-dashboard-scorecard {
+  background: rgba(33, 58, 39, 0.34);
+}
+
+.networth-dashboard-hero {
+  background:
+    radial-gradient(circle at top right, rgba(168, 85, 247, 0.2), transparent 22%),
+    radial-gradient(circle at bottom left, rgba(251, 191, 36, 0.16), transparent 24%),
+    linear-gradient(135deg, #201933 0%, #362b52 54%, #0f766e 100%);
+}
+
+.networth-dashboard-scorecard {
+  background: rgba(53, 39, 83, 0.34);
+}
+
 .budget-dashboard-scorecard {
   background: rgba(122, 94, 15, 0.34);
 }
