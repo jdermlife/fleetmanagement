@@ -347,39 +347,42 @@ const isSignedIn = authReady && Boolean(currentUser)
           </div>
 
           <div className="app-topbar-actions">
-            {/* HAMBURGER BUTTON */}
-            {isSignedIn ? (
-              <button
-                onClick={() => setMenuOpen(!menuOpen)}
-                type="button"
-                className="app-menu-toggle"
-                aria-label="Toggle account and application menu"
-                aria-expanded={menuOpen}
-              >
-                {`${currentUser?.username ?? 'Account'} • Menu`}
-              </button>
-            ) : null}
+            {(isSignedIn || shouldShowBackButton) ? (
+              <div className="app-topbar-control-group">
+                {isSignedIn ? (
+                  <button
+                    onClick={() => setMenuOpen(!menuOpen)}
+                    type="button"
+                    className="app-menu-toggle"
+                    aria-label="Toggle account and application menu"
+                    aria-expanded={menuOpen}
+                  >
+                    {`${currentUser?.username ?? 'Account'} • Menu`}
+                  </button>
+                ) : null}
 
-            {shouldShowBackButton ? (
-              <div className="app-mini-nav" aria-label="Page navigation controls">
-                <button
-                  type="button"
-                  className="app-mini-nav-button"
-                  onClick={handleTopbarBack}
-                  aria-label="Go back"
-                  title="Back"
-                >
-                  &larr;
-                </button>
-                <button
-                  type="button"
-                  className="app-mini-nav-button"
-                  onClick={handleTopbarForward}
-                  aria-label="Go forward"
-                  title="Next"
-                >
-                  &rarr;
-                </button>
+                {shouldShowBackButton ? (
+                  <div className="app-mini-nav" aria-label="Page navigation controls">
+                    <button
+                      type="button"
+                      className="app-mini-nav-button"
+                      onClick={handleTopbarBack}
+                      aria-label="Go back"
+                      title="Back"
+                    >
+                      &larr;
+                    </button>
+                    <button
+                      type="button"
+                      className="app-mini-nav-button"
+                      onClick={handleTopbarForward}
+                      aria-label="Go forward"
+                      title="Next"
+                    >
+                      &rarr;
+                    </button>
+                  </div>
+                ) : null}
               </div>
             ) : null}
           </div>
