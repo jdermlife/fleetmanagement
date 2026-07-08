@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
@@ -38,6 +38,47 @@ export default function BudgetExpenseTrackerPage() {
     () => buildBudgetExpenseTrackerSnapshot(applications),
     [applications],
   );
+  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    setCategoryOverrides({});
+  }, [snapshot.sourceApplicationNo, snapshot.livingExpenseDeclared]);
+
+  const effectiveCategoryItems = useMemo(
+    () =>
+      snapshot.categoryItems.map((item) => {
+        const rawOverride = categoryOverrides[item.id]?.trim() ?? '';
+        const parsedOverride = rawOverride === '' ? Number.NaN : Number(rawOverride);
+        const defaultAmount = item.amount;
+        const amount = Number.isFinite(parsedOverride) && parsedOverride >= 0 ? parsedOverride : defaultAmount;
+
+        return {
+          ...item,
+          defaultAmount,
+          amount,
+          share: snapshot.livingExpenseDeclared > 0 ? (amount / snapshot.livingExpenseDeclared) * 100 : 0,
+          isOverridden: rawOverride !== '' && Number.isFinite(parsedOverride) && parsedOverride >= 0,
+        };
+      }),
+    [categoryOverrides, snapshot.categoryItems, snapshot.livingExpenseDeclared],
+  );
+
+  const effectiveCategoryTotal = useMemo(
+    () => effectiveCategoryItems.reduce((sum, item) => sum + item.amount, 0),
+    [effectiveCategoryItems],
+  );
+
+  const resetAllCategoryOverrides = () => {
+    setCategoryOverrides({});
+  };
+
+  const resetCategoryOverride = (categoryId: string) => {
+    setCategoryOverrides((previous) => {
+      const next = { ...previous };
+      delete next[categoryId];
+      return next;
+    });
+  };
 
   return (
     <div className="psychometric-page budget-dashboard-page">
@@ -224,6 +265,14 @@ export default function BudgetExpenseTrackerPage() {
                 <span className="psychometric-panel-kicker">Budget and Spending Category Amount Setup</span>
                 <h2>Category allocation reconciled to declared living expenses</h2>
               </div>
+              <button
+                type="button"
+                className="psychometric-reset-button"
+                onClick={resetAllCategoryOverrides}
+                disabled={Object.keys(categoryOverrides).length === 0}
+              >
+                Reset All Categories
+              </button>
             </div>
 
             <div className="budget-dashboard-category-summary">
@@ -233,30 +282,64 @@ export default function BudgetExpenseTrackerPage() {
               </div>
               <div className="budget-dashboard-category-summary-card">
                 <span>Category Total</span>
-                <strong>{formatCurrency(snapshot.categoryTotal)}</strong>
+                <strong>{formatCurrency(effectiveCategoryTotal)}</strong>
               </div>
               <div className="budget-dashboard-category-summary-card">
                 <span>Variance</span>
-                <strong>{formatSignedCurrency(snapshot.categoryTotal - snapshot.livingExpenseDeclared)}</strong>
+                <strong>{formatSignedCurrency(effectiveCategoryTotal - snapshot.livingExpenseDeclared)}</strong>
               </div>
             </div>
 
             <p className="psychometric-section-note">
-              The category setup is derived from the declared living-expense amount and normalized so the total
-              reconciles with the application value.
+              Enter an amount to override any suggested category allocation. Suggested values are shown as watermark
+              placeholders and the live total updates automatically against declared living expenses.
             </p>
 
             <div className="budget-dashboard-category-grid">
-              {snapshot.categoryItems.map((item) => (
+              {effectiveCategoryItems.map((item) => (
                 <article key={item.id} className="budget-dashboard-card">
                   <div className="budget-dashboard-card-header">
                     <span>{item.label}</span>
-                    <strong>{item.share.toFixed(0)}%</strong>
+                    <div className="budget-dashboard-category-actions">
+                      <strong>{item.share.toFixed(0)}%</strong>
+                      {item.isOverridden ? (
+                        <button
+                          type="button"
+                          className="budget-dashboard-category-reset"
+                          onClick={() => resetCategoryOverride(item.id)}
+                        >
+                          Reset
+                        </button>
+                      ) : null}
+                    </div>
                   </div>
+                  <label className="budget-dashboard-category-input-wrap">
+                    <span className="budget-dashboard-category-input-label">Amount Override</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={categoryOverrides[item.id] ?? ''}
+                      onChange={(event) => {
+                        setCategoryOverrides((previous) => ({
+                          ...previous,
+                          [item.id]: event.target.value,
+                        }));
+                      }}
+                      placeholder={item.defaultAmount.toFixed(0)}
+                      className="budget-dashboard-category-input"
+                      aria-label={`${item.label} amount override`}
+                    />
+                  </label>
                   <div className="budget-dashboard-card-value">{formatCurrency(item.amount)}</div>
                   <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
                     <div className="psychometric-progress-bar" style={{ width: `${item.share}%` }} />
                   </div>
+                  <small className="budget-dashboard-category-helper">
+                    {item.isOverridden
+                      ? `Manual override applied • Default ${formatCurrency(item.defaultAmount)}`
+                      : `Suggested default: ${formatCurrency(item.defaultAmount)}`}
+                  </small>
                   <p>{item.note}</p>
                 </article>
               ))}

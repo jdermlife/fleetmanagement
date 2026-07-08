@@ -2435,6 +2435,53 @@ textarea {
   font-size: 1.15rem;
 }
 
+.budget-dashboard-category-input-wrap {
+  display: grid;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.budget-dashboard-category-input-label,
+.budget-dashboard-category-helper {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.budget-dashboard-category-input {
+  min-height: 42px;
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.96);
+  color: #0f172a;
+  padding: 10px 12px;
+}
+
+.budget-dashboard-category-input::placeholder {
+  color: rgba(100, 116, 139, 0.56);
+  font-style: italic;
+}
+
+.budget-dashboard-category-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.budget-dashboard-category-reset {
+  min-height: 28px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(184, 134, 11, 0.28);
+  background: #fffef4;
+  color: #6d4c00;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.budget-dashboard-category-reset:hover {
+  background: #fff4bf;
+}
+
 .budget-dashboard-card,
 .budget-dashboard-comparison-card,
 .budget-dashboard-indicator {
