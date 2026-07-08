@@ -78,6 +78,8 @@ const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage')
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazy(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
+const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
+const CompliancePage = lazy(() => import('./pages/governance/CompliancePage'))
 
 const AIDashboard = lazy(() => import('./pages/ai/AIDashboard'))
 const ChatAssistant = lazy(() => import('./pages/ai/ChatAssistant'))
@@ -441,7 +443,7 @@ const isSignedIn = authReady && Boolean(currentUser)
         </Link>
       ))}
 
-    {!isBorrowerSubscriber && !isLenderSubscriber && (
+    {false && !isBorrowerSubscriber && !isLenderSubscriber && (
       <>
         {/* AI TOOLS */}
 
@@ -1028,14 +1030,7 @@ const isSignedIn = authReady && Boolean(currentUser)
               path="/risk-management"
               element={
                 <ProtectedRoute permissions={['read:audit_logs']}>
-                  <div className="card">
-                    <h1>Risk Management</h1>
-
-                    <p>
-                      Risk monitoring, operational controls,
-                      fraud prevention, and fleet governance.
-                    </p>
-                  </div>
+                  <RiskManagementPage />
                 </ProtectedRoute>
               }
             />
@@ -1045,14 +1040,7 @@ const isSignedIn = authReady && Boolean(currentUser)
               path="/compliance"
               element={
                 <ProtectedRoute permissions={['read:audit_logs']}>
-                  <div className="card">
-                    <h1>Compliance</h1>
-
-                    <p>
-                      Regulatory compliance, internal controls,
-                      audit reviews, and compliance reporting.
-                    </p>
-                  </div>
+                  <CompliancePage />
                 </ProtectedRoute>
               }
             />
