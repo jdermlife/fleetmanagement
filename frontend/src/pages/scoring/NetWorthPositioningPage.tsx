@@ -239,7 +239,7 @@ export default function NetWorthPositioningPage() {
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Personal Net Worth Tracking</span>
-          <h1>Net Worth Positioning</h1>
+          <h1>Prosperity Lens</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>

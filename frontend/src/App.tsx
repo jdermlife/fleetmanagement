@@ -100,8 +100,7 @@ const menuLinks: MenuLink[] = [
   { id: 'budget-expense-tracker', label: 'Budget & Expense Tracker' },
   { id: 'loan-monitoring', label: 'Loan Monitoring' },
   { id: 'bill-reminder', label: 'Bill Reminder' },
-  { id: 'collateral-monitoring', label: 'Collateral Monitoring' },
-  { id: 'net-worth-positioning', label: 'Net Worth Positioning' },
+  { id: 'net-worth-positioning', label: 'Prosperity Lens' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
