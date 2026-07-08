@@ -2480,6 +2480,8 @@ textarea {
 .budget-dashboard-category-actions {
   display: inline-flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 8px;
 }
 
@@ -2528,6 +2530,11 @@ textarea {
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.budget-dashboard-card-header > *,
+.budget-dashboard-comparison-values > * {
+  min-width: 0;
 }
 
 .budget-dashboard-card-header span,
@@ -2905,6 +2912,50 @@ th { color: var(--dark-gold); }
     font-size: 1.45rem;
   }
 
+  .budget-dashboard-page .psychometric-panel-header > .psychometric-reset-button {
+    display: inline-flex;
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
+    padding: 10px 14px;
+    font-size: 0.82rem;
+  }
+
+  .budget-dashboard-card,
+  .budget-dashboard-comparison-card,
+  .budget-dashboard-indicator,
+  .budget-dashboard-category-summary-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .budget-dashboard-card-header,
+  .budget-dashboard-comparison-values {
+    flex-wrap: wrap;
+  }
+
+  .budget-dashboard-comparison-values > div {
+    flex: 1 1 140px;
+  }
+
+  .budget-dashboard-category-actions {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .budget-dashboard-category-reset {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    padding: 6px 12px;
+  }
+
+  .budget-dashboard-category-input {
+    min-height: 46px;
+    font-size: 16px;
+  }
+
   .lending-psychometric-layout {
     gap: 14px;
   }
@@ -2974,6 +3025,55 @@ th { color: var(--dark-gold); }
   .lending-psychometric-footer-actions .loan-inline-button,
   .lending-psychometric-footer-actions .loan-footer-button {
     width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .budget-dashboard-hero,
+  .budget-dashboard-page .psychometric-panel,
+  .budget-dashboard-page .psychometric-summary-card {
+    padding: 14px;
+    border-radius: 14px;
+  }
+
+  .budget-dashboard-page .psychometric-panel-header {
+    gap: 12px;
+  }
+
+  .budget-dashboard-card,
+  .budget-dashboard-comparison-card,
+  .budget-dashboard-indicator,
+  .budget-dashboard-category-summary-card {
+    padding: 12px;
+    border-radius: 14px;
+  }
+
+  .budget-dashboard-card-header,
+  .budget-dashboard-comparison-values {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .budget-dashboard-card-header strong,
+  .budget-dashboard-comparison-values strong {
+    font-size: 1rem;
+  }
+
+  .budget-dashboard-card-value,
+  .budget-dashboard-summary-grid strong,
+  .budget-dashboard-category-summary-card strong {
+    font-size: 1.2rem;
+  }
+
+  .budget-dashboard-page .psychometric-reset-button,
+  .budget-dashboard-category-reset {
+    width: 100%;
+  }
+
+  .budget-dashboard-category-actions {
+    align-items: stretch;
+    gap: 6px;
   }
 }
 
