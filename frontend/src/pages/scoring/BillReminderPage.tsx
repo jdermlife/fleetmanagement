@@ -530,12 +530,12 @@ export default function BillReminderPage() {
                 <tbody>
                   {billingSummaryRows.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.name}</td>
-                      <td>{row.facility}</td>
-                      <td>{row.frequency}</td>
-                      <td>{row.dueDateLabel}</td>
-                      <td>{row.daysLabel}</td>
-                      <td>{row.statusLabel}</td>
+                      <td data-label="Name of Biller">{row.name}</td>
+                      <td data-label="Facility / Utility Used">{row.facility}</td>
+                      <td data-label="Frequency">{row.frequency}</td>
+                      <td data-label="Due Date">{row.dueDateLabel}</td>
+                      <td data-label="Days to Due">{row.daysLabel}</td>
+                      <td data-label="Status">{row.statusLabel}</td>
                     </tr>
                   ))}
                   {billingSummaryRows.length === 0 ? (

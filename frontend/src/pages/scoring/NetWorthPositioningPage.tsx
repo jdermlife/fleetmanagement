@@ -327,8 +327,8 @@ export default function NetWorthPositioningPage() {
                       </tr>
                       {sectionRows[section].map((row) => (
                         <tr key={row.id}>
-                          <td>{row.label}</td>
-                          <td>
+                          <td data-label="Account">{row.label}</td>
+                          <td data-label="Amount">
                             <input
                               type="number"
                               min={0}
@@ -352,8 +352,8 @@ export default function NetWorthPositioningPage() {
                 </tbody>
                 <tfoot>
                   <tr>
-                    <td style={{ fontWeight: 700 }}>Net Worth</td>
-                    <td style={{ fontWeight: 700 }}>{formatCurrency(netWorth)}</td>
+                    <td data-label="Summary" style={{ fontWeight: 700 }}>Net Worth</td>
+                    <td data-label="Amount" style={{ fontWeight: 700 }}>{formatCurrency(netWorth)}</td>
                   </tr>
                 </tfoot>
               </table>
@@ -382,11 +382,11 @@ export default function NetWorthPositioningPage() {
                 <tbody>
                   {snapshot.controlItems.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.label}</td>
-                      <td>{formatMetric(item.actual, item.unit)}</td>
-                      <td>{formatMetric(item.target, item.unit)}</td>
-                      <td>{formatMetric(item.variance, item.unit)}</td>
-                      <td>{getStatusLabel(item.status)}</td>
+                      <td data-label="Control">{item.label}</td>
+                      <td data-label="Actual">{formatMetric(item.actual, item.unit)}</td>
+                      <td data-label="Target">{formatMetric(item.target, item.unit)}</td>
+                      <td data-label="Variance">{formatMetric(item.variance, item.unit)}</td>
+                      <td data-label="Status">{getStatusLabel(item.status)}</td>
                     </tr>
                   ))}
                 </tbody>

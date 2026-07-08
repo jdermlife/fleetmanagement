@@ -1839,12 +1839,14 @@ textarea {
   display: grid;
   gap: 10px;
   max-width: 780px;
+  min-width: 0;
 }
 
 .psychometric-hero-copy h1,
 .psychometric-panel h2,
 .psychometric-section-card h3 {
   margin: 0;
+  overflow-wrap: anywhere;
 }
 
 .psychometric-hero-copy h1 {
@@ -1881,6 +1883,7 @@ textarea {
   background: rgba(15, 23, 42, 0.28);
   border: 1px solid rgba(255, 255, 255, 0.14);
   text-align: right;
+  max-width: 100%;
 }
 
 .psychometric-hero-metric span,
@@ -1891,6 +1894,7 @@ textarea {
 .psychometric-hero-metric strong {
   font-size: clamp(2.8rem, 6vw, 4rem);
   line-height: 0.95;
+  overflow-wrap: anywhere;
 }
 
 .psychometric-summary-grid {
@@ -1925,6 +1929,7 @@ textarea {
   font-size: 2rem;
   line-height: 1;
   color: #0f172a;
+  overflow-wrap: anywhere;
 }
 
 .psychometric-summary-card-highlight {
@@ -1966,6 +1971,16 @@ textarea {
   align-items: flex-start;
 }
 
+.dashboard-header-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.dashboard-header-actions > * {
+  min-width: 0;
+}
+
 .psychometric-reset-button,
 .psychometric-option-button {
   border-radius: 14px;
@@ -1990,11 +2005,14 @@ textarea {
 
 .psychometric-scale-table-wrap {
   overflow-x: auto;
+  max-width: 100%;
+  border-radius: 16px;
 }
 
 .psychometric-scale-table th,
 .psychometric-scale-table td {
   text-align: left;
+  overflow-wrap: anywhere;
 }
 
 .psychometric-scale-table td:last-child,
@@ -2449,6 +2467,7 @@ textarea {
 .budget-dashboard-category-summary-card strong {
   color: #0f172a;
   font-size: 1.15rem;
+  overflow-wrap: anywhere;
 }
 
 .budget-dashboard-category-input-wrap {
@@ -2544,12 +2563,14 @@ textarea {
 .budget-dashboard-comparison-card p,
 .budget-dashboard-indicator p {
   color: #64748b;
+  overflow-wrap: anywhere;
 }
 
 .budget-dashboard-card-header strong,
 .budget-dashboard-comparison-card strong,
 .budget-dashboard-indicator strong {
   color: #0f172a;
+  overflow-wrap: anywhere;
 }
 
 .budget-dashboard-card-value {
@@ -2677,6 +2698,362 @@ th { color: var(--dark-gold); }
   flex-shrink: 0;
 }
 
+.login-art-page {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 28px 18px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 239, 161, 0.78), transparent 24%),
+    radial-gradient(circle at 20% 78%, rgba(255, 221, 105, 0.24), transparent 28%),
+    radial-gradient(circle at 88% 18%, rgba(255, 255, 255, 0.18), transparent 22%),
+    linear-gradient(180deg, #ffca2f 0%, #d08b13 50%, #8f5902 100%);
+}
+
+.login-art-page::before,
+.login-art-page::after {
+  content: "";
+  position: absolute;
+  inset: auto -10% -4% -10%;
+  height: 30vh;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at center, rgba(255, 244, 177, 0.6), transparent 42%),
+    linear-gradient(180deg, rgba(255, 230, 124, 0.38), rgba(255, 185, 31, 0));
+  filter: blur(10px);
+  pointer-events: none;
+}
+
+.login-art-page::after {
+  inset: auto -15% 6% 24%;
+  height: 24vh;
+  opacity: 0.55;
+  transform: rotate(-9deg);
+}
+
+.login-art-shell {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 580px);
+  display: grid;
+  gap: 18px;
+}
+
+.login-art-brand {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  text-align: center;
+}
+
+.login-art-logo {
+  width: min(100%, 360px);
+  filter: drop-shadow(0 16px 36px rgba(70, 28, 0, 0.42));
+}
+
+.login-art-brand-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.login-art-brand-name {
+  margin: 0;
+  color: #2f1800;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: 1.05rem;
+  font-weight: 900;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.login-art-brand-tagline {
+  margin: 0;
+  color: rgba(61, 31, 0, 0.86);
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.login-art-card {
+  display: grid;
+  gap: 18px;
+  padding: 26px 24px 22px;
+  border-radius: 34px;
+  background: linear-gradient(180deg, rgba(172, 106, 6, 0.34), rgba(123, 73, 3, 0.28));
+  border: 1px solid rgba(255, 221, 110, 0.9);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 241, 186, 0.9),
+    0 24px 48px rgba(77, 40, 0, 0.38);
+  backdrop-filter: blur(7px);
+}
+
+.login-art-social-stack,
+.login-art-form {
+  display: grid;
+  gap: 16px;
+}
+
+.login-art-social-button,
+.login-art-google-wrap {
+  position: relative;
+  min-height: 78px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 218, 82, 0.98);
+  background: linear-gradient(90deg, rgba(135, 82, 6, 0.92), rgba(107, 63, 3, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 174, 0.9),
+    0 10px 22px rgba(72, 38, 0, 0.28);
+}
+
+.login-art-social-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  width: 100%;
+  padding: 16px 24px;
+  color: #fff9ef;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+}
+
+.login-art-social-button:hover {
+  background: linear-gradient(90deg, rgba(124, 76, 5, 0.94), rgba(98, 58, 3, 0.96));
+}
+
+.login-art-social-button:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.login-art-social-icon {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.login-art-social-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login-art-google-wrap {
+  overflow: hidden;
+}
+
+.login-art-google-preview {
+  position: absolute;
+  inset: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px 24px;
+  color: #fff9ef;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.2rem);
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.28);
+  pointer-events: none;
+}
+
+.login-art-google-icon {
+  background: #ffffff;
+  border-radius: 999px;
+  padding: 2px;
+}
+
+.login-art-google-live {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+}
+
+.login-art-google-live > div {
+  width: 100% !important;
+  display: grid;
+  place-items: center;
+}
+
+.login-art-google-live iframe,
+.login-art-google-live div[role="button"] {
+  width: 100% !important;
+  min-width: 100% !important;
+  min-height: 78px !important;
+  opacity: 0.02;
+  border-radius: 999px !important;
+}
+
+.login-art-service-note,
+.login-art-message {
+  margin: -4px 4px 0;
+  color: #4c2700;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.login-art-divider {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 18px;
+  color: #7a4700;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: 0.95rem;
+  font-weight: 900;
+  text-transform: lowercase;
+}
+
+.login-art-divider::before,
+.login-art-divider::after {
+  content: "";
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, rgba(255, 219, 104, 0.12), rgba(255, 220, 108, 0.95));
+}
+
+.login-art-divider::after {
+  background: linear-gradient(90deg, rgba(255, 220, 108, 0.95), rgba(255, 219, 104, 0.12));
+}
+
+.login-art-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  min-height: 78px;
+  margin-bottom: 0;
+  padding: 0 22px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 218, 82, 0.98);
+  background: linear-gradient(90deg, rgba(121, 72, 5, 0.94), rgba(107, 63, 3, 0.96));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 174, 0.85),
+    0 10px 22px rgba(72, 38, 0, 0.24);
+}
+
+.login-art-field-icon,
+.login-art-visibility-toggle {
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #ffe680;
+}
+
+.login-art-field-icon svg,
+.login-art-visibility-toggle svg {
+  width: 100%;
+  height: 100%;
+}
+
+.login-art-input {
+  width: 100%;
+  min-height: 56px;
+  border: none;
+  background: transparent;
+  padding: 0;
+  color: #fff7d7;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1.05rem, 2vw, 1.18rem);
+  font-weight: 700;
+}
+
+.login-art-input::placeholder {
+  color: rgba(255, 231, 142, 0.85);
+}
+
+.login-art-input:focus {
+  outline: none;
+  box-shadow: none;
+}
+
+.login-art-visibility-toggle {
+  border: none;
+  background: transparent;
+  padding: 0;
+}
+
+.login-art-submit {
+  width: 100%;
+  min-height: 86px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 218, 82, 0.98);
+  background: linear-gradient(180deg, #ffd95f 0%, #ffc51b 48%, #f2b400 100%);
+  color: #332000;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1.4rem, 3vw, 1.95rem);
+  font-weight: 900;
+  letter-spacing: 0.01em;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 251, 214, 0.96),
+    0 14px 26px rgba(72, 38, 0, 0.3);
+}
+
+.login-art-submit:hover {
+  background: linear-gradient(180deg, #ffe078 0%, #ffcb2a 48%, #efb000 100%);
+}
+
+.login-art-submit:disabled {
+  opacity: 0.78;
+  cursor: wait;
+}
+
+.login-art-forgot,
+.login-art-new-user a {
+  color: #173a8d;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1rem, 2vw, 1.15rem);
+  font-weight: 900;
+  text-align: center;
+  text-decoration: none;
+}
+
+.login-art-forgot:hover,
+.login-art-new-user a:hover,
+.login-art-support-links a:hover {
+  text-decoration: underline;
+}
+
+.login-art-new-user {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 6px;
+  color: #5d3300;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.login-art-support-links {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  color: #5d3300;
+}
+
+.login-art-support-links a {
+  color: #5d3300;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
 /* ========================
    RESPONSIVE (≤960px)
    ======================== */
@@ -2719,6 +3096,14 @@ th { color: var(--dark-gold); }
     width: 100%;
     padding: 16px;
     padding-top: 24px;
+  }
+
+  .login-art-page {
+    padding: 22px 16px;
+  }
+
+  .login-art-shell {
+    width: min(100%, 540px);
   }
 
   .vehicle-grid,
@@ -2888,6 +3273,53 @@ th { color: var(--dark-gold); }
     gap: 14px;
   }
 
+  .login-art-page {
+    padding: 18px 12px;
+  }
+
+  .login-art-brand-name {
+    font-size: 0.92rem;
+    letter-spacing: 0.18em;
+  }
+
+  .login-art-brand-tagline {
+    font-size: 0.78rem;
+  }
+
+  .login-art-card {
+    gap: 16px;
+    padding: 20px 16px 18px;
+    border-radius: 28px;
+  }
+
+  .login-art-social-button,
+  .login-art-google-wrap,
+  .login-art-field {
+    min-height: 70px;
+  }
+
+  .login-art-social-button,
+  .login-art-google-preview {
+    gap: 14px;
+    padding: 14px 18px;
+    font-size: 1rem;
+  }
+
+  .login-art-google-live iframe,
+  .login-art-google-live div[role="button"] {
+    min-height: 70px !important;
+  }
+
+  .login-art-field {
+    gap: 12px;
+    padding: 0 18px;
+  }
+
+  .login-art-submit {
+    min-height: 74px;
+    font-size: 1.65rem;
+  }
+
   .psychometric-hero,
   .psychometric-panel,
   .psychometric-section-card,
@@ -2912,7 +3344,11 @@ th { color: var(--dark-gold); }
     font-size: 1.45rem;
   }
 
-  .budget-dashboard-page .psychometric-panel-header > .psychometric-reset-button {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-panel-header > .psychometric-reset-button,
+  .budget-dashboard-form-actions > .psychometric-reset-button,
+  .budget-dashboard-form-actions > .budget-dashboard-category-reset,
+  .dashboard-header-actions > .auth-link-button,
+  .dashboard-header-actions > .psychometric-reset-button {
     display: inline-flex;
     width: 100%;
     min-height: 46px;
@@ -2927,6 +3363,17 @@ th { color: var(--dark-gold); }
   .budget-dashboard-category-summary-card {
     padding: 14px;
     border-radius: 16px;
+  }
+
+  .budget-dashboard-form-actions,
+  .dashboard-header-actions {
+    width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .budget-dashboard-form-actions {
+    min-height: 0;
   }
 
   .budget-dashboard-card-header,
@@ -2954,6 +3401,10 @@ th { color: var(--dark-gold); }
   .budget-dashboard-category-input {
     min-height: 46px;
     font-size: 16px;
+  }
+
+  .loan-monitoring-dashboard-page .auth-link-button {
+    width: 100%;
   }
 
   .lending-psychometric-layout {
@@ -3029,14 +3480,146 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 420px) {
-  .budget-dashboard-hero,
-  .budget-dashboard-page .psychometric-panel,
-  .budget-dashboard-page .psychometric-summary-card {
+  .login-art-page {
+    padding: 14px 10px;
+  }
+
+  .login-art-shell {
+    gap: 14px;
+  }
+
+  .login-art-logo {
+    width: min(100%, 286px);
+  }
+
+  .login-art-card {
+    padding: 18px 14px 16px;
+    border-radius: 24px;
+  }
+
+  .login-art-social-button,
+  .login-art-google-wrap,
+  .login-art-field {
+    min-height: 64px;
+  }
+
+  .login-art-social-button,
+  .login-art-google-preview {
+    gap: 12px;
+    padding: 12px 16px;
+    font-size: 0.94rem;
+  }
+
+  .login-art-field {
+    padding: 0 16px;
+  }
+
+  .login-art-social-icon,
+  .login-art-field-icon,
+  .login-art-visibility-toggle {
+    width: 25px;
+    height: 25px;
+  }
+
+  .login-art-input {
+    min-height: 48px;
+    font-size: 1rem;
+  }
+
+  .login-art-google-live iframe,
+  .login-art-google-live div[role="button"] {
+    min-height: 64px !important;
+  }
+
+  .login-art-submit {
+    min-height: 68px;
+    font-size: 1.45rem;
+  }
+
+  .login-art-support-links {
+    gap: 10px;
+  }
+}
+
+@media (max-width: 520px) {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table-wrap {
+    overflow: visible;
+    border-radius: 0;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table thead,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table tbody,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table tfoot {
+    display: block;
+    width: 100%;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table thead {
+    display: none;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table tr {
+    display: grid;
+    gap: 10px;
+    margin-bottom: 12px;
+    padding: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+    border-radius: 14px;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 220, 0.8));
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table td {
+    display: grid;
+    gap: 4px;
+    width: 100%;
+    padding: 0;
+    border: none;
+    text-align: left;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table td:last-child {
+    width: 100%;
+    text-align: left;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table td[colspan]::before {
+    content: none;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table td[colspan] {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table tfoot tr {
+    margin-bottom: 0;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table input,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table select {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-hero,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-panel,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-summary-card {
     padding: 14px;
     border-radius: 14px;
   }
 
-  .budget-dashboard-page .psychometric-panel-header {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-panel-header {
     gap: 12px;
   }
 
@@ -3060,14 +3643,16 @@ th { color: var(--dark-gold); }
     font-size: 1rem;
   }
 
+  .psychometric-summary-card strong,
   .budget-dashboard-card-value,
   .budget-dashboard-summary-grid strong,
   .budget-dashboard-category-summary-card strong {
     font-size: 1.2rem;
   }
 
-  .budget-dashboard-page .psychometric-reset-button,
-  .budget-dashboard-category-reset {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-reset-button,
+  .budget-dashboard-category-reset,
+  .loan-monitoring-dashboard-page .auth-link-button {
     width: 100%;
   }
 

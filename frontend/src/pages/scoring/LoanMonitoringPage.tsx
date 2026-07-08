@@ -194,7 +194,7 @@ export default function LoanMonitoringPage() {
                 <span className="psychometric-panel-kicker">Loan Statement</span>
                 <h2>Borrower running balance and installment schedule</h2>
               </div>
-              <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+              <div className="dashboard-header-actions">
                 <Link to="/lending-scorecard" className="auth-link-button">
                   Loan Setup
                 </Link>
@@ -264,11 +264,11 @@ export default function LoanMonitoringPage() {
                 <tbody>
                   {snapshot.statementRows.map((row) => (
                     <tr key={row.id}>
-                      <td>{row.monthLabel}</td>
-                      <td>{formatMetricValue(row.previousBalance, 'currency')}</td>
-                      <td>{formatMetricValue(row.principal, 'currency')}</td>
-                      <td>{formatMetricValue(row.interest, 'currency')}</td>
-                      <td>{formatMetricValue(row.endBalance, 'currency')}</td>
+                      <td data-label="Month/Year">{row.monthLabel}</td>
+                      <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
+                      <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
+                      <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
+                      <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
                     </tr>
                   ))}
                   {snapshot.statementRows.length === 0 ? (
@@ -303,11 +303,11 @@ export default function LoanMonitoringPage() {
                 <tbody>
                   {snapshot.controlItems.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.label}</td>
-                      <td>{formatMetricValue(item.actual, item.unit)}</td>
-                      <td>{formatMetricValue(item.target, item.unit)}</td>
-                      <td>{formatMetricValue(item.variance, item.unit)}</td>
-                      <td>{getStatusLabel(item.status)}</td>
+                      <td data-label="Control">{item.label}</td>
+                      <td data-label="Actual">{formatMetricValue(item.actual, item.unit)}</td>
+                      <td data-label="Target">{formatMetricValue(item.target, item.unit)}</td>
+                      <td data-label="Variance">{formatMetricValue(item.variance, item.unit)}</td>
+                      <td data-label="Status">{getStatusLabel(item.status)}</td>
                     </tr>
                   ))}
                 </tbody>

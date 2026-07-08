@@ -230,11 +230,11 @@ export default function BudgetExpenseTrackerPage() {
                 <tbody>
                   {snapshot.comparisonItems.map((item) => (
                     <tr key={item.id}>
-                      <td>{item.label}</td>
-                      <td>{formatCurrency(item.actual)}</td>
-                      <td>{formatCurrency(item.budget)}</td>
-                      <td>{formatSignedCurrency(item.variance)}</td>
-                      <td>{getStatusLabel(item.status)}</td>
+                      <td data-label="Budget Line">{item.label}</td>
+                      <td data-label="Actual">{formatCurrency(item.actual)}</td>
+                      <td data-label="Budget">{formatCurrency(item.budget)}</td>
+                      <td data-label="Variance">{formatSignedCurrency(item.variance)}</td>
+                      <td data-label="Status">{getStatusLabel(item.status)}</td>
                     </tr>
                   ))}
                 </tbody>
