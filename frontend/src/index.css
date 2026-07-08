@@ -2399,10 +2399,40 @@ textarea {
 
 .budget-dashboard-card-grid,
 .budget-dashboard-comparison-grid,
-.budget-dashboard-indicator-row {
+.budget-dashboard-indicator-row,
+.budget-dashboard-category-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 16px;
+}
+
+.budget-dashboard-category-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.budget-dashboard-category-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.budget-dashboard-category-summary-card {
+  display: grid;
+  gap: 6px;
+  padding: 16px;
+  border-radius: 18px;
+  background: #fffdf3;
+  border: 1px solid rgba(184, 134, 11, 0.16);
+}
+
+.budget-dashboard-category-summary-card span {
+  color: #64748b;
+}
+
+.budget-dashboard-category-summary-card strong {
+  color: #0f172a;
+  font-size: 1.15rem;
 }
 
 .budget-dashboard-card,
@@ -2629,7 +2659,9 @@ th { color: var(--dark-gold); }
   .psychometric-option-grid,
   .budget-dashboard-card-grid,
   .budget-dashboard-comparison-grid,
-  .budget-dashboard-indicator-row {
+  .budget-dashboard-indicator-row,
+  .budget-dashboard-category-grid,
+  .budget-dashboard-category-summary {
     grid-template-columns: 1fr;
   }
 

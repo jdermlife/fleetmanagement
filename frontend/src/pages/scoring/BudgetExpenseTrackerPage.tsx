@@ -217,6 +217,51 @@ export default function BudgetExpenseTrackerPage() {
               ))}
             </div>
           </article>
+
+          <article className="psychometric-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Budget and Spending Category Amount Setup</span>
+                <h2>Category allocation reconciled to declared living expenses</h2>
+              </div>
+            </div>
+
+            <div className="budget-dashboard-category-summary">
+              <div className="budget-dashboard-category-summary-card">
+                <span>Declared Living Expenses</span>
+                <strong>{formatCurrency(snapshot.livingExpenseDeclared)}</strong>
+              </div>
+              <div className="budget-dashboard-category-summary-card">
+                <span>Category Total</span>
+                <strong>{formatCurrency(snapshot.categoryTotal)}</strong>
+              </div>
+              <div className="budget-dashboard-category-summary-card">
+                <span>Variance</span>
+                <strong>{formatSignedCurrency(snapshot.categoryTotal - snapshot.livingExpenseDeclared)}</strong>
+              </div>
+            </div>
+
+            <p className="psychometric-section-note">
+              The category setup is derived from the declared living-expense amount and normalized so the total
+              reconciles with the application value.
+            </p>
+
+            <div className="budget-dashboard-category-grid">
+              {snapshot.categoryItems.map((item) => (
+                <article key={item.id} className="budget-dashboard-card">
+                  <div className="budget-dashboard-card-header">
+                    <span>{item.label}</span>
+                    <strong>{item.share.toFixed(0)}%</strong>
+                  </div>
+                  <div className="budget-dashboard-card-value">{formatCurrency(item.amount)}</div>
+                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
+                    <div className="psychometric-progress-bar" style={{ width: `${item.share}%` }} />
+                  </div>
+                  <p>{item.note}</p>
+                </article>
+              ))}
+            </div>
+          </article>
         </div>
 
         <aside className="budget-dashboard-side">

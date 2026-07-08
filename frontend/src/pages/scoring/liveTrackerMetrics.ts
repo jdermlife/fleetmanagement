@@ -60,9 +60,12 @@ export type BudgetDashboardSnapshot = {
   actionLabel: string;
   budgetSetupLabel: string;
   expenseLoggingLabel: string;
+  livingExpenseDeclared: number;
+  categoryTotal: number;
   incomeItems: BudgetFlowItem[];
   expenseItems: BudgetComparisonItem[];
   comparisonItems: BudgetComparisonItem[];
+  categoryItems: BudgetFlowItem[];
   indicators: BudgetIndicator[];
 };
 
@@ -332,6 +335,103 @@ function getTotalIncome(record: LoanApplicationRecord): number {
 
 function getTotalKnownExpenses(record: LoanApplicationRecord): number {
   return getLivingExpenses(record) + getMortgageExpense(record) + getOtherDebtExpense(record);
+}
+
+type BudgetCategorySeed = {
+  id: string;
+  label: string;
+  weight: number;
+  note: string;
+};
+
+function buildBudgetCategorySeeds(record: LoanApplicationRecord | null): BudgetCategorySeed[] {
+  const dependents = safeNumber(record?.requirements?.applicantPersonal?.numberOfDependents);
+  const vehicleCount = safeNumber(record?.requirements?.otherInformation?.numberOfVehiclesOwned);
+  const homeOwnership = normalizeStatus(record?.requirements?.otherInformation?.homeOwnership);
+  const hasVehicle = vehicleCount > 0 || Boolean(record?.vehicle_info?.trim()) || Boolean(record?.requirements?.collateralAssetDetails?.model?.trim());
+  const renterLike = homeOwnership.includes('rent');
+  const ownerLike = homeOwnership.includes('owner') || homeOwnership.includes('mortgag');
+  const hasInsurance = Boolean(record?.requirements?.collateralAssetDetails?.insuranceProviderCompany?.trim())
+    || Boolean(record?.requirements?.enhancedDueDiligence?.existingInsurancePolicies?.trim());
+
+  return [
+    { id: 'housing', label: 'Housing', weight: ownerLike ? 8 : 7, note: 'Core shelter-related household spend.' },
+    { id: 'transport', label: 'Transport', weight: hasVehicle ? 4 : 3, note: 'General mobility and commute allowance.' },
+    { id: 'utilities', label: 'Utilities', weight: 3, note: 'Shared household utilities and service charges.' },
+    { id: 'electricity', label: 'Electricity', weight: 4, note: 'Electric power consumption allocation.' },
+    { id: 'water', label: 'Water', weight: 2, note: 'Water bill and related municipal charges.' },
+    { id: 'rent', label: 'Rent', weight: renterLike ? 8 : 3, note: 'Rental commitment or tenancy-related shelter cost.' },
+    { id: 'subscription', label: 'Subscription', weight: 2, note: 'Recurring digital and service subscriptions.' },
+    { id: 'insurance', label: 'Insurance', weight: hasInsurance ? 3 : 2, note: 'General insurance premium allocation.' },
+    { id: 'home-insurance', label: 'Home Insurance', weight: ownerLike ? 2 : 1, note: 'Property/home protection coverage.' },
+    { id: 'home-maintenance', label: 'Home Maintenance', weight: ownerLike ? 3 : 2, note: 'Repair, upkeep, and maintenance buffer.' },
+    { id: 'entertainment', label: 'Entertainment', weight: 3, note: 'Leisure, recreation, and discretionary spend.' },
+    { id: 'food-dining', label: 'Food & Dining', weight: 6 + Math.min(dependents, 3), note: 'Meals outside the home and dining activity.' },
+    { id: 'groceries', label: 'Groceries', weight: 8 + Math.min(dependents, 4), note: 'Household grocery basket and staples.' },
+    { id: 'travel', label: 'Travel', weight: 2, note: 'Occasional travel and trip-related allocation.' },
+    { id: 'fuel', label: 'Fuel', weight: hasVehicle ? 4 : 1, note: 'Fuel and transport energy costs.' },
+    { id: 'car-insurance', label: 'Car Insurance', weight: hasVehicle ? 2 : 1, note: 'Vehicle insurance coverage allocation.' },
+    { id: 'internet', label: 'Internet', weight: 3, note: 'Home or mobile internet connectivity.' },
+    { id: 'phone', label: 'Phone', weight: 2, note: 'Mobile and communication plan spend.' },
+    { id: 'streaming', label: 'Streaming', weight: 1.5, note: 'Entertainment streaming and recurring media access.' },
+    { id: 'doctor', label: 'Doctor', weight: 2, note: 'Routine checkups and consultation buffer.' },
+    { id: 'prescriptions', label: 'Prescriptions', weight: 1.5, note: 'Medicine and prescription-related spending.' },
+    { id: 'savings-core', label: 'Savings', weight: 4, note: 'Core savings contribution within living-expense planning.' },
+    { id: 'family', label: 'Family', weight: 3 + Math.min(dependents, 2), note: 'Family support and household shared obligations.' },
+    { id: 'pets', label: 'Pets', weight: 1, note: 'Pet food, care, and basic wellness allowance.' },
+    { id: 'gifts', label: 'Gifts', weight: 1, note: 'Occasional gifting and social obligation spending.' },
+    { id: 'childcare', label: 'Childcare', weight: dependents > 0 ? 3 + Math.min(dependents, 2) : 1, note: 'Childcare and dependent care costs.' },
+    { id: 'education', label: 'Education', weight: dependents > 0 ? 3 : 2, note: 'Schooling, training, and education-related needs.' },
+    { id: 'personal', label: 'Personal', weight: 3, note: 'Personal care and routine lifestyle spending.' },
+    { id: 'others', label: 'Others', weight: 2, note: 'Residual flexible category for uncaptured spend.' },
+    { id: 'savings-buffer', label: 'Savings Buffer', weight: 2.5, note: 'Additional reserve bucket kept separate from core savings.' },
+  ];
+}
+
+function buildBudgetCategoryItems(record: LoanApplicationRecord | null, livingExpenses: number): BudgetFlowItem[] {
+  const seeds = buildBudgetCategorySeeds(record);
+  if (livingExpenses <= 0 || seeds.length === 0) {
+    return seeds.map((seed) => ({
+      id: seed.id,
+      label: seed.label,
+      amount: 0,
+      share: 0,
+      note: seed.note,
+    }));
+  }
+
+  const totalWeight = seeds.reduce((sum, seed) => sum + seed.weight, 0);
+  const rawAmounts = seeds.map((seed) => (livingExpenses * seed.weight) / totalWeight);
+  const roundedAmounts = rawAmounts.map((amount) => Math.round(amount));
+  let roundingDelta = Math.round(livingExpenses) - roundedAmounts.reduce((sum, amount) => sum + amount, 0);
+
+  if (roundingDelta !== 0) {
+    const rankedIndexes = rawAmounts
+      .map((amount, index) => ({
+        index,
+        fraction: amount - Math.floor(amount),
+      }))
+      .sort((left, right) => {
+        return roundingDelta > 0 ? right.fraction - left.fraction : left.fraction - right.fraction;
+      })
+      .map((entry) => entry.index);
+
+    let cursor = 0;
+    while (roundingDelta !== 0 && rankedIndexes.length > 0) {
+      const targetIndex = rankedIndexes[cursor % rankedIndexes.length];
+      roundedAmounts[targetIndex] += roundingDelta > 0 ? 1 : -1;
+      roundingDelta += roundingDelta > 0 ? -1 : 1;
+      cursor += 1;
+    }
+  }
+
+  return seeds.map((seed, index) => ({
+    id: seed.id,
+    label: seed.label,
+    amount: roundedAmounts[index],
+    share: scoreFromRatio(roundedAmounts[index], livingExpenses),
+    note: seed.note,
+  }));
 }
 
 function getCashflowSurplus(record: LoanApplicationRecord): number {
@@ -1533,6 +1633,8 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
   const otherDebtBudget = totalIncome * 0.12;
   const totalExpenseBudget = totalIncome * 0.65;
   const reserveBudget = totalIncome * 0.1;
+  const categoryItems = buildBudgetCategoryItems(sourceRecord, livingExpenses);
+  const categoryTotal = categoryItems.reduce((sum, item) => sum + item.amount, 0);
 
   const incomeItems: BudgetFlowItem[] = [
     {
@@ -1697,9 +1799,12 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
     actionLabel: needsAttentionCount > 0 ? 'Rebalance' : 'Maintain',
     budgetSetupLabel: `${budgetReadyCount}/${comparisonItems.length} lines within budget`,
     expenseLoggingLabel: sourceRecord ? `Source ${sourceRecord.application_no}` : 'Awaiting source record',
+    livingExpenseDeclared: livingExpenses,
+    categoryTotal,
     incomeItems,
     expenseItems,
     comparisonItems,
+    categoryItems,
     indicators,
   };
 }
