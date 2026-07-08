@@ -3,6 +3,9 @@ const DEFAULT_GOOGLE_ALLOWED_HOSTS = [
   '127.0.0.1',
   'fleetmanagement.vercel.app',
   'staging.fleetmanagement.vercel.app',
+  'fleetmanagement-flame.vercel.app',
+   'fleetmanagement-7f0xuuk7p-jdionedas-projects.vercel.app',
+  'fleet.quantech.international',
 ]
 
 function parseHosts(rawHosts: string | undefined): string[] {
