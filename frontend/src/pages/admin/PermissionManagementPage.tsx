@@ -86,7 +86,30 @@ export default function PermissionManagementPage() {
         {loading ? (
           <p>Loading permissions...</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <>
+          <div className="space-y-4 md:hidden">
+            {permissions.map((permission) => (
+              <article key={`mobile-${permission.id}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="text-sm font-semibold text-slate-900">{permission.name}</div>
+                <div className="mt-3 grid gap-2 text-sm">
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Resource</div>
+                    <div className="text-slate-700 break-words">{permission.resource}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Action</div>
+                    <div className="text-slate-700">{permission.action}</div>
+                  </div>
+                  <div>
+                    <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Description</div>
+                    <div className="text-slate-700">{permission.description || '-'}</div>
+                  </div>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table className="min-w-full divide-y divide-slate-200">
               <thead>
                 <tr>
@@ -108,6 +131,7 @@ export default function PermissionManagementPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>

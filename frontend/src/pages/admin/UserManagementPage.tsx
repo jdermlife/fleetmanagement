@@ -220,7 +220,57 @@ export default function UserManagementPage() {
         {loading ? (
           <p>Loading users...</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <>
+            <div className="space-y-4 md:hidden">
+              {users.map((user) => (
+                <article key={`mobile-${user.id}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <div className="text-sm font-semibold text-slate-900">{user.username}</div>
+                      <div className="text-xs text-slate-500">
+                        {[user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || 'N/A'}
+                      </div>
+                    </div>
+                    <span className="rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-semibold text-slate-600">
+                      {user.account_status ?? (user.is_active ? 'ACTIVE' : 'DISABLED')}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 text-sm">
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Email</div>
+                      <div className="break-words text-slate-700">{user.email}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Subscription</div>
+                      <div className="text-slate-700">
+                        {subscriptions.find((subscription) => subscription.id === user.subscription_id)?.subscription_no ?? 'N/A'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Roles</div>
+                      <input
+                        value={roleDrafts[user.id] ?? ''}
+                        onChange={(event) =>
+                          setRoleDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
+                        }
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button type="button" onClick={() => void handleSaveRoles(user.id)}>
+                      Save Roles
+                    </button>
+                    <button type="button" onClick={() => void handleToggleStatus(user)}>
+                      {user.is_active ? 'Disable' : 'Enable'}
+                    </button>
+                  </div>
+                </article>
+              ))}
+            </div>
+
+          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table className="min-w-full divide-y divide-slate-200">
               <thead>
                 <tr>
@@ -268,6 +318,7 @@ export default function UserManagementPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>

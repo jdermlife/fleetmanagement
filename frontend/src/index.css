@@ -581,6 +581,19 @@ textarea {
 }
 
 .app-menu-panel {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  width: min(360px, calc(100vw - 24px));
+  max-height: calc(100vh - 88px);
+  overflow-y: auto;
+  border-radius: 14px;
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.28);
+  z-index: 99999;
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
@@ -2684,11 +2697,12 @@ th { color: var(--dark-gold); }
     margin-left: 0;
   }
 
-  .sidebar-dropdown {
-    width: calc(100vw - 32px);
-    right: 16px;
+  .app-menu-panel {
+    width: calc(100vw - 20px);
+    right: 10px;
     top: 76px;
-    max-height: 75vh;
+    max-height: calc(100vh - 92px);
+    padding: 12px;
   }
 
   .content {
@@ -2798,6 +2812,160 @@ th { color: var(--dark-gold); }
   );
 
   transition: all 0.25s ease;
+}
+
+@media (max-width: 600px) {
+  .sidebar {
+    padding: 10px 12px;
+  }
+
+  .content {
+    padding: 12px;
+    padding-top: 18px;
+  }
+
+  .app-brand-lockup {
+    gap: 10px;
+  }
+
+  .app-brand-mark {
+    width: 46px;
+    height: 46px;
+  }
+
+  .app-brand-title {
+    font-size: 1.2rem;
+  }
+
+  .app-brand-subtitle {
+    font-size: 0.68rem;
+    letter-spacing: 0.06em;
+  }
+
+  .app-topbar-actions {
+    width: 100%;
+  }
+
+  .app-menu-toggle {
+    width: 100%;
+    min-width: 0;
+    padding: 10px 14px;
+    justify-content: space-between;
+    font-size: 0.72rem;
+  }
+
+  .app-mini-nav {
+    right: 0;
+    top: calc(100% + 6px);
+  }
+
+  .app-menu-panel {
+    width: calc(100vw - 16px);
+    right: 8px;
+    top: 72px;
+    max-height: calc(100vh - 84px);
+    border-radius: 12px;
+    padding: 10px;
+  }
+
+  .psychometric-page {
+    gap: 14px;
+  }
+
+  .psychometric-hero,
+  .psychometric-panel,
+  .psychometric-section-card,
+  .psychometric-summary-card {
+    padding: 16px;
+  }
+
+  .psychometric-hero-copy h1 {
+    font-size: clamp(1.5rem, 8vw, 2rem);
+  }
+
+  .psychometric-hero-copy p,
+  .psychometric-section-header p,
+  .psychometric-section-note,
+  .budget-dashboard-card p,
+  .budget-dashboard-indicator p {
+    font-size: 0.9rem;
+  }
+
+  .psychometric-summary-card strong,
+  .budget-dashboard-card-value {
+    font-size: 1.45rem;
+  }
+
+  .lending-psychometric-layout {
+    gap: 14px;
+  }
+
+  .lending-psychometric-side-panel {
+    order: -1;
+    display: grid;
+    gap: 12px;
+  }
+
+  .lending-psychometric-toolbar-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .lending-psychometric-tool-button {
+    min-height: 46px;
+    padding: 10px 12px;
+    font-size: 0.76rem;
+    line-height: 1.2;
+  }
+
+  .lending-psychometric-step-list {
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    scroll-snap-type: x proximity;
+  }
+
+  .lending-psychometric-step-button {
+    min-width: 220px;
+    flex: 0 0 auto;
+    min-height: 64px;
+    padding: 10px 12px;
+    scroll-snap-align: start;
+  }
+
+  .lending-psychometric-step-copy strong {
+    font-size: 0.82rem;
+  }
+
+  .lending-psychometric-step-copy span {
+    font-size: 0.72rem;
+  }
+
+  .lending-psychometric-form-panel {
+    gap: 16px;
+  }
+
+  .loan-page-body {
+    min-height: auto;
+  }
+
+  .loan-form-input,
+  .loan-form-select,
+  .lending-scorecard-page textarea {
+    font-size: 16px;
+    min-height: 46px;
+  }
+
+  .loan-page-status-chip {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .lending-psychometric-footer-actions .loan-inline-button,
+  .lending-psychometric-footer-actions .loan-footer-button {
+    width: 100%;
+  }
 }
 
 .ai-card:hover {

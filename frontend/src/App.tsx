@@ -390,20 +390,7 @@ const isSignedIn = authReady && Boolean(currentUser)
   <div
     className="app-menu-panel"
     style={{
-      position: 'absolute',
-      top: '72px',
-      right: '24px',
-      width: '340px',
-      maxHeight: '80vh',
-      overflowY: 'auto',
       background: 'var(--app-menu-panel-bg)',
-      borderRadius: '14px',
-      padding: '14px',
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '10px',
-      boxShadow: '0 12px 30px rgba(0,0,0,0.28)',
-      zIndex: 99999,
     }}
   >
     {/* OPERATIONS */}

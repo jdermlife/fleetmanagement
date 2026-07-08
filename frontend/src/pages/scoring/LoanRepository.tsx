@@ -803,7 +803,144 @@ export default function LoanRepository() {
               </div>
             )}
 
-            <div className="overflow-hidden rounded-2xl border border-slate-200">
+            <div className="md:hidden space-y-4">
+              {filteredApplications.map((row) => (
+                <article
+                  key={`mobile-${row.application_no}`}
+                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="space-y-1">
+                      <button
+                        onClick={() =>
+                          navigate(
+                            `/lending-scorecard?applicationNo=${encodeURIComponent(
+                              row.application_no,
+                            )}`,
+                          )
+                        }
+                        className="text-left text-sm font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
+                      >
+                        {row.application_no}
+                      </button>
+                      <div className="text-xs text-slate-500">{formatDateTime(row.created_at)}</div>
+                      <div className="text-sm font-medium text-slate-900">{row.borrower_name}</div>
+                      <div className="text-xs text-slate-500">{row.product_type}</div>
+                    </div>
+
+                    <span
+                      className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${getStatusColor(
+                        row.status,
+                      )}`}
+                    >
+                      {row.status}
+                    </span>
+                  </div>
+
+                  <div className="mt-4 grid gap-3">
+                    <div className="grid grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Loan Amount</div>
+                        <div className="font-semibold text-slate-900">PHP {formatCurrency(row.loan_amount)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Monthly Income</div>
+                        <div className="text-slate-700">PHP {formatCurrency(row.monthly_income)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">DTI</div>
+                        <div className="text-slate-700">{formatPercent(row.dti)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">DSR</div>
+                        <div className="text-slate-700">{formatPercent(row.dsr)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">LTV</div>
+                        <div className="text-slate-700">{formatPercent(row.ltv)}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Term</div>
+                        <div className="text-slate-700">{row.term_months} mos</div>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-2 text-sm">
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Email</div>
+                        <div className="text-slate-700 break-words">{row.email}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Phone</div>
+                        <div className="text-slate-700">{row.phone}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Address</div>
+                        <div className="text-slate-700 break-words">{row.address}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <button
+                      onClick={() => navigate(`/loan-details/${row.application_no}`)}
+                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                    >
+                      View
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        navigate(
+                          `/lending-scorecard?applicationNo=${encodeURIComponent(
+                            row.application_no,
+                          )}`,
+                        )
+                      }
+                      disabled={!canEditLoans}
+                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      Update
+                    </button>
+
+                    {row.status === "Credit Review" && canApproveLoans ? (
+                      <button
+                        onClick={() => handleStatusUpdate(row.application_no, "Approved")}
+                        className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-800"
+                      >
+                        Approve
+                      </button>
+                    ) : null}
+
+                    {row.status === "Credit Review" && canApproveLoans ? (
+                      <button
+                        onClick={() => handleStatusUpdate(row.application_no, "Rejected")}
+                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                      >
+                        Reject
+                      </button>
+                    ) : null}
+
+                    {row.status === "Approved" && canFinalApproveLoans ? (
+                      <button
+                        onClick={() => handleStatusUpdate(row.application_no, "Released")}
+                        className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+                      >
+                        Release
+                      </button>
+                    ) : null}
+                  </div>
+                </article>
+              ))}
+
+              {!loading && filteredApplications.length === 0 ? (
+                <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center text-sm text-slate-500">
+                  No loan applications matched the current filters.
+                </div>
+              ) : null}
+            </div>
+
+            <div className="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-slate-200">
                 <thead>

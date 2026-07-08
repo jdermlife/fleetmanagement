@@ -117,7 +117,31 @@ export default function RoleManagementPage() {
         {loading ? (
           <p>Loading roles...</p>
         ) : (
-          <div style={{ overflowX: 'auto' }}>
+          <>
+          <div className="space-y-4 md:hidden">
+            {roles.map((role) => (
+              <article key={`mobile-${role.id}`} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+                <div className="text-sm font-semibold text-slate-900">{role.name}</div>
+                <div className="mt-1 text-sm text-slate-600">{role.description || '-'}</div>
+                <div className="mt-4">
+                  <div className="mb-2 text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Permissions</div>
+                  <input
+                    value={permissionDrafts[role.id] ?? ''}
+                    onChange={(event) =>
+                      setPermissionDrafts((prev) => ({ ...prev, [role.id]: event.target.value }))
+                    }
+                  />
+                </div>
+                <div className="mt-4">
+                  <button type="button" onClick={() => void handleAssignPermissions(role.id)}>
+                    Save Permissions
+                  </button>
+                </div>
+              </article>
+            ))}
+          </div>
+
+          <div className="hidden md:block" style={{ overflowX: 'auto' }}>
             <table className="min-w-full divide-y divide-slate-200">
               <thead>
                 <tr>
@@ -150,6 +174,7 @@ export default function RoleManagementPage() {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </div>
