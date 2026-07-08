@@ -38,6 +38,71 @@ function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
   return 'Needs Attention';
 }
 
+function getControlActual(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>, controlId: string) {
+  return snapshot.controlItems.find((item) => item.id === controlId)?.actual ?? 0;
+}
+
+function getIndicatorValue(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>, indicatorId: string) {
+  return snapshot.indicators.find((item) => item.id === indicatorId)?.value ?? 0;
+}
+
+function buildAiAdvisor(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>) {
+  const dsr = getControlActual(snapshot, 'dsr-control');
+  const ltv = getControlActual(snapshot, 'ltv-control');
+  const monthlyPayment = getControlActual(snapshot, 'monthly-payment');
+  const availableCredit = getControlActual(snapshot, 'available-credit');
+  const finalScore = getIndicatorValue(snapshot, 'final-score');
+  const availableCreditRatio = getIndicatorValue(snapshot, 'available-credit-ratio');
+
+  const interestStatus: 'maintain' | 'watch' | 'attention' =
+    snapshot.pastDueCount > 0 ? 'attention' : availableCreditRatio >= 10 ? 'watch' : 'maintain';
+  const interestAdvice =
+    snapshot.pastDueCount > 0
+      ? 'Bring projected past dues current first, then redirect extra cash to principal so new interest stops compounding on a higher balance.'
+      : availableCredit > 0 && availableCreditRatio >= 10
+        ? 'You still have borrowing headroom, but the better savings move is to avoid drawing it and apply spare cash to principal prepayments whenever allowed.'
+        : monthlyPayment > 0
+          ? 'Keep paying above the projected monthly installment when possible, prioritize principal reduction early, and avoid extending the term unless cashflow is under pressure.'
+          : 'Complete the loan setup first so an interest-saving plan can be computed from the amount, term, and rate.';
+
+  const dsrAdvisorStatus: 'maintain' | 'watch' | 'attention' =
+    dsr <= 35 ? 'maintain' : dsr <= 50 ? 'watch' : 'attention';
+  const dsrStatus =
+    dsr <= 35
+      ? 'DSR status: improving. The current debt-service load is in the stronger zone and suggests repayment capacity is still healthy.'
+      : dsr <= 50
+        ? 'DSR status: stable but watch closely. The debt-service load is still within an acceptable range, but tighter expense control would help preserve resilience.'
+        : 'DSR status: deteriorating. The debt-service load is above the prudent range and should be improved through expense reduction, income support, or loan restructuring.';
+
+  const refinancingStatus: 'maintain' | 'watch' | 'attention' =
+    snapshot.pastDueCount === 0 && dsr <= 40 && ltv <= 80 && finalScore >= 75
+      ? 'maintain'
+      : snapshot.pastDueCount <= 1 && dsr <= 50 && ltv <= 90 && finalScore >= 65
+        ? 'watch'
+        : 'attention';
+  const refinancingQuality =
+    snapshot.pastDueCount === 0 && dsr <= 40 && ltv <= 80 && finalScore >= 75
+      ? 'Quality of refinancing: strong. Current balance-sheet and application signals suggest the loan could qualify for better repricing or term optimization.'
+      : snapshot.pastDueCount <= 1 && dsr <= 50 && ltv <= 90 && finalScore >= 65
+        ? 'Quality of refinancing: moderate. Refinancing may still be viable, but better results will depend on improving repayment posture and documentation quality.'
+        : 'Quality of refinancing: weak for now. Focus first on lowering debt-service stress, avoiding new dues, and strengthening the application profile before refinancing.';
+
+  return {
+    interestAdvice: {
+      text: interestAdvice,
+      status: interestStatus,
+    },
+    dsrStatus: {
+      text: dsrStatus,
+      status: dsrAdvisorStatus,
+    },
+    refinancingQuality: {
+      text: refinancingQuality,
+      status: refinancingStatus,
+    },
+  };
+}
+
 export default function LoanMonitoringPage() {
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const monitoredApplications = useMemo(
@@ -63,6 +128,10 @@ export default function LoanMonitoringPage() {
   const snapshot = useMemo(
     () => buildLoanMonitoringSnapshot(applications, selectedApplicationNo),
     [applications, selectedApplicationNo],
+  );
+  const advisor = useMemo(
+    () => buildAiAdvisor(snapshot),
+    [snapshot],
   );
 
   return (
@@ -353,6 +422,35 @@ export default function LoanMonitoringPage() {
             </p>
           </article>
         </aside>
+      </section>
+
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">AI Advisor</span>
+            <h2>Borrower guidance from the monitored loan</h2>
+          </div>
+        </div>
+
+        <div className="budget-dashboard-indicator-row">
+          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.interestAdvice.status}`}>
+            <span>Ways to Save Interest</span>
+            <strong>Interest Strategy</strong>
+            <p>{advisor.interestAdvice.text}</p>
+          </article>
+
+          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.dsrStatus.status}`}>
+            <span>DSR Status</span>
+            <strong>Capacity Trend</strong>
+            <p>{advisor.dsrStatus.text}</p>
+          </article>
+
+          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.refinancingQuality.status}`}>
+            <span>Quality of Refinancing</span>
+            <strong>Refinancing View</strong>
+            <p>{advisor.refinancingQuality.text}</p>
+          </article>
+        </div>
       </section>
     </div>
   );
