@@ -273,6 +273,7 @@ const adminMenuItems = visibleMenuLinks.filter(
   (item) => adminMenus.includes(item.id),
 )
 
+const isLoginRoute = location.pathname === '/login'
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
 
@@ -333,6 +334,7 @@ const isSignedIn = authReady && Boolean(currentUser)
   return (
     <div className="app-shell">
       {/* TOP NAVIGATION */}
+      {!isLoginRoute ? (
       <header className="sidebar">
         <div className="app-topbar-row">
           {/* BRAND */}
@@ -719,8 +721,9 @@ const isSignedIn = authReady && Boolean(currentUser)
 )}
 
 </header>
+      ) : null}
   {/* PAGE CONTENT */}
-      <main className="content">
+      <main className={`content${isLoginRoute ? ' content-login' : ''}`}>
         <Suspense fallback={<div className="card">Loading page...</div>}>
           <Routes>
             <Route
