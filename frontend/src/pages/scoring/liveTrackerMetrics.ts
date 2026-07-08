@@ -87,7 +87,16 @@ export type MonitoringControlItem = {
   attainment: number;
   status: BudgetStatus;
   note: string;
-  unit: 'percent' | 'days' | 'score';
+  unit: 'percent' | 'days' | 'score' | 'currency' | 'count';
+};
+
+export type LoanStatementRow = {
+  id: string;
+  monthLabel: string;
+  previousBalance: number;
+  principal: number;
+  interest: number;
+  endBalance: number;
 };
 
 export type LoanMonitoringSnapshot = {
@@ -97,15 +106,16 @@ export type LoanMonitoringSnapshot = {
   sourceApplicationNo: string;
   healthScore: number;
   performanceBand: string;
-  portfolioCount: number;
-  openPipelineCount: number;
-  releasedCount: number;
-  watchlistCount: number;
-  attentionCount: number;
+  monitoredLoansCount: number;
+  availableCredit: number;
+  pastDueCount: number;
+  loanMarket: string;
   actionLabel: string;
-  averageOpenAgeDays: number;
-  averageFinalScore: number;
-  pipelineItems: MonitoringStageItem[];
+  monthlyPayment: number;
+  totalRequestedAmount: number;
+  endBalance: number;
+  sourceRecordStatus: string;
+  statementRows: LoanStatementRow[];
   controlItems: MonitoringControlItem[];
   indicators: BudgetIndicator[];
 };
@@ -589,15 +599,6 @@ function getRecordAgeInDays(record: LoanApplicationRecord, referenceTimeMs = Dat
   return ageMs / (1000 * 60 * 60 * 24);
 }
 
-function getAverageOpenAgeDays(records: LoanApplicationRecord[], referenceTimeMs = Date.now()): number {
-  const openRecords = records.filter(isOpenMonitoringStatus);
-  if (!openRecords.length) {
-    return 0;
-  }
-
-  return mean(openRecords.map((record) => getRecordAgeInDays(record, referenceTimeMs)));
-}
-
 function getDataCompleteness(record: LoanApplicationRecord): boolean {
   return (
     safeNumber(record.dsr) > 0 &&
@@ -606,13 +607,145 @@ function getDataCompleteness(record: LoanApplicationRecord): boolean {
   );
 }
 
+function getBorrowerMonitoredRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+  const prioritizedStatuses = ['released', 'approved', 'under review', 'submitted', 'credit review', 'draft'];
+
+  const candidates = records.filter((record) => safeNumber(record.loan_amount) > 0 && safeNumber(record.term_months) > 0);
+  if (!candidates.length) {
+    return getMostRecentRecord(records);
+  }
+
+  return [...candidates].sort((left, right) => {
+    const leftStatusIndex = prioritizedStatuses.indexOf(normalizeStatus(left.status));
+    const rightStatusIndex = prioritizedStatuses.indexOf(normalizeStatus(right.status));
+    const normalizedLeftIndex = leftStatusIndex === -1 ? prioritizedStatuses.length : leftStatusIndex;
+    const normalizedRightIndex = rightStatusIndex === -1 ? prioritizedStatuses.length : rightStatusIndex;
+
+    if (normalizedLeftIndex !== normalizedRightIndex) {
+      return normalizedLeftIndex - normalizedRightIndex;
+    }
+
+    const rightTimestamp = Date.parse(right.updated_at ?? right.created_at ?? '') || 0;
+    const leftTimestamp = Date.parse(left.updated_at ?? left.created_at ?? '') || 0;
+    return rightTimestamp - leftTimestamp;
+  })[0] ?? null;
+}
+
+function getMonthlyPaymentEstimate(record: LoanApplicationRecord | null): number {
+  if (!record) {
+    return 0;
+  }
+
+  const loanAmount = safeNumber(record.loan_amount);
+  const termMonths = Math.max(1, safeNumber(record.term_months));
+  const annualRate = safeNumber(record.interest_rate);
+  if (loanAmount <= 0) {
+    return 0;
+  }
+
+  const monthlyRate = annualRate / 100 / 12;
+  if (monthlyRate <= 0) {
+    return loanAmount / termMonths;
+  }
+
+  const numerator = monthlyRate * ((1 + monthlyRate) ** termMonths);
+  const denominator = ((1 + monthlyRate) ** termMonths) - 1;
+  if (denominator <= 0) {
+    return loanAmount / termMonths;
+  }
+
+  return loanAmount * (numerator / denominator);
+}
+
+function getAvailableCreditEstimate(record: LoanApplicationRecord | null): number {
+  if (!record) {
+    return 0;
+  }
+
+  const totalIncome = getTotalIncome(record);
+  const debtObligations = getDebt(record);
+  const termMonths = Math.max(1, safeNumber(record.term_months));
+  const annualRate = safeNumber(record.interest_rate);
+  const requestedAmount = safeNumber(record.loan_amount);
+  const appraisedValue = safeNumber(record.appraised_value);
+  const affordableMonthlyPayment = Math.max((totalIncome * 0.35) - debtObligations, 0);
+
+  let incomeBasedCapacity = 0;
+  const monthlyRate = annualRate / 100 / 12;
+  if (monthlyRate <= 0) {
+    incomeBasedCapacity = affordableMonthlyPayment * termMonths;
+  } else {
+    incomeBasedCapacity = affordableMonthlyPayment * ((1 - ((1 + monthlyRate) ** -termMonths)) / monthlyRate);
+  }
+
+  const collateralCap = appraisedValue > 0 ? appraisedValue * 0.8 : incomeBasedCapacity;
+  const maximumCapacity = Math.max(0, Math.min(incomeBasedCapacity, collateralCap));
+  return Math.max(0, maximumCapacity - requestedAmount);
+}
+
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+function getElapsedInstallments(record: LoanApplicationRecord | null, now = new Date()): number {
+  if (!record) {
+    return 0;
+  }
+
+  const normalizedStatus = normalizeStatus(record.status);
+  if (normalizedStatus !== 'released' && normalizedStatus !== 'approved') {
+    return 0;
+  }
+
+  const startDate = new Date(record.updated_at ?? record.created_at ?? now.toISOString());
+  const months =
+    ((now.getFullYear() - startDate.getFullYear()) * 12) +
+    (now.getMonth() - startDate.getMonth()) +
+    (now.getDate() >= startDate.getDate() ? 1 : 0);
+
+  return clamp(months, 0, Math.max(1, safeNumber(record.term_months)));
+}
+
+function buildLoanStatementRows(record: LoanApplicationRecord | null): LoanStatementRow[] {
+  if (!record) {
+    return [];
+  }
+
+  const loanAmount = safeNumber(record.loan_amount);
+  const termMonths = Math.max(1, safeNumber(record.term_months));
+  const annualRate = safeNumber(record.interest_rate);
+  const monthlyRate = annualRate / 100 / 12;
+  const monthlyPayment = getMonthlyPaymentEstimate(record);
+  const startDate = new Date(record.updated_at ?? record.created_at ?? Date.now());
+  let runningBalance = loanAmount;
+
+  return Array.from({ length: termMonths }, (_, index) => {
+    const previousBalance = runningBalance;
+    const interest = monthlyRate > 0 ? previousBalance * monthlyRate : 0;
+    const principal = Math.min(previousBalance, Math.max(monthlyPayment - interest, 0));
+    const endBalance = Math.max(previousBalance - principal, 0);
+    runningBalance = endBalance;
+
+    return {
+      id: `statement-${index + 1}`,
+      monthLabel: toMonthYearLabel(addMonths(startDate, index)),
+      previousBalance,
+      principal,
+      interest,
+      endBalance,
+    };
+  });
+}
+
 function buildMonitoringControlItem(
   id: string,
   label: string,
   actual: number,
   target: number,
   note: string,
-  unit: 'percent' | 'days' | 'score',
+  unit: 'percent' | 'days' | 'score' | 'currency' | 'count',
   higherIsBetter = false,
 ): MonitoringControlItem {
   const status = formatBudgetStatus(actual, target, higherIsBetter);
@@ -634,238 +767,107 @@ function buildMonitoringControlItem(
 }
 
 export function buildLoanMonitoringSnapshot(records: LoanApplicationRecord[]): LoanMonitoringSnapshot {
-  const latestRecord = getMostRecentRecord(records);
-  const referenceDate = latestRecord
-    ? new Date(latestRecord.updated_at ?? latestRecord.created_at ?? Date.now())
+  const monitoredRecord = getBorrowerMonitoredRecord(records);
+  const referenceDate = monitoredRecord
+    ? new Date(monitoredRecord.updated_at ?? monitoredRecord.created_at ?? Date.now())
     : new Date();
-  const referenceTimeMs = referenceDate.getTime();
-
-  const submittedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'submitted');
-  const underReviewCount = countWhere(records, (record) => normalizeStatus(record.status) === 'under review');
-  const creditReviewCount = countWhere(records, (record) => normalizeStatus(record.status) === 'credit review');
-  const approvedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'approved');
-  const releasedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'released');
-  const rejectedCount = countWhere(records, (record) => normalizeStatus(record.status) === 'rejected');
-  const openPipelineCount = countWhere(records, isOpenMonitoringStatus);
-
-  const approvalRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'approve');
-  const reviewRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'review');
-  const declineRate = percentWhere(records, (record) => getEffectiveDecisionBand(record) === 'decline');
-  const dsrCompliance = percentWhere(records, (record) => {
-    const dsrPercent = asPercent(safeNumber(record.dsr));
-    return dsrPercent > 0 && isAcceptableDsr(dsrPercent);
-  });
-  const safeLtvCoverage = percentWhere(records, (record) => {
-    const ltvPercent = asPercent(safeNumber(record.ltv));
-    return ltvPercent > 0 && isSafeLtv(ltvPercent);
-  });
-  const elevatedLtvRate = percentWhere(records, (record) => {
-    const ltvPercent = asPercent(safeNumber(record.ltv));
-    return isElevatedLtv(ltvPercent);
-  });
-  const riskyLtvRate = percentWhere(records, (record) => {
-    const ltvPercent = asPercent(safeNumber(record.ltv));
-    return isRiskyLtv(ltvPercent);
-  });
-  const staleOpenPipelineShare = openPipelineCount
-    ? (countWhere(records, (record) => isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 7) / openPipelineCount) * 100
-    : 0;
-  const severeOpenPipelineShare = openPipelineCount
-    ? (countWhere(records, (record) => isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 14) / openPipelineCount) * 100
-    : 0;
-  const dataCompleteness = percentWhere(records, getDataCompleteness);
-  const averageOpenAgeDays = getAverageOpenAgeDays(records, referenceTimeMs);
-  const averageFinalScore = mean(
-    records
-      .map((record) => getFinalScore(record))
-      .filter((score): score is number => score !== null),
-  );
-
-  const watchlistCount = countWhere(records, (record) => {
-    const dsrPercent = asPercent(safeNumber(record.dsr));
-    const ltvPercent = asPercent(safeNumber(record.ltv));
-    return (
-      getEffectiveDecisionBand(record) === 'review' ||
-      (dsrPercent > 0 && !isAcceptableDsr(dsrPercent)) ||
-      isElevatedLtv(ltvPercent) ||
-      (isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 7)
-    );
-  });
-
-  const attentionCount = countWhere(records, (record) => {
-    const dsrPercent = asPercent(safeNumber(record.dsr));
-    const ltvPercent = asPercent(safeNumber(record.ltv));
-    return (
-      getEffectiveDecisionBand(record) === 'decline' ||
-      isRiskyLtv(ltvPercent) ||
-      dsrPercent >= 60 ||
-      (isOpenMonitoringStatus(record) && getRecordAgeInDays(record, referenceTimeMs) > 14)
-    );
-  });
-
-  const pipelineItems: MonitoringStageItem[] = [
-    {
-      id: 'submitted',
-      label: 'Submitted',
-      count: submittedCount,
-      share: scoreFromRatio(submittedCount, records.length),
-      status: 'watch',
-      note: 'Fresh applications waiting to enter formal review.',
-    },
-    {
-      id: 'under-review',
-      label: 'Under Review',
-      count: underReviewCount,
-      share: scoreFromRatio(underReviewCount, records.length),
-      status: 'watch',
-      note: 'Cases actively being analyzed by underwriting or risk teams.',
-    },
-    {
-      id: 'credit-review',
-      label: 'Credit Review',
-      count: creditReviewCount,
-      share: scoreFromRatio(creditReviewCount, records.length),
-      status: 'attention',
-      note: 'Escalated cases needing tighter decision oversight and SLA control.',
-    },
-    {
-      id: 'approved',
-      label: 'Approved',
-      count: approvedCount,
-      share: scoreFromRatio(approvedCount, records.length),
-      status: 'maintain',
-      note: 'Applications cleared for approval but not yet released.',
-    },
-    {
-      id: 'released',
-      label: 'Released',
-      count: releasedCount,
-      share: scoreFromRatio(releasedCount, records.length),
-      status: 'maintain',
-      note: 'Finalized accounts contributing to portfolio conversion.',
-    },
-    {
-      id: 'rejected',
-      label: 'Rejected',
-      count: rejectedCount,
-      share: scoreFromRatio(rejectedCount, records.length),
-      status: 'attention',
-      note: 'Declined cases useful for exception tracking and policy refinement.',
-    },
-  ];
+  const monthlyPayment = getMonthlyPaymentEstimate(monitoredRecord);
+  const availableCredit = getAvailableCreditEstimate(monitoredRecord);
+  const statementRows = buildLoanStatementRows(monitoredRecord);
+  const pastDueCount = getElapsedInstallments(monitoredRecord, new Date());
+  const monitoredLoansCount = countWhere(records, (record) => safeNumber(record.loan_amount) > 0);
+  const totalRequestedAmount = monitoredRecord ? safeNumber(monitoredRecord.loan_amount) : 0;
+  const currentLtv = monitoredRecord ? asPercent(safeNumber(monitoredRecord.ltv)) : 0;
+  const currentDsr = monitoredRecord ? asPercent(safeNumber(monitoredRecord.dsr)) : 0;
+  const currentFinalScore = monitoredRecord ? (getFinalScore(monitoredRecord) ?? 0) : 0;
+  const loanMarket = monitoredRecord?.product_type ?? 'No loan market';
+  const latestEndBalance = statementRows.length ? statementRows[Math.min(Math.max(pastDueCount, 1), statementRows.length) - 1]?.endBalance ?? totalRequestedAmount : totalRequestedAmount;
+  const dataCompleteness = monitoredRecord && getDataCompleteness(monitoredRecord) ? 100 : 0;
 
   const controlItems: MonitoringControlItem[] = [
     buildMonitoringControlItem(
-      'approve-band-coverage',
-      'Approve Band Coverage',
-      approvalRate,
-      55,
-      'Healthy portfolios sustain strong approve-band throughput without relaxing policy discipline.',
-      'percent',
+      'available-credit',
+      'Available Credit',
+      availableCredit,
+      Math.max(totalRequestedAmount * 0.1, 1),
+      'Derived from application income, obligations, collateral support, requested amount, term, and interest rate.',
+      'currency',
       true,
     ),
     buildMonitoringControlItem(
-      'review-band-containment',
-      'Review Band Containment',
-      reviewRate,
-      25,
-      'Review-band concentration should stay contained so exceptions do not dominate the pipeline.',
+      'monthly-payment',
+      'Monthly Payment',
+      monthlyPayment,
+      Math.max((monitoredRecord ? getTotalIncome(monitoredRecord) : 0) * 0.2, 1),
+      'Projected monthly installment using the requested amount, term, and interest rate.',
+      'currency',
+    ),
+    buildMonitoringControlItem(
+      'dsr-control',
+      'Debt Service Ratio',
+      currentDsr,
+      50,
+      'Borrower payment health is stronger when debt service stays within prudent capacity limits.',
       'percent',
     ),
     buildMonitoringControlItem(
-      'dsr-compliance',
-      'DSR Compliance (< 50%)',
-      dsrCompliance,
-      75,
-      'Global underwriting practice favors strong capacity coverage across the monitored book.',
-      'percent',
-      true,
-    ),
-    buildMonitoringControlItem(
-      'safe-ltv-coverage',
-      'Safe LTV Coverage (< 80%)',
-      safeLtvCoverage,
-      60,
-      'Collateral-backed lending should maintain strong safe-LTV representation.',
-      'percent',
-      true,
-    ),
-    buildMonitoringControlItem(
-      'stale-open-pipeline',
-      'Stale Open Pipeline (> 7 days)',
-      staleOpenPipelineShare,
-      15,
-      'Operational best practice is to prevent review queues from aging beyond one week.',
+      'ltv-control',
+      'Loan to Value',
+      currentLtv,
+      80,
+      'Secured loans stay healthier when leverage remains within safer collateral thresholds.',
       'percent',
     ),
     buildMonitoringControlItem(
       'data-completeness',
-      'Decision Data Completeness',
+      'Application Readiness',
       dataCompleteness,
-      95,
-      'Portfolio monitoring is more reliable when DTI, DSR, and final score data are present.',
+      100,
+      'Availability of the key application fields used to build the borrower monitoring tool.',
       'percent',
       true,
+    ),
+    buildMonitoringControlItem(
+      'past-due-control',
+      'Number of Past Dues',
+      pastDueCount,
+      0,
+      'Projected elapsed installments based on the loan start month and current date when no payment ledger is available.',
+      'count',
     ),
   ];
 
   const indicators: BudgetIndicator[] = [
     buildGoalIndicator(
-      'avg-open-age',
-      'Average Open Age',
-      averageOpenAgeDays,
-      7,
-      'Average days an open case remains in the active review pipeline.',
-    ),
-    buildGoalIndicator(
-      'watchlist-share',
-      'Watchlist Share',
-      scoreFromRatio(watchlistCount, records.length),
-      25,
-      'Share of loans that require closer monitoring due to policy or aging flags.',
-    ),
-    buildGoalIndicator(
-      'attention-share',
-      'Critical Attention Share',
-      scoreFromRatio(attentionCount, records.length),
-      10,
-      'Critical concentration of loans with severe underwriting or pipeline issues.',
-    ),
-    buildGoalIndicator(
-      'critical-aged-pipeline',
-      'Critical Aged Pipeline',
-      severeOpenPipelineShare,
-      5,
-      'Critical open cases older than 14 days should remain a very small share of the queue.',
-    ),
-    buildGoalIndicator(
-      'average-final-score',
-      'Average Final Score',
-      averageFinalScore,
+      'loan-health-score',
+      'Loan Health Score',
+      mean(controlItems.map((item) => item.attainment)),
       75,
-      'Average underwriting quality across monitored loan records.',
+      'Composite borrower-focused monitoring score across credit headroom, payment load, leverage, and dues.',
       true,
     ),
     buildGoalIndicator(
-      'decline-concentration',
-      'Decline Concentration',
-      declineRate,
-      20,
-      'Decline concentration should remain controlled to signal healthy origination quality.',
+      'final-score',
+      'Application Final Score',
+      currentFinalScore,
+      75,
+      'Final application score from the lending workflow used as a live loan health reference.',
+      true,
     ),
     buildGoalIndicator(
-      'elevated-ltv-exposure',
-      'Elevated LTV Exposure',
-      elevatedLtvRate,
-      15,
-      'Exposure to elevated LTV should remain contained before it becomes a blocker issue.',
+      'available-credit-ratio',
+      'Available Credit Ratio',
+      totalRequestedAmount > 0 ? scoreFromRatio(availableCredit, totalRequestedAmount) : 0,
+      10,
+      'Extra borrowing headroom relative to the requested facility amount.',
+      true,
     ),
     buildGoalIndicator(
-      'risky-ltv-exposure',
-      'Risky LTV Exposure',
-      riskyLtvRate,
-      5,
-      'Exposure to LTV above the high-risk threshold should stay minimal.',
+      'statement-balance-control',
+      'End Balance Control',
+      totalRequestedAmount > 0 ? scoreFromRatio(latestEndBalance, totalRequestedAmount) : 0,
+      100,
+      'Remaining balance as a share of original principal for the monitored schedule.',
     ),
   ];
 
@@ -874,19 +876,20 @@ export function buildLoanMonitoringSnapshot(records: LoanApplicationRecord[]): L
   return {
     periodLabel: toMonthLabel(referenceDate),
     dateLabel: toMonthYearLabel(referenceDate),
-    sourceLabel: latestRecord ? 'Portfolio monitoring derived from the live Loan Repository' : 'Waiting for monitored loan records',
-    sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
+    sourceLabel: monitoredRecord ? 'Borrower loan monitoring derived from the application workflow' : 'Waiting for loan setup data',
+    sourceApplicationNo: monitoredRecord?.application_no ?? 'No monitored loan yet',
     healthScore,
     performanceBand: getLoanMonitoringPerformanceBand(healthScore),
-    portfolioCount: records.length,
-    openPipelineCount,
-    releasedCount,
-    watchlistCount,
-    attentionCount,
-    actionLabel: attentionCount > 0 ? 'Escalate' : watchlistCount > 0 ? 'Monitor' : 'Maintain',
-    averageOpenAgeDays,
-    averageFinalScore,
-    pipelineItems,
+    monitoredLoansCount,
+    availableCredit,
+    pastDueCount,
+    loanMarket,
+    actionLabel: monitoredRecord ? 'Monitor' : 'Set Up',
+    monthlyPayment,
+    totalRequestedAmount,
+    endBalance: latestEndBalance,
+    sourceRecordStatus: monitoredRecord?.status ?? 'Draft',
+    statementRows,
     controlItems,
     indicators,
   };

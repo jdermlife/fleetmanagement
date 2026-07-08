@@ -7,7 +7,17 @@ function formatPercent(value: number) {
   return `${value.toFixed(0)}%`;
 }
 
-function formatMetric(value: number, unit: 'percent' | 'days' | 'score') {
+function formatMetric(value: number, unit: 'percent' | 'days' | 'score' | 'currency' | 'count') {
+  if (unit === 'currency') {
+    return new Intl.NumberFormat(undefined, {
+      style: 'currency',
+      currency: 'PHP',
+      maximumFractionDigits: 0,
+    }).format(value);
+  }
+  if (unit === 'count') {
+    return value.toFixed(0);
+  }
   if (unit === 'days') {
     return `${value.toFixed(1)} days`;
   }
