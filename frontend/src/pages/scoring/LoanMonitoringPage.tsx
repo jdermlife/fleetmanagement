@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -40,9 +40,29 @@ function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
 
 export default function LoanMonitoringPage() {
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
-  const snapshot = useMemo(
-    () => buildLoanMonitoringSnapshot(applications),
+  const monitoredApplications = useMemo(
+    () =>
+      applications.filter(
+        (record) => Number.isFinite(record.loan_amount) && record.loan_amount > 0 && Number.isFinite(record.term_months) && record.term_months > 0,
+      ),
     [applications],
+  );
+  const [selectedApplicationNo, setSelectedApplicationNo] = useState('');
+
+  useEffect(() => {
+    if (!monitoredApplications.length) {
+      setSelectedApplicationNo('');
+      return;
+    }
+
+    if (!selectedApplicationNo || !monitoredApplications.some((record) => record.application_no === selectedApplicationNo)) {
+      setSelectedApplicationNo(monitoredApplications[0]?.application_no ?? '');
+    }
+  }, [monitoredApplications, selectedApplicationNo]);
+
+  const snapshot = useMemo(
+    () => buildLoanMonitoringSnapshot(applications, selectedApplicationNo),
+    [applications, selectedApplicationNo],
   );
 
   return (
@@ -91,7 +111,7 @@ export default function LoanMonitoringPage() {
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Loan Market</span>
+          <span>Product Type</span>
           <strong>{snapshot.loanMarket}</strong>
           <small>{snapshot.sourceRecordStatus}</small>
         </article>
@@ -130,6 +150,36 @@ export default function LoanMonitoringPage() {
               {snapshot.sourceLabel} | {snapshot.sourceApplicationNo}
               {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
             </p>
+
+            <div className="budget-dashboard-category-summary" style={{ marginBottom: '18px' }}>
+              <div className="budget-dashboard-category-summary-card">
+                <span>Application Reference Number</span>
+                <strong>{snapshot.sourceApplicationNo}</strong>
+              </div>
+              <div className="budget-dashboard-category-summary-card">
+                <span>Choose Loan / Application Reference</span>
+                <select
+                  value={selectedApplicationNo}
+                  onChange={(event) => setSelectedApplicationNo(event.target.value)}
+                  disabled={monitoredApplications.length <= 1}
+                  className="budget-dashboard-category-input"
+                  aria-label="Choose loan or application reference number"
+                >
+                  {monitoredApplications.map((record) => (
+                    <option key={record.application_no} value={record.application_no}>
+                      {record.application_no}
+                    </option>
+                  ))}
+                  {monitoredApplications.length === 0 ? (
+                    <option value="">No application reference available</option>
+                  ) : null}
+                </select>
+              </div>
+              <div className="budget-dashboard-category-summary-card">
+                <span>Current Status</span>
+                <strong>{snapshot.sourceRecordStatus}</strong>
+              </div>
+            </div>
 
             <div className="psychometric-scale-table-wrap">
               <table className="psychometric-scale-table">
@@ -275,7 +325,7 @@ export default function LoanMonitoringPage() {
           </article>
 
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Loan Market</span>
+            <span className="psychometric-panel-kicker">Product Type</span>
             <h2>{snapshot.loanMarket}</h2>
             <ul className="psychometric-breakdown-list">
               <li>

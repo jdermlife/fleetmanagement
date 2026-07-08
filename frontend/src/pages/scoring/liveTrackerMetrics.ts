@@ -607,12 +607,23 @@ function getDataCompleteness(record: LoanApplicationRecord): boolean {
   );
 }
 
-function getBorrowerMonitoredRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+function getBorrowerMonitoredRecord(
+  records: LoanApplicationRecord[],
+  selectedApplicationNo?: string,
+): LoanApplicationRecord | null {
   const prioritizedStatuses = ['released', 'approved', 'under review', 'submitted', 'credit review', 'draft'];
 
   const candidates = records.filter((record) => safeNumber(record.loan_amount) > 0 && safeNumber(record.term_months) > 0);
   if (!candidates.length) {
     return getMostRecentRecord(records);
+  }
+
+  const normalizedSelection = (selectedApplicationNo ?? '').trim();
+  if (normalizedSelection) {
+    const matchedRecord = candidates.find((record) => record.application_no === normalizedSelection);
+    if (matchedRecord) {
+      return matchedRecord;
+    }
   }
 
   return [...candidates].sort((left, right) => {
@@ -766,8 +777,11 @@ function buildMonitoringControlItem(
   };
 }
 
-export function buildLoanMonitoringSnapshot(records: LoanApplicationRecord[]): LoanMonitoringSnapshot {
-  const monitoredRecord = getBorrowerMonitoredRecord(records);
+export function buildLoanMonitoringSnapshot(
+  records: LoanApplicationRecord[],
+  selectedApplicationNo?: string,
+): LoanMonitoringSnapshot {
+  const monitoredRecord = getBorrowerMonitoredRecord(records, selectedApplicationNo);
   const referenceDate = monitoredRecord
     ? new Date(monitoredRecord.updated_at ?? monitoredRecord.created_at ?? Date.now())
     : new Date();
