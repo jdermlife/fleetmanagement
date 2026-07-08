@@ -1,7 +1,35 @@
-import { useMemo } from 'react';
+import { Fragment, useEffect, useMemo, useState } from 'react';
 
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
+
+type BalanceSheetSection = 'assets' | 'liabilities' | 'equities';
+
+type BalanceSheetEntry = {
+  id: string;
+  label: string;
+  section: BalanceSheetSection;
+};
+
+const BALANCE_SHEET_STORAGE_KEY = 'fms:networth-balance-sheet';
+
+const BALANCE_SHEET_ENTRIES: BalanceSheetEntry[] = [
+  { id: 'cash-savings', label: 'Cash and Savings', section: 'assets' },
+  { id: 'investments', label: 'Investments', section: 'assets' },
+  { id: 'real-estate', label: 'Real Estate', section: 'assets' },
+  { id: 'vehicles', label: 'Vehicles', section: 'assets' },
+  { id: 'business-assets', label: 'Business Assets', section: 'assets' },
+  { id: 'other-assets', label: 'Other Assets', section: 'assets' },
+  { id: 'credit-cards', label: 'Credit Cards', section: 'liabilities' },
+  { id: 'personal-loans', label: 'Personal Loans', section: 'liabilities' },
+  { id: 'mortgage-balance', label: 'Mortgage Balance', section: 'liabilities' },
+  { id: 'auto-loan', label: 'Auto Loan', section: 'liabilities' },
+  { id: 'other-liabilities', label: 'Other Liabilities', section: 'liabilities' },
+  { id: 'owner-equity', label: 'Owner Equity', section: 'equities' },
+  { id: 'retained-savings', label: 'Retained Savings', section: 'equities' },
+  { id: 'business-equity', label: 'Business Equity', section: 'equities' },
+  { id: 'other-equity', label: 'Other Equity', section: 'equities' },
+];
 
 function formatPercent(value: number) {
   return `${value.toFixed(0)}%`;
@@ -45,18 +73,172 @@ function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
   return 'Needs Attention';
 }
 
+function loadStoredBalanceSheet(): Record<string, string> {
+  if (typeof window === 'undefined') {
+    return {};
+  }
+
+  try {
+    const raw = window.localStorage.getItem(BALANCE_SHEET_STORAGE_KEY);
+    if (!raw) {
+      return {};
+    }
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};
+  } catch {
+    return {};
+  }
+}
+
+function getSectionLabel(section: BalanceSheetSection) {
+  if (section === 'assets') {
+    return 'Assets';
+  }
+  if (section === 'liabilities') {
+    return 'Liabilities';
+  }
+  return 'Equities';
+}
+
+function getTopBalanceSheetEntry(
+  rows: Array<BalanceSheetEntry & { amount: number; raw: string }>,
+): (BalanceSheetEntry & { amount: number; raw: string }) | null {
+  return [...rows]
+    .filter((row) => row.amount > 0)
+    .sort((left, right) => right.amount - left.amount)[0] ?? null;
+}
+
 export default function NetWorthPositioningPage() {
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const { applications, error, lastUpdated } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
     () => buildNetWorthPositioningSnapshot(applications),
     [applications],
   );
+  const [amounts, setAmounts] = useState<Record<string, string>>(() => loadStoredBalanceSheet());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+    window.localStorage.setItem(BALANCE_SHEET_STORAGE_KEY, JSON.stringify(amounts));
+  }, [amounts]);
+
+  const latestFinancialApplication = useMemo(() => {
+    const candidates = applications.filter((record) => {
+      return record.monthly_income > 0 || record.other_income > 0 || record.debt_obligations > 0;
+    });
+
+    return [...candidates].sort((left, right) => {
+      const rightTimestamp = Date.parse(right.updated_at ?? right.created_at ?? '') || 0;
+      const leftTimestamp = Date.parse(left.updated_at ?? left.created_at ?? '') || 0;
+      return rightTimestamp - leftTimestamp;
+    })[0] ?? null;
+  }, [applications]);
+
+  const increasingExpensesCount = useMemo(() => {
+    if (!latestFinancialApplication) {
+      return 0;
+    }
+
+    const employment = latestFinancialApplication.requirements?.employmentInformation;
+    const banking = latestFinancialApplication.requirements?.bankingRelationships;
+    const grossIncome = Math.max(
+      latestFinancialApplication.monthly_income + latestFinancialApplication.other_income,
+      Number(employment?.grossMonthlyIncome ?? 0),
+    );
+    const livingExpenses = Number(employment?.monthlyLivingExpenses ?? 0);
+    const mortgageExpense = Number(banking?.loanMonthlyAmortization ?? 0);
+    const debtObligations = Number(latestFinancialApplication.debt_obligations ?? 0);
+
+    if (grossIncome <= 0) {
+      return 0;
+    }
+
+    return [
+      livingExpenses / grossIncome > 0.45,
+      debtObligations / grossIncome > 0.35,
+      mortgageExpense / grossIncome > 0.28,
+      grossIncome - livingExpenses - debtObligations < 0,
+    ].filter(Boolean).length;
+  }, [latestFinancialApplication]);
+
+  const sectionRows = useMemo(
+    () =>
+      BALANCE_SHEET_ENTRIES.reduce<Record<BalanceSheetSection, Array<BalanceSheetEntry & { amount: number; raw: string }>>>(
+        (accumulator, entry) => {
+          const raw = amounts[entry.id] ?? '';
+          const parsed = raw.trim() === '' ? 0 : Number(raw);
+          accumulator[entry.section].push({
+            ...entry,
+            raw,
+            amount: Number.isFinite(parsed) ? Math.max(0, parsed) : 0,
+          });
+          return accumulator;
+        },
+        { assets: [], liabilities: [], equities: [] },
+      ),
+    [amounts],
+  );
+
+  const totalAssets = useMemo(
+    () => sectionRows.assets.reduce((sum, row) => sum + row.amount, 0),
+    [sectionRows.assets],
+  );
+  const totalLiabilities = useMemo(
+    () => sectionRows.liabilities.reduce((sum, row) => sum + row.amount, 0),
+    [sectionRows.liabilities],
+  );
+  const totalEquities = useMemo(
+    () => sectionRows.equities.reduce((sum, row) => sum + row.amount, 0),
+    [sectionRows.equities],
+  );
+  const numberOfAssets = useMemo(
+    () => sectionRows.assets.filter((row) => row.amount > 0).length,
+    [sectionRows.assets],
+  );
+  const netWorth = totalAssets + totalEquities - totalLiabilities;
+  const biggestLiability = useMemo(
+    () => getTopBalanceSheetEntry(sectionRows.liabilities),
+    [sectionRows.liabilities],
+  );
+  const biggestAsset = useMemo(
+    () => getTopBalanceSheetEntry(sectionRows.assets),
+    [sectionRows.assets],
+  );
+  const liabilitiesToAssetsRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
+  const advisor = useMemo(() => {
+    const debtAdvice =
+      biggestLiability && biggestLiability.amount > 0
+        ? `Focus first on reducing ${biggestLiability.label}, because it is currently your largest recorded liability and has the biggest effect on net worth.`
+        : 'Add liability balances so the advisor can identify which obligation should be reduced first.';
+
+    const expenseAdvice =
+      increasingExpensesCount > 0
+        ? `Expenses appear to be rising in ${increasingExpensesCount} pressure area(s). Review living expenses, debt obligations, and recurring monthly commitments before adding new liabilities.`
+        : 'Current application signals do not show strong expense pressure. Keep protecting surplus cash and avoid unnecessary recurring commitments.';
+
+    const netWorthAdvice =
+      netWorth > 0 && liabilitiesToAssetsRatio < 60
+        ? `Net worth is improving. ${biggestAsset ? `${biggestAsset.label} is currently your strongest asset anchor.` : 'Your asset base is stronger than your liabilities.'}`
+        : netWorth > 0
+          ? 'Net worth is still positive, but liabilities are taking a larger share of your assets. Prioritize liability reduction and preserve liquidity.'
+          : 'Net worth is weak or negative right now. Focus on cutting liabilities, building liquid assets, and avoiding new debt until the balance sheet stabilizes.';
+
+    return {
+      debtAdvice,
+      debtStatus: biggestLiability ? (biggestLiability.amount > totalAssets * 0.35 ? 'attention' : 'watch') : 'watch',
+      expenseAdvice,
+      expenseStatus: increasingExpensesCount > 1 ? 'attention' : increasingExpensesCount === 1 ? 'watch' : 'maintain',
+      netWorthAdvice,
+      netWorthStatus: netWorth > 0 && liabilitiesToAssetsRatio < 60 ? 'maintain' : netWorth > 0 ? 'watch' : 'attention',
+    } as const;
+  }, [biggestAsset, biggestLiability, increasingExpensesCount, liabilitiesToAssetsRatio, netWorth, totalAssets]);
 
   return (
     <div className="psychometric-page networth-dashboard-page">
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Balance Sheet Positioning</span>
+          <span className="psychometric-eyebrow">Personal Net Worth Tracking</span>
           <h1>Net Worth Positioning</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
@@ -76,21 +258,21 @@ export default function NetWorthPositioningPage() {
 
       <section className="psychometric-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>Portfolio Records</span>
-          <strong>{snapshot.portfolioCount}</strong>
-          <small>Total accounts used for positioning analysis</small>
+          <span>Number of Assets</span>
+          <strong>{numberOfAssets}</strong>
+          <small>Asset accounts with entered values</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Strong Position</span>
-          <strong>{snapshot.strongPositionCount}</strong>
-          <small>Accounts with positive surplus and asset cushion</small>
+          <span>Net Worth</span>
+          <strong>{formatCurrency(netWorth)}</strong>
+          <small>Total assets plus equities less liabilities</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Watchlist</span>
-          <strong>{snapshot.watchlistCount + snapshot.attentionCount}</strong>
-          <small>Records needing balance-sheet review or repositioning</small>
+          <span>Increasing Expenses</span>
+          <strong>{increasingExpensesCount}</strong>
+          <small>Expense pressure signals from the latest application</small>
         </article>
 
         <article className="psychometric-summary-card">
@@ -105,16 +287,16 @@ export default function NetWorthPositioningPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Positioning Mix</span>
-                <h2>Balance-sheet posture across the monitored book</h2>
+                <span className="psychometric-panel-kicker">Balance Sheet</span>
+                <h2>To be filled up for personal net worth monitoring</h2>
               </div>
               <button
                 type="button"
                 className="psychometric-reset-button"
-                onClick={reload}
-                disabled={loading}
+                onClick={() => setAmounts({})}
+                disabled={Object.keys(amounts).length === 0}
               >
-                {loading ? 'Refreshing...' : 'Refresh Data'}
+                Reset Balance Sheet
               </button>
             </div>
 
@@ -129,20 +311,52 @@ export default function NetWorthPositioningPage() {
               {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
             </p>
 
-            <div className="budget-dashboard-card-grid">
-              {snapshot.positioningItems.map((item) => (
-                <article key={item.id} className={`budget-dashboard-card budget-dashboard-status-${item.status}`}>
-                  <div className="budget-dashboard-card-header">
-                    <span>{item.label}</span>
-                    <strong>{formatPercent(item.share)}</strong>
-                  </div>
-                  <div className="budget-dashboard-card-value">{item.count}</div>
-                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
-                    <div className="psychometric-progress-bar" style={{ width: `${item.share}%` }} />
-                  </div>
-                  <p>{item.note}</p>
-                </article>
-              ))}
+            <div className="psychometric-scale-table-wrap">
+              <table className="psychometric-scale-table">
+                <thead>
+                  <tr>
+                    <th>Accounts</th>
+                    <th>Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(['assets', 'liabilities', 'equities'] as BalanceSheetSection[]).map((section) => (
+                    <Fragment key={section}>
+                      <tr>
+                        <td colSpan={2} style={{ fontWeight: 700 }}>{getSectionLabel(section)}</td>
+                      </tr>
+                      {sectionRows[section].map((row) => (
+                        <tr key={row.id}>
+                          <td>{row.label}</td>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              step="0.01"
+                              value={row.raw}
+                              onChange={(event) => {
+                                setAmounts((previous) => ({
+                                  ...previous,
+                                  [row.id]: event.target.value,
+                                }));
+                              }}
+                              className="budget-dashboard-category-input"
+                              placeholder="0"
+                              aria-label={`${row.label} amount`}
+                            />
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  ))}
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td style={{ fontWeight: 700 }}>Net Worth</td>
+                    <td style={{ fontWeight: 700 }}>{formatCurrency(netWorth)}</td>
+                  </tr>
+                </tfoot>
+              </table>
             </div>
           </article>
 
@@ -207,6 +421,35 @@ export default function NetWorthPositioningPage() {
               ))}
             </div>
           </article>
+
+          <article className="psychometric-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">AI Advisor</span>
+                <h2>Personal balance-sheet guidance</h2>
+              </div>
+            </div>
+
+            <div className="budget-dashboard-indicator-row">
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.debtStatus}`}>
+                <span>Liability Reduction Priority</span>
+                <strong>{biggestLiability?.label ?? 'Add liabilities'}</strong>
+                <p>{advisor.debtAdvice}</p>
+              </article>
+
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.expenseStatus}`}>
+                <span>Expenses vs Savings</span>
+                <strong>{increasingExpensesCount > 0 ? 'Review Spending' : 'Stable Spending'}</strong>
+                <p>{advisor.expenseAdvice}</p>
+              </article>
+
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.netWorthStatus}`}>
+                <span>Net Worth Direction</span>
+                <strong>{netWorth > 0 ? 'Positive Net Worth' : 'Rebuild Net Worth'}</strong>
+                <p>{advisor.netWorthAdvice}</p>
+              </article>
+            </div>
+          </article>
         </div>
 
         <aside className="budget-dashboard-side">
@@ -215,16 +458,16 @@ export default function NetWorthPositioningPage() {
             <h2>{snapshot.actionLabel}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Strong position</span>
-                <strong>{snapshot.strongPositionCount}</strong>
+                <span>Total assets</span>
+                <strong>{formatCurrency(totalAssets)}</strong>
               </li>
               <li>
-                <span>Average net cashflow</span>
-                <strong>{formatCurrency(snapshot.averageNetCashflow)}</strong>
+                <span>Total liabilities</span>
+                <strong>{formatCurrency(totalLiabilities)}</strong>
               </li>
               <li>
-                <span>Average asset strength</span>
-                <strong>{formatPercent(snapshot.averageAssetStrength)}</strong>
+                <span>Total equities</span>
+                <strong>{formatCurrency(totalEquities)}</strong>
               </li>
             </ul>
           </article>
@@ -234,16 +477,16 @@ export default function NetWorthPositioningPage() {
             <h2>{snapshot.performanceBand}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Watchlist</span>
-                <strong>{snapshot.watchlistCount}</strong>
+                <span>Number of assets</span>
+                <strong>{numberOfAssets}</strong>
               </li>
               <li>
-                <span>Needs attention</span>
-                <strong>{snapshot.attentionCount}</strong>
+                <span>Increasing expenses</span>
+                <strong>{increasingExpensesCount}</strong>
               </li>
               <li>
-                <span>Portfolio size</span>
-                <strong>{snapshot.portfolioCount}</strong>
+                <span>Net worth</span>
+                <strong>{formatCurrency(netWorth)}</strong>
               </li>
             </ul>
           </article>
