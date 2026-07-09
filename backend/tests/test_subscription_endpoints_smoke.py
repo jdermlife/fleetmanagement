@@ -121,6 +121,47 @@ def test_plans_create_and_list_smoke(client: TestClient, admin_headers):
     assert rows[0]["plan_code"] == "BASIC"
 
 
+def test_public_plans_endpoint_lists_only_active_public_plans_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+):
+    public_plan = SubscriptionPlan(
+        id=1,
+        plan_code="FREE",
+        plan_name="Free",
+        billing_cycle="MONTHLY",
+        is_active=True,
+        is_public=True,
+        display_order=1,
+    )
+    private_plan = SubscriptionPlan(
+        id=2,
+        plan_code="PRIVATE",
+        plan_name="Private",
+        billing_cycle="MONTHLY",
+        is_active=True,
+        is_public=False,
+        display_order=2,
+    )
+    inactive_plan = SubscriptionPlan(
+        id=3,
+        plan_code="OLD",
+        plan_name="Old",
+        billing_cycle="MONTHLY",
+        is_active=False,
+        is_public=True,
+        display_order=3,
+    )
+    fake_db.rows_by_model[SubscriptionPlan] = [public_plan, private_plan, inactive_plan]
+
+    response = client.get("/api/subscriptions/public-plans")
+
+    assert response.status_code == 200
+    rows = response.json()
+    assert len(rows) == 1
+    assert rows[0]["plan_code"] == "FREE"
+
+
 def test_subscriber_subscription_owner_scope_smoke(
     client: TestClient,
     fake_db: FakeSession,

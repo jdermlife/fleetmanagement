@@ -107,11 +107,14 @@ def list_public_plans():
     try:
         rows = (
             db.query(SubscriptionPlan)
-            .filter(SubscriptionPlan.is_active.is_(True), SubscriptionPlan.is_public.is_(True))
             .order_by(SubscriptionPlan.display_order.asc(), SubscriptionPlan.plan_name.asc())
             .all()
         )
-        return [_serialize_plan(item) for item in rows]
+        return [
+            _serialize_plan(item)
+            for item in rows
+            if item.is_active and item.is_public
+        ]
     finally:
         db.close()
 
