@@ -6,14 +6,17 @@ import {
   createSubscriptionPlan,
   getErrorMessage,
   listFeatures,
+  listSubscriptionPayments,
   listPlanFeatures,
   listPaymentProviders,
   listSubscriptionPlans,
   listSubscriptions,
+  updateSubscriptionPayment,
   updateSubscription,
   updateSubscriptionPlan,
   type Feature,
   type PaymentProvider,
+  type SubscriptionPayment,
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
@@ -27,6 +30,7 @@ function toDateValue(value: string): string {
 export default function SubscriptionManagementPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
+  const [payments, setPayments] = useState<SubscriptionPayment[]>([])
   const [features, setFeatures] = useState<Feature[]>([])
   const [providers, setProviders] = useState<PaymentProvider[]>([])
   const [planFeatures, setPlanFeatures] = useState<Record<number, Feature[]>>({})
@@ -66,14 +70,16 @@ export default function SubscriptionManagementPage() {
     setLoading(true)
     setStatusMessage('')
     try {
-      const [planRows, subscriptionRows, featureRows, providerRows] = await Promise.all([
+      const [planRows, subscriptionRows, paymentRows, featureRows, providerRows] = await Promise.all([
         listSubscriptionPlans(),
         listSubscriptions(),
+        listSubscriptionPayments(),
         listFeatures(),
         listPaymentProviders(),
       ])
       setPlans(planRows)
       setSubscriptions(subscriptionRows)
+      setPayments(paymentRows)
       setFeatures(featureRows)
       setProviders(providerRows)
 
@@ -218,6 +224,21 @@ export default function SubscriptionManagementPage() {
       setStatusMessage('Subscription updated.')
     } catch (error) {
       setStatusMessage(getErrorMessage(error, 'Failed to update subscription.'))
+    }
+  }
+
+  const handleUpdatePaymentStatus = async (
+    paymentId: number,
+    paymentStatus: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED',
+  ) => {
+    setStatusMessage('')
+
+    try {
+      await updateSubscriptionPayment(paymentId, { payment_status: paymentStatus })
+      await loadData()
+      setStatusMessage(`Payment ${paymentId} marked as ${paymentStatus}.`)
+    } catch (error) {
+      setStatusMessage(getErrorMessage(error, 'Failed to update payment status.'))
     }
   }
 
@@ -647,6 +668,69 @@ export default function SubscriptionManagementPage() {
                     <td className="px-3 py-2">{provider.is_active ? 'Yes' : 'No'}</td>
                   </tr>
                 ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="card" style={{ marginBottom: 16 }}>
+        <h3>Subscription Payments</h3>
+        {loading ? (
+          <p>Loading payments...</p>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead>
+                <tr>
+                  <th className="px-3 py-2 text-left">Reference</th>
+                  <th className="px-3 py-2 text-left">Subscription</th>
+                  <th className="px-3 py-2 text-left">Plan</th>
+                  <th className="px-3 py-2 text-left">Amount</th>
+                  <th className="px-3 py-2 text-left">Method</th>
+                  <th className="px-3 py-2 text-left">Status</th>
+                  <th className="px-3 py-2 text-left">Paid At</th>
+                  <th className="px-3 py-2 text-left">Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payments.map((payment) => {
+                  const subscription = subscriptions.find((row) => row.id === payment.subscription_id) ?? null
+                  const plan = subscription ? plans.find((row) => row.id === subscription.plan_id) ?? null : null
+                  return (
+                    <tr key={payment.id}>
+                      <td className="px-3 py-2">{payment.payment_reference}</td>
+                      <td className="px-3 py-2">{subscription?.subscription_no ?? payment.subscription_id}</td>
+                      <td className="px-3 py-2">{plan?.plan_name ?? subscription?.plan_id ?? 'N/A'}</td>
+                      <td className="px-3 py-2">
+                        {payment.amount ?? 0} {payment.currency ?? 'PHP'}
+                      </td>
+                      <td className="px-3 py-2">{payment.payment_method ?? 'N/A'}</td>
+                      <td className="px-3 py-2">{payment.payment_status}</td>
+                      <td className="px-3 py-2">{payment.paid_at ?? 'N/A'}</td>
+                      <td className="px-3 py-2">
+                        <div className="form-actions">
+                          {payment.payment_status !== 'SUCCESS' ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleUpdatePaymentStatus(payment.id, 'SUCCESS')}
+                            >
+                              Mark Success
+                            </button>
+                          ) : null}
+                          {payment.payment_status !== 'FAILED' ? (
+                            <button
+                              type="button"
+                              onClick={() => void handleUpdatePaymentStatus(payment.id, 'FAILED')}
+                            >
+                              Mark Failed
+                            </button>
+                          ) : null}
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
               </tbody>
             </table>
           </div>

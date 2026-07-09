@@ -6,7 +6,8 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
-from app.models.subscription import Feature, Subscription, SubscriptionPlan
+from app.models.subscription import Feature, Subscription, SubscriptionPayment, SubscriptionPlan
+from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.routes.subscriptions import router as subscriptions_router
 from security.auth import create_token
@@ -218,6 +219,61 @@ def test_subscriber_cannot_pay_foreign_subscription_smoke(
     )
 
     assert response.status_code == 403
+
+
+def test_admin_can_confirm_subscription_payment_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    admin_headers,
+):
+    plan = SubscriptionPlan(
+        id=1,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+    )
+    subscription = Subscription(
+        id=5,
+        subscription_no="SUB-PAY-001",
+        user_id=88,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_type="TRIAL",
+        subscription_start=date.today(),
+    )
+    subscription.plan = plan
+    payment = SubscriptionPayment(
+        id=6,
+        payment_reference="PAY-ADMIN-001",
+        subscription_id=5,
+        payment_status="PENDING",
+    )
+    payment.subscription = subscription
+    user = User(
+        id=88,
+        username="subscriber88",
+        email="subscriber88@example.com",
+        password_hash="hash",
+        role="subscriber",
+    )
+
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    fake_db.rows_by_model[User] = [user]
+
+    response = client.patch(
+        "/api/subscriptions/payments/6",
+        headers=admin_headers,
+        json={"payment_status": "SUCCESS"},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["payment_status"] == "SUCCESS"
+    assert payload["paid_at"] is not None
+    assert subscription.status == "ACTIVE"
+    assert user.subscription_id == subscription.id
 
 
 def test_feature_assign_and_list_smoke(client: TestClient, fake_db: FakeSession, admin_headers):

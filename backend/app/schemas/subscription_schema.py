@@ -170,6 +170,17 @@ class SubscriptionPaymentCreate(BaseModel):
     paid_at: datetime | None = None
 
 
+class SubscriptionPaymentUpdate(BaseModel):
+    provider_id: int | None = None
+    invoice_no: str | None = None
+    amount: float | None = None
+    currency: str | None = None
+    payment_method: str | None = None
+    payment_status: str | None = None
+    provider_transaction_id: str | None = None
+    paid_at: datetime | None = None
+
+
 class SubscriptionInvoiceCreate(BaseModel):
     invoice_no: str
     subscription_id: int

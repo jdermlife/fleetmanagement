@@ -6,12 +6,14 @@ import pytest
 from fastapi import HTTPException
 
 from app.fastapi_auth import CurrentUser
-from app.models.subscription import Subscription
+from app.models.subscription import Subscription, SubscriptionPayment, SubscriptionPlan
+from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.schemas.subscription_schema import (
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionPaymentCreate,
+    SubscriptionPaymentUpdate,
 )
 
 
@@ -159,6 +161,81 @@ def test_subscriber_cannot_create_payment_for_foreign_subscription(fake_db):
         subscription_routes.create_subscription_payment(payload=payload, user=subscriber)
 
     assert exc_info.value.status_code == 403
+
+
+def test_subscriber_payment_creation_is_forced_to_pending(fake_db):
+    own_subscription = Subscription(
+        id=12,
+        subscription_no="SUB-OWN-PAY",
+        user_id=42,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [own_subscription]
+
+    payload = SubscriptionPaymentCreate(
+        payment_reference="PAY-SELF-APPROVE",
+        subscription_id=12,
+        payment_status="SUCCESS",
+    )
+    subscriber = CurrentUser(id=42, username="subscriber", role="SUBSCRIBER")
+
+    result = subscription_routes.create_subscription_payment(payload=payload, user=subscriber)
+
+    assert result["payment_status"] == "PENDING"
+    assert result["paid_at"] is None
+
+
+def test_admin_can_confirm_payment_and_activate_subscription(fake_db):
+    plan = SubscriptionPlan(
+        id=1,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+    )
+    subscription = Subscription(
+        id=21,
+        subscription_no="SUB-UPGRADE-001",
+        user_id=77,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_type="TRIAL",
+        subscription_start=date.today(),
+    )
+    subscription.plan = plan
+    payment = SubscriptionPayment(
+        id=31,
+        payment_reference="PAY-CONFIRM-001",
+        subscription_id=21,
+        payment_status="PENDING",
+    )
+    payment.subscription = subscription
+    user = User(
+        id=77,
+        username="owner",
+        email="owner@example.com",
+        password_hash="hash",
+        role="subscriber",
+    )
+
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    fake_db.rows_by_model[User] = [user]
+
+    admin = CurrentUser(id=1, username="admin", role="ADMIN")
+    payload = SubscriptionPaymentUpdate(payment_status="SUCCESS")
+
+    result = subscription_routes.update_subscription_payment(payment_id=31, payload=payload, user=admin)
+
+    assert result["payment_status"] == "SUCCESS"
+    assert result["paid_at"] is not None
+    assert subscription.status == "ACTIVE"
+    assert subscription.subscription_type == "PAID"
+    assert subscription.last_payment_date is not None
+    assert subscription.next_billing_date is not None
+    assert user.subscription_id == subscription.id
 
 
 def test_subscriber_cannot_create_event_for_foreign_subscription(fake_db):

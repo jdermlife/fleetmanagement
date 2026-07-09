@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+from calendar import monthrange
+from datetime import date, datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from app.database import SessionLocal, set_rls_context
@@ -16,6 +19,7 @@ from app.models.subscription import (
     SubscriptionPlan,
     SubscriptionUsage,
 )
+from app.models.users import User
 from app.schemas.subscription_schema import (
     FeatureCreate,
     PaymentProviderCreate,
@@ -25,6 +29,7 @@ from app.schemas.subscription_schema import (
     SubscriptionEventCreate,
     SubscriptionInvoiceCreate,
     SubscriptionPaymentCreate,
+    SubscriptionPaymentUpdate,
     SubscriptionPlanCreate,
     SubscriptionPlanUpdate,
     SubscriptionUpdate,
@@ -157,6 +162,70 @@ def _serialize_subscription(subscription: Subscription) -> dict:
         "created_at": subscription.created_at,
         "updated_at": subscription.updated_at,
     }
+
+
+def _serialize_subscription_payment(payment: SubscriptionPayment) -> dict:
+    return {
+        "id": payment.id,
+        "payment_reference": payment.payment_reference,
+        "subscription_id": payment.subscription_id,
+        "provider_id": payment.provider_id,
+        "invoice_no": payment.invoice_no,
+        "amount": float(payment.amount) if payment.amount is not None else None,
+        "currency": payment.currency,
+        "payment_method": payment.payment_method,
+        "payment_status": payment.payment_status,
+        "provider_transaction_id": payment.provider_transaction_id,
+        "paid_at": payment.paid_at,
+        "created_at": payment.created_at,
+    }
+
+
+def _add_months(value: date, months: int) -> date:
+    total_months = (value.year * 12 + (value.month - 1)) + months
+    next_year = total_months // 12
+    next_month = total_months % 12 + 1
+    next_day = min(value.day, monthrange(next_year, next_month)[1])
+    return date(next_year, next_month, next_day)
+
+
+def _calculate_next_billing_date(plan: SubscriptionPlan | None, paid_date: date) -> date | None:
+    if plan is None:
+        return None
+    if plan.billing_cycle == "YEARLY":
+        return _add_months(paid_date, 12)
+    if plan.billing_cycle == "QUARTERLY":
+        return _add_months(paid_date, 3)
+    return _add_months(paid_date, 1)
+
+
+def _apply_successful_payment(
+    db,
+    payment: SubscriptionPayment,
+    subscription: Subscription | None = None,
+) -> None:
+    target_subscription = subscription or getattr(payment, "subscription", None)
+    if target_subscription is None:
+        target_subscription = db.query(Subscription).filter(Subscription.id == payment.subscription_id).first()
+    if target_subscription is None:
+        return
+
+    paid_at = payment.paid_at or datetime.now(timezone.utc)
+    payment.paid_at = paid_at
+
+    target_subscription.status = "ACTIVE"
+    if target_subscription.subscription_type != "LIFETIME":
+        target_subscription.subscription_type = "PAID"
+    target_subscription.last_payment_date = paid_at.date()
+
+    plan = getattr(target_subscription, "plan", None)
+    if plan is None:
+        plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == target_subscription.plan_id).first()
+    target_subscription.next_billing_date = _calculate_next_billing_date(plan, paid_at.date())
+
+    owning_user = db.query(User).filter(User.id == target_subscription.user_id).first()
+    if owning_user is not None:
+        owning_user.subscription_id = target_subscription.id
 
 
 @router.get("/plans")
@@ -360,23 +429,7 @@ def list_subscription_payments(user: CurrentUser = Depends(require_roles("Admin"
         if not _is_admin(user):
             query = query.filter(Subscription.user_id == user.id)
         rows = query.order_by(SubscriptionPayment.created_at.desc()).all()
-        return [
-            {
-                "id": item.id,
-                "payment_reference": item.payment_reference,
-                "subscription_id": item.subscription_id,
-                "provider_id": item.provider_id,
-                "invoice_no": item.invoice_no,
-                "amount": float(item.amount) if item.amount is not None else None,
-                "currency": item.currency,
-                "payment_method": item.payment_method,
-                "payment_status": item.payment_status,
-                "provider_transaction_id": item.provider_transaction_id,
-                "paid_at": item.paid_at,
-                "created_at": item.created_at,
-            }
-            for item in rows
-        ]
+        return [_serialize_subscription_payment(item) for item in rows]
     finally:
         db.close()
 
@@ -394,24 +447,43 @@ def create_subscription_payment(
         if not _is_admin(user) and subscription.user_id != user.id:
             raise HTTPException(status_code=403, detail="Cannot pay for another user's subscription")
 
-        row = SubscriptionPayment(**payload.model_dump())
+        payment_data = payload.model_dump()
+        if not _is_admin(user):
+            payment_data["payment_status"] = "PENDING"
+            payment_data["paid_at"] = None
+        row = SubscriptionPayment(**payment_data)
+        if row.payment_status == "SUCCESS":
+            _apply_successful_payment(db, row, subscription=subscription)
         db.add(row)
         db.commit()
         db.refresh(row)
-        return {
-            "id": row.id,
-            "payment_reference": row.payment_reference,
-            "subscription_id": row.subscription_id,
-            "provider_id": row.provider_id,
-            "invoice_no": row.invoice_no,
-            "amount": float(row.amount) if row.amount is not None else None,
-            "currency": row.currency,
-            "payment_method": row.payment_method,
-            "payment_status": row.payment_status,
-            "provider_transaction_id": row.provider_transaction_id,
-            "paid_at": row.paid_at,
-            "created_at": row.created_at,
-        }
+        return _serialize_subscription_payment(row)
+    finally:
+        db.close()
+
+
+@router.patch("/payments/{payment_id}")
+def update_subscription_payment(
+    payment_id: int,
+    payload: SubscriptionPaymentUpdate,
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    db = _session_with_rls(user)
+    try:
+        row = db.query(SubscriptionPayment).filter(SubscriptionPayment.id == payment_id).first()
+        if not row:
+            raise HTTPException(status_code=404, detail="Payment not found")
+
+        updates = payload.model_dump(exclude_unset=True)
+        for key, value in updates.items():
+            setattr(row, key, value)
+
+        if row.payment_status == "SUCCESS":
+            _apply_successful_payment(db, row)
+
+        db.commit()
+        db.refresh(row)
+        return _serialize_subscription_payment(row)
     finally:
         db.close()
 

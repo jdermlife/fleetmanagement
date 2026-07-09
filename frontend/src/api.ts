@@ -1262,6 +1262,23 @@ export async function createSubscriptionPayment(payload: {
   return response.data
 }
 
+export async function updateSubscriptionPayment(
+  paymentId: number,
+  payload: {
+    provider_id?: number
+    invoice_no?: string
+    amount?: number
+    currency?: string
+    payment_method?: string
+    payment_status?: 'PENDING' | 'SUCCESS' | 'FAILED' | 'REFUNDED'
+    provider_transaction_id?: string
+    paid_at?: string
+  },
+): Promise<SubscriptionPayment> {
+  const response = await api.patch<SubscriptionPayment>(`/api/subscriptions/payments/${paymentId}`, payload)
+  return response.data
+}
+
 export async function listSubscriptionInvoices(): Promise<SubscriptionInvoice[]> {
   const response = await api.get<SubscriptionInvoice[]>('/api/subscriptions/invoices')
   return response.data

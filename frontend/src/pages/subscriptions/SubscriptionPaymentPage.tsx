@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
+  createSubscription,
   createSubscriptionPayment,
   getErrorMessage,
   listSubscriptionPlans,
@@ -74,6 +75,10 @@ const PAYMENT_CHANNEL_DETAILS: Record<PaymentChannel, { title: string; summary: 
   },
 }
 
+function buildPendingSubscriptionNumber(plan: SubscriptionPlan): string {
+  return `SUB-${plan.plan_code}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50)
+}
+
 export default function SubscriptionPaymentPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -123,9 +128,26 @@ export default function SubscriptionPaymentPage() {
     return subscriptions.find((subscription) => subscription.status === 'ACTIVE') ?? subscriptions[0] ?? null
   }, [selectedSubscriptionId, subscriptions])
 
+  const matchedPlanSubscription = useMemo(() => {
+    if (selectedPlanId <= 0) {
+      return null
+    }
+
+    return (
+      subscriptions.find(
+        (subscription) =>
+          subscription.plan_id === selectedPlanId &&
+          subscription.status !== 'CANCELLED' &&
+          subscription.status !== 'EXPIRED',
+      ) ?? null
+    )
+  }, [selectedPlanId, subscriptions])
+
+  const paymentSubscription = selectedPlan ? matchedPlanSubscription : selectedSubscription
+
   const selectedSubscriptionPlan = useMemo(
-    () => plans.find((plan) => plan.id === selectedSubscription?.plan_id) ?? selectedPlan,
-    [plans, selectedPlan, selectedSubscription?.plan_id],
+    () => plans.find((plan) => plan.id === paymentSubscription?.plan_id) ?? selectedPlan,
+    [plans, paymentSubscription?.plan_id, selectedPlan],
   )
 
   const paymentChannel = useMemo(
@@ -148,12 +170,28 @@ export default function SubscriptionPaymentPage() {
     }
   }, [dueAmount, paymentAmount])
 
-  const handleSubmitPayment = async () => {
-    if (!selectedSubscription) {
-      setPaymentMessage('Please select a subscription first.')
-      return
+  const ensureSubscriptionForPayment = async (): Promise<SubscriptionRecord | null> => {
+    if (paymentSubscription) {
+      return paymentSubscription
     }
 
+    if (!selectedPlan) {
+      return null
+    }
+
+    const createdSubscription = await createSubscription({
+      subscription_no: buildPendingSubscriptionNumber(selectedPlan),
+      plan_id: selectedPlan.id,
+      status: 'SUSPENDED',
+      subscription_type: 'PAID',
+      subscription_start: new Date().toISOString().slice(0, 10),
+    })
+
+    setSubscriptions((prev) => [createdSubscription, ...prev])
+    return createdSubscription
+  }
+
+  const handleSubmitPayment = async () => {
     if (!paymentReference.trim()) {
       setPaymentMessage('Enter a payment reference before submitting.')
       return
@@ -163,18 +201,25 @@ export default function SubscriptionPaymentPage() {
     setPaymentMessage('')
 
     try {
+      const subscriptionForPayment = await ensureSubscriptionForPayment()
+      if (!subscriptionForPayment) {
+        setPaymentMessage('Please select a valid subscription plan before submitting payment.')
+        return
+      }
+
       await createSubscriptionPayment({
         payment_reference: paymentReference.trim(),
-        subscription_id: selectedSubscription.id,
-        invoice_no: invoiceNo.trim() || selectedSubscription.subscription_no,
+        subscription_id: subscriptionForPayment.id,
+        invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
         amount: Number(paymentAmount) || dueAmount,
         currency: selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP',
         payment_method: paymentMethod,
         payment_status: 'PENDING',
       })
 
+      navigate(`/subscription-payment?subscriptionId=${subscriptionForPayment.id}`, { replace: true })
       setPaymentMessage(
-        'Payment submitted. Send your proof of payment to support or wait for confirmation if your gateway posts automatically.',
+        'Payment submitted. Your subscription is awaiting confirmation and will activate once the payment is verified.',
       )
       setPaymentReference('')
       setInvoiceNo('')
@@ -208,11 +253,18 @@ export default function SubscriptionPaymentPage() {
         <div className="card auth-helper-card">
           <h3>{selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}</h3>
           <p className="intro">
-            {selectedSubscription ? `Subscription: ${selectedSubscription.subscription_no}` : `Plan code: ${selectedPlan?.plan_code ?? 'N/A'}`} | Support level: {selectedSubscriptionPlan?.support_level ?? selectedPlan?.support_level ?? 'N/A'}
+            {paymentSubscription
+              ? `Subscription: ${paymentSubscription.subscription_no}`
+              : `Plan code: ${selectedPlan?.plan_code ?? 'N/A'}`} | Support level: {selectedSubscriptionPlan?.support_level ?? selectedPlan?.support_level ?? 'N/A'}
           </p>
           <p className="status-message">
             Amount due: {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)} / month
           </p>
+          {!paymentSubscription && selectedPlan ? (
+            <p className="status-message">
+              A pending subscription for <strong>{selectedPlan.plan_name}</strong> will be created automatically when you submit your payment.
+            </p>
+          ) : null}
 
           <div className="card" style={{ marginTop: '16px' }}>
             <h4>Payment Instructions</h4>
@@ -242,7 +294,7 @@ export default function SubscriptionPaymentPage() {
             <label>
               Subscription
               <select
-                value={selectedSubscription?.id ?? ''}
+                value={paymentSubscription?.id ?? ''}
                 onChange={(event) => {
                   const subscriptionId = Number(event.target.value)
                   const nextSubscription = subscriptions.find((item) => item.id === subscriptionId) ?? null
@@ -251,6 +303,7 @@ export default function SubscriptionPaymentPage() {
                   }
                 }}
               >
+                {!paymentSubscription && selectedPlan ? <option value="">Create a new subscription for this plan</option> : null}
                 {subscriptions.length === 0 ? <option value="">No subscriptions available</option> : null}
                 {subscriptions.map((subscription) => (
                   <option key={subscription.id} value={subscription.id}>
@@ -280,7 +333,7 @@ export default function SubscriptionPaymentPage() {
               <input
                 value={invoiceNo}
                 onChange={(event) => setInvoiceNo(event.target.value)}
-                placeholder={selectedSubscription?.subscription_no ?? 'Enter invoice reference'}
+                placeholder={paymentSubscription?.subscription_no ?? 'Enter invoice reference'}
               />
             </label>
 
@@ -296,7 +349,11 @@ export default function SubscriptionPaymentPage() {
             </label>
 
             <div className="form-actions">
-              <button type="button" onClick={() => void handleSubmitPayment()} disabled={isSubmitting || !selectedSubscription}>
+              <button
+                type="button"
+                onClick={() => void handleSubmitPayment()}
+                disabled={isSubmitting || (!paymentSubscription && !selectedPlan)}
+              >
                 {isSubmitting ? 'Submitting...' : 'Submit Payment'}
               </button>
             </div>
