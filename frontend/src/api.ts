@@ -1048,6 +1048,11 @@ export async function listSubscriptionPlans(): Promise<SubscriptionPlan[]> {
   return response.data
 }
 
+export async function listPublicSubscriptionPlans(): Promise<SubscriptionPlan[]> {
+  const response = await api.get<SubscriptionPlan[]>('/api/subscriptions/public-plans')
+  return response.data
+}
+
 export async function createSubscriptionPlan(payload: {
   plan_code: string
   plan_name: string

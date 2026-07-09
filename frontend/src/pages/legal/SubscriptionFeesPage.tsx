@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
-import { getErrorMessage, listSubscriptionPlans, type SubscriptionPlan } from '../../api'
+import { getErrorMessage, listPublicSubscriptionPlans, type SubscriptionPlan } from '../../api'
 
 function formatMoney(amount: number | null, currency: string) {
   if (amount === null || Number.isNaN(amount)) {
@@ -23,7 +23,7 @@ export default function SubscriptionFeesPage() {
   useEffect(() => {
     const loadPlans = async () => {
       try {
-        const rows = await listSubscriptionPlans()
+        const rows = await listPublicSubscriptionPlans()
         setPlans(rows)
       } catch (error) {
         setMessage(getErrorMessage(error, 'Unable to load subscription fees right now.'))

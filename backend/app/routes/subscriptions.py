@@ -101,6 +101,21 @@ def get_loan_record_creation_entitlement(
         db.close()
 
 
+@router.get("/public-plans")
+def list_public_plans():
+    db = SessionLocal()
+    try:
+        rows = (
+            db.query(SubscriptionPlan)
+            .filter(SubscriptionPlan.is_active.is_(True), SubscriptionPlan.is_public.is_(True))
+            .order_by(SubscriptionPlan.display_order.asc(), SubscriptionPlan.plan_name.asc())
+            .all()
+        )
+        return [_serialize_plan(item) for item in rows]
+    finally:
+        db.close()
+
+
 def _serialize_subscription(subscription: Subscription) -> dict:
     return {
         "id": subscription.id,

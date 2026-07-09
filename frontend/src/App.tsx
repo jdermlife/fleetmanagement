@@ -586,26 +586,6 @@ const isSignedIn = authReady && Boolean(currentUser)
         >
           Account Settings
         </Link>
-        <button
-          type="button"
-          onClick={() => {
-            closeMenu()
-            void handleTopbarLogout()
-          }}
-          className="app-menu-link app-menu-link-account"
-          style={{
-            display: 'block',
-            color: 'var(--app-menu-link-text)',
-            textDecoration: 'none',
-            padding: '12px',
-            borderRadius: '8px',
-            background: 'var(--app-menu-link-bg)',
-            border: 'none',
-            textAlign: 'left',
-          }}
-        >
-          Sign Out
-        </button>
       </>
     ) : (
       <>
@@ -716,6 +696,28 @@ const isSignedIn = authReady && Boolean(currentUser)
     >
       Terms & Consent
     </Link>
+    {currentUser ? (
+      <button
+        type="button"
+        onClick={() => {
+          closeMenu()
+          void handleTopbarLogout()
+        }}
+        className="app-menu-link app-menu-link-account"
+        style={{
+          display: 'block',
+          color: 'var(--app-menu-link-text)',
+          textDecoration: 'none',
+          padding: '12px',
+          borderRadius: '8px',
+          background: 'var(--app-menu-link-bg)',
+          border: 'none',
+          textAlign: 'left',
+        }}
+      >
+        Sign Out
+      </button>
+    ) : null}
   </div>
   
 )}

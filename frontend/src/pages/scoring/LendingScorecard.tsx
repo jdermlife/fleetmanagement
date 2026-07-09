@@ -12,6 +12,7 @@ import {
   createLoanApplication,
   fetchLoanCreationEntitlement,
   fetchLoanApplication,
+  fetchLoanApplications,
   type LoanCreationEntitlementResponse,
   type QuantScoresSummary,
   updateLoanApplication,
@@ -67,6 +68,30 @@ interface DocumentItem { id: string; name: string; type: string; parsedData?: st
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
 interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; creditImprovementActionsTracked: boolean; }
 interface AdvisorChecklistItem { id: string; text: string; done: boolean; }
+
+function getMostRecentApplication(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
+  if (records.length === 0) {
+    return null;
+  }
+
+  const recordsWithTimestamp = records
+    .map((record) => {
+      const timestampSource = record.updated_at || record.created_at;
+      const timestamp = timestampSource ? Date.parse(timestampSource) : Number.NaN;
+      return {
+        record,
+        timestamp,
+      };
+    })
+    .filter((entry) => Number.isFinite(entry.timestamp))
+    .sort((left, right) => right.timestamp - left.timestamp);
+
+  if (recordsWithTimestamp.length > 0) {
+    return recordsWithTimestamp[0].record;
+  }
+
+  return records[0];
+}
 
 interface LoanApplication {
   id: string;
@@ -1970,6 +1995,43 @@ export default function LendingScorecard() {
     setSaveMessage(message);
     window.setTimeout(() => setSaveMessage(''), 3000);
   }, []);
+
+  const handleReviewApplication = useCallback(async () => {
+    if (!(isBorrowerSubscriber || isSingleApplicant)) {
+      navigate(reviewApplicationsPath);
+      return;
+    }
+
+    const existingApplicationNo = formData.id || requestedApplicationNo;
+    if (existingApplicationNo) {
+      navigate(`/lending-scorecard?applicationNo=${encodeURIComponent(existingApplicationNo)}`);
+      return;
+    }
+
+    if (isBorrowerSubscriber) {
+      try {
+        const applications = await fetchLoanApplications({ limit: 25 });
+        const mostRecentApplication = getMostRecentApplication(applications);
+
+        if (mostRecentApplication?.application_no) {
+          navigate(`/lending-scorecard?applicationNo=${encodeURIComponent(mostRecentApplication.application_no)}`);
+          return;
+        }
+      } catch {
+        // Fall back to the guided message below when the lookup fails.
+      }
+    }
+
+    setTransientMessage('Please complete application before review');
+  }, [
+    formData.id,
+    isBorrowerSubscriber,
+    isSingleApplicant,
+    navigate,
+    requestedApplicationNo,
+    reviewApplicationsPath,
+    setTransientMessage,
+  ]);
 
   const invalidateBackendScoring = useCallback(() => {
     setBackendQuantSummary(null);
@@ -5132,7 +5194,7 @@ export default function LendingScorecard() {
                 Create New Application
               </button>
               <button
-                onClick={() => navigate(reviewApplicationsPath)}
+                onClick={() => void handleReviewApplication()}
                 className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
               >
                 {isBorrowerSubscriber || isSingleApplicant ? 'Review Application' : 'Review Applications'}
