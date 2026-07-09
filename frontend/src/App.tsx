@@ -146,6 +146,8 @@ function authenticatedPage(
   return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>
 }
 
+const ACCOUNT_ACCESS_ROLES = ['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]
+
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -1132,12 +1134,12 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/account"
-              element={authenticatedPage(<AccountSettingsPage />)}
+              element={authenticatedPage(<AccountSettingsPage />, ACCOUNT_ACCESS_ROLES)}
             />
 
             <Route
               path="/settings"
-              element={authenticatedPage(<AccountSettingsPage />)}
+              element={authenticatedPage(<AccountSettingsPage />, ACCOUNT_ACCESS_ROLES)}
             />
 
             <Route

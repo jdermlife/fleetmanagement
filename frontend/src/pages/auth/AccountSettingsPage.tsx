@@ -45,8 +45,6 @@ export default function AccountSettingsPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [isUpdatingPreferences, setIsUpdatingPreferences] = useState(false)
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
-  const [selectedPlanId, setSelectedPlanId] = useState<number | ''>('')
-  const [subscriptionMessage, setSubscriptionMessage] = useState('')
   const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share'>(
     'do_not_share',
   )
@@ -75,9 +73,6 @@ export default function AccountSettingsPage() {
         setUser(currentUser)
         setLenderDataSharingChoice(currentUser.lenderDataSharingConsent ? 'share' : 'do_not_share')
         setPlans(planRows)
-        if (planRows.length > 0) {
-          setSelectedPlanId(planRows[0].id)
-        }
       } catch (error) {
         setLoadMessage(getErrorMessage(error, 'Unable to load account details.'))
       } finally {
@@ -163,26 +158,19 @@ export default function AccountSettingsPage() {
     [plans],
   )
 
-  const selectedPlan = useMemo(
-    () => sortedPlans.find((plan) => plan.id === selectedPlanId) ?? null,
-    [sortedPlans, selectedPlanId],
+  const currentPlan = useMemo(
+    () => sortedPlans.find((plan) => plan.id === user?.subscriptionId) ?? null,
+    [sortedPlans, user?.subscriptionId],
   )
 
   const suggestedUpgrade = useMemo(() => {
-    if (!selectedPlan) {
-      return null
+    if (!currentPlan) {
+      return sortedPlans[0] ?? null
     }
-    const selectedPrice = getMonthlyEquivalent(selectedPlan)
-    return sortedPlans.find((plan) => getMonthlyEquivalent(plan) > selectedPrice) ?? null
-  }, [selectedPlan, sortedPlans])
 
-  const handleGoToPayment = () => {
-    if (!selectedPlan) {
-      setSubscriptionMessage('Please select a subscription plan first.')
-      return
-    }
-    navigate(`/subscription-payment?planId=${selectedPlan.id}`)
-  }
+    const selectedPrice = getMonthlyEquivalent(currentPlan)
+    return sortedPlans.find((plan) => getMonthlyEquivalent(plan) > selectedPrice) ?? null
+  }, [currentPlan, sortedPlans])
 
   const handleSavePreferences = async () => {
     setIsUpdatingPreferences(true)
@@ -277,49 +265,37 @@ export default function AccountSettingsPage() {
       <div className="card auth-helper-card">
         <h3>Subscription Plan</h3>
         <p className="intro">
-          Select your preferred plan and proceed to payment for activation or upgrade.
+          Review your current subscription and use the upgrade link when you are ready to move to a higher plan.
         </p>
-
-        <label>
-          Available plans (monthly equivalent)
-          <select
-            value={selectedPlanId}
-            onChange={(event) => setSelectedPlanId(event.target.value ? Number(event.target.value) : '')}
-          >
-            {sortedPlans.map((plan) => (
-              <option key={plan.id} value={plan.id}>
-                {plan.plan_name} ({plan.plan_code}) - {plan.currency} {getMonthlyEquivalent(plan).toFixed(2)} / month
-              </option>
-            ))}
-          </select>
-        </label>
-
-        {selectedPlan ? (
+        <p className="status-message">
+          Current subscription:{' '}
+          <strong>
+            {currentPlan ? `${currentPlan.plan_name} (${currentPlan.plan_code})` : 'No subscription assigned'}
+          </strong>
+        </p>
+        {currentPlan ? (
           <p className="status-message">
-            Selected: <strong>{selectedPlan.plan_name}</strong> | Support: <strong>{selectedPlan.support_level}</strong>
+            Support level: <strong>{currentPlan.support_level}</strong> | Monthly equivalent:{' '}
+            <strong>
+              {currentPlan.currency} {getMonthlyEquivalent(currentPlan).toFixed(2)}
+            </strong>
           </p>
         ) : null}
-
-        {suggestedUpgrade ? (
-          <p className="status-message">
-            Upgrade offer: Move to <strong>{suggestedUpgrade.plan_name}</strong> for enhanced features at
-            {' '}
-            <strong>
-              {suggestedUpgrade.currency} {getMonthlyEquivalent(suggestedUpgrade).toFixed(2)} / month
-            </strong>
-            .
-          </p>
-        ) : (
-          <p className="status-message">You are already on the highest available monthly tier.</p>
-        )}
-
-        <div className="form-actions">
-          <button type="button" onClick={handleGoToPayment}>
-            Go to Payment
-          </button>
-        </div>
-
-        {subscriptionMessage ? <p className="status-message">{subscriptionMessage}</p> : null}
+        <p className="status-message">
+          {suggestedUpgrade ? (
+            <>
+              To upgrade, visit{' '}
+              <Link to={`/subscription-payment?planId=${suggestedUpgrade.id}`}>
+                {suggestedUpgrade.plan_name}
+              </Link>
+              .
+            </>
+          ) : (
+            <>
+              For subscription changes, visit <Link to="/subscription-payment">Subscription Payment</Link>.
+            </>
+          )}
+        </p>
       </div>
 
       <div className="card auth-helper-card">

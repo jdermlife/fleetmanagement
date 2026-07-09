@@ -348,6 +348,7 @@ export interface AuthUser {
   roles: string[]
   permissions: string[]
   isActive: boolean
+  subscriptionId?: number | null
   createdAt: string
   updatedAt: string
   lastLoginAt: string | null
@@ -377,6 +378,7 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     roles: rolesFromPayload.length > 0 ? rolesFromPayload : [roleFromPayload],
     permissions,
     isActive: Boolean(raw.isActive ?? raw.is_active ?? true),
+    subscriptionId: (raw.subscriptionId ?? raw.subscription_id ?? null) as number | null,
     createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
     updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
     lastLoginAt: (raw.lastLoginAt ?? raw.last_login_at ?? null) as string | null,
