@@ -162,61 +162,37 @@ export default function RegisterPage() {
     <div className="standalone-card auth-screen">
       <h1>Create Account</h1>
       <p className="intro">
-        Register a user account.  Review and accet the legal disclosures before 
+        Register a user. Review the legal disclosures and agree by ticking the boxes
         before continuing.
       </p>
 
-      <form className="stack-panel auth-panel" onSubmit={handleSubmit}>
-        <label>
-          Username
+      <div className="stack-panel auth-panel">
+        <label className="checkbox-label">
           <input
-            value={username}
-            onChange={(event) => setUsername(event.target.value)}
-            autoComplete="username"
-            minLength={3}
-            required
+            type="checkbox"
+            checked={acceptedTerms}
+            onChange={(event) => setAcceptedTerms(event.target.checked)}
           />
+          <span>
+            I reviewed and accept the <Link to="/terms">Terms & Consent</Link>.
+          </span>
         </label>
 
-        <label>
-          Email
+        <label className="checkbox-label">
           <input
-            type="email"
-            value={email}
-            onChange={(event) => setEmail(event.target.value)}
-            autoComplete="email"
-            required
+            type="checkbox"
+            checked={acceptedPrivacy}
+            onChange={(event) => setAcceptedPrivacy(event.target.checked)}
           />
-        </label>
-
-        <label>
-          Password
-          <input
-            type="password"
-            value={password}
-            onChange={(event) => setPassword(event.target.value)}
-            autoComplete="new-password"
-            minLength={8}
-            required
-          />
-        </label>
-
-        <label>
-          Confirm password
-          <input
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            autoComplete="new-password"
-            minLength={8}
-            required
-          />
+          <span>
+            I reviewed and accept the <Link to="/privacy">Privacy Disclosures</Link>.
+          </span>
         </label>
 
         <fieldset className="auth-role-fieldset">
           <legend>Subscriber type</legend>
           <p className="auth-role-copy">
-            Select the  access this new account should receive.
+            Select the access this new account should receive.
           </p>
           <div className="auth-role-options">
             {REGISTER_SUBSCRIBER_OPTIONS.map((option) => (
@@ -273,43 +249,13 @@ export default function RegisterPage() {
             </label>
           </div>
         </fieldset>
-
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={acceptedTerms}
-            onChange={(event) => setAcceptedTerms(event.target.checked)}
-          />
-          <span>
-            I reviewed and accept the <Link to="/terms">Terms & Consent</Link>.
-          </span>
-        </label>
-
-        <label className="checkbox-label">
-          <input
-            type="checkbox"
-            checked={acceptedPrivacy}
-            onChange={(event) => setAcceptedPrivacy(event.target.checked)}
-          />
-          <span>
-            I reviewed and accept the <Link to="/privacy">Privacy Disclosures</Link>.
-          </span>
-        </label>
-
-        <div className="form-actions">
-          <button type="submit" disabled={isSaving}>
-            {isSaving ? 'Creating Account...' : 'Create Account'}
-          </button>
-          <Link className="auth-link-button" to="/login">
-            Back to Login
-          </Link>
-        </div>
-
-        {message ? <p className="status-message status-error">{message}</p> : null}
-      </form>
+      </div>
 
       <div className="stack-panel auth-panel" aria-live="polite">
-        <p className="auth-role-copy">Or create your account using Google.</p>
+        <p className="auth-role-copy">
+          <strong>Create Account Using:</strong>
+        </p>
+        <p className="auth-role-copy">Google Account</p>
         {isGoogleEnabled ? (
           <GoogleLogin
             onSuccess={handleGoogleSuccess}
@@ -326,7 +272,7 @@ export default function RegisterPage() {
             : <p className="status-message">Google Sign-Up is available when configured.</p>
         ) : null}
 
-        <p className="auth-role-copy">Or create your account using Apple.</p>
+        <p className="auth-role-copy">Apple Account</p>
         <button
           type="button"
           className="auth-link-button auth-apple-button"
@@ -346,7 +292,70 @@ export default function RegisterPage() {
         {!isAppleConfigured ? (
           <p className="status-message">Apple Sign-Up is available when configured.</p>
         ) : null}
+
+        <p className="auth-role-copy">
+          <strong>or Email</strong>
+        </p>
       </div>
+
+      <form className="stack-panel auth-panel" onSubmit={handleSubmit}>
+        <label>
+          Username
+          <input
+            value={username}
+            onChange={(event) => setUsername(event.target.value)}
+            autoComplete="username"
+            minLength={3}
+            required
+          />
+        </label>
+
+        <label>
+          Email
+          <input
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.target.value)}
+            autoComplete="email"
+            required
+          />
+        </label>
+
+        <label>
+          Password
+          <input
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+        </label>
+
+        <label>
+          Confirm password
+          <input
+            type="password"
+            value={confirmPassword}
+            onChange={(event) => setConfirmPassword(event.target.value)}
+            autoComplete="new-password"
+            minLength={8}
+            required
+          />
+        </label>
+
+        <div className="form-actions">
+          <button type="submit" disabled={isSaving}>
+            {isSaving ? 'Creating Account...' : 'Create Account'}
+          </button>
+          <Link className="auth-link-button" to="/login">
+            Back to Login
+          </Link>
+        </div>
+
+        {message ? <p className="status-message status-error">{message}</p> : null}
+      </form>
 
       <div className="auth-support-links">
         <Link to="/subscription-fees">Subscription Fees</Link>

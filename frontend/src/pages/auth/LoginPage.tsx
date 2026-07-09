@@ -265,6 +265,11 @@ export default function LoginPage() {
 
         <div className="login-art-card">
           <div className="login-art-social-stack" aria-live="polite">
+            <div className="login-art-new-user">
+              <span>New user?</span>
+              <Link to="/register">Create Account</Link>
+            </div>
+
             <button
               type="button"
               className="login-art-social-button login-art-social-button-apple"
@@ -366,11 +371,6 @@ export default function LoginPage() {
           <Link className="login-art-forgot" to="/forgot-password">
             Forgot Password?
           </Link>
-
-          <div className="login-art-new-user">
-            <span>New user?</span>
-            <Link to="/register">Create Account</Link>
-          </div>
 
           <div className="login-art-support-links">
             <Link to="/account">Account Settings</Link>
