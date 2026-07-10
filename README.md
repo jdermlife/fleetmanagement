@@ -63,7 +63,7 @@ For production deployments, keep startup migrations disabled and run schema chan
    ```
    VITE_API_URL=http://localhost:5000
    VITE_APPLE_CLIENT_ID=your-apple-service-id
-   VITE_APPLE_REDIRECT_URI=http://localhost:5173
+   VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback
    ```
 4. Start the dev server: `npm run dev`
 
@@ -90,11 +90,11 @@ Configure Apple Sign-In in Apple Developer Console and mirror those values in ba
 
 1. In Apple Developer Console, create or use a Service ID for web sign-in.
 2. Enable Sign in with Apple for that Service ID.
-3. Add your frontend callback URL as a Return URL (for example `http://localhost:5173`).
+3. Register `fleetmanagement-flame.vercel.app` as a web domain and add the exact HTTPS callback URL as a Return URL. Apple does not accept `localhost` or an IP address.
 4. Set matching environment variables:
    - Backend: `APPLE_OAUTH_CLIENT_ID=your-apple-service-id`
    - Frontend: `VITE_APPLE_CLIENT_ID=your-apple-service-id`
-   - Frontend: `VITE_APPLE_REDIRECT_URI=http://localhost:5173`
+   - Frontend: `VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback`
 5. Keep the backend and frontend client IDs identical.
 
 For first-time Apple sign-in, the API requires subscriber type and lender data-sharing preference before creating the account.

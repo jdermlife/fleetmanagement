@@ -62,7 +62,7 @@ The backend runs on `http://localhost:5000`.
    VITE_PAYMENT_SUPPORT_EMAIL=support@example.com
    VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id
    VITE_APPLE_CLIENT_ID=your-apple-service-id
-   VITE_APPLE_REDIRECT_URI=http://localhost:5173
+   VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback
    ```
 4. Start the dev server: `npm run dev`
 
@@ -111,9 +111,13 @@ To enable Apple Sign-In in the web UI:
 3. Register the exact HTTPS frontend Return URL. Apple does not accept `localhost` or an IP address.
 4. Set frontend env values:
    - `VITE_APPLE_CLIENT_ID=your-apple-service-id`
-   - `VITE_APPLE_REDIRECT_URI=https://your-registered-domain.example/auth/apple/callback`
+   - `VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback`
 5. Ensure backend `APPLE_OAUTH_CLIENT_ID` matches `VITE_APPLE_CLIENT_ID`.
 6. Redeploy both services after changing these values; Vite embeds frontend values at build time.
+
+The Vercel `/backend` rewrite forwards this same-origin callback to the active Render API at
+`/api/auth/apple/callback`. In Apple Developer, register `fleetmanagement-flame.vercel.app` as a
+web domain and register the full return URL above exactly.
 
 For first-time Apple sign-in, users must select subscriber type and lender data-sharing preference.
 

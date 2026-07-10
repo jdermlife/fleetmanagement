@@ -21,7 +21,7 @@ export default function RegisterPage() {
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
   const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
-    || 'https://fleet.quantech.international/api/auth/apple/callback'
+    || 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
   const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed

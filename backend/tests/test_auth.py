@@ -161,6 +161,44 @@ def test_login_endpoint_exists(app_client):
     assert "refresh_token" in payload
 
 
+def test_apple_callback_route_accepts_apples_form_post_without_exposing_tokens(app_client):
+    client, _auth_module, _fake_db = app_client
+
+    response = client.post(
+        "/api/auth/apple/callback",
+        data={
+            "code": "apple-authorization-code",
+            "id_token": "apple-identity-token",
+            "state": "apple-state",
+        },
+    )
+
+    assert response.status_code == 200
+    assert "Authentication completed successfully" in response.text
+    assert "apple-identity-token" not in response.text
+    assert response.headers["cache-control"] == "no-store"
+
+
+def test_apple_callback_route_has_a_readiness_page(app_client):
+    client, _auth_module, _fake_db = app_client
+
+    response = client.get("/api/auth/apple/callback")
+
+    assert response.status_code == 200
+    assert "callback is ready" in response.text
+
+
+def test_apple_callback_route_rejects_non_form_payloads(app_client):
+    client, _auth_module, _fake_db = app_client
+
+    response = client.post(
+        "/api/auth/apple/callback",
+        json={"id_token": "not-form-encoded"},
+    )
+
+    assert response.status_code == 415
+
+
 def test_delete_account_endpoint_disables_authenticated_user(app_client):
     client, auth_module, fake_db = app_client
 

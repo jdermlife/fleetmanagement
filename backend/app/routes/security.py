@@ -8,9 +8,11 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
+from urllib.parse import parse_qs
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
 import requests
 from sqlalchemy import and_
@@ -172,6 +174,7 @@ APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))
 _APPLE_JWKS_CACHE: dict[str, object] = {"expires_at": datetime.fromtimestamp(0, timezone.utc), "keys": []}
+APPLE_CALLBACK_MAX_BODY_BYTES = 64 * 1024
 REGISTERABLE_SUBSCRIBER_ROLES = {
     "borrower": RBACRole.SUBSCRIBER_BORROWER.value,
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
@@ -747,6 +750,70 @@ def login_with_apple_token(
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
     return _build_login_payload(user, request, db)
+
+
+def _apple_callback_page(message: str) -> HTMLResponse:
+    content = f"""<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Apple Sign-In</title>
+  </head>
+  <body>
+    <main>
+      <h1>Apple Sign-In</h1>
+      <p>{message}</p>
+      <p>You may close this window.</p>
+    </main>
+  </body>
+</html>"""
+    return HTMLResponse(
+        content=content,
+        headers={
+            "Cache-Control": "no-store",
+            "Pragma": "no-cache",
+        },
+    )
+
+
+@router.get("/apple/callback", response_class=HTMLResponse, include_in_schema=False)
+def apple_sign_in_callback_status() -> HTMLResponse:
+    return _apple_callback_page("The Apple Sign-In callback is ready to receive Apple's response.")
+
+
+@router.post("/apple/callback", response_class=HTMLResponse, include_in_schema=False)
+async def apple_sign_in_callback(request: Request) -> HTMLResponse:
+    content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+    if content_type != "application/x-www-form-urlencoded":
+        raise HTTPException(status_code=415, detail="Apple callback requires form-encoded data")
+
+    content_length = request.headers.get("content-length")
+    if (
+        content_length
+        and content_length.isdigit()
+        and int(content_length) > APPLE_CALLBACK_MAX_BODY_BYTES
+    ):
+        raise HTTPException(status_code=413, detail="Apple callback payload is too large")
+
+    body = await request.body()
+    if len(body) > APPLE_CALLBACK_MAX_BODY_BYTES:
+        raise HTTPException(status_code=413, detail="Apple callback payload is too large")
+
+    try:
+        fields = parse_qs(body.decode("utf-8"), keep_blank_values=True)
+    except UnicodeDecodeError as exc:
+        raise HTTPException(status_code=400, detail="Invalid Apple callback encoding") from exc
+
+    if fields.get("error", [""])[0]:
+        return _apple_callback_page("Apple Sign-In was cancelled or could not be completed.")
+
+    if not fields.get("id_token", [""])[0] and not fields.get("code", [""])[0]:
+        raise HTTPException(status_code=400, detail="Apple callback response is missing authorization data")
+
+    # AppleID JS delivers the authorization result to the opener. This endpoint
+    # only completes Apple's form POST; token validation remains in /apple-token.
+    return _apple_callback_page("Authentication completed successfully.")
 
 
 @router.post("/refresh")

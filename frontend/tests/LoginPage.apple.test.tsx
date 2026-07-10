@@ -73,7 +73,7 @@ describe('LoginPage Apple sign-in', () => {
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     vi.stubEnv(
       'VITE_APPLE_REDIRECT_URI',
-      'https://fleet.quantech.international/api/auth/apple/callback'
+      'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
     )
     const storageMock = createStorageMock()
     Object.defineProperty(window, 'localStorage', {
@@ -123,7 +123,7 @@ describe('LoginPage Apple sign-in', () => {
     await waitFor(() => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledWith({
         clientId: 'com.quantech.filscore.web',
-        redirectURI: 'https://fleet.quantech.international/api/auth/apple/callback',
+        redirectURI: 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback',
       })
     })
 
