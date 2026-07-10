@@ -290,7 +290,7 @@ export default function RegisterPage() {
           Continue with Apple
         </button>
         {!isAppleConfigured ? (
-          <p className="status-message">Apple Sign-Up is available when configured.</p>
+          <p className="status-message"></p>
         ) : null}
 
         <p className="auth-role-copy">
