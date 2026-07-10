@@ -16,7 +16,7 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
   },
   {
     value: 'lender',
-    label: 'Subscriber Multiple Applications / Assessment (Maker/Reviewer)',
+    label: 'Subscriber Multiple Applications / Assessment ',
     description: '',
   },
 ]
