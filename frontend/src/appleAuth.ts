@@ -44,7 +44,6 @@ export async function requestAppleSignInToken(params: {
   appleAuth.init({
     clientId: params.clientId,
     scope: 'name email',
-    redirectURI: params.redirectURI,
     usePopup: true,
   })
 
