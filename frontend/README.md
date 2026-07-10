@@ -108,11 +108,12 @@ To enable Apple Sign-In in the web UI:
 
 1. Create an Apple Service ID in Apple Developer Console.
 2. Enable Sign in with Apple for the Service ID.
-3. Register your frontend Return URL (for example `http://localhost:5173`).
+3. Register the exact HTTPS frontend Return URL. Apple does not accept `localhost` or an IP address.
 4. Set frontend env values:
    - `VITE_APPLE_CLIENT_ID=your-apple-service-id`
-   - `VITE_APPLE_REDIRECT_URI=http://localhost:5173`
+   - `VITE_APPLE_REDIRECT_URI=https://your-registered-domain.example/auth/apple/callback`
 5. Ensure backend `APPLE_OAUTH_CLIENT_ID` matches `VITE_APPLE_CLIENT_ID`.
+6. Redeploy both services after changing these values; Vite embeds frontend values at build time.
 
 For first-time Apple sign-in, users must select subscriber type and lender data-sharing preference.
 

@@ -28,8 +28,6 @@ describe('requestAppleSignInToken', () => {
       scope: 'name email',
       redirectURI: 'https://fleet.quantech.international/api/auth/apple/callback',
       usePopup: true,
-      responseType: 'code id_token',
-      responseMode: 'fragment',
     })
     expect(signIn).toHaveBeenCalledTimes(1)
     expect(result).toEqual({ idToken: 'apple-id-token-value' })

@@ -164,7 +164,10 @@ class AssignPermissionsRequest(BaseModel):
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
-APPLE_OAUTH_CLIENT_ID = os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
+APPLE_OAUTH_CLIENT_ID = (
+    os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
+    or "com.quantech.filscore.web"
+)
 APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))

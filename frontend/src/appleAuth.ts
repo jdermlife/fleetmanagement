@@ -7,8 +7,6 @@ type AppleAuthInitConfig = {
   scope: string
   redirectURI?: string
   usePopup: boolean
-  responseType: string
-  responseMode: string
 }
 
 type AppleAuthSignInResponse = {
@@ -48,8 +46,6 @@ export async function requestAppleSignInToken(params: {
     scope: 'name email',
     redirectURI: params.redirectURI,
     usePopup: true,
-    responseType: 'code id_token',
-    responseMode: 'fragment',
   })
 
   const result = await appleAuth.signIn()
