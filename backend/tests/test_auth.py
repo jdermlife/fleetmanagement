@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import importlib
+from datetime import datetime, timedelta, timezone
 
 import pytest
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
 from app.models.roles import Role
@@ -197,6 +198,91 @@ def test_apple_callback_route_rejects_non_form_payloads(app_client):
     )
 
     assert response.status_code == 415
+
+
+def test_apple_id_token_verifier_accepts_a_valid_rs256_token(monkeypatch):
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key_id = "apple-test-key"
+    public_jwk = security_routes.jwt.algorithms.RSAAlgorithm.to_jwk(
+        private_key.public_key(),
+        as_dict=True,
+    )
+    public_jwk["kid"] = key_id
+    now = datetime.now(timezone.utc)
+    identity_token = security_routes.jwt.encode(
+        {
+            "iss": security_routes.APPLE_OAUTH_ISSUER,
+            "aud": "com.quantech.filscore.web",
+            "sub": "apple-user-123",
+            "email": "apple-user@example.com",
+            "email_verified": True,
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+        },
+        private_key,
+        algorithm="RS256",
+        headers={"kid": key_id},
+    )
+
+    monkeypatch.setattr(
+        security_routes,
+        "_load_apple_sign_in_keys",
+        lambda: [public_jwk],
+    )
+    monkeypatch.setattr(
+        security_routes,
+        "APPLE_OAUTH_CLIENT_ID",
+        "com.quantech.filscore.web",
+    )
+
+    decoded = security_routes._verify_apple_id_token(identity_token)
+
+    assert decoded["sub"] == "apple-user-123"
+    assert decoded["email"] == "apple-user@example.com"
+
+
+def test_apple_id_token_verifier_reports_service_id_mismatch(monkeypatch):
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key_id = "apple-test-key"
+    public_jwk = security_routes.jwt.algorithms.RSAAlgorithm.to_jwk(
+        private_key.public_key(),
+        as_dict=True,
+    )
+    public_jwk["kid"] = key_id
+    now = datetime.now(timezone.utc)
+    identity_token = security_routes.jwt.encode(
+        {
+            "iss": security_routes.APPLE_OAUTH_ISSUER,
+            "aud": "different.apple.service-id",
+            "sub": "apple-user-123",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+        },
+        private_key,
+        algorithm="RS256",
+        headers={"kid": key_id},
+    )
+
+    monkeypatch.setattr(
+        security_routes,
+        "_load_apple_sign_in_keys",
+        lambda: [public_jwk],
+    )
+    monkeypatch.setattr(
+        security_routes,
+        "APPLE_OAUTH_CLIENT_ID",
+        "com.quantech.filscore.web",
+    )
+
+    with pytest.raises(HTTPException) as error:
+        security_routes._verify_apple_id_token(identity_token)
+
+    assert error.value.status_code == 401
+    assert "different Service ID" in error.value.detail
 
 
 def test_delete_account_endpoint_disables_authenticated_user(app_client):

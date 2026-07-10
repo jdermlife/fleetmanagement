@@ -479,8 +479,15 @@ def _verify_apple_id_token(id_token: str) -> dict[str, object]:
         if matching_key is None:
             raise HTTPException(status_code=401, detail="Unable to validate Apple token signature")
 
+    rsa_algorithm = getattr(jwt.algorithms, "RSAAlgorithm", None)
+    if rsa_algorithm is None:
+        raise HTTPException(
+            status_code=500,
+            detail="Apple token verification is unavailable because PyJWT crypto support is missing",
+        )
+
     try:
-        public_key = jwt.algorithms.RSAAlgorithm.from_jwk(json.dumps(matching_key))
+        public_key = rsa_algorithm.from_jwk(json.dumps(matching_key))
         decoded = jwt.decode(
             id_token,
             public_key,
@@ -488,8 +495,27 @@ def _verify_apple_id_token(id_token: str) -> dict[str, object]:
             audience=APPLE_OAUTH_CLIENT_ID,
             issuer=APPLE_OAUTH_ISSUER,
         )
-    except Exception as exc:  # noqa: BLE001
+    except jwt.ExpiredSignatureError as exc:
+        raise HTTPException(
+            status_code=401,
+            detail="Apple identity token expired. Please try signing in again.",
+        ) from exc
+    except jwt.InvalidAudienceError as exc:
+        raise HTTPException(
+            status_code=401,
+            detail=(
+                "Apple token was issued for a different Service ID. "
+                "Ensure APPLE_OAUTH_CLIENT_ID matches VITE_APPLE_CLIENT_ID."
+            ),
+        ) from exc
+    except jwt.InvalidIssuerError as exc:
+        raise HTTPException(status_code=401, detail="Invalid Apple token issuer") from exc
+    except jwt.InvalidSignatureError as exc:
+        raise HTTPException(status_code=401, detail="Invalid Apple token signature") from exc
+    except jwt.PyJWTError as exc:
         raise HTTPException(status_code=401, detail="Invalid or expired Apple token") from exc
+    except Exception as exc:  # noqa: BLE001
+        raise HTTPException(status_code=500, detail="Unable to verify Apple identity token") from exc
 
     if not isinstance(decoded, dict):
         raise HTTPException(status_code=401, detail="Invalid Apple token payload")
