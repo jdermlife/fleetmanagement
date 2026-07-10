@@ -3,7 +3,6 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-
 import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
 import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
 import { requestAppleSignInToken } from '../../appleAuth'
