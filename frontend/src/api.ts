@@ -479,6 +479,7 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
   await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/apple-token', {
+    identity_token: payload.idToken,
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,

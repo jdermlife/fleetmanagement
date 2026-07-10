@@ -8,6 +8,7 @@ from fastapi.testclient import TestClient
 
 from app.models.roles import Role
 from app.models.users import User
+from app.routes import apple_auth as apple_auth_routes
 from app.routes import security as security_routes
 
 
@@ -92,6 +93,28 @@ def app_client(monkeypatch, fake_db: FakeSession):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def apple_auth_client(monkeypatch, fake_db: FakeSession):
+    monkeypatch.setenv("ENFORCE_AUTH", "true")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-fastapi-auth")
+    monkeypatch.setenv("ENABLE_RATE_LIMIT", "false")
+
+    import security.auth as auth_module
+
+    auth_module = importlib.reload(auth_module)
+    security_module = importlib.reload(security_routes)
+    apple_auth_module = importlib.reload(apple_auth_routes)
+
+    app = FastAPI()
+    app.include_router(apple_auth_module.router)
+    app.dependency_overrides[apple_auth_module.get_db] = lambda: fake_db
+
+    with TestClient(app) as client:
+        yield client, auth_module, fake_db, apple_auth_module
+
+    app.dependency_overrides.clear()
+
+
 def test_register_endpoint_exists(app_client):
     client, _auth_module, fake_db = app_client
 
@@ -166,3 +189,61 @@ def test_delete_account_endpoint_disables_authenticated_user(app_client):
     assert "disabled" in response.json()["message"].lower()
     assert user.is_active is False
     assert user.is_deleted is True
+
+
+def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, monkeypatch):
+    client, _auth_module, fake_db, apple_auth_module = apple_auth_client
+
+    monkeypatch.setattr(
+        apple_auth_module,
+        "_verify_apple_id_token",
+        lambda _token: {
+            "email": "new-apple-user@example.com",
+            "sub": "apple-sub-123",
+            "email_verified": True,
+        },
+    )
+    monkeypatch.setattr(
+        apple_auth_module,
+        "_build_login_payload",
+        lambda user, _request, _db: {
+            "access_token": "test-access-token",
+            "refresh_token": "test-refresh-token",
+            "token_type": "bearer",
+            "user": {"id": user.id, "email": user.email, "role": user.role},
+        },
+    )
+
+    response = client.post(
+        "/auth/apple-token",
+        json={
+            "identity_token": "apple-token-value",
+            "subscriber_type": "borrower",
+            "lender_data_sharing_consent": False,
+        },
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["access_token"] == "test-access-token"
+    assert payload["user"]["email"] == "new-apple-user@example.com"
+
+    users = fake_db.rows_by_model.get(User, [])
+    assert len(users) == 1
+    assert users[0].email == "new-apple-user@example.com"
+    assert users[0].role == "subscriber_borrower"
+
+
+def test_apple_token_endpoint_requires_identity_token(apple_auth_client):
+    client, _auth_module, _fake_db, _apple_auth_module = apple_auth_client
+
+    response = client.post(
+        "/auth/apple-token",
+        json={
+            "id_token": "wrong-field",
+            "subscriber_type": "borrower",
+            "lender_data_sharing_consent": False,
+        },
+    )
+
+    assert response.status_code == 422
