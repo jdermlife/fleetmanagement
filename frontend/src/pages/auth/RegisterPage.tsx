@@ -294,7 +294,7 @@ export default function RegisterPage() {
         ) : null}
 
         <p className="auth-role-copy">
-          <strong>or Email</strong>
+          <strong>Other Email</strong>
         </p>
       </div>
 
