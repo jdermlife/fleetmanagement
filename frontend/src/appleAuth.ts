@@ -34,7 +34,6 @@ export function isAppleSignInReady(): boolean {
 
 export async function requestAppleSignInToken(params: {
   clientId: string
-  redirectURI?: string
 }): Promise<AppleSignInResult> {
   const appleAuth = window.AppleID?.auth
   if (!appleAuth) {
