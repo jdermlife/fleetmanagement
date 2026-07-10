@@ -20,6 +20,8 @@ export default function RegisterPage() {
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
+  const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
+    || 'https://fleet.quantech.international/api/auth/apple/callback'
   const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
@@ -139,6 +141,7 @@ export default function RegisterPage() {
     try {
       const appleTokenResult = await requestAppleSignInToken({
         clientId: appleClientId,
+        redirectURI: appleRedirectUri,
       })
       const loginResponse = await loginWithApple({
         idToken: appleTokenResult.idToken,
@@ -147,6 +150,10 @@ export default function RegisterPage() {
       })
       navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
     } catch (error) {
+      if (error instanceof Error && error.message) {
+        setAppleMessage(error.message)
+        return
+      }
       setAppleMessage(getErrorMessage(error, 'Unable to continue with Apple right now.'))
     } finally {
       setIsSaving(false)

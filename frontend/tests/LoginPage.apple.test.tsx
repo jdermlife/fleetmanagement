@@ -66,9 +66,15 @@ function createStorageMock(): Storage {
 describe('LoginPage Apple sign-in', () => {
   afterEach(() => {
     cleanup()
+    vi.unstubAllEnvs()
   })
 
   beforeEach(() => {
+    vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
+    vi.stubEnv(
+      'VITE_APPLE_REDIRECT_URI',
+      'https://fleet.quantech.international/api/auth/apple/callback'
+    )
     const storageMock = createStorageMock()
     Object.defineProperty(window, 'localStorage', {
       value: storageMock,

@@ -13,6 +13,8 @@ type AppleAuthSignInResponse = {
   authorization?: {
     id_token?: string
   }
+  error?: string
+  error_description?: string
 }
 
 type AppleAuthApi = {
@@ -34,6 +36,7 @@ export function isAppleSignInReady(): boolean {
 
 export async function requestAppleSignInToken(params: {
   clientId: string
+  redirectURI?: string
 }): Promise<AppleSignInResult> {
   const appleAuth = window.AppleID?.auth
   if (!appleAuth) {
@@ -43,13 +46,19 @@ export async function requestAppleSignInToken(params: {
   appleAuth.init({
     clientId: params.clientId,
     scope: 'name email',
+    redirectURI: params.redirectURI,
     usePopup: true,
   })
 
   const result = await appleAuth.signIn()
+  if (result.error) {
+    const description = result.error_description ? ` (${result.error_description})` : ''
+    throw new Error(`Apple Sign-In error: ${result.error}${description}`)
+  }
+
   const idToken = result.authorization?.id_token
   if (!idToken) {
-    throw new Error('Apple sign-in did not return a valid token.')
+    throw new Error('Apple sign-in did not return a valid token. Check Apple clientId/domain/redirectURI settings.')
   }
 
   return { idToken }

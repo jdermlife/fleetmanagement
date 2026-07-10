@@ -67,7 +67,7 @@ describe('RegisterPage Apple sign-up', () => {
       </MemoryRouter>
     )
 
-    const appleButton = screen.getByRole('button', { name: /continue with apple/i })
+    const appleButton = screen.getByRole('button', { name: /(continue with apple|sign with apple)/i })
     await userEvent.click(appleButton)
 
     const alert = await screen.findByRole('alert')
@@ -91,7 +91,7 @@ describe('RegisterPage Apple sign-up', () => {
     )
 
     const user = await completeAppleRegistrationChoices()
-    await user.click(screen.getByRole('button', { name: /continue with apple/i }))
+    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
 
     await waitFor(() => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledWith({
