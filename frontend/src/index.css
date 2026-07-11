@@ -1138,6 +1138,30 @@ textarea {
   line-height: 1.4;
 }
 
+.loan-certification-rating-unavailable {
+  display: grid;
+  gap: 5px;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 2px solid #f59e0b;
+  border-radius: 10px;
+  background: #fffbeb;
+  color: #78350f;
+  text-align: center;
+}
+
+.loan-certification-rating-unavailable strong {
+  color: #991b1b;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.loan-certification-rating-unavailable span {
+  font-size: 0.7rem;
+  font-weight: 650;
+  line-height: 1.4;
+}
+
 .loan-certification-summary-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2595,6 +2619,53 @@ button.loan-repository-action-release { background: #4f46e5; }
 .lending-psychometric-step-copy span {
   font-size: 0.75rem;
   color: #64748b;
+}
+
+.lending-step-information-track {
+  width: 100%;
+  height: 5px;
+  margin-top: 3px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #e2e8f0;
+}
+
+.lending-step-information-bar {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #0f766e, #22c55e);
+  transition: width 180ms ease;
+}
+
+.lending-step-information-bar-low {
+  background: linear-gradient(90deg, #dc2626, #f59e0b);
+}
+
+.loan-rating-readiness-notice {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border: 2px solid #f59e0b;
+  border-radius: 14px;
+  background: #fffbeb;
+  color: #78350f;
+}
+
+.loan-rating-readiness-notice strong {
+  color: #991b1b;
+  font-size: 1.2rem;
+}
+
+.loan-rating-readiness-notice span {
+  font-size: 0.95rem;
+  font-weight: 650;
+  line-height: 1.5;
+}
+
+.loan-rating-readiness-notice small {
+  color: #92400e;
+  font-size: 0.82rem;
+  line-height: 1.45;
 }
 
 .budget-dashboard-page {

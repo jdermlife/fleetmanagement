@@ -36,7 +36,11 @@ import {
 } from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
 import { isBorrowerSubscriberRole } from '../../authRoles';
-import { calculateInformationProvidedPercent } from './applicationCompleteness';
+import {
+  calculateApplicationInformationCompletion,
+  CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
+  type InformationStepNumber,
+} from './applicationCompleteness';
 import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
@@ -306,6 +310,13 @@ const buildLoanRequirements = (
       })),
     },
     spouseInformation: application.spouseInformation,
+    coBorrowers: application.coBorrowers.map((coBorrower) => ({
+      name: coBorrower.name,
+      relationship: coBorrower.relationship,
+      monthlyIncome: coBorrower.monthlyIncome,
+      debtObligations: coBorrower.debtObligations,
+      creditStanding: coBorrower.creditStanding,
+    })),
     bankingRelationships: application.bankingRelationships,
     signatures: application.signatures,
     supportingDocuments: application.supportingDocuments,
@@ -2366,6 +2377,16 @@ export default function LendingScorecard() {
           ),
         ),
       },
+      coBorrowers: Array.isArray(savedRequirements.coBorrowers)
+        ? savedRequirements.coBorrowers.map((coBorrower, index) => ({
+            id: `CO-${index}-${Date.now()}`,
+            name: coBorrower.name ?? '',
+            relationship: coBorrower.relationship ?? '',
+            monthlyIncome: parseFormattedNumber(String(coBorrower.monthlyIncome ?? 0)),
+            debtObligations: parseFormattedNumber(String(coBorrower.debtObligations ?? 0)),
+            creditStanding: coBorrower.creditStanding ?? '',
+          }))
+        : blankApplication.coBorrowers,
       bankingRelationships: {
         ...blankApplication.bankingRelationships,
         ...savedRequirements.bankingRelationships,
@@ -2509,6 +2530,13 @@ export default function LendingScorecard() {
     };
   };
 
+  const informationCompletion = calculateApplicationInformationCompletion(
+    buildLoanPayload(formData.status),
+  );
+  const informationProvidedPercent = informationCompletion.overallPercent;
+  const hasSufficientInformationForRating =
+    informationProvidedPercent >= CREDIT_RATING_MINIMUM_INFORMATION_PERCENT;
+
   const handleStepChange = async (nextStep: number) => {
     const boundedNextStep = Math.max(1, Math.min(nextStep, maxVisibleStep));
 
@@ -2525,6 +2553,15 @@ export default function LendingScorecard() {
     }
 
     setSaveMessage('');
+
+    if (!hasSufficientInformationForRating) {
+      setBackendQuantSummary(null);
+      setSaveMessage(
+        `Information provided is ${informationProvidedPercent}%. At least ${CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required to produce a rating.`,
+      );
+      setStep(boundedNextStep);
+      return;
+    }
 
     try {
       const payload = buildLoanPayload(formData.status);
@@ -3698,11 +3735,13 @@ export default function LendingScorecard() {
     'Unnamed Applicant / Borrower';
 
   const handleOpenCertification = () => {
-    if (!displayedQuantSummary) {
+    if (hasSufficientInformationForRating && !displayedQuantSummary) {
       return;
     }
 
-    const certificationPayload = buildLoanPayload(formData.status);
+    const ratingSummary = hasSufficientInformationForRating
+      ? displayedQuantSummary
+      : null;
 
     const qrValue =
       typeof window !== 'undefined'
@@ -3716,14 +3755,14 @@ export default function LendingScorecard() {
           borrowerName: borrowerDisplayName,
           productType: formData.loan.productType,
           issuedAt: new Date().toISOString(),
-          informationProvidedPercent: calculateInformationProvidedPercent(certificationPayload),
-          overallScore: compositeInternalScore,
-          label: displayedQuantSummary.final_grade,
-          decision: displayedQuantSummary.decision,
-          creditScore: displayedQuantSummary.credit_score,
-          fraudScore: displayedQuantSummary.fraud_score,
-          socialScore: displayedQuantSummary.social_score,
-          creditValueScore: displayedQuantSummary.psychometric_score,
+          informationProvidedPercent,
+          overallScore: ratingSummary ? compositeInternalScore : null,
+          label: ratingSummary?.final_grade ?? 'Rating Not Produced',
+          decision: ratingSummary?.decision ?? 'Insufficient Information',
+          creditScore: ratingSummary?.credit_score ?? null,
+          fraudScore: ratingSummary?.fraud_score ?? null,
+          socialScore: ratingSummary?.social_score ?? null,
+          creditValueScore: ratingSummary?.psychometric_score ?? null,
           qrValue,
         },
       },
@@ -4642,6 +4681,7 @@ export default function LendingScorecard() {
                 <button
                   type="button"
                   onClick={() => setShowLoanStatement((prev) => !prev)}
+                  disabled={!hasSufficientInformationForRating}
                   className="loan-inline-button loan-inline-button-primary"
                 >
                   {showLoanStatement ? 'Hide Loan Statement' : 'Generate Loan Statement'}
@@ -4649,12 +4689,25 @@ export default function LendingScorecard() {
                 <button
                   type="button"
                   onClick={handleOpenCertification}
-                  disabled={!displayedQuantSummary}
+                  disabled={hasSufficientInformationForRating && !displayedQuantSummary}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Request Certification
                 </button>
               </div>
+              {!hasSufficientInformationForRating ? (
+                <div className="loan-rating-readiness-notice" role="alert">
+                  <strong>Rating Not Produced</strong>
+                  <span>
+                    Information provided is {informationProvidedPercent}%. A minimum of{' '}
+                    {CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required before FILScore can
+                    produce a rating.
+                  </span>
+                  <small>
+                    Complete the missing information in Steps 1–7, then return to Step 8.
+                  </small>
+                </div>
+              ) : (
               <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
                 <h3 className="mb-4 text-lg font-bold text-amber-900">Step 8: FILScore</h3>
                 <div className="grid grid-cols-2 gap-4">
@@ -4807,6 +4860,7 @@ export default function LendingScorecard() {
                   </div>
                 </div>
               </div>
+              )}
             </div>
           )}
 
@@ -5179,21 +5233,49 @@ export default function LendingScorecard() {
             </div>
 
             <div className="lending-psychometric-step-list">
-              {stepLabels.map((label, i) => (
+              {stepLabels.map((label, i) => {
+                const stepNumber = i + 1;
+                const stepInformation = stepNumber <= 7
+                  ? informationCompletion.steps[stepNumber as InformationStepNumber]
+                  : null;
+                const stepStatus = stepInformation
+                  ? stepInformation.applicable
+                    ? `${stepInformation.percent}% information provided`
+                    : '100% information provided · Not required'
+                  : stepNumber === 8
+                    ? hasSufficientInformationForRating
+                      ? 'Rating available'
+                      : 'Rating not produced'
+                    : step === stepNumber
+                      ? 'Current step'
+                      : step > stepNumber
+                        ? 'Completed'
+                        : 'Pending';
+
+                return (
                 <button
                   key={label}
-                  onClick={() => void handleStepChange(i + 1)}
-                  className={`${stepperButtonClass} lending-psychometric-step-button ${step === i + 1 ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                  onClick={() => void handleStepChange(stepNumber)}
+                  className={`${stepperButtonClass} lending-psychometric-step-button ${step === stepNumber ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
                 >
-                  <div className={`lending-psychometric-step-index ${step >= i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                    {i + 1}
+                  <div className={`lending-psychometric-step-index ${step >= stepNumber ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                    {stepNumber}
                   </div>
                   <div className="lending-psychometric-step-copy">
                     <strong>{label}</strong>
-                    <span>{step === i + 1 ? 'Current step' : step > i + 1 ? 'Completed' : 'Pending'}</span>
+                    <span>{stepStatus}</span>
+                    {stepInformation ? (
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepInformation.percent < CREDIT_RATING_MINIMUM_INFORMATION_PERCENT ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepInformation.percent}%` }}
+                        />
+                      </div>
+                    ) : null}
                   </div>
                 </button>
-              ))}
+                );
+              })}
             </div>
           </article>
         </aside>

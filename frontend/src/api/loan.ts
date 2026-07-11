@@ -74,6 +74,7 @@ export interface LoanApplicationRequirements {
     numberOfVehiclesOwned: number
     recentPhotoUploaded: boolean
     deviceVerified: boolean
+    hasCoBorrower?: boolean
   }
   employmentInformation: {
     employmentStatus: string
@@ -155,6 +156,13 @@ export interface LoanApplicationRequirements {
     monthlyExpenses: number
     otherIncomeSources: string
   }
+  coBorrowers?: Array<{
+    name: string
+    relationship: string
+    monthlyIncome: number
+    debtObligations: number
+    creditStanding: string
+  }>
   bankingRelationships: {
     creditCardIssuer: string
     creditCardNumber: string
