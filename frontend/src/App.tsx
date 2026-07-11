@@ -102,7 +102,7 @@ const menuLinks: MenuLink[] = [
   { id: 'budget-expense-tracker', label: 'Budget & Expense Tracker' },
   { id: 'loan-monitoring', label: 'Loan Monitoring' },
   { id: 'bill-reminder', label: 'Bill Reminder' },
-  { id: 'net-worth-positioning', label: 'Prosperity Lens' },
+  { id: 'net-worth-positioning', label: 'Net Worth Tracker' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
@@ -778,24 +778,24 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/loan-repository"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
-                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanRepository />}
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
+                  <LoanRepository />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/loan-applications"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
-                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanRepository />}
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
+                  <LoanRepository />
                 </ProtectedRoute>
               }
             />
             <Route
               path="/loan-details/:applicationNo"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]} permissions={['read:loans']}>
-                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <LoanDetails />}
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]} permissions={['read:loans']}>
+                  <LoanDetails />
                 </ProtectedRoute>
               }
             />

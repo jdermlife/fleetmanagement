@@ -12,7 +12,6 @@ import {
   createLoanApplication,
   fetchLoanCreationEntitlement,
   fetchLoanApplication,
-  fetchLoanApplications,
   type LoanCreationEntitlementResponse,
   type QuantScoresSummary,
   updateLoanApplication,
@@ -37,6 +36,7 @@ import {
 } from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
 import { isBorrowerSubscriberRole } from '../../authRoles';
+import { calculateInformationProvidedPercent } from './applicationCompleteness';
 import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
@@ -68,30 +68,6 @@ interface DocumentItem { id: string; name: string; type: string; parsedData?: st
 interface Disbursement { bankAccount: string; accountNumber: string; disbursementDate: string; bookingDate: string; startRepaymentDate: string; firstPaymentDate: string; }
 interface FinalChecklist { allRequiredDocumentsProvided: boolean; allSignaturesCollected: boolean; creditCommitteeApproved: boolean; executiveApprovalObtained: boolean; collateralDocumentationReady: boolean; creditImprovementActionsTracked: boolean; }
 interface AdvisorChecklistItem { id: string; text: string; done: boolean; }
-
-function getMostRecentApplication(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
-  if (records.length === 0) {
-    return null;
-  }
-
-  const recordsWithTimestamp = records
-    .map((record) => {
-      const timestampSource = record.updated_at || record.created_at;
-      const timestamp = timestampSource ? Date.parse(timestampSource) : Number.NaN;
-      return {
-        record,
-        timestamp,
-      };
-    })
-    .filter((entry) => Number.isFinite(entry.timestamp))
-    .sort((left, right) => right.timestamp - left.timestamp);
-
-  if (recordsWithTimestamp.length > 0) {
-    return recordsWithTimestamp[0].record;
-  }
-
-  return records[0];
-}
 
 interface LoanApplication {
   id: string;
@@ -1820,7 +1796,7 @@ export default function LendingScorecard() {
   const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
   const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
   const isBorrowerSubscriber = isBorrowerSubscriberRole(user?.role);
-  const reviewApplicationsPath = '/loan-repository';
+  const reviewApplicationsPath = '/loan-repository?status=All';
   const queuePath = isBorrowerSubscriber
     ? '/loan-certification'
     : '/loan-repository?status=Credit%20Review';
@@ -1996,42 +1972,9 @@ export default function LendingScorecard() {
     window.setTimeout(() => setSaveMessage(''), 3000);
   }, []);
 
-  const handleReviewApplication = useCallback(async () => {
-    if (!(isBorrowerSubscriber || isSingleApplicant)) {
-      navigate(reviewApplicationsPath);
-      return;
-    }
-
-    const existingApplicationNo = formData.id || requestedApplicationNo;
-    if (existingApplicationNo) {
-      navigate(`/lending-scorecard?applicationNo=${encodeURIComponent(existingApplicationNo)}`);
-      return;
-    }
-
-    if (isBorrowerSubscriber) {
-      try {
-        const applications = await fetchLoanApplications({ limit: 25 });
-        const mostRecentApplication = getMostRecentApplication(applications);
-
-        if (mostRecentApplication?.application_no) {
-          navigate(`/lending-scorecard?applicationNo=${encodeURIComponent(mostRecentApplication.application_no)}`);
-          return;
-        }
-      } catch {
-        // Fall back to the guided message below when the lookup fails.
-      }
-    }
-
-    setTransientMessage('Please complete application before review');
-  }, [
-    formData.id,
-    isBorrowerSubscriber,
-    isSingleApplicant,
-    navigate,
-    requestedApplicationNo,
-    reviewApplicationsPath,
-    setTransientMessage,
-  ]);
+  const handleReviewApplication = useCallback(() => {
+    navigate(reviewApplicationsPath);
+  }, [navigate, reviewApplicationsPath]);
 
   const invalidateBackendScoring = useCallback(() => {
     setBackendQuantSummary(null);
@@ -3759,6 +3702,8 @@ export default function LendingScorecard() {
       return;
     }
 
+    const certificationPayload = buildLoanPayload(formData.status);
+
     const qrValue =
       typeof window !== 'undefined'
         ? `${window.location.origin}/loan-certification?applicationNo=${encodeURIComponent(formData.id)}`
@@ -3771,6 +3716,7 @@ export default function LendingScorecard() {
           borrowerName: borrowerDisplayName,
           productType: formData.loan.productType,
           issuedAt: new Date().toISOString(),
+          informationProvidedPercent: calculateInformationProvidedPercent(certificationPayload),
           overallScore: compositeInternalScore,
           label: displayedQuantSummary.final_grade,
           decision: displayedQuantSummary.decision,

@@ -4,6 +4,7 @@ import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-do
 import { fetchLoanApplication, type LoanApplicationRecord } from '../../api/loan'
 import { getErrorMessage } from '../../api'
 import { APP_NAME, brandLogoDataUri } from '../../brand'
+import { calculateInformationProvidedPercent } from './applicationCompleteness'
 import { calculateCompositeInternalScore, getFilscoreBand, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
@@ -11,6 +12,7 @@ type CertificationSnapshot = {
   borrowerName: string
   productType: string
   issuedAt: string
+  informationProvidedPercent: number
   overallScore: number | null
   label: string
   decision: string
@@ -62,6 +64,7 @@ const buildCertificationSnapshot = (
     borrowerName: record.borrower_name?.trim() || 'Unnamed Applicant / Borrower',
     productType: normalizeProductType(record.product_type),
     issuedAt: new Date().toISOString(),
+    informationProvidedPercent: calculateInformationProvidedPercent(record),
     overallScore: calculateCompositeInternalScore({
       creditScore: record.overall_scores?.credit_score ?? null,
       creditValueScore: record.overall_scores?.psychometric_score ?? null,
@@ -87,6 +90,51 @@ const formatBand = (value: number | null) => {
   const scaledScore = toFilscore(value)
   const band = getFilscoreBand(scaledScore)
   return band ? `${band.grade} : ${band.internalGrade}` : 'FILSCORE : Grade : Internal Grade'
+}
+
+const formatInformationProvided = (value: number) =>
+  `${Math.max(0, Math.min(100, Math.round(value)))}%`
+
+const buildRecommendationStatement = (certification: CertificationSnapshot) =>
+  `Recommendation: ${certification.decision} based on a composite score of ${formatScore(certification.overallScore)}, calculated from the Credit Score (${formatScore(certification.creditScore)} at 60%), Credit Values Score (${formatScore(certification.creditValueScore)} at 15%), Social Score (${formatScore(certification.socialScore)} at 15%), and Non-Starter Score (${formatScore(certification.fraudScore)} at 10%).`
+
+const getCertificationMetadata = (applicationNo: string, issuedAt: string) => {
+  const issuedDate = new Date(issuedAt)
+
+  if (Number.isNaN(issuedDate.getTime())) {
+    return {
+      certificateId: `${applicationNo.replace(/[+/]/g, '')}Pending`,
+      issuedLabel: 'Pending',
+      validUntilLabel: 'Pending',
+    }
+  }
+
+  const pad = (value: number) => String(value).padStart(2, '0')
+  const certificateId = [
+    applicationNo.replace(/[+/]/g, ''),
+    issuedDate.getFullYear(),
+    pad(issuedDate.getMonth() + 1),
+    pad(issuedDate.getDate()),
+    pad(issuedDate.getHours()),
+    pad(issuedDate.getMinutes()),
+  ].join('')
+
+  const validUntil = new Date(issuedDate)
+  const issueDay = validUntil.getDate()
+  validUntil.setDate(1)
+  validUntil.setMonth(validUntil.getMonth() + 6)
+  const finalDayOfValidMonth = new Date(
+    validUntil.getFullYear(),
+    validUntil.getMonth() + 1,
+    0,
+  ).getDate()
+  validUntil.setDate(Math.min(issueDay, finalDayOfValidMonth))
+
+  return {
+    certificateId,
+    issuedLabel: issuedDate.toLocaleString(),
+    validUntilLabel: validUntil.toLocaleString(),
+  }
 }
 
 export default function LoanCertificationPage() {
@@ -170,6 +218,15 @@ export default function LoanCertificationPage() {
     if (!certification) {
       return
     }
+
+    const { certificateId, issuedLabel, validUntilLabel } = getCertificationMetadata(
+      certification.applicationNo,
+      certification.issuedAt,
+    )
+    const informationProvided = formatInformationProvided(
+      certification.informationProvidedPercent,
+    )
+    const recommendationStatement = buildRecommendationStatement(certification)
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -339,6 +396,16 @@ export default function LoanCertificationPage() {
       line-height: 1;
       font-weight: 700;
     }
+    .recommendation {
+      margin-top: 6px;
+      padding: 7px 8px;
+      border: 1px solid rgba(163, 184, 200, 0.52);
+      border-radius: 8px;
+      background: #f8fafc;
+      color: #0f2547;
+      font-size: 7px;
+      line-height: 1.4;
+    }
     .footer {
       margin-top: 8px;
       display: flex;
@@ -381,6 +448,24 @@ export default function LoanCertificationPage() {
       text-transform: uppercase;
       letter-spacing: 0.16em;
       font-weight: 700;
+    }
+    .information-provided {
+      margin-top: 6px;
+      padding-top: 5px;
+      border-top: 1px solid rgba(163, 184, 200, 0.52);
+      color: #0f2547;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+    .ai-disclaimer {
+      margin: 4px 0 0;
+      color: #6b7280;
+      font-size: 6px;
+      line-height: 1.3;
+      text-align: center;
     }
     @media print {
       body {
@@ -434,9 +519,12 @@ export default function LoanCertificationPage() {
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${formatBand(certification.socialScore)}</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${formatBand(certification.creditValueScore)}</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
       </div>
+      <div class="recommendation">${recommendationStatement}</div>
       <div class="footer">
         <div class="meta">
-          <div class="meta-line"><strong>Info Provided:</strong> ${new Date(certification.issuedAt).toLocaleString()}</div>
+          <div class="meta-line"><strong>Certificate ID:</strong> ${certificateId}</div>
+          <div class="meta-line"><strong>Issued:</strong> ${issuedLabel}</div>
+          <div class="meta-line"><strong>Valid Until:</strong> ${validUntilLabel}</div>
           <div class="meta-line"><strong>Reference Number:</strong> ${certification.applicationNo}</div>
           <div class="meta-line"><strong>Product Being Applied For:</strong> ${certification.productType || 'Not Specified'}</div>
           <div class="meta-line"><strong>Applicant / Borrower Name:</strong> ${certification.borrowerName}</div>
@@ -447,6 +535,8 @@ export default function LoanCertificationPage() {
           <p>Verification QR</p>
         </div>
       </div>
+      <div class="information-provided">Information Provided: ${informationProvided}</div>
+      <p class="ai-disclaimer">AI-assisted recommendations may contain mistakes.</p>
     </div>
   </section>
 </body>
@@ -488,6 +578,15 @@ export default function LoanCertificationPage() {
       </div>
     )
   }
+
+  const { certificateId, issuedLabel, validUntilLabel } = getCertificationMetadata(
+    certification.applicationNo,
+    certification.issuedAt,
+  )
+  const informationProvided = formatInformationProvided(
+    certification.informationProvidedPercent,
+  )
+  const recommendationStatement = buildRecommendationStatement(certification)
 
   return (
     <div className="loan-certification-page">
@@ -597,9 +696,15 @@ export default function LoanCertificationPage() {
               ))}
             </div>
 
+            <div className="loan-certification-recommendation">
+              {recommendationStatement}
+            </div>
+
             <div className="loan-certification-footer">
               <div className="loan-certification-meta">
-                <p><strong>Issued:</strong> {new Date(certification.issuedAt).toLocaleString()}</p>
+                <p><strong>Certificate ID:</strong> {certificateId}</p>
+                <p><strong>Issued:</strong> {issuedLabel}</p>
+                <p><strong>Valid Until:</strong> {validUntilLabel}</p>
                 <p><strong>Applicant / Borrower:</strong> {certification.borrowerName}</p>
                 <p><strong>Reference Number:</strong> {certification.applicationNo}</p>
                 <p><strong>Product Being Applied For:</strong> {certification.productType || 'Not Specified'}</p>
@@ -611,6 +716,12 @@ export default function LoanCertificationPage() {
                 <span>Verification QR</span>
               </div>
             </div>
+            <div className="loan-certification-information-provided">
+              Information Provided: <strong>{informationProvided}</strong>
+            </div>
+            <p className="loan-certification-ai-disclaimer">
+              AI-assisted recommendations may contain mistakes.
+            </p>
           </div>
         </div>
       </section>
