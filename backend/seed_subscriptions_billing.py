@@ -15,9 +15,15 @@ SEED_STATEMENTS = [
     ('PAYPAL', 'PayPal', 'https://api.paypal.com', '/api/webhooks/paypal', TRUE),
     ('GCASH', 'GCash', 'https://api.gcash.com', '/api/webhooks/gcash', TRUE),
     ('MAYA', 'Maya', 'https://api.maya.ph', '/api/webhooks/maya', TRUE),
-    ('PAYMONGO', 'PayMongo', 'https://api.paymongo.com', '/api/webhooks/paymongo', TRUE),
+    ('PAYMONGO', 'PayMongo', 'https://api.paymongo.com', '/api/subscriptions/payments/paymongo/webhook', TRUE),
     ('XENDIT', 'Xendit', 'https://api.xendit.co', '/api/webhooks/xendit', TRUE)
     ON CONFLICT(provider_code) DO NOTHING;
+    """,
+    """
+    UPDATE payment_providers
+    SET api_endpoint = 'https://api.paymongo.com',
+        webhook_url = '/api/subscriptions/payments/paymongo/webhook'
+    WHERE provider_code = 'PAYMONGO';
     """,
     # 2. Seed Subscription Plans
     """

@@ -6,10 +6,11 @@ import pytest
 from fastapi import HTTPException
 
 from app.fastapi_auth import CurrentUser
-from app.models.subscription import Subscription, SubscriptionPayment, SubscriptionPlan
+from app.models.subscription import PaymentProvider, Subscription, SubscriptionPayment, SubscriptionPlan
 from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.schemas.subscription_schema import (
+    PayMongoCheckoutCreate,
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionPaymentCreate,
@@ -163,6 +164,26 @@ def test_subscriber_cannot_create_payment_for_foreign_subscription(fake_db):
     assert exc_info.value.status_code == 403
 
 
+def test_subscriber_cannot_start_checkout_for_foreign_subscription(fake_db):
+    foreign_subscription = Subscription(
+        id=11,
+        subscription_no="SUB-FOREIGN-CHECKOUT",
+        user_id=500,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [foreign_subscription]
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.create_paymongo_checkout(
+            payload=PayMongoCheckoutCreate(subscription_id=11),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 403
+
+
 def test_subscriber_payment_creation_is_forced_to_pending(fake_db):
     own_subscription = Subscription(
         id=12,
@@ -185,6 +206,63 @@ def test_subscriber_payment_creation_is_forced_to_pending(fake_db):
 
     assert result["payment_status"] == "PENDING"
     assert result["paid_at"] is None
+
+
+def test_subscriber_checkout_uses_server_plan_amount(fake_db, monkeypatch):
+    plan = SubscriptionPlan(
+        id=1,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+        monthly_price=999,
+        currency="PHP",
+    )
+    subscription = Subscription(
+        id=13,
+        subscription_no="SUB-CHECKOUT",
+        user_id=42,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    subscription.plan = plan
+    provider = PaymentProvider(
+        id=5,
+        provider_code="PAYMONGO",
+        provider_name="PayMongo",
+        is_active=True,
+    )
+    user_row = User(
+        id=42,
+        username="subscriber",
+        email="subscriber@example.com",
+        password_hash="hash",
+        role="subscriber",
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[User] = [user_row]
+    captured: dict[str, object] = {}
+
+    def fake_checkout(**kwargs):
+        captured.update(kwargs)
+        return {
+            "checkout_id": "cs_test_checkout",
+            "checkout_url": "https://checkout.paymongo.com/cs_test_checkout",
+        }
+
+    monkeypatch.setattr(subscription_routes, "create_checkout_session", fake_checkout)
+
+    result = subscription_routes.create_paymongo_checkout(
+        payload=PayMongoCheckoutCreate(subscription_id=13),
+        user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+    )
+
+    assert captured["amount_centavos"] == 99_900
+    assert result["amount"] == 999.0
+    assert result["payment"]["payment_status"] == "PENDING"
+    assert result["payment"]["provider_transaction_id"] == "cs_test_checkout"
 
 
 def test_admin_can_confirm_payment_and_activate_subscription(fake_db):

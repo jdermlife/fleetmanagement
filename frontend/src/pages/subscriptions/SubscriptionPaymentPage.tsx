@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
+  createPayMongoCheckout,
   createSubscription,
   createSubscriptionPayment,
   getErrorMessage,
@@ -11,17 +12,20 @@ import {
   type SubscriptionRecord,
 } from '../../api'
 
-function monthlyEquivalent(plan: SubscriptionPlan): number {
-  if (plan.monthly_price && plan.monthly_price > 0) {
-    return plan.monthly_price
+function billingAmount(plan: SubscriptionPlan): number {
+  const monthlyPrice = plan.monthly_price && plan.monthly_price > 0 ? plan.monthly_price : 0
+  const yearlyPrice = plan.yearly_price && plan.yearly_price > 0 ? plan.yearly_price : 0
+  const minimumFee = plan.minimum_monthly_fee && plan.minimum_monthly_fee > 0
+    ? plan.minimum_monthly_fee
+    : 0
+
+  if (plan.billing_cycle === 'YEARLY') {
+    return yearlyPrice || monthlyPrice * 12 || minimumFee
   }
-  if (plan.yearly_price && plan.yearly_price > 0) {
-    return plan.yearly_price / 12
+  if (plan.billing_cycle === 'QUARTERLY') {
+    return monthlyPrice * 3 || minimumFee
   }
-  if (plan.minimum_monthly_fee && plan.minimum_monthly_fee > 0) {
-    return plan.minimum_monthly_fee
-  }
-  return 0
+  return monthlyPrice || minimumFee
 }
 
 type PaymentChannel = 'Bank Transfer' | 'GCash' | 'Maya' | 'Manual Invoice' | 'Over-the-Counter'
@@ -88,6 +92,7 @@ export default function SubscriptionPaymentPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isStartingCheckout, setIsStartingCheckout] = useState(false)
   const [paymentReference, setPaymentReference] = useState('')
   const paymentMethod = DEFAULT_PAYMENT_CHANNEL
   const [invoiceNo, setInvoiceNo] = useState('')
@@ -114,6 +119,17 @@ export default function SubscriptionPaymentPage() {
 
     void loadData()
   }, [])
+
+  useEffect(() => {
+    const checkoutResult = searchParams.get('checkout')
+    if (checkoutResult === 'success') {
+      setPaymentMessage(
+        'Checkout completed. Payment confirmation is being verified securely; activation follows the signed gateway confirmation.',
+      )
+    } else if (checkoutResult === 'cancelled') {
+      setPaymentMessage('Checkout was cancelled. No subscription access was activated.')
+    }
+  }, [searchParams])
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
@@ -161,7 +177,7 @@ export default function SubscriptionPaymentPage() {
       return 0
     }
 
-    return monthlyEquivalent(activePlan)
+    return billingAmount(activePlan)
   }, [selectedPlan, selectedSubscriptionPlan])
 
   useEffect(() => {
@@ -230,6 +246,29 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
+  const handleStartCheckout = async () => {
+    setIsStartingCheckout(true)
+    setPaymentMessage('')
+
+    try {
+      const subscriptionForPayment = await ensureSubscriptionForPayment()
+      if (!subscriptionForPayment) {
+        setPaymentMessage('Please select a valid subscription plan before starting checkout.')
+        return
+      }
+
+      const checkout = await createPayMongoCheckout({
+        subscription_id: subscriptionForPayment.id,
+        invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
+      })
+      window.location.assign(checkout.checkout_url)
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
+    } finally {
+      setIsStartingCheckout(false)
+    }
+  }
+
   const handleCopyChannelDetails = async () => {
     const textToCopy = [paymentChannel.title, paymentChannel.summary, ...paymentChannel.detailLines].join('\n')
 
@@ -244,7 +283,9 @@ export default function SubscriptionPaymentPage() {
   return (
     <div className="standalone-card auth-screen">
       <h1>Subscription Payment</h1>
-      <p className="intro">Pay through the configured channel below, then submit the reference here for confirmation.</p>
+      <p className="intro">
+        Pay securely online through PayMongo, or use the manual payment instructions and submit your reference for confirmation.
+      </p>
 
       {isLoading ? <p>Loading payment details...</p> : null}
       {loadMessage ? <p className="status-message status-error">{loadMessage}</p> : null}
@@ -258,7 +299,7 @@ export default function SubscriptionPaymentPage() {
               : `Plan code: ${selectedPlan?.plan_code ?? 'N/A'}`} | Support level: {selectedSubscriptionPlan?.support_level ?? selectedPlan?.support_level ?? 'N/A'}
           </p>
           <p className="status-message">
-            Amount due: {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)} / month
+            Amount due: {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)} / {(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
           </p>
           {!paymentSubscription && selectedPlan ? (
             <p className="status-message">
@@ -267,7 +308,26 @@ export default function SubscriptionPaymentPage() {
           ) : null}
 
           <div className="card" style={{ marginTop: '16px' }}>
-            <h4>Payment Instructions</h4>
+            <h4>Secure Online Checkout</h4>
+            <p className="intro">
+              Pay by an available card or e-wallet on PayMongo&apos;s hosted checkout page. Your subscription activates only after the signed payment confirmation is verified.
+            </p>
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={() => void handleStartCheckout()}
+                disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
+              >
+                {isStartingCheckout ? 'Starting secure checkout...' : 'Pay Now with PayMongo'}
+              </button>
+            </div>
+            <p className="status-message">
+              Available methods depend on the payment methods enabled for your PayMongo merchant account.
+            </p>
+          </div>
+
+          <div className="card" style={{ marginTop: '16px' }}>
+            <h4>Manual Payment Instructions</h4>
             <p className="intro">
               Use the configured channel below, keep the reference or receipt number, then submit it for confirmation.
             </p>
@@ -290,7 +350,7 @@ export default function SubscriptionPaymentPage() {
           </div>
 
           <div className="card" style={{ marginTop: '16px' }}>
-            <h4>Submit payment details</h4>
+            <h4>Submit Manual Payment Details</h4>
             <label>
               Subscription
               <select

@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class SubscriptionPlanCreate(BaseModel):
@@ -179,6 +179,13 @@ class SubscriptionPaymentUpdate(BaseModel):
     payment_status: str | None = None
     provider_transaction_id: str | None = None
     paid_at: datetime | None = None
+
+
+class PayMongoCheckoutCreate(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    subscription_id: int
+    invoice_no: str | None = Field(default=None, max_length=50)
 
 
 class SubscriptionInvoiceCreate(BaseModel):

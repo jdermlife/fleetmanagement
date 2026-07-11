@@ -2,8 +2,11 @@ from __future__ import annotations
 
 from calendar import monthrange
 from datetime import date, datetime, timezone
+from decimal import Decimal, ROUND_HALF_UP
+import json
+import uuid
 
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 
 from app.database import SessionLocal, set_rls_context
 from app.fastapi_auth import CurrentUser, require_roles
@@ -23,6 +26,7 @@ from app.models.users import User
 from app.schemas.subscription_schema import (
     FeatureCreate,
     PaymentProviderCreate,
+    PayMongoCheckoutCreate,
     PaymentWebhookCreate,
     PlanFeatureAssignRequest,
     SubscriptionCreate,
@@ -34,6 +38,13 @@ from app.schemas.subscription_schema import (
     SubscriptionPlanUpdate,
     SubscriptionUpdate,
     SubscriptionUsageCreate,
+)
+from app.services.paymongo import (
+    PayMongoAPIError,
+    PayMongoConfigurationError,
+    PayMongoSignatureError,
+    create_checkout_session,
+    verify_webhook_signature,
 )
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 
@@ -228,8 +239,33 @@ def _apply_successful_payment(
         owning_user.subscription_id = target_subscription.id
 
 
+def _subscription_checkout_amount(plan: SubscriptionPlan) -> Decimal:
+    monthly_price = Decimal(str(plan.monthly_price or 0))
+    yearly_price = Decimal(str(plan.yearly_price or 0))
+    minimum_fee = Decimal(str(plan.minimum_monthly_fee or 0))
+    billing_cycle = (plan.billing_cycle or "MONTHLY").upper()
+
+    if billing_cycle == "YEARLY":
+        amount = yearly_price if yearly_price > 0 else monthly_price * 12
+    elif billing_cycle == "QUARTERLY":
+        amount = monthly_price * 3
+    else:
+        amount = monthly_price
+    if amount <= 0:
+        amount = minimum_fee
+    return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _amount_to_centavos(amount: Decimal) -> int:
+    return int((amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
+
+
 @router.get("/plans")
-def list_plans(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_plans(
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
     db = _session_with_rls(user)
     try:
         rows = db.query(SubscriptionPlan).order_by(SubscriptionPlan.plan_name.asc()).all()
@@ -289,7 +325,9 @@ def update_plan(
 
 @router.get("")
 def list_subscriptions(
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
     status: str | None = Query(default=None),
 ):
     db = _session_with_rls(user)
@@ -308,7 +346,9 @@ def list_subscriptions(
 @router.post("")
 def create_subscription(
     payload: SubscriptionCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
 ):
     db = _session_with_rls(user)
     try:
@@ -422,7 +462,11 @@ def create_payment_provider(
 
 
 @router.get("/payments")
-def list_subscription_payments(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_subscription_payments(
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
     db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionPayment).join(Subscription, Subscription.id == SubscriptionPayment.subscription_id)
@@ -434,10 +478,213 @@ def list_subscription_payments(user: CurrentUser = Depends(require_roles("Admin"
         db.close()
 
 
+@router.post("/payments/paymongo/checkout")
+def create_paymongo_checkout(
+    payload: PayMongoCheckoutCreate,
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    db = _session_with_rls(user)
+    try:
+        subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
+        if not subscription:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if not _is_admin(user) and subscription.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot pay for another user's subscription")
+
+        provider = (
+            db.query(PaymentProvider)
+            .filter(PaymentProvider.provider_code == "PAYMONGO")
+            .first()
+        )
+        if provider is None or provider.is_active is False:
+            raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
+
+        plan = getattr(subscription, "plan", None)
+        if plan is None:
+            plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
+        if plan is None:
+            raise HTTPException(status_code=422, detail="Subscription plan is unavailable")
+
+        amount = _subscription_checkout_amount(plan)
+        if amount <= 0:
+            raise HTTPException(status_code=422, detail="Subscription plan has no payable amount")
+
+        currency = (plan.currency or "PHP").upper()
+        payment_reference = f"PM-{uuid.uuid4().hex.upper()}"[:35]
+        owning_user = db.query(User).filter(User.id == subscription.user_id).first()
+
+        try:
+            checkout = create_checkout_session(
+                amount_centavos=_amount_to_centavos(amount),
+                currency=currency,
+                description=f"{plan.plan_name} subscription payment",
+                item_name=f"{plan.plan_name} subscription",
+                reference_number=payment_reference,
+                customer_name=getattr(owning_user, "username", None),
+                customer_email=getattr(owning_user, "email", None),
+            )
+        except PayMongoConfigurationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except PayMongoAPIError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        payment = SubscriptionPayment(
+            payment_reference=payment_reference,
+            subscription_id=subscription.id,
+            provider_id=provider.id,
+            invoice_no=payload.invoice_no or subscription.subscription_no,
+            amount=amount,
+            currency=currency,
+            payment_method="PayMongo Checkout",
+            payment_status="PENDING",
+            provider_transaction_id=checkout["checkout_id"],
+        )
+        db.add(payment)
+        db.commit()
+        db.refresh(payment)
+        return {
+            "checkout_id": checkout["checkout_id"],
+            "checkout_url": checkout["checkout_url"],
+            "amount": float(amount),
+            "currency": currency,
+            "payment": _serialize_subscription_payment(payment),
+        }
+    finally:
+        db.close()
+
+
+@router.post("/payments/paymongo/webhook")
+async def receive_paymongo_webhook(
+    request: Request,
+    paymongo_signature: str | None = Header(default=None, alias="Paymongo-Signature"),
+):
+    if not paymongo_signature:
+        raise HTTPException(status_code=401, detail="Missing PayMongo signature")
+
+    raw_payload = await request.body()
+    try:
+        signature_mode = verify_webhook_signature(raw_payload, paymongo_signature)
+    except PayMongoConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except PayMongoSignatureError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    try:
+        payload = json.loads(raw_payload)
+        event = payload["data"]
+        event_id = str(event["id"])
+        event_attributes = event["attributes"]
+        event_type = str(event_attributes["type"])
+        livemode = bool(event_attributes["livemode"])
+    except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
+        raise HTTPException(status_code=400, detail="Invalid PayMongo webhook payload") from exc
+
+    if (signature_mode == "live") != livemode:
+        raise HTTPException(status_code=401, detail="PayMongo signature mode mismatch")
+    if not event_id.startswith("evt_"):
+        raise HTTPException(status_code=400, detail="Invalid PayMongo event identifier")
+
+    db = SessionLocal()
+    try:
+        provider = (
+            db.query(PaymentProvider)
+            .filter(PaymentProvider.provider_code == "PAYMONGO")
+            .first()
+        )
+        if provider is None or provider.is_active is False:
+            raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
+
+        if event_type != "checkout_session.payment.paid":
+            db.add(
+                PaymentWebhook(
+                    provider_id=provider.id,
+                    event_type=event_type,
+                    payload=payload,
+                    processed=False,
+                )
+            )
+            db.commit()
+            return {"received": True, "processed": False}
+
+        try:
+            checkout = event_attributes["data"]
+            checkout_id = str(checkout["id"])
+            if not checkout_id.startswith("cs_"):
+                raise ValueError("invalid checkout identifier")
+            checkout_attributes = checkout["attributes"]
+            paid_payments = [
+                item
+                for item in checkout_attributes.get("payments", [])
+                if item.get("attributes", {}).get("status") == "paid"
+            ]
+            paid_payment = paid_payments[0]
+            paid_attributes = paid_payment["attributes"]
+            paid_amount_centavos = int(paid_attributes["amount"])
+            paid_currency = str(paid_attributes["currency"]).upper()
+        except (IndexError, KeyError, TypeError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail="Incomplete paid checkout payload") from exc
+
+        payment = (
+            db.query(SubscriptionPayment)
+            .filter(SubscriptionPayment.provider_id == provider.id)
+            .filter(SubscriptionPayment.provider_transaction_id == checkout_id)
+            .first()
+        )
+        if payment is None:
+            raise HTTPException(status_code=404, detail="Pending checkout payment not found")
+
+        expected_amount_centavos = _amount_to_centavos(Decimal(str(payment.amount or 0)))
+        expected_currency = (payment.currency or "").upper()
+        if paid_amount_centavos != expected_amount_centavos or paid_currency != expected_currency:
+            raise HTTPException(status_code=409, detail="Paid checkout amount does not match")
+
+        processed_at = datetime.now(timezone.utc)
+        if payment.payment_status != "SUCCESS":
+            paid_at_value = paid_attributes.get("paid_at")
+            payment.paid_at = (
+                datetime.fromtimestamp(int(paid_at_value), tz=timezone.utc)
+                if paid_at_value is not None
+                else processed_at
+            )
+            source = paid_attributes.get("source") or {}
+            payment.payment_method = str(source.get("type") or "PayMongo Checkout")[:50]
+            payment.payment_status = "SUCCESS"
+
+            subscription = getattr(payment, "subscription", None)
+            if subscription is None:
+                subscription = (
+                    db.query(Subscription)
+                    .filter(Subscription.id == payment.subscription_id)
+                    .first()
+                )
+            if subscription is None:
+                raise HTTPException(status_code=404, detail="Subscription not found for payment")
+            subscription.payment_provider_id = provider.id
+            _apply_successful_payment(db, payment, subscription=subscription)
+
+        db.add(
+            PaymentWebhook(
+                provider_id=provider.id,
+                event_type=event_type,
+                payload=payload,
+                processed=True,
+                processed_at=processed_at,
+            )
+        )
+        db.commit()
+        return {"received": True, "processed": True}
+    finally:
+        db.close()
+
+
 @router.post("/payments")
 def create_subscription_payment(
     payload: SubscriptionPaymentCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
 ):
     db = _session_with_rls(user)
     try:

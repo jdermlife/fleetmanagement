@@ -1007,7 +1007,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscription-payment"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <SubscriptionPaymentPage />
                 </ProtectedRoute>
               }

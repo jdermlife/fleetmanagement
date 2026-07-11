@@ -993,6 +993,14 @@ export interface SubscriptionPayment {
   created_at: string
 }
 
+export interface PayMongoCheckoutSession {
+  checkout_id: string
+  checkout_url: string
+  amount: number
+  currency: string
+  payment: SubscriptionPayment
+}
+
 export interface SubscriptionInvoice {
   id: number
   invoice_no: string
@@ -1260,6 +1268,17 @@ export async function createSubscriptionPayment(payload: {
   paid_at?: string
 }): Promise<SubscriptionPayment> {
   const response = await api.post<SubscriptionPayment>('/api/subscriptions/payments', payload)
+  return response.data
+}
+
+export async function createPayMongoCheckout(payload: {
+  subscription_id: number
+  invoice_no?: string
+}): Promise<PayMongoCheckoutSession> {
+  const response = await api.post<PayMongoCheckoutSession>(
+    '/api/subscriptions/payments/paymongo/checkout',
+    payload,
+  )
   return response.data
 }
 

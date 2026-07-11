@@ -72,6 +72,14 @@ export SMTP_SERVER="smtp.provider.com"
 export SMTP_PORT="587"
 export SMTP_USERNAME="your-email@domain.com"
 export SMTP_PASSWORD="<your-app-password>"
+
+# PayMongo hosted checkout (backend secrets only)
+export PAYMONGO_SECRET_KEY="<sk_test_or_sk_live_key>"
+export PAYMONGO_WEBHOOK_SECRET="<webhook_signing_secret>"
+export PAYMONGO_SUCCESS_URL="https://app.yourdomain.com/subscription-payment?checkout=success"
+export PAYMONGO_CANCEL_URL="https://app.yourdomain.com/subscription-payment?checkout=cancelled"
+export PAYMONGO_PAYMENT_METHODS="card,gcash,paymaya,grab_pay"
+export PAYMONGO_WEBHOOK_TOLERANCE_SECONDS="300"
 ```
 
 #### Frontend (.env.production)
@@ -92,6 +100,22 @@ VITE_APPLE_REDIRECT_URI=https://app.yourdomain.com
   - Existing Apple user can sign in.
   - First-time Apple sign-in without subscriber type is rejected with 400.
   - First-time Apple sign-in succeeds after selecting subscriber type and lender data-sharing preference.
+
+### PayMongo Checkout Production Checklist
+
+1. Activate only the payment methods approved for the PayMongo merchant account and mirror them in `PAYMONGO_PAYMENT_METHODS`.
+2. Keep `PAYMONGO_SECRET_KEY` and `PAYMONGO_WEBHOOK_SECRET` in the backend secret store. Never use a `VITE_` prefix for either value.
+3. Ensure the `PAYMONGO` row in `payment_providers` exists and is active (`backend/seed_subscriptions_billing.py` seeds it).
+4. In the PayMongo dashboard, register one HTTPS webhook:
+   - URL: `https://api.yourdomain.com/api/subscriptions/payments/paymongo/webhook`
+   - Event: `checkout_session.payment.paid`
+5. Copy that webhook's signing secret to `PAYMONGO_WEBHOOK_SECRET` and restart the backend.
+6. Complete a test-mode checkout and verify all of the following:
+   - Checkout creates one local `PENDING` payment with the PayMongo Checkout Session ID.
+   - Returning through the success URL does not activate the subscription by itself.
+   - A correctly signed paid webhook changes the payment to `SUCCESS` and activates the subscription.
+   - Invalid, stale, amount-mismatched, and currency-mismatched webhooks are rejected.
+7. Replace test credentials with live credentials only after the test-mode checks pass.
 
 ### Infrastructure
 
