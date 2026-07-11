@@ -244,6 +244,7 @@ const borrowerVisibleMenus = [
 
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
 const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
+const isAdminUser = currentUser?.role?.toLowerCase() === 'admin'
 const defaultHomePath = isBorrowerSubscriber ? '/lending-scorecard' : '/dashboard'
 
 const visibleMenuLinks = isBorrowerSubscriber
@@ -271,9 +272,9 @@ const govMenuItems = visibleMenuLinks.filter(
   (item) => governanceMenus.includes(item.id)
 )
 
-const adminMenuItems = visibleMenuLinks.filter(
-  (item) => adminMenus.includes(item.id),
-)
+const adminMenuItems = isAdminUser
+  ? visibleMenuLinks.filter((item) => adminMenus.includes(item.id))
+  : []
 
 const isLoginRoute = location.pathname === '/login'
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)

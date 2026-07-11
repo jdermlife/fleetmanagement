@@ -244,8 +244,7 @@ export default function NetWorthPositioningPage() {
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
-            Built from live valuation cushions, debt pressure, liquidity surplus, and approval-band
-            positioning so the balance-sheet picture is visible at portfolio level.
+            Tracking personal net worth means monitoring valuation cushions, debt pressures, liquidity reserves, and approval-band positioning — so your financial standing is always visible at a portfolio level.
           </p>
         </div>
 

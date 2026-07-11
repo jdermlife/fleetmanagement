@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import {
   assignAdminUserRoles,
@@ -6,10 +6,12 @@ import {
   getErrorMessage,
   listAdminRoles,
   listAdminUsers,
+  listSubscriptionPlans,
   listSubscriptions,
   updateAdminUser,
   type AdminRole,
   type AdminUser,
+  type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
 
@@ -28,6 +30,7 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<AdminUser[]>([])
   const [roles, setRoles] = useState<AdminRole[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -48,14 +51,16 @@ export default function UserManagementPage() {
     setLoading(true)
     setMessage('')
     try {
-      const [loadedUsers, loadedRoles, loadedSubscriptions] = await Promise.all([
+      const [loadedUsers, loadedRoles, loadedSubscriptions, loadedSubscriptionPlans] = await Promise.all([
         listAdminUsers(),
         listAdminRoles(),
         listSubscriptions(),
+        listSubscriptionPlans(),
       ])
       setUsers(loadedUsers)
       setRoles(loadedRoles)
       setSubscriptions(loadedSubscriptions)
+      setSubscriptionPlans(loadedSubscriptionPlans)
       setRoleDrafts(
         Object.fromEntries(loadedUsers.map((user) => [user.id, user.roles.join(', ')])),
       )
@@ -69,6 +74,27 @@ export default function UserManagementPage() {
   useEffect(() => {
     void loadData()
   }, [])
+
+  const subscriptionPlanNames = useMemo(() => {
+    const planNamesById = new Map(
+      subscriptionPlans.map((plan) => [plan.id, plan.plan_name]),
+    )
+
+    return new Map(
+      subscriptions.map((subscription) => [
+        subscription.id,
+        planNamesById.get(subscription.plan_id) ?? 'Plan unavailable',
+      ]),
+    )
+  }, [subscriptionPlans, subscriptions])
+
+  const getSubscriptionPlanName = (user: AdminUser) => {
+    if (!user.subscription_id) {
+      return 'No Subscription'
+    }
+
+    return subscriptionPlanNames.get(user.subscription_id) ?? 'Plan unavailable'
+  }
 
   const handleCreateUser = async () => {
     setMessage('')
@@ -131,7 +157,9 @@ export default function UserManagementPage() {
   return (
     <div className="standalone-card">
       <h1>User Management</h1>
-      <p className="intro">Create users, enable or disable accounts, and assign roles.</p>
+      <p className="intro">
+        Admin-only user register for account status, access roles, and subscription plans.
+      </p>
 
       {message ? <p className="status-message">{message}</p> : null}
 
@@ -193,7 +221,7 @@ export default function UserManagementPage() {
               <option value="">None</option>
               {subscriptions.map((subscription) => (
                 <option key={subscription.id} value={subscription.id}>
-                  {subscription.subscription_no}
+                  {subscription.subscription_no} - {subscriptionPlanNames.get(subscription.id) ?? 'Plan unavailable'}
                 </option>
               ))}
             </select>
@@ -215,10 +243,12 @@ export default function UserManagementPage() {
       </div>
 
       <div className="card">
-        <h3>Users</h3>
+        <h3>User Register</h3>
         <p className="intro">Available roles: {roles.map((role) => role.name).join(', ') || 'None'}</p>
         {loading ? (
           <p>Loading users...</p>
+        ) : users.length === 0 ? (
+          <p className="status-message">No users found.</p>
         ) : (
           <>
             <div className="space-y-4 md:hidden">
@@ -242,14 +272,17 @@ export default function UserManagementPage() {
                       <div className="break-words text-slate-700">{user.email}</div>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Subscription</div>
-                      <div className="text-slate-700">
-                        {subscriptions.find((subscription) => subscription.id === user.subscription_id)?.subscription_no ?? 'N/A'}
-                      </div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Date Created</div>
+                      <div className="text-slate-700">{formatDateCreated(user.created_at)}</div>
                     </div>
                     <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Roles</div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Subscription Plan</div>
+                      <div className="text-slate-700">{getSubscriptionPlanName(user)}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Role</div>
                       <input
+                        aria-label={`Role for ${user.username}`}
                         value={roleDrafts[user.id] ?? ''}
                         onChange={(event) =>
                           setRoleDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
@@ -275,11 +308,11 @@ export default function UserManagementPage() {
               <thead>
                 <tr>
                   <th className="px-3 py-2 text-left">Username</th>
-                  <th className="px-3 py-2 text-left">Name</th>
                   <th className="px-3 py-2 text-left">Email</th>
+                  <th className="px-3 py-2 text-left">Date Created</th>
                   <th className="px-3 py-2 text-left">Status</th>
-                  <th className="px-3 py-2 text-left">Subscription</th>
-                  <th className="px-3 py-2 text-left">Roles</th>
+                  <th className="px-3 py-2 text-left">Role</th>
+                  <th className="px-3 py-2 text-left">Subscription Plan</th>
                   <th className="px-3 py-2 text-left">Actions</th>
                 </tr>
               </thead>
@@ -287,22 +320,19 @@ export default function UserManagementPage() {
                 {users.map((user) => (
                   <tr key={user.id}>
                     <td className="px-3 py-2">{user.username}</td>
-                    <td className="px-3 py-2">
-                      {[user.first_name, user.middle_name, user.last_name].filter(Boolean).join(' ') || 'N/A'}
-                    </td>
                     <td className="px-3 py-2">{user.email}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatDateCreated(user.created_at)}</td>
                     <td className="px-3 py-2">{user.account_status ?? (user.is_active ? 'ACTIVE' : 'DISABLED')}</td>
                     <td className="px-3 py-2">
-                      {subscriptions.find((subscription) => subscription.id === user.subscription_id)?.subscription_no ?? 'N/A'}
-                    </td>
-                    <td className="px-3 py-2">
                       <input
+                        aria-label={`Role for ${user.username}`}
                         value={roleDrafts[user.id] ?? ''}
                         onChange={(event) =>
                           setRoleDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
                         }
                       />
                     </td>
+                    <td className="px-3 py-2">{getSubscriptionPlanName(user)}</td>
                     <td className="px-3 py-2">
                       <div className="form-actions">
                         <button type="button" onClick={() => void handleSaveRoles(user.id)}>
@@ -323,4 +353,21 @@ export default function UserManagementPage() {
       </div>
     </div>
   )
+}
+
+function formatDateCreated(value?: string): string {
+  if (!value) {
+    return 'N/A'
+  }
+
+  const createdAt = new Date(value)
+  if (Number.isNaN(createdAt.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('en-PH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(createdAt)
 }
