@@ -177,7 +177,11 @@ export const calculateApplicationInformationCompletion = (
     hasText(banking?.utilityCreditBureauStatus),
   ]
 
-  const unsecuredProduct = productType === 'Personal Loan' || productType === 'Credit Card'
+  const securityClassificationCheck = productType === 'Auto Loan'
+    ? collateral?.securityClassification === 'Secured'
+    : productType === 'Personal Loan' || productType === 'Credit Card'
+      ? collateral?.securityClassification === 'Unsecured'
+      : hasText(collateral?.securityClassification)
   const homeCollateralChecks = productType === 'Home Loan'
     ? [
         hasText(property?.propertyAddress),
@@ -220,6 +224,7 @@ export const calculateApplicationInformationCompletion = (
     ],
   )
   const step6Checks = [
+    securityClassificationCheck,
     ...homeCollateralChecks,
     ...vehicleCollateralChecks,
     ...additionalCollateralChecks,
@@ -259,7 +264,7 @@ export const calculateApplicationInformationCompletion = (
     3: calculateStep(3, step3Checks),
     4: calculateStep(4, step4Checks, step4Applicable),
     5: calculateStep(5, step5Checks),
-    6: calculateStep(6, step6Checks, !unsecuredProduct),
+    6: calculateStep(6, step6Checks),
     7: calculateStep(7, step7Checks),
   } satisfies Record<InformationStepNumber, StepInformationCompletion>
 

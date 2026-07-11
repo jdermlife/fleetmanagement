@@ -4020,6 +4020,76 @@ th { color: var(--dark-gold); }
   }
 }
 
+.loan-collateral-classification {
+  min-width: 0;
+  padding: 18px;
+  border: 1px solid #cbd5e1;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.loan-collateral-classification legend {
+  padding: 0 6px;
+  color: #1e293b;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.loan-collateral-classification-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.loan-collateral-classification-option {
+  display: inline-flex;
+  min-width: 130px;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  background: #fff;
+  color: #334155;
+  cursor: pointer;
+  font-size: 0.95rem;
+  font-weight: 700;
+}
+
+.loan-collateral-classification-option:hover {
+  border-color: #2563eb;
+}
+
+.loan-collateral-classification-option-selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #1d4ed8;
+  box-shadow: 0 0 0 1px #2563eb;
+}
+
+.loan-collateral-classification-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: #2563eb;
+}
+
+.loan-collateral-classification-note {
+  margin: 12px 0 0;
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.loan-collateral-classification-note-error {
+  color: #b91c1c;
+}
+
+@media (max-width: 520px) {
+  .loan-collateral-classification-option {
+    width: 100%;
+  }
+}
+
 .ai-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 10px 24px rgba(0,0,0,0.25);

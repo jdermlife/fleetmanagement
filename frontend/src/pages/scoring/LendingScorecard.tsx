@@ -48,7 +48,7 @@ interface BorrowerInfo { fullName: string; email: string; phone: string; govId: 
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
-interface Collateral { assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; useAsCollateral: boolean; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
+interface Collateral { securityClassification: string; assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; useAsCollateral: boolean; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
 interface AdditionalCollateral { id: string; collateralType: string; maker: string; brand: string; model: string; year: string; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; notes: string; }
 interface ApplicantPersonal { lastName: string; firstName: string; middleName: string; dateOfBirth: string; placeOfBirth: string; age: number; gender: string; citizenship: string; numberOfDependents: number; maritalStatus: string; mothersMaidenName: string; }
 interface ContactInformation { mobileNumber: string; mobileYearsUsed: string; homePhoneNumber: string; emailAddress: string; emailYearsUsed: string; }
@@ -214,7 +214,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
-  collateral: { assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
+  collateral: { securityClassification: '', assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
   applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', mobileYearsUsed: '', homePhoneNumber: '', emailAddress: '', emailYearsUsed: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
@@ -280,6 +280,7 @@ const buildLoanRequirements = (
     employmentInformation: application.employmentInformation,
     collateralInformation: application.collateralInformation,
     collateralAssetDetails: {
+      securityClassification: application.collateral.securityClassification,
       assetType: application.collateral.assetType,
       maker: application.collateral.maker,
       brand: application.collateral.brand,
@@ -2253,6 +2254,9 @@ export default function LendingScorecard() {
       },
       collateral: {
         ...blankApplication.collateral,
+        securityClassification:
+          savedCollateralAssetDetails.securityClassification ??
+          blankApplication.collateral.securityClassification,
         assetType: savedCollateralAssetDetails.assetType ?? blankApplication.collateral.assetType,
         maker: savedCollateralAssetDetails.maker ?? blankApplication.collateral.maker,
         brand: savedCollateralAssetDetails.brand ?? blankApplication.collateral.brand,
@@ -4381,9 +4385,46 @@ export default function LendingScorecard() {
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
+              <fieldset className="loan-collateral-classification md:col-span-2">
+                <legend>Security Classification</legend>
+                <div className="loan-collateral-classification-options">
+                  {['Secured', 'Unsecured', 'Lease'].map((classification) => {
+                    const selected = formData.collateral.securityClassification === classification;
+
+                    return (
+                      <label
+                        key={classification}
+                        className={`loan-collateral-classification-option${selected ? ' loan-collateral-classification-option-selected' : ''}`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={selected}
+                          onChange={() =>
+                            updateField(
+                              'collateral',
+                              'securityClassification',
+                              selected ? '' : classification,
+                            )
+                          }
+                        />
+                        <span>{classification}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                <p
+                  className={`loan-collateral-classification-note${
+                    isAutoLoan && formData.collateral.securityClassification !== 'Secured'
+                      ? ' loan-collateral-classification-note-error'
+                      : ''
+                  }`}
+                >
+                  <strong>Auto Loan — Mandatory:</strong> Select <strong>Secured</strong>.
+                </p>
+              </fieldset>
               {(isCreditCard || isPersonalLoan) && (
                 <p className="col-span-full -mt-2 text-sm italic text-slate-500">
-                  Not Applicable for Unsecured Loans (Credit Card / Personal Loan)
+                  Asset details are not required for unsecured loans; select Unsecured above.
                 </p>
               )}
               {(isAutoLoan || isMotorcycleLoan) && (

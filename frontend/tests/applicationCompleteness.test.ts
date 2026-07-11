@@ -111,6 +111,9 @@ describe('calculateInformationProvidedPercent', () => {
           latestPayslips: true,
           latestItr: true,
         },
+        collateralAssetDetails: {
+          securityClassification: 'Unsecured',
+        },
         bankingRelationships: {
           creditPaymentHistory: 'No previous borrowing',
           accountHandling: 'Satisfactory handling',
@@ -123,7 +126,7 @@ describe('calculateInformationProvidedPercent', () => {
     expect(calculateInformationProvidedPercent(application)).toBe(100)
   })
 
-  it('excludes non-applicable co-borrower and collateral steps from the total', () => {
+  it('excludes a non-applicable co-borrower step and requires a loan classification', () => {
     const application = asLoanApplication({
       product_type: 'Personal Loan',
       requirements: {
@@ -137,6 +140,33 @@ describe('calculateInformationProvidedPercent', () => {
     const completion = calculateApplicationInformationCompletion(application)
 
     expect(completion.steps[4]).toMatchObject({ applicable: false, percent: 100 })
-    expect(completion.steps[6]).toMatchObject({ applicable: false, percent: 100 })
+    expect(completion.steps[6]).toMatchObject({ applicable: true, percent: 0 })
+  })
+
+  it('requires Secured classification for an Auto Loan', () => {
+    const collateralAssetDetails = {
+      securityClassification: 'Unsecured',
+      assetType: 'Passenger Vehicle',
+      maker: 'Toyota',
+      brand: 'Toyota',
+      model: 'Vios',
+      year: '2026',
+      vehicleMarketabilityCategory: 'Brand new',
+      vehicleConditionCategory: 'Brand New',
+      vehicleTypeCategory: 'Passenger vehicle',
+      insuranceProviderCompany: 'Sample Insurance',
+      policyNumber: 'POL-123',
+    }
+    const application = asLoanApplication({
+      product_type: 'Auto Loan',
+      appraised_value: 750_000,
+      requirements: { collateralAssetDetails },
+    })
+
+    expect(calculateApplicationInformationCompletion(application).steps[6].percent).toBeLessThan(100)
+
+    collateralAssetDetails.securityClassification = 'Secured'
+
+    expect(calculateApplicationInformationCompletion(application).steps[6].percent).toBe(100)
   })
 })

@@ -109,6 +109,7 @@ export interface LoanApplicationRequirements {
     propertyAppraisedValue: number
   }
   collateralAssetDetails: {
+    securityClassification: string
     assetType: string
     maker: string
     brand: string
