@@ -1179,11 +1179,12 @@ textarea {
 
 .loan-certification-metric-band {
   display: block;
-  margin-top: 3px;
+  margin-top: 5px;
   color: #0d3ea3;
-  font-size: 0.44rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  line-height: 1.35;
+  letter-spacing: 0.05em;
   text-transform: uppercase;
 }
 
@@ -1211,17 +1212,6 @@ textarea {
   font-size: clamp(1.25rem, 2.2vw, 1.65rem);
   line-height: 1;
   font-weight: 700;
-}
-
-.loan-certification-recommendation {
-  margin-top: 10px;
-  padding: 10px 12px;
-  border: 1px solid rgba(163, 184, 200, 0.52);
-  border-radius: 10px;
-  background: #f8fafc;
-  color: #0f2547;
-  font-size: 0.68rem;
-  line-height: 1.45;
 }
 
 .loan-certification-footer {
@@ -1293,9 +1283,224 @@ textarea {
 .loan-certification-ai-disclaimer {
   margin: 5px 0 0;
   color: #6b7280;
-  font-size: 0.58rem;
+  font-size: 0.62rem;
   line-height: 1.35;
   text-align: center;
+}
+
+.loan-repository-mobile-records {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+  padding: 2px 2px 12px;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-color: #94a3b8 #e2e8f0;
+  scrollbar-width: thin;
+}
+
+.loan-repository-record-card {
+  display: grid;
+  grid-template-columns: 230px minmax(760px, 1fr);
+  align-items: stretch;
+  gap: 18px;
+  min-width: 1040px;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.07);
+}
+
+.loan-repository-record-summary {
+  display: grid;
+  align-content: space-between;
+  gap: 14px;
+  min-width: 0;
+  padding-right: 18px;
+  border-right: 1px solid #e2e8f0;
+}
+
+.loan-repository-record-identity {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.loan-repository-record-link {
+  justify-self: start;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: #1d4ed8;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.3;
+  text-align: left;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.loan-repository-record-link:hover {
+  background: transparent;
+  color: #1e3a8a;
+}
+
+.loan-repository-record-identity > div:nth-of-type(1),
+.loan-repository-record-identity > div:nth-of-type(3) {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.loan-repository-record-identity > div:nth-of-type(2) {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.loan-repository-status {
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.loan-repository-status-draft { background: #f1f5f9; color: #475569; }
+.loan-repository-status-submitted { background: #dbeafe; color: #1d4ed8; }
+.loan-repository-status-review { background: #fef3c7; color: #92400e; }
+.loan-repository-status-credit-review { background: #f3e8ff; color: #7e22ce; }
+.loan-repository-status-approved { background: #dcfce7; color: #15803d; }
+.loan-repository-status-rejected { background: #fee2e2; color: #b91c1c; }
+.loan-repository-status-released { background: #e0e7ff; color: #4338ca; }
+
+.loan-repository-record-metrics {
+  display: grid;
+  grid-template-columns: minmax(520px, 1fr) minmax(180px, 240px);
+  align-items: center;
+  gap: 18px;
+}
+
+.loan-repository-metric-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(72px, 1fr));
+  gap: 12px;
+}
+
+.loan-repository-metric-grid > div {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.loan-repository-metric-grid > div > div:first-child,
+.loan-repository-record-contact > div > div:first-child {
+  color: #64748b;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.25;
+  text-transform: uppercase;
+}
+
+.loan-repository-metric-grid > div > div:last-child,
+.loan-repository-record-contact > div > div:last-child {
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 0.8rem;
+  font-weight: 650;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.loan-repository-record-contact {
+  display: grid;
+  align-content: center;
+  gap: 10px;
+  min-width: 0;
+  padding-left: 18px;
+  border-left: 1px solid #e2e8f0;
+}
+
+.loan-repository-record-actions {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+button.loan-repository-action {
+  padding: 7px 13px;
+  border: 0;
+  border-radius: 8px;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+button.loan-repository-action-view { background: #2563eb; }
+button.loan-repository-action-update { background: #059669; }
+button.loan-repository-action-approve { background: #15803d; }
+button.loan-repository-action-reject { background: #dc2626; }
+button.loan-repository-action-release { background: #4f46e5; }
+
+.loan-repository-desktop-register {
+  display: none;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid #cbd5e1;
+  border-radius: 14px;
+}
+
+.loan-repository-table-scroll {
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+}
+
+.loan-repository-table {
+  min-width: 2800px;
+  background: #ffffff;
+}
+
+.loan-repository-table th {
+  position: sticky;
+  top: 0;
+  padding: 11px 12px;
+  background: #f1f5f9;
+  color: #475569;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.loan-repository-table td {
+  padding: 12px;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.loan-repository-table tbody tr:hover {
+  background: #f8fafc;
+}
+
+@media (min-width: 768px) {
+  .loan-repository-mobile-records {
+    display: none;
+  }
+
+  .loan-repository-desktop-register {
+    display: block;
+  }
 }
 
 .loan-step8-shell {
@@ -1462,10 +1667,14 @@ textarea {
 
   .loan-certification-summary-label,
   .loan-certification-metric-label,
-  .loan-certification-metric-band,
   .loan-certification-qr span {
     font-size: 0.62rem;
     letter-spacing: 0.05em;
+  }
+
+  .loan-certification-metric-band {
+    font-size: 0.78rem;
+    letter-spacing: 0.04em;
   }
 
   .loan-certification-meta p,
@@ -1671,9 +1880,10 @@ textarea {
   }
 
   .loan-certification-metric-band {
-    margin-top: 3px;
-    font-size: 0.38rem;
-    letter-spacing: 0.06em;
+    margin-top: 5px;
+    font-size: 0.68rem;
+    line-height: 1.35;
+    letter-spacing: 0.04em;
   }
 
   .loan-certification-summary-value {

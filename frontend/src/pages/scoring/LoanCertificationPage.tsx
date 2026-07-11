@@ -95,9 +95,6 @@ const formatBand = (value: number | null) => {
 const formatInformationProvided = (value: number) =>
   `${Math.max(0, Math.min(100, Math.round(value)))}%`
 
-const buildRecommendationStatement = (certification: CertificationSnapshot) =>
-  `Recommendation: ${certification.decision} based on a composite score of ${formatScore(certification.overallScore)}, calculated from the Credit Score (${formatScore(certification.creditScore)} at 60%), Credit Values Score (${formatScore(certification.creditValueScore)} at 15%), Social Score (${formatScore(certification.socialScore)} at 15%), and Non-Starter Score (${formatScore(certification.fraudScore)} at 10%).`
-
 const getCertificationMetadata = (applicationNo: string, issuedAt: string) => {
   const issuedDate = new Date(issuedAt)
 
@@ -226,7 +223,6 @@ export default function LoanCertificationPage() {
     const informationProvided = formatInformationProvided(
       certification.informationProvidedPercent,
     )
-    const recommendationStatement = buildRecommendationStatement(certification)
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -384,7 +380,8 @@ export default function LoanCertificationPage() {
     .metric-band {
       margin-top: 2px;
       color: #0d3ea3;
-      font-size: 6px;
+      font-size: 9px;
+      line-height: 1.35;
       letter-spacing: 0.08em;
       text-transform: uppercase;
       font-weight: 700;
@@ -395,16 +392,6 @@ export default function LoanCertificationPage() {
       font-size: 13px;
       line-height: 1;
       font-weight: 700;
-    }
-    .recommendation {
-      margin-top: 6px;
-      padding: 7px 8px;
-      border: 1px solid rgba(163, 184, 200, 0.52);
-      border-radius: 8px;
-      background: #f8fafc;
-      color: #0f2547;
-      font-size: 7px;
-      line-height: 1.4;
     }
     .footer {
       margin-top: 8px;
@@ -463,8 +450,8 @@ export default function LoanCertificationPage() {
     .ai-disclaimer {
       margin: 4px 0 0;
       color: #6b7280;
-      font-size: 6px;
-      line-height: 1.3;
+      font-size: 7px;
+      line-height: 1.35;
       text-align: center;
     }
     @media print {
@@ -489,7 +476,7 @@ export default function LoanCertificationPage() {
     <div class="content">
       <div class="brand-header">
         <img class="brand-mark" src="${brandLogoDataUri}" alt="${APP_NAME} logo" />
-        <div class="kicker">Certification of Lending Assessment</div>
+        <div class="kicker">Certification of Credit Readiness Assessment</div>
         <h1>${APP_NAME}</h1>
       </div>
       <h2>Reference No. ${certification.applicationNo}</h2>
@@ -519,7 +506,6 @@ export default function LoanCertificationPage() {
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${formatBand(certification.socialScore)}</div><div class="metric-value">${formatScore(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${formatBand(certification.creditValueScore)}</div><div class="metric-value">${formatScore(certification.creditValueScore)}</div></div>
       </div>
-      <div class="recommendation">${recommendationStatement}</div>
       <div class="footer">
         <div class="meta">
           <div class="meta-line"><strong>Certificate ID:</strong> ${certificateId}</div>
@@ -586,7 +572,6 @@ export default function LoanCertificationPage() {
   const informationProvided = formatInformationProvided(
     certification.informationProvidedPercent,
   )
-  const recommendationStatement = buildRecommendationStatement(certification)
 
   return (
     <div className="loan-certification-page">
@@ -626,7 +611,7 @@ export default function LoanCertificationPage() {
                 alt={`${APP_NAME} logo`}
               />
               <div className="loan-certification-brand-copy">
-                <p className="loan-certification-kicker">Certification of Lending Assessment</p>
+                <p className="loan-certification-kicker">Certification of Credit Readiness Assessment</p>
                 <h1 className="loan-certification-title">{APP_NAME}</h1>
               </div>
             </div>
@@ -694,10 +679,6 @@ export default function LoanCertificationPage() {
                   <strong className="loan-certification-metric-value">{item.value}</strong>
                 </div>
               ))}
-            </div>
-
-            <div className="loan-certification-recommendation">
-              {recommendationStatement}
             </div>
 
             <div className="loan-certification-footer">

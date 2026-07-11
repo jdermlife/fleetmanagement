@@ -36,21 +36,21 @@ const workflowStatuses: WorkflowStatus[] = [
 function getStatusColor(status: WorkflowStatus) {
   switch (status) {
     case "Draft":
-      return "bg-gray-100 text-gray-700";
+      return "loan-repository-status-draft";
     case "Submitted":
-      return "bg-blue-100 text-blue-700";
+      return "loan-repository-status-submitted";
     case "Under Review":
-      return "bg-yellow-100 text-yellow-700";
+      return "loan-repository-status-review";
     case "Credit Review":
-      return "bg-purple-100 text-purple-700";
+      return "loan-repository-status-credit-review";
     case "Approved":
-      return "bg-green-100 text-green-700";
+      return "loan-repository-status-approved";
     case "Rejected":
-      return "bg-red-100 text-red-700";
+      return "loan-repository-status-rejected";
     case "Released":
-      return "bg-indigo-100 text-indigo-700";
+      return "loan-repository-status-released";
     default:
-      return "bg-gray-100 text-gray-700";
+      return "loan-repository-status-draft";
   }
 }
 
@@ -803,14 +803,14 @@ export default function LoanRepository() {
               </div>
             )}
 
-            <div className="md:hidden space-y-4">
+            <div className="loan-repository-mobile-records">
               {filteredApplications.map((row) => (
                 <article
                   key={`mobile-${row.application_no}`}
-                  className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm"
+                  className="loan-repository-record-card"
                 >
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1">
+                  <div className="loan-repository-record-summary">
+                    <div className="loan-repository-record-identity">
                       <button
                         onClick={() =>
                           navigate(
@@ -819,7 +819,7 @@ export default function LoanRepository() {
                             )}`,
                           )
                         }
-                        className="text-left text-sm font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
+                        className="loan-repository-record-link"
                       >
                         {row.application_no}
                       </button>
@@ -829,7 +829,7 @@ export default function LoanRepository() {
                     </div>
 
                     <span
-                      className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${getStatusColor(
+                      className={`loan-repository-status ${getStatusColor(
                         row.status,
                       )}`}
                     >
@@ -837,8 +837,8 @@ export default function LoanRepository() {
                     </span>
                   </div>
 
-                  <div className="mt-4 grid gap-3">
-                    <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div className="loan-repository-record-metrics">
+                    <div className="loan-repository-metric-grid">
                       <div>
                         <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Loan Amount</div>
                         <div className="font-semibold text-slate-900">PHP {formatCurrency(row.loan_amount)}</div>
@@ -865,7 +865,7 @@ export default function LoanRepository() {
                       </div>
                     </div>
 
-                    <div className="grid gap-2 text-sm">
+                    <div className="loan-repository-record-contact">
                       <div>
                         <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Email</div>
                         <div className="text-slate-700 break-words">{row.email}</div>
@@ -881,10 +881,10 @@ export default function LoanRepository() {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="loan-repository-record-actions">
                     <button
                       onClick={() => navigate(`/loan-details/${row.application_no}`)}
-                      className="rounded-lg bg-blue-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-blue-700"
+                      className="loan-repository-action loan-repository-action-view"
                     >
                       View
                     </button>
@@ -898,7 +898,7 @@ export default function LoanRepository() {
                         )
                       }
                       disabled={!canEditLoans}
-                      className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700 disabled:opacity-50"
+                      className="loan-repository-action loan-repository-action-update"
                     >
                       Update
                     </button>
@@ -906,7 +906,7 @@ export default function LoanRepository() {
                     {row.status === "Credit Review" && canApproveLoans ? (
                       <button
                         onClick={() => handleStatusUpdate(row.application_no, "Approved")}
-                        className="rounded-lg bg-green-700 px-3 py-2 text-sm font-medium text-white transition hover:bg-green-800"
+                        className="loan-repository-action loan-repository-action-approve"
                       >
                         Approve
                       </button>
@@ -915,7 +915,7 @@ export default function LoanRepository() {
                     {row.status === "Credit Review" && canApproveLoans ? (
                       <button
                         onClick={() => handleStatusUpdate(row.application_no, "Rejected")}
-                        className="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-red-700"
+                        className="loan-repository-action loan-repository-action-reject"
                       >
                         Reject
                       </button>
@@ -924,7 +924,7 @@ export default function LoanRepository() {
                     {row.status === "Approved" && canFinalApproveLoans ? (
                       <button
                         onClick={() => handleStatusUpdate(row.application_no, "Released")}
-                        className="rounded-lg bg-indigo-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-indigo-700"
+                        className="loan-repository-action loan-repository-action-release"
                       >
                         Release
                       </button>
@@ -940,9 +940,9 @@ export default function LoanRepository() {
               ) : null}
             </div>
 
-            <div className="hidden overflow-hidden rounded-2xl border border-slate-200 md:block">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-slate-200">
+            <div className="loan-repository-desktop-register">
+              <div className="loan-repository-table-scroll">
+                <table className="loan-repository-table">
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Application No</th>
