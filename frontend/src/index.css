@@ -2943,6 +2943,175 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: linear-gradient(90deg, #b42318 0%, #ef4444 100%);
 }
 
+.budget-workflow-status-banner {
+  margin-top: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(16, 185, 129, 0.26);
+  background: rgba(236, 253, 245, 0.95);
+  color: #065f46;
+  font-weight: 700;
+}
+
+.budget-workflow-step-block {
+  display: grid;
+  gap: 16px;
+}
+
+.budget-workflow-step-block h3,
+.budget-workflow-ai-card h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.budget-workflow-subtitle {
+  margin: 0;
+  color: #334155;
+  font-size: 0.96rem;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.budget-workflow-grid-two,
+.budget-workflow-income-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.budget-workflow-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.budget-workflow-variance-copy {
+  display: block;
+  margin-bottom: 8px;
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
+.budget-workflow-ai-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.budget-workflow-ai-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-radius: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 220, 0.82));
+}
+
+.budget-workflow-graph-row,
+.budget-workflow-variance-row {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr) auto;
+  gap: 10px;
+  align-items: center;
+}
+
+.budget-workflow-graph-row span,
+.budget-workflow-variance-row span {
+  color: #475569;
+  font-size: 0.86rem;
+}
+
+.budget-workflow-graph-track {
+  position: relative;
+  width: 100%;
+  min-height: 12px;
+  border-radius: 999px;
+  background: rgba(203, 213, 225, 0.38);
+  overflow: hidden;
+}
+
+.budget-workflow-graph-bar {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.budget-workflow-graph-bar-setup {
+  background: linear-gradient(90deg, #0f766e, #14b8a6);
+}
+
+.budget-workflow-graph-bar-actual {
+  background: linear-gradient(90deg, #0284c7, #38bdf8);
+}
+
+.budget-workflow-graph-bar-alert {
+  background: linear-gradient(90deg, #b45309, #f59e0b);
+}
+
+.budget-workflow-graph-bar-warning {
+  background: linear-gradient(90deg, #b42318, #ef4444);
+}
+
+.budget-workflow-variance-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.budget-workflow-step-list {
+  display: grid;
+  gap: 10px;
+}
+
+.budget-workflow-step-button {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  text-align: left;
+  padding: 12px;
+}
+
+.budget-workflow-step-index {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  background: #cbd5e1;
+  color: #475569;
+}
+
+.budget-workflow-step-index-active {
+  background: #0ea5e9;
+  color: #ffffff;
+}
+
+.budget-workflow-step-copy {
+  display: grid;
+  gap: 4px;
+}
+
+.budget-workflow-step-copy strong {
+  color: #0f172a;
+  font-size: 0.9rem;
+}
+
+.budget-workflow-step-copy span {
+  color: #475569;
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.budget-workflow-step-copy small {
+  color: #64748b;
+  font-size: 0.74rem;
+  line-height: 1.35;
+}
+
 /* ========================
    UI COMPONENTS (PRESERVED)
    ======================== */
@@ -3710,7 +3879,8 @@ th { color: var(--dark-gold); }
   .budget-dashboard-card,
   .budget-dashboard-comparison-card,
   .budget-dashboard-indicator,
-  .budget-dashboard-category-summary-card {
+  .budget-dashboard-category-summary-card,
+  .budget-workflow-ai-card {
     padding: 14px;
     border-radius: 16px;
   }
@@ -3718,6 +3888,11 @@ th { color: var(--dark-gold); }
   .budget-dashboard-form-actions,
   .dashboard-header-actions {
     width: 100%;
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .budget-workflow-inline-actions {
     flex-direction: column;
     align-items: stretch;
   }
@@ -3751,6 +3926,18 @@ th { color: var(--dark-gold); }
   .budget-dashboard-category-input {
     min-height: 46px;
     font-size: 16px;
+  }
+
+  .budget-workflow-grid-two,
+  .budget-workflow-income-grid,
+  .budget-workflow-ai-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-workflow-graph-row,
+  .budget-workflow-variance-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .loan-monitoring-dashboard-page .auth-link-button {
@@ -3984,7 +4171,8 @@ th { color: var(--dark-gold); }
   .budget-dashboard-card,
   .budget-dashboard-comparison-card,
   .budget-dashboard-indicator,
-  .budget-dashboard-category-summary-card {
+  .budget-dashboard-category-summary-card,
+  .budget-workflow-ai-card {
     padding: 12px;
     border-radius: 14px;
   }

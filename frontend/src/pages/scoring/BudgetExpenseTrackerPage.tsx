@@ -3,6 +3,16 @@ import { useEffect, useMemo, useState } from 'react';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 
+type WorkflowStep = 1 | 2 | 3;
+type IncomeKey = 'salary' | 'business' | 'investment' | 'pension';
+
+interface WorkflowLineItem {
+  id: string;
+  label: string;
+  setupAmount: number;
+  type: 'income' | 'expense';
+}
+
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
@@ -22,14 +32,39 @@ function formatSignedCurrency(amount: number) {
   return absoluteAmount;
 }
 
-function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
-  if (status === 'maintain') {
-    return 'Maintain';
+function toInputAmount(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '';
   }
-  if (status === 'watch') {
-    return 'Watch';
+  return Math.round(value).toString();
+}
+
+function toSafeNumber(rawValue: string) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
   }
-  return 'Needs Attention';
+  return parsed;
+}
+
+function isBlank(rawValue: string | undefined) {
+  return (rawValue ?? '').trim() === '';
+}
+
+function buildVarianceExplanation(itemType: 'income' | 'expense', variance: number) {
+  if (variance === 0) {
+    return 'On target versus setup';
+  }
+
+  if (itemType === 'income') {
+    return variance > 0
+      ? 'Higher realized income than setup'
+      : 'Lower realized income than setup';
+  }
+
+  return variance > 0
+    ? 'Spending is above setup and needs attention'
+    : 'Spending is below setup and can improve savings';
 }
 
 export default function BudgetExpenseTrackerPage() {
@@ -38,93 +73,283 @@ export default function BudgetExpenseTrackerPage() {
     () => buildBudgetExpenseTrackerSnapshot(applications),
     [applications],
   );
-  const [categoryOverrides, setCategoryOverrides] = useState<Record<string, string>>({});
+  const [step, setStep] = useState<WorkflowStep>(1);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+  const [incomeDraft, setIncomeDraft] = useState<Record<IncomeKey, string>>({
+    salary: '',
+    business: '',
+    investment: '',
+    pension: '',
+  });
+  const [expenseDraft, setExpenseDraft] = useState<Record<string, string>>({});
+  const [savedSetup, setSavedSetup] = useState<WorkflowLineItem[]>([]);
+  const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
+  const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
   useEffect(() => {
-    setCategoryOverrides({});
-  }, [snapshot.sourceApplicationNo, snapshot.livingExpenseDeclared]);
+    const findIncomeValue = (keywords: string[]) => {
+      const matched = snapshot.incomeItems.find((item) => {
+        const text = `${item.id} ${item.label}`.toLowerCase();
+        return keywords.some((keyword) => text.includes(keyword));
+      });
+      return matched?.amount ?? 0;
+    };
 
-  const effectiveCategoryItems = useMemo(
-    () =>
-      snapshot.categoryItems.map((item) => {
-        const rawOverride = categoryOverrides[item.id]?.trim() ?? '';
-        const parsedOverride = rawOverride === '' ? Number.NaN : Number(rawOverride);
-        const defaultAmount = item.amount;
-        const amount = Number.isFinite(parsedOverride) && parsedOverride >= 0 ? parsedOverride : defaultAmount;
+    setIncomeDraft({
+      salary: toInputAmount(findIncomeValue(['salary', 'gross monthly', 'employment'])),
+      business: toInputAmount(findIncomeValue(['business'])),
+      investment: toInputAmount(findIncomeValue(['investment'])),
+      pension: toInputAmount(findIncomeValue(['pension'])),
+    });
 
+    setExpenseDraft(
+      snapshot.categoryItems.reduce<Record<string, string>>((accumulator, item) => {
+        accumulator[item.id] = toInputAmount(item.amount);
+        return accumulator;
+      }, {}),
+    );
+
+    setSavedSetup([]);
+    setActualEntries({});
+    setVarianceNotes({});
+    setSetupStatusMessage('');
+    setStep(1);
+  }, [snapshot.sourceApplicationNo, snapshot.periodLabel, snapshot.dateLabel, snapshot.incomeItems, snapshot.categoryItems]);
+
+  const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
+    {
+      id: 1,
+      label: 'Choose Period Covered',
+      description: 'Pick the tracking period and reporting dates.',
+    },
+    {
+      id: 2,
+      label: 'Set Up Budget',
+      description: 'Configure income and expense setup values.',
+    },
+    {
+      id: 3,
+      label: 'Actual vs Setup Variance',
+      description: 'Enter actuals and review variance explanations.',
+    },
+  ];
+
+  const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Budget Workflow';
+  const completionPercent = Math.round((step / workflowSteps.length) * 100);
+
+  const budgetSetupTotals = useMemo(() => {
+    const incomeTotal = toSafeNumber(incomeDraft.salary)
+      + toSafeNumber(incomeDraft.business)
+      + toSafeNumber(incomeDraft.investment)
+      + toSafeNumber(incomeDraft.pension);
+
+    const expenseTotal = snapshot.categoryItems.reduce((total, item) => {
+      return total + toSafeNumber(expenseDraft[item.id] ?? '');
+    }, 0);
+
+    return {
+      incomeTotal,
+      expenseTotal,
+      net: incomeTotal - expenseTotal,
+    };
+  }, [incomeDraft, expenseDraft, snapshot.categoryItems]);
+
+  const handleSaveSetup = () => {
+    if (!periodStart || !periodEnd) {
+      setSetupStatusMessage('Please complete the period covered before saving the budget setup.');
+      setStep(1);
+      return;
+    }
+
+    const setupLines: WorkflowLineItem[] = [
+      {
+        id: 'income-salary',
+        label: 'Income from Salary',
+        setupAmount: toSafeNumber(incomeDraft.salary),
+        type: 'income',
+      },
+      {
+        id: 'income-business',
+        label: 'Income from Business',
+        setupAmount: toSafeNumber(incomeDraft.business),
+        type: 'income',
+      },
+      {
+        id: 'income-investment',
+        label: 'Income from Investment',
+        setupAmount: toSafeNumber(incomeDraft.investment),
+        type: 'income',
+      },
+      {
+        id: 'income-pension',
+        label: 'Income from Pension',
+        setupAmount: toSafeNumber(incomeDraft.pension),
+        type: 'income',
+      },
+      ...snapshot.categoryItems.map((item) => ({
+        id: `expense-${item.id}`,
+        label: `Expense - ${item.label}`,
+        setupAmount: toSafeNumber(expenseDraft[item.id] ?? ''),
+        type: 'expense' as const,
+      })),
+    ];
+
+    setSavedSetup(setupLines);
+    setActualEntries({});
+    setVarianceNotes({});
+    setSetupStatusMessage('Budget setup saved. Continue with Step 3 to input actual values and monitor variance.');
+    setStep(3);
+  };
+
+  const varianceRows = useMemo(() => {
+    return savedSetup.map((item) => {
+      const rawActual = actualEntries[item.id] ?? '';
+      const hasActual = !isBlank(rawActual);
+      const actualAmount = hasActual ? toSafeNumber(rawActual) : 0;
+      const variance = hasActual ? actualAmount - item.setupAmount : 0;
+
+      return {
+        ...item,
+        hasActual,
+        actualAmount,
+        variance,
+      };
+    });
+  }, [savedSetup, actualEntries]);
+
+  const setupVsActualSummary = useMemo(() => {
+    const setupIncomeTotal = varianceRows
+      .filter((item) => item.type === 'income')
+      .reduce((total, item) => total + item.setupAmount, 0);
+    const setupExpenseTotal = varianceRows
+      .filter((item) => item.type === 'expense')
+      .reduce((total, item) => total + item.setupAmount, 0);
+    const actualIncomeTotal = varianceRows
+      .filter((item) => item.type === 'income' && item.hasActual)
+      .reduce((total, item) => total + item.actualAmount, 0);
+    const actualExpenseTotal = varianceRows
+      .filter((item) => item.type === 'expense' && item.hasActual)
+      .reduce((total, item) => total + item.actualAmount, 0);
+
+    return {
+      setupIncomeTotal,
+      setupExpenseTotal,
+      setupNet: setupIncomeTotal - setupExpenseTotal,
+      actualIncomeTotal,
+      actualExpenseTotal,
+      actualNet: actualIncomeTotal - actualExpenseTotal,
+    };
+  }, [varianceRows]);
+
+  const topVarianceRows = useMemo(() => {
+    return varianceRows
+      .filter((item) => item.hasActual)
+      .map((item) => ({
+        ...item,
+        magnitude: Math.abs(item.variance),
+      }))
+      .sort((left, right) => right.magnitude - left.magnitude)
+      .slice(0, 5);
+  }, [varianceRows]);
+
+  const maxVarianceMagnitude = useMemo(() => {
+    return topVarianceRows.reduce((largest, item) => Math.max(largest, item.magnitude), 0);
+  }, [topVarianceRows]);
+
+  const aiRecommendations = useMemo(() => {
+    if (varianceRows.length === 0) {
+      return [
+        'Save your setup to generate tailored recommendations for this budget period.',
+      ];
+    }
+
+    const hasAnyActual = varianceRows.some((item) => item.hasActual);
+    if (!hasAnyActual) {
+      return [
+        'Start entering actual values in Step 3. AI recommendations will update as soon as variances are available.',
+      ];
+    }
+
+    const priorityRows = varianceRows
+      .filter((item) => item.hasActual)
+      .map((item) => {
+        const riskMagnitude = item.type === 'expense'
+          ? Math.max(item.variance, 0)
+          : Math.max(-item.variance, 0);
         return {
           ...item,
-          defaultAmount,
-          amount,
-          share: snapshot.livingExpenseDeclared > 0 ? (amount / snapshot.livingExpenseDeclared) * 100 : 0,
-          isOverridden: rawOverride !== '' && Number.isFinite(parsedOverride) && parsedOverride >= 0,
+          riskMagnitude,
         };
-      }),
-    [categoryOverrides, snapshot.categoryItems, snapshot.livingExpenseDeclared],
-  );
+      })
+      .sort((left, right) => right.riskMagnitude - left.riskMagnitude)
+      .slice(0, 3)
+      .filter((item) => item.riskMagnitude > 0);
 
-  const effectiveCategoryTotal = useMemo(
-    () => effectiveCategoryItems.reduce((sum, item) => sum + item.amount, 0),
-    [effectiveCategoryItems],
-  );
-
-  const resetAllCategoryOverrides = () => {
-    setCategoryOverrides({});
-  };
-
-  const resetCategoryOverride = (categoryId: string) => {
-    setCategoryOverrides((previous) => {
-      const next = { ...previous };
-      delete next[categoryId];
-      return next;
+    const recommendations = priorityRows.map((item) => {
+      if (item.type === 'expense') {
+        return `${item.label} is above setup by ${formatCurrency(item.variance)}. Consider setting a weekly spend cap and moving this category to watchlist.`;
+      }
+      return `${item.label} is below setup by ${formatCurrency(Math.abs(item.variance))}. Review expected inflow timing and prepare contingency cashflow.`;
     });
-  };
+
+    if (recommendations.length === 0) {
+      recommendations.push('Actuals are within setup targets. Continue tracking and keep variance explanations updated for audit readiness.');
+    }
+
+    recommendations.push(
+      `Projected net cashflow is ${formatSignedCurrency(setupVsActualSummary.actualNet || setupVsActualSummary.setupNet)}. Keep at least one month of fixed obligations in reserve.`,
+    );
+
+    return recommendations.slice(0, 4);
+  }, [varianceRows, setupVsActualSummary.actualNet, setupVsActualSummary.setupNet]);
 
   return (
     <div className="psychometric-page budget-dashboard-page">
       <section className="psychometric-hero budget-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Household Financial Controls</span>
+          <span className="psychometric-eyebrow">Budget Workflow Controls</span>
           <h1>Budget and Expense Tracker</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
-            Derived from application data covering declared income, investments, living expenses,
-            mortgage amortization, and other debt commitments.
+            Navigate a guided workflow to set period coverage, build the budget setup, then monitor actual
+            versus setup variances with AI guidance.
           </p>
         </div>
 
         <div className="psychometric-hero-metric budget-dashboard-scorecard">
           <span>Budget Health Score</span>
           <strong>{snapshot.healthScore.toFixed(1)}</strong>
-          <small>{snapshot.performanceBand}</small>
+          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
         </div>
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>Actual MTD</span>
-          <strong>{formatCurrency(snapshot.totalKnownExpenses)}</strong>
-          <small>Known monthly outflow from source application</small>
+          <span>Progress</span>
+          <strong>{completionPercent}%</strong>
+          <small>{currentStepLabel}</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Budget Setup</span>
-          <strong>{formatCurrency(snapshot.totalExpenseBudget)}</strong>
-          <small>{snapshot.budgetSetupLabel}</small>
+          <span>Planned Income</span>
+          <strong>{formatCurrency(budgetSetupTotals.incomeTotal)}</strong>
+          <small>Salary, business, investment, pension</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Watchlist</span>
-          <strong>{snapshot.watchlistCount + snapshot.needsAttentionCount}</strong>
-          <small>Indicators needing review or rebalancing</small>
+          <span>Planned Expenses</span>
+          <strong>{formatCurrency(budgetSetupTotals.expenseTotal)}</strong>
+          <small>All itemized expense categories</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Performance Band</span>
-          <strong>{snapshot.performanceBand}</strong>
-          <small>{snapshot.healthScore} / 100 weighted score</small>
+          <span>Planned Net</span>
+          <strong>{formatSignedCurrency(budgetSetupTotals.net)}</strong>
+          <small>{snapshot.performanceBand}</small>
         </article>
       </section>
 
@@ -133,8 +358,8 @@ export default function BudgetExpenseTrackerPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Income Setup</span>
-                <h2>Application-derived monthly inflow mix</h2>
+                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               <button
                 type="button"
@@ -157,240 +382,438 @@ export default function BudgetExpenseTrackerPage() {
               {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
             </p>
 
-            <div className="budget-dashboard-card-grid">
-              {snapshot.incomeItems.map((item) => (
-                <article key={item.id} className="budget-dashboard-card">
-                  <div className="budget-dashboard-card-header">
-                    <span>{item.label}</span>
-                    <strong>{item.share.toFixed(0)}%</strong>
-                  </div>
-                  <div className="budget-dashboard-card-value">{formatCurrency(item.amount)}</div>
-                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
-                    <div className="psychometric-progress-bar" style={{ width: `${item.share}%` }} />
-                  </div>
-                  <p>{item.note}</p>
-                </article>
-              ))}
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Expense Setup</span>
-                <h2>Known monthly obligations against budget caps</h2>
+            {setupStatusMessage ? (
+              <div className="budget-workflow-status-banner" role="status">
+                {setupStatusMessage}
               </div>
-            </div>
+            ) : null}
 
-            <div className="budget-dashboard-comparison-grid">
-              {snapshot.expenseItems.map((item) => (
-                <article key={item.id} className={`budget-dashboard-comparison-card budget-dashboard-status-${item.status}`}>
-                  <div className="budget-dashboard-card-header">
-                    <span>{item.label}</span>
-                    <strong>{getStatusLabel(item.status)}</strong>
+            {step === 1 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 1: Choose the Period Covered</h3>
+                <p className="psychometric-section-note">
+                  Select the coverage period for this budget workflow. This period will be tied to your saved setup.
+                </p>
+                <div className="budget-workflow-grid-two">
+                  <label>
+                    Period Start
+                    <input
+                      type="date"
+                      value={periodStart}
+                      onChange={(event) => setPeriodStart(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Period End
+                    <input
+                      type="date"
+                      value={periodEnd}
+                      onChange={(event) => setPeriodEnd(event.target.value)}
+                    />
+                  </label>
+                </div>
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="psychometric-reset-button" onClick={() => setStep(2)}>
+                    Continue to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 2: Set Up the Budget</h3>
+                <p className="psychometric-section-note">
+                  Enter your monthly income setup and itemized expenses, then click save to publish this setup to Step 3.
+                </p>
+
+                <div className="budget-dashboard-category-summary">
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Setup Income</span>
+                    <strong>{formatCurrency(budgetSetupTotals.incomeTotal)}</strong>
                   </div>
-                  <div className="budget-dashboard-comparison-values">
-                    <div>
-                      <small>Actual</small>
-                      <strong>{formatCurrency(item.actual)}</strong>
-                    </div>
-                    <div>
-                      <small>Budget</small>
-                      <strong>{formatCurrency(item.budget)}</strong>
-                    </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Setup Expenses</span>
+                    <strong>{formatCurrency(budgetSetupTotals.expenseTotal)}</strong>
                   </div>
-                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
-                    <div className="psychometric-progress-bar" style={{ width: `${Math.min(item.attainment, 100)}%` }} />
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Setup Net</span>
+                    <strong>{formatSignedCurrency(budgetSetupTotals.net)}</strong>
                   </div>
-                  <p>{item.note}</p>
-                </article>
-              ))}
-            </div>
-          </article>
+                </div>
 
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Actual vs Budget</span>
-                <h2>Monthly comparison and maintain indicators</h2>
-              </div>
-            </div>
-
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Budget Line</th>
-                    <th>Actual</th>
-                    <th>Budget</th>
-                    <th>Variance</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.comparisonItems.map((item) => (
-                    <tr key={item.id}>
-                      <td data-label="Budget Line">{item.label}</td>
-                      <td data-label="Actual">{formatCurrency(item.actual)}</td>
-                      <td data-label="Budget">{formatCurrency(item.budget)}</td>
-                      <td data-label="Variance">{formatSignedCurrency(item.variance)}</td>
-                      <td data-label="Status">{getStatusLabel(item.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="budget-dashboard-indicator-row">
-              {snapshot.indicators.map((indicator) => (
-                <article key={indicator.id} className={`budget-dashboard-indicator budget-dashboard-status-${indicator.status}`}>
-                  <span>{indicator.label}</span>
-                  <strong>
-                    {indicator.id.endsWith('coverage')
-                      ? `${indicator.value.toFixed(2)}x`
-                      : `${indicator.value.toFixed(0)}%`}
-                  </strong>
-                  <small>
-                    Target {indicator.id.endsWith('coverage') ? `${indicator.target.toFixed(2)}x` : `${indicator.target.toFixed(0)}%`}
-                  </small>
-                  <p>{indicator.note}</p>
-                </article>
-              ))}
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Budget and Spending Category Amount Setup</span>
-                <h2>Category allocation reconciled to declared living expenses</h2>
-              </div>
-              <button
-                type="button"
-                className="psychometric-reset-button"
-                onClick={resetAllCategoryOverrides}
-                disabled={Object.keys(categoryOverrides).length === 0}
-              >
-                Reset All Categories
-              </button>
-            </div>
-
-            <div className="budget-dashboard-category-summary">
-              <div className="budget-dashboard-category-summary-card">
-                <span>Declared Living Expenses</span>
-                <strong>{formatCurrency(snapshot.livingExpenseDeclared)}</strong>
-              </div>
-              <div className="budget-dashboard-category-summary-card">
-                <span>Category Total</span>
-                <strong>{formatCurrency(effectiveCategoryTotal)}</strong>
-              </div>
-              <div className="budget-dashboard-category-summary-card">
-                <span>Variance</span>
-                <strong>{formatSignedCurrency(effectiveCategoryTotal - snapshot.livingExpenseDeclared)}</strong>
-              </div>
-            </div>
-
-            <p className="psychometric-section-note">
-              Enter an amount to override any suggested category allocation. Suggested values are shown as watermark
-              placeholders and the live total updates automatically against declared living expenses.
-            </p>
-
-            <div className="budget-dashboard-category-grid">
-              {effectiveCategoryItems.map((item) => (
-                <article key={item.id} className="budget-dashboard-card">
-                  <div className="budget-dashboard-card-header">
-                    <span>{item.label}</span>
-                    <div className="budget-dashboard-category-actions">
-                      <strong>{item.share.toFixed(0)}%</strong>
-                      {item.isOverridden ? (
-                        <button
-                          type="button"
-                          className="budget-dashboard-category-reset"
-                          onClick={() => resetCategoryOverride(item.id)}
-                        >
-                          Reset
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                  <label className="budget-dashboard-category-input-wrap">
-                    <span className="budget-dashboard-category-input-label">Amount Override</span>
+                <div className="budget-workflow-income-grid">
+                  <label>
+                    Income from Salary
                     <input
                       type="number"
                       min={0}
                       step="0.01"
-                      value={categoryOverrides[item.id] ?? ''}
+                      value={incomeDraft.salary}
                       onChange={(event) => {
-                        setCategoryOverrides((previous) => ({
+                        setIncomeDraft((previous) => ({
                           ...previous,
-                          [item.id]: event.target.value,
+                          salary: event.target.value,
                         }));
                       }}
-                      placeholder={item.defaultAmount.toFixed(0)}
-                      className="budget-dashboard-category-input"
-                      aria-label={`${item.label} amount override`}
                     />
                   </label>
-                  <div className="budget-dashboard-card-value">{formatCurrency(item.amount)}</div>
-                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
-                    <div className="psychometric-progress-bar" style={{ width: `${item.share}%` }} />
+                  <label>
+                    Income from Business
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={incomeDraft.business}
+                      onChange={(event) => {
+                        setIncomeDraft((previous) => ({
+                          ...previous,
+                          business: event.target.value,
+                        }));
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Income from Investment
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={incomeDraft.investment}
+                      onChange={(event) => {
+                        setIncomeDraft((previous) => ({
+                          ...previous,
+                          investment: event.target.value,
+                        }));
+                      }}
+                    />
+                  </label>
+                  <label>
+                    Income from Pension
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={incomeDraft.pension}
+                      onChange={(event) => {
+                        setIncomeDraft((previous) => ({
+                          ...previous,
+                          pension: event.target.value,
+                        }));
+                      }}
+                    />
+                  </label>
+                </div>
+
+                <h4 className="budget-workflow-subtitle">Itemized Expense Setup</h4>
+                <div className="budget-dashboard-category-grid">
+                  {snapshot.categoryItems.map((item) => (
+                    <article key={item.id} className="budget-dashboard-card">
+                      <div className="budget-dashboard-card-header">
+                        <span>{item.label}</span>
+                        <strong>{item.share.toFixed(0)}%</strong>
+                      </div>
+                      <label className="budget-dashboard-category-input-wrap">
+                        <span className="budget-dashboard-category-input-label">Setup Amount</span>
+                        <input
+                          type="number"
+                          min={0}
+                          step="0.01"
+                          value={expenseDraft[item.id] ?? ''}
+                          onChange={(event) => {
+                            setExpenseDraft((previous) => ({
+                              ...previous,
+                              [item.id]: event.target.value,
+                            }));
+                          }}
+                          className="budget-dashboard-category-input"
+                          aria-label={`${item.label} setup amount`}
+                        />
+                      </label>
+                      <small className="budget-dashboard-category-helper">
+                        Suggested baseline: {formatCurrency(item.amount)}
+                      </small>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
+                    Back to Step 1
+                  </button>
+                  <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
+                    Save Setup and Open Step 3
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 3: Actual vs Setup</h3>
+                <p className="psychometric-section-note">
+                  First column shows the saved setup. Second column is intentionally blank for user actuals. Third column shows variance and fourth column provides small-text variance explanation.
+                </p>
+
+                {savedSetup.length === 0 ? (
+                  <p className="psychometric-section-note">
+                    No saved setup yet. Complete Step 2 and click save setup first.
+                  </p>
+                ) : (
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table">
+                      <thead>
+                        <tr>
+                          <th>Budget Setup</th>
+                          <th>Actual (User Input)</th>
+                          <th>Variance</th>
+                          <th>Variance Explanation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {varianceRows.map((item) => (
+                          <tr key={item.id}>
+                            <td data-label="Budget Setup">
+                              <strong>{item.label}</strong>
+                              <div>{formatCurrency(item.setupAmount)}</div>
+                            </td>
+                            <td data-label="Actual (User Input)">
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={actualEntries[item.id] ?? ''}
+                                onChange={(event) => {
+                                  setActualEntries((previous) => ({
+                                    ...previous,
+                                    [item.id]: event.target.value,
+                                  }));
+                                }}
+                                placeholder="Enter actual amount"
+                                aria-label={`${item.label} actual amount`}
+                              />
+                            </td>
+                            <td data-label="Variance">
+                              {item.hasActual ? formatSignedCurrency(item.variance) : 'Pending input'}
+                            </td>
+                            <td data-label="Variance Explanation">
+                              <small className="budget-workflow-variance-copy">
+                                {item.hasActual
+                                  ? (varianceNotes[item.id]?.trim() || buildVarianceExplanation(item.type, item.variance))
+                                  : 'Awaiting actual value from user.'}
+                              </small>
+                              {item.hasActual ? (
+                                <input
+                                  type="text"
+                                  value={varianceNotes[item.id] ?? ''}
+                                  onChange={(event) => {
+                                    setVarianceNotes((previous) => ({
+                                      ...previous,
+                                      [item.id]: event.target.value,
+                                    }));
+                                  }}
+                                  placeholder="Optional explanation"
+                                  aria-label={`${item.label} variance explanation`}
+                                />
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
-                  <small className="budget-dashboard-category-helper">
-                    {item.isOverridden
-                      ? `Manual override applied • Default ${formatCurrency(item.defaultAmount)}`
-                      : `Suggested default: ${formatCurrency(item.defaultAmount)}`}
-                  </small>
-                  <p>{item.note}</p>
-                </article>
-              ))}
-            </div>
+                )}
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
+                    Back to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </article>
+
+          {step === 3 ? (
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">AI Recommendations</span>
+                  <h2>Variance coaching and trend visuals</h2>
+                </div>
+              </div>
+
+              <div className="budget-workflow-ai-grid">
+                <article className="budget-workflow-ai-card">
+                  <h3>Recommendations</h3>
+                  <ul className="psychometric-breakdown-list">
+                    {aiRecommendations.map((recommendation) => (
+                      <li key={recommendation}>
+                        <span>{recommendation}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Income vs Expense Graph</h3>
+                  <div className="budget-workflow-graph-row">
+                    <span>Setup Income</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualSummary.setupIncomeTotal > 0
+                              ? (setupVsActualSummary.setupIncomeTotal / Math.max(setupVsActualSummary.setupIncomeTotal, setupVsActualSummary.actualIncomeTotal, 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatCurrency(setupVsActualSummary.setupIncomeTotal)}</strong>
+                  </div>
+                  <div className="budget-workflow-graph-row">
+                    <span>Actual Income</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-actual"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualSummary.actualIncomeTotal > 0
+                              ? (setupVsActualSummary.actualIncomeTotal / Math.max(setupVsActualSummary.setupIncomeTotal, setupVsActualSummary.actualIncomeTotal, 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatCurrency(setupVsActualSummary.actualIncomeTotal)}</strong>
+                  </div>
+                  <div className="budget-workflow-graph-row">
+                    <span>Setup Expenses</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-alert"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualSummary.setupExpenseTotal > 0
+                              ? (setupVsActualSummary.setupExpenseTotal / Math.max(setupVsActualSummary.setupExpenseTotal, setupVsActualSummary.actualExpenseTotal, 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatCurrency(setupVsActualSummary.setupExpenseTotal)}</strong>
+                  </div>
+                  <div className="budget-workflow-graph-row">
+                    <span>Actual Expenses</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-warning"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualSummary.actualExpenseTotal > 0
+                              ? (setupVsActualSummary.actualExpenseTotal / Math.max(setupVsActualSummary.setupExpenseTotal, setupVsActualSummary.actualExpenseTotal, 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatCurrency(setupVsActualSummary.actualExpenseTotal)}</strong>
+                  </div>
+                </article>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Top Variance Graph</h3>
+                  {topVarianceRows.length === 0 ? (
+                    <p className="psychometric-section-note">Enter actual values to visualize top variances.</p>
+                  ) : (
+                    <div className="budget-workflow-variance-chart">
+                      {topVarianceRows.map((item) => (
+                        <div key={item.id} className="budget-workflow-variance-row">
+                          <span>{item.label}</span>
+                          <div className="budget-workflow-graph-track">
+                            <div
+                              className={`budget-workflow-graph-bar ${item.variance >= 0 ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-setup'}`}
+                              style={{
+                                width: `${maxVarianceMagnitude > 0 ? (item.magnitude / maxVarianceMagnitude) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                          <strong>{formatSignedCurrency(item.variance)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
+              </div>
+            </article>
+          ) : null}
         </div>
 
         <aside className="budget-dashboard-side">
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Action</span>
-            <h2>{snapshot.actionLabel}</h2>
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate the Budget Tracker</h2>
+              </div>
+            </div>
+            <div className="budget-workflow-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const statusLabel = isActive ? 'Current step' : isCompleted ? 'Completed' : 'Pending';
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`loan-stepper-button budget-workflow-step-button ${isActive ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}
+                  >
+                    <div className={`budget-workflow-step-index ${isActive || isCompleted ? 'budget-workflow-step-index-active' : ''}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="budget-workflow-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{statusLabel}</span>
+                      <small>{workflowStep.description}</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Setup Snapshot</span>
+            <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Draft Setup'}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Total Income</span>
-                <strong>{formatCurrency(snapshot.totalIncome)}</strong>
+                <span>Period Covered</span>
+                <strong>{periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : 'Not set'}</strong>
               </li>
               <li>
-                <span>Total Known Expenses</span>
-                <strong>{formatCurrency(snapshot.totalKnownExpenses)}</strong>
+                <span>Income Setup</span>
+                <strong>{formatCurrency(budgetSetupTotals.incomeTotal)}</strong>
               </li>
               <li>
-                <span>Net Cashflow</span>
-                <strong>{formatSignedCurrency(snapshot.netCashflow)}</strong>
+                <span>Expense Setup</span>
+                <strong>{formatCurrency(budgetSetupTotals.expenseTotal)}</strong>
               </li>
             </ul>
           </article>
 
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Budget Setup</span>
-            <h2>{snapshot.budgetReadyCount} Ready</h2>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Tracked areas</span>
-                <strong>{snapshot.trackedAreas}</strong>
-              </li>
-              <li>
-                <span>Maintain</span>
-                <strong>{snapshot.budgetReadyCount}</strong>
-              </li>
-              <li>
-                <span>Watchlist</span>
-                <strong>{snapshot.watchlistCount}</strong>
-              </li>
-            </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Expense Logging</span>
-            <h2>{snapshot.expenseLoggingLabel}</h2>
+            <span className="psychometric-panel-kicker">Variance Control</span>
+            <h2>{savedSetup.length > 0 ? 'Ready for Tracking' : 'Waiting for Save Setup'}</h2>
             <p className="psychometric-section-note">
-              This tracker uses the most recent application with income and expense data as the live monthly source.
+              Enter actual values in Step 3 to activate variance analytics, explanation notes, AI recommendations,
+              and graphs.
             </p>
           </article>
         </aside>

@@ -3871,7 +3871,7 @@ export default function LendingScorecard() {
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced Origination Workflow</span>
-          <h1>Lending Scorecard</h1>
+          <h1>Lending Credit Scorecard</h1>
           <p>
             Run the end-to-end loan workflow across product intake, underwriting details, and
             FILScore certification
