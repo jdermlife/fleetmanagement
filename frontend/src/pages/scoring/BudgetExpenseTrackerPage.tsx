@@ -122,17 +122,17 @@ export default function BudgetExpenseTrackerPage() {
     {
       id: 1,
       label: 'Choose Period Covered',
-      description: 'Pick the tracking period and reporting dates.',
+      description: 'Select covered dates for this workflow.',
     },
     {
       id: 2,
-      label: 'Set Up Budget',
-      description: 'Configure income and expense setup values.',
+      label: 'Set Up Baseline',
+      description: 'Enter setup values before saving.',
     },
     {
       id: 3,
       label: 'Actual vs Setup Variance',
-      description: 'Enter actuals and review variance explanations.',
+      description: 'Enter actual values and review variance.',
     },
   ];
 
@@ -199,7 +199,7 @@ export default function BudgetExpenseTrackerPage() {
     setSavedSetup(setupLines);
     setActualEntries({});
     setVarianceNotes({});
-    setSetupStatusMessage('Budget setup saved. Continue with Step 3 to input actual values and monitor variance.');
+    setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
   };
 
@@ -390,7 +390,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 1 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 1: Choose the Period Covered</h3>
+                <h3>Step 1: Choose Period Covered</h3>
                 <p className="psychometric-section-note">
                   Select the coverage period for this budget workflow. This period will be tied to your saved setup.
                 </p>
@@ -422,7 +422,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 2 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 2: Set Up the Budget</h3>
+                <h3>Step 2: Set Up Baseline</h3>
                 <p className="psychometric-section-note">
                   Enter your monthly income setup and itemized expenses, then click save to publish this setup to Step 3.
                 </p>
@@ -542,7 +542,7 @@ export default function BudgetExpenseTrackerPage() {
                     Back to Step 1
                   </button>
                   <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
-                    Save Setup and Open Step 3
+                    Save Setup and Continue to Step 3
                   </button>
                 </div>
               </div>
@@ -550,7 +550,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 3: Actual vs Setup</h3>
+                <h3>Step 3: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows the saved setup. Second column is intentionally blank for user actuals. Third column shows variance and fourth column provides small-text variance explanation.
                 </p>
@@ -759,7 +759,7 @@ export default function BudgetExpenseTrackerPage() {
             <div className="psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow Steps</span>
-                <h2>Navigate the Budget Tracker</h2>
+                <h2>Navigate Workflow Steps</h2>
               </div>
             </div>
             <div className="budget-workflow-step-list">

@@ -3,30 +3,65 @@ import { useEffect, useMemo, useState, type FormEvent } from 'react';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
 
+type WorkflowStep = 1 | 2 | 3;
 type BillerFrequency = 'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annual' | 'Weekly';
 
 type BillerSetup = {
   id: string;
-  name: string;
-  facility: string;
+  company: string;
+  utilityType: string;
   frequency: BillerFrequency;
-  dueDate: string;
+  dateCovered: string;
+  budgetedAmount: number;
+};
+
+type StoredBiller = Partial<BillerSetup> & {
+  name?: string;
+  facility?: string;
+  dueDate?: string;
 };
 
 const BILLER_STORAGE_KEY = 'fms:bill-reminder-setup';
 
-function formatPercent(value: number) {
-  return `${value.toFixed(0)}%`;
+function formatCurrency(amount: number) {
+  return new Intl.NumberFormat(undefined, {
+    style: 'currency',
+    currency: 'PHP',
+    maximumFractionDigits: 0,
+  }).format(amount);
 }
 
-function getBillerStatus(dueDate: string) {
+function formatSignedCurrency(amount: number) {
+  const absoluteAmount = formatCurrency(Math.abs(amount));
+  if (amount > 0) {
+    return `+${absoluteAmount}`;
+  }
+  if (amount < 0) {
+    return `-${absoluteAmount}`;
+  }
+  return absoluteAmount;
+}
+
+function toSafeNumber(rawValue: string | number | undefined) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
+  }
+  return parsed;
+}
+
+function isBlank(rawValue: string | undefined) {
+  return (rawValue ?? '').trim() === '';
+}
+
+function getBillerStatus(dateCovered: string) {
   const now = new Date();
-  const due = new Date(dueDate);
+  const due = new Date(dateCovered);
   if (Number.isNaN(due.getTime())) {
     return {
       id: 'watch' as const,
-      label: 'Due Date Needed',
-      note: 'Update the biller with a valid due date.',
+      label: 'Date Needed',
+      note: 'Update coverage date',
       daysUntil: Number.NaN,
     };
   }
@@ -48,7 +83,7 @@ function getBillerStatus(dueDate: string) {
   if (daysUntil <= 5) {
     return {
       id: 'watch' as const,
-      label: 'Due Within 5 Days',
+      label: 'Due Soon',
       note: `${daysUntil} day(s) remaining`,
       daysUntil,
     };
@@ -56,29 +91,19 @@ function getBillerStatus(dueDate: string) {
 
   return {
     id: 'maintain' as const,
-    label: 'Reminder',
+    label: 'On Track',
     note: `${daysUntil} day(s) until due date`,
     daysUntil,
   };
 }
 
-function buildBillsPaymentHealthScore(billers: BillerSetup[]) {
-  if (!billers.length) {
-    return 0;
+function buildVarianceExplanation(variance: number) {
+  if (variance === 0) {
+    return 'On budget target';
   }
-
-  const scores = billers.map((biller) => {
-    const status = getBillerStatus(biller.dueDate);
-    if (status.id === 'maintain') {
-      return 100;
-    }
-    if (status.id === 'watch') {
-      return 65;
-    }
-    return 25;
-  });
-
-  return scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return variance > 0
+    ? 'Actual payment is above budgeted amount'
+    : 'Actual payment is below budgeted amount';
 }
 
 function loadStoredBillers(): BillerSetup[] {
@@ -91,20 +116,57 @@ function loadStoredBillers(): BillerSetup[] {
     if (!raw) {
       return [];
     }
+
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       return [];
     }
 
-    return parsed.filter((item): item is BillerSetup => {
-      return (
-        typeof item?.id === 'string' &&
-        typeof item?.name === 'string' &&
-        typeof item?.facility === 'string' &&
-        typeof item?.frequency === 'string' &&
-        typeof item?.dueDate === 'string'
-      );
-    });
+    return parsed
+      .map((item: StoredBiller, index: number): BillerSetup | null => {
+        const company = typeof item.company === 'string'
+          ? item.company
+          : typeof item.name === 'string'
+            ? item.name
+            : '';
+        const utilityType = typeof item.utilityType === 'string'
+          ? item.utilityType
+          : typeof item.facility === 'string'
+            ? item.facility
+            : '';
+        const dateCovered = typeof item.dateCovered === 'string'
+          ? item.dateCovered
+          : typeof item.dueDate === 'string'
+            ? item.dueDate
+            : '';
+
+        if (!company.trim() || !utilityType.trim()) {
+          return null;
+        }
+
+        const frequency: BillerFrequency =
+          item.frequency === 'Monthly' ||
+          item.frequency === 'Quarterly' ||
+          item.frequency === 'Semi-Annual' ||
+          item.frequency === 'Annual' ||
+          item.frequency === 'Weekly'
+            ? item.frequency
+            : 'Monthly';
+
+        const id = typeof item.id === 'string' && item.id.trim()
+          ? item.id
+          : `biller-${index + 1}`;
+
+        return {
+          id,
+          company: company.trim(),
+          utilityType: utilityType.trim(),
+          frequency,
+          dateCovered,
+          budgetedAmount: toSafeNumber(item.budgetedAmount),
+        };
+      })
+      .filter((item): item is BillerSetup => item !== null);
   } catch {
     return [];
   }
@@ -117,155 +179,116 @@ export default function BillReminderPage() {
     [applications],
   );
 
-  const [billers, setBillers] = useState<BillerSetup[]>(() => loadStoredBillers());
+  const [step, setStep] = useState<WorkflowStep>(1);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+
+  const [draftBillers, setDraftBillers] = useState<BillerSetup[]>(() => loadStoredBillers());
   const [editingBillerId, setEditingBillerId] = useState<string | null>(null);
-  const [name, setName] = useState('');
-  const [facility, setFacility] = useState('');
+
+  const [company, setCompany] = useState('');
+  const [utilityType, setUtilityType] = useState('');
   const [frequency, setFrequency] = useState<BillerFrequency>('Monthly');
-  const [dueDate, setDueDate] = useState('');
+  const [dateCovered, setDateCovered] = useState('');
+  const [budgetedAmount, setBudgetedAmount] = useState('');
+
+  const [savedSetup, setSavedSetup] = useState<BillerSetup[]>([]);
+  const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
+  const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') {
       return;
     }
-    window.localStorage.setItem(BILLER_STORAGE_KEY, JSON.stringify(billers));
-  }, [billers]);
+    window.localStorage.setItem(BILLER_STORAGE_KEY, JSON.stringify(draftBillers));
+  }, [draftBillers]);
 
-  const billerCards = useMemo(
+  const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
+    {
+      id: 1,
+      label: 'Choose Period Covered',
+      description: 'Select covered dates for this workflow.',
+    },
+    {
+      id: 2,
+      label: 'Set Up Baseline',
+      description: 'Enter setup values before saving.',
+    },
+    {
+      id: 3,
+      label: 'Actual vs Setup Variance',
+      description: 'Enter actual values and review variance.',
+    },
+  ];
+
+  const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Bill Workflow';
+  const completionPercent = Math.round((step / workflowSteps.length) * 100);
+  const stepperButtonClass = 'loan-stepper-button';
+
+  const draftCards = useMemo(
     () =>
-      [...billers]
+      [...draftBillers]
         .map((biller) => ({
           ...biller,
-          status: getBillerStatus(biller.dueDate),
+          status: getBillerStatus(biller.dateCovered),
         }))
         .sort((left, right) => {
           const leftDays = Number.isNaN(left.status.daysUntil) ? Number.POSITIVE_INFINITY : left.status.daysUntil;
           const rightDays = Number.isNaN(right.status.daysUntil) ? Number.POSITIVE_INFINITY : right.status.daysUntil;
           return leftDays - rightDays;
         }),
-    [billers],
-  );
-
-  const billsPaymentHealthScore = useMemo(
-    () => buildBillsPaymentHealthScore(billers),
-    [billers],
+    [draftBillers],
   );
 
   const dueSoonCount = useMemo(
-    () => billerCards.filter((biller) => biller.status.id === 'watch').length,
-    [billerCards],
+    () => draftCards.filter((biller) => biller.status.id === 'watch').length,
+    [draftCards],
   );
   const pastDueCount = useMemo(
-    () => billerCards.filter((biller) => biller.status.id === 'attention').length,
-    [billerCards],
-  );
-  const reminderCount = useMemo(
-    () => billerCards.filter((biller) => biller.status.id === 'maintain').length,
-    [billerCards],
+    () => draftCards.filter((biller) => biller.status.id === 'attention').length,
+    [draftCards],
   );
 
-  const advisor = useMemo(() => {
-    const overdueBillers = billerCards.filter((biller) => biller.status.id === 'attention');
-    const dueSoonBillers = billerCards.filter((biller) => biller.status.id === 'watch');
-    const readyToPay = snapshot.readyToPayCount > 0;
-
-    return {
-      nextPriority: overdueBillers.length
-        ? `Pay ${overdueBillers[0]?.name} first because it is already past due.`
-        : dueSoonBillers.length
-          ? `Prepare payment for ${dueSoonBillers[0]?.name}; it is due within 5 days.`
-          : 'No immediate bill is due. Maintain your reminder list and keep funds allocated for the next cycle.',
-      cashflowReminder: readyToPay
-        ? 'Cashflow reminder: your current borrower profile shows payment room, so keep bill funding ring-fenced before discretionary spend.'
-        : 'Cashflow reminder: tighten discretionary spending and reserve cash for the nearest due bills first.',
-      coverageReminder: billers.length
-        ? `Coverage reminder: ${billers.length} biller(s) tracked. Review frequencies and due dates regularly so reminder accuracy stays high.`
-        : 'Coverage reminder: add your first biller so the page can begin monitoring upcoming due dates and overdue items.',
-    };
-  }, [billerCards, billers.length, snapshot.readyToPayCount]);
-
-  const billingSummaryRows = useMemo(
-    () =>
-      billerCards.map((biller) => ({
-        id: biller.id,
-        name: biller.name,
-        facility: biller.facility,
-        frequency: biller.frequency,
-        dueDateLabel: Number.isNaN(new Date(biller.dueDate).getTime())
-          ? 'Not set'
-          : new Date(biller.dueDate).toLocaleDateString(),
-        daysLabel:
-          Number.isNaN(biller.status.daysUntil)
-            ? 'Needs update'
-            : biller.status.daysUntil < 0
-              ? `${Math.abs(biller.status.daysUntil)} day(s) overdue`
-              : `${biller.status.daysUntil} day(s) remaining`,
-        statusLabel: biller.status.label,
-        status: biller.status.id,
-      })),
-    [billerCards],
+  const draftBudgetTotal = useMemo(
+    () => draftBillers.reduce((sum, biller) => sum + biller.budgetedAmount, 0),
+    [draftBillers],
   );
 
-  const personalReminderCards = useMemo(
-    () => [
-      {
-        id: 'due-soon',
-        label: 'Bills Due Within 5 Days',
-        value: dueSoonCount,
-        helper: dueSoonCount > 0 ? 'Prepare payment or set aside funds now.' : 'No immediate bills due within 5 days.',
-        status: dueSoonCount > 0 ? 'watch' : 'maintain',
-      },
-      {
-        id: 'past-due',
-        label: 'Past Due Bills',
-        value: pastDueCount,
-        helper: pastDueCount > 0 ? 'Settle overdue bills first to avoid compounding charges.' : 'No bill is currently past due.',
-        status: pastDueCount > 0 ? 'attention' : 'maintain',
-      },
-      {
-        id: 'payment-room',
-        label: 'Payment Room',
-        value: snapshot.readyToPayCount,
-        helper: snapshot.readyToPayCount > 0
-          ? 'Borrower profile shows room to fund near-term obligations.'
-          : 'Cashflow room looks tight; prioritize essentials first.',
-        status: snapshot.readyToPayCount > 0 ? 'maintain' : 'watch',
-      },
-      {
-        id: 'biller-coverage',
-        label: 'Biller Coverage',
-        value: billers.length,
-        helper: billers.length > 0 ? 'Tracked billers with stored due dates and frequency.' : 'Add billers so reminders can start working for you.',
-        status: billers.length > 0 ? 'watch' : 'attention',
-      },
-    ],
-    [dueSoonCount, pastDueCount, snapshot.readyToPayCount, billers.length],
+  const savedBudgetTotal = useMemo(
+    () => savedSetup.reduce((sum, biller) => sum + biller.budgetedAmount, 0),
+    [savedSetup],
   );
 
   const resetForm = () => {
     setEditingBillerId(null);
-    setName('');
-    setFacility('');
+    setCompany('');
+    setUtilityType('');
     setFrequency('Monthly');
-    setDueDate('');
+    setDateCovered('');
+    setBudgetedAmount('');
   };
 
   const handleAddBiller = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!name.trim() || !facility.trim() || !dueDate) {
+
+    if (!company.trim() || !utilityType.trim() || !dateCovered || isBlank(budgetedAmount)) {
       return;
     }
 
+    const budgetAmount = toSafeNumber(budgetedAmount);
+
     if (editingBillerId) {
-      setBillers((previous) =>
+      setDraftBillers((previous) =>
         previous.map((biller) =>
           biller.id === editingBillerId
             ? {
                 ...biller,
-                name: name.trim(),
-                facility: facility.trim(),
+                company: company.trim(),
+                utilityType: utilityType.trim(),
                 frequency,
-                dueDate,
+                dateCovered,
+                budgetedAmount: budgetAmount,
               }
             : biller,
         ),
@@ -274,140 +297,186 @@ export default function BillReminderPage() {
       return;
     }
 
-    setBillers((previous) => [
+    setDraftBillers((previous) => [
       ...previous,
       {
         id: `${Date.now()}-${previous.length + 1}`,
-        name: name.trim(),
-        facility: facility.trim(),
+        company: company.trim(),
+        utilityType: utilityType.trim(),
         frequency,
-        dueDate,
+        dateCovered,
+        budgetedAmount: budgetAmount,
       },
     ]);
 
     resetForm();
   };
 
+  const handleSaveSetup = () => {
+    if (!periodStart || !periodEnd) {
+      setSetupStatusMessage('Please complete period covered before saving this setup.');
+      setStep(1);
+      return;
+    }
+
+    if (draftBillers.length === 0) {
+      setSetupStatusMessage('Please add at least one biller in Step 1 before saving setup.');
+      setStep(1);
+      return;
+    }
+
+    setSavedSetup(
+      draftBillers.map((biller) => ({
+        ...biller,
+      })),
+    );
+    setActualEntries({});
+    setVarianceNotes({});
+    setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
+    setStep(3);
+  };
+
+  const varianceRows = useMemo(() => {
+    return savedSetup.map((biller) => {
+      const rawActual = actualEntries[biller.id] ?? '';
+      const hasActual = !isBlank(rawActual);
+      const actualAmount = hasActual ? toSafeNumber(rawActual) : 0;
+      const variance = hasActual ? actualAmount - biller.budgetedAmount : 0;
+
+      return {
+        ...biller,
+        hasActual,
+        actualAmount,
+        variance,
+      };
+    });
+  }, [savedSetup, actualEntries]);
+
+  const setupVsActualTotals = useMemo(() => {
+    const setupTotal = varianceRows.reduce((sum, row) => sum + row.budgetedAmount, 0);
+    const actualTotal = varianceRows
+      .filter((row) => row.hasActual)
+      .reduce((sum, row) => sum + row.actualAmount, 0);
+
+    return {
+      setupTotal,
+      actualTotal,
+      netVariance: actualTotal - setupTotal,
+    };
+  }, [varianceRows]);
+
+  const topVarianceRows = useMemo(() => {
+    return varianceRows
+      .filter((row) => row.hasActual)
+      .map((row) => ({
+        ...row,
+        magnitude: Math.abs(row.variance),
+      }))
+      .sort((left, right) => right.magnitude - left.magnitude)
+      .slice(0, 5);
+  }, [varianceRows]);
+
+  const maxVarianceMagnitude = useMemo(
+    () => topVarianceRows.reduce((largest, row) => Math.max(largest, row.magnitude), 0),
+    [topVarianceRows],
+  );
+
+  const billsPaymentHealthScore = useMemo(() => {
+    if (!draftCards.length) {
+      return 0;
+    }
+
+    const total = draftCards.reduce((sum, biller) => {
+      if (biller.status.id === 'maintain') {
+        return sum + 100;
+      }
+      if (biller.status.id === 'watch') {
+        return sum + 65;
+      }
+      return sum + 25;
+    }, 0);
+
+    return total / draftCards.length;
+  }, [draftCards]);
+
+  const aiRecommendations = useMemo(() => {
+    if (!varianceRows.length) {
+      return ['Save your setup to generate bill variance recommendations.'];
+    }
+
+    const hasAnyActual = varianceRows.some((row) => row.hasActual);
+    if (!hasAnyActual) {
+      return ['Start entering actual bill payments in Step 3 to activate AI recommendations.'];
+    }
+
+    const priorityRows = varianceRows
+      .filter((row) => row.hasActual && row.variance > 0)
+      .sort((left, right) => right.variance - left.variance)
+      .slice(0, 3);
+
+    const suggestions = priorityRows.map((row) => {
+      return `${row.company} (${row.utilityType}) is over budget by ${formatCurrency(row.variance)}. Consider pre-scheduling payment and revising monthly allocation.`;
+    });
+
+    if (pastDueCount > 0) {
+      suggestions.push('Settle past due billers first before discretionary payments to avoid late fees.');
+    }
+
+    if (suggestions.length === 0) {
+      suggestions.push('Actual payments are within budgeted amounts. Keep variance explanations updated for each biller.');
+    }
+
+    suggestions.push(`Total bill variance is ${formatSignedCurrency(setupVsActualTotals.netVariance)} versus saved setup.`);
+
+    return suggestions.slice(0, 4);
+  }, [varianceRows, pastDueCount, setupVsActualTotals.netVariance]);
+
   return (
     <div className="psychometric-page bill-reminder-dashboard-page">
       <section className="psychometric-hero bill-reminder-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Payment Calendar</span>
+          <span className="psychometric-eyebrow">Billing Workflow Controls</span>
           <h1>Bill Reminder</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
-            Built for individual bill tracking with borrower cashflow context, due-date reminders,
-            and payment-readiness indicators.
+            Use a guided workflow to set period coverage, configure billers, save setup, and track actual
+            payment variance with AI recommendations.
           </p>
         </div>
 
         <div className="psychometric-hero-metric bill-reminder-dashboard-scorecard">
           <span>Bills Payment Health Score</span>
           <strong>{billsPaymentHealthScore.toFixed(1)}</strong>
-          <small>{billerCards.length ? snapshot.performanceBand : 'Set up your first biller'}</small>
+          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
         </div>
       </section>
 
-      <section className="psychometric-summary-grid">
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>Billings Monitored</span>
-          <strong>{billers.length}</strong>
-          <small>Total billers currently tracked for reminders</small>
+          <span>Progress</span>
+          <strong>{completionPercent}%</strong>
+          <small>{currentStepLabel}</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Ready to Pay</span>
-          <strong>{snapshot.readyToPayCount}</strong>
-          <small>Accounts with usable surplus before due obligations</small>
+          <span>Draft Billers</span>
+          <strong>{draftBillers.length}</strong>
+          <small>Configured in setup workflow</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Watchlist</span>
-          <strong>{dueSoonCount + pastDueCount}</strong>
-          <small>Billers due soon or already past due</small>
+          <span>Saved Setup</span>
+          <strong>{savedSetup.length}</strong>
+          <small>Available for variance tracking</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Performance Band</span>
-          <strong>{snapshot.performanceBand}</strong>
-          <small>{snapshot.healthScore} / 100 weighted score</small>
+          <span>Budget Total</span>
+          <strong>{formatCurrency(draftBudgetTotal)}</strong>
+          <small>Current draft budgeted bill amount</small>
         </article>
-      </section>
-
-      <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Billing Set Up Menu</span>
-            <h2>Add and maintain billers with due dates</h2>
-          </div>
-        </div>
-
-        <form className="budget-dashboard-form-grid" onSubmit={handleAddBiller}>
-          <label className="budget-dashboard-category-input-wrap">
-            <span className="budget-dashboard-category-input-label">Name of Biller</span>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              className="budget-dashboard-category-input"
-              placeholder="Electric Company"
-              required
-            />
-          </label>
-
-          <label className="budget-dashboard-category-input-wrap">
-            <span className="budget-dashboard-category-input-label">Facility / Utility Used</span>
-            <input
-              value={facility}
-              onChange={(event) => setFacility(event.target.value)}
-              className="budget-dashboard-category-input"
-              placeholder="Electricity"
-              required
-            />
-          </label>
-
-          <label className="budget-dashboard-category-input-wrap">
-            <span className="budget-dashboard-category-input-label">Frequency</span>
-            <select
-              value={frequency}
-              onChange={(event) => setFrequency(event.target.value as BillerFrequency)}
-              className="budget-dashboard-category-input"
-            >
-              <option value="Monthly">Monthly</option>
-              <option value="Quarterly">Quarterly</option>
-              <option value="Semi-Annual">Semi-Annual</option>
-              <option value="Annual">Annual</option>
-              <option value="Weekly">Weekly</option>
-            </select>
-          </label>
-
-          <label className="budget-dashboard-category-input-wrap">
-            <span className="budget-dashboard-category-input-label">Due Date</span>
-            <input
-              type="date"
-              value={dueDate}
-              onChange={(event) => setDueDate(event.target.value)}
-              className="budget-dashboard-category-input"
-              required
-            />
-          </label>
-
-          <div className="budget-dashboard-form-actions">
-            <button type="submit" className="psychometric-reset-button">
-              {editingBillerId ? 'Update Biller' : 'Save Biller'}
-            </button>
-            {editingBillerId ? (
-              <button
-                type="button"
-                className="budget-dashboard-category-reset"
-                onClick={resetForm}
-              >
-                Cancel Edit
-              </button>
-            ) : null}
-          </div>
-        </form>
       </section>
 
       <section className="budget-dashboard-layout">
@@ -415,8 +484,8 @@ export default function BillReminderPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Billers Setup</span>
-                <h2>Due-date reminder boxes</h2>
+                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               <button
                 type="button"
@@ -439,244 +508,513 @@ export default function BillReminderPage() {
               {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
             </p>
 
-            <div className="budget-dashboard-card-grid">
-              {billerCards.map((biller) => (
-                <article key={biller.id} className={`budget-dashboard-card budget-dashboard-status-${biller.status.id}`}>
-                  <div className="budget-dashboard-card-header">
-                    <span>{biller.name}</span>
-                    <div className="budget-dashboard-category-actions">
-                      <strong>{biller.status.label}</strong>
+            {setupStatusMessage ? (
+              <div className="budget-workflow-status-banner" role="status">
+                {setupStatusMessage}
+              </div>
+            ) : null}
+
+            {step === 1 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 1: Choose Period Covered</h3>
+                <p className="psychometric-section-note">
+                  In this same step, choose period covered and encode biller setup including company,
+                  utility type or amortization, frequency, date covered, and budgeted amount.
+                </p>
+
+                <div className="budget-workflow-grid-two">
+                  <label>
+                    Period Start
+                    <input
+                      type="date"
+                      value={periodStart}
+                      onChange={(event) => setPeriodStart(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Period End
+                    <input
+                      type="date"
+                      value={periodEnd}
+                      onChange={(event) => setPeriodEnd(event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <form className="budget-workflow-income-grid" onSubmit={handleAddBiller}>
+                  <label>
+                    Company
+                    <input
+                      value={company}
+                      onChange={(event) => setCompany(event.target.value)}
+                      placeholder="Electric Company"
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Utility Type or Amortization For
+                    <input
+                      value={utilityType}
+                      onChange={(event) => setUtilityType(event.target.value)}
+                      placeholder="Electricity or Home Loan Amortization"
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Frequency
+                    <select
+                      value={frequency}
+                      onChange={(event) => setFrequency(event.target.value as BillerFrequency)}
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Semi-Annual">Semi-Annual</option>
+                      <option value="Annual">Annual</option>
+                      <option value="Weekly">Weekly</option>
+                    </select>
+                  </label>
+
+                  <label>
+                    Date Covered
+                    <input
+                      type="date"
+                      value={dateCovered}
+                      onChange={(event) => setDateCovered(event.target.value)}
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Budgeted Amount
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={budgetedAmount}
+                      onChange={(event) => setBudgetedAmount(event.target.value)}
+                      placeholder="0"
+                      required
+                    />
+                  </label>
+
+                  <div className="budget-workflow-inline-actions">
+                    <button type="submit" className="psychometric-reset-button">
+                      {editingBillerId ? 'Update Biller' : 'Add Biller'}
+                    </button>
+                    {editingBillerId ? (
                       <button
                         type="button"
                         className="budget-dashboard-category-reset"
-                        onClick={() => {
-                          setEditingBillerId(biller.id);
-                          setName(biller.name);
-                          setFacility(biller.facility);
-                          setFrequency(biller.frequency);
-                          setDueDate(biller.dueDate);
-                        }}
+                        onClick={resetForm}
                       >
-                        Edit
+                        Cancel Edit
                       </button>
-                      <button
-                        type="button"
-                        className="budget-dashboard-category-reset"
-                        onClick={() => {
-                          setBillers((previous) => previous.filter((item) => item.id !== biller.id));
-                          if (editingBillerId === biller.id) {
-                            resetForm();
-                          }
+                    ) : null}
+                  </div>
+                </form>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Company</th>
+                        <th>Utility / Amortization</th>
+                        <th>Frequency</th>
+                        <th>Date Covered</th>
+                        <th>Budgeted Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {draftCards.map((biller) => (
+                        <tr key={biller.id}>
+                          <td data-label="Company">{biller.company}</td>
+                          <td data-label="Utility / Amortization">{biller.utilityType}</td>
+                          <td data-label="Frequency">{biller.frequency}</td>
+                          <td data-label="Date Covered">{biller.dateCovered || 'Not set'}</td>
+                          <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
+                          <td data-label="Status">{biller.status.label}</td>
+                          <td data-label="Actions">
+                            <div className="budget-workflow-inline-actions">
+                              <button
+                                type="button"
+                                className="budget-dashboard-category-reset"
+                                onClick={() => {
+                                  setEditingBillerId(biller.id);
+                                  setCompany(biller.company);
+                                  setUtilityType(biller.utilityType);
+                                  setFrequency(biller.frequency);
+                                  setDateCovered(biller.dateCovered);
+                                  setBudgetedAmount(String(biller.budgetedAmount));
+                                }}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="budget-dashboard-category-reset"
+                                onClick={() => {
+                                  setDraftBillers((previous) => previous.filter((item) => item.id !== biller.id));
+                                  if (editingBillerId === biller.id) {
+                                    resetForm();
+                                  }
+                                }}
+                              >
+                                Delete
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                      {draftCards.length === 0 ? (
+                        <tr>
+                          <td colSpan={7}>No billers added yet. Add at least one setup line.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="psychometric-reset-button" onClick={() => setStep(2)}>
+                    Continue to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 2: Set Up Baseline</h3>
+                <p className="psychometric-section-note">
+                  Review setup values, then click save. Saved lines will be shown in Step 3 first column for variance monitoring.
+                </p>
+
+                <div className="budget-dashboard-category-summary">
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Period Covered</span>
+                    <strong>{periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : 'Not set'}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Biller Count</span>
+                    <strong>{draftBillers.length}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Budgeted Total</span>
+                    <strong>{formatCurrency(draftBudgetTotal)}</strong>
+                  </div>
+                </div>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Company</th>
+                        <th>Utility / Amortization</th>
+                        <th>Frequency</th>
+                        <th>Date Covered</th>
+                        <th>Budgeted Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {draftBillers.map((biller) => (
+                        <tr key={biller.id}>
+                          <td data-label="Company">{biller.company}</td>
+                          <td data-label="Utility / Amortization">{biller.utilityType}</td>
+                          <td data-label="Frequency">{biller.frequency}</td>
+                          <td data-label="Date Covered">{biller.dateCovered || 'Not set'}</td>
+                          <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
+                        </tr>
+                      ))}
+                      {draftBillers.length === 0 ? (
+                        <tr>
+                          <td colSpan={5}>No billers to review yet.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
+                    Back to Step 1
+                  </button>
+                  <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
+                    Save Setup and Continue to Step 3
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 3: Actual vs Setup Variance</h3>
+                <p className="psychometric-section-note">
+                  First column shows saved setup. Second column is blank for user actuals. Third column shows variance.
+                  Fourth column provides variance explanation in small letters.
+                </p>
+
+                {savedSetup.length === 0 ? (
+                  <p className="psychometric-section-note">
+                    No saved setup yet. Complete Step 2 and click save setup first.
+                  </p>
+                ) : (
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table">
+                      <thead>
+                        <tr>
+                          <th>Setup (Saved)</th>
+                          <th>Actual (User Input)</th>
+                          <th>Variance</th>
+                          <th>Variance Explanation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {varianceRows.map((row) => (
+                          <tr key={row.id}>
+                            <td data-label="Setup (Saved)">
+                              <strong>{row.company}</strong>
+                              <div>{row.utilityType}</div>
+                              <div>{row.frequency}</div>
+                              <div>{row.dateCovered || 'No date covered'}</div>
+                              <div>{formatCurrency(row.budgetedAmount)}</div>
+                            </td>
+                            <td data-label="Actual (User Input)">
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={actualEntries[row.id] ?? ''}
+                                onChange={(event) => {
+                                  setActualEntries((previous) => ({
+                                    ...previous,
+                                    [row.id]: event.target.value,
+                                  }));
+                                }}
+                                placeholder="Enter actual payment"
+                                aria-label={`${row.company} actual payment`}
+                              />
+                            </td>
+                            <td data-label="Variance">
+                              {row.hasActual ? formatSignedCurrency(row.variance) : 'Pending input'}
+                            </td>
+                            <td data-label="Variance Explanation">
+                              <small className="budget-workflow-variance-copy">
+                                {row.hasActual
+                                  ? (varianceNotes[row.id]?.trim() || buildVarianceExplanation(row.variance))
+                                  : 'Awaiting user actual amount.'}
+                              </small>
+                              {row.hasActual ? (
+                                <input
+                                  type="text"
+                                  value={varianceNotes[row.id] ?? ''}
+                                  onChange={(event) => {
+                                    setVarianceNotes((previous) => ({
+                                      ...previous,
+                                      [row.id]: event.target.value,
+                                    }));
+                                  }}
+                                  placeholder="Optional explanation"
+                                  aria-label={`${row.company} variance explanation`}
+                                />
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
+                    Back to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
+          </article>
+
+          {step === 3 ? (
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">AI Recommendations and Graphs</span>
+                  <h2>Variance coaching for bill monitoring</h2>
+                </div>
+              </div>
+
+              <div className="budget-workflow-ai-grid">
+                <article className="budget-workflow-ai-card">
+                  <h3>AI Recommendations</h3>
+                  <ul className="psychometric-breakdown-list">
+                    {aiRecommendations.map((item) => (
+                      <li key={item}>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </article>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Setup vs Actual Graph</h3>
+                  <div className="budget-workflow-graph-row">
+                    <span>Saved Setup Total</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualTotals.setupTotal > 0
+                              ? (setupVsActualTotals.setupTotal / Math.max(setupVsActualTotals.setupTotal, setupVsActualTotals.actualTotal, 1)) * 100
+                              : 0,
+                          )}%`,
                         }}
-                      >
-                        Delete
-                      </button>
+                      />
                     </div>
+                    <strong>{formatCurrency(setupVsActualTotals.setupTotal)}</strong>
                   </div>
-                  <div className="budget-dashboard-comparison-values">
-                    <div>
-                      <small>Facility</small>
-                      <strong>{biller.facility}</strong>
+
+                  <div className="budget-workflow-graph-row">
+                    <span>Actual Total</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-warning"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            setupVsActualTotals.actualTotal > 0
+                              ? (setupVsActualTotals.actualTotal / Math.max(setupVsActualTotals.setupTotal, setupVsActualTotals.actualTotal, 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
                     </div>
-                    <div>
-                      <small>Frequency</small>
-                      <strong>{biller.frequency}</strong>
-                    </div>
+                    <strong>{formatCurrency(setupVsActualTotals.actualTotal)}</strong>
                   </div>
-                  <div className="budget-dashboard-comparison-values">
-                    <div>
-                      <small>Due Date</small>
-                      <strong>{new Date(biller.dueDate).toLocaleDateString()}</strong>
+
+                  <div className="budget-workflow-graph-row">
+                    <span>Net Variance</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className={`budget-workflow-graph-bar ${setupVsActualTotals.netVariance > 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.abs(setupVsActualTotals.netVariance) > 0
+                              ? (Math.abs(setupVsActualTotals.netVariance) / Math.max(Math.abs(setupVsActualTotals.setupTotal), 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
                     </div>
-                    <div>
-                      <small>Status</small>
-                      <strong>{biller.status.note}</strong>
-                    </div>
+                    <strong>{formatSignedCurrency(setupVsActualTotals.netVariance)}</strong>
                   </div>
                 </article>
-              ))}
-              {billerCards.length === 0 ? (
-                <article className="budget-dashboard-card budget-dashboard-status-watch">
-                  <div className="budget-dashboard-card-header">
-                    <span>No billers yet</span>
-                    <strong>Set Up Needed</strong>
-                  </div>
-                  <p>Add your first biller above to start receiving due-date reminder boxes.</p>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Top Variance Graph</h3>
+                  {topVarianceRows.length === 0 ? (
+                    <p className="psychometric-section-note">Enter actual values to visualize top variance billers.</p>
+                  ) : (
+                    <div className="budget-workflow-variance-chart">
+                      {topVarianceRows.map((row) => (
+                        <div key={row.id} className="budget-workflow-variance-row">
+                          <span>{row.company}</span>
+                          <div className="budget-workflow-graph-track">
+                            <div
+                              className={`budget-workflow-graph-bar ${row.variance > 0 ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-setup'}`}
+                              style={{
+                                width: `${maxVarianceMagnitude > 0 ? (row.magnitude / maxVarianceMagnitude) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                          <strong>{formatSignedCurrency(row.variance)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </article>
-              ) : null}
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Billing Calendar Summary</span>
-                <h2>Helpful view for personally monitored billings</h2>
               </div>
-            </div>
-
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Name of Biller</th>
-                    <th>Facility / Utility Used</th>
-                    <th>Frequency</th>
-                    <th>Due Date</th>
-                    <th>Days to Due</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {billingSummaryRows.map((row) => (
-                    <tr key={row.id}>
-                      <td data-label="Name of Biller">{row.name}</td>
-                      <td data-label="Facility / Utility Used">{row.facility}</td>
-                      <td data-label="Frequency">{row.frequency}</td>
-                      <td data-label="Due Date">{row.dueDateLabel}</td>
-                      <td data-label="Days to Due">{row.daysLabel}</td>
-                      <td data-label="Status">{row.statusLabel}</td>
-                    </tr>
-                  ))}
-                  {billingSummaryRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={6}>No billers are set up yet. Add a biller above to start tracking due dates.</td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="budget-dashboard-comparison-grid">
-              {personalReminderCards.map((card) => (
-                <article key={card.id} className={`budget-dashboard-comparison-card budget-dashboard-status-${card.status}`}>
-                  <div className="budget-dashboard-card-header">
-                    <span>{card.label}</span>
-                    <strong>{card.value}</strong>
-                  </div>
-                  <p>{card.helper}</p>
-                </article>
-              ))}
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Personal Reminder Guidance</span>
-                <h2>Helpful guidance for individual billing monitoring</h2>
-              </div>
-            </div>
-
-            <div className="budget-dashboard-indicator-row">
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${pastDueCount > 0 ? 'attention' : 'maintain'}`}>
-                <span>Pay Overdue Bills First</span>
-                <strong>{pastDueCount > 0 ? 'High Priority' : 'Clear'}</strong>
-                <p>
-                  {pastDueCount > 0
-                    ? 'Overdue bills should be paid before lower-priority upcoming bills to avoid additional fees and service interruption.'
-                    : 'No overdue bill is currently flagged, so keep upcoming due dates funded and tracked.'}
-                </p>
-              </article>
-
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${dueSoonCount > 0 ? 'watch' : 'maintain'}`}>
-                <span>Prepare the Next 5 Days</span>
-                <strong>{dueSoonCount > 0 ? 'Due Soon' : 'Stable'}</strong>
-                <p>
-                  {dueSoonCount > 0
-                    ? 'Bills due within five days should be funded now so you are not forced into last-minute catch-up payments.'
-                    : 'There are no near-term due bills inside the next five days right now.'}
-                </p>
-              </article>
-
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${snapshot.readyToPayCount > 0 ? 'maintain' : 'watch'}`}>
-                <span>Use Borrower Cashflow Signal</span>
-                <strong>{snapshot.readyToPayCount > 0 ? 'Payment Room' : 'Conserve Cash'}</strong>
-                <p>
-                  {snapshot.readyToPayCount > 0
-                    ? 'The borrower profile suggests some payment room, so reserve it first for required bills before discretionary spending.'
-                    : 'Current financial pressure looks tighter, so prioritize essential utilities and fixed obligations first.'}
-                </p>
-              </article>
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">AI Reminder</span>
-                <h2>Suggested next actions from the current bill list</h2>
-              </div>
-            </div>
-
-            <div className="budget-dashboard-indicator-row">
-              <article className={`budget-dashboard-indicator ${pastDueCount > 0 ? 'budget-dashboard-status-attention' : 'budget-dashboard-status-maintain'}`}>
-                <span>Next Priority</span>
-                <strong>{pastDueCount > 0 ? 'Act Now' : dueSoonCount > 0 ? 'Prepare Now' : 'Stable'}</strong>
-                <p>{advisor.nextPriority}</p>
-              </article>
-
-              <article className={`budget-dashboard-indicator ${snapshot.readyToPayCount > 0 ? 'budget-dashboard-status-maintain' : 'budget-dashboard-status-watch'}`}>
-                <span>Cashflow Reminder</span>
-                <strong>{snapshot.readyToPayCount > 0 ? 'Payment Room Available' : 'Tighten Spend'}</strong>
-                <p>{advisor.cashflowReminder}</p>
-              </article>
-
-              <article className={`budget-dashboard-indicator ${billers.length > 0 ? 'budget-dashboard-status-watch' : 'budget-dashboard-status-attention'}`}>
-                <span>Coverage Reminder</span>
-                <strong>{billers.length > 0 ? 'Review Setup' : 'Add Billers'}</strong>
-                <p>{advisor.coverageReminder}</p>
-              </article>
-            </div>
-          </article>
+            </article>
+          ) : null}
         </div>
 
         <aside className="budget-dashboard-side">
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Action</span>
-            <h2>{snapshot.actionLabel}</h2>
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+
+            <div className="lending-psychometric-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const statusLabel = isActive ? 'Current step' : isCompleted ? 'Completed' : 'Pending';
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                  >
+                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="lending-psychometric-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{`${statusLabel} · ${workflowStep.description}`}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Setup Snapshot</span>
+            <h2>{savedSetup.length > 0 ? 'Setup Saved' : 'Setup Draft'}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Reminder</span>
-                <strong>{reminderCount}</strong>
+                <span>Period Covered</span>
+                <strong>{periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : 'Not set'}</strong>
               </li>
               <li>
-                <span>Due within 5 days</span>
-                <strong>{dueSoonCount}</strong>
+                <span>Draft Budget</span>
+                <strong>{formatCurrency(draftBudgetTotal)}</strong>
               </li>
               <li>
-                <span>Past due</span>
-                <strong>{pastDueCount}</strong>
+                <span>Saved Budget</span>
+                <strong>{formatCurrency(savedBudgetTotal)}</strong>
               </li>
             </ul>
           </article>
 
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Queue Health</span>
+            <span className="psychometric-panel-kicker">Due Health</span>
             <h2>{snapshot.performanceBand}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Billings monitored</span>
-                <strong>{billers.length}</strong>
+                <span>Due Soon</span>
+                <strong>{dueSoonCount}</strong>
               </li>
               <li>
-                <span>Ready to pay</span>
+                <span>Past Due</span>
+                <strong>{pastDueCount}</strong>
+              </li>
+              <li>
+                <span>Ready to Pay</span>
                 <strong>{snapshot.readyToPayCount}</strong>
               </li>
-              <li>
-                <span>Average surplus ratio</span>
-                <strong>{formatPercent(snapshot.averageSurplusRatio)}</strong>
-              </li>
             </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Reminder Notes</span>
-            <h2>Best-practice focus</h2>
-            <p className="psychometric-section-note">
-              Green reminder cards are safe, yellow cards are due within 5 days, and red cards are past due.
-              Use the setup menu to keep due dates and billing frequency current.
-            </p>
           </article>
         </aside>
       </section>

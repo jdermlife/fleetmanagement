@@ -1,14 +1,22 @@
-import { Fragment, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 
+type WorkflowStep = 1 | 2 | 3;
 type BalanceSheetSection = 'assets' | 'liabilities' | 'equities';
 
 type BalanceSheetEntry = {
   id: string;
   label: string;
   section: BalanceSheetSection;
+};
+
+type SavedLine = {
+  id: string;
+  label: string;
+  section: BalanceSheetSection;
+  setupAmount: number;
 };
 
 const BALANCE_SHEET_STORAGE_KEY = 'fms:networth-balance-sheet';
@@ -31,10 +39,6 @@ const BALANCE_SHEET_ENTRIES: BalanceSheetEntry[] = [
   { id: 'other-equity', label: 'Other Equity', section: 'equities' },
 ];
 
-function formatPercent(value: number) {
-  return `${value.toFixed(0)}%`;
-}
-
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat(undefined, {
     style: 'currency',
@@ -43,34 +47,27 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
-function formatMetric(value: number, unit: 'percent' | 'days' | 'score' | 'currency' | 'count') {
-  if (unit === 'currency') {
-    return new Intl.NumberFormat(undefined, {
-      style: 'currency',
-      currency: 'PHP',
-      maximumFractionDigits: 0,
-    }).format(value);
+function formatSignedCurrency(amount: number) {
+  const absoluteAmount = formatCurrency(Math.abs(amount));
+  if (amount > 0) {
+    return `+${absoluteAmount}`;
   }
-  if (unit === 'count') {
-    return value.toFixed(0);
+  if (amount < 0) {
+    return `-${absoluteAmount}`;
   }
-  if (unit === 'days') {
-    return `${value.toFixed(1)} days`;
-  }
-  if (unit === 'score') {
-    return value.toFixed(1);
-  }
-  return formatPercent(value);
+  return absoluteAmount;
 }
 
-function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
-  if (status === 'maintain') {
-    return 'Maintain';
+function toSafeNumber(rawValue: string | number | undefined) {
+  const parsed = Number(rawValue);
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return 0;
   }
-  if (status === 'watch') {
-    return 'Watch';
-  }
-  return 'Needs Attention';
+  return parsed;
+}
+
+function isBlank(rawValue: string | undefined) {
+  return (rawValue ?? '').trim() === '';
 }
 
 function loadStoredBalanceSheet(): Record<string, string> {
@@ -84,7 +81,7 @@ function loadStoredBalanceSheet(): Record<string, string> {
       return {};
     }
     const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? parsed as Record<string, string> : {};
+    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
   } catch {
     return {};
   }
@@ -92,29 +89,46 @@ function loadStoredBalanceSheet(): Record<string, string> {
 
 function getSectionLabel(section: BalanceSheetSection) {
   if (section === 'assets') {
-    return 'Assets';
+    return 'Asset';
   }
   if (section === 'liabilities') {
-    return 'Liabilities';
+    return 'Liability';
   }
-  return 'Equities';
+  return 'Equity';
 }
 
-function getTopBalanceSheetEntry(
-  rows: Array<BalanceSheetEntry & { amount: number; raw: string }>,
-): (BalanceSheetEntry & { amount: number; raw: string }) | null {
-  return [...rows]
-    .filter((row) => row.amount > 0)
-    .sort((left, right) => right.amount - left.amount)[0] ?? null;
+function buildVarianceExplanation(section: BalanceSheetSection, variance: number) {
+  if (variance === 0) {
+    return 'On target versus setup';
+  }
+
+  if (section === 'liabilities') {
+    return variance > 0
+      ? 'Liability increased above setup and needs control'
+      : 'Liability is lower than setup and improves net worth';
+  }
+
+  return variance > 0
+    ? 'Value improved above setup and supports net worth'
+    : 'Value declined below setup and weakens net worth';
 }
 
 export default function NetWorthPositioningPage() {
-  const { applications, error, lastUpdated } = useLoanApplicationsMetrics();
+  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
     () => buildNetWorthPositioningSnapshot(applications),
     [applications],
   );
+
+  const [step, setStep] = useState<WorkflowStep>(1);
+  const [periodStart, setPeriodStart] = useState('');
+  const [periodEnd, setPeriodEnd] = useState('');
+
   const [amounts, setAmounts] = useState<Record<string, string>>(() => loadStoredBalanceSheet());
+  const [savedSetup, setSavedSetup] = useState<SavedLine[]>([]);
+  const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
+  const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
   useEffect(() => {
     if (typeof window === 'undefined') {
@@ -123,161 +137,235 @@ export default function NetWorthPositioningPage() {
     window.localStorage.setItem(BALANCE_SHEET_STORAGE_KEY, JSON.stringify(amounts));
   }, [amounts]);
 
-  const latestFinancialApplication = useMemo(() => {
-    const candidates = applications.filter((record) => {
-      return record.monthly_income > 0 || record.other_income > 0 || record.debt_obligations > 0;
-    });
+  const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
+    {
+      id: 1,
+      label: 'Choose Period Covered',
+      description: 'Select covered dates for this workflow.',
+    },
+    {
+      id: 2,
+      label: 'Set Up Baseline',
+      description: 'Enter setup values before saving.',
+    },
+    {
+      id: 3,
+      label: 'Actual vs Setup Variance',
+      description: 'Enter actual values and review variance.',
+    },
+  ];
 
-    return [...candidates].sort((left, right) => {
-      const rightTimestamp = Date.parse(right.updated_at ?? right.created_at ?? '') || 0;
-      const leftTimestamp = Date.parse(left.updated_at ?? left.created_at ?? '') || 0;
-      return rightTimestamp - leftTimestamp;
-    })[0] ?? null;
-  }, [applications]);
+  const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Net Worth Workflow';
+  const completionPercent = Math.round((step / workflowSteps.length) * 100);
+  const stepperButtonClass = 'loan-stepper-button';
 
-  const increasingExpensesCount = useMemo(() => {
-    if (!latestFinancialApplication) {
-      return 0;
-    }
-
-    const employment = latestFinancialApplication.requirements?.employmentInformation;
-    const banking = latestFinancialApplication.requirements?.bankingRelationships;
-    const grossIncome = Math.max(
-      latestFinancialApplication.monthly_income + latestFinancialApplication.other_income,
-      Number(employment?.grossMonthlyIncome ?? 0),
-    );
-    const livingExpenses = Number(employment?.monthlyLivingExpenses ?? 0);
-    const mortgageExpense = Number(banking?.loanMonthlyAmortization ?? 0);
-    const debtObligations = Number(latestFinancialApplication.debt_obligations ?? 0);
-
-    if (grossIncome <= 0) {
-      return 0;
-    }
-
-    return [
-      livingExpenses / grossIncome > 0.45,
-      debtObligations / grossIncome > 0.35,
-      mortgageExpense / grossIncome > 0.28,
-      grossIncome - livingExpenses - debtObligations < 0,
-    ].filter(Boolean).length;
-  }, [latestFinancialApplication]);
-
-  const sectionRows = useMemo(
+  const setupRows = useMemo(
     () =>
-      BALANCE_SHEET_ENTRIES.reduce<Record<BalanceSheetSection, Array<BalanceSheetEntry & { amount: number; raw: string }>>>(
-        (accumulator, entry) => {
-          const raw = amounts[entry.id] ?? '';
-          const parsed = raw.trim() === '' ? 0 : Number(raw);
-          accumulator[entry.section].push({
-            ...entry,
-            raw,
-            amount: Number.isFinite(parsed) ? Math.max(0, parsed) : 0,
-          });
-          return accumulator;
-        },
-        { assets: [], liabilities: [], equities: [] },
-      ),
+      BALANCE_SHEET_ENTRIES.map((entry) => {
+        const raw = amounts[entry.id] ?? '';
+        return {
+          ...entry,
+          raw,
+          amount: toSafeNumber(raw),
+        };
+      }),
     [amounts],
   );
 
-  const totalAssets = useMemo(
-    () => sectionRows.assets.reduce((sum, row) => sum + row.amount, 0),
-    [sectionRows.assets],
+  const setupAssetsTotal = useMemo(
+    () => setupRows.filter((row) => row.section === 'assets').reduce((sum, row) => sum + row.amount, 0),
+    [setupRows],
   );
-  const totalLiabilities = useMemo(
-    () => sectionRows.liabilities.reduce((sum, row) => sum + row.amount, 0),
-    [sectionRows.liabilities],
+  const setupLiabilitiesTotal = useMemo(
+    () => setupRows.filter((row) => row.section === 'liabilities').reduce((sum, row) => sum + row.amount, 0),
+    [setupRows],
   );
-  const totalEquities = useMemo(
-    () => sectionRows.equities.reduce((sum, row) => sum + row.amount, 0),
-    [sectionRows.equities],
+  const setupEquitiesTotal = useMemo(
+    () => setupRows.filter((row) => row.section === 'equities').reduce((sum, row) => sum + row.amount, 0),
+    [setupRows],
   );
-  const numberOfAssets = useMemo(
-    () => sectionRows.assets.filter((row) => row.amount > 0).length,
-    [sectionRows.assets],
-  );
-  const netWorth = totalAssets + totalEquities - totalLiabilities;
-  const biggestLiability = useMemo(
-    () => getTopBalanceSheetEntry(sectionRows.liabilities),
-    [sectionRows.liabilities],
-  );
-  const biggestAsset = useMemo(
-    () => getTopBalanceSheetEntry(sectionRows.assets),
-    [sectionRows.assets],
-  );
-  const liabilitiesToAssetsRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0;
-  const advisor = useMemo(() => {
-    const debtAdvice =
-      biggestLiability && biggestLiability.amount > 0
-        ? `Focus first on reducing ${biggestLiability.label}, because it is currently your largest recorded liability and has the biggest effect on net worth.`
-        : 'Add liability balances so the advisor can identify which obligation should be reduced first.';
+  const setupNetWorth = setupAssetsTotal + setupEquitiesTotal - setupLiabilitiesTotal;
 
-    const expenseAdvice =
-      increasingExpensesCount > 0
-        ? `Expenses appear to be rising in ${increasingExpensesCount} pressure area(s). Review living expenses, debt obligations, and recurring monthly commitments before adding new liabilities.`
-        : 'Current application signals do not show strong expense pressure. Keep protecting surplus cash and avoid unnecessary recurring commitments.';
+  const handleSaveSetup = () => {
+    if (!periodStart || !periodEnd) {
+      setSetupStatusMessage('Please complete period covered before saving this net worth setup.');
+      setStep(1);
+      return;
+    }
 
-    const netWorthAdvice =
-      netWorth > 0 && liabilitiesToAssetsRatio < 60
-        ? `Net worth is improving. ${biggestAsset ? `${biggestAsset.label} is currently your strongest asset anchor.` : 'Your asset base is stronger than your liabilities.'}`
-        : netWorth > 0
-          ? 'Net worth is still positive, but liabilities are taking a larger share of your assets. Prioritize liability reduction and preserve liquidity.'
-          : 'Net worth is weak or negative right now. Focus on cutting liabilities, building liquid assets, and avoiding new debt until the balance sheet stabilizes.';
+    const setupLines = setupRows
+      .filter((row) => row.amount > 0)
+      .map((row) => ({
+        id: row.id,
+        label: row.label,
+        section: row.section,
+        setupAmount: row.amount,
+      }));
+
+    if (setupLines.length === 0) {
+      setSetupStatusMessage('Please enter at least one balance sheet amount before saving setup.');
+      setStep(1);
+      return;
+    }
+
+    setSavedSetup(setupLines);
+    setActualEntries({});
+    setVarianceNotes({});
+    setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
+    setStep(3);
+  };
+
+  const varianceRows = useMemo(() => {
+    return savedSetup.map((line) => {
+      const rawActual = actualEntries[line.id] ?? '';
+      const hasActual = !isBlank(rawActual);
+      const actualAmount = hasActual ? toSafeNumber(rawActual) : 0;
+      const variance = hasActual ? actualAmount - line.setupAmount : 0;
+
+      return {
+        ...line,
+        hasActual,
+        actualAmount,
+        variance,
+      };
+    });
+  }, [savedSetup, actualEntries]);
+
+  const totals = useMemo(() => {
+    const setupAssets = varianceRows
+      .filter((row) => row.section === 'assets')
+      .reduce((sum, row) => sum + row.setupAmount, 0);
+    const setupLiabilities = varianceRows
+      .filter((row) => row.section === 'liabilities')
+      .reduce((sum, row) => sum + row.setupAmount, 0);
+    const setupEquities = varianceRows
+      .filter((row) => row.section === 'equities')
+      .reduce((sum, row) => sum + row.setupAmount, 0);
+
+    const actualAssets = varianceRows
+      .filter((row) => row.section === 'assets' && row.hasActual)
+      .reduce((sum, row) => sum + row.actualAmount, 0);
+    const actualLiabilities = varianceRows
+      .filter((row) => row.section === 'liabilities' && row.hasActual)
+      .reduce((sum, row) => sum + row.actualAmount, 0);
+    const actualEquities = varianceRows
+      .filter((row) => row.section === 'equities' && row.hasActual)
+      .reduce((sum, row) => sum + row.actualAmount, 0);
 
     return {
-      debtAdvice,
-      debtStatus: biggestLiability ? (biggestLiability.amount > totalAssets * 0.35 ? 'attention' : 'watch') : 'watch',
-      expenseAdvice,
-      expenseStatus: increasingExpensesCount > 1 ? 'attention' : increasingExpensesCount === 1 ? 'watch' : 'maintain',
-      netWorthAdvice,
-      netWorthStatus: netWorth > 0 && liabilitiesToAssetsRatio < 60 ? 'maintain' : netWorth > 0 ? 'watch' : 'attention',
-    } as const;
-  }, [biggestAsset, biggestLiability, increasingExpensesCount, liabilitiesToAssetsRatio, netWorth, totalAssets]);
+      setupAssets,
+      setupLiabilities,
+      setupEquities,
+      setupNetWorth: setupAssets + setupEquities - setupLiabilities,
+      actualAssets,
+      actualLiabilities,
+      actualEquities,
+      actualNetWorth: actualAssets + actualEquities - actualLiabilities,
+    };
+  }, [varianceRows]);
+
+  const topVarianceRows = useMemo(() => {
+    return varianceRows
+      .filter((row) => row.hasActual)
+      .map((row) => ({
+        ...row,
+        magnitude: Math.abs(row.variance),
+      }))
+      .sort((left, right) => right.magnitude - left.magnitude)
+      .slice(0, 5);
+  }, [varianceRows]);
+
+  const maxVarianceMagnitude = useMemo(
+    () => topVarianceRows.reduce((largest, row) => Math.max(largest, row.magnitude), 0),
+    [topVarianceRows],
+  );
+
+  const aiRecommendations = useMemo(() => {
+    if (!varianceRows.length) {
+      return ['Save setup first so recommendations can be generated.'];
+    }
+
+    const hasAnyActual = varianceRows.some((row) => row.hasActual);
+    if (!hasAnyActual) {
+      return ['Enter actual values in Step 3 to unlock AI recommendations for net worth variance.'];
+    }
+
+    const prioritized = varianceRows
+      .filter((row) => row.hasActual)
+      .map((row) => {
+        const riskMagnitude = row.section === 'liabilities'
+          ? Math.max(row.variance, 0)
+          : Math.max(-row.variance, 0);
+        return {
+          ...row,
+          riskMagnitude,
+        };
+      })
+      .sort((left, right) => right.riskMagnitude - left.riskMagnitude)
+      .slice(0, 3)
+      .filter((row) => row.riskMagnitude > 0);
+
+    const recommendations = prioritized.map((row) => {
+      if (row.section === 'liabilities') {
+        return `${row.label} is above setup by ${formatCurrency(row.variance)}. Prioritize payoff sequencing to protect net worth.`;
+      }
+      return `${row.label} is below setup by ${formatCurrency(Math.abs(row.variance))}. Rebuild this value area to stabilize net worth.`;
+    });
+
+    if (recommendations.length === 0) {
+      recommendations.push('Actual values are aligned with setup. Keep updating variance explanations to maintain tracking quality.');
+    }
+
+    recommendations.push(`Net worth projection is ${formatSignedCurrency(totals.actualNetWorth || totals.setupNetWorth)} using current entries.`);
+
+    return recommendations.slice(0, 4);
+  }, [varianceRows, totals.actualNetWorth, totals.setupNetWorth]);
 
   return (
     <div className="psychometric-page networth-dashboard-page">
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Prosperity Lens</span>
+          <span className="psychometric-eyebrow">Net Worth Workflow Controls</span>
           <h1>Net Worth Tracking</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
-            Tracking personal net worth means monitoring valuation cushions, debt pressures, liquidity reserves, and approval-band positioning — so your financial standing is always visible at a portfolio level.
+            Navigate a guided net-worth workflow to set period coverage, build setup amounts, then compare
+            actual values and track variances with AI guidance.
           </p>
         </div>
 
         <div className="psychometric-hero-metric networth-dashboard-scorecard">
           <span>Net Worth Position Score</span>
           <strong>{snapshot.healthScore.toFixed(1)}</strong>
-          <small>{snapshot.performanceBand}</small>
+          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
         </div>
       </section>
 
-      <section className="psychometric-summary-grid">
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>Number of Assets</span>
-          <strong>{numberOfAssets}</strong>
-          <small>Asset accounts with entered values</small>
+          <span>Progress</span>
+          <strong>{completionPercent}%</strong>
+          <small>{currentStepLabel}</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Net Worth</span>
-          <strong>{formatCurrency(netWorth)}</strong>
-          <small>Total assets plus equities less liabilities</small>
+          <span>Setup Assets</span>
+          <strong>{formatCurrency(setupAssetsTotal)}</strong>
+          <small>Current setup for asset lines</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Increasing Expenses</span>
-          <strong>{increasingExpensesCount}</strong>
-          <small>Expense pressure signals from the latest application</small>
+          <span>Setup Liabilities</span>
+          <strong>{formatCurrency(setupLiabilitiesTotal)}</strong>
+          <small>Current setup for liability lines</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Performance Band</span>
-          <strong>{snapshot.performanceBand}</strong>
-          <small>{snapshot.healthScore} / 100 weighted score</small>
+          <span>Setup Net Worth</span>
+          <strong>{formatSignedCurrency(setupNetWorth)}</strong>
+          <small>{snapshot.performanceBand}</small>
         </article>
       </section>
 
@@ -286,16 +374,16 @@ export default function NetWorthPositioningPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Balance Sheet</span>
-                <h2>To be filled up for personal net worth monitoring</h2>
+                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               <button
                 type="button"
                 className="psychometric-reset-button"
-                onClick={() => setAmounts({})}
-                disabled={Object.keys(amounts).length === 0}
+                onClick={reload}
+                disabled={loading}
               >
-                Reset Balance Sheet
+                {loading ? 'Refreshing...' : 'Refresh Data'}
               </button>
             </div>
 
@@ -310,24 +398,53 @@ export default function NetWorthPositioningPage() {
               {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
             </p>
 
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Accounts</th>
-                    <th>Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {(['assets', 'liabilities', 'equities'] as BalanceSheetSection[]).map((section) => (
-                    <Fragment key={section}>
+            {setupStatusMessage ? (
+              <div className="budget-workflow-status-banner" role="status">
+                {setupStatusMessage}
+              </div>
+            ) : null}
+
+            {step === 1 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 1: Choose Period Covered</h3>
+                <p className="psychometric-section-note">
+                  Select period covered, then encode setup amounts for assets, liabilities, and equities.
+                </p>
+
+                <div className="budget-workflow-grid-two">
+                  <label>
+                    Period Start
+                    <input
+                      type="date"
+                      value={periodStart}
+                      onChange={(event) => setPeriodStart(event.target.value)}
+                    />
+                  </label>
+                  <label>
+                    Period End
+                    <input
+                      type="date"
+                      value={periodEnd}
+                      onChange={(event) => setPeriodEnd(event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
                       <tr>
-                        <td colSpan={2} style={{ fontWeight: 700 }}>{getSectionLabel(section)}</td>
+                        <th>Section</th>
+                        <th>Line Item</th>
+                        <th>Setup Amount</th>
                       </tr>
-                      {sectionRows[section].map((row) => (
+                    </thead>
+                    <tbody>
+                      {setupRows.map((row) => (
                         <tr key={row.id}>
-                          <td data-label="Account">{row.label}</td>
-                          <td data-label="Amount">
+                          <td data-label="Section">{getSectionLabel(row.section)}</td>
+                          <td data-label="Line Item">{row.label}</td>
+                          <td data-label="Setup Amount">
                             <input
                               type="number"
                               min={0}
@@ -341,162 +458,348 @@ export default function NetWorthPositioningPage() {
                               }}
                               className="budget-dashboard-category-input"
                               placeholder="0"
-                              aria-label={`${row.label} amount`}
+                              aria-label={`${row.label} setup amount`}
                             />
                           </td>
                         </tr>
                       ))}
-                    </Fragment>
-                  ))}
-                </tbody>
-                <tfoot>
-                  <tr>
-                    <td data-label="Summary" style={{ fontWeight: 700 }}>Net Worth</td>
-                    <td data-label="Amount" style={{ fontWeight: 700 }}>{formatCurrency(netWorth)}</td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="psychometric-reset-button" onClick={() => setStep(2)}>
+                    Continue to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 2 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 2: Set Up Baseline</h3>
+                <p className="psychometric-section-note">
+                  Review setup values, then click save setup so lines appear in Step 3 first column.
+                </p>
+
+                <div className="budget-dashboard-category-summary">
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Period Covered</span>
+                    <strong>{periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : 'Not set'}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Setup Entries</span>
+                    <strong>{setupRows.filter((row) => row.amount > 0).length}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Setup Net Worth</span>
+                    <strong>{formatSignedCurrency(setupNetWorth)}</strong>
+                  </div>
+                </div>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Section</th>
+                        <th>Line Item</th>
+                        <th>Setup Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {setupRows
+                        .filter((row) => row.amount > 0)
+                        .map((row) => (
+                          <tr key={row.id}>
+                            <td data-label="Section">{getSectionLabel(row.section)}</td>
+                            <td data-label="Line Item">{row.label}</td>
+                            <td data-label="Setup Amount">{formatCurrency(row.amount)}</td>
+                          </tr>
+                        ))}
+                      {setupRows.filter((row) => row.amount > 0).length === 0 ? (
+                        <tr>
+                          <td colSpan={3}>No setup lines yet. Return to Step 1 and add values.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
+                    Back to Step 1
+                  </button>
+                  <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
+                    Save Setup and Continue to Step 3
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 3 ? (
+              <div className="budget-workflow-step-block">
+                <h3>Step 3: Actual vs Setup Variance</h3>
+                <p className="psychometric-section-note">
+                  First column shows saved setup. Second column is blank for actual entry. Third column is variance.
+                  Fourth column shows variance explanation in small letters.
+                </p>
+
+                {savedSetup.length === 0 ? (
+                  <p className="psychometric-section-note">
+                    No saved setup yet. Complete Step 2 and click save setup first.
+                  </p>
+                ) : (
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table">
+                      <thead>
+                        <tr>
+                          <th>Setup (Saved)</th>
+                          <th>Actual (User Input)</th>
+                          <th>Variance</th>
+                          <th>Variance Explanation</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {varianceRows.map((row) => (
+                          <tr key={row.id}>
+                            <td data-label="Setup (Saved)">
+                              <strong>{row.label}</strong>
+                              <div>{getSectionLabel(row.section)}</div>
+                              <div>{formatCurrency(row.setupAmount)}</div>
+                            </td>
+                            <td data-label="Actual (User Input)">
+                              <input
+                                type="number"
+                                min={0}
+                                step="0.01"
+                                value={actualEntries[row.id] ?? ''}
+                                onChange={(event) => {
+                                  setActualEntries((previous) => ({
+                                    ...previous,
+                                    [row.id]: event.target.value,
+                                  }));
+                                }}
+                                placeholder="Enter actual value"
+                                aria-label={`${row.label} actual value`}
+                              />
+                            </td>
+                            <td data-label="Variance">
+                              {row.hasActual ? formatSignedCurrency(row.variance) : 'Pending input'}
+                            </td>
+                            <td data-label="Variance Explanation">
+                              <small className="budget-workflow-variance-copy">
+                                {row.hasActual
+                                  ? (varianceNotes[row.id]?.trim() || buildVarianceExplanation(row.section, row.variance))
+                                  : 'Awaiting actual value from user.'}
+                              </small>
+                              {row.hasActual ? (
+                                <input
+                                  type="text"
+                                  value={varianceNotes[row.id] ?? ''}
+                                  onChange={(event) => {
+                                    setVarianceNotes((previous) => ({
+                                      ...previous,
+                                      [row.id]: event.target.value,
+                                    }));
+                                  }}
+                                  placeholder="Optional explanation"
+                                  aria-label={`${row.label} variance explanation`}
+                                />
+                              ) : null}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
+                    Back to Step 2
+                  </button>
+                </div>
+              </div>
+            ) : null}
           </article>
 
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Control Metrics</span>
-                <h2>Actual vs target net-worth controls</h2>
+          {step === 3 ? (
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">AI Recommendations and Graphs</span>
+                  <h2>Net worth variance coaching and visuals</h2>
+                </div>
               </div>
-            </div>
 
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Control</th>
-                    <th>Actual</th>
-                    <th>Target</th>
-                    <th>Variance</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.controlItems.map((item) => (
-                    <tr key={item.id}>
-                      <td data-label="Control">{item.label}</td>
-                      <td data-label="Actual">{formatMetric(item.actual, item.unit)}</td>
-                      <td data-label="Target">{formatMetric(item.target, item.unit)}</td>
-                      <td data-label="Variance">{formatMetric(item.variance, item.unit)}</td>
-                      <td data-label="Status">{getStatusLabel(item.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Position Indicators</span>
-                <h2>Indicators to maintain and reposition</h2>
-              </div>
-            </div>
-
-            <div className="budget-dashboard-indicator-row">
-              {snapshot.indicators.map((indicator) => (
-                <article key={indicator.id} className={`budget-dashboard-indicator budget-dashboard-status-${indicator.status}`}>
-                  <span>{indicator.label}</span>
-                  <strong>
-                    {indicator.id === 'average-net-cashflow'
-                      ? formatCurrency(indicator.value)
-                      : formatPercent(indicator.value)}
-                  </strong>
-                  <small>
-                    Target {indicator.id === 'average-net-cashflow'
-                      ? formatCurrency(indicator.target)
-                      : formatPercent(indicator.target)}
-                  </small>
-                  <p>{indicator.note}</p>
+              <div className="budget-workflow-ai-grid">
+                <article className="budget-workflow-ai-card">
+                  <h3>AI Recommendations</h3>
+                  <ul className="psychometric-breakdown-list">
+                    {aiRecommendations.map((item) => (
+                      <li key={item}>
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </article>
-              ))}
-            </div>
-          </article>
 
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">AI Advisor</span>
-                <h2>Personal balance-sheet guidance</h2>
+                <article className="budget-workflow-ai-card">
+                  <h3>Setup vs Actual Net Worth Graph</h3>
+                  <div className="budget-workflow-graph-row">
+                    <span>Setup Net Worth</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.abs(totals.setupNetWorth) > 0
+                              ? (Math.abs(totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.actualNetWorth), 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatSignedCurrency(totals.setupNetWorth)}</strong>
+                  </div>
+
+                  <div className="budget-workflow-graph-row">
+                    <span>Actual Net Worth</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className={`budget-workflow-graph-bar ${totals.actualNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.abs(totals.actualNetWorth) > 0
+                              ? (Math.abs(totals.actualNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.actualNetWorth), 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatSignedCurrency(totals.actualNetWorth)}</strong>
+                  </div>
+
+                  <div className="budget-workflow-graph-row">
+                    <span>Net Worth Variance</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className={`budget-workflow-graph-bar ${totals.actualNetWorth - totals.setupNetWorth < 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            Math.abs(totals.actualNetWorth - totals.setupNetWorth) > 0
+                              ? (Math.abs(totals.actualNetWorth - totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{formatSignedCurrency(totals.actualNetWorth - totals.setupNetWorth)}</strong>
+                  </div>
+                </article>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Top Variance Graph</h3>
+                  {topVarianceRows.length === 0 ? (
+                    <p className="psychometric-section-note">Enter actual values to visualize top variance lines.</p>
+                  ) : (
+                    <div className="budget-workflow-variance-chart">
+                      {topVarianceRows.map((row) => (
+                        <div key={row.id} className="budget-workflow-variance-row">
+                          <span>{row.label}</span>
+                          <div className="budget-workflow-graph-track">
+                            <div
+                              className={`budget-workflow-graph-bar ${row.section === 'liabilities' && row.variance > 0 ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-setup'}`}
+                              style={{
+                                width: `${maxVarianceMagnitude > 0 ? (row.magnitude / maxVarianceMagnitude) * 100 : 0}%`,
+                              }}
+                            />
+                          </div>
+                          <strong>{formatSignedCurrency(row.variance)}</strong>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </article>
               </div>
-            </div>
-
-            <div className="budget-dashboard-indicator-row">
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.debtStatus}`}>
-                <span>Liability Reduction Priority</span>
-                <strong>{biggestLiability?.label ?? 'Add liabilities'}</strong>
-                <p>{advisor.debtAdvice}</p>
-              </article>
-
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.expenseStatus}`}>
-                <span>Expenses vs Savings</span>
-                <strong>{increasingExpensesCount > 0 ? 'Review Spending' : 'Stable Spending'}</strong>
-                <p>{advisor.expenseAdvice}</p>
-              </article>
-
-              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.netWorthStatus}`}>
-                <span>Net Worth Direction</span>
-                <strong>{netWorth > 0 ? 'Positive Net Worth' : 'Rebuild Net Worth'}</strong>
-                <p>{advisor.netWorthAdvice}</p>
-              </article>
-            </div>
-          </article>
+            </article>
+          ) : null}
         </div>
 
         <aside className="budget-dashboard-side">
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Action</span>
-            <h2>{snapshot.actionLabel}</h2>
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+
+            <div className="lending-psychometric-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const statusLabel = isActive ? 'Current step' : isCompleted ? 'Completed' : 'Pending';
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                  >
+                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="lending-psychometric-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{`${statusLabel} · ${workflowStep.description}`}</span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Setup Snapshot</span>
+            <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Draft Setup'}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Total assets</span>
-                <strong>{formatCurrency(totalAssets)}</strong>
+                <span>Period Covered</span>
+                <strong>{periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : 'Not set'}</strong>
               </li>
               <li>
-                <span>Total liabilities</span>
-                <strong>{formatCurrency(totalLiabilities)}</strong>
+                <span>Setup Entries</span>
+                <strong>{savedSetup.length || setupRows.filter((row) => row.amount > 0).length}</strong>
               </li>
               <li>
-                <span>Total equities</span>
-                <strong>{formatCurrency(totalEquities)}</strong>
+                <span>Setup Net Worth</span>
+                <strong>{formatSignedCurrency(savedSetup.length > 0 ? totals.setupNetWorth : setupNetWorth)}</strong>
               </li>
             </ul>
           </article>
 
           <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Balance Sheet</span>
+            <span className="psychometric-panel-kicker">Position Health</span>
             <h2>{snapshot.performanceBand}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
-                <span>Number of assets</span>
-                <strong>{numberOfAssets}</strong>
+                <span>Health Score</span>
+                <strong>{snapshot.healthScore.toFixed(1)}</strong>
               </li>
               <li>
-                <span>Increasing expenses</span>
-                <strong>{increasingExpensesCount}</strong>
+                <span>Action</span>
+                <strong>{snapshot.actionLabel}</strong>
               </li>
               <li>
-                <span>Net worth</span>
-                <strong>{formatCurrency(netWorth)}</strong>
+                <span>Source</span>
+                <strong>{snapshot.sourceApplicationNo || 'N/A'}</strong>
               </li>
             </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Position Notes</span>
-            <h2>Best-practice focus</h2>
-            <p className="psychometric-section-note">
-              This page emphasizes cashflow resilience, leverage control, valuation cushion, and
-              decision-band distribution so net-worth positioning reflects practical credit strength.
-            </p>
           </article>
         </aside>
       </section>
