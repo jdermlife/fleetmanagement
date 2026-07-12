@@ -935,7 +935,7 @@ export interface SubscriptionRecord {
   subscription_no: string
   user_id: number
   plan_id: number
-  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  status: 'PENDING' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
   subscription_type: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
   trial_start: string | null
   trial_end: string | null
@@ -1146,11 +1146,21 @@ export async function listSubscriptions(status?: string): Promise<SubscriptionRe
   return response.data
 }
 
+export async function getMySubscription(): Promise<SubscriptionRecord | null> {
+  const response = await api.get<SubscriptionRecord | null>('/api/subscriptions/me')
+  return response.data
+}
+
+export async function createFreeSubscription(payload?: { user_id?: number }): Promise<SubscriptionRecord> {
+  const response = await api.post<SubscriptionRecord>('/api/subscriptions/create-free', payload ?? {})
+  return response.data
+}
+
 export async function createSubscription(payload: {
   subscription_no: string
   user_id?: number
   plan_id: number
-  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+  status: 'PENDING' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
   subscription_type?: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
   trial_start?: string
   trial_end?: string
@@ -1189,7 +1199,7 @@ export async function updateSubscription(
   payload: {
     user_id?: number
     plan_id?: number
-    status?: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
+    status?: 'PENDING' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED'
     subscription_type?: 'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'
     trial_start?: string
     trial_end?: string
@@ -1226,11 +1236,19 @@ export async function updateSubscription(
 
 export async function updateSubscriptionStatus(
   subscriptionId: number,
-  status: 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED',
+  status: 'PENDING' | 'TRIAL' | 'ACTIVE' | 'SUSPENDED' | 'EXPIRED' | 'CANCELLED',
 ): Promise<SubscriptionRecord> {
   const response = await api.patch<SubscriptionRecord>(`/api/subscriptions/${subscriptionId}/status`, null, {
     params: { status },
   })
+  return response.data
+}
+
+export async function createSubscriptionCheckout(payload: {
+  plan: string
+  billing_cycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
+}): Promise<{ checkout_url: string }> {
+  const response = await api.post<{ checkout_url: string }>('/api/subscriptions/create-checkout', payload)
   return response.data
 }
 

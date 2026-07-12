@@ -63,6 +63,7 @@ from logging_config import request_logger, backend_logger, error_logger
 from app.routes.lease import router as lease_router
 from app.routes.database import router as database_router
 from app.routes.loan_routes import router as loan_router
+from app.routes.paymongo import router as paymongo_router
 from app.routes.subscriptions import router as subscriptions_router
 
 environment = os.getenv("ENVIRONMENT", "development").lower()
@@ -447,6 +448,10 @@ app.include_router(
 )
 app.include_router(
     subscriptions_router,
+    prefix="/api",
+)
+app.include_router(
+    paymongo_router,
     prefix="/api",
 )
 

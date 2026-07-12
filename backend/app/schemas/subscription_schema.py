@@ -188,6 +188,19 @@ class PayMongoCheckoutCreate(BaseModel):
     invoice_no: str | None = Field(default=None, max_length=50)
 
 
+class FreeSubscriptionCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    user_id: int | None = None
+
+
+class SubscriptionCheckoutCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    plan: str = Field(min_length=1, max_length=50)
+    billing_cycle: str = Field(min_length=3, max_length=20)
+
+
 class SubscriptionInvoiceCreate(BaseModel):
     invoice_no: str
     subscription_id: int

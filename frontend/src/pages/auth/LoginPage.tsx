@@ -3,7 +3,7 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
+import { getErrorMessage, getMySubscription, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
 import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
@@ -145,6 +145,19 @@ export default function LoginPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
 
+  const resolvePostLoginPath = async (user: AuthUser): Promise<string> => {
+    const subscription = await getMySubscription()
+    if (subscription?.status !== 'ACTIVE') {
+      return '/subscription/payment'
+    }
+
+    if (isBorrowerSubscriberRole(user.role)) {
+      return resolveBorrowerRedirectPath(redirectTo)
+    }
+
+    return redirectTo
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     setIsSaving(true)
@@ -152,9 +165,7 @@ export default function LoginPage() {
 
     try {
       const response = await login({ username, password })
-      const nextPath = isBorrowerSubscriberRole(response.user.role)
-        ? await resolveBorrowerRedirectPath(redirectTo)
-        : redirectTo
+      const nextPath = await resolvePostLoginPath(response.user)
       navigate(nextPath)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to sign in right now.'))
@@ -176,9 +187,7 @@ export default function LoginPage() {
       const loginResponse = await loginWithGoogle({
         idToken,
       })
-      const nextPath = isBorrowerSubscriberRole(loginResponse.user.role)
-        ? await resolveBorrowerRedirectPath(redirectTo)
-        : redirectTo
+      const nextPath = await resolvePostLoginPath(loginResponse.user)
       navigate(nextPath)
     } catch (error) {
       if (axios.isAxiosError(error)) {
@@ -223,9 +232,7 @@ export default function LoginPage() {
       const loginResponse = await loginWithApple({
         idToken: appleTokenResult.idToken,
       })
-      const nextPath = isBorrowerSubscriberRole(loginResponse.user.role)
-        ? await resolveBorrowerRedirectPath(redirectTo)
-        : redirectTo
+      const nextPath = await resolvePostLoginPath(loginResponse.user)
       navigate(nextPath)
     } catch (error) {
       if (axios.isAxiosError(error)) {

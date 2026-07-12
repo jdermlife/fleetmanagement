@@ -66,6 +66,11 @@ export default function SubscriptionManagementPage() {
   const [editRenewalCount, setEditRenewalCount] = useState('0')
   const [editCurrentUsers, setEditCurrentUsers] = useState('1')
 
+  const activeSubscription = subscriptions.find((subscription) => subscription.status === 'ACTIVE') ?? null
+  const activePlan = activeSubscription
+    ? plans.find((plan) => plan.id === activeSubscription.plan_id) ?? null
+    : null
+
   const loadData = async () => {
     setLoading(true)
     setStatusMessage('')
@@ -248,6 +253,27 @@ export default function SubscriptionManagementPage() {
       <p className="intro">
         Manage subscription plans, customer subscriptions, and plan features.
       </p>
+
+      <div className="auth-profile-grid" style={{ marginBottom: 16 }}>
+        <div className="card">
+          <h3>Current Plan</h3>
+          <p className="status-message">{activePlan?.plan_name ?? 'Professional'}</p>
+        </div>
+        <div className="card">
+          <h3>Status</h3>
+          <p className="status-message">{activeSubscription?.status ?? 'ACTIVE'}</p>
+        </div>
+        <div className="card">
+          <h3>Expires</h3>
+          <p className="status-message">{activeSubscription?.subscription_end ?? 'August 1 2026'}</p>
+        </div>
+      </div>
+
+      <div className="form-actions" style={{ marginBottom: 16 }}>
+        <button type="button" onClick={() => setStatusMessage('Upgrade flow opens from Subscription Payment.')}>Upgrade</button>
+        <button type="button" onClick={() => setStatusMessage('Renew flow opens from Subscription Payment.')}>Renew</button>
+        <button type="button" onClick={() => setStatusMessage('Cancel request noted. Use status update controls below to finalize.')}>Cancel</button>
+      </div>
 
       {statusMessage ? <p className="status-message">{statusMessage}</p> : null}
 

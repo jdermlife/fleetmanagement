@@ -3,18 +3,13 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { getErrorMessage, login, loginWithApple, loginWithGoogle, register } from '../../api'
+import { createFreeSubscription, getErrorMessage, login, loginWithApple, loginWithGoogle, register } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
-  isBorrowerSubscriberRole,
 } from '../../authRoles'
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
-
-function getDefaultHomePathForRole(role?: string | null) {
-  return isBorrowerSubscriberRole(role) ? '/lending-scorecard' : '/dashboard'
-}
 
 export default function RegisterPage() {
   const navigate = useNavigate()
@@ -73,7 +68,8 @@ export default function RegisterPage() {
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
       const loginResponse = await login({ username, password })
-      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
+      await createFreeSubscription({ user_id: loginResponse.user.id })
+      navigate('/subscription/payment', { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
     } finally {
@@ -111,7 +107,8 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
-      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
+      await createFreeSubscription({ user_id: loginResponse.user.id })
+      navigate('/subscription/payment', { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
@@ -148,7 +145,8 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
-      navigate(getDefaultHomePathForRole(loginResponse.user.role), { replace: true })
+      await createFreeSubscription({ user_id: loginResponse.user.id })
+      navigate('/subscription/payment', { replace: true })
     } catch (error) {
       if (error instanceof Error && error.message) {
         setAppleMessage(error.message)

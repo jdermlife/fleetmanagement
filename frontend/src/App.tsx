@@ -78,6 +78,9 @@ const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage')
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazy(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
+const BillingPage = lazy(() => import('./pages/subscriptions/BillingPage'))
+const PaymentSuccess = lazy(() => import('./pages/payment/PaymentSuccess'))
+const PaymentCancelled = lazy(() => import('./pages/payment/PaymentCancelled'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
 const CompliancePage = lazy(() => import('./pages/governance/CompliancePage'))
 
@@ -625,6 +628,66 @@ const isSignedIn = authReady && Boolean(currentUser)
       </>
     )}
     <Link
+      to="/billing"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Billing
+    </Link>
+    <Link
+      to="/subscriptions"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription
+    </Link>
+    <Link
+      to="/invoices"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Invoices
+    </Link>
+    <Link
+      to="/payment-history"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Payment History
+    </Link>
+    <Link
       to="/subscriptions"
       onClick={closeMenu}
       className="app-menu-link app-menu-link-account"
@@ -1010,6 +1073,60 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <SubscriptionPaymentPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/subscription/payment"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <SubscriptionPaymentPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/billing"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <BillingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/invoices"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <BillingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/payment-history"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <BillingPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/payment/success"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <PaymentSuccess />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/payment/cancel"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <PaymentCancelled />
                 </ProtectedRoute>
               }
             />

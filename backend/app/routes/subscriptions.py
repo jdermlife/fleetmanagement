@@ -25,10 +25,12 @@ from app.models.subscription import (
 from app.models.users import User
 from app.schemas.subscription_schema import (
     FeatureCreate,
+    FreeSubscriptionCreateRequest,
     PaymentProviderCreate,
     PayMongoCheckoutCreate,
     PaymentWebhookCreate,
     PlanFeatureAssignRequest,
+    SubscriptionCheckoutCreateRequest,
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionInvoiceCreate,
@@ -39,6 +41,7 @@ from app.schemas.subscription_schema import (
     SubscriptionUpdate,
     SubscriptionUsageCreate,
 )
+from app.services.email_service import send_email
 from app.services.paymongo import (
     PayMongoAPIError,
     PayMongoConfigurationError,
@@ -260,6 +263,60 @@ def _amount_to_centavos(amount: Decimal) -> int:
     return int((amount * 100).quantize(Decimal("1"), rounding=ROUND_HALF_UP))
 
 
+def _build_subscription_no(prefix: str = "SUB") -> str:
+    return f"{prefix}-{uuid.uuid4().hex[:12].upper()}"
+
+
+def _find_default_free_plan(db) -> SubscriptionPlan | None:
+    free_plan = (
+        db.query(SubscriptionPlan)
+        .filter(SubscriptionPlan.is_active.is_(True))
+        .filter(SubscriptionPlan.is_public.is_(True))
+        .filter(
+            (SubscriptionPlan.monthly_price.is_(None)) | (SubscriptionPlan.monthly_price <= 0)
+        )
+        .order_by(SubscriptionPlan.display_order.asc(), SubscriptionPlan.plan_name.asc())
+        .first()
+    )
+    if free_plan is not None:
+        return free_plan
+
+    return (
+        db.query(SubscriptionPlan)
+        .filter(SubscriptionPlan.is_active.is_(True))
+        .order_by(SubscriptionPlan.display_order.asc(), SubscriptionPlan.plan_name.asc())
+        .first()
+    )
+
+
+def generate_pdf_invoice(payment: SubscriptionPayment, subscription: Subscription, plan: SubscriptionPlan | None) -> dict:
+    amount = float(payment.amount) if payment.amount is not None else 0.0
+    return {
+        "invoice_no": payment.invoice_no or f"INV-{payment.id}",
+        "payment_reference": payment.payment_reference,
+        "subscription_no": subscription.subscription_no,
+        "plan_name": plan.plan_name if plan is not None else "Subscription",
+        "currency": payment.currency or "PHP",
+        "amount": amount,
+        "paid_at": payment.paid_at.isoformat() if payment.paid_at else None,
+    }
+
+
+def _send_invoice_email(user: User | None, invoice: dict) -> None:
+    if user is None or not user.email:
+        return
+    subject = f"Payment received: {invoice.get('invoice_no', 'Invoice')}"
+    body = (
+        "Your subscription payment has been confirmed.\n\n"
+        f"Invoice No: {invoice.get('invoice_no')}\n"
+        f"Subscription: {invoice.get('subscription_no')}\n"
+        f"Plan: {invoice.get('plan_name')}\n"
+        f"Amount: {invoice.get('currency')} {invoice.get('amount')}\n"
+        f"Reference: {invoice.get('payment_reference')}\n"
+    )
+    send_email(user.email, subject, body)
+
+
 @router.get("/plans")
 def list_plans(
     user: CurrentUser = Depends(
@@ -339,6 +396,154 @@ def list_subscriptions(
             query = query.filter(Subscription.status == status)
         rows = query.order_by(Subscription.created_at.desc()).all()
         return [_serialize_subscription(item) for item in rows]
+    finally:
+        db.close()
+
+
+@router.get("/me")
+def get_my_subscription(
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    db = _session_with_rls(user)
+    try:
+        row = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == user.id)
+            .order_by(Subscription.created_at.desc())
+            .first()
+        )
+        return _serialize_subscription(row) if row else None
+    finally:
+        db.close()
+
+
+@router.post("/create-free")
+def create_free_subscription(
+    payload: FreeSubscriptionCreateRequest,
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    db = _session_with_rls(user)
+    try:
+        target_user_id = payload.user_id if _is_admin(user) and payload.user_id else user.id
+
+        existing = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == target_user_id)
+            .filter(Subscription.status.in_(["PENDING", "TRIAL", "ACTIVE", "SUSPENDED"]))
+            .order_by(Subscription.created_at.desc())
+            .first()
+        )
+        if existing is not None:
+            return _serialize_subscription(existing)
+
+        free_plan = _find_default_free_plan(db)
+        if free_plan is None:
+            raise HTTPException(status_code=422, detail="No subscription plans are configured")
+
+        row = Subscription(
+            subscription_no=_build_subscription_no("FREE"),
+            user_id=target_user_id,
+            plan_id=free_plan.id,
+            status="PENDING",
+            subscription_type="FREE",
+            subscription_start=date.today(),
+            auto_renew=True,
+        )
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return _serialize_subscription(row)
+    finally:
+        db.close()
+
+
+@router.post("/create-checkout")
+def create_checkout_for_plan(
+    payload: SubscriptionCheckoutCreateRequest,
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    db = _session_with_rls(user)
+    try:
+        normalized_cycle = payload.billing_cycle.upper()
+        plan = (
+            db.query(SubscriptionPlan)
+            .filter(SubscriptionPlan.plan_code == payload.plan)
+            .filter(SubscriptionPlan.billing_cycle == normalized_cycle)
+            .first()
+        )
+        if plan is None:
+            raise HTTPException(status_code=404, detail="Subscription plan not found")
+
+        subscription = Subscription(
+            subscription_no=_build_subscription_no("SUB"),
+            user_id=user.id,
+            plan_id=plan.id,
+            status="PENDING",
+            subscription_type="PAID",
+            subscription_start=date.today(),
+            auto_renew=True,
+        )
+        db.add(subscription)
+        db.flush()
+
+        provider = (
+            db.query(PaymentProvider)
+            .filter(PaymentProvider.provider_code == "PAYMONGO")
+            .first()
+        )
+        if provider is None or provider.is_active is False:
+            raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
+
+        amount = _subscription_checkout_amount(plan)
+        if amount <= 0:
+            raise HTTPException(status_code=422, detail="Subscription plan has no payable amount")
+
+        payment_reference = f"PM-{uuid.uuid4().hex.upper()}"[:35]
+        owning_user = db.query(User).filter(User.id == subscription.user_id).first()
+
+        try:
+            checkout = create_checkout_session(
+                amount_centavos=_amount_to_centavos(amount),
+                currency=(plan.currency or "PHP").upper(),
+                description=f"{plan.plan_name} subscription payment",
+                item_name=f"{plan.plan_name} subscription",
+                reference_number=payment_reference,
+                customer_name=getattr(owning_user, "username", None),
+                customer_email=getattr(owning_user, "email", None),
+                metadata={
+                    "user_id": str(subscription.user_id),
+                    "subscription_id": str(subscription.id),
+                    "plan": plan.plan_code,
+                },
+            )
+        except PayMongoConfigurationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except PayMongoAPIError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        payment = SubscriptionPayment(
+            payment_reference=payment_reference,
+            subscription_id=subscription.id,
+            provider_id=provider.id,
+            invoice_no=subscription.subscription_no,
+            amount=amount,
+            currency=(plan.currency or "PHP").upper(),
+            payment_method="PayMongo Checkout",
+            payment_status="PENDING",
+            provider_transaction_id=checkout["checkout_id"],
+        )
+        subscription.status = "PENDING"
+        db.add(subscription)
+        db.add(payment)
+        db.commit()
+
+        return {"checkout_url": checkout["checkout_url"]}
     finally:
         db.close()
 
@@ -524,6 +729,11 @@ def create_paymongo_checkout(
                 reference_number=payment_reference,
                 customer_name=getattr(owning_user, "username", None),
                 customer_email=getattr(owning_user, "email", None),
+                metadata={
+                    "user_id": str(subscription.user_id),
+                    "subscription_id": str(subscription.id),
+                    "plan": plan.plan_code,
+                },
             )
         except PayMongoConfigurationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -614,6 +824,7 @@ async def receive_paymongo_webhook(
             if not checkout_id.startswith("cs_"):
                 raise ValueError("invalid checkout identifier")
             checkout_attributes = checkout["attributes"]
+            checkout_metadata = checkout_attributes.get("metadata") or {}
             paid_payments = [
                 item
                 for item in checkout_attributes.get("payments", [])
@@ -632,6 +843,21 @@ async def receive_paymongo_webhook(
             .filter(SubscriptionPayment.provider_transaction_id == checkout_id)
             .first()
         )
+        if payment is None and isinstance(checkout_metadata, dict):
+            metadata_subscription_id = checkout_metadata.get("subscription_id")
+            if metadata_subscription_id is not None:
+                try:
+                    metadata_subscription_id_int = int(metadata_subscription_id)
+                except (TypeError, ValueError):
+                    metadata_subscription_id_int = None
+                if metadata_subscription_id_int is not None:
+                    payment = (
+                        db.query(SubscriptionPayment)
+                        .filter(SubscriptionPayment.subscription_id == metadata_subscription_id_int)
+                        .filter(SubscriptionPayment.provider_id == provider.id)
+                        .order_by(SubscriptionPayment.created_at.desc())
+                        .first()
+                    )
         if payment is None:
             raise HTTPException(status_code=404, detail="Pending checkout payment not found")
 
@@ -663,6 +889,39 @@ async def receive_paymongo_webhook(
                 raise HTTPException(status_code=404, detail="Subscription not found for payment")
             subscription.payment_provider_id = provider.id
             _apply_successful_payment(db, payment, subscription=subscription)
+
+            if payment.invoice_no:
+                existing_invoice = (
+                    db.query(SubscriptionInvoice)
+                    .filter(SubscriptionInvoice.invoice_no == payment.invoice_no)
+                    .first()
+                )
+            else:
+                existing_invoice = None
+            if existing_invoice is None:
+                db.add(
+                    SubscriptionInvoice(
+                        invoice_no=payment.invoice_no or f"INV-{payment.id}",
+                        subscription_id=subscription.id,
+                        invoice_date=processed_at.date(),
+                        due_date=processed_at.date(),
+                        subtotal=payment.amount,
+                        tax=0,
+                        total=payment.amount,
+                        status="PAID",
+                    )
+                )
+
+            try:
+                plan = getattr(subscription, "plan", None)
+                if plan is None:
+                    plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
+                owning_user = db.query(User).filter(User.id == subscription.user_id).first()
+                invoice = generate_pdf_invoice(payment, subscription, plan)
+                _send_invoice_email(owning_user, invoice)
+            except Exception:
+                # Email or invoice rendering issues should not fail payment activation.
+                pass
 
         db.add(
             PaymentWebhook(

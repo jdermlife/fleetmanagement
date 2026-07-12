@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
-  createPayMongoCheckout,
+  createSubscriptionCheckout,
   createSubscription,
   createSubscriptionPayment,
   getErrorMessage,
@@ -233,7 +233,7 @@ export default function SubscriptionPaymentPage() {
         payment_status: 'PENDING',
       })
 
-      navigate(`/subscription-payment?subscriptionId=${subscriptionForPayment.id}`, { replace: true })
+      navigate(`/subscription/payment?subscriptionId=${subscriptionForPayment.id}`, { replace: true })
       setPaymentMessage(
         'Payment submitted. Your subscription is awaiting confirmation and will activate once the payment is verified.',
       )
@@ -251,17 +251,17 @@ export default function SubscriptionPaymentPage() {
     setPaymentMessage('')
 
     try {
-      const subscriptionForPayment = await ensureSubscriptionForPayment()
-      if (!subscriptionForPayment) {
+      const checkoutPlan = selectedSubscriptionPlan ?? selectedPlan
+      if (!checkoutPlan) {
         setPaymentMessage('Please select a valid subscription plan before starting checkout.')
         return
       }
 
-      const checkout = await createPayMongoCheckout({
-        subscription_id: subscriptionForPayment.id,
-        invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
+      const checkout = await createSubscriptionCheckout({
+        plan: checkoutPlan.plan_code,
+        billing_cycle: checkoutPlan.billing_cycle,
       })
-      window.location.assign(checkout.checkout_url)
+      window.location.href = checkout.checkout_url
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
     } finally {

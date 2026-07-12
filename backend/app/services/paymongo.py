@@ -55,6 +55,7 @@ def create_checkout_session(
     reference_number: str,
     customer_name: str | None = None,
     customer_email: str | None = None,
+    metadata: dict[str, Any] | None = None,
 ) -> dict[str, str]:
     if amount_centavos <= 0:
         raise ValueError("Checkout amount must be greater than zero")
@@ -79,6 +80,10 @@ def create_checkout_session(
         raise PayMongoConfigurationError("PAYMONGO_API_BASE_URL must use api.paymongo.com in production")
     timeout_seconds = float(os.getenv("PAYMONGO_TIMEOUT_SECONDS", "15"))
 
+    metadata_payload: dict[str, Any] = {"payment_reference": reference_number}
+    if metadata:
+        metadata_payload.update(metadata)
+
     attributes: dict[str, Any] = {
         "cancel_url": cancel_url,
         "description": description,
@@ -91,7 +96,7 @@ def create_checkout_session(
                 "quantity": 1,
             }
         ],
-        "metadata": {"payment_reference": reference_number},
+        "metadata": metadata_payload,
         "payment_method_types": _checkout_payment_methods(),
         "reference_number": reference_number,
         "send_email_receipt": True,
