@@ -418,7 +418,7 @@ const isSignedIn = authReady && Boolean(currentUser)
         fontWeight: 'bold',
       }}
     >
-      OPERATIONS {fleetOpen ? '▲' : '▼'}
+      SERVICES {fleetOpen ? '▲' : '▼'}
     </div>
 
     {fleetOpen &&
