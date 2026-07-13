@@ -1,5 +1,5 @@
 import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
-import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
 import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
 import {
@@ -7,11 +7,17 @@ import {
   SUBSCRIBER_LENDER_ROLE,
   SUBSCRIBER_ROLE,
   isBorrowerSubscriberRole,
+  isLenderSubscriberRole,
 } from './authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
 import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
+
+type MenuLink = {
+  id: string
+  label: string
+}
 
 function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
   importer: () => Promise<T>,
@@ -94,6 +100,41 @@ const ComplianceAI = lazy(() => import('./pages/ai/ComplianceAI'))
 const MeetingHistory = lazy(() => import('./pages/ai/MeetingHistory'))
 const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
+
+const menuLinks: MenuLink[] = [
+  { id: 'dashboard', label: 'Dashboard Snapshot' },
+  { id: 'lending-scorecard', label: 'Lending Scorecard' },
+  { id: 'budget-expense-tracker', label: 'Budget & Expense Tracker' },
+  { id: 'loan-monitoring', label: 'Loan Monitoring' },
+  { id: 'bill-reminder', label: 'Bill Reminder' },
+  { id: 'net-worth-positioning', label: 'Net Worth Tracker' },
+
+  /* AI MENU */
+  { id: 'ai-dashboard', label: 'AI Dashboard' },
+  { id: 'chat-assistant', label: 'Chat Assistant' },
+  { id: 'voice-reports', label: 'Voice Reports' },
+  { id: 'ocr-scanner', label: 'OCR Scanner' },
+  { id: 'maintenance-ai', label: 'Maintenance AI' },
+  { id: 'risk-analysis', label: 'Risk Analysis' },
+  { id: 'pdf-summarizer', label: 'PDF Summarizer' },
+  { id: 'meeting-minutes', label: 'Meeting Minutes' },
+  { id: 'send-email', label: 'Send Email' },
+  { id: 'attend-meeting', label: 'Attend Meeting' },
+  { id: 'compliance-ai', label: 'Compliance AI' },
+  { id: 'meeting-history', label: 'Meeting History' },
+
+
+  /* AUDIT */
+  { id: 'audit-trail', label: 'Audit Trail' },
+  { id: 'risk-management', label: 'Risk Management' },
+  { id: 'compliance', label: 'Compliance' },
+
+  /* ADMIN */
+  { id: 'admin-users', label: 'User Management' },
+  { id: 'admin-roles', label: 'Admin Role Management' },
+  { id: 'admin-permissions', label: 'Permission Management' },
+]
+
 const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const THEME_STORAGE_KEY = 'fms:theme'
@@ -122,6 +163,13 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
+  const [fleetOpen, setFleetOpen] = useState(true)
+  const [aiOpen, setAiOpen] = useState(true)
+  const [govOpen, setGovOpen] = useState(true)
+
+  const closeMenu = () => {
+    setMenuOpen(false)
+  }
 
   const handleTopbarBack = () => {
     if (window.history.length > 1) {
@@ -141,8 +189,101 @@ function App() {
     navigate(1)
   }
 
+const aiMenus = [
+  'ai-dashboard',
+  'chat-assistant',
+  'voice-reports',
+  'ocr-scanner',
+  'maintenance-ai',
+  'risk-analysis',
+  'pdf-summarizer',
+  'meeting-minutes',
+  'send-email',
+  'attend-meeting',
+  'compliance-ai',
+  'meeting-history',
+]
+
+const governanceMenus = [
+  'audit-trail',
+  'risk-management',
+  'compliance',
+]
+
+const adminMenus = [
+  'admin-users',
+  'admin-roles',
+  'admin-permissions',
+]
+
+const subscriberHiddenMenus = [
+  'snapshot',
+  'lease-scorecard',
+  'insurance-management',
+  'credit-scoring',
+  'ai-dashboard',
+  'ocr-scanner',
+  'voice-reports',
+  'audit-trail',
+  'risk-management',
+  'compliance',
+  'subscriptions',
+  'admin-users',
+  'admin-roles',
+  'admin-permissions',
+]
+
+const subscriberAlwaysVisibleMenus = [
+  'lending-scorecard',
+  'budget-expense-tracker',
+  'loan-monitoring',
+  'bill-reminder',
+  'collateral-monitoring',
+  'net-worth-positioning',
+]
+
+const borrowerVisibleMenus = [
+  'lending-scorecard',
+  'budget-expense-tracker',
+  'loan-monitoring',
+  'bill-reminder',
+  'collateral-monitoring',
+  'net-worth-positioning',
+]
+
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
+const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
+const isAdminUser = currentUser?.role?.toLowerCase() === 'admin'
 const defaultHomePath = isBorrowerSubscriber ? '/lending-scorecard' : '/dashboard'
+
+const visibleMenuLinks = isBorrowerSubscriber
+  ? menuLinks.filter((item) => borrowerVisibleMenus.includes(item.id))
+  : isLenderSubscriber
+    ? menuLinks.filter(
+        (item) =>
+          subscriberAlwaysVisibleMenus.includes(item.id) ||
+          !subscriberHiddenMenus.includes(item.id),
+      )
+    : menuLinks
+
+const fleetMenus = visibleMenuLinks.filter(
+  (item) =>
+    !aiMenus.includes(item.id) &&
+    !governanceMenus.includes(item.id) &&
+    !adminMenus.includes(item.id)
+)
+
+const aiMenuItems = visibleMenuLinks.filter(
+  (item) => aiMenus.includes(item.id)
+)
+
+const govMenuItems = visibleMenuLinks.filter(
+  (item) => governanceMenus.includes(item.id)
+)
+
+const adminMenuItems = isAdminUser
+  ? visibleMenuLinks.filter((item) => adminMenus.includes(item.id))
+  : []
 
 const isLoginRoute = location.pathname === '/login'
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
@@ -275,11 +416,369 @@ const isSignedIn = authReady && Boolean(currentUser)
       background: 'var(--app-menu-panel-bg)',
     }}
   >
+    {/* TOOLS */}
+
+    <div
+      onClick={() => setFleetOpen(!fleetOpen)}
+      className="app-menu-group app-menu-group-fleet"
+      style={{
+        background: 'var(--app-menu-group-fleet-bg)',
+        color: 'var(--app-menu-group-fleet-text)',
+        padding: '12px',
+        borderRadius: '8px',
+        cursor: 'pointer',
+        fontWeight: 'bold',
+      }}
+    >
+      TOOLS {fleetOpen ? '▲' : '▼'}
+    </div>
+
+    {fleetOpen &&
+      fleetMenus.map((page) => (
+        <Link
+          key={page.id}
+          to={`/${page.id}`}
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-fleet"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          {page.label}
+        </Link>
+      ))}
+
+    {false && !isBorrowerSubscriber && !isLenderSubscriber && (
+      <>
+        {/* AI TOOLS */}
+
+        <div
+          onClick={() => setAiOpen(!aiOpen)}
+          className="app-menu-group app-menu-group-ai"
+          style={{
+            background: 'var(--app-menu-group-ai-bg)',
+            color: 'var(--app-menu-group-ai-text)',
+            padding: '12px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            marginTop: '10px',
+          }}
+        >
+          🤖 AI TOOLS {aiOpen ? '▲' : '▼'}
+        </div>
+
+        {aiOpen &&
+          aiMenuItems.map((page) => (
+            <Link
+              key={page.id}
+              to={`/${page.id}`}
+              onClick={closeMenu}
+              className="app-menu-link app-menu-link-ai"
+              style={{
+                display: 'block',
+                color: 'var(--app-menu-link-text)',
+                textDecoration: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'var(--app-menu-link-ai-bg)',
+              }}
+            >
+              🤖 {page.label}
+            </Link>
+          ))}
+      </>
+    )}
+
+    {adminMenuItems.length > 0 && (
+      <>
+        <div
+          className="app-menu-group app-menu-group-account"
+          style={{
+            background: 'var(--app-menu-group-admin-bg)',
+            color: 'var(--app-menu-group-admin-text)',
+            padding: '12px',
+            borderRadius: '8px',
+            fontWeight: 'bold',
+            marginTop: '10px',
+          }}
+        >
+          ADMINISTRATION
+        </div>
+        {adminMenuItems.map((page) => (
+          <Link
+            key={page.id}
+            to={`/${page.id}`}
+            onClick={closeMenu}
+            className="app-menu-link app-menu-link-account"
+            style={{
+              display: 'block',
+              color: 'var(--app-menu-link-text)',
+              textDecoration: 'none',
+              padding: '12px',
+              borderRadius: '8px',
+              background: 'var(--app-menu-link-admin-bg)',
+            }}
+          >
+            {page.label}
+          </Link>
+        ))}
+      </>
+    )}
+
+    {!isBorrowerSubscriber && !isLenderSubscriber && (
+      <>
+        {/* GOVERNANCE */}
+
+        <div
+          onClick={() => setGovOpen(!govOpen)}
+          className="app-menu-group app-menu-group-governance"
+          style={{
+            background: 'var(--app-menu-group-governance-bg)',
+            color: 'var(--app-menu-group-governance-text)',
+            padding: '12px',
+            borderRadius: '8px',
+            cursor: 'pointer',
+            fontWeight: 'bold',
+            marginTop: '10px',
+          }}
+        >
+          🛡 GOVERNANCE & COMPLIANCE {govOpen ? '▲' : '▼'}
+        </div>
+
+        {govOpen &&
+          govMenuItems.map((page) => (
+            <Link
+              key={page.id}
+              to={`/${page.id}`}
+              onClick={closeMenu}
+              className="app-menu-link app-menu-link-governance"
+              style={{
+                display: 'block',
+                color: 'var(--app-menu-link-text)',
+                textDecoration: 'none',
+                padding: '12px',
+                borderRadius: '8px',
+                background: 'var(--app-menu-link-governance-bg)',
+              }}
+            >
+              🛡 {page.label}
+            </Link>
+          ))}
+      </>
+    )}
+
+    <div
+      className="app-menu-group app-menu-group-account"
+      style={{
+        background: 'var(--app-menu-group-account-bg)',
+        color: 'var(--app-menu-group-account-text)',
+        padding: '12px',
+        borderRadius: '8px',
+        fontWeight: 'bold',
+        marginTop: '10px',
+      }}
+    >
+      ACCOUNT & LEGAL
+    </div>
+
+    {currentUser ? (
+      <>
+        <Link
+          to="/account"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Account Settings
+        </Link>
+      </>
+    ) : (
+      <>
+        <Link
+          to="/login"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Sign In
+        </Link>
+        <Link
+          to="/register"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Create Account
+        </Link>
+      </>
+    )}
+    <Link
+      to="/billing"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Billing
+    </Link>
+    <Link
+      to="/subscriptions"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription
+    </Link>
+    <Link
+      to="/invoices"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Invoices
+    </Link>
+    <Link
+      to="/payment-history"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Payment History
+    </Link>
+    <Link
+      to="/subscriptions"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription Billing
+    </Link>
+    <Link
+      to="/subscription-fees"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Subscription Fees
+    </Link>
+    <Link
+      to="/support"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Support
+    </Link>
+    <Link
+      to="/privacy"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Privacy Disclosures
+    </Link>
+    <Link
+      to="/terms"
+      onClick={closeMenu}
+      className="app-menu-link app-menu-link-account"
+      style={{
+        display: 'block',
+        color: 'var(--app-menu-link-text)',
+        textDecoration: 'none',
+        padding: '12px',
+        borderRadius: '8px',
+        background: 'var(--app-menu-link-bg)',
+      }}
+    >
+      Terms & Consent
+    </Link>
     {currentUser ? (
       <button
         type="button"
         onClick={() => {
-          setMenuOpen(false)
+          closeMenu()
           void handleTopbarLogout()
         }}
         className="app-menu-link app-menu-link-account"
