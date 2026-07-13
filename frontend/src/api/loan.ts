@@ -14,7 +14,7 @@ export type WorkflowStatus =
   | 'Rejected'
   | 'Released'
 
-export type ProductType = 'Home Loan' | 'Auto Loan' | 'Motorcycle Loan' | 'Credit Card' | 'Personal Loan'
+export type ProductType = 'Home Loan' | 'Auto Loan' | 'Motorcycle Loan' | 'Credit Card' | 'Personal Loan' | 'Margin Loan'
 
 export interface LoanApplicationRequirements {
   productInformation: {
@@ -195,6 +195,7 @@ export interface LoanApplicationRequirements {
   }
   supportingDocuments: {
     validGovernmentId: boolean
+    selfiePhotoOptional?: boolean
     passportIfApplicable: boolean
     driversLicense: boolean
     philSysId: boolean

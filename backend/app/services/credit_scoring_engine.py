@@ -240,6 +240,8 @@ def _score_product_specific_sections(payload: Any, product_type: str) -> tuple[f
         return 0.0, score_motorcycle_loan_collateral(payload)
     if product_type == "Credit Card":
         return score_credit_card_capital(payload), 0.0
+    if product_type == "Margin Loan":
+        return score_personal_loan_capital(payload), 0.0
     return score_personal_loan_capital(payload), 0.0
 
 
@@ -263,6 +265,10 @@ def compute_credit_score(payload: Any) -> dict[str, float | str]:
         character_score = score_credit_card_character(payload)
         conditions_score = score_credit_card_condition(payload)
     elif product_type == "Personal Loan":
+        capacity_score = score_personal_loan_capacity(payload)
+        character_score = score_personal_loan_character(payload)
+        conditions_score = score_personal_loan_condition(payload)
+    elif product_type == "Margin Loan":
         capacity_score = score_personal_loan_capacity(payload)
         character_score = score_personal_loan_character(payload)
         conditions_score = score_personal_loan_condition(payload)

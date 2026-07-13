@@ -179,7 +179,7 @@ export const calculateApplicationInformationCompletion = (
 
   const securityClassificationCheck = productType === 'Auto Loan'
     ? collateral?.securityClassification === 'Secured'
-    : productType === 'Personal Loan' || productType === 'Credit Card'
+    : productType === 'Personal Loan' || productType === 'Margin Loan' || productType === 'Credit Card'
       ? collateral?.securityClassification === 'Unsecured'
       : hasText(collateral?.securityClassification)
   const homeCollateralChecks = productType === 'Home Loan'
@@ -230,33 +230,10 @@ export const calculateApplicationInformationCompletion = (
     ...additionalCollateralChecks,
   ]
 
-  const step7Checks = [
-    documents?.validGovernmentId === true,
-    documents?.proofOfIncome === true,
-    documents?.bankStatements === true,
-    documents?.additionalSupportingDocuments === true,
-    documents?.auditedFinancialStatements === true,
-    documents?.proofOfRemittanceIncome === true,
-    documents?.investmentStatements === true,
-    ...(productType === 'Home Loan'
-      ? [
-          documents?.titleTctCct === true,
-          documents?.taxDeclaration === true,
-          documents?.lotPlan === true,
-          documents?.propertyPhotos === true,
-        ]
-      : []),
-    ...(productType === 'Auto Loan' || productType === 'Motorcycle Loan'
-      ? [documents?.vehicleQuotation === true, documents?.vehicleInvoice === true]
-      : []),
-    ...(productType === 'Personal Loan'
-      ? [
-          documents?.certificateOfEmployment === true,
-          documents?.latestPayslips === true,
-          documents?.latestItr === true,
-        ]
-      : []),
-  ]
+  const hasAtLeastOneSupportingDocument = Object.values(documents ?? {}).some(
+    (value) => value === true,
+  )
+  const step7Checks = [hasAtLeastOneSupportingDocument]
 
   const steps = {
     1: calculateStep(1, step1Checks),

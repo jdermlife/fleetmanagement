@@ -569,6 +569,7 @@ Return strict JSON with this shape:
     "governmentIds": {
       "tin": "",
       "sssGsisNumber": "",
+            "otherGovernmentId": "",
       "idNumber": "",
       "issueDate": "",
       "expiryDate": ""

@@ -93,6 +93,7 @@ def normalize_product_type(payload: Any) -> str:
         "credit card": "Credit Card",
         "credit  card": "Credit Card",
         "personal loan": "Personal Loan",
+        "margin loan": "Margin Loan",
     }
     return mapping.get(normalized, "Auto Loan")
 

@@ -61,7 +61,7 @@ interface CollateralInformation { propertyAddress: string; registeredOwner: stri
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditPaymentHistory: string; creditCardRelationshipStatus: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; averageSavingsBalance: number; averageDailyBalance: number; depositRegularity: string; bankingRelationshipTier: string; accountHandling: string; utilityCreditBureauStatus: string; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
-interface SupportingDocuments { validGovernmentId: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
+interface SupportingDocuments { validGovernmentId: boolean; selfiePhotoOptional?: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
 interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; digitalBankingUsage: string; characterReferences: string; communityReputation: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; facebookProfileDateOpened: string; instagramProfile: string; instagramProfileDateOpened: string; xProfile: string; xProfileDateOpened: string; tikTokProfile: string; tikTokProfileDateOpened: string; linkedInProfile: string; linkedInProfileDateOpened: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
 interface FraudVerification { faceMatchScore: number; livenessDetection: string; incomeDocumentsStatus: string; employmentVerificationStatus: string; bankStatementVerificationStatus: string; payrollVerificationStatus: string; bankAccountOwnershipStatus: string; }
 interface DocumentAnalysis { ocrAnalysisStatus: string; }
@@ -225,7 +225,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
   collateral: { securityClassification: '', assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
-  applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: '', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
+  applicantPersonal: { lastName: '', firstName: '', middleName: '', dateOfBirth: '', placeOfBirth: '', age: 0, gender: '', citizenship: 'Filipino', numberOfDependents: 0, maritalStatus: '', mothersMaidenName: '' },
   contactInformation: { mobileNumber: '', mobileYearsUsed: '', homePhoneNumber: '', emailAddress: '', emailYearsUsed: '' },
   governmentIds: { tin: '', sssGsisNumber: '', otherGovernmentId: '', idNumber: '', issueDate: '', expiryDate: '' },
   addressInformation: { presentAddress: '', permanentAddress: '', mailingAddress: '', lengthOfStay: '' },
@@ -236,7 +236,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   spouseInformation: createBlankSpouseInformation(),
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
-  supportingDocuments: { validGovernmentId: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
+  supportingDocuments: { validGovernmentId: false, selfiePhotoOptional: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
   enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', digitalBankingUsage: '', characterReferences: '', communityReputation: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', facebookProfileDateOpened: '', instagramProfile: '', instagramProfileDateOpened: '', xProfile: '', xProfileDateOpened: '', tikTokProfile: '', tikTokProfileDateOpened: '', linkedInProfile: '', linkedInProfileDateOpened: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
   fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
   documentAnalysis: { ocrAnalysisStatus: '' },
@@ -1218,6 +1218,122 @@ const calculateAgeFromDateOfBirth = (dateOfBirth: string) => {
   return Math.max(age, 0);
 };
 
+const normalizeDateInput = (value: unknown): string => {
+  if (typeof value !== 'string') {
+    return '';
+  }
+
+  const raw = value.trim();
+  if (!raw) {
+    return '';
+  }
+
+  const isoMatch = raw.match(/^(\d{4})[-/](\d{2})[-/](\d{2})$/);
+  if (isoMatch) {
+    return `${isoMatch[1]}-${isoMatch[2]}-${isoMatch[3]}`;
+  }
+
+  const dmyOrMdyMatch = raw.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/);
+  if (dmyOrMdyMatch) {
+    const first = Number.parseInt(dmyOrMdyMatch[1], 10);
+    const second = Number.parseInt(dmyOrMdyMatch[2], 10);
+    const year = dmyOrMdyMatch[3];
+    const month = first > 12 ? second : first;
+    const day = first > 12 ? first : second;
+
+    if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+      return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    }
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) {
+    return '';
+  }
+
+  return parsed.toISOString().slice(0, 10);
+};
+
+const firstTextValue = (...values: Array<unknown>): string => {
+  for (const value of values) {
+    if (typeof value === 'string' && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+
+  return '';
+};
+
+const normalizeParsedSectionUpdates = (
+  extractedData: DocumentParseReview['extractedData'] | Record<string, unknown> | null | undefined,
+): ParsedSectionUpdates => {
+  const source = (extractedData ?? {}) as Record<string, unknown>;
+  const borrower = (source.borrower ?? {}) as Record<string, unknown>;
+  const applicantPersonal = (source.applicantPersonal ?? {}) as Record<string, unknown>;
+  const governmentIds = (source.governmentIds ?? {}) as Record<string, unknown>;
+  const contactInformation = (source.contactInformation ?? {}) as Record<string, unknown>;
+  const addressInformation = (source.addressInformation ?? {}) as Record<string, unknown>;
+
+  const normalizedGovernmentIds: Partial<GovernmentIds> = {
+    tin: firstTextValue(governmentIds.tin, governmentIds.tinNumber, governmentIds.taxIdentificationNumber),
+    sssGsisNumber: firstTextValue(
+      governmentIds.sssGsisNumber,
+      governmentIds.sssNumber,
+      governmentIds.gsisNumber,
+      governmentIds.sss,
+      governmentIds.gsis,
+    ),
+    otherGovernmentId: firstTextValue(
+      governmentIds.otherGovernmentId,
+      governmentIds.idType,
+      governmentIds.governmentIdType,
+      governmentIds.cardType,
+    ),
+    idNumber: firstTextValue(governmentIds.idNumber, governmentIds.govId, governmentIds.governmentIdNumber),
+    issueDate: normalizeDateInput(firstTextValue(governmentIds.issueDate, governmentIds.dateIssued)),
+    expiryDate: normalizeDateInput(firstTextValue(governmentIds.expiryDate, governmentIds.validUntil, governmentIds.expirationDate)),
+  };
+
+  const normalizedApplicant: Partial<ApplicantPersonal> = {
+    lastName: firstTextValue(applicantPersonal.lastName, applicantPersonal.surname),
+    firstName: firstTextValue(applicantPersonal.firstName, applicantPersonal.givenName),
+    middleName: firstTextValue(applicantPersonal.middleName, applicantPersonal.middleInitial),
+    dateOfBirth: normalizeDateInput(firstTextValue(applicantPersonal.dateOfBirth, applicantPersonal.birthDate)),
+    placeOfBirth: firstTextValue(applicantPersonal.placeOfBirth),
+  };
+
+  const normalizedBorrower: Partial<BorrowerInfo> = {
+    ...((source.borrower ?? {}) as Partial<BorrowerInfo>),
+    fullName: firstTextValue(borrower.fullName, borrower.name),
+    govId: firstTextValue(
+      borrower.govId,
+      borrower.governmentId,
+      normalizedGovernmentIds.idNumber,
+      normalizedGovernmentIds.tin,
+      normalizedGovernmentIds.sssGsisNumber,
+    ),
+  };
+
+  return {
+    ...source,
+    borrower: normalizedBorrower,
+    applicantPersonal: normalizedApplicant,
+    contactInformation: {
+      ...((source.contactInformation ?? {}) as Partial<ContactInformation>),
+      mobileNumber: firstTextValue(contactInformation.mobileNumber, contactInformation.phone, contactInformation.contactNumber),
+      homePhoneNumber: firstTextValue(contactInformation.homePhoneNumber),
+      emailAddress: firstTextValue(contactInformation.emailAddress, contactInformation.email),
+    },
+    governmentIds: normalizedGovernmentIds,
+    addressInformation: {
+      ...((source.addressInformation ?? {}) as Partial<AddressInformation>),
+      presentAddress: firstTextValue(addressInformation.presentAddress, addressInformation.address),
+      permanentAddress: firstTextValue(addressInformation.permanentAddress),
+      mailingAddress: firstTextValue(addressInformation.mailingAddress),
+    },
+  };
+};
+
 const composeApplicantFullName = (applicant: ApplicantPersonal) =>
   [applicant.firstName, applicant.middleName, applicant.lastName]
     .map((value) => value.trim())
@@ -1711,6 +1827,7 @@ const reviewSectionConfigs: Array<{
     fields: [
       { key: 'tin', label: 'TIN' },
       { key: 'sssGsisNumber', label: 'SSS / GSIS Number' },
+      { key: 'otherGovernmentId', label: 'Other - ID Type' },
       { key: 'idNumber', label: 'Other - ID Number' },
       { key: 'issueDate', label: 'Issue Date', type: 'date' },
       { key: 'expiryDate', label: 'Expiry Date', type: 'date' },
@@ -1857,13 +1974,16 @@ export default function LendingScorecard() {
   });
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
+  const isMarginLoan = formData.loan.productType === 'Margin Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
   const isAutoLoan = formData.loan.productType === 'Auto Loan';
   const isMotorcycleLoan = formData.loan.productType === 'Motorcycle Loan';
+  const isUnderAgeApplicant = formData.applicantPersonal.age > 0 && formData.applicantPersonal.age < 18;
+  const isOverAgeApplicant = formData.applicantPersonal.age > 65;
   const isMarried = formData.applicantPersonal.maritalStatus === 'Married';
   const hasCoBorrowerSelected = formData.otherInformation.hasCoBorrower;
   const isSingleApplicant = !isMarried && !hasCoBorrowerSelected;
-  const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
+  const usesStructuredRetailCriteria = isHomeLoan || isPersonalLoan || isMarginLoan || isCreditCard || isAutoLoan || isMotorcycleLoan;
   const creationLocked = !hasPersistedRecord && !!loanCreationEntitlement && !loanCreationEntitlement.allowed;
   const isBorrowerSubscriber = isBorrowerSubscriberRole(user?.role);
   const reviewApplicationsPath = '/loan-repository?status=All';
@@ -2148,7 +2268,7 @@ export default function LendingScorecard() {
   );
 
   const parseLoanDocument = useCallback(
-    async (documentId: string, file: File) => {
+    async (documentId: string, file: File, autoApplyToForm = false) => {
       setIsParsing(true);
       setSaveMessage('');
 
@@ -2173,9 +2293,12 @@ export default function LendingScorecard() {
           summary: response.data.summary || 'AI review completed.',
           notes: response.data.notes || [],
           supportingDocuments: response.data.supportingDocuments || {},
-          extractedData: response.data.extractedData || {},
+          extractedData: normalizeParsedSectionUpdates(response.data.extractedData),
         };
 
+        if (autoApplyToForm) {
+          setFormData((prev) => mergeReviewIntoApplication(prev, normalizedReview));
+        }
         setDocumentReview(normalizedReview);
         setReviewDocumentId(documentId);
         updateDocumentItem(
@@ -2195,7 +2318,7 @@ export default function LendingScorecard() {
         setIsParsing(false);
       }
     },
-    [updateDocumentItem],
+    [mergeReviewIntoApplication, updateDocumentItem],
   );
 
   const updateDocumentReviewField = useCallback(
@@ -2368,6 +2491,9 @@ export default function LendingScorecard() {
       applicantPersonal: {
         ...blankApplication.applicantPersonal,
         ...savedRequirements.applicantPersonal,
+        citizenship:
+          savedRequirements.applicantPersonal?.citizenship ||
+          blankApplication.applicantPersonal.citizenship,
       },
       contactInformation: {
         ...blankApplication.contactInformation,
@@ -2779,6 +2905,32 @@ export default function LendingScorecard() {
         (collateral) => collateral.id !== id,
       ),
     }));
+  };
+
+  const handleIdCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const isSupportedImageFile =
+        file.type.startsWith('image/') ||
+        /\.(heic|heif|png|jpe?g|webp|bmp)$/i.test(file.name);
+
+      if (!isSupportedImageFile) {
+        setSaveMessage('Only camera-captured ID images are allowed in Step 1 review capture.');
+        e.target.value = '';
+        return;
+      }
+
+      const newDoc: DocumentItem = {
+        id: Date.now().toString(),
+        name: `ID Capture - ${new Date().toLocaleString()}`,
+        type: file.type,
+        status: 'Pending',
+      };
+      setFormData((prev) => ({ ...prev, documents: [...prev.documents, newDoc] }));
+      await parseLoanDocument(newDoc.id, file, true);
+
+      e.target.value = '';
+    }
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3300,6 +3452,22 @@ export default function LendingScorecard() {
     }
   }, [formData.applicantPersonal.age, formData.applicantPersonal.dateOfBirth]);
   useEffect(() => {
+    const currentEmployer = formData.employment.history.trim();
+    const employerBusinessName = formData.employmentInformation.employerBusinessName.trim();
+
+    if (!currentEmployer || employerBusinessName) {
+      return;
+    }
+
+    setFormData((prev) => ({
+      ...prev,
+      employmentInformation: {
+        ...prev.employmentInformation,
+        employerBusinessName: currentEmployer,
+      },
+    }));
+  }, [formData.employment.history, formData.employmentInformation.employerBusinessName]);
+  useEffect(() => {
     const derivedFullName = composeApplicantFullName(formData.applicantPersonal);
     const canonicalMobileNumber = formData.contactInformation.mobileNumber.trim();
     const legacyPhoneNumber = formData.borrower.phone.trim();
@@ -3471,6 +3639,7 @@ export default function LendingScorecard() {
     label: string,
     rows = 3,
     required = false,
+    placeholder?: string,
   ) => (
     <div className="mb-3">
       <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">
@@ -3478,6 +3647,7 @@ export default function LendingScorecard() {
       </label>
       <textarea
         rows={rows}
+        placeholder={placeholder}
         value={String(getInputValue(section, field))}
         onChange={(event) => updateField(section, field, event.target.value)}
         className="loan-form-input w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -3588,15 +3758,15 @@ export default function LendingScorecard() {
           {renderTextarea('enhancedDueDiligence', 'previousLendersAndExistingLoanAccounts', 'Previous Lenders and Existing Loan Accounts', 3, true)}
           {renderInput('enhancedDueDiligence', 'numberOfActiveLoans', 'Number of Active Loans', 'number')}
           {renderTextarea('enhancedDueDiligence', 'previousLoanRestructuringDisclosures', 'Previous Loan Restructuring Disclosures', 3, true)}
-          {usesStructuredRetailCriteria && renderSelect('bankingRelationships', 'creditPaymentHistory', 'Loan Borrowing / Credit Card Verification', ['Excellent handling (no past due)', 'Satisfactory handling (minimal delays, settled)', 'No previous borrowing', 'Not properly handled / delayed payments'])}
+          {usesStructuredRetailCriteria && renderSelect('bankingRelationships', 'creditPaymentHistory', 'Declaration of Previously with Unpaid Loan or Credit Card', ['Excellent handling (no past due)', 'Satisfactory handling (minimal delays, settled)', 'No previous borrowing', 'Not properly handled / delayed payments'])}
           {usesStructuredRetailCriteria && renderSelect('bankingRelationships', 'accountHandling', 'Deposit / Current Account Handling', ['Excellent handling (no returned checks)', 'Satisfactory handling (minimal returned checks, settled)', 'Not properly handled'])}
           {usesStructuredRetailCriteria && renderSelect('bankingRelationships', 'utilityCreditBureauStatus', 'Payment of Utilities / Credit Bureau Findings', ['Very satisfactory to satisfactory', 'Dismissed / settled (fully settled with date)', 'Not satisfactory'])}
           {isCreditCard && renderSelect('bankingRelationships', 'creditCardRelationshipStatus', 'Existing Credit Card Relationship', ['Existing cardholder for more than 5 years with excellent payment history', 'Existing cardholder for 2–5 years with satisfactory history', 'New cardholder or less than 2 years', 'No previous credit card relationship'])}
           {renderTextarea('enhancedDueDiligence', 'additionalBankAccountsOwned', 'Additional Bank Accounts Owned', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'priorBankingRelationships', 'Prior Banking Relationships', 3, true)}
-          {isPersonalLoan && renderFormattedNumberInput('bankingRelationships', 'averageSavingsBalance', 'Average Savings Balance')}
+          {(isPersonalLoan || isMarginLoan) && renderFormattedNumberInput('bankingRelationships', 'averageSavingsBalance', 'Average Savings Balance')}
           {usesStructuredRetailCriteria && renderFormattedNumberInput('bankingRelationships', 'averageDailyBalance', 'Average Daily Balance')}
-          {isPersonalLoan && renderSelect('bankingRelationships', 'depositRegularity', 'Deposit Regularity', ['Regular deposits', 'Irregular deposits', 'No savings relationship'])}
+          {(isPersonalLoan || isMarginLoan) && renderSelect('bankingRelationships', 'depositRegularity', 'Deposit Regularity', ['Regular deposits', 'Irregular deposits', 'No savings relationship'])}
           {isCreditCard && renderSelect('bankingRelationships', 'bankingRelationshipTier', 'Banking Relationship', ['Premium/Preferred banking customer with multiple products', 'Active savings/current account with regular transactions', 'Limited banking relationship', 'No banking relationship'])}
           {renderTextarea('enhancedDueDiligence', 'existingInsurancePolicies', 'Existing Insurance Policies', 3, true)}
           {renderTextarea('enhancedDueDiligence', 'selfDeclaredAssetsAndLiabilities', 'Self-Declared Assets and Liabilities', 4, true)}
@@ -3615,12 +3785,12 @@ export default function LendingScorecard() {
           {usesStructuredRetailCriteria && renderInput('employmentInformation', 'employerBusinessYears', 'Years in Business of Employer', 'number')}
           {renderInput('contactInformation', 'mobileYearsUsed', 'Mobile Number Years in Use')}
           {renderInput('contactInformation', 'emailYearsUsed', 'Email Address Years in Use')}
-          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person and Contact No.', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information and Contact No.', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information and Contact No.', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'employmentReferencePerson', 'Employment Reference Person and Contact No.', 3, true, 'Full Name / Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'hrContactInformation', 'HR Contact Information and Contact No.', 3, true, 'Full Name / Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'supervisorInformation', 'Supervisor Information and Contact No.', 3, true, 'Full Name / Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'sourceOfIncomeVerificationReferences', 'Source of Income Verification and Contact No.', 3, true, 'Full Name / Contact Number')}
           {renderTextarea('enhancedDueDiligence', 'lengthOfResidenceConfirmation', 'Length of Residence Confirmation', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'utilityAccountReferences', 'Utility Account References', 3, true, 'Utility Type, Company and Account Number')}
           {renderCheckbox('otherInformation', 'deviceVerified', 'Device Verified / Registered')}
         </div>
       </div>
@@ -3629,17 +3799,17 @@ export default function LendingScorecard() {
         <h5 className="font-semibold text-sm text-slate-700 mb-3">References, Declarations, and Professional Profile</h5>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {usesStructuredRetailCriteria && renderSelect('enhancedDueDiligence', 'lifestyleIndicator', 'Lifestyle', ['Respectable lifestyle (no gambling, drinking, etc.)', 'Signs of adverse characteristics'])}
-          {(isPersonalLoan || isMotorcycleLoan) && renderSelect('enhancedDueDiligence', 'secondaryIncomeProfile', 'Secondary Source of Income', ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'])}
-          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References and CONTACT NUMBERS', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References and CONTACT NUMBERS', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References and CONTACT NUMBERS (Optional)', 3)}
-          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community and CONTACT NUMBERS', 3, true)}
+          {(isPersonalLoan || isMarginLoan || isMotorcycleLoan) && renderSelect('enhancedDueDiligence', 'secondaryIncomeProfile', 'Secondary Source of Income', ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'])}
+          {renderTextarea('enhancedDueDiligence', 'characterReferences', 'Character References and CONTACT NUMBERS', 3, true, 'Full Name and Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'guarantorReferences', 'Guarantor References and CONTACT NUMBERS', 3, true, 'Full Name and Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'coBorrowerReferences', 'Co-Borrower References and CONTACT NUMBERS (Optional)', 3, false, 'Full Name and Contact Number')}
+          {renderTextarea('enhancedDueDiligence', 'referencesFromEmployerOrCommunity', 'References from Employer or Community and CONTACT NUMBERS', 3, true, 'Full Name and Contact Number')}
           {renderSelect('enhancedDueDiligence', 'communityReputation', 'Community Reputation', ['Excellent references', 'Good references', 'Average', 'Limited information', 'Adverse information'])}
           {renderTextarea('enhancedDueDiligence', 'professionalOrganizationMemberships', 'Professional Organization Memberships', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true)}
-          {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true)}
+          {renderTextarea('enhancedDueDiligence', 'professionalLicenses', 'Professional Licenses', 3, true, 'Issuer Profession ID Number and Validity Date')}
+          {renderTextarea('enhancedDueDiligence', 'additionalPropertyDeclarations', 'Additional Property Declarations', 3, true, 'Address')}
+          {renderTextarea('enhancedDueDiligence', 'additionalVehicleDeclarations', 'Additional Vehicle Declarations', 3, true, 'Car Model and Year')}
+          {renderTextarea('enhancedDueDiligence', 'communityInvolvementInformation', 'Community Involvement Information', 3, true, 'Association Name and Role')}
           {renderInput('enhancedDueDiligence', 'facebookProfile', 'Facebook Profile Links')}
           {renderInput('enhancedDueDiligence', 'facebookProfileDateOpened', 'Facebook Profile Date Opened', 'date')}
           {renderInput('enhancedDueDiligence', 'instagramProfile', 'Instagram Profile Links')}
@@ -4041,7 +4211,7 @@ export default function LendingScorecard() {
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
-              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Motorcycle Loan', 'Credit Card', 'Personal Loan'])}
+              {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Motorcycle Loan', 'Credit Card', 'Personal Loan', 'Margin Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
@@ -4059,7 +4229,7 @@ export default function LendingScorecard() {
                   <div>
                     <h4 className="font-bold text-slate-800 text-sm mb-1">Step 1 Review Capture</h4>
                     <p className="text-sm text-slate-600">
-                      Take a picture or upload an image document. AI will suggest requirement checks and field values for review before saving.
+                      Take a picture of a valid ID. AI will auto-fill applicant and ID details, then suggest requirement checks for review.
                     </p>
                   </div>
                   <div className="shrink-0">
@@ -4068,7 +4238,7 @@ export default function LendingScorecard() {
                         type="file"
                         id="step1DocumentUpload"
                         className="hidden"
-                        onChange={(event) => void handleFileUpload(event)}
+                        onChange={(event) => void handleIdCapture(event)}
                         accept="image/*"
                         capture="environment"
                       />
@@ -4076,11 +4246,14 @@ export default function LendingScorecard() {
                         htmlFor="step1DocumentUpload"
                         className="loan-inline-button loan-inline-button-primary inline-flex cursor-pointer items-center justify-center px-4 py-2 text-sm font-semibold"
                       >
-                        {isParsing ? 'Analyzing Image...' : 'Take Picture / Upload Image'}
+                        {isParsing ? 'Analyzing ID Capture...' : 'Take Picture of ID'}
                       </label>
                     </div>
                   </div>
                 </div>
+                <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  Upload is disabled in this section. Use camera capture for a valid ID.
+                </p>
 
                 {formData.documents.length > 0 && (
                   <div className="mt-4 space-y-2">
@@ -4109,7 +4282,7 @@ export default function LendingScorecard() {
                       <div>
                         <h4 className="font-bold text-slate-800 text-sm mb-1">Verification Confirmation</h4>
                         <p className="text-sm text-slate-600">
-                          Review and edit AI-suggested details before finalizing this application as draft or for review.
+                          Captured ID details are auto-filled. Review and edit AI-suggested details before finalizing this application as draft or for review.
                         </p>
                         {reviewDocumentId && (
                           <p className="mt-1 text-xs text-slate-500">
@@ -4254,9 +4427,18 @@ export default function LendingScorecard() {
               {renderInput('applicantPersonal', 'dateOfBirth', 'Date of Birth', 'date')}
               {renderInput('applicantPersonal', 'placeOfBirth', 'Place of Birth')}
               {renderInput('applicantPersonal', 'age', 'Age', 'number', true)}
+              {isUnderAgeApplicant && (
+                <p className="md:col-span-2 -mt-1 mb-2 rounded-md border-2 border-red-300 bg-red-50 px-4 py-3 text-base font-extrabold uppercase tracking-wide text-red-700">
+                  Not qualified: applicant is under age (below 18).
+                </p>
+              )}
+              {isOverAgeApplicant && (
+                <p className="md:col-span-2 -mt-1 mb-2 rounded-md border-2 border-red-300 bg-red-50 px-4 py-3 text-base font-extrabold uppercase tracking-wide text-red-700">
+                  Not qualified: applicant is over age (above 65).
+                </p>
+              )}
               {renderSelect('applicantPersonal', 'gender', 'Gender', ['Male', 'Female'])}
               {renderInput('applicantPersonal', 'citizenship', 'Citizenship')}
-              {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
               <div className="mb-3">
                 <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Civil Status</label>
                 <select
@@ -4271,6 +4453,7 @@ export default function LendingScorecard() {
                   <option value="Separated">Separated</option>
                 </select>
               </div>
+              {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
               <div className="mb-3">
                 <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Co-Borrower</label>
                 <select
@@ -4289,6 +4472,7 @@ export default function LendingScorecard() {
               {renderInput('contactInformation', 'homePhoneNumber', 'Home Phone Number')}
               {renderInput('governmentIds', 'tin', 'TIN')}
               {renderInput('governmentIds', 'sssGsisNumber', 'SSS / GSIS Number')}
+              {renderInput('governmentIds', 'otherGovernmentId', 'Other - ID Type')}
               {renderInput('governmentIds', 'idNumber', 'Other - ID Number')}
               {renderInput('governmentIds', 'issueDate', 'Issue Date', 'date')}
               {renderInput('governmentIds', 'expiryDate', 'Expiry Date', 'date')}
@@ -4411,8 +4595,8 @@ export default function LendingScorecard() {
                       ['spouseInformation', 'occupation', 'Occupation'],
                       ['spouseInformation', 'position', 'Position'],
                       ['spouseInformation', 'natureOfWork', 'Nature of Work'],
+                      ['spouseInformation', 'previousEmployer', 'Current Employer'],
                       ['spouseInformation', 'yearsWithEmployer', 'Years with Employer'],
-                      ['spouseInformation', 'previousEmployer', 'Previous Employer'],
                       ['spouseInformation', 'totalYearsWorking', 'Total Years Working'],
                       ['spouseInformation', 'grossMonthlyIncome', 'Gross Monthly Income'],
                       ['spouseInformation', 'monthlyExpenses', 'Monthly Expenses'],
@@ -4481,16 +4665,16 @@ export default function LendingScorecard() {
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
-              <fieldset className="loan-collateral-classification md:col-span-2">
-                <legend>Security Classification</legend>
-                <div className="loan-collateral-classification-options">
+              <fieldset className="loan-collateral-classification md:col-span-2 text-xs">
+                <legend className="text-xs font-semibold">Security Classification</legend>
+                <div className="loan-collateral-classification-options flex flex-wrap items-center gap-2">
                   {['Secured', 'Unsecured', 'Lease'].map((classification) => {
                     const selected = formData.collateral.securityClassification === classification;
 
                     return (
                       <label
                         key={classification}
-                        className={`loan-collateral-classification-option${selected ? ' loan-collateral-classification-option-selected' : ''}`}
+                        className={`loan-collateral-classification-option inline-flex items-center gap-1 px-2 py-1 text-xs${selected ? ' loan-collateral-classification-option-selected' : ''}`}
                       >
                         <input
                           type="checkbox"
@@ -4503,7 +4687,7 @@ export default function LendingScorecard() {
                             )
                           }
                         />
-                        <span>{classification}</span>
+                        <span className="text-xs leading-none">{classification}</span>
                       </label>
                     );
                   })}
@@ -4518,7 +4702,7 @@ export default function LendingScorecard() {
                   <strong>Auto Loan — Mandatory:</strong> Select <strong>Secured</strong>.
                 </p>
               </fieldset>
-              {(isCreditCard || isPersonalLoan) && (
+              {(isCreditCard || isPersonalLoan || isMarginLoan) && (
                 <p className="col-span-full -mt-2 text-sm italic text-slate-500">
                   Asset details are not required for unsecured loans; select Unsecured above.
                 </p>
@@ -4780,6 +4964,7 @@ export default function LendingScorecard() {
                 <div className="grid grid-cols-2 gap-2">
                   {[
                     ['supportingDocuments', 'validGovernmentId', 'Valid Government ID'],
+                    ['supportingDocuments', 'selfiePhotoOptional', 'Selfie Photo (Optional) - not counted in completion score'],
                     ['supportingDocuments', 'passportIfApplicable', 'Passport (if applicable)'],
                     ['supportingDocuments', 'driversLicense', 'Driver License'],
                     ['supportingDocuments', 'philSysId', 'PhilSys ID'],
