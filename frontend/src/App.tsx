@@ -404,7 +404,7 @@ const isSignedIn = authReady && Boolean(currentUser)
       background: 'var(--app-menu-panel-bg)',
     }}
   >
-    {/* OPERATIONS */}
+    {/* SERVICES */}
 
     <div
       onClick={() => setFleetOpen(!fleetOpen)}
