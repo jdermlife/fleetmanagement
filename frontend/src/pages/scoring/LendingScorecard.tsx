@@ -3829,7 +3829,7 @@ export default function LendingScorecard() {
         <div className="mb-3">
           <h5 className="font-semibold text-sm text-indigo-800 mb-1">Credit Values Assessment Model</h5>
           <p className="text-sm text-indigo-700/80">
-            This assessment must be completed in one instance. No saving and reverting back.
+            This assessment must be completed in less than an hour. No saving and reverting back.
           </p>
         </div>
         <div className="space-y-4">
@@ -3840,7 +3840,7 @@ export default function LendingScorecard() {
                   Section {section.id}: {section.title}
                 </h6>
                 <p className="text-xs text-slate-500">
-                  5 questions x 4 points = 20 maximum points for this section.
+                 
                 </p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

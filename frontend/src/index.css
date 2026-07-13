@@ -3019,12 +3019,53 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 10px;
 }
 
+.budget-workflow-actions-block {
+  display: grid;
+  gap: 10px;
+  margin-top: 6px;
+}
+
+.budget-workflow-actions-label {
+  color: #0f172a;
+  font-weight: 700;
+}
+
+.budget-workflow-actions-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 110px;
+}
+
 .budget-workflow-variance-copy {
   display: block;
   margin-bottom: 8px;
   color: #64748b;
   font-size: 0.74rem;
   line-height: 1.35;
+}
+
+.bill-reminder-variance-cell {
+  border-radius: 10px;
+  font-weight: 700;
+}
+
+.bill-reminder-variance-lower {
+  background: rgba(34, 197, 94, 0.16);
+  color: #166534;
+}
+
+.bill-reminder-variance-higher {
+  background: rgba(248, 113, 113, 0.18);
+  color: #991b1b;
+}
+
+.bill-reminder-variance-neutral {
+  background: rgba(148, 163, 184, 0.16);
+  color: #334155;
+}
+
+.bill-reminder-variance-pending {
+  background: rgba(148, 163, 184, 0.12);
 }
 
 .budget-workflow-ai-grid {

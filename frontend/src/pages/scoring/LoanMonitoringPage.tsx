@@ -4,6 +4,84 @@ import { Link } from 'react-router-dom';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
 
+interface AdditionalLoanStatementRow {
+  id: string;
+  monthLabel: string;
+  previousBalance: number;
+  principal: number;
+  interest: number;
+  endBalance: number;
+}
+
+interface AdditionalLoanSchedule {
+  id: string;
+  loanAmount: number;
+  interestRate: number;
+  termMonths: number;
+  monthlyPayment: number;
+  rows: AdditionalLoanStatementRow[];
+}
+
+function addMonths(date: Date, months: number): Date {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + months);
+  return next;
+}
+
+function toMonthYearLabel(date: Date): string {
+  return date.toLocaleDateString(undefined, {
+    month: 'short',
+    year: 'numeric',
+  });
+}
+
+function buildAdditionalLoanSchedule(loanAmount: number, annualRate: number, termMonths: number): AdditionalLoanSchedule {
+  const normalizedAmount = Math.max(0, loanAmount);
+  const normalizedRate = Math.max(0, annualRate);
+  const normalizedTerm = Math.max(1, Math.round(termMonths));
+  const monthlyRate = normalizedRate / 100 / 12;
+
+  let monthlyPayment = 0;
+  if (normalizedAmount > 0) {
+    if (monthlyRate <= 0) {
+      monthlyPayment = normalizedAmount / normalizedTerm;
+    } else {
+      const numerator = monthlyRate * ((1 + monthlyRate) ** normalizedTerm);
+      const denominator = ((1 + monthlyRate) ** normalizedTerm) - 1;
+      monthlyPayment = denominator > 0 ? normalizedAmount * (numerator / denominator) : normalizedAmount / normalizedTerm;
+    }
+  }
+
+  const startDate = new Date();
+  let runningBalance = normalizedAmount;
+
+  const rows = Array.from({ length: normalizedTerm }, (_, index) => {
+    const previousBalance = runningBalance;
+    const interest = monthlyRate > 0 ? previousBalance * monthlyRate : 0;
+    const principal = Math.min(previousBalance, Math.max(monthlyPayment - interest, 0));
+    const endBalance = Math.max(previousBalance - principal, 0);
+    runningBalance = endBalance;
+
+    return {
+      id: `additional-statement-${index + 1}`,
+      monthLabel: toMonthYearLabel(addMonths(startDate, index)),
+      previousBalance,
+      principal,
+      interest,
+      endBalance,
+    };
+  });
+
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    loanAmount: normalizedAmount,
+    interestRate: normalizedRate,
+    termMonths: normalizedTerm,
+    monthlyPayment,
+    rows,
+  };
+}
+
 function formatMetricValue(value: number, unit: 'percent' | 'days' | 'score' | 'currency' | 'count') {
   if (unit === 'currency') {
     return new Intl.NumberFormat(undefined, {
@@ -113,6 +191,12 @@ export default function LoanMonitoringPage() {
     [applications],
   );
   const [selectedApplicationNo, setSelectedApplicationNo] = useState('');
+  const [showAddLoanForm, setShowAddLoanForm] = useState(false);
+  const [newLoanAmount, setNewLoanAmount] = useState('');
+  const [newLoanInterestRate, setNewLoanInterestRate] = useState('');
+  const [newLoanTerm, setNewLoanTerm] = useState('');
+  const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
+  const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
 
   useEffect(() => {
     if (!monitoredApplications.length) {
@@ -133,6 +217,34 @@ export default function LoanMonitoringPage() {
     () => buildAiAdvisor(snapshot),
     [snapshot],
   );
+
+  const handleRunAdditionalInstallmentSchedule = () => {
+    const parsedLoanAmount = Number(newLoanAmount);
+    const parsedInterestRate = Number(newLoanInterestRate);
+    const parsedTerm = Number(newLoanTerm);
+
+    if (!Number.isFinite(parsedLoanAmount) || parsedLoanAmount <= 0) {
+      setAdditionalScheduleMessage('Please enter a valid Amount of Loan greater than zero.');
+      return;
+    }
+
+    if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
+      setAdditionalScheduleMessage('Please enter a valid Interest Rate (zero or higher).');
+      return;
+    }
+
+    if (!Number.isFinite(parsedTerm) || parsedTerm <= 0) {
+      setAdditionalScheduleMessage('Please enter a valid Term in months greater than zero.');
+      return;
+    }
+
+    const schedule = buildAdditionalLoanSchedule(parsedLoanAmount, parsedInterestRate, parsedTerm);
+    setAdditionalSchedules((previous) => [schedule, ...previous]);
+    setAdditionalScheduleMessage('Additional loan installment schedule generated.');
+    setNewLoanAmount('');
+    setNewLoanInterestRate('');
+    setNewLoanTerm('');
+  };
 
   return (
     <div className="psychometric-page loan-monitoring-dashboard-page">
@@ -278,6 +390,111 @@ export default function LoanMonitoringPage() {
                   ) : null}
                 </tbody>
               </table>
+            </div>
+
+            <div className="budget-workflow-step-block" style={{ marginTop: '16px' }}>
+              <div className="budget-workflow-inline-actions">
+                <button
+                  type="button"
+                  className="psychometric-reset-button"
+                  onClick={() => {
+                    setShowAddLoanForm((previous) => !previous);
+                    setAdditionalScheduleMessage('');
+                  }}
+                >
+                  {showAddLoanForm ? 'Hide Additional Loan Form' : 'Add Another Loan and Installment Schedule'}
+                </button>
+              </div>
+
+              {showAddLoanForm ? (
+                <>
+                  <div className="budget-dashboard-category-summary">
+                    <label className="budget-dashboard-category-summary-card">
+                      <span>Amount of Loan</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={newLoanAmount}
+                        onChange={(event) => setNewLoanAmount(event.target.value)}
+                        className="budget-dashboard-category-input"
+                        placeholder="Enter amount"
+                      />
+                    </label>
+                    <label className="budget-dashboard-category-summary-card">
+                      <span>Interest Rate (%)</span>
+                      <input
+                        type="number"
+                        min={0}
+                        step="0.01"
+                        value={newLoanInterestRate}
+                        onChange={(event) => setNewLoanInterestRate(event.target.value)}
+                        className="budget-dashboard-category-input"
+                        placeholder="Enter annual rate"
+                      />
+                    </label>
+                    <label className="budget-dashboard-category-summary-card">
+                      <span>Term (Months)</span>
+                      <input
+                        type="number"
+                        min={1}
+                        step="1"
+                        value={newLoanTerm}
+                        onChange={(event) => setNewLoanTerm(event.target.value)}
+                        className="budget-dashboard-category-input"
+                        placeholder="Enter term"
+                      />
+                    </label>
+                  </div>
+
+                  <div className="budget-workflow-inline-actions">
+                    <button
+                      type="button"
+                      className="psychometric-reset-button"
+                      onClick={handleRunAdditionalInstallmentSchedule}
+                    >
+                      Run Installment Schedule
+                    </button>
+                  </div>
+                </>
+              ) : null}
+
+              {additionalScheduleMessage ? (
+                <p className="psychometric-section-note" role="status">
+                  {additionalScheduleMessage}
+                </p>
+              ) : null}
+
+              {additionalSchedules.map((schedule, scheduleIndex) => (
+                <div key={schedule.id} className="psychometric-scale-table-wrap">
+                  <h3>{`Additional Loan Statement ${scheduleIndex + 1}`}</h3>
+                  <p className="psychometric-section-note">
+                    Amount: {formatMetricValue(schedule.loanAmount, 'currency')} | Interest Rate: {schedule.interestRate.toFixed(2)}% | Term: {schedule.termMonths} months | Monthly Installment: {formatMetricValue(schedule.monthlyPayment, 'currency')}
+                  </p>
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Month/Year</th>
+                        <th>Total Running Balance from Previous Month</th>
+                        <th>Principal</th>
+                        <th>Interest</th>
+                        <th>End Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {schedule.rows.map((row) => (
+                        <tr key={row.id}>
+                          <td data-label="Month/Year">{row.monthLabel}</td>
+                          <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
+                          <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
+                          <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
+                          <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
             </div>
           </article>
 

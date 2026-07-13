@@ -25,11 +25,11 @@ interface BillReminderDraft {
   company: string;
   utilityType: string;
   frequency: BillerFrequency;
-  dateCovered: string;
   budgetedAmount: string;
   savedSetup: BillerSetup[];
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
+  step3RecordSavedAt: string;
 }
 
 const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
@@ -41,11 +41,11 @@ const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
   company: '',
   utilityType: '',
   frequency: 'Monthly',
-  dateCovered: '',
   budgetedAmount: '',
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
+  step3RecordSavedAt: '',
 };
 
 function formatCurrency(amount: number) {
@@ -148,12 +148,12 @@ export default function BillReminderPage() {
   const [company, setCompany] = useState('');
   const [utilityType, setUtilityType] = useState('');
   const [frequency, setFrequency] = useState<BillerFrequency>('Monthly');
-  const [dateCovered, setDateCovered] = useState('');
   const [budgetedAmount, setBudgetedAmount] = useState('');
 
   const [savedSetup, setSavedSetup] = useState<BillerSetup[]>([]);
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [step3RecordSavedAt, setStep3RecordSavedAt] = useState('');
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
   const autosaveValue = useMemo<BillReminderDraft>(() => ({
@@ -165,16 +165,15 @@ export default function BillReminderPage() {
     company,
     utilityType,
     frequency,
-    dateCovered,
     budgetedAmount,
     savedSetup,
     actualEntries,
     varianceNotes,
+    step3RecordSavedAt,
   }), [
     actualEntries,
     budgetedAmount,
     company,
-    dateCovered,
     draftBillers,
     editingBillerId,
     frequency,
@@ -182,6 +181,7 @@ export default function BillReminderPage() {
     periodStart,
     savedSetup,
     step,
+    step3RecordSavedAt,
     utilityType,
     varianceNotes,
   ]);
@@ -195,11 +195,11 @@ export default function BillReminderPage() {
     setCompany(draft.company);
     setUtilityType(draft.utilityType);
     setFrequency(draft.frequency);
-    setDateCovered(draft.dateCovered);
     setBudgetedAmount(draft.budgetedAmount);
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
     setVarianceNotes(draft.varianceNotes);
+    setStep3RecordSavedAt(draft.step3RecordSavedAt ?? '');
   }, []);
 
   useAutosaveDraft({
@@ -271,14 +271,13 @@ export default function BillReminderPage() {
     setCompany('');
     setUtilityType('');
     setFrequency('Monthly');
-    setDateCovered('');
     setBudgetedAmount('');
   };
 
   const handleAddBiller = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!company.trim() || !utilityType.trim() || !dateCovered || isBlank(budgetedAmount)) {
+    if (!company.trim() || !utilityType.trim() || isBlank(budgetedAmount)) {
       return;
     }
 
@@ -293,7 +292,6 @@ export default function BillReminderPage() {
                 company: company.trim(),
                 utilityType: utilityType.trim(),
                 frequency,
-                dateCovered,
                 budgetedAmount: budgetAmount,
               }
             : biller,
@@ -303,6 +301,8 @@ export default function BillReminderPage() {
       return;
     }
 
+    const fallbackCoveredDate = periodEnd || periodStart || new Date().toISOString().slice(0, 10);
+
     setDraftBillers((previous) => [
       ...previous,
       {
@@ -310,7 +310,7 @@ export default function BillReminderPage() {
         company: company.trim(),
         utilityType: utilityType.trim(),
         frequency,
-        dateCovered,
+        dateCovered: fallbackCoveredDate,
         budgetedAmount: budgetAmount,
       },
     ]);
@@ -338,8 +338,20 @@ export default function BillReminderPage() {
     );
     setActualEntries({});
     setVarianceNotes({});
+    setStep3RecordSavedAt('');
     setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
+  };
+
+  const handleSaveVarianceRecord = () => {
+    const hasComputedVariance = varianceRows.some((row) => row.hasActual);
+    if (!hasComputedVariance) {
+      setSetupStatusMessage('Please enter at least one actual amount in Step 3 before saving the record.');
+      return;
+    }
+
+    setStep3RecordSavedAt(new Date().toISOString());
+    setSetupStatusMessage('Step 3 record saved successfully.');
   };
 
   const varianceRows = useMemo(() => {
@@ -525,7 +537,7 @@ export default function BillReminderPage() {
                 <h3>Step 1: Choose Period Covered</h3>
                 <p className="psychometric-section-note">
                   In this same step, choose period covered and encode biller setup including company,
-                  utility type or amortization, frequency, date covered, and budgeted amount.
+                  utility type or amortization, frequency, and budgeted amount.
                 </p>
 
                 <div className="budget-workflow-grid-two">
@@ -583,16 +595,6 @@ export default function BillReminderPage() {
                   </label>
 
                   <label>
-                    Date Covered
-                    <input
-                      type="date"
-                      value={dateCovered}
-                      onChange={(event) => setDateCovered(event.target.value)}
-                      required
-                    />
-                  </label>
-
-                  <label>
                     Budgeted Amount
                     <input
                       type="number"
@@ -628,7 +630,6 @@ export default function BillReminderPage() {
                         <th>Company</th>
                         <th>Utility / Amortization</th>
                         <th>Frequency</th>
-                        <th>Date Covered</th>
                         <th>Budgeted Amount</th>
                         <th>Status</th>
                         <th>Actions</th>
@@ -640,7 +641,6 @@ export default function BillReminderPage() {
                           <td data-label="Company">{biller.company}</td>
                           <td data-label="Utility / Amortization">{biller.utilityType}</td>
                           <td data-label="Frequency">{biller.frequency}</td>
-                          <td data-label="Date Covered">{biller.dateCovered || 'Not set'}</td>
                           <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
                           <td data-label="Status">{biller.status.label}</td>
                           <td data-label="Actions">
@@ -653,7 +653,6 @@ export default function BillReminderPage() {
                                   setCompany(biller.company);
                                   setUtilityType(biller.utilityType);
                                   setFrequency(biller.frequency);
-                                  setDateCovered(biller.dateCovered);
                                   setBudgetedAmount(String(biller.budgetedAmount));
                                 }}
                               >
@@ -677,7 +676,7 @@ export default function BillReminderPage() {
                       ))}
                       {draftCards.length === 0 ? (
                         <tr>
-                          <td colSpan={7}>No billers added yet. Add at least one setup line.</td>
+                          <td colSpan={6}>No billers added yet. Add at least one setup line.</td>
                         </tr>
                       ) : null}
                     </tbody>
@@ -774,7 +773,7 @@ export default function BillReminderPage() {
                         <tr>
                           <th>Setup (Saved)</th>
                           <th>Actual (User Input)</th>
-                          <th>Variance</th>
+                          <th>Variance (B/W)</th>
                           <th>Variance Explanation</th>
                         </tr>
                       </thead>
@@ -804,7 +803,10 @@ export default function BillReminderPage() {
                                 aria-label={`${row.company} actual payment`}
                               />
                             </td>
-                            <td data-label="Variance">
+                            <td
+                              data-label="Variance (B/W)"
+                              className={`bill-reminder-variance-cell ${row.hasActual ? (row.variance < 0 ? 'bill-reminder-variance-lower' : (row.variance > 0 ? 'bill-reminder-variance-higher' : 'bill-reminder-variance-neutral')) : 'bill-reminder-variance-pending'}`}
+                            >
                               {row.hasActual ? formatSignedCurrency(row.variance) : 'Pending input'}
                             </td>
                             <td data-label="Variance Explanation">
@@ -839,7 +841,16 @@ export default function BillReminderPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>
+                  <button type="button" className="psychometric-reset-button" onClick={handleSaveVarianceRecord}>
+                    Save
+                  </button>
                 </div>
+
+                {step3RecordSavedAt ? (
+                  <p className="psychometric-section-note">
+                    Last saved: {new Date(step3RecordSavedAt).toLocaleString()}
+                  </p>
+                ) : null}
               </div>
             ) : null}
           </article>

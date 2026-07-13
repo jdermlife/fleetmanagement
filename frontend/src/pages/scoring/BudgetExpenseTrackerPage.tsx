@@ -23,6 +23,7 @@ interface BudgetExpenseTrackerDraft {
   savedSetup: WorkflowLineItem[];
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
+  actionsToBeTaken: string;
 }
 
 const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
@@ -39,6 +40,7 @@ const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
+  actionsToBeTaken: '',
 };
 
 function formatCurrency(amount: number) {
@@ -114,6 +116,7 @@ export default function BudgetExpenseTrackerPage() {
   const [savedSetup, setSavedSetup] = useState<WorkflowLineItem[]>([]);
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
+  const [actionsToBeTaken, setActionsToBeTaken] = useState('');
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
   const sourceSnapshotAppliedRef = useRef(false);
 
@@ -126,8 +129,10 @@ export default function BudgetExpenseTrackerPage() {
     savedSetup,
     actualEntries,
     varianceNotes,
+    actionsToBeTaken,
   }), [
     actualEntries,
+    actionsToBeTaken,
     expenseDraft,
     incomeDraft,
     periodEnd,
@@ -146,6 +151,7 @@ export default function BudgetExpenseTrackerPage() {
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
     setVarianceNotes(draft.varianceNotes);
+    setActionsToBeTaken(draft.actionsToBeTaken ?? '');
   }, []);
 
   const { isHydrated } = useAutosaveDraft({
@@ -169,7 +175,8 @@ export default function BudgetExpenseTrackerPage() {
       || Object.values(expenseDraft).some((value) => value !== '')
       || savedSetup.length > 0
       || Object.values(actualEntries).some((value) => value !== '')
-      || Object.values(varianceNotes).some((value) => value !== '');
+      || Object.values(varianceNotes).some((value) => value !== '')
+      || actionsToBeTaken !== '';
 
     if (hasRestoredWorkflow) {
       return;
@@ -208,6 +215,7 @@ export default function BudgetExpenseTrackerPage() {
     snapshot.categoryItems,
     snapshot.incomeItems,
     step,
+    actionsToBeTaken,
     varianceNotes,
   ]);
 
@@ -292,8 +300,13 @@ export default function BudgetExpenseTrackerPage() {
     setSavedSetup(setupLines);
     setActualEntries({});
     setVarianceNotes({});
+    setActionsToBeTaken('');
     setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
+  };
+
+  const handleSaveOrFinishStepThree = () => {
+    setSetupStatusMessage('Step 3 saved. Actions to be taken recorded.');
   };
 
   const varianceRows = useMemo(() => {
@@ -721,6 +734,25 @@ export default function BudgetExpenseTrackerPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>
+                </div>
+
+                <div className="budget-workflow-actions-block">
+                  <label htmlFor="budget-actions-to-be-taken" className="budget-workflow-actions-label">
+                    Actions to be taken
+                  </label>
+                  <textarea
+                    id="budget-actions-to-be-taken"
+                    value={actionsToBeTaken}
+                    onChange={(event) => setActionsToBeTaken(event.target.value)}
+                    placeholder="Enter actions to be taken based on the variance review"
+                    rows={4}
+                    className="budget-workflow-actions-textarea"
+                  />
+                  <div className="budget-workflow-inline-actions">
+                    <button type="button" className="psychometric-reset-button" onClick={handleSaveOrFinishStepThree}>
+                      Save / Finish
+                    </button>
+                  </div>
                 </div>
               </div>
             ) : null}
