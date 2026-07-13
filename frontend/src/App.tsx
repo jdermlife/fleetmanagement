@@ -11,6 +11,8 @@ import {
 } from './authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import ProtectedRoute from './components/auth/ProtectedRoute'
+import AutosaveStatus from './components/AutosaveStatus'
+import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
 
 type MenuLink = {
   id: string
@@ -136,6 +138,10 @@ const menuLinks: MenuLink[] = [
 const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const THEME_STORAGE_KEY = 'fms:theme'
+const LEGACY_UNSCOPED_DRAFT_KEYS = [
+  'fms:bill-reminder-setup',
+  'fms:networth-balance-sheet',
+]
 const VALID_THEME_IDS = new Set(['classic', 'civic', 'philippine-flag'])
 
 function isAuthPath(pathname: string) {
@@ -326,12 +332,17 @@ const isSignedIn = authReady && Boolean(currentUser)
   }, [])
 
   useEffect(() => {
+    LEGACY_UNSCOPED_DRAFT_KEYS.forEach((key) => window.localStorage.removeItem(key))
+  }, [])
+
+  useEffect(() => {
     if (!currentUser) {
       setMenuOpen(false)
     }
   }, [currentUser])
 
   const handleTopbarLogout = async () => {
+    await prepareAutosavesForLogout()
     await logout()
     setCurrentUser(null)
     navigate('/login')
@@ -355,6 +366,7 @@ const isSignedIn = authReady && Boolean(currentUser)
           </div>
 
           <div className="app-topbar-actions">
+            {isSignedIn ? <AutosaveStatus className="app-autosave-status" /> : null}
             {(isSignedIn || shouldShowBackButton) ? (
               <div className="app-topbar-control-group">
                 {isSignedIn ? (
@@ -404,7 +416,7 @@ const isSignedIn = authReady && Boolean(currentUser)
       background: 'var(--app-menu-panel-bg)',
     }}
   >
-    {/* SERVICES */}
+    {/* TOOLS */}
 
     <div
       onClick={() => setFleetOpen(!fleetOpen)}
@@ -418,7 +430,7 @@ const isSignedIn = authReady && Boolean(currentUser)
         fontWeight: 'bold',
       }}
     >
-      SERVICES {fleetOpen ? '▲' : '▼'}
+      TOOLS {fleetOpen ? '▲' : '▼'}
     </div>
 
     {fleetOpen &&

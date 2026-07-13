@@ -22,6 +22,7 @@ vi.mock('../src/appleAuth', () => ({
 }))
 
 vi.mock('../src/api', () => ({
+  createFreeSubscription: vi.fn().mockResolvedValue({}),
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
@@ -80,6 +81,7 @@ describe('RegisterPage Apple sign-up', () => {
     mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
     mockLoginWithApple.mockResolvedValue({
       user: {
+        id: 9,
         role: 'subscriber_borrower',
       },
     })
@@ -104,6 +106,6 @@ describe('RegisterPage Apple sign-up', () => {
       subscriberType: 'borrower',
       lenderDataSharingConsent: true,
     })
-    expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard', { replace: true })
+    expect(mockNavigate).toHaveBeenCalledWith('/subscription/payment', { replace: true })
   })
 })

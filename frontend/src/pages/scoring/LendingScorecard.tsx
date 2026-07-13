@@ -35,6 +35,7 @@ import {
   isWorkflowAutoRejectProbability,
 } from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
 import {
   calculateApplicationInformationCompletion,
@@ -108,6 +109,15 @@ interface LoanApplication {
   finalChecklist?: FinalChecklist;
   releaseNotes?: string;
   advisorChecklist: AdvisorChecklistItem[];
+}
+
+interface LendingAutosaveDraft {
+  formData: LoanApplication;
+  step: number;
+  formattedNumberDrafts: Record<string, string>;
+  documentReview: DocumentParseReview | null;
+  reviewDocumentId: string | null;
+  selectedWorkflowAction: WorkflowStatus;
 }
 
 const createBlankSpouseInformation = (): SpouseInformation => ({
@@ -328,6 +338,15 @@ const buildLoanRequirements = (
     fraudIntelligence: application.fraudIntelligence,
     optionalPsychometricQuestionnaire: application.optionalPsychometricQuestionnaire,
     psychometricAssessment: application.psychometricAssessment,
+    editorState: {
+      documents: application.documents,
+      routing: {
+        creditOfficer: application.routing.creditOfficer,
+        branchManager: application.routing.branchManager,
+        creditCommittee: application.routing.creditCommittee,
+      },
+      disbursement: application.disbursement,
+    },
     releaseReadiness: {
       finalChecklist: application.finalChecklist,
       releaseNotes: application.releaseNotes || '',
@@ -1797,6 +1816,45 @@ export default function LendingScorecard() {
   const [advisorError, setAdvisorError] = useState('');
   const [advisorMeta, setAdvisorMeta] = useState<Pick<CreditAdvisorResult, 'provider' | 'model' | 'total_tokens' | 'latency_ms'> | null>(null);
   const [advisorNotice, setAdvisorNotice] = useState('');
+  const autosaveDefaults = useMemo<LendingAutosaveDraft>(() => ({
+    formData: createNewApplicationInstance(),
+    step: isFilscoreRoute ? 8 : 1,
+    formattedNumberDrafts: {},
+    documentReview: null,
+    reviewDocumentId: null,
+    selectedWorkflowAction: 'Credit Review',
+  }), [isFilscoreRoute]);
+  const autosaveValue = useMemo<LendingAutosaveDraft>(() => ({
+    formData,
+    step,
+    formattedNumberDrafts,
+    documentReview,
+    reviewDocumentId,
+    selectedWorkflowAction,
+  }), [
+    documentReview,
+    formData,
+    formattedNumberDrafts,
+    reviewDocumentId,
+    selectedWorkflowAction,
+    step,
+  ]);
+  const hydrateAutosaveDraft = useCallback((draft: LendingAutosaveDraft) => {
+    setFormData(draft.formData);
+    setStep(draft.step);
+    setFormattedNumberDrafts(draft.formattedNumberDrafts);
+    setDocumentReview(draft.documentReview);
+    setReviewDocumentId(draft.reviewDocumentId);
+    setSelectedWorkflowAction(draft.selectedWorkflowAction);
+  }, []);
+  const lendingAutosave = useAutosaveDraft({
+    scope: 'loan-application',
+    entityKey: requestedApplicationNo || 'new',
+    value: autosaveValue,
+    defaults: autosaveDefaults,
+    onHydrate: hydrateAutosaveDraft,
+    enabled: !requestedApplicationNo || hasPersistedRecord,
+  });
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
   const isCreditCard = formData.loan.productType === 'Credit Card';
@@ -2197,6 +2255,10 @@ export default function LendingScorecard() {
       (savedRequirements.releaseReadiness ?? {}) as Partial<
         NonNullable<LoanApplicationRequirements['releaseReadiness']>
       >;
+    const savedEditorState =
+      (savedRequirements.editorState ?? {}) as Partial<
+        NonNullable<LoanApplicationRequirements['editorState']>
+      >;
     const savedAdvisorChecklist = Array.isArray(savedReleaseReadiness.advisorChecklist)
       ? savedReleaseReadiness.advisorChecklist
           .map((item, index) => {
@@ -2443,10 +2505,24 @@ export default function LendingScorecard() {
         ...blankApplication.psychometricAssessment,
         ...(savedRequirements.psychometricAssessment ?? {}),
       },
+      documents: Array.isArray(savedEditorState.documents)
+        ? savedEditorState.documents.map((document) => ({
+            id: document.id,
+            name: document.name,
+            type: document.type,
+            parsedData: document.parsedData,
+            status: document.status,
+          }))
+        : blankApplication.documents,
       committeeRemarks: record.committee_remarks,
       routing: {
         ...blankApplication.routing,
+        ...(savedEditorState.routing ?? {}),
         executiveApproval: record.executive_approval,
+      },
+      disbursement: {
+        ...blankApplication.disbursement,
+        ...(savedEditorState.disbursement ?? {}),
       },
       finalChecklist: {
         ...blankApplication.finalChecklist,
@@ -2572,7 +2648,15 @@ export default function LendingScorecard() {
       const result = await computeQuantScores(payload);
       setBackendQuantSummary(mapBackendQuantSummary(result.quant_scores));
       if (result.application_no) {
+        await lendingAutosave.clear();
         await loadApplication(result.application_no);
+        const editorPath = isFilscoreRoute
+          ? '/lending-scorecard/filscore'
+          : '/lending-scorecard';
+        navigate(
+          `${editorPath}?applicationNo=${encodeURIComponent(result.application_no)}`,
+          { replace: true },
+        );
       } else {
         setHasPersistedRecord(true);
       }
@@ -2759,8 +2843,19 @@ export default function LendingScorecard() {
         ? await updateLoanApplication(applicationToSave.id, payload)
         : await createLoanApplication(payload);
 
+      await lendingAutosave.clear();
       setHasPersistedRecord(true);
-      setFormData({ ...applicationToSave, status: newStatus });
+      const persistedApplicationNo = result.application_no || applicationToSave.id;
+      setFormData({ ...applicationToSave, id: persistedApplicationNo, status: newStatus });
+      if (!requestedApplicationNo) {
+        const editorPath = isFilscoreRoute
+          ? '/lending-scorecard/filscore'
+          : '/lending-scorecard';
+        navigate(
+          `${editorPath}?applicationNo=${encodeURIComponent(persistedApplicationNo)}`,
+          { replace: true },
+        );
+      }
       setTransientMessage(result.message || `Application saved as ${newStatus}`);
       await refreshLoanCreationEntitlement();
       return true;
@@ -2982,7 +3077,8 @@ export default function LendingScorecard() {
   }, [refreshLoanCreationEntitlement]);
 
   // --- Global Nav Actions ---
-  const handleCreateNew = () => {
+  const handleCreateNew = async () => {
+    await lendingAutosave.clear();
     setFormData(createNewApplicationInstance());
     setFormattedNumberDrafts({});
     setDocumentReview(null);

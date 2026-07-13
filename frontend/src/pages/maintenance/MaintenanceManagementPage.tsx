@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 
 import type {
   DatabaseStatus,
@@ -21,6 +22,10 @@ const initialForm: MaintenanceRecordSubmission = {
   estimatedCost: 0,
   status: 'Scheduled',
   notes: '',
+}
+
+const initialDraft = {
+  form: initialForm,
 }
 
 function MaintenanceManagementPage() {
@@ -48,6 +53,14 @@ function MaintenanceManagementPage() {
 
   const [successMessage, setSuccessMessage] =
     useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'maintenance-management',
+    entityKey: 'default',
+    value: { form },
+    defaults: initialDraft,
+    onHydrate: (draft) => setForm(draft.form),
+  })
 
   useEffect(() => {
     void loadPage()
@@ -159,6 +172,8 @@ function MaintenanceManagementPage() {
       setSuccessMessage(
         'Maintenance record saved successfully.',
       )
+
+      await clearDraft()
 
       setForm(initialForm)
     } catch (saveError: unknown) {

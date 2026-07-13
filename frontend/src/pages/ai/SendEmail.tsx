@@ -1,6 +1,7 @@
 import { useState } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 export default function SendEmail() {
   const [recipient, setRecipient] = useState('')
@@ -9,6 +10,17 @@ export default function SendEmail() {
 
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const emailAutosave = useAutosaveDraft({
+    scope: 'send-email',
+    entityKey: 'default',
+    value: { recipient, subject, body },
+    defaults: { recipient: '', subject: '', body: '' },
+    onHydrate: (draft) => {
+      setRecipient(draft.recipient)
+      setSubject(draft.subject)
+      setBody(draft.body)
+    },
+  })
 
   const sendEmail = async () => {
     try {
@@ -24,6 +36,7 @@ export default function SendEmail() {
         }
       )
 
+      await emailAutosave.clear()
       setMessage(response.data.message)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Failed to send email.'))

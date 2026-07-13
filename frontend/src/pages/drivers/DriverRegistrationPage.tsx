@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 
 import type {
   DriverRegistrationRecord,
@@ -25,6 +26,10 @@ const statusOptions = [
   'Pending',
 ]
 
+const initialDraft = {
+  form: initialForm,
+}
+
 function DriverRegistrationPage() {
   const [form, setForm] =
     useState<DriverRegistrationSubmission>(
@@ -47,6 +52,14 @@ function DriverRegistrationPage() {
 
   const [successMessage, setSuccessMessage] =
     useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'driver-registration',
+    entityKey: 'default',
+    value: { form },
+    defaults: initialDraft,
+    onHydrate: (draft) => setForm(draft.form),
+  })
 
   useEffect(() => {
     void loadDrivers()
@@ -128,6 +141,8 @@ function DriverRegistrationPage() {
       setSuccessMessage(
         'Driver profile registered successfully.',
       )
+
+      await clearDraft()
 
       setForm(initialForm)
     } catch (saveError: unknown) {

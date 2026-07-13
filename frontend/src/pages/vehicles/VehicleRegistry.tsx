@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 import type { NewVehicle, Vehicle } from '../../types'
 
 import VehicleList from './VehicleList'
@@ -10,6 +11,11 @@ const initialForm = {
   make: '',
   model: '',
   year: '',
+}
+
+const initialDraft = {
+  form: initialForm,
+  editingVehicleId: null as number | null,
 }
 
 interface VehicleRegistryProps {
@@ -52,6 +58,17 @@ function VehicleRegistry({
     successMessage,
     setSuccessMessage,
   ] = useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'vehicle-registry',
+    entityKey: 'default',
+    value: { form, editingVehicleId },
+    defaults: initialDraft,
+    onHydrate: (draft) => {
+      setForm(draft.form)
+      setEditingVehicleId(draft.editingVehicleId)
+    },
+  })
 
   useEffect(() => {
     void loadVehicles()
@@ -103,6 +120,11 @@ function VehicleRegistry({
     setForm(initialForm)
 
     setEditingVehicleId(null)
+  }
+
+  async function cancelEdit() {
+    await clearDraft()
+    resetForm()
   }
 
   async function handleSubmit(
@@ -218,6 +240,7 @@ function VehicleRegistry({
         )
       }
 
+      await clearDraft()
       resetForm()
     } catch (error: unknown) {
       setError(
@@ -301,6 +324,7 @@ function VehicleRegistry({
         editingVehicleId ===
         vehicle.id
       ) {
+        await clearDraft()
         resetForm()
       }
 
@@ -483,9 +507,7 @@ function VehicleRegistry({
               null ? (
                 <button
                   type="button"
-                  onClick={
-                    resetForm
-                  }
+                  onClick={() => void cancelEdit()}
                 >
                   Cancel Edit
                 </button>

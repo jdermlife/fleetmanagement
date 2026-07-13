@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 import type {
   DatabaseStatus,
   InsuranceRecord,
@@ -24,6 +25,10 @@ const initialForm: InsuranceRecordSubmission = {
   notes: '',
 }
 
+const initialDraft = {
+  form: initialForm,
+}
+
 function InsuranceManagementPage() {
   const [databaseStatus, setDatabaseStatus] =
     useState<DatabaseStatus | null>(null)
@@ -39,6 +44,14 @@ function InsuranceManagementPage() {
 
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'insurance-management',
+    entityKey: 'default',
+    value: { form },
+    defaults: initialDraft,
+    onHydrate: (draft) => setForm(draft.form),
+  })
 
   useEffect(() => {
     void loadPage()
@@ -143,6 +156,8 @@ function InsuranceManagementPage() {
       setSuccessMessage(
         'Insurance record saved successfully.',
       )
+
+      await clearDraft()
 
       setForm(initialForm)
     } catch (saveError: unknown) {

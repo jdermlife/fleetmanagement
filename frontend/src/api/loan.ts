@@ -320,6 +320,28 @@ export interface LoanApplicationRequirements {
     question20: string
   }
   psychometricAssessment: Record<string, string>
+  editorState?: {
+    documents?: Array<{
+      id: string
+      name: string
+      type: string
+      parsedData?: string
+      status: 'Pending' | 'Parsed' | 'Failed'
+    }>
+    routing?: {
+      creditOfficer: string
+      branchManager: string
+      creditCommittee: string
+    }
+    disbursement?: {
+      bankAccount: string
+      accountNumber: string
+      disbursementDate: string
+      bookingDate: string
+      startRepaymentDate: string
+      firstPaymentDate: string
+    }
+  }
   releaseReadiness?: {
     finalChecklist?: {
       allRequiredDocumentsProvided: boolean

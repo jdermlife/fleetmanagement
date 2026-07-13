@@ -20,6 +20,7 @@ import {
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 type SubmitEvent = FormEvent<HTMLFormElement>
 
@@ -65,6 +66,73 @@ export default function SubscriptionManagementPage() {
   const [editSubscriptionType, setEditSubscriptionType] = useState<'FREE' | 'TRIAL' | 'PAID' | 'LIFETIME'>('TRIAL')
   const [editRenewalCount, setEditRenewalCount] = useState('0')
   const [editCurrentUsers, setEditCurrentUsers] = useState('1')
+
+  const planAutosave = useAutosaveDraft({
+    scope: 'subscription-plan-create',
+    entityKey: 'default',
+    value: { planCode, planName, billingCycle, monthlyPrice, trialDays, supportLevel, displayOrder, isPublicPlan, isCustomPricing },
+    defaults: { planCode: '', planName: '', billingCycle: 'MONTHLY' as typeof billingCycle, monthlyPrice: '', trialDays: '30', supportLevel: 'STANDARD' as typeof supportLevel, displayOrder: '1', isPublicPlan: true, isCustomPricing: false },
+    onHydrate: (draft) => {
+      setPlanCode(draft.planCode)
+      setPlanName(draft.planName)
+      setBillingCycle(draft.billingCycle)
+      setMonthlyPrice(draft.monthlyPrice)
+      setTrialDays(draft.trialDays)
+      setSupportLevel(draft.supportLevel)
+      setDisplayOrder(draft.displayOrder)
+      setIsPublicPlan(draft.isPublicPlan)
+      setIsCustomPricing(draft.isCustomPricing)
+    },
+  })
+  const subscriptionAutosave = useAutosaveDraft({
+    scope: 'subscription-create',
+    entityKey: 'default',
+    value: { subscriptionNo, selectedPlanId, selectedProviderId, subscriptionStart, subscriptionStatus, subscriptionType },
+    defaults: { subscriptionNo: '', selectedPlanId: '' as number | '', selectedProviderId: '' as number | '', subscriptionStart: toDateValue(''), subscriptionStatus: 'ACTIVE' as typeof subscriptionStatus, subscriptionType: 'TRIAL' as typeof subscriptionType },
+    onHydrate: (draft) => {
+      setSubscriptionNo(draft.subscriptionNo)
+      setSelectedPlanId(draft.selectedPlanId)
+      setSelectedProviderId(draft.selectedProviderId)
+      setSubscriptionStart(draft.subscriptionStart)
+      setSubscriptionStatus(draft.subscriptionStatus)
+      setSubscriptionType(draft.subscriptionType)
+    },
+  })
+  const featureAutosave = useAutosaveDraft({
+    scope: 'subscription-feature-create',
+    entityKey: 'default',
+    value: { featureCode, featureName },
+    defaults: { featureCode: '', featureName: '' },
+    onHydrate: (draft) => {
+      setFeatureCode(draft.featureCode)
+      setFeatureName(draft.featureName)
+    },
+  })
+  const editPlanAutosave = useAutosaveDraft({
+    scope: 'subscription-plan-edit',
+    entityKey: 'default',
+    value: { editPlanId, editPlanSupportLevel, editPlanTrialDays, editPlanPublic },
+    defaults: { editPlanId: '' as number | '', editPlanSupportLevel: 'STANDARD' as typeof editPlanSupportLevel, editPlanTrialDays: '30', editPlanPublic: true },
+    onHydrate: (draft) => {
+      setEditPlanId(draft.editPlanId)
+      setEditPlanSupportLevel(draft.editPlanSupportLevel)
+      setEditPlanTrialDays(draft.editPlanTrialDays)
+      setEditPlanPublic(draft.editPlanPublic)
+    },
+  })
+  const editSubscriptionAutosave = useAutosaveDraft({
+    scope: 'subscription-edit',
+    entityKey: 'default',
+    value: { editSubscriptionId, editSubscriptionStatus, editSubscriptionType, editRenewalCount, editCurrentUsers },
+    defaults: { editSubscriptionId: '' as number | '', editSubscriptionStatus: 'ACTIVE' as typeof editSubscriptionStatus, editSubscriptionType: 'TRIAL' as typeof editSubscriptionType, editRenewalCount: '0', editCurrentUsers: '1' },
+    onHydrate: (draft) => {
+      setEditSubscriptionId(draft.editSubscriptionId)
+      setEditSubscriptionStatus(draft.editSubscriptionStatus)
+      setEditSubscriptionType(draft.editSubscriptionType)
+      setEditRenewalCount(draft.editRenewalCount)
+      setEditCurrentUsers(draft.editCurrentUsers)
+    },
+  })
 
   const activeSubscription = subscriptions.find((subscription) => subscription.status === 'ACTIVE') ?? null
   const activePlan = activeSubscription
@@ -122,6 +190,7 @@ export default function SubscriptionManagementPage() {
         is_public: isPublicPlan,
         is_custom_pricing: isCustomPricing,
       })
+      await planAutosave.clear()
       setPlanCode('')
       setPlanName('')
       setBillingCycle('MONTHLY')
@@ -156,6 +225,7 @@ export default function SubscriptionManagementPage() {
         subscription_start: subscriptionStart,
         payment_provider_id: selectedProviderId ? Number(selectedProviderId) : undefined,
       })
+      await subscriptionAutosave.clear()
       setSubscriptionNo('')
       setSelectedPlanId('')
       setSelectedProviderId('')
@@ -178,6 +248,7 @@ export default function SubscriptionManagementPage() {
         feature_code: featureCode,
         feature_name: featureName,
       })
+      await featureAutosave.clear()
       setFeatureCode('')
       setFeatureName('')
       await loadData()
@@ -202,6 +273,7 @@ export default function SubscriptionManagementPage() {
         trial_days: Number(editPlanTrialDays),
         is_public: editPlanPublic,
       })
+      await editPlanAutosave.clear()
       await loadData()
       setStatusMessage('Plan updated.')
     } catch (error) {
@@ -225,6 +297,7 @@ export default function SubscriptionManagementPage() {
         renewal_count: Number(editRenewalCount),
         current_users: Number(editCurrentUsers),
       })
+      await editSubscriptionAutosave.clear()
       await loadData()
       setStatusMessage('Subscription updated.')
     } catch (error) {

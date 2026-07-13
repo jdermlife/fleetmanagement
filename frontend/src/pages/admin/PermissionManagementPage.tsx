@@ -6,6 +6,7 @@ import {
   listAdminPermissions,
   type AdminPermission,
 } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 export default function PermissionManagementPage() {
   const [permissions, setPermissions] = useState<AdminPermission[]>([])
@@ -15,6 +16,18 @@ export default function PermissionManagementPage() {
   const [description, setDescription] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const permissionFormAutosave = useAutosaveDraft({
+    scope: 'admin-permission-create',
+    entityKey: 'default',
+    value: { name, resource, action, description },
+    defaults: { name: '', resource: '', action: '', description: '' },
+    onHydrate: (draft) => {
+      setName(draft.name)
+      setResource(draft.resource)
+      setAction(draft.action)
+      setDescription(draft.description)
+    },
+  })
 
   const loadData = async () => {
     setLoading(true)
@@ -37,6 +50,7 @@ export default function PermissionManagementPage() {
     setMessage('')
     try {
       await createAdminPermission({ name, resource, action, description })
+      await permissionFormAutosave.clear()
       setName('')
       setResource('')
       setAction('')

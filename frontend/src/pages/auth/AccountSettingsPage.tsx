@@ -14,6 +14,7 @@ import {
   type LoginResponse,
   type SubscriptionPlan,
 } from '../../api'
+import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
 
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
@@ -89,6 +90,7 @@ export default function AccountSettingsPage() {
   }, [theme])
 
   const handleLogout = async () => {
+    await prepareAutosavesForLogout()
     await logout()
     navigate('/login')
   }
@@ -129,6 +131,7 @@ export default function AccountSettingsPage() {
     setDeleteMessage('')
 
     try {
+      await prepareAutosavesForLogout()
       const response = await deleteAccount(deletePassword)
       setDeleteMessage(response.message)
       await logout()

@@ -31,6 +31,7 @@ vi.mock('axios', () => ({
 
 vi.mock('../src/api', () => ({
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
+  getMySubscription: vi.fn().mockResolvedValue({ status: 'ACTIVE' }),
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
   loginWithApple: mockLoginWithApple,

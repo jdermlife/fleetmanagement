@@ -1,5 +1,7 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
+import { clearAutosaveDraftsForToken } from './autosave/draftStorage'
+
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
 const PRODUCTION_API_PROXY_FALLBACK = '/backend'
 const RENDER_API_FALLBACKS = [
@@ -520,6 +522,7 @@ export async function register(data: RegisterRequest): Promise<LoginResponse['us
 
 export async function logout(): Promise<void> {
   const currentRefreshToken = getRefreshToken()
+  const autosaveOwnerToken = getAuthToken() ?? currentRefreshToken
 
   try {
     if (currentRefreshToken) {
@@ -530,6 +533,7 @@ export async function logout(): Promise<void> {
   } catch {
     // Clear the local session even if the backend session is already expired.
   } finally {
+    clearAutosaveDraftsForToken(autosaveOwnerToken)
     syncStoredSession(null, null)
   }
 }

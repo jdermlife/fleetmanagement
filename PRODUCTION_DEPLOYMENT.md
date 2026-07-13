@@ -132,6 +132,9 @@ VITE_APPLE_REDIRECT_URI=https://app.yourdomain.com
 # Run as privileged user, once only
 python backend/setup_db.py
 
+# Add the authenticated autosave sidecar table on existing databases
+python backend/migrate_autosave_drafts.py
+
 # Verify tables created
 psql $DATABASE_URL -c "\dt"
 ```
@@ -185,7 +188,9 @@ npm run build
    - Manager cannot perform admin operations
 4. Loan repository list pagination works with `limit` and `offset` parameters
 5. All critical workflows execute without errors
-6. Social sign-in verification:
+6. Editing a supported form shows `Saving...` then `All changes saved`, and a reload restores the draft
+7. `GET /api/drafts/{scope}/{entity_key}` rejects unauthenticated and cross-user access
+8. Social sign-in verification:
   - Google sign-in works for existing users.
   - Apple sign-in works for existing users.
   - First-time social sign-in enforces subscriber type and lender data-sharing preference.

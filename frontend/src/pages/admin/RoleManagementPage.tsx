@@ -9,6 +9,7 @@ import {
   type AdminPermission,
   type AdminRole,
 } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 function splitCsv(value: string): string[] {
   return Array.from(
@@ -29,6 +30,16 @@ export default function RoleManagementPage() {
   const [description, setDescription] = useState('')
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
+  const roleFormAutosave = useAutosaveDraft({
+    scope: 'admin-role-create',
+    entityKey: 'default',
+    value: { name, description },
+    defaults: { name: '', description: '' },
+    onHydrate: (draft) => {
+      setName(draft.name)
+      setDescription(draft.description)
+    },
+  })
 
   const loadData = async () => {
     setLoading(true)
@@ -63,6 +74,7 @@ export default function RoleManagementPage() {
     setMessage('')
     try {
       await createAdminRole({ name, description })
+      await roleFormAutosave.clear()
       setName('')
       setDescription('')
       await loadData()

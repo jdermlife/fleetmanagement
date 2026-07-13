@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 
 import type {
   DatabaseStatus,
@@ -20,6 +21,10 @@ const initialForm: DriverManagementScorecardSubmission = {
   onTimeRate: 95,
   customerRating: 4.5,
   fatigueEvents: 0,
+}
+
+const initialDraft = {
+  form: initialForm,
 }
 
 function DriverManagementScorecardPage() {
@@ -51,6 +56,14 @@ function DriverManagementScorecardPage() {
 
   const [successMessage, setSuccessMessage] =
     useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'driver-management-scorecard',
+    entityKey: 'default',
+    value: { form },
+    defaults: initialDraft,
+    onHydrate: (draft) => setForm(draft.form),
+  })
 
   useEffect(() => {
     void loadPage()
@@ -158,6 +171,8 @@ function DriverManagementScorecardPage() {
       setSuccessMessage(
         'Driver management scorecard saved successfully.',
       )
+
+      await clearDraft()
     } catch (saveError: unknown) {
       setError(
         getErrorMessage(

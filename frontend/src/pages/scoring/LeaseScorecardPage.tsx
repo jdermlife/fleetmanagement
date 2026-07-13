@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 import type { DatabaseStatus, LeaseScorecardRecord, LeaseScorecardSubmission } from '../../types'
 
 
@@ -23,6 +24,10 @@ const initialForm: LeaseScorecardSubmission = {
   estimatedResidualValue: 0,
 }
 
+const initialDraft = {
+  form: initialForm,
+}
+
 
 function LeaseScorecardPage() {
   const [form, setForm] = useState<LeaseScorecardSubmission>(initialForm)
@@ -33,6 +38,14 @@ function LeaseScorecardPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [error, setError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'lease-scorecard',
+    entityKey: 'default',
+    value: { form },
+    defaults: initialDraft,
+    onHydrate: (draft) => setForm(draft.form),
+  })
 
   useEffect(() => {
     void loadPage()
@@ -98,6 +111,7 @@ if (safeRecords[0]) {
     : []),
 ].slice(0, 20))
       setSuccessMessage('Lease scorecard saved successfully.')
+      await clearDraft()
     } catch (saveError: unknown) {
       setError(getErrorMessage(saveError, 'Lease scorecard could not be saved.'))
     } finally {

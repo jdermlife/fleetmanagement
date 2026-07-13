@@ -14,6 +14,7 @@ import {
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 function uniqueRoleList(value: string): string[] {
   return Array.from(
@@ -46,6 +47,43 @@ export default function UserManagementPage() {
   const [newUserRoles, setNewUserRoles] = useState('')
 
   const [roleDrafts, setRoleDrafts] = useState<Record<number, string>>({})
+  const userFormAutosave = useAutosaveDraft({
+    scope: 'admin-user-create',
+    entityKey: 'default',
+    value: {
+      username,
+      email,
+      firstName,
+      middleName,
+      lastName,
+      mobileNo,
+      accountStatus,
+      subscriptionId,
+      newUserRoles,
+    },
+    defaults: {
+      username: '',
+      email: '',
+      firstName: '',
+      middleName: '',
+      lastName: '',
+      mobileNo: '',
+      accountStatus: 'ACTIVE' as const,
+      subscriptionId: '' as number | '',
+      newUserRoles: '',
+    },
+    onHydrate: (draft) => {
+      setUsername(draft.username)
+      setEmail(draft.email)
+      setFirstName(draft.firstName)
+      setMiddleName(draft.middleName)
+      setLastName(draft.lastName)
+      setMobileNo(draft.mobileNo)
+      setAccountStatus(draft.accountStatus)
+      setSubscriptionId(draft.subscriptionId)
+      setNewUserRoles(draft.newUserRoles)
+    },
+  })
 
   const loadData = async () => {
     setLoading(true)
@@ -111,6 +149,7 @@ export default function UserManagementPage() {
         subscription_id: subscriptionId ? Number(subscriptionId) : undefined,
         roles: uniqueRoleList(newUserRoles),
       })
+      await userFormAutosave.clear()
       setUsername('')
       setEmail('')
       setPassword('')

@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { useAutosaveDraft } from '../../autosave';
 
 type ResponseOption = {
   label: string;
@@ -159,6 +161,14 @@ const buildInitialResponses = () =>
     {},
   );
 
+interface CreditScoringDraft {
+  responses: Record<string, string>;
+}
+
+const DEFAULT_CREDIT_SCORING_DRAFT: CreditScoringDraft = {
+  responses: buildInitialResponses(),
+};
+
 const getReadinessLabel = (score: number) => {
   if (score >= 85) {
     return 'Very Strong';
@@ -181,6 +191,27 @@ const getReadinessLabel = (score: number) => {
 
 function CreditScoring() {
   const [responses, setResponses] = useState<Record<string, string>>(() => buildInitialResponses());
+  const clearDraftAfterResetRef = useRef(false);
+
+  const autosaveValue = useMemo<CreditScoringDraft>(() => ({ responses }), [responses]);
+  const handleAutosaveHydrate = useCallback((draft: CreditScoringDraft) => {
+    setResponses(draft.responses);
+  }, []);
+  const { clear: clearAutosaveDraft } = useAutosaveDraft({
+    scope: 'credit-scoring',
+    entityKey: 'primary',
+    value: autosaveValue,
+    defaults: DEFAULT_CREDIT_SCORING_DRAFT,
+    onHydrate: handleAutosaveHydrate,
+  });
+
+  useEffect(() => {
+    if (!clearDraftAfterResetRef.current) {
+      return;
+    }
+    clearDraftAfterResetRef.current = false;
+    void clearAutosaveDraft();
+  }, [clearAutosaveDraft, responses]);
 
   const sectionSummaries = useMemo(
     () =>
@@ -231,6 +262,11 @@ function CreditScoring() {
   };
 
   const handleReset = () => {
+    if (!Object.values(responses).some(Boolean)) {
+      void clearAutosaveDraft();
+      return;
+    }
+    clearDraftAfterResetRef.current = true;
     setResponses(buildInitialResponses());
   };
 

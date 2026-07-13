@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
 import { api, getErrorMessage } from '../../api'
+import { useAutosaveDraft } from '../../autosave'
 import type { FuelLog, NewFuelLog } from '../../types'
 
 const initialForm = {
@@ -13,6 +14,11 @@ const initialForm = {
   notes: '',
   theftSuspected: false,
   abnormalRefill: false,
+}
+
+const initialDraft = {
+  form: initialForm,
+  editingLogId: null as number | null,
 }
 
 function FuelManagement() {
@@ -55,6 +61,17 @@ function FuelManagement() {
     successMessage,
     setSuccessMessage,
   ] = useState('')
+
+  const { clear: clearDraft } = useAutosaveDraft({
+    scope: 'fuel-management',
+    entityKey: 'default',
+    value: { form, editingLogId },
+    defaults: initialDraft,
+    onHydrate: (draft) => {
+      setForm(draft.form)
+      setEditingLogId(draft.editingLogId)
+    },
+  })
 
   /*
   |--------------------------------------------------------------------------
@@ -161,6 +178,11 @@ function FuelManagement() {
     setForm(initialForm)
 
     setEditingLogId(null)
+  }
+
+  async function cancelEdit() {
+    await clearDraft()
+    resetForm()
   }
 
   /*
@@ -320,6 +342,7 @@ function FuelManagement() {
         )
       }
 
+      await clearDraft()
       resetForm()
     } catch (
       error: unknown
@@ -429,6 +452,7 @@ function FuelManagement() {
         editingLogId ===
         log.id
       ) {
+        await clearDraft()
         resetForm()
       }
 
@@ -777,9 +801,7 @@ function FuelManagement() {
               null ? (
                 <button
                   type="button"
-                  onClick={
-                    resetForm
-                  }
+                  onClick={() => void cancelEdit()}
                 >
                   Cancel Edit
                 </button>

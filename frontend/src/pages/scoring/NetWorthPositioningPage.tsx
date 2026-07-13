@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 
+import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 
@@ -19,7 +20,25 @@ type SavedLine = {
   setupAmount: number;
 };
 
-const BALANCE_SHEET_STORAGE_KEY = 'fms:networth-balance-sheet';
+interface NetWorthPositioningDraft {
+  step: WorkflowStep;
+  periodStart: string;
+  periodEnd: string;
+  amounts: Record<string, string>;
+  savedSetup: SavedLine[];
+  actualEntries: Record<string, string>;
+  varianceNotes: Record<string, string>;
+}
+
+const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
+  step: 1,
+  periodStart: '',
+  periodEnd: '',
+  amounts: {},
+  savedSetup: [],
+  actualEntries: {},
+  varianceNotes: {},
+};
 
 const BALANCE_SHEET_ENTRIES: BalanceSheetEntry[] = [
   { id: 'cash-savings', label: 'Cash and Savings', section: 'assets' },
@@ -70,23 +89,6 @@ function isBlank(rawValue: string | undefined) {
   return (rawValue ?? '').trim() === '';
 }
 
-function loadStoredBalanceSheet(): Record<string, string> {
-  if (typeof window === 'undefined') {
-    return {};
-  }
-
-  try {
-    const raw = window.localStorage.getItem(BALANCE_SHEET_STORAGE_KEY);
-    if (!raw) {
-      return {};
-    }
-    const parsed = JSON.parse(raw);
-    return parsed && typeof parsed === 'object' ? (parsed as Record<string, string>) : {};
-  } catch {
-    return {};
-  }
-}
-
 function getSectionLabel(section: BalanceSheetSection) {
   if (section === 'assets') {
     return 'Asset';
@@ -124,18 +126,47 @@ export default function NetWorthPositioningPage() {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
 
-  const [amounts, setAmounts] = useState<Record<string, string>>(() => loadStoredBalanceSheet());
+  const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [savedSetup, setSavedSetup] = useState<SavedLine[]>([]);
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.localStorage.setItem(BALANCE_SHEET_STORAGE_KEY, JSON.stringify(amounts));
-  }, [amounts]);
+  const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
+    step,
+    periodStart,
+    periodEnd,
+    amounts,
+    savedSetup,
+    actualEntries,
+    varianceNotes,
+  }), [
+    actualEntries,
+    amounts,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    step,
+    varianceNotes,
+  ]);
+
+  const handleAutosaveHydrate = useCallback((draft: NetWorthPositioningDraft) => {
+    setStep(draft.step);
+    setPeriodStart(draft.periodStart);
+    setPeriodEnd(draft.periodEnd);
+    setAmounts(draft.amounts);
+    setSavedSetup(draft.savedSetup);
+    setActualEntries(draft.actualEntries);
+    setVarianceNotes(draft.varianceNotes);
+  }, []);
+
+  useAutosaveDraft({
+    scope: 'net-worth-positioning',
+    entityKey: 'primary',
+    value: autosaveValue,
+    defaults: DEFAULT_NET_WORTH_POSITIONING_DRAFT,
+    onHydrate: handleAutosaveHydrate,
+  });
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {

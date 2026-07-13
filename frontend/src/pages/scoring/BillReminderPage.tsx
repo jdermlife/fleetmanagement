@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useMemo, useState, type FormEvent } from 'react';
 
+import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
 
@@ -15,13 +16,37 @@ type BillerSetup = {
   budgetedAmount: number;
 };
 
-type StoredBiller = Partial<BillerSetup> & {
-  name?: string;
-  facility?: string;
-  dueDate?: string;
-};
+interface BillReminderDraft {
+  step: WorkflowStep;
+  periodStart: string;
+  periodEnd: string;
+  draftBillers: BillerSetup[];
+  editingBillerId: string | null;
+  company: string;
+  utilityType: string;
+  frequency: BillerFrequency;
+  dateCovered: string;
+  budgetedAmount: string;
+  savedSetup: BillerSetup[];
+  actualEntries: Record<string, string>;
+  varianceNotes: Record<string, string>;
+}
 
-const BILLER_STORAGE_KEY = 'fms:bill-reminder-setup';
+const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
+  step: 1,
+  periodStart: '',
+  periodEnd: '',
+  draftBillers: [],
+  editingBillerId: null,
+  company: '',
+  utilityType: '',
+  frequency: 'Monthly',
+  dateCovered: '',
+  budgetedAmount: '',
+  savedSetup: [],
+  actualEntries: {},
+  varianceNotes: {},
+};
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat(undefined, {
@@ -106,72 +131,6 @@ function buildVarianceExplanation(variance: number) {
     : 'Actual payment is below budgeted amount';
 }
 
-function loadStoredBillers(): BillerSetup[] {
-  if (typeof window === 'undefined') {
-    return [];
-  }
-
-  try {
-    const raw = window.localStorage.getItem(BILLER_STORAGE_KEY);
-    if (!raw) {
-      return [];
-    }
-
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) {
-      return [];
-    }
-
-    return parsed
-      .map((item: StoredBiller, index: number): BillerSetup | null => {
-        const company = typeof item.company === 'string'
-          ? item.company
-          : typeof item.name === 'string'
-            ? item.name
-            : '';
-        const utilityType = typeof item.utilityType === 'string'
-          ? item.utilityType
-          : typeof item.facility === 'string'
-            ? item.facility
-            : '';
-        const dateCovered = typeof item.dateCovered === 'string'
-          ? item.dateCovered
-          : typeof item.dueDate === 'string'
-            ? item.dueDate
-            : '';
-
-        if (!company.trim() || !utilityType.trim()) {
-          return null;
-        }
-
-        const frequency: BillerFrequency =
-          item.frequency === 'Monthly' ||
-          item.frequency === 'Quarterly' ||
-          item.frequency === 'Semi-Annual' ||
-          item.frequency === 'Annual' ||
-          item.frequency === 'Weekly'
-            ? item.frequency
-            : 'Monthly';
-
-        const id = typeof item.id === 'string' && item.id.trim()
-          ? item.id
-          : `biller-${index + 1}`;
-
-        return {
-          id,
-          company: company.trim(),
-          utilityType: utilityType.trim(),
-          frequency,
-          dateCovered,
-          budgetedAmount: toSafeNumber(item.budgetedAmount),
-        };
-      })
-      .filter((item): item is BillerSetup => item !== null);
-  } catch {
-    return [];
-  }
-}
-
 export default function BillReminderPage() {
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -183,7 +142,7 @@ export default function BillReminderPage() {
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
 
-  const [draftBillers, setDraftBillers] = useState<BillerSetup[]>(() => loadStoredBillers());
+  const [draftBillers, setDraftBillers] = useState<BillerSetup[]>([]);
   const [editingBillerId, setEditingBillerId] = useState<string | null>(null);
 
   const [company, setCompany] = useState('');
@@ -197,12 +156,59 @@ export default function BillReminderPage() {
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
-  useEffect(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-    window.localStorage.setItem(BILLER_STORAGE_KEY, JSON.stringify(draftBillers));
-  }, [draftBillers]);
+  const autosaveValue = useMemo<BillReminderDraft>(() => ({
+    step,
+    periodStart,
+    periodEnd,
+    draftBillers,
+    editingBillerId,
+    company,
+    utilityType,
+    frequency,
+    dateCovered,
+    budgetedAmount,
+    savedSetup,
+    actualEntries,
+    varianceNotes,
+  }), [
+    actualEntries,
+    budgetedAmount,
+    company,
+    dateCovered,
+    draftBillers,
+    editingBillerId,
+    frequency,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    step,
+    utilityType,
+    varianceNotes,
+  ]);
+
+  const handleAutosaveHydrate = useCallback((draft: BillReminderDraft) => {
+    setStep(draft.step);
+    setPeriodStart(draft.periodStart);
+    setPeriodEnd(draft.periodEnd);
+    setDraftBillers(draft.draftBillers);
+    setEditingBillerId(draft.editingBillerId);
+    setCompany(draft.company);
+    setUtilityType(draft.utilityType);
+    setFrequency(draft.frequency);
+    setDateCovered(draft.dateCovered);
+    setBudgetedAmount(draft.budgetedAmount);
+    setSavedSetup(draft.savedSetup);
+    setActualEntries(draft.actualEntries);
+    setVarianceNotes(draft.varianceNotes);
+  }, []);
+
+  useAutosaveDraft({
+    scope: 'bill-reminder',
+    entityKey: 'primary',
+    value: autosaveValue,
+    defaults: DEFAULT_BILL_REMINDER_DRAFT,
+    onHydrate: handleAutosaveHydrate,
+  });
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {

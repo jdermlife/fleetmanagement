@@ -5,6 +5,7 @@ import {
   getErrorMessage,
   transcribeMeetingAudio,
 } from '../../api'
+import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 export default function AttendMeeting(): JSX.Element {
   const [meetingTitle, setMeetingTitle] = useState('')
@@ -13,6 +14,17 @@ export default function AttendMeeting(): JSX.Element {
   const [minutes, setMinutes] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  useAutosaveDraft({
+    scope: 'attend-meeting',
+    entityKey: 'default',
+    value: { meetingTitle, transcript, minutes },
+    defaults: { meetingTitle: '', transcript: '', minutes: '' },
+    onHydrate: (draft) => {
+      setMeetingTitle(draft.meetingTitle)
+      setTranscript(draft.transcript)
+      setMinutes(draft.minutes)
+    },
+  })
 
   const generateMinutes = async (): Promise<void> => {
     if (!audioFile) {

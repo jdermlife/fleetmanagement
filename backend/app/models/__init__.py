@@ -1,6 +1,7 @@
 # from app.models.loan_application import LoanApplication
 
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.autosave_draft import AutosaveDraft  # noqa: F401
 from app.models.vehicles import Vehicle  # noqa: F401
 from app.models.fuel_logs import FuelLog  # noqa: F401
 from app.models.maintenance_logs import MaintenanceRecord  # noqa: F401

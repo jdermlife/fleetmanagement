@@ -1,5 +1,6 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
+import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 
@@ -12,6 +13,33 @@ interface WorkflowLineItem {
   setupAmount: number;
   type: 'income' | 'expense';
 }
+
+interface BudgetExpenseTrackerDraft {
+  step: WorkflowStep;
+  periodStart: string;
+  periodEnd: string;
+  incomeDraft: Record<IncomeKey, string>;
+  expenseDraft: Record<string, string>;
+  savedSetup: WorkflowLineItem[];
+  actualEntries: Record<string, string>;
+  varianceNotes: Record<string, string>;
+}
+
+const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
+  step: 1,
+  periodStart: '',
+  periodEnd: '',
+  incomeDraft: {
+    salary: '',
+    business: '',
+    investment: '',
+    pension: '',
+  },
+  expenseDraft: {},
+  savedSetup: [],
+  actualEntries: {},
+  varianceNotes: {},
+};
 
 function formatCurrency(amount: number) {
   return new Intl.NumberFormat(undefined, {
@@ -87,8 +115,66 @@ export default function BudgetExpenseTrackerPage() {
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
+  const sourceSnapshotAppliedRef = useRef(false);
+
+  const autosaveValue = useMemo<BudgetExpenseTrackerDraft>(() => ({
+    step,
+    periodStart,
+    periodEnd,
+    incomeDraft,
+    expenseDraft,
+    savedSetup,
+    actualEntries,
+    varianceNotes,
+  }), [
+    actualEntries,
+    expenseDraft,
+    incomeDraft,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    step,
+    varianceNotes,
+  ]);
+
+  const handleAutosaveHydrate = useCallback((draft: BudgetExpenseTrackerDraft) => {
+    setStep(draft.step);
+    setPeriodStart(draft.periodStart);
+    setPeriodEnd(draft.periodEnd);
+    setIncomeDraft(draft.incomeDraft);
+    setExpenseDraft(draft.expenseDraft);
+    setSavedSetup(draft.savedSetup);
+    setActualEntries(draft.actualEntries);
+    setVarianceNotes(draft.varianceNotes);
+  }, []);
+
+  const { isHydrated } = useAutosaveDraft({
+    scope: 'budget-expense-tracker',
+    entityKey: 'primary',
+    value: autosaveValue,
+    defaults: DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT,
+    onHydrate: handleAutosaveHydrate,
+  });
 
   useEffect(() => {
+    if (!isHydrated || loading || sourceSnapshotAppliedRef.current) {
+      return;
+    }
+
+    sourceSnapshotAppliedRef.current = true;
+    const hasRestoredWorkflow = step !== 1
+      || periodStart !== ''
+      || periodEnd !== ''
+      || Object.values(incomeDraft).some((value) => value !== '')
+      || Object.values(expenseDraft).some((value) => value !== '')
+      || savedSetup.length > 0
+      || Object.values(actualEntries).some((value) => value !== '')
+      || Object.values(varianceNotes).some((value) => value !== '');
+
+    if (hasRestoredWorkflow) {
+      return;
+    }
+
     const findIncomeValue = (keywords: string[]) => {
       const matched = snapshot.incomeItems.find((item) => {
         const text = `${item.id} ${item.label}`.toLowerCase();
@@ -110,13 +196,20 @@ export default function BudgetExpenseTrackerPage() {
         return accumulator;
       }, {}),
     );
-
-    setSavedSetup([]);
-    setActualEntries({});
-    setVarianceNotes({});
-    setSetupStatusMessage('');
-    setStep(1);
-  }, [snapshot.sourceApplicationNo, snapshot.periodLabel, snapshot.dateLabel, snapshot.incomeItems, snapshot.categoryItems]);
+  }, [
+    actualEntries,
+    expenseDraft,
+    incomeDraft,
+    isHydrated,
+    loading,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    snapshot.categoryItems,
+    snapshot.incomeItems,
+    step,
+    varianceNotes,
+  ]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {

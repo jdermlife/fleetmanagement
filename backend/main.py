@@ -15,6 +15,7 @@ from app.database import Base, SessionLocal, engine
 from app.fastapi_rate_limit import RATE_LIMIT_ENABLED, RateLimitMiddleware
 from app.models.loan_application import LoanApplication  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
+from app.models.autosave_draft import AutosaveDraft  # noqa: F401
 from app.models.ai_governance import AIRequest, AIResponse, AIFeedback  # noqa: F401
 from app.models.vehicles import Vehicle  # noqa: F401
 from app.models.fuel_logs import FuelLog  # noqa: F401
@@ -53,8 +54,14 @@ from app.routes.notifications import router as notifications_router
 from app.routes.security import router as security_router, admin_router as security_admin_router
 from app.routes.apple_auth import router as apple_auth_router
 from app.routes.fleet_operations import router as fleet_operations_router
+from app.routes.autosave_drafts import router as autosave_drafts_router
 from app.observability import setup_observability
 from app.services.audit_log_service import create_immutable_audit_constraints, write_audit_log
+from app.services.autosave_audit import (
+    autosave_request_audit_metadata,
+    autosave_response_audit_metadata,
+    is_autosave_draft_path,
+)
 from app.services.notification_service import dispatch_queued_notifications
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.auth import TokenError, decode_token
@@ -330,6 +337,9 @@ def _infer_table_and_record(path: str) -> tuple[str, str | None]:
     if not segments:
         return "root", None
 
+    if len(segments) >= 4 and segments[:2] == ["api", "drafts"]:
+        table_name = "autosave_drafts"
+        return table_name, segments[3]
     if len(segments) >= 2 and segments[0] == "workflows":
         table_name = segments[1]
     elif len(segments) >= 3 and segments[0] == "documents" and segments[1] == "entity":
@@ -365,7 +375,9 @@ async def immutable_audit_log_middleware(request: Request, call_next):
     raw_body = b""
     if method in {"POST", "PUT", "PATCH", "DELETE"}:
         raw_body = await request.body()
-        if raw_body:
+        if is_autosave_draft_path(path):
+            old_value = autosave_request_audit_metadata(path, raw_body)
+        elif raw_body:
             try:
                 old_value = json.loads(raw_body.decode("utf-8"))
             except Exception:
@@ -398,6 +410,12 @@ async def immutable_audit_log_middleware(request: Request, call_next):
             status_code=response.status_code,
             headers=dict(response.headers),
             media_type=response.media_type,
+        )
+
+    if is_autosave_draft_path(path):
+        response_payload = autosave_response_audit_metadata(
+            response_payload,
+            response.status_code,
         )
 
     table_name, record_id = _infer_table_and_record(path)
@@ -439,6 +457,7 @@ app.include_router(notifications_router)
 app.include_router(apple_auth_router)
 app.include_router(security_router, prefix="/api")
 app.include_router(security_admin_router, prefix="/api")
+app.include_router(autosave_drafts_router, prefix="/api")
 
 
 app.include_router(
