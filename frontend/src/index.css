@@ -1009,6 +1009,10 @@ textarea {
   color: #ffffff;
 }
 
+.workflow-duplicate-step-title {
+  display: none;
+}
+
 .loan-certification-page {
   display: grid;
   gap: 18px;

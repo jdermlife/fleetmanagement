@@ -4293,7 +4293,7 @@ export default function LendingScorecard() {
 
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
               {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Motorcycle Loan', 'Credit Card', 'Personal Loan', 'Margin Loan'])}
               {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
@@ -4497,7 +4497,7 @@ export default function LendingScorecard() {
 
           {step === 2 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 2: Applicant Information</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 2: Applicant Information</h3>
               {renderInput('borrower', 'fullName', 'Full Legal Name (Auto-generated)', 'text', true)}
               {renderInput('borrower', 'email', 'Email Address', 'email')}
               {renderInput('borrower', 'govId', 'Government ID Number', 'text', false, 'issuer / ID number/ expiration date')}
@@ -4584,7 +4584,7 @@ export default function LendingScorecard() {
 
           {step === 3 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment, Income and Credit Values</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 3: Employment, Income and Credit Values</h3>
               {renderInput('employment', 'history', 'Employment History (Current Employer)')}
               {renderFormattedNumberInput('employment', 'monthlyIncome', 'Primary Monthly Income')}
               {renderFormattedNumberInput('employment', 'otherIncome', 'Other Sources of Income')}
@@ -4632,7 +4632,7 @@ export default function LendingScorecard() {
           {step === 4 && (
             <div className="space-y-4">
               <div className="flex justify-between items-center border-b pb-2">
-                <h3 className="text-lg font-bold text-slate-800">Step 4: Spouse / Co-Borrower Information</h3>
+                <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800">Step 4: Spouse / Co-Borrower Information</h3>
                 {hasCoBorrowerSelected && (
                   <button onClick={addCoBorrower} className="loan-inline-button loan-inline-button-primary text-sm bg-blue-600 text-white px-3 py-1.5 rounded hover:bg-blue-700">Add Co-Borrower</button>
                 )}
@@ -4719,7 +4719,7 @@ export default function LendingScorecard() {
 
           {step === 5 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 5: Banking Relationships</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 5: Banking Relationships</h3>
               <div className="md:col-span-2 border-b pb-4">
                 <h4 className="font-semibold text-sm text-gray-700 mb-3">Existing Credit Card Information</h4>
               </div>
@@ -4805,7 +4805,7 @@ export default function LendingScorecard() {
 
           {step === 6 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 6: Collateral Details</h3>
               <fieldset className="loan-collateral-classification md:col-span-2 text-xs">
                 <legend className="text-xs font-semibold">Security Classification</legend>
                 <div className="loan-collateral-classification-options flex flex-wrap items-center gap-2">
@@ -5008,7 +5008,7 @@ export default function LendingScorecard() {
 
           {step === 7 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 7: Document Upload Center</h3>
+              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 7: Document Upload Center</h3>
               <div className="rounded-lg border border-amber-200 bg-amber-50 p-4">
                 <div className="mb-3 flex items-center justify-between gap-3">
                   <div>
@@ -5178,7 +5178,7 @@ export default function LendingScorecard() {
                 </div>
               ) : (
               <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
-                <h3 className="mb-4 text-lg font-bold text-amber-900">Step 8: FILScore</h3>
+                <h3 className="workflow-duplicate-step-title mb-4 text-lg font-bold text-amber-900">Step 8: FILScore</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {executiveSummaryItems.map((item) => (
                     <div
@@ -5335,7 +5335,7 @@ export default function LendingScorecard() {
 
           {!isBorrowerSubscriber && step === 9 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
+              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Origination Profitability
@@ -5383,7 +5383,7 @@ export default function LendingScorecard() {
 
           {!isBorrowerSubscriber && step === 10 && (
             <div className="space-y-4">
-              <h3 className="text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
+              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
               <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
                 <h4 className="font-bold text-blue-800 mb-2 text-sm uppercase">✅ System Validation Check</h4>
                 <ul className="space-y-1">

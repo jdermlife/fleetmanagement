@@ -496,7 +496,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 1 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 1: Choose Period Covered</h3>
+                <h3 className="workflow-duplicate-step-title">Step 1: Choose Period Covered</h3>
                 <p className="psychometric-section-note">
                   Select the coverage period for this budget workflow. This period will be tied to your saved setup.
                 </p>
@@ -528,7 +528,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 2 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 2: Set Up Baseline</h3>
+                <h3 className="workflow-duplicate-step-title">Step 2: Set Up Baseline</h3>
                 <p className="psychometric-section-note">
                   Enter your monthly income setup and itemized expenses, then click save to publish this setup to Step 3.
                 </p>
@@ -656,7 +656,7 @@ export default function BudgetExpenseTrackerPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 3: Actual vs Setup Variance</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows the saved setup. Second column is intentionally blank for user actuals. Third column shows variance and fourth column provides small-text variance explanation.
                 </p>

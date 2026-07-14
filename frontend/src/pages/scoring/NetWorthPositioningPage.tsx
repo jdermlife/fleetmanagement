@@ -617,7 +617,7 @@ export default function NetWorthPositioningPage() {
 
             {step === 1 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 1: Set As Of Date</h3>
+                <h3 className="workflow-duplicate-step-title">Step 1: Set As Of Date</h3>
                 <p className="psychometric-section-note">
                   FILSCORE Personal Net Worth Statement. Set As Of date, then encode values for suggested accounts.
                 </p>
@@ -711,7 +711,7 @@ export default function NetWorthPositioningPage() {
 
             {step === 2 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 2: Set Up Baseline</h3>
+                <h3 className="workflow-duplicate-step-title">Step 2: Set Up Baseline</h3>
                 <p className="psychometric-section-note">
                   Review setup values, then click save setup so lines appear in Step 3 first column.
                 </p>
@@ -778,7 +778,7 @@ export default function NetWorthPositioningPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 3: Actual vs Setup Variance</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows saved setup. Second column is blank for actual entry. Third column is variance.
                   Fourth column shows variance explanation in small letters.

@@ -534,7 +534,7 @@ export default function BillReminderPage() {
 
             {step === 1 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 1: Choose Period Covered</h3>
+                <h3 className="workflow-duplicate-step-title">Step 1: Choose Period Covered</h3>
                 <p className="psychometric-section-note">
                   In this same step, choose period covered and encode biller setup including company,
                   utility type or amortization, frequency, and budgeted amount.
@@ -693,7 +693,7 @@ export default function BillReminderPage() {
 
             {step === 2 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 2: Set Up Baseline</h3>
+                <h3 className="workflow-duplicate-step-title">Step 2: Set Up Baseline</h3>
                 <p className="psychometric-section-note">
                   Review setup values, then click save. Saved lines will be shown in Step 3 first column for variance monitoring.
                 </p>
@@ -756,7 +756,7 @@ export default function BillReminderPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3>Step 3: Actual vs Setup Variance</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows saved setup. Second column is blank for user actuals. Third column shows variance.
                   Fourth column provides variance explanation in small letters.
