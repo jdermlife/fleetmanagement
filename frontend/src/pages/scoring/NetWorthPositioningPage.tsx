@@ -1048,6 +1048,26 @@ export default function NetWorthPositioningPage() {
           </article>
         </aside>
       </section>
+
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Global Comparator</span>
+            <h2>Your Income and Wealth Standing in the World</h2>
+          </div>
+        </div>
+        <p className="psychometric-section-note">
+          Compare your income and wealth standing globally using the World Inequality Database comparator.
+        </p>
+        <a
+          href="https://wid.world/income-comparator/"
+          target="_blank"
+          rel="noreferrer"
+          className="auth-link-button"
+        >
+          Open WID Income Comparator
+        </a>
+      </section>
     </div>
   );
 }
