@@ -4254,7 +4254,7 @@ export default function LendingScorecard() {
                   </div>
                 </div>
                 <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">
-                  Upload is disabled in this section. Use camera capture for a valid ID.
+                   Use camera capture for a valid ID.
                 </p>
 
                 {formData.documents.length > 0 && (
@@ -4455,7 +4455,20 @@ export default function LendingScorecard() {
                   <option value="Separated">Separated</option>
                 </select>
               </div>
-              {renderInput('applicantPersonal', 'numberOfDependents', 'Number of Dependents', 'number')}
+              <div className="mb-3">
+                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Number of Dependents</label>
+                <select
+                  value={String(getInputValue('applicantPersonal', 'numberOfDependents', 'number'))}
+                  onChange={(event) => updateField('applicantPersonal', 'numberOfDependents', parseInt(event.target.value, 10))}
+                  className="loan-form-select w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  {Array.from({ length: 11 }, (_, index) => index).map((value) => (
+                    <option key={value} value={value}>
+                      {value}
+                    </option>
+                  ))}
+                </select>
+              </div>
               <div className="mb-3">
                 <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Co-Borrower</label>
                 <select

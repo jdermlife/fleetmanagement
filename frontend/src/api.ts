@@ -271,9 +271,9 @@ export function getErrorMessage(error: unknown, fallback: string): string {
     // Handle network errors
     if (!error.response) {
       if (error.code === 'ECONNABORTED') {
-        return 'Request timeout. The backend may be slow or unavailable.'
+        return 'We are securely analyzing your document. This may take up to 60 seconds depending on image quality and server load. Thank you for your patience.'
       }
-      return `Unable to reach the backend. Tried: ${apiBaseUrlCandidates.join(', ')}. Make sure the backend server is running.`
+      return `We are unable to connect the verification service at this time. Please try again later. Tried: ${apiBaseUrlCandidates.join(', ')}. If the problem persists, contact support.`
     }
 
     // Handle HTTP errors
