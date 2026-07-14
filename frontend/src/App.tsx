@@ -12,7 +12,8 @@ import {
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
-import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
+import { prepareAutosavesForLogout } from './autosave/useAutosave
+Draft'
 
 type MenuLink = {
   id: string
@@ -105,8 +106,8 @@ const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Financial Snapshot' },
   { id: 'lending-scorecard', label: 'Financial Health Score' },
   { id: 'budget-expense-tracker', label: 'Income & Spending' },
-  { id: 'loan-monitoring', label: 'Loan Monitoring' },
-  { id: 'bill-reminder', label: 'Debt Optimizer' },
+  { id: 'loan-monitoring', label: 'Debt Optimizer' },
+  { id: 'bill-reminder', label: 'Bill Manager' },
   { id: 'net-worth-positioning', label: 'Wealth & Networth Building Score' },
 
   /* AI MENU */
