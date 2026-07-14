@@ -12,8 +12,7 @@ import {
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
-import { prepareAutosavesForLogout } from './autosave/useAutosave
-Draft'
+import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
 
 type MenuLink = {
   id: string
