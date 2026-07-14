@@ -2273,13 +2273,14 @@ export default function LendingScorecard() {
       setSaveMessage('');
 
       try {
-        const payload = new FormData();
-        payload.append('file', file);
+        const formData = new FormData();
+        formData.append('file', file);
 
         const response = await api.post<DocumentParseReview>(
           '/ai/loan-documents/parse',
-          payload,
+          formData,
           {
+            timeout: 60000,
             headers: {
               'Content-Type': 'multipart/form-data',
             },

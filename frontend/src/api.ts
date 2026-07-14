@@ -42,7 +42,7 @@ let apiBaseUrlResolved = false
 
 export const api = axios.create({
   baseURL: activeApiBaseUrl,
-  timeout: 10000,
+  timeout: 60000,
   headers: {
     'Content-Type': 'application/json',
   },
