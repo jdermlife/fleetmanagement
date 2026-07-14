@@ -126,6 +126,7 @@ export interface LoanApplicationRequirements {
     crNumber: string
     additionalCollaterals: Array<{
       collateralType: string
+      propertyType: string
       maker: string
       brand: string
       model: string
@@ -135,6 +136,7 @@ export interface LoanApplicationRequirements {
       policyNumber: string
       orNumber: string
       crNumber: string
+      tctCctNumber: string
       notes: string
     }>
   }

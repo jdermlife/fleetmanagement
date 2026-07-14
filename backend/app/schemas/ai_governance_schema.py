@@ -86,3 +86,25 @@ class CreditAdvisorResponse(BaseModel):
     total_tokens: int
     latency_ms: int
 
+
+class CreditCardRiskCheckRequest(BaseModel):
+    card_issuer: str
+    card_number_bin: str = Field(..., min_length=6, max_length=8)
+    card_number_last4: str = Field(..., min_length=4, max_length=4)
+    card_number_length: int = Field(..., ge=13, le=19)
+    luhn_valid: bool
+    issuer_from_number: str | None = None
+    issuer_matches_prefix: bool | None = None
+
+
+class CreditCardRiskCheckResponse(BaseModel):
+    provider: str
+    model: str
+    risk_level: str
+    summary: str
+    recommended_action: str
+    input_tokens: int
+    output_tokens: int
+    total_tokens: int
+    latency_ms: int
+

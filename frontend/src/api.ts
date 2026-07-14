@@ -896,6 +896,44 @@ export async function generateCreditAdvisorPlan(
   return response.data
 }
 
+export interface CreditCardRiskCheckPayload {
+  cardIssuer: string
+  cardNumberBin: string
+  cardNumberLast4: string
+  cardNumberLength: number
+  luhnValid: boolean
+  issuerFromNumber?: string | null
+  issuerMatchesPrefix?: boolean | null
+}
+
+export interface CreditCardRiskCheckResult {
+  provider: string
+  model: string
+  risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'UNKNOWN'
+  summary: string
+  recommended_action: string
+  input_tokens: number
+  output_tokens: number
+  total_tokens: number
+  latency_ms: number
+}
+
+export async function checkCreditCardRiskWithAi(
+  payload: CreditCardRiskCheckPayload,
+): Promise<CreditCardRiskCheckResult> {
+  const response = await api.post<CreditCardRiskCheckResult>('/ai/credit-card-risk-check', {
+    card_issuer: payload.cardIssuer,
+    card_number_bin: payload.cardNumberBin,
+    card_number_last4: payload.cardNumberLast4,
+    card_number_length: payload.cardNumberLength,
+    luhn_valid: payload.luhnValid,
+    issuer_from_number: payload.issuerFromNumber ?? null,
+    issuer_matches_prefix: payload.issuerMatchesPrefix ?? null,
+  })
+
+  return response.data
+}
+
 export interface SubscriptionPlan {
   id: number
   plan_code: string

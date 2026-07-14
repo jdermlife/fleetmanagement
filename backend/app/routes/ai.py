@@ -23,6 +23,8 @@ from app.schemas.ai_governance_schema import (
     AIGovernanceStatsResponse,
     AIRequestAuditResponse,
     AIResponseAuditResponse,
+    CreditCardRiskCheckRequest,
+    CreditCardRiskCheckResponse,
     CreditAdvisorRequest,
     CreditAdvisorResponse,
 )
@@ -153,6 +155,121 @@ async def credit_advisor(
             status_code=500,
             detail=(
                 "Credit advisor is unavailable. Verify AI provider settings "
+                "for OPENAI_API_KEY and/or OLLAMA_BASE_URL."
+            ),
+        ) from exc
+    finally:
+        governance_db.close()
+
+
+@router.post(
+    "/ai/credit-card-risk-check",
+    response_model=CreditCardRiskCheckResponse,
+    dependencies=[Depends(require_roles("Admin", "Manager", "Subscriber", "subscriber_lender", "subscriber_borrower", "borrower"))],
+)
+async def credit_card_risk_check(
+    payload: CreditCardRiskCheckRequest,
+    current_user: CurrentUser | None = Depends(get_current_user),
+):
+    system_prompt = (
+        "You are a conservative payment risk analyst. "
+        "Assess risk only from masked card metadata, never request full PAN, CVV, OTP, or expiry. "
+        "Return concise JSON only."
+    )
+
+    prompt_payload = {
+        "card_issuer": payload.card_issuer,
+        "card_number_bin": payload.card_number_bin,
+        "card_number_last4": payload.card_number_last4,
+        "card_number_length": payload.card_number_length,
+        "luhn_valid": payload.luhn_valid,
+        "issuer_from_number": payload.issuer_from_number,
+        "issuer_matches_prefix": payload.issuer_matches_prefix,
+    }
+
+    user_prompt = (
+        "Assess payment risk for this masked card metadata. "
+        "Use risk levels LOW, MEDIUM, HIGH, or UNKNOWN. "
+        "Return valid JSON with keys: risk_level, summary, recommended_action.\n\n"
+        f"Masked payload JSON:\n{json.dumps(prompt_payload, indent=2)}"
+    )
+
+    governance_db = SessionLocal()
+    started_at = time.perf_counter()
+    request_log = create_ai_request(
+        governance_db,
+        user_id=current_user.id if current_user else None,
+        endpoint="/ai/credit-card-risk-check",
+        prompt=user_prompt,
+        model=os.getenv("AI_PROVIDER_MODE", "openai"),
+        request_metadata={
+            "feature": "credit_card_risk_check",
+            "provider_mode": os.getenv("AI_PROVIDER_MODE", "openai"),
+        },
+    )
+
+    try:
+        result = generate_text_with_fallback(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+            openai_model=os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini"),
+            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+        )
+
+        elapsed_ms = int((time.perf_counter() - started_at) * 1000)
+
+        parsed_response: dict[str, Any] | None = None
+        try:
+            parsed_response = _extract_json_payload(result.content)
+        except Exception:
+            parsed_response = None
+
+        risk_level = str((parsed_response or {}).get("risk_level", "UNKNOWN")).upper().strip()
+        if risk_level not in {"LOW", "MEDIUM", "HIGH", "UNKNOWN"}:
+            risk_level = "UNKNOWN"
+
+        summary = str((parsed_response or {}).get("summary", "Masked-card AI assessment returned no summary.")).strip()
+        recommended_action = str(
+            (parsed_response or {}).get(
+                "recommended_action",
+                "Continue with deterministic checks and perform manual review when needed.",
+            )
+        ).strip()
+
+        finalize_ai_success(
+            governance_db,
+            request_id=request_log.id,
+            user_id=current_user.id if current_user else None,
+            model=f"{result.provider}:{result.model}",
+            response_text=result.content,
+            response_json={
+                "risk_level": risk_level,
+                "summary": summary,
+                "recommended_action": recommended_action,
+            },
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            total_tokens=result.total_tokens,
+            latency_ms=result.latency_ms if result.latency_ms > 0 else elapsed_ms,
+        )
+
+        return CreditCardRiskCheckResponse(
+            provider=result.provider,
+            model=result.model,
+            risk_level=risk_level,
+            summary=summary,
+            recommended_action=recommended_action,
+            input_tokens=result.input_tokens,
+            output_tokens=result.output_tokens,
+            total_tokens=result.total_tokens,
+            latency_ms=result.latency_ms if result.latency_ms > 0 else elapsed_ms,
+        )
+    except Exception as exc:
+        finalize_ai_failure(governance_db, request_id=request_log.id, error_message=str(exc))
+        raise HTTPException(
+            status_code=500,
+            detail=(
+                "AI card risk validation is unavailable. Verify AI provider settings "
                 "for OPENAI_API_KEY and/or OLLAMA_BASE_URL."
             ),
         ) from exc
