@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
 
 import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -21,6 +21,7 @@ interface BillReminderDraft {
   periodStart: string;
   periodEnd: string;
   draftBillers: BillerSetup[];
+  billerAllocationDraft: Record<string, string>;
   editingBillerId: string | null;
   company: string;
   utilityType: string;
@@ -37,6 +38,7 @@ const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
   periodStart: '',
   periodEnd: '',
   draftBillers: [],
+  billerAllocationDraft: {},
   editingBillerId: null,
   company: '',
   utilityType: '',
@@ -77,6 +79,14 @@ function toSafeNumber(rawValue: string | number | undefined) {
 
 function isBlank(rawValue: string | undefined) {
   return (rawValue ?? '').trim() === '';
+}
+
+function formatPercentInput(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '';
+  }
+
+  return value.toFixed(2).replace(/\.00$/, '');
 }
 
 function getBillerStatus(dateCovered: string) {
@@ -143,6 +153,7 @@ export default function BillReminderPage() {
   const [periodEnd, setPeriodEnd] = useState('');
 
   const [draftBillers, setDraftBillers] = useState<BillerSetup[]>([]);
+  const [billerAllocationDraft, setBillerAllocationDraft] = useState<Record<string, string>>({});
   const [editingBillerId, setEditingBillerId] = useState<string | null>(null);
 
   const [company, setCompany] = useState('');
@@ -161,6 +172,7 @@ export default function BillReminderPage() {
     periodStart,
     periodEnd,
     draftBillers,
+    billerAllocationDraft,
     editingBillerId,
     company,
     utilityType,
@@ -175,6 +187,7 @@ export default function BillReminderPage() {
     budgetedAmount,
     company,
     draftBillers,
+    billerAllocationDraft,
     editingBillerId,
     frequency,
     periodEnd,
@@ -191,6 +204,7 @@ export default function BillReminderPage() {
     setPeriodStart(draft.periodStart);
     setPeriodEnd(draft.periodEnd);
     setDraftBillers(draft.draftBillers);
+    setBillerAllocationDraft(draft.billerAllocationDraft ?? {});
     setEditingBillerId(draft.editingBillerId);
     setCompany(draft.company);
     setUtilityType(draft.utilityType);
@@ -266,6 +280,49 @@ export default function BillReminderPage() {
     [savedSetup],
   );
 
+  useEffect(() => {
+    if (draftBillers.length === 0) {
+      if (Object.keys(billerAllocationDraft).length > 0) {
+        setBillerAllocationDraft({});
+      }
+      return;
+    }
+
+    const totalBudget = draftBillers.reduce((sum, biller) => sum + biller.budgetedAmount, 0);
+    const nextDraft = draftBillers.reduce<Record<string, string>>((accumulator, biller) => {
+      const existingValue = billerAllocationDraft[biller.id];
+      if (existingValue !== undefined) {
+        accumulator[biller.id] = existingValue;
+        return accumulator;
+      }
+
+      const share = totalBudget > 0 ? (biller.budgetedAmount / totalBudget) * 100 : 0;
+      accumulator[biller.id] = formatPercentInput(share);
+      return accumulator;
+    }, {});
+
+    const changed = draftBillers.length !== Object.keys(billerAllocationDraft).length
+      || draftBillers.some((biller) => billerAllocationDraft[biller.id] !== nextDraft[biller.id]);
+
+    if (changed) {
+      setBillerAllocationDraft(nextDraft);
+    }
+  }, [billerAllocationDraft, draftBillers]);
+
+  const billerAllocationSummary = useMemo(() => {
+    const totalAllocation = draftBillers.reduce((sum, biller) => {
+      return sum + toSafeNumber(billerAllocationDraft[biller.id] ?? '');
+    }, 0);
+
+    const varianceToTarget = Number((100 - totalAllocation).toFixed(2));
+
+    return {
+      totalAllocation: Number(totalAllocation.toFixed(2)),
+      varianceToTarget,
+      isBalanced: draftBillers.length === 0 || Math.abs(varianceToTarget) < 0.01,
+    };
+  }, [billerAllocationDraft, draftBillers]);
+
   const resetForm = () => {
     setEditingBillerId(null);
     setCompany('');
@@ -303,19 +360,80 @@ export default function BillReminderPage() {
 
     const fallbackCoveredDate = periodEnd || periodStart || new Date().toISOString().slice(0, 10);
 
-    setDraftBillers((previous) => [
-      ...previous,
-      {
-        id: `${Date.now()}-${previous.length + 1}`,
+    setDraftBillers((previous) => {
+      const nextId = `${Date.now()}-${previous.length + 1}`;
+      return [
+        ...previous,
+        {
+          id: nextId,
         company: company.trim(),
         utilityType: utilityType.trim(),
         frequency,
         dateCovered: fallbackCoveredDate,
         budgetedAmount: budgetAmount,
-      },
-    ]);
+        },
+      ];
+    });
 
     resetForm();
+  };
+
+  const handleNormalizeBillerAllocation = () => {
+    const currentTotal = draftBillers.reduce((sum, biller) => {
+      return sum + toSafeNumber(billerAllocationDraft[biller.id] ?? '');
+    }, 0);
+
+    if (currentTotal <= 0) {
+      setSetupStatusMessage('Enter biller allocation percentages first before normalizing to 100%.');
+      return;
+    }
+
+    let runningTotal = 0;
+    const normalized = draftBillers.reduce<Record<string, string>>((accumulator, biller, index) => {
+      if (index === draftBillers.length - 1) {
+        accumulator[biller.id] = formatPercentInput(Math.max(0, 100 - runningTotal));
+        return accumulator;
+      }
+
+      const nextValue = Number(((toSafeNumber(billerAllocationDraft[biller.id] ?? '') / currentTotal) * 100).toFixed(2));
+      runningTotal += nextValue;
+      accumulator[biller.id] = formatPercentInput(nextValue);
+      return accumulator;
+    }, {});
+
+    setBillerAllocationDraft(normalized);
+    setSetupStatusMessage('Biller allocation percentages were normalized to 100%.');
+  };
+
+  const handleApplyBillerAllocation = () => {
+    if (!billerAllocationSummary.isBalanced) {
+      setSetupStatusMessage(`Biller allocation must total 100%. Current variance is ${billerAllocationSummary.varianceToTarget.toFixed(2)}%.`);
+      return;
+    }
+
+    if (draftBudgetTotal <= 0) {
+      setSetupStatusMessage('Add billers with budgeted amounts first before applying revised allocation percentages.');
+      return;
+    }
+
+    let allocatedTotal = 0;
+    setDraftBillers((previous) => previous.map((biller, index) => {
+      if (index === previous.length - 1) {
+        return {
+          ...biller,
+          budgetedAmount: Number((draftBudgetTotal - allocatedTotal).toFixed(2)),
+        };
+      }
+
+      const nextAmount = Number(((draftBudgetTotal * toSafeNumber(billerAllocationDraft[biller.id] ?? '')) / 100).toFixed(2));
+      allocatedTotal += nextAmount;
+      return {
+        ...biller,
+        budgetedAmount: nextAmount,
+      };
+    }));
+
+    setSetupStatusMessage('Biller budgeted amounts were recalculated using the revised allocation percentages.');
   };
 
   const handleSaveSetup = () => {
@@ -328,6 +446,11 @@ export default function BillReminderPage() {
     if (draftBillers.length === 0) {
       setSetupStatusMessage('Please add at least one biller in Step 1 before saving setup.');
       setStep(1);
+      return;
+    }
+
+    if (!billerAllocationSummary.isBalanced) {
+      setSetupStatusMessage(`Biller allocation must stay at 100% before saving Step 2. Current variance is ${billerAllocationSummary.varianceToTarget.toFixed(2)}%.`);
       return;
     }
 
@@ -711,7 +834,15 @@ export default function BillReminderPage() {
                     <span>Budgeted Total</span>
                     <strong>{formatCurrency(draftBudgetTotal)}</strong>
                   </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Allocation Total</span>
+                    <strong>{billerAllocationSummary.totalAllocation.toFixed(2)}%</strong>
+                  </div>
                 </div>
+
+                <p className="psychometric-section-note">
+                  Revise each biller allocation percentage if needed. Total allocation must remain at 100% before saving Step 2.
+                </p>
 
                 <div className="psychometric-scale-table-wrap">
                   <table className="psychometric-scale-table">
@@ -721,6 +852,7 @@ export default function BillReminderPage() {
                         <th>Utility / Amortization</th>
                         <th>Frequency</th>
                         <th>Date Covered</th>
+                        <th>Allocation %</th>
                         <th>Budgeted Amount</th>
                       </tr>
                     </thead>
@@ -731,12 +863,29 @@ export default function BillReminderPage() {
                           <td data-label="Utility / Amortization">{biller.utilityType}</td>
                           <td data-label="Frequency">{biller.frequency}</td>
                           <td data-label="Date Covered">{biller.dateCovered || 'Not set'}</td>
+                          <td data-label="Allocation %">
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step="0.01"
+                              value={billerAllocationDraft[biller.id] ?? ''}
+                              onChange={(event) => {
+                                setBillerAllocationDraft((previous) => ({
+                                  ...previous,
+                                  [biller.id]: event.target.value,
+                                }));
+                              }}
+                              className="budget-dashboard-category-input"
+                              aria-label={`${biller.company} allocation percentage`}
+                            />
+                          </td>
                           <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
                         </tr>
                       ))}
                       {draftBillers.length === 0 ? (
                         <tr>
-                          <td colSpan={5}>No billers to review yet.</td>
+                          <td colSpan={6}>No billers to review yet.</td>
                         </tr>
                       ) : null}
                     </tbody>
@@ -746,6 +895,12 @@ export default function BillReminderPage() {
                 <div className="budget-workflow-inline-actions">
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
                     Back to Step 1
+                  </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleNormalizeBillerAllocation}>
+                    Normalize to 100%
+                  </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleApplyBillerAllocation}>
+                    Apply Revised % Allocation
                   </button>
                   <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
                     Save Setup and Continue to Step 3

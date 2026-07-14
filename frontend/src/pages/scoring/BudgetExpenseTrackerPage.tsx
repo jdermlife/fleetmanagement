@@ -20,6 +20,7 @@ interface BudgetExpenseTrackerDraft {
   periodEnd: string;
   incomeDraft: Record<IncomeKey, string>;
   expenseDraft: Record<string, string>;
+  expenseAllocationDraft: Record<string, string>;
   savedSetup: WorkflowLineItem[];
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
@@ -37,6 +38,7 @@ const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
     pension: '',
   },
   expenseDraft: {},
+  expenseAllocationDraft: {},
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
@@ -81,6 +83,14 @@ function isBlank(rawValue: string | undefined) {
   return (rawValue ?? '').trim() === '';
 }
 
+function formatPercentInput(value: number) {
+  if (!Number.isFinite(value) || value <= 0) {
+    return '';
+  }
+
+  return value.toFixed(2).replace(/\.00$/, '');
+}
+
 function buildVarianceExplanation(itemType: 'income' | 'expense', variance: number) {
   if (variance === 0) {
     return 'On target versus setup';
@@ -113,6 +123,7 @@ export default function BudgetExpenseTrackerPage() {
     pension: '',
   });
   const [expenseDraft, setExpenseDraft] = useState<Record<string, string>>({});
+  const [expenseAllocationDraft, setExpenseAllocationDraft] = useState<Record<string, string>>({});
   const [savedSetup, setSavedSetup] = useState<WorkflowLineItem[]>([]);
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
@@ -126,6 +137,7 @@ export default function BudgetExpenseTrackerPage() {
     periodEnd,
     incomeDraft,
     expenseDraft,
+    expenseAllocationDraft,
     savedSetup,
     actualEntries,
     varianceNotes,
@@ -133,6 +145,7 @@ export default function BudgetExpenseTrackerPage() {
   }), [
     actualEntries,
     actionsToBeTaken,
+    expenseAllocationDraft,
     expenseDraft,
     incomeDraft,
     periodEnd,
@@ -148,6 +161,7 @@ export default function BudgetExpenseTrackerPage() {
     setPeriodEnd(draft.periodEnd);
     setIncomeDraft(draft.incomeDraft);
     setExpenseDraft(draft.expenseDraft);
+    setExpenseAllocationDraft(draft.expenseAllocationDraft ?? {});
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
     setVarianceNotes(draft.varianceNotes);
@@ -173,6 +187,7 @@ export default function BudgetExpenseTrackerPage() {
       || periodEnd !== ''
       || Object.values(incomeDraft).some((value) => value !== '')
       || Object.values(expenseDraft).some((value) => value !== '')
+      || Object.values(expenseAllocationDraft).some((value) => value !== '')
       || savedSetup.length > 0
       || Object.values(actualEntries).some((value) => value !== '')
       || Object.values(varianceNotes).some((value) => value !== '')
@@ -203,8 +218,16 @@ export default function BudgetExpenseTrackerPage() {
         return accumulator;
       }, {}),
     );
+
+    setExpenseAllocationDraft(
+      snapshot.categoryItems.reduce<Record<string, string>>((accumulator, item) => {
+        accumulator[item.id] = formatPercentInput(item.share);
+        return accumulator;
+      }, {}),
+    );
   }, [
     actualEntries,
+    expenseAllocationDraft,
     expenseDraft,
     incomeDraft,
     isHydrated,
@@ -257,10 +280,124 @@ export default function BudgetExpenseTrackerPage() {
     };
   }, [incomeDraft, expenseDraft, snapshot.categoryItems]);
 
+  const budgetAiSummary = useMemo(() => {
+    const net = budgetSetupTotals.net;
+
+    if (net > 0) {
+      return {
+        status: 'surplus' as const,
+        headline: 'Income exceeds expenses',
+        recommendation: `AI recommendation: Move ${formatCurrency(net)} to savings.`,
+        detail: 'The current setup produces a positive monthly surplus, so the excess should be retained as savings.',
+      };
+    }
+
+    if (net < 0) {
+      return {
+        status: 'deficit' as const,
+        headline: 'Expenses exceed income',
+        recommendation: `AI recommendation: Reduce savings by ${formatCurrency(Math.abs(net))} or cut expenses to restore balance.`,
+        detail: 'The current setup is running at a deficit, so savings would need to absorb the shortfall unless expenses are reduced or income increases.',
+      };
+    }
+
+    return {
+      status: 'balanced' as const,
+      headline: 'Income matches expenses',
+      recommendation: 'AI recommendation: No additional savings movement is required based on the current setup.',
+      detail: 'The budget is exactly balanced, so there is no surplus to save and no deficit to fund from savings.',
+    };
+  }, [budgetSetupTotals.net]);
+
+  const allocationSummary = useMemo(() => {
+    const totalAllocation = snapshot.categoryItems.reduce((total, item) => {
+      return total + toSafeNumber(expenseAllocationDraft[item.id] ?? '');
+    }, 0);
+
+    const varianceToTarget = Number((100 - totalAllocation).toFixed(2));
+
+    return {
+      totalAllocation: Number(totalAllocation.toFixed(2)),
+      varianceToTarget,
+      isBalanced: Math.abs(varianceToTarget) < 0.01,
+    };
+  }, [expenseAllocationDraft, snapshot.categoryItems]);
+
+  const handleNormalizeExpenseAllocation = () => {
+    const currentTotal = snapshot.categoryItems.reduce((total, item) => {
+      return total + toSafeNumber(expenseAllocationDraft[item.id] ?? '');
+    }, 0);
+
+    if (currentTotal <= 0) {
+      setSetupStatusMessage('Enter expense allocation percentages first before normalizing to 100%.');
+      return;
+    }
+
+    let runningTotal = 0;
+    const normalizedDraft = snapshot.categoryItems.reduce<Record<string, string>>((accumulator, item, index) => {
+      if (index === snapshot.categoryItems.length - 1) {
+        accumulator[item.id] = formatPercentInput(Math.max(0, 100 - runningTotal));
+        return accumulator;
+      }
+
+      const nextValue = Number(((toSafeNumber(expenseAllocationDraft[item.id] ?? '') / currentTotal) * 100).toFixed(2));
+      runningTotal += nextValue;
+      accumulator[item.id] = formatPercentInput(nextValue);
+      return accumulator;
+    }, {});
+
+    setExpenseAllocationDraft(normalizedDraft);
+    setSetupStatusMessage('Expense allocation percentages were normalized to 100%.');
+  };
+
+  const handleApplyExpenseAllocation = () => {
+    if (!allocationSummary.isBalanced) {
+      setSetupStatusMessage(
+        `Expense allocation must total 100%. Current variance is ${allocationSummary.varianceToTarget.toFixed(2)}%.`,
+      );
+      return;
+    }
+
+    const currentExpenseBudget = snapshot.categoryItems.reduce((total, item) => {
+      return total + toSafeNumber(expenseDraft[item.id] ?? '');
+    }, 0);
+    const baselineExpenseBudget = currentExpenseBudget > 0
+      ? currentExpenseBudget
+      : snapshot.categoryItems.reduce((total, item) => total + item.amount, 0);
+
+    if (baselineExpenseBudget <= 0) {
+      setSetupStatusMessage('Provide setup expense amounts first so revised allocation percentages can be applied.');
+      return;
+    }
+
+    let allocatedTotal = 0;
+    const nextExpenseDraft = snapshot.categoryItems.reduce<Record<string, string>>((accumulator, item, index) => {
+      if (index === snapshot.categoryItems.length - 1) {
+        accumulator[item.id] = (baselineExpenseBudget - allocatedTotal).toFixed(2);
+        return accumulator;
+      }
+
+      const nextAmount = Number(((baselineExpenseBudget * toSafeNumber(expenseAllocationDraft[item.id] ?? '')) / 100).toFixed(2));
+      allocatedTotal += nextAmount;
+      accumulator[item.id] = nextAmount.toFixed(2);
+      return accumulator;
+    }, {});
+
+    setExpenseDraft(nextExpenseDraft);
+    setSetupStatusMessage('Expense setup amounts were recalculated using the revised allocation percentages.');
+  };
+
   const handleSaveSetup = () => {
     if (!periodStart || !periodEnd) {
       setSetupStatusMessage('Please complete the period covered before saving the budget setup.');
       setStep(1);
+      return;
+    }
+
+    if (!allocationSummary.isBalanced) {
+      setSetupStatusMessage(
+        `Expense allocation must stay at 100% before saving Step 2. Current variance is ${allocationSummary.varianceToTarget.toFixed(2)}%.`,
+      );
       return;
     }
 
@@ -418,7 +555,10 @@ export default function BudgetExpenseTrackerPage() {
           <span className="psychometric-eyebrow">Budget Workflow Controls</span>
           <h1>Budget and Expense Tracker</h1>
           <p>
-            Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
+            As of covering period:{' '}
+            <strong>
+              {periodStart && periodEnd ? `${periodStart} to ${periodEnd}` : snapshot.periodLabel}
+            </strong>
           </p>
           <p>
             Navigate a guided workflow to set period coverage, build the budget setup, then monitor actual
@@ -548,6 +688,47 @@ export default function BudgetExpenseTrackerPage() {
                   </div>
                 </div>
 
+                <div
+                  className={`rounded-lg border p-4 ${
+                    budgetAiSummary.status === 'surplus'
+                      ? 'border-emerald-200 bg-emerald-50'
+                      : budgetAiSummary.status === 'deficit'
+                        ? 'border-rose-200 bg-rose-50'
+                        : 'border-slate-200 bg-slate-50'
+                  }`}
+                >
+                  <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                    <div>
+                      <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">
+                        Full Summary Box
+                      </p>
+                      <h4 className="mt-1 text-base font-bold text-slate-900">{budgetAiSummary.headline}</h4>
+                      <p className="mt-2 text-sm text-slate-700">{budgetAiSummary.detail}</p>
+                    </div>
+                    <div className="grid gap-2 text-sm md:min-w-[220px]">
+                      <div className="rounded-md bg-white/80 px-3 py-2">
+                        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Total Income</span>
+                        <strong className="text-slate-900">{formatCurrency(budgetSetupTotals.incomeTotal)}</strong>
+                      </div>
+                      <div className="rounded-md bg-white/80 px-3 py-2">
+                        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Total Expenses</span>
+                        <strong className="text-slate-900">{formatCurrency(budgetSetupTotals.expenseTotal)}</strong>
+                      </div>
+                      <div className="rounded-md bg-white/80 px-3 py-2">
+                        <span className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Savings Impact</span>
+                        <strong className={budgetSetupTotals.net > 0 ? 'text-emerald-700' : budgetSetupTotals.net < 0 ? 'text-rose-700' : 'text-slate-900'}>
+                          {formatSignedCurrency(budgetSetupTotals.net)}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 rounded-md border border-white/70 bg-white/80 px-4 py-3">
+                    <p className="text-xs font-semibold uppercase tracking-[0.14em] text-slate-500">AI Recommendation</p>
+                    <p className="mt-1 text-sm font-semibold text-slate-800">{budgetAiSummary.recommendation}</p>
+                  </div>
+                </div>
+
                 <div className="budget-workflow-income-grid">
                   <label>
                     Income from Salary
@@ -612,13 +793,48 @@ export default function BudgetExpenseTrackerPage() {
                 </div>
 
                 <h4 className="budget-workflow-subtitle">Itemized Expense Setup</h4>
+                <div className="budget-dashboard-category-summary">
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Total Allocation</span>
+                    <strong>{allocationSummary.totalAllocation.toFixed(2)}%</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Variance to 100%</span>
+                    <strong>{allocationSummary.varianceToTarget.toFixed(2)}%</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Status</span>
+                    <strong>{allocationSummary.isBalanced ? 'Balanced' : 'Needs Reconciliation'}</strong>
+                  </div>
+                </div>
+                <p className="psychometric-section-note">
+                  Revise the budget allocation percentage per expense, then apply or normalize it. The allocation must remain at 100% before Step 2 can be saved.
+                </p>
                 <div className="budget-dashboard-category-grid">
                   {snapshot.categoryItems.map((item) => (
                     <article key={item.id} className="budget-dashboard-card">
                       <div className="budget-dashboard-card-header">
                         <span>{item.label}</span>
-                        <strong>{item.share.toFixed(0)}%</strong>
+                        <strong>{formatPercentInput(item.share)}% suggested</strong>
                       </div>
+                      <label className="budget-dashboard-category-input-wrap">
+                        <span className="budget-dashboard-category-input-label">Budget Allocation %</span>
+                        <input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step="0.01"
+                          value={expenseAllocationDraft[item.id] ?? ''}
+                          onChange={(event) => {
+                            setExpenseAllocationDraft((previous) => ({
+                              ...previous,
+                              [item.id]: event.target.value,
+                            }));
+                          }}
+                          className="budget-dashboard-category-input"
+                          aria-label={`${item.label} budget allocation percentage`}
+                        />
+                      </label>
                       <label className="budget-dashboard-category-input-wrap">
                         <span className="budget-dashboard-category-input-label">Setup Amount</span>
                         <input
@@ -646,6 +862,12 @@ export default function BudgetExpenseTrackerPage() {
                 <div className="budget-workflow-inline-actions">
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
                     Back to Step 1
+                  </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleNormalizeExpenseAllocation}>
+                    Normalize to 100%
+                  </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleApplyExpenseAllocation}>
+                    Apply Revised % Allocation
                   </button>
                   <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
                     Save Setup and Continue to Step 3
