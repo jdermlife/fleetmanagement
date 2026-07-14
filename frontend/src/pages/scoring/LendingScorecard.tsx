@@ -4006,6 +4006,7 @@ export default function LendingScorecard() {
 
   const handleOpenCertification = () => {
     if (hasSufficientInformationForRating && !displayedQuantSummary) {
+      setSaveMessage('Generate FILScore first before requesting certification.');
       return;
     }
 
@@ -5011,7 +5012,6 @@ export default function LendingScorecard() {
                 <button
                   type="button"
                   onClick={handleOpenCertification}
-                  disabled={hasSufficientInformationForRating && !displayedQuantSummary}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Request Certification

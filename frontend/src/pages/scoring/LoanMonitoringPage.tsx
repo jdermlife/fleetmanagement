@@ -253,7 +253,7 @@ export default function LoanMonitoringPage() {
           <span className="psychometric-eyebrow">Loan Performance Oversight</span>
           <h1>Loan Monitoring</h1>
           <p>
-            Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
+            Period: <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
             Built from live loan statuses, DSR, LTV, decision outcomes, and pipeline aging indicators

@@ -33,6 +33,7 @@ type SavedLine = {
 interface NetWorthPositioningDraft {
   step: WorkflowStep;
   asOfDate: string;
+  selectedFinancialGoal: string;
   amounts: Record<string, string>;
   savedSetup: SavedLine[];
   actualEntries: Record<string, string>;
@@ -42,11 +43,28 @@ interface NetWorthPositioningDraft {
 const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   step: 1,
   asOfDate: '',
+  selectedFinancialGoal: '',
   amounts: {},
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
 };
+
+const FINANCIAL_GOAL_OPTIONS = [
+  'Build Emergency Fund',
+  'Pay off High Interest Debt',
+  'Save for Major Purchase (10k above)',
+  'Create Monthly Discipline',
+  'Save for Property Down Payment',
+  'Fund Education or Certification',
+  'Grow an Investment Portfolio',
+  'Establish Insurance Coverage',
+  'Create Generational Wealth',
+  'Support Social Responsibility',
+  'Achieve Financial Independence',
+  'Build Retirement Savings',
+  'Others',
+] as const;
 
 const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
   { id: 'asset-cash-on-hand', label: 'Cash on Hand', section: 'assets', category: '1. Cash & Bank Accounts' },
@@ -297,6 +315,7 @@ export default function NetWorthPositioningPage() {
 
   const [step, setStep] = useState<WorkflowStep>(1);
   const [asOfDate, setAsOfDate] = useState('');
+  const [selectedFinancialGoal, setSelectedFinancialGoal] = useState('');
 
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [savedSetup, setSavedSetup] = useState<SavedLine[]>([]);
@@ -307,6 +326,7 @@ export default function NetWorthPositioningPage() {
   const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
     step,
     asOfDate,
+    selectedFinancialGoal,
     amounts,
     savedSetup,
     actualEntries,
@@ -315,6 +335,7 @@ export default function NetWorthPositioningPage() {
     actualEntries,
     asOfDate,
     amounts,
+    selectedFinancialGoal,
     savedSetup,
     step,
     varianceNotes,
@@ -323,6 +344,7 @@ export default function NetWorthPositioningPage() {
   const handleAutosaveHydrate = useCallback((draft: NetWorthPositioningDraft) => {
     setStep(draft.step);
     setAsOfDate(draft.asOfDate);
+    setSelectedFinancialGoal(draft.selectedFinancialGoal ?? '');
     setAmounts(draft.amounts);
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
@@ -515,9 +537,9 @@ export default function NetWorthPositioningPage() {
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Net Worth Workflow Controls</span>
-          <h1>Net Worth Tracking</h1>
+          <h1>Net Worth  and Goal Tracking</h1>
           <p>
-            Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
+            Period:  <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
             Navigate a guided net-worth workflow to set period coverage, build setup amounts, then compare
@@ -609,6 +631,22 @@ export default function NetWorthPositioningPage() {
                     <span>Suggested Accounts</span>
                     <strong>A to G Sections</strong>
                   </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Financial Goals</span>
+                    <select
+                      value={selectedFinancialGoal}
+                      onChange={(event) => setSelectedFinancialGoal(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      aria-label="Financial goals"
+                    >
+                      <option value="">Select financial goal</option>
+                      {FINANCIAL_GOAL_OPTIONS.map((goal) => (
+                        <option key={goal} value={goal}>
+                          {goal}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
                 <label>
@@ -682,6 +720,10 @@ export default function NetWorthPositioningPage() {
                   <div className="budget-dashboard-category-summary-card">
                     <span>As Of</span>
                     <strong>{asOfDate || 'Not set'}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Financial Goal</span>
+                    <strong>{selectedFinancialGoal || 'Not selected'}</strong>
                   </div>
                   <div className="budget-dashboard-category-summary-card">
                     <span>Setup Entries</span>
@@ -970,6 +1012,10 @@ export default function NetWorthPositioningPage() {
               <li>
                 <span>As Of</span>
                 <strong>{asOfDate || 'Not set'}</strong>
+              </li>
+              <li>
+                <span>Financial Goal</span>
+                <strong>{selectedFinancialGoal || 'Not selected'}</strong>
               </li>
               <li>
                 <span>Setup Entries</span>
