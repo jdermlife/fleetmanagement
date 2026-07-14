@@ -124,7 +124,6 @@ def _ensure_loan_application_schema() -> None:
             text(
                 """
                 ALTER TABLE loan_applications
-                ALTER TABLE loan_applications
                 ADD COLUMN IF NOT EXISTS created_at TIMESTAMPTZ DEFAULT NOW();
                 """
             )
