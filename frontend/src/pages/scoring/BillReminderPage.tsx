@@ -11,6 +11,8 @@ type BillerSetup = {
   id: string;
   company: string;
   utilityType: string;
+  estimatedDueDay: string;
+  emailReminder10DaysBefore: boolean;
   frequency: BillerFrequency;
   dateCovered: string;
   budgetedAmount: number;
@@ -25,12 +27,15 @@ interface BillReminderDraft {
   editingBillerId: string | null;
   company: string;
   utilityType: string;
+  estimatedDueDay: string;
+  emailReminder10DaysBefore: boolean;
   frequency: BillerFrequency;
   budgetedAmount: string;
   savedSetup: BillerSetup[];
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
   step3RecordSavedAt: string;
+  isBaselineAllocationFixed: boolean;
 }
 
 const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
@@ -42,12 +47,15 @@ const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
   editingBillerId: null,
   company: '',
   utilityType: '',
+  estimatedDueDay: '',
+  emailReminder10DaysBefore: false,
   frequency: 'Monthly',
   budgetedAmount: '',
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
   step3RecordSavedAt: '',
+  isBaselineAllocationFixed: false,
 };
 
 function formatCurrency(amount: number) {
@@ -87,6 +95,31 @@ function formatPercentInput(value: number) {
   }
 
   return value.toFixed(2).replace(/\.00$/, '');
+}
+
+function formatEstimatedDueDayLabel(rawValue: string) {
+  const trimmed = rawValue.trim();
+  const day = Number(trimmed);
+
+  if (!Number.isInteger(day) || day < 1 || day > 31) {
+    return trimmed || 'Not set';
+  }
+
+  const lastTwoDigits = day % 100;
+  const lastDigit = day % 10;
+  let suffix = 'th';
+
+  if (lastTwoDigits < 11 || lastTwoDigits > 13) {
+    if (lastDigit === 1) {
+      suffix = 'st';
+    } else if (lastDigit === 2) {
+      suffix = 'nd';
+    } else if (lastDigit === 3) {
+      suffix = 'rd';
+    }
+  }
+
+  return `${day}${suffix} of the month`;
 }
 
 function getBillerStatus(dateCovered: string) {
@@ -141,6 +174,32 @@ function buildVarianceExplanation(variance: number) {
     : 'Actual payment is below budgeted amount';
 }
 
+function buildAiVarianceReason(utilityType: string, variance: number) {
+  if (variance <= 0) {
+    return 'No over-budget alert from AI for this biller in the current cycle.';
+  }
+
+  const lowerType = utilityType.toLowerCase();
+
+  if (lowerType.includes('electric')) {
+    return 'AI reason: Higher usage from cooling appliances or tariff adjustments may have increased the electric bill.';
+  }
+  if (lowerType.includes('water')) {
+    return 'AI reason: Leak-related wastage, seasonal demand, or utility rate changes may have increased the water bill.';
+  }
+  if (lowerType.includes('internet') || lowerType.includes('mobile') || lowerType.includes('telco')) {
+    return 'AI reason: Overage charges, add-on services, or plan repricing may have increased telecom-related charges.';
+  }
+  if (lowerType.includes('loan') || lowerType.includes('amortization') || lowerType.includes('mortgage')) {
+    return 'AI reason: Interest repricing, penalties, or additional principal servicing may have increased amortization outflow.';
+  }
+  if (lowerType.includes('insurance')) {
+    return 'AI reason: Premium adjustments, riders, or policy updates may have increased insurance due amounts.';
+  }
+
+  return 'AI reason: A usage spike, pricing update, penalties, or one-time charges may explain this higher-than-budget payment.';
+}
+
 export default function BillReminderPage() {
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -158,6 +217,8 @@ export default function BillReminderPage() {
 
   const [company, setCompany] = useState('');
   const [utilityType, setUtilityType] = useState('');
+  const [estimatedDueDay, setEstimatedDueDay] = useState('');
+  const [emailReminder10DaysBefore, setEmailReminder10DaysBefore] = useState(false);
   const [frequency, setFrequency] = useState<BillerFrequency>('Monthly');
   const [budgetedAmount, setBudgetedAmount] = useState('');
 
@@ -165,6 +226,7 @@ export default function BillReminderPage() {
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [step3RecordSavedAt, setStep3RecordSavedAt] = useState('');
+  const [isBaselineAllocationFixed, setIsBaselineAllocationFixed] = useState(false);
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
 
   const autosaveValue = useMemo<BillReminderDraft>(() => ({
@@ -176,18 +238,23 @@ export default function BillReminderPage() {
     editingBillerId,
     company,
     utilityType,
+    estimatedDueDay,
+    emailReminder10DaysBefore,
     frequency,
     budgetedAmount,
     savedSetup,
     actualEntries,
     varianceNotes,
     step3RecordSavedAt,
+    isBaselineAllocationFixed,
   }), [
     actualEntries,
     budgetedAmount,
     company,
     draftBillers,
     billerAllocationDraft,
+    estimatedDueDay,
+    emailReminder10DaysBefore,
     editingBillerId,
     frequency,
     periodEnd,
@@ -195,6 +262,7 @@ export default function BillReminderPage() {
     savedSetup,
     step,
     step3RecordSavedAt,
+    isBaselineAllocationFixed,
     utilityType,
     varianceNotes,
   ]);
@@ -208,12 +276,15 @@ export default function BillReminderPage() {
     setEditingBillerId(draft.editingBillerId);
     setCompany(draft.company);
     setUtilityType(draft.utilityType);
+    setEstimatedDueDay(draft.estimatedDueDay ?? '');
+    setEmailReminder10DaysBefore(draft.emailReminder10DaysBefore ?? false);
     setFrequency(draft.frequency);
     setBudgetedAmount(draft.budgetedAmount);
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
     setVarianceNotes(draft.varianceNotes);
     setStep3RecordSavedAt(draft.step3RecordSavedAt ?? '');
+    setIsBaselineAllocationFixed(draft.isBaselineAllocationFixed ?? false);
   }, []);
 
   useAutosaveDraft({
@@ -258,10 +329,11 @@ export default function BillReminderPage() {
         const completedFields = [
           !isBlank(biller.company),
           !isBlank(biller.utilityType),
+          !isBlank(biller.estimatedDueDay),
           !isBlank(biller.dateCovered),
           biller.budgetedAmount > 0,
         ].filter(Boolean).length;
-        return sum + (completedFields / 4);
+        return sum + (completedFields / 5);
       }, 0) / draftBillers.length;
 
     const step1Percent = clamp(((periodCompletion * 0.4) + (billerCompletion * 0.6)) * 100);
@@ -273,8 +345,9 @@ export default function BillReminderPage() {
     const allocationBalanced = draftBillers.length === 0 || Math.abs(100 - allocationTotal) < 0.01;
     const hasDraftBillers = draftBillers.length > 0;
     const setupSaved = savedSetup.length > 0;
+    const baselineFixed = isBaselineAllocationFixed;
     const baselineChecks = [hasDraftBillers, allocationProvided, allocationBalanced, setupSaved].filter(Boolean).length;
-    const step2Percent = setupSaved ? 100 : clamp((baselineChecks / 4) * 100);
+    const step2Percent = (setupSaved && baselineFixed) ? 100 : clamp((baselineChecks / 4) * 100);
 
     const setupCount = savedSetup.length;
     const actualCompleted = setupCount > 0
@@ -300,6 +373,7 @@ export default function BillReminderPage() {
     periodEnd,
     periodStart,
     savedSetup,
+    isBaselineAllocationFixed,
     step3RecordSavedAt,
     varianceNotes,
   ]);
@@ -385,6 +459,8 @@ export default function BillReminderPage() {
     setEditingBillerId(null);
     setCompany('');
     setUtilityType('');
+    setEstimatedDueDay('');
+    setEmailReminder10DaysBefore(false);
     setFrequency('Monthly');
     setBudgetedAmount('');
   };
@@ -392,7 +468,7 @@ export default function BillReminderPage() {
   const handleAddBiller = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!company.trim() || !utilityType.trim() || isBlank(budgetedAmount)) {
+    if (!company.trim() || !utilityType.trim() || isBlank(estimatedDueDay) || isBlank(budgetedAmount)) {
       return;
     }
 
@@ -406,6 +482,8 @@ export default function BillReminderPage() {
                 ...biller,
                 company: company.trim(),
                 utilityType: utilityType.trim(),
+                estimatedDueDay: estimatedDueDay.trim(),
+                emailReminder10DaysBefore,
                 frequency,
                 budgetedAmount: budgetAmount,
               }
@@ -426,6 +504,8 @@ export default function BillReminderPage() {
           id: nextId,
         company: company.trim(),
         utilityType: utilityType.trim(),
+        estimatedDueDay: estimatedDueDay.trim(),
+        emailReminder10DaysBefore,
         frequency,
         dateCovered: fallbackCoveredDate,
         budgetedAmount: budgetAmount,
@@ -520,8 +600,44 @@ export default function BillReminderPage() {
     setActualEntries({});
     setVarianceNotes({});
     setStep3RecordSavedAt('');
+    setIsBaselineAllocationFixed(true);
     setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
+  };
+
+  const handleFixBaselineAllocation = () => {
+    if (!periodStart || !periodEnd) {
+      setSetupStatusMessage('Please complete period covered before fixing baseline allocation.');
+      setStep(1);
+      return;
+    }
+
+    if (draftBillers.length === 0) {
+      setSetupStatusMessage('Please add at least one biller in Step 1 before fixing baseline allocation.');
+      setStep(1);
+      return;
+    }
+
+    if (!billerAllocationSummary.isBalanced) {
+      setSetupStatusMessage(`Biller allocation must stay at 100% before fixing Step 2 baseline. Current variance is ${billerAllocationSummary.varianceToTarget.toFixed(2)}%.`);
+      return;
+    }
+
+    setSavedSetup(
+      draftBillers.map((biller) => ({
+        ...biller,
+      })),
+    );
+    setActualEntries({});
+    setVarianceNotes({});
+    setStep3RecordSavedAt('');
+    setIsBaselineAllocationFixed(true);
+    setSetupStatusMessage('Baseline allocation fixed. You can proceed to Step 3 and update actual values only.');
+  };
+
+  const handleUnfixBaselineAllocation = () => {
+    setIsBaselineAllocationFixed(false);
+    setSetupStatusMessage('Baseline allocation unlocked. You may now revise Step 2 setup and allocation.');
   };
 
   const handleSaveVarianceRecord = () => {
@@ -718,7 +834,7 @@ export default function BillReminderPage() {
                 <h3 className="workflow-duplicate-step-title">Step 1: Choose Period Covered</h3>
                 <p className="psychometric-section-note">
                   In this same step, choose period covered and encode biller setup including company,
-                  utility type or amortization, frequency, and budgeted amount.
+                  utility type or amortization, estimated due date, frequency, and budgeted amount.
                 </p>
 
                 <div className="budget-workflow-grid-two">
@@ -758,6 +874,29 @@ export default function BillReminderPage() {
                       onChange={(event) => setUtilityType(event.target.value)}
                       placeholder="Electricity or Home Loan Amortization"
                       required
+                    />
+                  </label>
+
+                  <label>
+                    Estimated Due Date (Day of Month)
+                    <input
+                      type="number"
+                      min={1}
+                      max={31}
+                      step="1"
+                      value={estimatedDueDay}
+                      onChange={(event) => setEstimatedDueDay(event.target.value)}
+                      placeholder="10"
+                      required
+                    />
+                  </label>
+
+                  <label>
+                    Email Reminder (10 days before due date)
+                    <input
+                      type="checkbox"
+                      checked={emailReminder10DaysBefore}
+                      onChange={(event) => setEmailReminder10DaysBefore(event.target.checked)}
                     />
                   </label>
 
@@ -810,6 +949,8 @@ export default function BillReminderPage() {
                       <tr>
                         <th>Company</th>
                         <th>Utility / Amortization</th>
+                        <th>Estimated Due Date</th>
+                        <th>Email Reminder (10 Days Before)</th>
                         <th>Frequency</th>
                         <th>Budgeted Amount</th>
                         <th>Status</th>
@@ -821,6 +962,10 @@ export default function BillReminderPage() {
                         <tr key={biller.id}>
                           <td data-label="Company">{biller.company}</td>
                           <td data-label="Utility / Amortization">{biller.utilityType}</td>
+                          <td data-label="Estimated Due Date">{formatEstimatedDueDayLabel(biller.estimatedDueDay)}</td>
+                          <td data-label="Email Reminder (10 Days Before)">
+                            <input type="checkbox" checked={biller.emailReminder10DaysBefore} readOnly aria-label={`${biller.company} email reminder 10 days before due date`} />
+                          </td>
                           <td data-label="Frequency">{biller.frequency}</td>
                           <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
                           <td data-label="Status">{biller.status.label}</td>
@@ -833,6 +978,8 @@ export default function BillReminderPage() {
                                   setEditingBillerId(biller.id);
                                   setCompany(biller.company);
                                   setUtilityType(biller.utilityType);
+                                  setEstimatedDueDay(biller.estimatedDueDay ?? '');
+                                  setEmailReminder10DaysBefore(Boolean(biller.emailReminder10DaysBefore));
                                   setFrequency(biller.frequency);
                                   setBudgetedAmount(String(biller.budgetedAmount));
                                 }}
@@ -857,7 +1004,7 @@ export default function BillReminderPage() {
                       ))}
                       {draftCards.length === 0 ? (
                         <tr>
-                          <td colSpan={6}>No billers added yet. Add at least one setup line.</td>
+                          <td colSpan={8}>No billers added yet. Add at least one setup line.</td>
                         </tr>
                       ) : null}
                     </tbody>
@@ -902,12 +1049,20 @@ export default function BillReminderPage() {
                   Revise each biller allocation percentage if needed. Total allocation must remain at 100% before saving Step 2.
                 </p>
 
+                <p className="psychometric-section-note" style={{ color: isBaselineAllocationFixed ? '#047857' : '#b45309' }}>
+                  {isBaselineAllocationFixed
+                    ? 'Baseline allocation is fixed. Step 2 setup is locked and Step 3 actual values are the only updates.'
+                    : 'Baseline allocation is not fixed yet. Click "Fix Baseline Allocation" once ready.'}
+                </p>
+
                 <div className="psychometric-scale-table-wrap">
                   <table className="psychometric-scale-table">
                     <thead>
                       <tr>
                         <th>Company</th>
                         <th>Utility / Amortization</th>
+                        <th>Estimated Due Date</th>
+                        <th>Email Reminder (10 Days Before)</th>
                         <th>Frequency</th>
                         <th>Date Covered</th>
                         <th>Allocation %</th>
@@ -919,6 +1074,10 @@ export default function BillReminderPage() {
                         <tr key={biller.id}>
                           <td data-label="Company">{biller.company}</td>
                           <td data-label="Utility / Amortization">{biller.utilityType}</td>
+                          <td data-label="Estimated Due Date">{formatEstimatedDueDayLabel(biller.estimatedDueDay)}</td>
+                          <td data-label="Email Reminder (10 Days Before)">
+                            <input type="checkbox" checked={biller.emailReminder10DaysBefore} readOnly aria-label={`${biller.company} baseline email reminder 10 days before due date`} />
+                          </td>
                           <td data-label="Frequency">{biller.frequency}</td>
                           <td data-label="Date Covered">{biller.dateCovered || 'Not set'}</td>
                           <td data-label="Allocation %">
@@ -936,6 +1095,7 @@ export default function BillReminderPage() {
                               }}
                               className="budget-dashboard-category-input"
                               aria-label={`${biller.company} allocation percentage`}
+                              disabled={isBaselineAllocationFixed}
                             />
                           </td>
                           <td data-label="Budgeted Amount">{formatCurrency(biller.budgetedAmount)}</td>
@@ -943,7 +1103,7 @@ export default function BillReminderPage() {
                       ))}
                       {draftBillers.length === 0 ? (
                         <tr>
-                          <td colSpan={6}>No billers to review yet.</td>
+                          <td colSpan={8}>No billers to review yet.</td>
                         </tr>
                       ) : null}
                     </tbody>
@@ -951,18 +1111,34 @@ export default function BillReminderPage() {
                 </div>
 
                 <div className="budget-workflow-inline-actions">
-                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)} disabled={isBaselineAllocationFixed}>
                     Back to Step 1
                   </button>
-                  <button type="button" className="budget-dashboard-category-reset" onClick={handleNormalizeBillerAllocation}>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleNormalizeBillerAllocation} disabled={isBaselineAllocationFixed}>
                     Normalize to 100%
                   </button>
-                  <button type="button" className="budget-dashboard-category-reset" onClick={handleApplyBillerAllocation}>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleApplyBillerAllocation} disabled={isBaselineAllocationFixed}>
                     Apply Revised % Allocation
                   </button>
-                  <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
-                    Save Setup and Continue to Step 3
-                  </button>
+                  {isBaselineAllocationFixed ? (
+                    <>
+                      <button type="button" className="budget-dashboard-category-reset" onClick={handleUnfixBaselineAllocation}>
+                        Unfix / Revise Baseline
+                      </button>
+                      <button type="button" className="psychometric-reset-button" onClick={() => setStep(3)}>
+                        Continue to Step 3
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <button type="button" className="budget-dashboard-category-reset" onClick={handleFixBaselineAllocation}>
+                        Fix Baseline Allocation
+                      </button>
+                      <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
+                        Save Setup and Continue to Step 3
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : null}
@@ -972,7 +1148,7 @@ export default function BillReminderPage() {
                 <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows saved setup. Second column is blank for user actuals. Third column shows variance.
-                  Fourth column provides variance explanation in small letters.
+                  Fourth column shows AI variance explanation and fifth column provides user variance explanation in small letters.
                 </p>
 
                 {savedSetup.length === 0 ? (
@@ -987,6 +1163,7 @@ export default function BillReminderPage() {
                           <th>Setup (Saved)</th>
                           <th>Actual (User Input)</th>
                           <th>Variance (B/W)</th>
+                          <th>Variance Explanation by AI</th>
                           <th>Variance Explanation</th>
                         </tr>
                       </thead>
@@ -996,6 +1173,8 @@ export default function BillReminderPage() {
                             <td data-label="Setup (Saved)">
                               <strong>{row.company}</strong>
                               <div>{row.utilityType}</div>
+                              <div>{formatEstimatedDueDayLabel(row.estimatedDueDay)}</div>
+                              <div>{row.emailReminder10DaysBefore ? 'Email reminder: Enabled (10 days before)' : 'Email reminder: Disabled'}</div>
                               <div>{row.frequency}</div>
                               <div>{row.dateCovered || 'No date covered'}</div>
                               <div>{formatCurrency(row.budgetedAmount)}</div>
@@ -1021,6 +1200,13 @@ export default function BillReminderPage() {
                               className={`bill-reminder-variance-cell ${row.hasActual ? (row.variance < 0 ? 'bill-reminder-variance-lower' : (row.variance > 0 ? 'bill-reminder-variance-higher' : 'bill-reminder-variance-neutral')) : 'bill-reminder-variance-pending'}`}
                             >
                               {row.hasActual ? formatSignedCurrency(row.variance) : 'Pending input'}
+                            </td>
+                            <td data-label="Variance Explanation by AI">
+                              <small className="budget-workflow-variance-copy">
+                                {row.hasActual
+                                  ? buildAiVarianceReason(row.utilityType, row.variance)
+                                  : 'Awaiting user actual amount to generate AI explanation.'}
+                              </small>
                             </td>
                             <td data-label="Variance Explanation">
                               <small className="budget-workflow-variance-copy">
