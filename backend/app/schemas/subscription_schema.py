@@ -188,6 +188,20 @@ class PayMongoCheckoutCreate(BaseModel):
     invoice_no: str | None = Field(default=None, max_length=50)
 
 
+class PayPalCreateOrderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    subscription_id: int
+    invoice_no: str | None = Field(default=None, max_length=50)
+
+
+class PayPalCaptureOrderRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    order_id: str = Field(min_length=3, max_length=120)
+    subscription_id: int | None = None
+
+
 class FreeSubscriptionCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
