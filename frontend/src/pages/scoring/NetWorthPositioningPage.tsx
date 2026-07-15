@@ -1,5 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 import {
   fetchAutosaveDraft,
   isAutosaveConflictError,
@@ -40,6 +41,8 @@ interface NetWorthPositioningDraft {
   currency: string;
   currencyCode?: string;
   selectedFinancialGoal: string;
+  targetAmount: number;
+  targetMonths: number;
   amounts: Record<string, string>;
   monthlyExpenseAllocationDraft: Record<string, string>;
   savedSetup: SavedLine[];
@@ -52,6 +55,8 @@ const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   asOfDate: '',
   currency: 'PHP',
   selectedFinancialGoal: '',
+  targetAmount: 0,
+  targetMonths: 12,
   amounts: {},
   monthlyExpenseAllocationDraft: {},
   savedSetup: [],
@@ -323,6 +328,8 @@ export default function NetWorthPositioningPage() {
   const [asOfDate, setAsOfDate] = useState('');
   const [currency, setCurrency] = useState('PHP');
   const [selectedFinancialGoal, setSelectedFinancialGoal] = useState('');
+  const [targetAmount, setTargetAmount] = useState(0);
+  const [targetMonths, setTargetMonths] = useState(12);
 
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [monthlyExpenseAllocationDraft, setMonthlyExpenseAllocationDraft] = useState<Record<string, string>>({});
@@ -338,6 +345,8 @@ export default function NetWorthPositioningPage() {
     asOfDate,
     currency,
     selectedFinancialGoal,
+    targetAmount,
+    targetMonths,
     amounts,
     monthlyExpenseAllocationDraft,
     savedSetup,
@@ -352,6 +361,8 @@ export default function NetWorthPositioningPage() {
     selectedFinancialGoal,
     savedSetup,
     step,
+    targetAmount,
+    targetMonths,
     varianceNotes,
   ]);
 
@@ -360,6 +371,8 @@ export default function NetWorthPositioningPage() {
     setAsOfDate(draft.asOfDate);
     setCurrency(draft.currency ?? draft.currencyCode ?? 'PHP');
     setSelectedFinancialGoal(draft.selectedFinancialGoal ?? '');
+    setTargetAmount(draft.targetAmount ?? 0);
+    setTargetMonths(draft.targetMonths ?? 12);
     setAmounts(draft.amounts ?? {});
     setMonthlyExpenseAllocationDraft(draft.monthlyExpenseAllocationDraft ?? {});
     setSavedSetup(draft.savedSetup ?? []);
@@ -951,37 +964,78 @@ export default function NetWorthPositioningPage() {
               <div className="budget-workflow-step-block">
                 <h3 className="workflow-duplicate-step-title">Step 1: Set As Of Date</h3>
                 <p className="psychometric-section-note">
-                  FILSCORE Personal Net Worth Statement. Set As Of date, then encode values for suggested accounts.
+                  FILSCORE Personal Net Worth Statement. Set the As Of Date, choose your
+                  financial goal, enter your target amount and target period, then encode
+                  your Assets and Liabilities.
                 </p>
 
-                <div className="budget-dashboard-category-summary" style={{ marginBottom: '8px' }}>
+                <div className="budget-dashboard-category-summary" style={{ marginBottom: '10px' }}>
                   <div className="budget-dashboard-category-summary-card">
                     <span>FILSCORE</span>
                     <strong>Personal Net Worth Statement</strong>
                   </div>
+
                   <div className="budget-dashboard-category-summary-card">
-                    <span>Accounts</span>
-                    <strong>A to G Sections</strong>
-                  </div>
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Financial Goals</span>
+                    <span>Financial Goal</span>
                     <select
                       value={selectedFinancialGoal}
                       onChange={(event) => setSelectedFinancialGoal(event.target.value)}
                       className="budget-dashboard-category-input"
-                      aria-label="Financial goals"
                     >
-                      <option value="">Select financial goal</option>
+                      <option value="">Select Financial Goal</option>
                       {FINANCIAL_GOAL_OPTIONS.map((goal) => (
                         <option key={goal} value={goal}>
                           {goal}
                         </option>
                       ))}
                     </select>
-                     <div className="budget-dashboard-category-summary-card">
-                    <span>Suggested Accounts</span>
-                    <strong>A to G Sections</strong>
                   </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Target Amount</span>
+                    <NumericFormat
+                      value={targetAmount}
+                      thousandSeparator
+                      decimalScale={2}
+                      fixedDecimalScale
+                      allowNegative={false}
+                      prefix="₱ "
+                      className="budget-dashboard-category-input"
+                      onValueChange={(values) =>
+                        setTargetAmount(values.floatValue || 0)
+                      }
+                    />
+                  </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Months to Achieve</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Months"
+                      value={targetMonths}
+                      className="budget-dashboard-category-input"
+                      onChange={(event) => setTargetMonths(Number(event.target.value))}
+                    />
+                  </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Monthly Savings Required</span>
+                    <strong
+                      style={{
+                        color: '#0d6efd',
+                        fontSize: '18px',
+                        marginTop: '8px',
+                      }}
+                    >
+                      ₱{' '}
+                      {(targetMonths > 0
+                        ? targetAmount / targetMonths
+                        : 0).toLocaleString('en-PH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </strong>
                   </div>
                 </div>
 
