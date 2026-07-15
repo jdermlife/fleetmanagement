@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 
 import {
   fetchAutosaveDraft,
@@ -323,6 +324,8 @@ export default function NetWorthPositioningPage() {
   const [asOfDate, setAsOfDate] = useState('');
   const [currency, setCurrency] = useState('PHP');
   const [selectedFinancialGoal, setSelectedFinancialGoal] = useState('');
+  const [targetAmount, setTargetAmount] = useState(0);
+  const [targetMonths, setTargetMonths] = useState(12);
 
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [monthlyExpenseAllocationDraft, setMonthlyExpenseAllocationDraft] = useState<Record<string, string>>({});
@@ -540,7 +543,11 @@ export default function NetWorthPositioningPage() {
     () => setupRows.filter((row) => row.section === 'liabilities').reduce((sum, row) => sum + row.amount, 0),
     [setupRows],
   );
-  const setupNetWorth = setupAssetsTotal - setupLiabilitiesTotal;
+  const netWorth = setupAssetsTotal - setupLiabilitiesTotal;
+  const setupNetWorth = netWorth;
+  const goalProgress = targetAmount > 0
+    ? Math.max(0, Math.min((netWorth / targetAmount) * 100, 100))
+    : 0;
 
   const stepCompletionById = useMemo<Record<WorkflowStep, number>>(() => {
     const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
@@ -590,6 +597,7 @@ export default function NetWorthPositioningPage() {
     setupRows,
     varianceNotes,
   ]);
+  const isStage3Complete = stepCompletionById[3] === 100;
 
   const handleNormalizeMonthlyExpenseAllocation = () => {
     const currentTotal = monthlyExpenseRows.reduce((sum, row) => {
@@ -951,37 +959,93 @@ export default function NetWorthPositioningPage() {
               <div className="budget-workflow-step-block">
                 <h3 className="workflow-duplicate-step-title">Step 1: Set As Of Date</h3>
                 <p className="psychometric-section-note">
-                  FILSCORE Personal Net Worth Statement. Set As Of date, then encode values for suggested accounts.
+                  FILSCORE Personal Net Worth Statement. Set the As Of Date, choose your financial goal, enter your
+                  target amount and target period, then encode your Assets and Liabilities.
                 </p>
 
-                <div className="budget-dashboard-category-summary" style={{ marginBottom: '8px' }}>
+                <div className="budget-dashboard-category-summary" style={{ marginBottom: '10px' }}>
                   <div className="budget-dashboard-category-summary-card">
                     <span>FILSCORE</span>
                     <strong>Personal Net Worth Statement</strong>
                   </div>
+
                   <div className="budget-dashboard-category-summary-card">
-                    <span>Suggested Accounts</span>
-                    <strong>A to G Sections</strong>
-                  </div>
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Financial Goals</span>
+                    <span>Financial Goal</span>
                     <select
                       value={selectedFinancialGoal}
                       onChange={(event) => setSelectedFinancialGoal(event.target.value)}
                       className="budget-dashboard-category-input"
-                      aria-label="Financial goals"
+                      aria-label="Financial goal"
                     >
-                      <option value="">Select financial goal</option>
+                      <option value="">Select Financial Goal</option>
                       {FINANCIAL_GOAL_OPTIONS.map((goal) => (
                         <option key={goal} value={goal}>
                           {goal}
                         </option>
                       ))}
                     </select>
-                     <div className="budget-dashboard-category-summary-card">
-                    <span>Suggested Accounts</span>
-                    <strong>A to G Sections</strong>
                   </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Target Amount</span>
+                    <NumericFormat
+                      value={targetAmount}
+                      thousandSeparator
+                      decimalScale={2}
+                      fixedDecimalScale
+                      allowNegative={false}
+                      prefix="₱ "
+                      className="budget-dashboard-category-input"
+                      aria-label="Target amount"
+                      onValueChange={(values) => setTargetAmount(values.floatValue || 0)}
+                    />
+                  </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Months to Achieve</span>
+                    <input
+                      type="number"
+                      min="1"
+                      placeholder="Months"
+                      value={targetMonths}
+                      className="budget-dashboard-category-input"
+                      aria-label="Months to achieve financial goal"
+                      onChange={(event) => setTargetMonths(Number(event.target.value))}
+                    />
+                  </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Monthly Savings Required</span>
+                    <strong
+                      style={{
+                        color: '#0d6efd',
+                        fontSize: '18px',
+                        marginTop: '8px',
+                      }}
+                    >
+                      ₱{' '}
+                      {(targetMonths > 0 ? targetAmount / targetMonths : 0).toLocaleString('en-PH', {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}
+                    </strong>
+                  </div>
+
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Current Net Worth</span>
+                    <strong>{formatSignedCurrency(netWorth)}</strong>
+                    <span>Goal Progress</span>
+                    <strong>{Math.round(goalProgress)}%</strong>
+                    <div
+                      className="psychometric-progress-track budget-dashboard-progress-track"
+                      role="progressbar"
+                      aria-label="Financial goal progress"
+                      aria-valuemin={0}
+                      aria-valuemax={100}
+                      aria-valuenow={Math.round(goalProgress)}
+                    >
+                      <div className="psychometric-progress-bar" style={{ width: `${goalProgress}%` }} />
+                    </div>
                   </div>
                 </div>
 
@@ -1298,6 +1362,11 @@ export default function NetWorthPositioningPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
+                  {isStage3Complete ? (
+                    <button type="button" className="psychometric-reset-button" onClick={() => window.print()}>
+                      Print / Save as PDF
+                    </button>
+                  ) : null}
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>

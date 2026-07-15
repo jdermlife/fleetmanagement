@@ -4197,6 +4197,22 @@ th { color: var(--dark-gold); }
   }
 }
 
+@media print {
+  .networth-dashboard-page .budget-workflow-inline-actions,
+  .networth-dashboard-page .budget-dashboard-side,
+  .networth-dashboard-page .auth-link-button {
+    display: none !important;
+  }
+
+  .networth-dashboard-page .budget-dashboard-layout {
+    display: block;
+  }
+
+  .networth-dashboard-page .budget-dashboard-main {
+    width: 100%;
+  }
+}
+
 @media (max-width: 520px) {
   :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table-wrap {
     overflow: visible;
