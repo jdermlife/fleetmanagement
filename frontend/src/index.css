@@ -20,8 +20,13 @@
   --app-menu-group-governance-text: #fed7aa;
   --app-menu-group-account-bg: #1f2937;
   --app-menu-group-account-text: #e2e8f0;
+  --app-menu-group-account-bg-strong: linear-gradient(135deg, #111827, #1f2937);
+  --app-menu-group-account-text-strong: #f8fafc;
   --app-menu-link-bg: rgba(255, 255, 255, 0.05);
   --app-menu-link-text: #ffffff;
+  --app-menu-link-account-bg: rgba(100, 116, 139, 0.34);
+  --app-menu-link-account-text: #f8fafc;
+  --app-menu-link-account-hover-bg: rgba(148, 163, 184, 0.42);
   --app-menu-link-ai-bg: linear-gradient(135deg, #0f766e, #0891b2);
   --app-menu-link-admin-bg: rgba(120, 76, 153, 0.35);
   --app-menu-link-governance-bg: linear-gradient(135deg, #92400e, #b45309);
@@ -91,8 +96,13 @@
   --app-menu-group-governance-text: #102a43;
   --app-menu-group-account-bg: #ffffff;
   --app-menu-group-account-text: #12304f;
+  --app-menu-group-account-bg-strong: linear-gradient(135deg, #dbeafe, #bfdbfe);
+  --app-menu-group-account-text-strong: #12304f;
   --app-menu-link-bg: rgba(255, 255, 255, 0.14);
   --app-menu-link-text: #ffffff;
+  --app-menu-link-account-bg: rgba(219, 234, 254, 0.92);
+  --app-menu-link-account-text: #102a43;
+  --app-menu-link-account-hover-bg: rgba(191, 219, 254, 1);
   --app-menu-link-ai-bg: linear-gradient(135deg, #2563eb, #dc2626);
   --app-menu-link-admin-bg: rgba(255, 243, 199, 0.2);
   --app-menu-link-governance-bg: linear-gradient(135deg, #facc15, #f59e0b);
@@ -162,8 +172,13 @@
   --app-menu-group-governance-text: #0f2547;
   --app-menu-group-account-bg: #ffffff;
   --app-menu-group-account-text: #0f2547;
+  --app-menu-group-account-bg-strong: linear-gradient(135deg, #fff8d6, #ffffff);
+  --app-menu-group-account-text-strong: #0f2547;
   --app-menu-link-bg: rgba(255, 255, 255, 0.14);
   --app-menu-link-text: #ffffff;
+  --app-menu-link-account-bg: rgba(255, 248, 214, 0.92);
+  --app-menu-link-account-text: #0f2547;
+  --app-menu-link-account-hover-bg: #fff3b8;
   --app-menu-link-ai-bg: linear-gradient(135deg, rgba(15, 118, 110, 0.88), rgba(11, 143, 120, 0.82));
   --app-menu-link-admin-bg: rgba(255, 248, 214, 0.16);
   --app-menu-link-governance-bg: linear-gradient(135deg, #fcd116, #ffd84a);
@@ -704,6 +719,23 @@ textarea {
   font-size: 0.95rem;
   font-weight: 600;
   letter-spacing: 0.01em;
+}
+
+.app-menu-group-account {
+  background: var(--app-menu-group-account-bg-strong) !important;
+  color: var(--app-menu-group-account-text-strong) !important;
+  font-size: 0.72rem;
+}
+
+.app-menu-link-account {
+  background: var(--app-menu-link-account-bg) !important;
+  color: var(--app-menu-link-account-text) !important;
+  font-size: 0.84rem;
+}
+
+.app-menu-link-account:hover,
+.app-menu-link-account:focus {
+  background: var(--app-menu-link-account-hover-bg) !important;
 }
 
 .lending-scorecard-page {
