@@ -852,17 +852,20 @@ export default function NetWorthPositioningPage() {
       </section>
 
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
-        <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>What do you own and what do you owe?</span>
-          <strong>Build Your Net Worth</strong>
-          <small>Record All Assets. Record All Liabilities.Calculate Net Worth</small>
-        </article>
-
-        <article className="psychometric-summary-card">
+         <article className="psychometric-summary-card">
           <span>Where do you want to be?</span>
           <strong>Set Your Financial Goals</strong>
           <small>Create Financial Goals.  Assign Priorities. Set target amounts and dealine.</small>
         </article>
+ 
+ 
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>What do you own and what do you owe?</span>
+          <strong>Assess and Establish Existing Net Worth</strong>
+          <small>Record All Assets. Record All Liabilities.Calculate Net Worth</small>
+        </article>
+
+
 
         <article className="psychometric-summary-card">
           <span>How will you achieve your goals?</span>
