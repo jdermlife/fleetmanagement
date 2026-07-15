@@ -246,6 +246,64 @@ export default function BillReminderPage() {
   const completionPercent = Math.round((step / workflowSteps.length) * 100);
   const stepperButtonClass = 'loan-stepper-button';
 
+  const stepCompletionById = useMemo<Record<WorkflowStep, number>>(() => {
+    const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+    const periodFieldsCompleted = [periodStart, periodEnd].filter((value) => !isBlank(value)).length;
+    const periodCompletion = periodFieldsCompleted / 2;
+
+    const billerCompletion = draftBillers.length === 0
+      ? 0
+      : draftBillers.reduce((sum, biller) => {
+        const completedFields = [
+          !isBlank(biller.company),
+          !isBlank(biller.utilityType),
+          !isBlank(biller.dateCovered),
+          biller.budgetedAmount > 0,
+        ].filter(Boolean).length;
+        return sum + (completedFields / 4);
+      }, 0) / draftBillers.length;
+
+    const step1Percent = clamp(((periodCompletion * 0.4) + (billerCompletion * 0.6)) * 100);
+
+    const allocationProvided = draftBillers.some((biller) => !isBlank(billerAllocationDraft[biller.id]));
+    const allocationTotal = draftBillers.reduce((sum, biller) => {
+      return sum + toSafeNumber(billerAllocationDraft[biller.id] ?? '');
+    }, 0);
+    const allocationBalanced = draftBillers.length === 0 || Math.abs(100 - allocationTotal) < 0.01;
+    const hasDraftBillers = draftBillers.length > 0;
+    const setupSaved = savedSetup.length > 0;
+    const baselineChecks = [hasDraftBillers, allocationProvided, allocationBalanced, setupSaved].filter(Boolean).length;
+    const step2Percent = setupSaved ? 100 : clamp((baselineChecks / 4) * 100);
+
+    const setupCount = savedSetup.length;
+    const actualCompleted = setupCount > 0
+      ? savedSetup.filter((biller) => !isBlank(actualEntries[biller.id])).length / setupCount
+      : 0;
+    const notesCompleted = setupCount > 0
+      ? savedSetup.filter((biller) => !isBlank(varianceNotes[biller.id])).length / setupCount
+      : 0;
+    const hasSavedVarianceRecord = !isBlank(step3RecordSavedAt);
+    const step3Percent = setupCount === 0
+      ? 0
+      : clamp(((actualCompleted * 0.7) + (notesCompleted * 0.2) + (hasSavedVarianceRecord ? 0.1 : 0)) * 100);
+
+    return {
+      1: step1Percent,
+      2: step2Percent,
+      3: step3Percent,
+    };
+  }, [
+    actualEntries,
+    billerAllocationDraft,
+    draftBillers,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    step3RecordSavedAt,
+    varianceNotes,
+  ]);
+
   const draftCards = useMemo(
     () =>
       [...draftBillers]
@@ -1129,7 +1187,8 @@ export default function BillReminderPage() {
               {workflowSteps.map((workflowStep) => {
                 const isActive = step === workflowStep.id;
                 const isCompleted = step > workflowStep.id;
-                const statusLabel = isActive ? 'Current step' : isCompleted ? 'Completed' : 'Pending';
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
 
                 return (
                   <button
@@ -1143,7 +1202,14 @@ export default function BillReminderPage() {
                     </div>
                     <div className="lending-psychometric-step-copy">
                       <strong>{workflowStep.label}</strong>
-                      <span>{`${statusLabel} · ${workflowStep.description}`}</span>
+                      <span>{statusLabel}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%` }}
+                        />
+                      </div>
+                      <small>{workflowStep.description}</small>
                     </div>
                   </button>
                 );

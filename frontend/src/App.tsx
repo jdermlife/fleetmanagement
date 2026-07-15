@@ -264,7 +264,9 @@ const visibleMenuLinks = isBorrowerSubscriber
           subscriberAlwaysVisibleMenus.includes(item.id) ||
           !subscriberHiddenMenus.includes(item.id),
       )
-    : menuLinks
+    : menuLinks.filter(
+      (item) => isAdminUser || (!adminMenus.includes(item.id) && !governanceMenus.includes(item.id)),
+    )
 
 const fleetMenus = visibleMenuLinks.filter(
   (item) =>
@@ -495,7 +497,7 @@ const isSignedIn = authReady && Boolean(currentUser)
       </>
     )}
 
-    {adminMenuItems.length > 0 && (
+    {isAdminUser && adminMenuItems.length > 0 && (
       <>
         <div
           className="app-menu-group app-menu-group-account"
@@ -531,7 +533,7 @@ const isSignedIn = authReady && Boolean(currentUser)
       </>
     )}
 
-    {!isBorrowerSubscriber && !isLenderSubscriber && (
+    {isAdminUser && govMenuItems.length > 0 && (
       <>
         {/* GOVERNANCE */}
 
@@ -1146,7 +1148,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/audit-trail"
               element={
-                <ProtectedRoute permissions={['read:audit_logs']}>
+                <ProtectedRoute roles={['admin']} permissions={['read:audit_logs']}>
                   <AuditTrailPanel />
                 </ProtectedRoute>
               }
@@ -1156,7 +1158,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/risk-management"
               element={
-                <ProtectedRoute permissions={['read:audit_logs']}>
+                <ProtectedRoute roles={['admin']} permissions={['read:audit_logs']}>
                   <RiskManagementPage />
                 </ProtectedRoute>
               }
@@ -1166,7 +1168,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/compliance"
               element={
-                <ProtectedRoute permissions={['read:audit_logs']}>
+                <ProtectedRoute roles={['admin']} permissions={['read:audit_logs']}>
                   <CompliancePage />
                 </ProtectedRoute>
               }

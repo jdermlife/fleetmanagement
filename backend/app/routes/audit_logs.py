@@ -9,7 +9,7 @@ router = APIRouter()
 
 @router.get(
     "/audit-logs",
-    dependencies=[Depends(require_roles("admin", "auditor", "credit_manager"))],
+    dependencies=[Depends(require_roles("admin"))],
 )
 def list_audit_logs(
     limit: int = Query(100, ge=1, le=500),

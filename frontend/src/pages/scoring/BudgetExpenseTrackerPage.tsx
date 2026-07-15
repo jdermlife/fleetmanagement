@@ -263,6 +263,53 @@ export default function BudgetExpenseTrackerPage() {
   const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Budget Workflow';
   const completionPercent = Math.round((step / workflowSteps.length) * 100);
 
+  const stepCompletionById = useMemo<Record<WorkflowStep, number>>(() => {
+    const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+    const periodFieldsCompleted = [periodStart, periodEnd].filter((value) => !isBlank(value)).length;
+    const step1Percent = clamp((periodFieldsCompleted / 2) * 100);
+
+    const incomeProvided = Object.values(incomeDraft).some((value) => !isBlank(value));
+    const expenseProvided = snapshot.categoryItems.some((item) => !isBlank(expenseDraft[item.id]));
+    const allocationProvided = snapshot.categoryItems.some((item) => !isBlank(expenseAllocationDraft[item.id]));
+    const allocationTotal = snapshot.categoryItems.reduce((total, item) => {
+      return total + toSafeNumber(expenseAllocationDraft[item.id] ?? '');
+    }, 0);
+    const allocationBalanced = allocationProvided && Math.abs(100 - allocationTotal) < 0.01;
+    const setupSaved = savedSetup.length > 0;
+    const step2Checks = [incomeProvided, expenseProvided, allocationProvided, allocationBalanced, setupSaved].filter(Boolean).length;
+    const step2Percent = setupSaved ? 100 : clamp((step2Checks / 5) * 100);
+
+    const setupCount = savedSetup.length;
+    const actualCompleted = setupCount > 0
+      ? savedSetup.filter((line) => !isBlank(actualEntries[line.id])).length / setupCount
+      : 0;
+    const notesCompleted = setupCount > 0
+      ? savedSetup.filter((line) => !isBlank(varianceNotes[line.id])).length / setupCount
+      : 0;
+    const hasActions = !isBlank(actionsToBeTaken);
+    const step3Percent = setupCount === 0
+      ? 0
+      : clamp(((actualCompleted * 0.7) + (notesCompleted * 0.2) + (hasActions ? 0.1 : 0)) * 100);
+
+    return {
+      1: step1Percent,
+      2: step2Percent,
+      3: step3Percent,
+    };
+  }, [
+    actionsToBeTaken,
+    actualEntries,
+    expenseAllocationDraft,
+    expenseDraft,
+    incomeDraft,
+    periodEnd,
+    periodStart,
+    savedSetup,
+    snapshot.categoryItems,
+    varianceNotes,
+  ]);
+
   const budgetSetupTotals = useMemo(() => {
     const incomeTotal = toSafeNumber(incomeDraft.salary)
       + toSafeNumber(incomeDraft.business)
@@ -1113,7 +1160,8 @@ export default function BudgetExpenseTrackerPage() {
               {workflowSteps.map((workflowStep) => {
                 const isActive = step === workflowStep.id;
                 const isCompleted = step > workflowStep.id;
-                const statusLabel = isActive ? 'Current step' : isCompleted ? 'Completed' : 'Pending';
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
 
                 return (
                   <button
@@ -1128,6 +1176,12 @@ export default function BudgetExpenseTrackerPage() {
                     <div className="budget-workflow-step-copy">
                       <strong>{workflowStep.label}</strong>
                       <span>{statusLabel}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%` }}
+                        />
+                      </div>
                       <small>{workflowStep.description}</small>
                     </div>
                   </button>
