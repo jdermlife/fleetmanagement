@@ -319,6 +319,8 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 
 export default function NetWorthPositioningPage() {
   const INITIAL_VISIBLE_SETUP_ROWS = 3;
+  const REMAINING_ROWS_BATCH_SIZE = 8;
+  const DARK_GOLD_COLOR = '#B8860B';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
     () => buildNetWorthPositioningSnapshot(applications),
@@ -340,7 +342,8 @@ export default function NetWorthPositioningPage() {
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [draftRevision, setDraftRevision] = useState<number | null>(null);
-  const [expandedSetupRows, setExpandedSetupRows] = useState<Record<string, boolean>>({});
+  const [visibleRemainingRowsCount, setVisibleRemainingRowsCount] = useState(0);
+  const [isStep2SetupReviewExpanded, setIsStep2SetupReviewExpanded] = useState(false);
 
   const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
     step,
@@ -509,11 +512,19 @@ export default function NetWorthPositioningPage() {
     [setupRows],
   );
 
-  const handleToggleSetupRow = useCallback((rowId: string) => {
-    setExpandedSetupRows((previous) => ({
-      ...previous,
-      [rowId]: !previous[rowId],
-    }));
+  const visibleRemainingSetupRows = useMemo(
+    () => accordionSetupRows.slice(0, visibleRemainingRowsCount),
+    [accordionSetupRows, visibleRemainingRowsCount],
+  );
+
+  const hiddenRemainingRowsCount = Math.max(accordionSetupRows.length - visibleRemainingRowsCount, 0);
+
+  const handleShowMoreRemainingRows = useCallback(() => {
+    setVisibleRemainingRowsCount((previous) => Math.min(previous + REMAINING_ROWS_BATCH_SIZE, accordionSetupRows.length));
+  }, [accordionSetupRows.length]);
+
+  const handleHideRemainingRows = useCallback(() => {
+    setVisibleRemainingRowsCount(0);
   }, []);
 
   const monthlyExpenseTotal = useMemo(
@@ -778,6 +789,66 @@ export default function NetWorthPositioningPage() {
     };
   }, [varianceRows]);
 
+  const goalForecast = useMemo(() => {
+    const likelyAchievableThreshold = 1.1;
+    const atRiskThreshold = 0.8;
+    const baselineNetWorth = savedSetup.length > 0 ? totals.setupNetWorth : setupNetWorth;
+    const netWorthVariancePerCycle = totals.projectedNetWorth - totals.setupNetWorth;
+    const sanitizedMonths = Number.isFinite(targetMonths) && targetMonths > 0 ? Math.floor(targetMonths) : 0;
+    const effectiveTargetAmount = toSafeNumber(targetAmount);
+    const remainingGap = Math.max(effectiveTargetAmount - baselineNetWorth, 0);
+    const projectedGainAtDeadline = Math.max(netWorthVariancePerCycle, 0) * sanitizedMonths;
+    const projectedNetWorthAtDeadline = baselineNetWorth + (netWorthVariancePerCycle * sanitizedMonths);
+    const requiredMonthlyGain = sanitizedMonths > 0 ? remainingGap / sanitizedMonths : 0;
+    const monthsToGoal = netWorthVariancePerCycle > 0 && remainingGap > 0
+      ? Math.ceil(remainingGap / netWorthVariancePerCycle)
+      : null;
+
+    const progressRatio = remainingGap === 0
+      ? 1
+      : projectedGainAtDeadline / remainingGap;
+    const possibilityPercent = Math.max(0, Math.min(100, Math.round(progressRatio * 100)));
+
+    let status: 'Goal already achieved' | 'Likely achievable' | 'Possible but at risk' | 'Unlikely within timeframe' | 'Need target setup';
+    let statusColor: string;
+
+    if (effectiveTargetAmount <= 0 || sanitizedMonths <= 0) {
+      status = 'Need target setup';
+      statusColor = '#b45309';
+    } else if (remainingGap === 0) {
+      status = 'Goal already achieved';
+      statusColor = '#047857';
+    } else if (progressRatio >= likelyAchievableThreshold) {
+      status = 'Likely achievable';
+      statusColor = '#047857';
+    } else if (progressRatio >= atRiskThreshold) {
+      status = 'Possible but at risk';
+      statusColor = '#b45309';
+    } else {
+      status = 'Unlikely within timeframe';
+      statusColor = '#b91c1c';
+    }
+
+    return {
+      baselineNetWorth,
+      netWorthVariancePerCycle,
+      sanitizedMonths,
+      effectiveTargetAmount,
+      remainingGap,
+      projectedNetWorthAtDeadline,
+      requiredMonthlyGain,
+      monthsToGoal,
+      possibilityPercent,
+      likelyAchievableThreshold,
+      atRiskThreshold,
+      status,
+      statusColor,
+      isAchievable: effectiveTargetAmount > 0 && sanitizedMonths > 0 && remainingGap === 0
+        ? true
+        : effectiveTargetAmount > 0 && sanitizedMonths > 0 && progressRatio >= 1,
+    };
+  }, [savedSetup.length, setupNetWorth, targetAmount, targetMonths, totals.projectedNetWorth, totals.setupNetWorth]);
+
   const topVarianceRows = useMemo(() => {
     return varianceRows
       .filter((row) => row.hasActual)
@@ -865,9 +936,8 @@ export default function NetWorthPositioningPage() {
           </div>
         </div>
         <p className="psychometric-section-note">
-          
+          Set your goals, encode setup amounts, then compare actual values to monitor variance.
         </p>
-        
       </section>
 
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
@@ -900,18 +970,6 @@ export default function NetWorthPositioningPage() {
         </article>
       </section>
 
-      <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker"></span>
-            <h2>Let's do the work. Follow the workflow</h2>
-          </div>
-        </div>
-        <p className="psychometric-section-note">
-          
-        </p>
-        
-      </section>
       <section className="psychometric-summary-grid budget-dashboard-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
@@ -932,7 +990,7 @@ export default function NetWorthPositioningPage() {
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Setup Net Worth</span>
+          <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
           <strong>{formatSignedCurrency(setupNetWorth)}</strong>
           <small>{snapshot.performanceBand}</small>
         </article>
@@ -1090,10 +1148,10 @@ export default function NetWorthPositioningPage() {
                 </div>
 
                 <div className="psychometric-scale-table-wrap">
-                  <table className="psychometric-scale-table">
+                  <table className="psychometric-scale-table networth-compact-table">
                       <colgroup>
                       <col style={{ width: '15%' }} />   {/* Statement Section */}
-                      <col style={{ width: '25%' }} />   {/* Suggested Account Group */}
+                      <col style={{ width: '25%' }} />   {/* Account Group */}
                       <col style={{ width: '25%' }} />   {/* Line Item */}
                       <col style={{ width: '25%' }} />   {/* Setup Amount */}
                       <col style={{ width: '10%' }} />   {/* Remarks */}
@@ -1102,7 +1160,7 @@ export default function NetWorthPositioningPage() {
                     <thead>
                       <tr>
                         <th>Statement Section</th>
-                        <th>Suggested Account Group</th>
+                        <th> Account Group</th>
                         <th>Line Item</th>
                         <th>Setup Amount</th>
                       </tr>
@@ -1111,8 +1169,15 @@ export default function NetWorthPositioningPage() {
                       {alwaysVisibleSetupRows.map((row) => (
                         <tr key={row.id}>
                           <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
-                          <td data-label="Suggested Account Group">{row.category}</td>
-                          <td data-label="Line Item">{row.label}</td>
+                          <td data-label="Account Group">{row.category}</td>
+                          <td data-label="Line Item">
+                            <div className="networth-line-item-primary">{row.label}</div>
+                            <details className="networth-line-item-details">
+                              <summary>View details</summary>
+                              <div><strong>Statement Section:</strong> {getSectionLabel(row.section)}</div>
+                              <div><strong>Account Group:</strong> {row.category}</div>
+                            </details>
+                          </td>
                           <td data-label="Setup Amount">
                             {row.autoGenerated ? (
                               <span className="psychometric-section-note">Automatically Generated</span>
@@ -1141,70 +1206,82 @@ export default function NetWorthPositioningPage() {
                 </div>
 
                 {accordionSetupRows.length > 0 ? (
-                  <div className="psychometric-scale-table-wrap" style={{ marginTop: '12px' }}>
-                    <table className="psychometric-scale-table">
-                      <thead>
-                        <tr>
-                          <th>Additional Statement Rows (Click to Expand)</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {accordionSetupRows.map((row) => {
-                          const isExpanded = expandedSetupRows[row.id] ?? false;
+                  <div style={{ marginTop: '12px' }}>
+                    <div className="budget-workflow-inline-actions" style={{ marginBottom: '10px' }}>
+                      <button
+                        type="button"
+                        className="budget-dashboard-category-reset"
+                        onClick={handleShowMoreRemainingRows}
+                        disabled={hiddenRemainingRowsCount === 0}
+                      >
+                        {visibleRemainingRowsCount === 0
+                          ? `Show Remaining Accounts (${accordionSetupRows.length})`
+                          : hiddenRemainingRowsCount > 0
+                            ? `Show ${Math.min(REMAINING_ROWS_BATCH_SIZE, hiddenRemainingRowsCount)} More Remaining Accounts`
+                            : 'All Remaining Accounts Shown'}
+                      </button>
+                      {visibleRemainingRowsCount > 0 ? (
+                        <button
+                          type="button"
+                          className="budget-dashboard-category-reset"
+                          onClick={handleHideRemainingRows}
+                        >
+                          Hide Remaining Accounts
+                        </button>
+                      ) : null}
+                    </div>
 
-                          return (
-                            <tr key={row.id}>
-                              <td>
-                                <button
-                                  type="button"
-                                  className="budget-dashboard-category-reset"
-                                  onClick={() => handleToggleSetupRow(row.id)}
-                                  style={{ width: '100%', textAlign: 'left', marginBottom: isExpanded ? '8px' : '0' }}
-                                  aria-expanded={isExpanded}
-                                  aria-controls={`statement-row-accordion-${row.id}`}
-                                >
-                                  {isExpanded ? 'Hide' : 'Show'} {row.label}
-                                </button>
-
-                                {isExpanded ? (
-                                  <div id={`statement-row-accordion-${row.id}`}>
-                                    <div style={{ marginBottom: '4px' }}>
-                                      <strong>Statement Section:</strong> {getSectionLabel(row.section)}
-                                    </div>
-                                    <div style={{ marginBottom: '4px' }}>
-                                      <strong>Suggested Account Group:</strong> {row.category}
-                                    </div>
-                                    <div style={{ marginBottom: '8px' }}>
-                                      <strong>Line Item:</strong> {row.label}
-                                    </div>
-
-                                    {row.autoGenerated ? (
-                                      <span className="psychometric-section-note">Automatically Generated</span>
-                                    ) : (
-                                      <input
-                                        type="number"
-                                        min={0}
-                                        step="0.01"
-                                        value={row.raw}
-                                        onChange={(event) => {
-                                          setAmounts((previous) => ({
-                                            ...previous,
-                                            [row.id]: event.target.value,
-                                          }));
-                                        }}
-                                        className="budget-dashboard-category-input"
-                                        placeholder="0"
-                                        aria-label={`${row.label} setup amount`}
-                                      />
-                                    )}
-                                  </div>
-                                ) : null}
-                              </td>
+                    {visibleRemainingSetupRows.length > 0 ? (
+                      <div className="psychometric-scale-table-wrap">
+                        <table className="psychometric-scale-table networth-compact-table">
+                          <thead>
+                            <tr>
+                              <th style={{ color: DARK_GOLD_COLOR }}>Remaining Accounts</th>
+                              <th>Account Group</th>
+                              <th>Line Item</th>
+                              <th>Setup Amount</th>
                             </tr>
-                          );
-                        })}
-                      </tbody>
-                    </table>
+                          </thead>
+                          <tbody>
+                            {visibleRemainingSetupRows.map((row) => (
+                              <tr key={row.id}>
+                                <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
+                                <td data-label="Account Group">{row.category}</td>
+                                <td data-label="Line Item">
+                                  <div className="networth-line-item-primary">{row.label}</div>
+                                  <details className="networth-line-item-details">
+                                    <summary>View details</summary>
+                                    <div><strong>Statement Section:</strong> {getSectionLabel(row.section)}</div>
+                                    <div><strong>Account Group:</strong> {row.category}</div>
+                                  </details>
+                                </td>
+                                <td data-label="Setup Amount">
+                                  {row.autoGenerated ? (
+                                    <span className="psychometric-section-note">Automatically Generated</span>
+                                  ) : (
+                                    <input
+                                      type="number"
+                                      min={0}
+                                      step="0.01"
+                                      value={row.raw}
+                                      onChange={(event) => {
+                                        setAmounts((previous) => ({
+                                          ...previous,
+                                          [row.id]: event.target.value,
+                                        }));
+                                      }}
+                                      className="budget-dashboard-category-input"
+                                      placeholder="0"
+                                      aria-label={`${row.label} setup amount`}
+                                    />
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
 
@@ -1240,7 +1317,7 @@ export default function NetWorthPositioningPage() {
                     <strong>{setupRows.filter((row) => !row.autoGenerated && row.amount > 0).length}</strong>
                   </div>
                   <div className="budget-dashboard-category-summary-card">
-                    <span>Setup Net Worth</span>
+                    <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
                     <strong>{formatSignedCurrency(setupNetWorth)}</strong>
                   </div>
                 </div>
@@ -1310,35 +1387,47 @@ export default function NetWorthPositioningPage() {
                   </table>
                 </div>
 
-                <div className="psychometric-scale-table-wrap">
-                  <table className="psychometric-scale-table">
-                    <thead>
-                      <tr>
-                        <th>Statement Section</th>
-                        <th>Suggested Account Group</th>
-                        <th>Line Item</th>
-                        <th>Setup Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {setupRows
-                        .filter((row) => !row.autoGenerated && row.amount > 0)
-                        .map((row) => (
-                          <tr key={row.id}>
-                            <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
-                            <td data-label="Suggested Account Group">{row.category}</td>
-                            <td data-label="Line Item">{row.label}</td>
-                            <td data-label="Setup Amount">{formatCurrency(row.amount)}</td>
-                          </tr>
-                        ))}
-                      {setupRows.filter((row) => !row.autoGenerated && row.amount > 0).length === 0 ? (
-                        <tr>
-                          <td colSpan={4}>No setup lines yet. Return to Step 1 and add values.</td>
-                        </tr>
-                      ) : null}
-                    </tbody>
-                  </table>
+                <div className="budget-workflow-inline-actions" style={{ marginTop: '8px' }}>
+                  <button
+                    type="button"
+                    className="budget-dashboard-category-reset"
+                    onClick={() => setIsStep2SetupReviewExpanded((previous) => !previous)}
+                  >
+                    {isStep2SetupReviewExpanded ? 'Hide Setup Lines Review' : 'Show Setup Lines Review'}
+                  </button>
                 </div>
+
+                {isStep2SetupReviewExpanded ? (
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table">
+                      <thead>
+                        <tr>
+                          <th>Statement Section</th>
+                          <th>Account Group</th>
+                          <th>Line Item</th>
+                          <th>Setup Amount</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {setupRows
+                          .filter((row) => !row.autoGenerated && row.amount > 0)
+                          .map((row) => (
+                            <tr key={row.id}>
+                              <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
+                              <td data-label="Account Group">{row.category}</td>
+                              <td data-label="Line Item">{row.label}</td>
+                              <td data-label="Setup Amount">{formatCurrency(row.amount)}</td>
+                            </tr>
+                          ))}
+                        {setupRows.filter((row) => !row.autoGenerated && row.amount > 0).length === 0 ? (
+                          <tr>
+                            <td colSpan={4}>No setup lines yet. Return to Step 1 and add values.</td>
+                          </tr>
+                        ) : null}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : null}
 
                 <div className="budget-workflow-inline-actions">
                   <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
@@ -1483,7 +1572,7 @@ export default function NetWorthPositioningPage() {
                 <article className="budget-workflow-ai-card">
                   <h3>Setup vs Projected Net Worth Graph</h3>
                   <div className="budget-workflow-graph-row">
-                    <span>Setup Net Worth</span>
+                    <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
                     <div className="budget-workflow-graph-track">
                       <div
                         className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
@@ -1629,7 +1718,7 @@ export default function NetWorthPositioningPage() {
                 <strong>{savedSetup.length || setupRows.filter((row) => !row.autoGenerated && row.amount > 0).length}</strong>
               </li>
               <li>
-                <span>Setup Net Worth</span>
+                <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
                 <strong>{formatSignedCurrency(savedSetup.length > 0 ? totals.setupNetWorth : setupNetWorth)}</strong>
               </li>
             </ul>
@@ -1652,6 +1741,56 @@ export default function NetWorthPositioningPage() {
                 <strong>{snapshot.sourceApplicationNo || 'N/A'}</strong>
               </li>
             </ul>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Position vs Goal</span>
+            <h2 style={{ color: goalForecast.statusColor }}>{goalForecast.status}</h2>
+            <ul className="psychometric-breakdown-list">
+              <li>
+                <span>Goal Target</span>
+                <strong>{formatCurrency(goalForecast.effectiveTargetAmount)}</strong>
+              </li>
+              <li>
+                <span>Time Frame</span>
+                <strong>{goalForecast.sanitizedMonths > 0 ? `${goalForecast.sanitizedMonths} months` : 'Not set'}</strong>
+              </li>
+              <li>
+                <span>Current Net Worth Position</span>
+                <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
+              </li>
+              <li>
+                <span>Net Worth Variance (Per Cycle)</span>
+                <strong>{formatSignedCurrency(goalForecast.netWorthVariancePerCycle)}</strong>
+              </li>
+              <li>
+                <span>Required Monthly Gain</span>
+                <strong>{formatCurrency(goalForecast.requiredMonthlyGain)}</strong>
+              </li>
+              <li>
+                <span>Projected Position at Deadline</span>
+                <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
+              </li>
+              <li>
+                <span>Possibility to Reach Goal</span>
+                <strong style={{ color: goalForecast.statusColor }}>{goalForecast.possibilityPercent}%</strong>
+              </li>
+              <li>
+                <span>Confidence Buffer for "Likely"</span>
+                <strong>{Math.round(goalForecast.likelyAchievableThreshold * 100)}%</strong>
+              </li>
+              <li>
+                <span>Achievable in Time Frame</span>
+                <strong>{goalForecast.isAchievable ? 'Yes' : 'No'}</strong>
+              </li>
+              <li>
+                <span>Estimated Months to Goal</span>
+                <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
+              </li>
+            </ul>
+            <p className="psychometric-section-note">
+              Forecast assumes net worth variance per cycle remains consistent. "Likely achievable" requires at least a {Math.round(goalForecast.likelyAchievableThreshold * 100)}% projected coverage buffer; {Math.round(goalForecast.atRiskThreshold * 100)}% to below that is marked as at risk.
+            </p>
           </article>
         </aside>
       </section>

@@ -3055,6 +3055,28 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 10px;
 }
 
+.networth-line-item-primary {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.networth-line-item-details {
+  margin-top: 6px;
+}
+
+.networth-line-item-details summary {
+  cursor: pointer;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.networth-line-item-details div {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 0.82rem;
+}
+
 .budget-workflow-actions-block {
   display: grid;
   gap: 10px;
@@ -4281,6 +4303,69 @@ th { color: var(--dark-gold); }
   :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-scale-table select {
     width: 100%;
   }
+
+  .networth-dashboard-page .networth-compact-table td[data-label="Statement Section"],
+  .networth-dashboard-page .networth-compact-table td[data-label="Account Group"] {
+    display: none;
+  }
+
+  .networth-dashboard-page .psychometric-hero,
+  .networth-dashboard-page .psychometric-panel,
+  .networth-dashboard-page .psychometric-summary-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .networth-dashboard-page .psychometric-summary-grid,
+  .networth-dashboard-page .budget-dashboard-category-summary {
+    gap: 8px;
+  }
+
+  .networth-dashboard-page .budget-dashboard-category-summary-card,
+  .networth-dashboard-page .budget-workflow-ai-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .networth-dashboard-page .psychometric-scale-table tr {
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 10px;
+  }
+
+  .networth-dashboard-page .psychometric-panel-header {
+    margin-bottom: 8px;
+  }
+
+  .networth-dashboard-page .psychometric-hero {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .networth-dashboard-page .psychometric-hero-copy {
+    gap: 6px;
+  }
+
+  .networth-dashboard-page .psychometric-hero-copy h1 {
+    font-size: clamp(1.15rem, 4.8vw, 1.45rem);
+    line-height: 1.05;
+  }
+
+  .networth-dashboard-page .psychometric-hero-copy p {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .networth-dashboard-page .psychometric-hero-metric {
+    min-width: 150px;
+    padding: 10px;
+    gap: 4px;
+    border-radius: 12px;
+  }
+
+  .networth-dashboard-page .psychometric-hero-metric strong {
+    font-size: clamp(1.4rem, 7vw, 1.9rem);
+  }
 }
 
 @media (max-width: 420px) {
@@ -4332,6 +4417,53 @@ th { color: var(--dark-gold); }
   .budget-dashboard-category-actions {
     align-items: stretch;
     gap: 6px;
+  }
+
+  .networth-dashboard-page .psychometric-hero,
+  .networth-dashboard-page .psychometric-panel,
+  .networth-dashboard-page .psychometric-summary-card {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .networth-dashboard-page .psychometric-scale-table tr {
+    padding: 8px;
+    margin-bottom: 6px;
+  }
+
+  .networth-dashboard-page .networth-line-item-details summary,
+  .networth-dashboard-page .psychometric-scale-table td::before {
+    font-size: 0.7rem;
+  }
+
+  .networth-dashboard-page .psychometric-hero-copy h1 {
+    font-size: 1.05rem;
+  }
+
+  .networth-dashboard-page .psychometric-hero-copy p {
+    font-size: 0.78rem;
+  }
+
+  .networth-dashboard-page .psychometric-hero-metric {
+    min-width: 130px;
+    padding: 8px;
+  }
+
+  .networth-dashboard-page .psychometric-hero-metric strong {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .networth-dashboard-page .budget-workflow-inline-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .networth-dashboard-page .budget-workflow-inline-actions .psychometric-reset-button,
+  .networth-dashboard-page .budget-workflow-inline-actions .budget-dashboard-category-reset {
+    width: 100%;
   }
 }
 
