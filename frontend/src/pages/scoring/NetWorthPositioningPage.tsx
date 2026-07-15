@@ -721,33 +721,6 @@ export default function NetWorthPositioningPage() {
     };
   }, [varianceRows]);
 
-  const actualEntryCompletionBadge = useMemo(() => {
-    if (actualEntryCompletion.total === 0 || actualEntryCompletion.completed === 0) {
-      return {
-        label: 'No actual entries yet',
-        textColor: '#9a3412',
-        backgroundColor: '#fff7ed',
-        borderColor: '#fdba74',
-      };
-    }
-
-    if (!actualEntryCompletion.isComplete) {
-      return {
-        label: 'Partially complete',
-        textColor: '#92400e',
-        backgroundColor: '#fffbeb',
-        borderColor: '#fcd34d',
-      };
-    }
-
-    return {
-      label: 'Fully complete',
-      textColor: '#166534',
-      backgroundColor: '#f0fdf4',
-      borderColor: '#86efac',
-    };
-  }, [actualEntryCompletion.completed, actualEntryCompletion.isComplete, actualEntryCompletion.total]);
-
   const totals = useMemo(() => {
     const setupAssets = varianceRows
       .filter((row) => row.section === 'assets')
@@ -1255,22 +1228,6 @@ export default function NetWorthPositioningPage() {
                     {actualEntryCompletion.isComplete
                       ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.'
                       : `Actual entry completion: ${actualEntryCompletion.completed}/${actualEntryCompletion.total} (${actualEntryCompletion.percent}%). Missing actual values use setup values in the projection.`}
-                    {' '}
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        marginLeft: '8px',
-                        padding: '2px 8px',
-                        borderRadius: '999px',
-                        border: `1px solid ${actualEntryCompletionBadge.borderColor}`,
-                        backgroundColor: actualEntryCompletionBadge.backgroundColor,
-                        color: actualEntryCompletionBadge.textColor,
-                        fontWeight: 600,
-                        fontSize: '12px',
-                      }}
-                    >
-                      {actualEntryCompletionBadge.label}
-                    </span>
                   </p>
                 ) : null}
 
@@ -1379,7 +1336,7 @@ export default function NetWorthPositioningPage() {
                 </article>
 
                 <article className="budget-workflow-ai-card">
-                  <h3>Setup vs Projected and Fully-Actual Net Worth</h3>
+                  <h3>Setup vs Projected Net Worth Graph</h3>
                   <div className="budget-workflow-graph-row">
                     <span>Setup Net Worth</span>
                     <div className="budget-workflow-graph-track">
@@ -1399,7 +1356,7 @@ export default function NetWorthPositioningPage() {
                   </div>
 
                   <div className="budget-workflow-graph-row">
-                    <span>Projected Net Worth</span>
+                    <span>{actualEntryCompletion.isComplete ? 'Actual Net Worth' : 'Projected Net Worth'}</span>
                     <div className="budget-workflow-graph-track">
                       <div
                         className={`budget-workflow-graph-bar ${totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
@@ -1414,24 +1371,6 @@ export default function NetWorthPositioningPage() {
                       />
                     </div>
                     <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
-                  </div>
-
-                  <div className="budget-workflow-graph-row">
-                    <span>Fully-Actual Net Worth</span>
-                    <div className="budget-workflow-graph-track">
-                      <div
-                        className={`budget-workflow-graph-bar ${actualEntryCompletion.isComplete && totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            actualEntryCompletion.isComplete && Math.abs(totals.projectedNetWorth) > 0
-                              ? (Math.abs(totals.projectedNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
-                              : 0,
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{actualEntryCompletion.isComplete ? formatSignedCurrency(totals.projectedNetWorth) : 'Pending full input'}</strong>
                   </div>
 
                   <div className="budget-workflow-graph-row">
