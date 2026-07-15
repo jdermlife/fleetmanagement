@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
-import { NumericFormat } from 'react-number-format';
 
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   fetchAutosaveDraft,
   isAutosaveConflictError,
@@ -324,8 +323,6 @@ export default function NetWorthPositioningPage() {
   const [asOfDate, setAsOfDate] = useState('');
   const [currency, setCurrency] = useState('PHP');
   const [selectedFinancialGoal, setSelectedFinancialGoal] = useState('');
-  const [targetAmount, setTargetAmount] = useState(0);
-  const [targetMonths, setTargetMonths] = useState(12);
 
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [monthlyExpenseAllocationDraft, setMonthlyExpenseAllocationDraft] = useState<Record<string, string>>({});
@@ -543,11 +540,7 @@ export default function NetWorthPositioningPage() {
     () => setupRows.filter((row) => row.section === 'liabilities').reduce((sum, row) => sum + row.amount, 0),
     [setupRows],
   );
-  const netWorth = setupAssetsTotal - setupLiabilitiesTotal;
-  const setupNetWorth = netWorth;
-  const goalProgress = targetAmount > 0
-    ? Math.max(0, Math.min((netWorth / targetAmount) * 100, 100))
-    : 0;
+  const setupNetWorth = setupAssetsTotal - setupLiabilitiesTotal;
 
   const stepCompletionById = useMemo<Record<WorkflowStep, number>>(() => {
     const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
@@ -597,7 +590,6 @@ export default function NetWorthPositioningPage() {
     setupRows,
     varianceNotes,
   ]);
-  const isStage3Complete = stepCompletionById[3] === 100;
 
   const handleNormalizeMonthlyExpenseAllocation = () => {
     const currentTotal = monthlyExpenseRows.reduce((sum, row) => {
@@ -709,6 +701,53 @@ export default function NetWorthPositioningPage() {
     });
   }, [savedSetup, actualEntries]);
 
+  const actualEntryCompletion = useMemo(() => {
+    const total = varianceRows.length;
+    if (total === 0) {
+      return {
+        total,
+        completed: 0,
+        percent: 0,
+        isComplete: false,
+      };
+    }
+
+    const completed = varianceRows.filter((row) => row.hasActual).length;
+    return {
+      total,
+      completed,
+      percent: Math.round((completed / total) * 100),
+      isComplete: completed === total,
+    };
+  }, [varianceRows]);
+
+  const actualEntryCompletionBadge = useMemo(() => {
+    if (actualEntryCompletion.total === 0 || actualEntryCompletion.completed === 0) {
+      return {
+        label: 'No actual entries yet',
+        textColor: '#9a3412',
+        backgroundColor: '#fff7ed',
+        borderColor: '#fdba74',
+      };
+    }
+
+    if (!actualEntryCompletion.isComplete) {
+      return {
+        label: 'Partially complete',
+        textColor: '#92400e',
+        backgroundColor: '#fffbeb',
+        borderColor: '#fcd34d',
+      };
+    }
+
+    return {
+      label: 'Fully complete',
+      textColor: '#166534',
+      backgroundColor: '#f0fdf4',
+      borderColor: '#86efac',
+    };
+  }, [actualEntryCompletion.completed, actualEntryCompletion.isComplete, actualEntryCompletion.total]);
+
   const totals = useMemo(() => {
     const setupAssets = varianceRows
       .filter((row) => row.section === 'assets')
@@ -717,20 +756,20 @@ export default function NetWorthPositioningPage() {
       .filter((row) => row.section === 'liabilities')
       .reduce((sum, row) => sum + row.setupAmount, 0);
 
-    const actualAssets = varianceRows
-      .filter((row) => row.section === 'assets' && row.hasActual)
-      .reduce((sum, row) => sum + row.actualAmount, 0);
-    const actualLiabilities = varianceRows
-      .filter((row) => row.section === 'liabilities' && row.hasActual)
-      .reduce((sum, row) => sum + row.actualAmount, 0);
+    const projectedAssets = varianceRows
+      .filter((row) => row.section === 'assets')
+      .reduce((sum, row) => sum + (row.hasActual ? row.actualAmount : row.setupAmount), 0);
+    const projectedLiabilities = varianceRows
+      .filter((row) => row.section === 'liabilities')
+      .reduce((sum, row) => sum + (row.hasActual ? row.actualAmount : row.setupAmount), 0);
 
     return {
       setupAssets,
       setupLiabilities,
       setupNetWorth: setupAssets - setupLiabilities,
-      actualAssets,
-      actualLiabilities,
-      actualNetWorth: actualAssets - actualLiabilities,
+      projectedAssets,
+      projectedLiabilities,
+      projectedNetWorth: projectedAssets - projectedLiabilities,
     };
   }, [varianceRows]);
 
@@ -786,10 +825,10 @@ export default function NetWorthPositioningPage() {
       recommendations.push('Actual values are aligned with setup. Keep updating variance explanations to maintain tracking quality.');
     }
 
-    recommendations.push(`Net worth projection is ${formatSignedCurrency(totals.actualNetWorth || totals.setupNetWorth)} using current entries.`);
+    recommendations.push(`Net worth projection is ${formatSignedCurrency(totals.projectedNetWorth)} using current entries.`);
 
     return recommendations.slice(0, 4);
-  }, [formatCurrency, formatSignedCurrency, varianceRows, totals.actualNetWorth, totals.setupNetWorth]);
+  }, [formatCurrency, formatSignedCurrency, varianceRows, totals.projectedNetWorth]);
 
   return (
     <div className="psychometric-page networth-dashboard-page">
@@ -817,7 +856,7 @@ export default function NetWorthPositioningPage() {
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker"></span>
-            <h2>Four Steps in Setting Up Net Worth and Goal Tracking</h2>
+            <h2>Three Steps in Setting Up Net Worth and Goal Tracking</h2>
           </div>
         </div>
         <p className="psychometric-section-note">
@@ -850,26 +889,6 @@ export default function NetWorthPositioningPage() {
           <strong>Monitor Progress</strong>
           <small>Track progress. Get insights to continuously improve.</small>
         </article>
-      </section>
-
-      <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Global Comparator</span>
-            <h2>Your Income and Wealth Standing in the World.   </h2>
-          </div>
-        </div>
-        <p className="psychometric-section-note">
-          Compare your income and wealth standing globally using the World Inequality Database comparator. 
-        </p>
-        <a
-          href="https://wid.world/income-comparator/"
-          target="_blank"
-          rel="noreferrer"
-          className="auth-link-button"
-        >
-          Open WID Income Comparator
-        </a>
       </section>
 
       <section className="psychometric-panel">
@@ -959,93 +978,37 @@ export default function NetWorthPositioningPage() {
               <div className="budget-workflow-step-block">
                 <h3 className="workflow-duplicate-step-title">Step 1: Set As Of Date</h3>
                 <p className="psychometric-section-note">
-                  FILSCORE Personal Net Worth Statement. Set the As Of Date, choose your financial goal, enter your
-                  target amount and target period, then encode your Assets and Liabilities.
+                  FILSCORE Personal Net Worth Statement. Set As Of date, then encode values for suggested accounts.
                 </p>
 
-                <div className="budget-dashboard-category-summary" style={{ marginBottom: '10px' }}>
+                <div className="budget-dashboard-category-summary" style={{ marginBottom: '8px' }}>
                   <div className="budget-dashboard-category-summary-card">
                     <span>FILSCORE</span>
                     <strong>Personal Net Worth Statement</strong>
                   </div>
-
                   <div className="budget-dashboard-category-summary-card">
-                    <span>Financial Goal</span>
+                    <span>Accounts</span>
+                    <strong>A to G Sections</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Financial Goals</span>
                     <select
                       value={selectedFinancialGoal}
                       onChange={(event) => setSelectedFinancialGoal(event.target.value)}
                       className="budget-dashboard-category-input"
-                      aria-label="Financial goal"
+                      aria-label="Financial goals"
                     >
-                      <option value="">Select Financial Goal</option>
+                      <option value="">Select financial goal</option>
                       {FINANCIAL_GOAL_OPTIONS.map((goal) => (
                         <option key={goal} value={goal}>
                           {goal}
                         </option>
                       ))}
                     </select>
+                     <div className="budget-dashboard-category-summary-card">
+                    <span>Suggested Accounts</span>
+                    <strong>A to G Sections</strong>
                   </div>
-
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Target Amount</span>
-                    <NumericFormat
-                      value={targetAmount}
-                      thousandSeparator
-                      decimalScale={2}
-                      fixedDecimalScale
-                      allowNegative={false}
-                      prefix="₱ "
-                      className="budget-dashboard-category-input"
-                      aria-label="Target amount"
-                      onValueChange={(values) => setTargetAmount(values.floatValue || 0)}
-                    />
-                  </div>
-
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Months to Achieve</span>
-                    <input
-                      type="number"
-                      min="1"
-                      placeholder="Months"
-                      value={targetMonths}
-                      className="budget-dashboard-category-input"
-                      aria-label="Months to achieve financial goal"
-                      onChange={(event) => setTargetMonths(Number(event.target.value))}
-                    />
-                  </div>
-
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Monthly Savings Required</span>
-                    <strong
-                      style={{
-                        color: '#0d6efd',
-                        fontSize: '18px',
-                        marginTop: '8px',
-                      }}
-                    >
-                      ₱{' '}
-                      {(targetMonths > 0 ? targetAmount / targetMonths : 0).toLocaleString('en-PH', {
-                        minimumFractionDigits: 2,
-                        maximumFractionDigits: 2,
-                      })}
-                    </strong>
-                  </div>
-
-                  <div className="budget-dashboard-category-summary-card">
-                    <span>Current Net Worth</span>
-                    <strong>{formatSignedCurrency(netWorth)}</strong>
-                    <span>Goal Progress</span>
-                    <strong>{Math.round(goalProgress)}%</strong>
-                    <div
-                      className="psychometric-progress-track budget-dashboard-progress-track"
-                      role="progressbar"
-                      aria-label="Financial goal progress"
-                      aria-valuemin={0}
-                      aria-valuemax={100}
-                      aria-valuenow={Math.round(goalProgress)}
-                    >
-                      <div className="psychometric-progress-bar" style={{ width: `${goalProgress}%` }} />
-                    </div>
                   </div>
                 </div>
 
@@ -1287,6 +1250,30 @@ export default function NetWorthPositioningPage() {
                   Fourth column shows variance explanation in small letters.
                 </p>
 
+                {savedSetup.length > 0 ? (
+                  <p className="psychometric-section-note">
+                    {actualEntryCompletion.isComplete
+                      ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.'
+                      : `Actual entry completion: ${actualEntryCompletion.completed}/${actualEntryCompletion.total} (${actualEntryCompletion.percent}%). Missing actual values use setup values in the projection.`}
+                    {' '}
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        marginLeft: '8px',
+                        padding: '2px 8px',
+                        borderRadius: '999px',
+                        border: `1px solid ${actualEntryCompletionBadge.borderColor}`,
+                        backgroundColor: actualEntryCompletionBadge.backgroundColor,
+                        color: actualEntryCompletionBadge.textColor,
+                        fontWeight: 600,
+                        fontSize: '12px',
+                      }}
+                    >
+                      {actualEntryCompletionBadge.label}
+                    </span>
+                  </p>
+                ) : null}
+
                 {savedSetup.length === 0 ? (
                   <p className="psychometric-section-note">
                     No saved setup yet. Complete Step 2 and click save setup first.
@@ -1362,11 +1349,6 @@ export default function NetWorthPositioningPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
                     {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
-                  {isStage3Complete ? (
-                    <button type="button" className="psychometric-reset-button" onClick={() => window.print()}>
-                      Print / Save as PDF
-                    </button>
-                  ) : null}
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>
@@ -1397,7 +1379,7 @@ export default function NetWorthPositioningPage() {
                 </article>
 
                 <article className="budget-workflow-ai-card">
-                  <h3>Setup vs Actual Net Worth Graph</h3>
+                  <h3>Setup vs Projected and Fully-Actual Net Worth</h3>
                   <div className="budget-workflow-graph-row">
                     <span>Setup Net Worth</span>
                     <div className="budget-workflow-graph-track">
@@ -1407,7 +1389,7 @@ export default function NetWorthPositioningPage() {
                           width: `${Math.min(
                             100,
                             Math.abs(totals.setupNetWorth) > 0
-                              ? (Math.abs(totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.actualNetWorth), 1)) * 100
+                              ? (Math.abs(totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
                               : 0,
                           )}%`,
                         }}
@@ -1417,39 +1399,57 @@ export default function NetWorthPositioningPage() {
                   </div>
 
                   <div className="budget-workflow-graph-row">
-                    <span>Actual Net Worth</span>
+                    <span>Projected Net Worth</span>
                     <div className="budget-workflow-graph-track">
                       <div
-                        className={`budget-workflow-graph-bar ${totals.actualNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
+                        className={`budget-workflow-graph-bar ${totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
                         style={{
                           width: `${Math.min(
                             100,
-                            Math.abs(totals.actualNetWorth) > 0
-                              ? (Math.abs(totals.actualNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.actualNetWorth), 1)) * 100
+                            Math.abs(totals.projectedNetWorth) > 0
+                              ? (Math.abs(totals.projectedNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
                               : 0,
                           )}%`,
                         }}
                       />
                     </div>
-                    <strong>{formatSignedCurrency(totals.actualNetWorth)}</strong>
+                    <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
+                  </div>
+
+                  <div className="budget-workflow-graph-row">
+                    <span>Fully-Actual Net Worth</span>
+                    <div className="budget-workflow-graph-track">
+                      <div
+                        className={`budget-workflow-graph-bar ${actualEntryCompletion.isComplete && totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
+                        style={{
+                          width: `${Math.min(
+                            100,
+                            actualEntryCompletion.isComplete && Math.abs(totals.projectedNetWorth) > 0
+                              ? (Math.abs(totals.projectedNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
+                              : 0,
+                          )}%`,
+                        }}
+                      />
+                    </div>
+                    <strong>{actualEntryCompletion.isComplete ? formatSignedCurrency(totals.projectedNetWorth) : 'Pending full input'}</strong>
                   </div>
 
                   <div className="budget-workflow-graph-row">
                     <span>Net Worth Variance</span>
                     <div className="budget-workflow-graph-track">
                       <div
-                        className={`budget-workflow-graph-bar ${totals.actualNetWorth - totals.setupNetWorth < 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
+                        className={`budget-workflow-graph-bar ${totals.projectedNetWorth - totals.setupNetWorth < 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
                         style={{
                           width: `${Math.min(
                             100,
-                            Math.abs(totals.actualNetWorth - totals.setupNetWorth) > 0
-                              ? (Math.abs(totals.actualNetWorth - totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), 1)) * 100
+                            Math.abs(totals.projectedNetWorth - totals.setupNetWorth) > 0
+                              ? (Math.abs(totals.projectedNetWorth - totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), 1)) * 100
                               : 0,
                           )}%`,
                         }}
                       />
                     </div>
-                    <strong>{formatSignedCurrency(totals.actualNetWorth - totals.setupNetWorth)}</strong>
+                    <strong>{formatSignedCurrency(totals.projectedNetWorth - totals.setupNetWorth)}</strong>
                   </div>
                 </article>
 

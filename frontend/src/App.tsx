@@ -104,10 +104,11 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Financial Snapshot' },
   { id: 'lending-scorecard', label: 'Financial Health Score' },
+  { id: 'net-worth-positioning', label: 'Wealth & Networth Building Score' },
   { id: 'budget-expense-tracker', label: 'Income & Spending' },
   { id: 'loan-monitoring', label: 'Debt Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
-  { id: 'net-worth-positioning', label: 'Wealth & Networth Building Score' },
+
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
