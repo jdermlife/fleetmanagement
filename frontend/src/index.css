@@ -2967,6 +2967,19 @@ button.loan-repository-action-release { background: #4f46e5; }
   overflow-wrap: anywhere;
 }
 
+.budget-expense-card-type {
+  font-size: 0.84rem;
+  line-height: 1.25;
+  font-weight: 600;
+}
+
+.budget-expense-card-suggested {
+  font-size: 0.78rem;
+  line-height: 1.2;
+  white-space: normal;
+  text-align: right;
+}
+
 .budget-dashboard-card-value {
   font-size: 1.8rem;
   font-weight: 700;
@@ -4399,6 +4412,14 @@ th { color: var(--dark-gold); }
   .budget-dashboard-card-header strong,
   .budget-dashboard-comparison-values strong {
     font-size: 1rem;
+  }
+
+  .budget-expense-card-type {
+    font-size: 0.78rem;
+  }
+
+  .budget-expense-card-suggested {
+    font-size: 0.72rem;
   }
 
   .psychometric-summary-card strong,

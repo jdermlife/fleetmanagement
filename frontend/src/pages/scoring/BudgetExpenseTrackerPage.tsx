@@ -7,6 +7,9 @@ import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 type WorkflowStep = 1 | 2 | 3;
 type IncomeKey = 'salary' | 'business' | 'investment' | 'pension';
 
+const HOUSE_AMORTIZATION_KEY = 'expense-house-amortization';
+const LOAN_AMORTIZATION_KEY = 'expense-loan-amortization';
+
 interface WorkflowLineItem {
   id: string;
   label: string;
@@ -270,7 +273,9 @@ export default function BudgetExpenseTrackerPage() {
     const step1Percent = clamp((periodFieldsCompleted / 2) * 100);
 
     const incomeProvided = Object.values(incomeDraft).some((value) => !isBlank(value));
-    const expenseProvided = snapshot.categoryItems.some((item) => !isBlank(expenseDraft[item.id]));
+    const hasCategoryExpense = snapshot.categoryItems.some((item) => !isBlank(expenseDraft[item.id]));
+    const hasFixedAmortizationExpense = !isBlank(expenseDraft[HOUSE_AMORTIZATION_KEY]) || !isBlank(expenseDraft[LOAN_AMORTIZATION_KEY]);
+    const expenseProvided = hasCategoryExpense || hasFixedAmortizationExpense;
     const allocationProvided = snapshot.categoryItems.some((item) => !isBlank(expenseAllocationDraft[item.id]));
     const allocationTotal = snapshot.categoryItems.reduce((total, item) => {
       return total + toSafeNumber(expenseAllocationDraft[item.id] ?? '');
@@ -318,7 +323,9 @@ export default function BudgetExpenseTrackerPage() {
 
     const expenseTotal = snapshot.categoryItems.reduce((total, item) => {
       return total + toSafeNumber(expenseDraft[item.id] ?? '');
-    }, 0);
+    }, 0)
+      + toSafeNumber(expenseDraft[HOUSE_AMORTIZATION_KEY] ?? '')
+      + toSafeNumber(expenseDraft[LOAN_AMORTIZATION_KEY] ?? '');
 
     return {
       incomeTotal,
@@ -329,13 +336,18 @@ export default function BudgetExpenseTrackerPage() {
 
   const budgetAiSummary = useMemo(() => {
     const net = budgetSetupTotals.net;
+    const fixedObligationsTotal = toSafeNumber(expenseDraft[HOUSE_AMORTIZATION_KEY] ?? '')
+      + toSafeNumber(expenseDraft[LOAN_AMORTIZATION_KEY] ?? '');
+    const fixedObligationsCopy = fixedObligationsTotal > 0
+      ? ` Fixed obligations (House + Loan Amortization): ${formatCurrency(fixedObligationsTotal)}.`
+      : ' Fixed obligations (House + Loan Amortization) are not set yet.';
 
     if (net > 0) {
       return {
         status: 'surplus' as const,
         headline: 'Income exceeds expenses',
-        recommendation: `AI recommendation: Move ${formatCurrency(net)} to savings.`,
-        detail: 'The current setup produces a positive monthly surplus, so the excess should be retained as savings.',
+        recommendation: `AI recommendation: Move ${formatCurrency(net)} to savings while prioritizing fixed obligations coverage.${fixedObligationsCopy}`,
+        detail: `The current setup produces a positive monthly surplus, so the excess should be retained as savings after fixed obligations are protected.${fixedObligationsCopy}`,
       };
     }
 
@@ -343,18 +355,18 @@ export default function BudgetExpenseTrackerPage() {
       return {
         status: 'deficit' as const,
         headline: 'Expenses exceed income',
-        recommendation: `AI recommendation: Reduce savings by ${formatCurrency(Math.abs(net))} or cut expenses to restore balance.`,
-        detail: 'The current setup is running at a deficit, so savings would need to absorb the shortfall unless expenses are reduced or income increases.',
+        recommendation: `AI recommendation: Reduce savings by ${formatCurrency(Math.abs(net))} or cut expenses to restore balance, starting with non-fixed categories.${fixedObligationsCopy}`,
+        detail: `The current setup is running at a deficit, so savings would need to absorb the shortfall unless expenses are reduced or income increases. Protect fixed obligations first.${fixedObligationsCopy}`,
       };
     }
 
     return {
       status: 'balanced' as const,
       headline: 'Income matches expenses',
-      recommendation: 'AI recommendation: No additional savings movement is required based on the current setup.',
-      detail: 'The budget is exactly balanced, so there is no surplus to save and no deficit to fund from savings.',
+      recommendation: `AI recommendation: No additional savings movement is required based on the current setup.${fixedObligationsCopy}`,
+      detail: `The budget is exactly balanced, so there is no surplus to save and no deficit to fund from savings.${fixedObligationsCopy}`,
     };
-  }, [budgetSetupTotals.net]);
+  }, [budgetSetupTotals.net, expenseDraft]);
 
   const allocationSummary = useMemo(() => {
     const totalAllocation = snapshot.categoryItems.reduce((total, item) => {
@@ -430,7 +442,10 @@ export default function BudgetExpenseTrackerPage() {
       return accumulator;
     }, {});
 
-    setExpenseDraft(nextExpenseDraft);
+    setExpenseDraft((previous) => ({
+      ...previous,
+      ...nextExpenseDraft,
+    }));
     setSetupStatusMessage('Expense setup amounts were recalculated using the revised allocation percentages.');
   };
 
@@ -472,6 +487,18 @@ export default function BudgetExpenseTrackerPage() {
         label: 'Income from Pension',
         setupAmount: toSafeNumber(incomeDraft.pension),
         type: 'income',
+      },
+      {
+        id: HOUSE_AMORTIZATION_KEY,
+        label: 'Expense - House Amortization',
+        setupAmount: toSafeNumber(expenseDraft[HOUSE_AMORTIZATION_KEY] ?? ''),
+        type: 'expense',
+      },
+      {
+        id: LOAN_AMORTIZATION_KEY,
+        label: 'Expense - Loan Amortization',
+        setupAmount: toSafeNumber(expenseDraft[LOAN_AMORTIZATION_KEY] ?? ''),
+        type: 'expense',
       },
       ...snapshot.categoryItems.map((item) => ({
         id: `expense-${item.id}`,
@@ -549,16 +576,22 @@ export default function BudgetExpenseTrackerPage() {
   }, [topVarianceRows]);
 
   const aiRecommendations = useMemo(() => {
+    const fixedObligationsTotal = toSafeNumber(expenseDraft[HOUSE_AMORTIZATION_KEY] ?? '')
+      + toSafeNumber(expenseDraft[LOAN_AMORTIZATION_KEY] ?? '');
+    const fixedObligationsGuidance = fixedObligationsTotal > 0
+      ? `Fixed obligations (House + Loan Amortization) are currently ${formatCurrency(fixedObligationsTotal)}.`
+      : 'Set House and Loan Amortization values to improve fixed-obligation forecasting.';
+
     if (varianceRows.length === 0) {
       return [
-        'Save your setup to generate tailored recommendations for this budget period.',
+        `Save your setup to generate tailored recommendations for this budget period. ${fixedObligationsGuidance}`,
       ];
     }
 
     const hasAnyActual = varianceRows.some((item) => item.hasActual);
     if (!hasAnyActual) {
       return [
-        'Start entering actual values in Step 3. AI recommendations will update as soon as variances are available.',
+        `Start entering actual values in Step 3. AI recommendations will update as soon as variances are available. ${fixedObligationsGuidance}`,
       ];
     }
 
@@ -589,11 +622,11 @@ export default function BudgetExpenseTrackerPage() {
     }
 
     recommendations.push(
-      `Projected net cashflow is ${formatSignedCurrency(setupVsActualSummary.actualNet || setupVsActualSummary.setupNet)}. Keep at least one month of fixed obligations in reserve.`,
+      `Projected net cashflow is ${formatSignedCurrency(setupVsActualSummary.actualNet || setupVsActualSummary.setupNet)}. ${fixedObligationsGuidance} Keep at least one month of fixed obligations in reserve.`,
     );
 
     return recommendations.slice(0, 4);
-  }, [varianceRows, setupVsActualSummary.actualNet, setupVsActualSummary.setupNet]);
+  }, [expenseDraft, varianceRows, setupVsActualSummary.actualNet, setupVsActualSummary.setupNet]);
 
   return (
     <div className="psychometric-page budget-dashboard-page">
@@ -839,6 +872,46 @@ export default function BudgetExpenseTrackerPage() {
                   </label>
                 </div>
 
+                <h4 className="budget-workflow-subtitle">Fixed Amortization Expenses</h4>
+                <div className="budget-workflow-grid-two">
+                  <label>
+                    House Amortization
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={expenseDraft[HOUSE_AMORTIZATION_KEY] ?? ''}
+                      onChange={(event) => {
+                        setExpenseDraft((previous) => ({
+                          ...previous,
+                          [HOUSE_AMORTIZATION_KEY]: event.target.value,
+                        }));
+                      }}
+                      className="budget-dashboard-category-input"
+                      placeholder="0"
+                      aria-label="House amortization setup amount"
+                    />
+                  </label>
+                  <label>
+                    Loan Amortization
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={expenseDraft[LOAN_AMORTIZATION_KEY] ?? ''}
+                      onChange={(event) => {
+                        setExpenseDraft((previous) => ({
+                          ...previous,
+                          [LOAN_AMORTIZATION_KEY]: event.target.value,
+                        }));
+                      }}
+                      className="budget-dashboard-category-input"
+                      placeholder="0"
+                      aria-label="Loan amortization setup amount"
+                    />
+                  </label>
+                </div>
+
                 <h4 className="budget-workflow-subtitle">Itemized Expense Setup</h4>
                 <div className="budget-dashboard-category-summary">
                   <div className="budget-dashboard-category-summary-card">
@@ -861,8 +934,8 @@ export default function BudgetExpenseTrackerPage() {
                   {snapshot.categoryItems.map((item) => (
                     <article key={item.id} className="budget-dashboard-card">
                       <div className="budget-dashboard-card-header">
-                        <span>{item.label}</span>
-                        <strong>{formatPercentInput(item.share)}% suggested</strong>
+                        <span className="budget-expense-card-type">{item.label}</span>
+                        <strong className="budget-expense-card-suggested">{formatPercentInput(item.share)}% suggested</strong>
                       </div>
                       <label className="budget-dashboard-category-input-wrap">
                         <span className="budget-dashboard-category-input-label">Budget Allocation %</span>
