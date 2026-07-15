@@ -848,11 +848,11 @@ export default function NetWorthPositioningPage() {
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker">Global Comparator</span>
-            <h2>Your Income and Wealth Standing in the World</h2>
+            <h2>Your Income and Wealth Standing in the World.   </h2>
           </div>
         </div>
         <p className="psychometric-section-note">
-          Compare your income and wealth standing globally using the World Inequality Database comparator. Think where you want to be.
+          Compare your income and wealth standing globally using the World Inequality Database comparator. 
         </p>
         <a
           href="https://wid.world/income-comparator/"
@@ -868,7 +868,7 @@ export default function NetWorthPositioningPage() {
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker"></span>
-            <h2>Follow the workflow</h2>
+            <h2>Let's do the work. Follow the workflow</h2>
           </div>
         </div>
         <p className="psychometric-section-note">
@@ -978,6 +978,10 @@ export default function NetWorthPositioningPage() {
                         </option>
                       ))}
                     </select>
+                     <div className="budget-dashboard-category-summary-card">
+                    <span>Suggested Accounts</span>
+                    <strong>A to G Sections</strong>
+                  </div>
                   </div>
                 </div>
 
