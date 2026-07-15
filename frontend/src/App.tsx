@@ -641,96 +641,102 @@ const isSignedIn = authReady && Boolean(currentUser)
         </Link>
       </>
     )}
-    <Link
-      to="/billing"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Billing
-    </Link>
-    <Link
-      to="/subscriptions"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Subscription
-    </Link>
-    <Link
-      to="/invoices"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Invoices
-    </Link>
-    <Link
-      to="/payment-history"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Payment History
-    </Link>
-    <Link
-      to="/subscriptions"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Subscription Billing
-    </Link>
-    <Link
-      to="/subscription-fees"
-      onClick={closeMenu}
-      className="app-menu-link app-menu-link-account"
-      style={{
-        display: 'block',
-        color: 'var(--app-menu-link-text)',
-        textDecoration: 'none',
-        padding: '12px',
-        borderRadius: '8px',
-        background: 'var(--app-menu-link-bg)',
-      }}
-    >
-      Subscription Fees
-    </Link>
+    {isAdminUser ? (
+      <>
+        <Link
+          to="/billing"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Billing
+        </Link>
+        <Link
+          to="/subscriptions"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Subscription
+        </Link>
+        <Link
+          to="/invoices"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Invoices
+        </Link>
+        <Link
+          to="/payment-history"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Payment History
+        </Link>
+        <Link
+          to="/subscriptions"
+          onClick={closeMenu}
+          className="app-menu-link app-menu-link-account"
+          style={{
+            display: 'block',
+            color: 'var(--app-menu-link-text)',
+            textDecoration: 'none',
+            padding: '12px',
+            borderRadius: '8px',
+            background: 'var(--app-menu-link-bg)',
+          }}
+        >
+          Subscription Billing
+        </Link>
+      </>
+    ) : null}
+    {isAdminUser ? (
+      <Link
+        to="/subscription-fees"
+        onClick={closeMenu}
+        className="app-menu-link app-menu-link-account"
+        style={{
+          display: 'block',
+          color: 'var(--app-menu-link-text)',
+          textDecoration: 'none',
+          padding: '12px',
+          borderRadius: '8px',
+          background: 'var(--app-menu-link-bg)',
+        }}
+      >
+        Subscription Fees
+      </Link>
+    ) : null}
     <Link
       to="/support"
       onClick={closeMenu}
@@ -1076,7 +1082,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscriptions"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <SubscriptionManagementPage />
                 </ProtectedRoute>
               }
@@ -1085,7 +1091,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscription-payment"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <SubscriptionPaymentPage />
                 </ProtectedRoute>
               }
@@ -1094,7 +1100,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscription/payment"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <SubscriptionPaymentPage />
                 </ProtectedRoute>
               }
@@ -1103,7 +1109,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/billing"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <BillingPage />
                 </ProtectedRoute>
               }
@@ -1112,7 +1118,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/invoices"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <BillingPage />
                 </ProtectedRoute>
               }
@@ -1121,7 +1127,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/payment-history"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <BillingPage />
                 </ProtectedRoute>
               }
@@ -1130,7 +1136,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/payment/success"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <PaymentSuccess />
                 </ProtectedRoute>
               }
@@ -1139,7 +1145,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/payment/cancel"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                <ProtectedRoute roles={['admin']}>
                   <PaymentCancelled />
                 </ProtectedRoute>
               }
@@ -1296,7 +1302,11 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/subscription-fees"
-              element={<SubscriptionFeesPage />}
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <SubscriptionFeesPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route

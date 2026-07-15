@@ -1,6 +1,10 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { useAutosaveDraft } from '../../autosave';
+import {
+  fetchAutosaveDraft,
+  isAutosaveConflictError,
+  saveAutosaveDraftRemote,
+} from '../../autosave/draftApi';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 
@@ -326,6 +330,8 @@ export default function NetWorthPositioningPage() {
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
+  const [isSavingDraft, setIsSavingDraft] = useState(false);
+  const [draftRevision, setDraftRevision] = useState<number | null>(null);
 
   const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
     step,
@@ -350,24 +356,68 @@ export default function NetWorthPositioningPage() {
   ]);
 
   const handleAutosaveHydrate = useCallback((draft: NetWorthPositioningDraft) => {
-    setStep(draft.step);
+    setStep(draft.step ?? 1);
     setAsOfDate(draft.asOfDate);
     setCurrency(draft.currency ?? draft.currencyCode ?? 'PHP');
     setSelectedFinancialGoal(draft.selectedFinancialGoal ?? '');
-    setAmounts(draft.amounts);
+    setAmounts(draft.amounts ?? {});
     setMonthlyExpenseAllocationDraft(draft.monthlyExpenseAllocationDraft ?? {});
-    setSavedSetup(draft.savedSetup);
-    setActualEntries(draft.actualEntries);
-    setVarianceNotes(draft.varianceNotes);
+    setSavedSetup(draft.savedSetup ?? []);
+    setActualEntries(draft.actualEntries ?? {});
+    setVarianceNotes(draft.varianceNotes ?? {});
   }, []);
 
-  useAutosaveDraft({
-    scope: 'net-worth-positioning',
-    entityKey: 'primary',
-    value: autosaveValue,
-    defaults: DEFAULT_NET_WORTH_POSITIONING_DRAFT,
-    onHydrate: handleAutosaveHydrate,
-  });
+  useEffect(() => {
+    let disposed = false;
+
+    const loadDraft = async () => {
+      try {
+        const remoteDraft = await fetchAutosaveDraft<NetWorthPositioningDraft>('net-worth-positioning', 'primary');
+        if (disposed || !remoteDraft) {
+          return;
+        }
+
+        setDraftRevision(remoteDraft.revision);
+        handleAutosaveHydrate({
+          ...DEFAULT_NET_WORTH_POSITIONING_DRAFT,
+          ...remoteDraft.payload,
+        });
+        setSetupStatusMessage(`Draft loaded (${new Date(remoteDraft.updatedAt).toLocaleString()}).`);
+      } catch {
+        if (!disposed) {
+          setSetupStatusMessage('Unable to load saved draft right now.');
+        }
+      }
+    };
+
+    void loadDraft();
+
+    return () => {
+      disposed = true;
+    };
+  }, [handleAutosaveHydrate]);
+
+  const handleSaveDraft = useCallback(async () => {
+    setIsSavingDraft(true);
+    try {
+      const savedDraft = await saveAutosaveDraftRemote('net-worth-positioning', 'primary', {
+        payload: autosaveValue,
+        expectedRevision: draftRevision,
+      });
+
+      setDraftRevision(savedDraft.revision);
+      setSetupStatusMessage(`Draft saved (${new Date(savedDraft.updatedAt).toLocaleString()}).`);
+    } catch (error) {
+      if (isAutosaveConflictError(error) && error.currentDraft) {
+        setDraftRevision(error.currentDraft.revision);
+        setSetupStatusMessage('Save conflict detected. A newer draft exists in another session. Save again to overwrite.');
+      } else {
+        setSetupStatusMessage('Unable to save draft right now. Please try again.');
+      }
+    } finally {
+      setIsSavingDraft(false);
+    }
+  }, [autosaveValue, draftRevision]);
 
   const selectedCurrencyLabel = useMemo(
     () => CURRENCY_OPTIONS.find((option) => option.code === currency)?.label ?? currency,
@@ -789,14 +839,24 @@ export default function NetWorthPositioningPage() {
                 <span className="psychometric-panel-kicker">Workflow Form</span>
                 <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
-              <button
-                type="button"
-                className="psychometric-reset-button"
-                onClick={reload}
-                disabled={loading}
-              >
-                {loading ? 'Refreshing...' : 'Refresh Data'}
-              </button>
+              <div className="budget-workflow-inline-actions">
+                <button
+                  type="button"
+                  className="psychometric-reset-button"
+                  onClick={handleSaveDraft}
+                  disabled={isSavingDraft}
+                >
+                  {isSavingDraft ? 'Saving...' : 'Save All Steps'}
+                </button>
+                <button
+                  type="button"
+                  className="psychometric-reset-button"
+                  onClick={reload}
+                  disabled={loading}
+                >
+                  {loading ? 'Refreshing...' : 'Refresh Data'}
+                </button>
+              </div>
             </div>
 
             {error ? (
@@ -929,6 +989,9 @@ export default function NetWorthPositioningPage() {
                 </div>
 
                 <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                    {isSavingDraft ? 'Saving...' : 'Save'}
+                  </button>
                   <button type="button" className="psychometric-reset-button" onClick={() => setStep(2)}>
                     Continue to Step 2
                   </button>
@@ -1058,6 +1121,9 @@ export default function NetWorthPositioningPage() {
                 </div>
 
                 <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                    {isSavingDraft ? 'Saving...' : 'Save'}
+                  </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
                     Back to Step 1
                   </button>
@@ -1154,6 +1220,9 @@ export default function NetWorthPositioningPage() {
                 )}
 
                 <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={handleSaveDraft} disabled={isSavingDraft}>
+                    {isSavingDraft ? 'Saving...' : 'Save'}
+                  </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>

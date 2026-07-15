@@ -119,9 +119,7 @@ def _serialize_plan(plan: SubscriptionPlan) -> dict:
 
 @router.get("/entitlement/loan-record-create")
 def get_loan_record_creation_entitlement(
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -131,7 +129,7 @@ def get_loan_record_creation_entitlement(
 
 
 @router.get("/public-plans")
-def list_public_plans():
+def list_public_plans(user: CurrentUser = Depends(require_roles("Admin"))):
     db = SessionLocal()
     try:
         rows = (
@@ -392,9 +390,7 @@ def _mark_payment_success(
 
 @router.get("/plans")
 def list_plans(
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -455,9 +451,7 @@ def update_plan(
 
 @router.get("")
 def list_subscriptions(
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
     status: str | None = Query(default=None),
 ):
     db = _session_with_rls(user)
@@ -475,9 +469,7 @@ def list_subscriptions(
 
 @router.get("/me")
 def get_my_subscription(
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -495,9 +487,7 @@ def get_my_subscription(
 @router.post("/create-free")
 def create_free_subscription(
     payload: FreeSubscriptionCreateRequest,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -537,9 +527,7 @@ def create_free_subscription(
 @router.post("/create-checkout")
 def create_checkout_for_plan(
     payload: SubscriptionCheckoutCreateRequest,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -624,9 +612,7 @@ def create_checkout_for_plan(
 @router.post("")
 def create_subscription(
     payload: SubscriptionCreate,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -648,7 +634,7 @@ def create_subscription(
 def update_subscription(
     subscription_id: int,
     payload: SubscriptionUpdate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -692,7 +678,7 @@ def update_subscription_status(
 
 
 @router.get("/providers")
-def list_payment_providers(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_payment_providers(user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         rows = db.query(PaymentProvider).order_by(PaymentProvider.provider_name.asc()).all()
@@ -741,9 +727,7 @@ def create_payment_provider(
 
 @router.get("/payments")
 def list_subscription_payments(
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -759,9 +743,7 @@ def list_subscription_payments(
 @router.post("/payments/paymongo/checkout")
 def create_paymongo_checkout(
     payload: PayMongoCheckoutCreate,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -976,9 +958,7 @@ async def receive_paymongo_webhook(
 @router.post("/payments/paypal/create-order")
 def create_paypal_order(
     payload: PayPalCreateOrderRequest,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -1052,9 +1032,7 @@ def create_paypal_order(
 @router.post("/payments/paypal/capture-order")
 def capture_paypal_order(
     payload: PayPalCaptureOrderRequest,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -1287,9 +1265,7 @@ async def receive_paypal_webhook(request: Request):
 @router.post("/payments")
 def create_subscription_payment(
     payload: SubscriptionPaymentCreate,
-    user: CurrentUser = Depends(
-        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
-    ),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -1341,7 +1317,7 @@ def update_subscription_payment(
 
 
 @router.get("/invoices")
-def list_subscription_invoices(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_subscription_invoices(user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionInvoice).join(Subscription, Subscription.id == SubscriptionInvoice.subscription_id)
@@ -1397,7 +1373,7 @@ def create_subscription_invoice(
 
 
 @router.get("/usage")
-def list_subscription_usage(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_subscription_usage(user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionUsage).join(Subscription, Subscription.id == SubscriptionUsage.subscription_id)
@@ -1451,7 +1427,7 @@ def create_subscription_usage(
 
 
 @router.get("/events")
-def list_subscription_events(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_subscription_events(user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         query = db.query(SubscriptionEvent).join(Subscription, Subscription.id == SubscriptionEvent.subscription_id)
@@ -1476,7 +1452,7 @@ def list_subscription_events(user: CurrentUser = Depends(require_roles("Admin", 
 @router.post("/events")
 def create_subscription_event(
     payload: SubscriptionEventCreate,
-    user: CurrentUser = Depends(require_roles("Admin", "Subscriber")),
+    user: CurrentUser = Depends(require_roles("Admin")),
 ):
     db = _session_with_rls(user)
     try:
@@ -1553,7 +1529,7 @@ def create_payment_webhook(
 
 
 @router.get("/features")
-def list_features(user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_features(user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         rows = db.query(Feature).order_by(Feature.feature_name.asc()).all()
@@ -1596,7 +1572,7 @@ def create_feature(
 
 
 @router.get("/plans/{plan_id}/features")
-def list_plan_features(plan_id: int, user: CurrentUser = Depends(require_roles("Admin", "Subscriber"))):
+def list_plan_features(plan_id: int, user: CurrentUser = Depends(require_roles("Admin"))):
     db = _session_with_rls(user)
     try:
         rows = db.query(PlanFeature).filter(PlanFeature.plan_id == plan_id).all()
