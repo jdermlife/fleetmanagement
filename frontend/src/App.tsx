@@ -586,7 +586,7 @@ const isSignedIn = authReady && Boolean(currentUser)
         marginTop: '10px',
       }}
     >
-      ACCOUNT & LEGAL
+      PROFILE
     </div>
 
     {currentUser ? (

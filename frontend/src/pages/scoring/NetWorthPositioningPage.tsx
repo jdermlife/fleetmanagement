@@ -805,6 +805,52 @@ export default function NetWorthPositioningPage() {
         </div>
       </section>
 
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Global Comparator</span>
+            <h2>Your Income and Wealth Standing in the World</h2>
+          </div>
+        </div>
+        <p className="psychometric-section-note">
+          Compare your income and wealth standing globally using the World Inequality Database comparator.
+        </p>
+        <a
+          href="https://wid.world/income-comparator/"
+          target="_blank"
+          rel="noreferrer"
+          className="auth-link-button"
+        >
+          Open WID Income Comparator
+        </a>
+      </section>
+
+            <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>What do you own and what do you owe?</span>
+          <strong>Build Your Net Worth</strong>
+          <small>Record All Assets. Record All Liabilities.Calculate Net Worth</small>
+        </article>
+
+        <article className="psychometric-summary-card">
+          <span>Where do you want to be?</span>
+          <strong>Set Your Financial Goals</strong>
+          <small>Create Financial Goals.  Assign Priorities. Set target amounts and dealine.</small>
+        </article>
+
+        <article className="psychometric-summary-card">
+          <span>How will you achieve your goals?</span>
+          <strong>Create Your Financial Action Plan</strong>
+          <small>Determine monthly goal  for savings and investment plan. Create strategies.</small>
+        </article>
+
+        <article className="psychometric-summary-card">
+          <span>Are you getting closer to your goals?</span>
+          <strong>Monitor Progress</strong>
+          <small>Track progress. Get insights to continuously improve.</small>
+        </article>
+      </section>
+
       <section className="psychometric-summary-grid budget-dashboard-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
