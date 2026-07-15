@@ -791,6 +791,13 @@ export default function NetWorthPositioningPage() {
 
                 <div className="psychometric-scale-table-wrap">
                   <table className="psychometric-scale-table">
+                      <colgroup>
+                      <col style={{ width: '15%' }} />   {/* Statement Section */}
+                      <col style={{ width: '25%' }} />   {/* Suggested Account Group */}
+                      <col style={{ width: '40%' }} />   {/* Line Item */}
+                      <col style={{ width: '20%' }} />   {/* Setup Amount */}
+                       </colgroup>
+
                     <thead>
                       <tr>
                         <th>Statement Section</th>
