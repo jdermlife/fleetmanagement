@@ -48,7 +48,15 @@ interface NetWorthPositioningDraft {
   savedSetup: SavedLine[];
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
+  certifierName: string;
+  certifierRole: string;
+  certificationDate: string;
+  hasCertifiedAccuracy: boolean;
+  hasCertifiedConsistencyAssumption: boolean;
+  hasCertifiedConsent: boolean;
 }
+
+const DEFAULT_CERTIFICATION_DATE = new Date().toISOString().slice(0, 10);
 
 const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   step: 1,
@@ -62,6 +70,12 @@ const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   savedSetup: [],
   actualEntries: {},
   varianceNotes: {},
+  certifierName: '',
+  certifierRole: 'Borrower',
+  certificationDate: DEFAULT_CERTIFICATION_DATE,
+  hasCertifiedAccuracy: false,
+  hasCertifiedConsistencyAssumption: false,
+  hasCertifiedConsent: false,
 };
 
 const FINANCIAL_GOAL_OPTIONS = [
@@ -319,7 +333,6 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 
 export default function NetWorthPositioningPage() {
   const INITIAL_VISIBLE_SETUP_ROWS = 3;
-  const REMAINING_ROWS_BATCH_SIZE = 8;
   const DARK_GOLD_COLOR = '#B8860B';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -344,6 +357,12 @@ export default function NetWorthPositioningPage() {
   const [draftRevision, setDraftRevision] = useState<number | null>(null);
   const [visibleRemainingRowsCount, setVisibleRemainingRowsCount] = useState(0);
   const [isStep2SetupReviewExpanded, setIsStep2SetupReviewExpanded] = useState(false);
+  const [certifierName, setCertifierName] = useState('');
+  const [certifierRole, setCertifierRole] = useState('Borrower');
+  const [certificationDate, setCertificationDate] = useState(DEFAULT_CERTIFICATION_DATE);
+  const [hasCertifiedAccuracy, setHasCertifiedAccuracy] = useState(false);
+  const [hasCertifiedConsistencyAssumption, setHasCertifiedConsistencyAssumption] = useState(false);
+  const [hasCertifiedConsent, setHasCertifiedConsent] = useState(false);
 
   const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
     step,
@@ -357,11 +376,23 @@ export default function NetWorthPositioningPage() {
     savedSetup,
     actualEntries,
     varianceNotes,
+    certifierName,
+    certifierRole,
+    certificationDate,
+    hasCertifiedAccuracy,
+    hasCertifiedConsistencyAssumption,
+    hasCertifiedConsent,
   }), [
     actualEntries,
     asOfDate,
     amounts,
+    certifierName,
+    certifierRole,
+    certificationDate,
     currency,
+    hasCertifiedAccuracy,
+    hasCertifiedConsistencyAssumption,
+    hasCertifiedConsent,
     monthlyExpenseAllocationDraft,
     selectedFinancialGoal,
     savedSetup,
@@ -383,6 +414,12 @@ export default function NetWorthPositioningPage() {
     setSavedSetup(draft.savedSetup ?? []);
     setActualEntries(draft.actualEntries ?? {});
     setVarianceNotes(draft.varianceNotes ?? {});
+    setCertifierName(draft.certifierName ?? '');
+    setCertifierRole(draft.certifierRole ?? 'Borrower');
+    setCertificationDate(draft.certificationDate ?? DEFAULT_CERTIFICATION_DATE);
+    setHasCertifiedAccuracy(draft.hasCertifiedAccuracy ?? false);
+    setHasCertifiedConsistencyAssumption(draft.hasCertifiedConsistencyAssumption ?? false);
+    setHasCertifiedConsent(draft.hasCertifiedConsent ?? false);
   }, []);
 
   useEffect(() => {
@@ -517,10 +554,8 @@ export default function NetWorthPositioningPage() {
     [accordionSetupRows, visibleRemainingRowsCount],
   );
 
-  const hiddenRemainingRowsCount = Math.max(accordionSetupRows.length - visibleRemainingRowsCount, 0);
-
   const handleShowMoreRemainingRows = useCallback(() => {
-    setVisibleRemainingRowsCount((previous) => Math.min(previous + REMAINING_ROWS_BATCH_SIZE, accordionSetupRows.length));
+    setVisibleRemainingRowsCount(accordionSetupRows.length);
   }, [accordionSetupRows.length]);
 
   const handleHideRemainingRows = useCallback(() => {
@@ -848,6 +883,48 @@ export default function NetWorthPositioningPage() {
         : effectiveTargetAmount > 0 && sanitizedMonths > 0 && progressRatio >= 1,
     };
   }, [savedSetup.length, setupNetWorth, targetAmount, targetMonths, totals.projectedNetWorth, totals.setupNetWorth]);
+
+  const positionStatement = useMemo(() => {
+    const netWorthVariance = totals.projectedNetWorth - totals.setupNetWorth;
+    const hasGoalInputs = goalForecast.effectiveTargetAmount > 0 && goalForecast.sanitizedMonths > 0;
+
+    let title: 'Favorable Position' | 'Watchlist Position' | 'At-Risk Position' | 'Preliminary Position';
+    let color: string;
+    let conclusion: string;
+
+    if (!hasGoalInputs) {
+      title = 'Preliminary Position';
+      color = '#334155';
+      conclusion = 'Set target amount and timeframe to issue a final position statement.';
+    } else if (goalForecast.isAchievable && netWorthVariance >= 0) {
+      title = 'Favorable Position';
+      color = '#047857';
+      conclusion = 'Current variance trend supports achieving the stated goal within the selected timeframe.';
+    } else if (goalForecast.possibilityPercent >= 80) {
+      title = 'Watchlist Position';
+      color = '#b45309';
+      conclusion = 'The goal is still within reach but requires tighter month-over-month variance consistency.';
+    } else {
+      title = 'At-Risk Position';
+      color = '#b91c1c';
+      conclusion = 'Based on current variance trend, the goal is unlikely to be achieved within the current timeframe.';
+    }
+
+    return {
+      title,
+      color,
+      conclusion,
+      netWorthVariance,
+      projectedCoverage: goalForecast.possibilityPercent,
+      complianceNote: 'This statement is system-generated from user-provided inputs and should be validated before external submission.',
+    };
+  }, [goalForecast.effectiveTargetAmount, goalForecast.isAchievable, goalForecast.possibilityPercent, goalForecast.sanitizedMonths, totals.projectedNetWorth, totals.setupNetWorth]);
+
+  const isCertificationComplete = hasCertifiedAccuracy
+    && hasCertifiedConsistencyAssumption
+    && hasCertifiedConsent
+    && certifierName.trim().length > 0
+    && certificationDate.trim().length > 0;
 
   const topVarianceRows = useMemo(() => {
     return varianceRows
@@ -1212,13 +1289,11 @@ export default function NetWorthPositioningPage() {
                         type="button"
                         className="budget-dashboard-category-reset"
                         onClick={handleShowMoreRemainingRows}
-                        disabled={hiddenRemainingRowsCount === 0}
+                        disabled={visibleRemainingRowsCount === accordionSetupRows.length}
                       >
-                        {visibleRemainingRowsCount === 0
-                          ? `Show Remaining Accounts (${accordionSetupRows.length})`
-                          : hiddenRemainingRowsCount > 0
-                            ? `Show ${Math.min(REMAINING_ROWS_BATCH_SIZE, hiddenRemainingRowsCount)} More Remaining Accounts`
-                            : 'All Remaining Accounts Shown'}
+                        {visibleRemainingRowsCount === accordionSetupRows.length
+                          ? 'All Remaining Accounts Shown'
+                          : `Show Remaining Accounts (${accordionSetupRows.length})`}
                       </button>
                       {visibleRemainingRowsCount > 0 ? (
                         <button
@@ -1792,7 +1867,133 @@ export default function NetWorthPositioningPage() {
               Forecast assumes net worth variance per cycle remains consistent. "Likely achievable" requires at least a {Math.round(goalForecast.likelyAchievableThreshold * 100)}% projected coverage buffer; {Math.round(goalForecast.atRiskThreshold * 100)}% to below that is marked as at risk.
             </p>
           </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Statement of Position</span>
+            <h2 style={{ color: positionStatement.color }}>{positionStatement.title}</h2>
+            <ul className="psychometric-breakdown-list">
+              <li>
+                <span>Total Assets (Projected)</span>
+                <strong>{formatCurrency(totals.projectedAssets)}</strong>
+              </li>
+              <li>
+                <span>Total Liabilities (Projected)</span>
+                <strong>{formatCurrency(totals.projectedLiabilities)}</strong>
+              </li>
+              <li>
+                <span>Current Net Worth Position</span>
+                <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
+              </li>
+              <li>
+                <span>Net Worth Variance</span>
+                <strong>{formatSignedCurrency(positionStatement.netWorthVariance)}</strong>
+              </li>
+              <li>
+                <span>Projected Net Worth at Target Date</span>
+                <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
+              </li>
+              <li>
+                <span>Goal Coverage Probability</span>
+                <strong style={{ color: positionStatement.color }}>{positionStatement.projectedCoverage}%</strong>
+              </li>
+              <li>
+                <span>Time-to-Goal Estimate</span>
+                <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
+              </li>
+            </ul>
+            <p className="psychometric-section-note">
+              {positionStatement.conclusion}
+            </p>
+            <p className="psychometric-section-note">
+              {positionStatement.complianceNote}
+            </p>
+          </article>
         </aside>
+      </section>
+
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Certification</span>
+            <h2>Certification and Declaration</h2>
+          </div>
+        </div>
+
+        <p className="psychometric-section-note">
+          Complete this declaration before formal use of the statement of position.
+        </p>
+
+        <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
+          <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+            <span>Accuracy Declaration</span>
+            <input
+              type="checkbox"
+              checked={hasCertifiedAccuracy}
+              onChange={(event) => setHasCertifiedAccuracy(event.target.checked)}
+            />
+            <small>I certify that all values entered are true and complete to the best of my knowledge.</small>
+          </label>
+
+          <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+            <span>Consistency Assumption</span>
+            <input
+              type="checkbox"
+              checked={hasCertifiedConsistencyAssumption}
+              onChange={(event) => setHasCertifiedConsistencyAssumption(event.target.checked)}
+            />
+            <small>I understand that forecasted achievability assumes consistent net worth variance behavior.</small>
+          </label>
+
+          <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+            <span>Consent</span>
+            <input
+              type="checkbox"
+              checked={hasCertifiedConsent}
+              onChange={(event) => setHasCertifiedConsent(event.target.checked)}
+            />
+            <small>I authorize the use of this statement for financial assessment and planning.</small>
+          </label>
+        </div>
+
+        <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
+          <label className="budget-dashboard-category-summary-card">
+            <span>Certifier Name</span>
+            <input
+              type="text"
+              value={certifierName}
+              onChange={(event) => setCertifierName(event.target.value)}
+              className="budget-dashboard-category-input"
+              placeholder="Enter full name"
+            />
+          </label>
+
+          <label className="budget-dashboard-category-summary-card">
+            <span>Role</span>
+            <input
+              type="text"
+              value={certifierRole}
+              onChange={(event) => setCertifierRole(event.target.value)}
+              className="budget-dashboard-category-input"
+              placeholder="Borrower"
+            />
+          </label>
+
+          <label className="budget-dashboard-category-summary-card">
+            <span>Certification Date</span>
+            <input
+              type="date"
+              value={certificationDate}
+              onChange={(event) => setCertificationDate(event.target.value)}
+              className="budget-dashboard-category-input"
+            />
+          </label>
+        </div>
+
+        <p className="psychometric-section-note" style={{ color: isCertificationComplete ? '#047857' : '#b45309' }}>
+          {isCertificationComplete
+            ? `Certification complete. Signed by ${certifierName.trim()} (${certifierRole.trim() || 'Borrower'}) on ${certificationDate}.`
+            : 'Certification incomplete. Confirm all declarations and complete signer details.'}
+        </p>
       </section>
 
       <section className="psychometric-panel">
