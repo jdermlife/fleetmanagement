@@ -97,8 +97,8 @@ function formatPercentInput(value: number) {
   return value.toFixed(2).replace(/\.00$/, '');
 }
 
-function formatEstimatedDueDayLabel(rawValue: string) {
-  const trimmed = rawValue.trim();
+function formatEstimatedDueDayLabel(rawValue: string | undefined) {
+  const trimmed = (rawValue ?? '').trim();
   const day = Number(trimmed);
 
   if (!Number.isInteger(day) || day < 1 || day > 31) {
