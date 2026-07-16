@@ -105,7 +105,7 @@ const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Financial Snapshot' },
   { id: 'lending-scorecard', label: 'Financial Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth & Networth Building Score' },
-  { id: 'budget-expense-tracker', label: 'Income & Spending' },
+  { id: 'budget-expense-tracker', label: 'Income & Spending Tracker' },
   { id: 'loan-monitoring', label: 'Debt Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
 
@@ -350,6 +350,15 @@ const isSignedIn = authReady && Boolean(currentUser)
     setCurrentUser(null)
     navigate('/login')
   }
+
+  useEffect(() => {
+    const handleSessionExpired = () => {
+      setCurrentUser(null)
+      navigate('/login')
+    }
+    window.addEventListener('auth:session-expired', handleSessionExpired)
+    return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
+  }, [navigate])
 
   return (
     <div className="app-shell">

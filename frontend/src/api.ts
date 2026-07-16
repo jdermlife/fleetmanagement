@@ -237,6 +237,9 @@ api.interceptors.response.use(
         return await api.request(originalRequest)
       } catch (refreshError) {
         syncStoredSession(null, null)
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(new CustomEvent('auth:session-expired'))
+        }
         return Promise.reject(refreshError)
       }
     }

@@ -1,5 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import axios from 'axios';
 
 import {
   api,
@@ -3301,8 +3302,24 @@ export default function LendingScorecard() {
     try {
       const entitlement = await fetchLoanCreationEntitlement();
       setLoanCreationEntitlement(entitlement);
-    } catch {
-      setLoanCreationEntitlement(null);
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        setLoanCreationEntitlement({
+          allowed: false,
+          reason: 'subscription_required',
+          message: 'Your current plan does not allow creating new loan records.',
+          role_code: '',
+          records_in_free_window: 0,
+          records_this_month: 0,
+          free_limit: 0,
+          free_days: 0,
+          free_window_active: false,
+          amount_due_this_month: 0,
+          has_paid_current_period: false,
+        });
+      } else {
+        setLoanCreationEntitlement(null);
+      }
     }
   }, []);
 
