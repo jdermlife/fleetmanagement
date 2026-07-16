@@ -4,7 +4,7 @@ import { Link } from 'react-router-dom';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
 
-type WorkflowStep = 1 | 2 | 3;
+type WorkflowStep = 1 | 2 | 3 | 4;
 
 interface AdditionalLoanStatementRow {
   id: string;
@@ -30,6 +30,9 @@ interface LoanMonitoringWorkflowConfig {
     hasSelectedLoan: boolean;
     hasValidSnapshot: boolean;
     hasRecordStatus: boolean;
+    hasLoanType: boolean;
+    hasEntityIssuer: boolean;
+    hasCollateralIfAny: boolean;
   };
   step2: {
     hasStatementRows: boolean;
@@ -37,6 +40,12 @@ interface LoanMonitoringWorkflowConfig {
     hasComputedInstallments: boolean;
   };
   step3: {
+    hasSummaryRow: boolean;
+    hasLoanType: boolean;
+    hasIssuerLender: boolean;
+    hasCollateral: boolean;
+  };
+  step4: {
     hasControlItems: boolean;
     hasIndicators: boolean;
     hasAdvisorSignals: boolean;
@@ -56,6 +65,9 @@ const DEFAULT_WORKFLOW_CONFIG: LoanMonitoringWorkflowConfig = {
     hasSelectedLoan: true,
     hasValidSnapshot: true,
     hasRecordStatus: true,
+    hasLoanType: true,
+    hasEntityIssuer: true,
+    hasCollateralIfAny: true,
   },
   step2: {
     hasStatementRows: true,
@@ -63,6 +75,12 @@ const DEFAULT_WORKFLOW_CONFIG: LoanMonitoringWorkflowConfig = {
     hasComputedInstallments: true,
   },
   step3: {
+    hasSummaryRow: true,
+    hasLoanType: true,
+    hasIssuerLender: true,
+    hasCollateral: true,
+  },
+  step4: {
     hasControlItems: true,
     hasIndicators: true,
     hasAdvisorSignals: true,
@@ -247,6 +265,9 @@ export default function LoanMonitoringPage() {
   const [newLoanAmount, setNewLoanAmount] = useState('');
   const [newLoanInterestRate, setNewLoanInterestRate] = useState('');
   const [newLoanTerm, setNewLoanTerm] = useState('');
+  const [loanType, setLoanType] = useState('');
+  const [entityIssuer, setEntityIssuer] = useState('');
+  const [collateralIfAny, setCollateralIfAny] = useState('');
   const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
   const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
   const [step, setStep] = useState<WorkflowStep>(1);
@@ -270,6 +291,42 @@ export default function LoanMonitoringPage() {
     () => buildAiAdvisor(snapshot),
     [snapshot],
   );
+  const selectedRecord = useMemo(
+    () => monitoredApplications.find((record) => record.application_no === selectedApplicationNo) ?? null,
+    [monitoredApplications, selectedApplicationNo],
+  );
+  const summaryDashboardRows = useMemo(() => {
+    const selectedOriginalAmount = Number(selectedRecord?.loan_amount ?? 0);
+    const selectedRate = Number(selectedRecord?.interest_rate ?? 0);
+    const selectedTerm = Number(selectedRecord?.term_months ?? 0);
+    const selectedOutstanding = snapshot.statementRows.length > 0
+      ? snapshot.statementRows[snapshot.statementRows.length - 1]?.endBalance ?? selectedOriginalAmount
+      : selectedOriginalAmount;
+
+    const primaryRow = {
+      id: selectedApplicationNo || 'selected-loan',
+      loanType: loanType || 'Not set',
+      issuerLender: entityIssuer || 'Not set',
+      originalLoanAmount: selectedOriginalAmount,
+      interestRate: selectedRate,
+      term: selectedTerm,
+      outstandingBalance: selectedOutstanding,
+      collateral: collateralIfAny || 'None',
+    };
+
+    const additionalRows = additionalSchedules.map((schedule, index) => ({
+      id: `${schedule.id}-${index}`,
+      loanType: loanType || 'Additional Loan',
+      issuerLender: entityIssuer || 'Not set',
+      originalLoanAmount: schedule.loanAmount,
+      interestRate: schedule.interestRate,
+      term: schedule.termMonths,
+      outstandingBalance: schedule.rows[schedule.rows.length - 1]?.endBalance ?? schedule.loanAmount,
+      collateral: collateralIfAny || 'None',
+    }));
+
+    return [primaryRow, ...additionalRows].filter((item) => item.originalLoanAmount > 0);
+  }, [selectedRecord, snapshot.statementRows, selectedApplicationNo, loanType, entityIssuer, collateralIfAny, additionalSchedules]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -284,6 +341,11 @@ export default function LoanMonitoringPage() {
     },
     {
       id: 3,
+      label: 'Summary Dashboard',
+      description: 'Review loan summary and analysis/computation areas.',
+    },
+    {
+      id: 4,
       label: 'AI Advisor',
       description: 'Get borrower guidance from the monitored loan.',
     },
@@ -312,6 +374,7 @@ export default function LoanMonitoringPage() {
       const step1 = typeof parsed.step1 === 'object' && parsed.step1 ? parsed.step1 as Record<string, unknown> : {};
       const step2 = typeof parsed.step2 === 'object' && parsed.step2 ? parsed.step2 as Record<string, unknown> : {};
       const step3 = typeof parsed.step3 === 'object' && parsed.step3 ? parsed.step3 as Record<string, unknown> : {};
+      const step4 = typeof parsed.step4 === 'object' && parsed.step4 ? parsed.step4 as Record<string, unknown> : {};
       const thresholds = typeof parsed.thresholds === 'object' && parsed.thresholds
         ? parsed.thresholds as Record<string, unknown>
         : {};
@@ -325,6 +388,9 @@ export default function LoanMonitoringPage() {
           hasSelectedLoan: readBoolean(step1.hasSelectedLoan, DEFAULT_WORKFLOW_CONFIG.step1.hasSelectedLoan),
           hasValidSnapshot: readBoolean(step1.hasValidSnapshot, DEFAULT_WORKFLOW_CONFIG.step1.hasValidSnapshot),
           hasRecordStatus: readBoolean(step1.hasRecordStatus, DEFAULT_WORKFLOW_CONFIG.step1.hasRecordStatus),
+          hasLoanType: readBoolean(step1.hasLoanType, DEFAULT_WORKFLOW_CONFIG.step1.hasLoanType),
+          hasEntityIssuer: readBoolean(step1.hasEntityIssuer, DEFAULT_WORKFLOW_CONFIG.step1.hasEntityIssuer),
+          hasCollateralIfAny: readBoolean(step1.hasCollateralIfAny, DEFAULT_WORKFLOW_CONFIG.step1.hasCollateralIfAny),
         },
         step2: {
           hasStatementRows: readBoolean(step2.hasStatementRows, DEFAULT_WORKFLOW_CONFIG.step2.hasStatementRows),
@@ -332,10 +398,16 @@ export default function LoanMonitoringPage() {
           hasComputedInstallments: readBoolean(step2.hasComputedInstallments, DEFAULT_WORKFLOW_CONFIG.step2.hasComputedInstallments),
         },
         step3: {
-          hasControlItems: readBoolean(step3.hasControlItems, DEFAULT_WORKFLOW_CONFIG.step3.hasControlItems),
-          hasIndicators: readBoolean(step3.hasIndicators, DEFAULT_WORKFLOW_CONFIG.step3.hasIndicators),
-          hasAdvisorSignals: readBoolean(step3.hasAdvisorSignals, DEFAULT_WORKFLOW_CONFIG.step3.hasAdvisorSignals),
-          hasHealthScore: readBoolean(step3.hasHealthScore, DEFAULT_WORKFLOW_CONFIG.step3.hasHealthScore),
+          hasSummaryRow: readBoolean(step3.hasSummaryRow, DEFAULT_WORKFLOW_CONFIG.step3.hasSummaryRow),
+          hasLoanType: readBoolean(step3.hasLoanType, DEFAULT_WORKFLOW_CONFIG.step3.hasLoanType),
+          hasIssuerLender: readBoolean(step3.hasIssuerLender, DEFAULT_WORKFLOW_CONFIG.step3.hasIssuerLender),
+          hasCollateral: readBoolean(step3.hasCollateral, DEFAULT_WORKFLOW_CONFIG.step3.hasCollateral),
+        },
+        step4: {
+          hasControlItems: readBoolean(step4.hasControlItems, DEFAULT_WORKFLOW_CONFIG.step4.hasControlItems),
+          hasIndicators: readBoolean(step4.hasIndicators, DEFAULT_WORKFLOW_CONFIG.step4.hasIndicators),
+          hasAdvisorSignals: readBoolean(step4.hasAdvisorSignals, DEFAULT_WORKFLOW_CONFIG.step4.hasAdvisorSignals),
+          hasHealthScore: readBoolean(step4.hasHealthScore, DEFAULT_WORKFLOW_CONFIG.step4.hasHealthScore),
         },
         thresholds: {
           inProgressMin: Math.min(inProgressMin, completeMin),
@@ -353,11 +425,17 @@ export default function LoanMonitoringPage() {
     const hasSelectedLoan = selectedApplicationNo.trim().length > 0;
     const hasValidSnapshot = snapshot.sourceApplicationNo !== 'N/A';
     const hasRecordStatus = snapshot.sourceRecordStatus.trim().length > 0 && snapshot.sourceRecordStatus !== 'No Records';
+    const hasLoanType = loanType.trim().length > 0;
+    const hasEntityIssuer = entityIssuer.trim().length > 0;
+    const hasCollateralIfAny = collateralIfAny.trim().length > 0;
     const step1Rules = [
       workflowConfig.step1.hasPortfolioLoans ? hasPortfolioLoans : null,
       workflowConfig.step1.hasSelectedLoan ? hasSelectedLoan : null,
       workflowConfig.step1.hasValidSnapshot ? hasValidSnapshot : null,
       workflowConfig.step1.hasRecordStatus ? hasRecordStatus : null,
+      workflowConfig.step1.hasLoanType ? hasLoanType : null,
+      workflowConfig.step1.hasEntityIssuer ? hasEntityIssuer : null,
+      workflowConfig.step1.hasCollateralIfAny ? hasCollateralIfAny : null,
     ].filter((item): item is boolean => typeof item === 'boolean');
     const step1Checks = step1Rules.filter(Boolean).length;
 
@@ -373,28 +451,45 @@ export default function LoanMonitoringPage() {
     ].filter((item): item is boolean => typeof item === 'boolean');
     const step2Checks = step2Rules.filter(Boolean).length;
 
+    const hasSummaryRow = summaryDashboardRows.length > 0;
+    const hasLoanTypeStep3 = loanType.trim().length > 0;
+    const hasIssuerLender = entityIssuer.trim().length > 0;
+    const hasCollateral = collateralIfAny.trim().length > 0;
+    const step3Rules = [
+      workflowConfig.step3.hasSummaryRow ? hasSummaryRow : null,
+      workflowConfig.step3.hasLoanType ? hasLoanTypeStep3 : null,
+      workflowConfig.step3.hasIssuerLender ? hasIssuerLender : null,
+      workflowConfig.step3.hasCollateral ? hasCollateral : null,
+    ].filter((item): item is boolean => typeof item === 'boolean');
+    const step3Checks = step3Rules.filter(Boolean).length;
+
     const hasControlItems = snapshot.controlItems.length > 0;
     const hasIndicators = snapshot.indicators.length > 0;
     const hasAdvisorSignals = [advisor.interestAdvice.text, advisor.dsrStatus.text, advisor.refinancingQuality.text]
       .every((item) => item.trim().length > 0);
     const hasHealthScore = Number.isFinite(snapshot.healthScore);
-    const step3Rules = [
-      workflowConfig.step3.hasControlItems ? hasControlItems : null,
-      workflowConfig.step3.hasIndicators ? hasIndicators : null,
-      workflowConfig.step3.hasAdvisorSignals ? hasAdvisorSignals : null,
-      workflowConfig.step3.hasHealthScore ? hasHealthScore : null,
+    const step4Rules = [
+      workflowConfig.step4.hasControlItems ? hasControlItems : null,
+      workflowConfig.step4.hasIndicators ? hasIndicators : null,
+      workflowConfig.step4.hasAdvisorSignals ? hasAdvisorSignals : null,
+      workflowConfig.step4.hasHealthScore ? hasHealthScore : null,
     ].filter((item): item is boolean => typeof item === 'boolean');
-    const step3Checks = step3Rules.filter(Boolean).length;
+    const step4Checks = step4Rules.filter(Boolean).length;
 
     return {
       1: Math.round((step1Checks / Math.max(step1Rules.length, 1)) * 100),
       2: Math.round((step2Checks / Math.max(step2Rules.length, 1)) * 100),
       3: Math.round((step3Checks / Math.max(step3Rules.length, 1)) * 100),
+      4: Math.round((step4Checks / Math.max(step4Rules.length, 1)) * 100),
     };
   }, [
     monitoredApplications.length,
     selectedApplicationNo,
     snapshot,
+    loanType,
+    entityIssuer,
+    collateralIfAny,
+    summaryDashboardRows,
     additionalSchedules.length,
     advisor,
     workflowConfig,
@@ -435,7 +530,7 @@ export default function LoanMonitoringPage() {
       <section className="psychometric-hero loan-monitoring-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Loan Performance Oversight</span>
-          <h1>Loan Monitoring</h1>
+          <h1>Debt Optimizer-Loan Monitoring</h1>
           <p>
             Period: <strong>{snapshot.dateLabel}</strong>
           </p>
@@ -485,11 +580,6 @@ export default function LoanMonitoringPage() {
           <small>Projected elapsed installments from the monitored loan statement</small>
         </article>
 
-        <article className="psychometric-summary-card">
-          <span>Product Type</span>
-          <strong>{snapshot.loanMarket}</strong>
-          <small>{snapshot.sourceRecordStatus}</small>
-        </article>
       </section>
 
       <section className="budget-dashboard-layout">
@@ -556,6 +646,47 @@ export default function LoanMonitoringPage() {
                     <span>Current Status</span>
                     <strong>{snapshot.sourceRecordStatus}</strong>
                   </div>
+                </div>
+
+                <div className="budget-dashboard-category-summary">
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Loan Type</span>
+                    <select
+                      value={loanType}
+                      onChange={(event) => setLoanType(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      aria-label="Loan type"
+                    >
+                      <option value="">Select loan type</option>
+                      <option value="Home Loan">Home Loan</option>
+                      <option value="Auto Loan">Auto Loan</option>
+                      <option value="Personal Loan">Personal Loan</option>
+                      <option value="Business Loan">Business Loan</option>
+                      <option value="Credit Line">Credit Line</option>
+                      <option value="Bridge Loan">Bridge Loan</option>
+                      <option value="Other">Other</option>
+                    </select>
+                  </label>
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Entity Issuer</span>
+                    <input
+                      type="text"
+                      value={entityIssuer}
+                      onChange={(event) => setEntityIssuer(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Enter loan issuer entity"
+                    />
+                  </label>
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Collateral (If Any)</span>
+                    <input
+                      type="text"
+                      value={collateralIfAny}
+                      onChange={(event) => setCollateralIfAny(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Type collateral or None"
+                    />
+                  </label>
                 </div>
 
                 <div className="budget-workflow-inline-actions">
@@ -719,7 +850,69 @@ export default function LoanMonitoringPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3 className="workflow-duplicate-step-title">Step 3: AI Advisor</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Dashboard - Loan Summary</h3>
+                <p className="psychometric-section-note">
+                  Review the consolidated loan summary table and run loan optimization computations.
+                </p>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Loan Type</th>
+                        <th>Issuer/Lender</th>
+                        <th>Original Loan Amount</th>
+                        <th>Interest Rate</th>
+                        <th>Term</th>
+                        <th>Outstanding Balance</th>
+                        <th>Collateral (If Any)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {summaryDashboardRows.map((row) => (
+                        <tr key={row.id}>
+                          <td data-label="Loan Type">{row.loanType}</td>
+                          <td data-label="Issuer/Lender">{row.issuerLender}</td>
+                          <td data-label="Original Loan Amount">{formatMetricValue(row.originalLoanAmount, 'currency')}</td>
+                          <td data-label="Interest Rate">{`${row.interestRate.toFixed(2)}%`}</td>
+                          <td data-label="Term">{`${row.term} months`}</td>
+                          <td data-label="Outstanding Balance">{formatMetricValue(row.outstandingBalance, 'currency')}</td>
+                          <td data-label="Collateral (If Any)">{row.collateral}</td>
+                        </tr>
+                      ))}
+                      {summaryDashboardRows.length === 0 ? (
+                        <tr>
+                          <td colSpan={7}>No loan summary available yet. Complete Step 1 and Step 2 first.</td>
+                        </tr>
+                      ) : null}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-dashboard-indicator-row" style={{ marginTop: '12px' }}>
+                  <article className="budget-dashboard-indicator budget-dashboard-status-watch" style={{ flex: '1 1 100%' }}>
+                    <span>Analysis / Computation</span>
+                    <strong>Debt Optimization Summary</strong>
+                    <p>
+                      Debt Consolidation, Debt Repayment, Refinancing Opportunities, Credit Utilization Optimizer, Debt-to-Income Optimization, Loan Restructuring Advisor, Borrowing Capacity Simulator, Debt Free-Date Analysis, and Interest Leakage.
+                    </p>
+                  </article>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
+                    Back to Step 2
+                  </button>
+                  <button type="button" className="psychometric-reset-button" onClick={() => setStep(4)}>
+                    Continue to Step 4
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="budget-workflow-step-block">
+                <h3 className="workflow-duplicate-step-title">Step 4: AI Advisor</h3>
                 <p className="psychometric-section-note">
                   Review payment controls, health indicators, and AI guidance from live loan behavior.
                 </p>
@@ -773,15 +966,15 @@ export default function LoanMonitoringPage() {
                 </div>
 
                 <div className="budget-workflow-inline-actions">
-                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
-                    Back to Step 2
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
+                    Back to Step 3
                   </button>
                 </div>
               </div>
             ) : null}
           </article>
 
-          {step === 3 ? (
+          {step === 4 ? (
             <article className="psychometric-panel">
               <div className="psychometric-panel-header">
                 <div>
@@ -881,6 +1074,27 @@ export default function LoanMonitoringPage() {
                   </button>
                 );
               })}
+            </div>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel" style={{ marginTop: '12px' }}>
+            <div className="budget-dashboard-indicator-row" style={{ display: 'grid', gap: '10px' }}>
+              <article className="budget-dashboard-indicator budget-dashboard-status-maintain" style={{ margin: 0 }}>
+                <span>Debt Savings Calculator</span>
+                <p>Estimate potential savings from prepayments, lower rates, or term adjustments.</p>
+              </article>
+              <article className="budget-dashboard-indicator budget-dashboard-status-maintain" style={{ margin: 0 }}>
+                <span>Borrowing Capacity Simulator</span>
+                <p>Simulate borrowing headroom based on current debt service and cashflow.</p>
+              </article>
+              <article className="budget-dashboard-indicator budget-dashboard-status-watch" style={{ margin: 0 }}>
+                <span>Collateral Valuation Trigger</span>
+                <p>Highlight loans that require updated collateral valuation and risk reassessment.</p>
+              </article>
+              <article className="budget-dashboard-indicator budget-dashboard-status-watch" style={{ margin: 0 }}>
+                <span>Loan Restructuring Advisor</span>
+                <p>Assess refinance, consolidation, and restructuring options to reduce repayment pressure.</p>
+              </article>
             </div>
           </article>
         </aside>
