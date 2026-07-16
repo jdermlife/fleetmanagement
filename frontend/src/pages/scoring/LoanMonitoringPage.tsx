@@ -4,6 +4,8 @@ import { Link } from 'react-router-dom';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
 
+type WorkflowStep = 1 | 2 | 3 | 4 | 5;
+
 interface AdditionalLoanStatementRow {
   id: string;
   monthLabel: string;
@@ -197,6 +199,31 @@ export default function LoanMonitoringPage() {
   const [newLoanTerm, setNewLoanTerm] = useState('');
   const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
   const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
+  const [step, setStep] = useState<WorkflowStep>(1);
+  
+  // Step 1: Loan Master
+  const [loanName, setLoanName] = useState('');
+  const [loanType, setLoanType] = useState('');
+  const [lender, setLender] = useState('');
+  const [borrower, setBorrower] = useState('');
+  const [originalAmount, setOriginalAmount] = useState('');
+  const [dateGranted, setDateGranted] = useState('');
+  const [interestRateForMaster, setInterestRateForMaster] = useState('');
+  const [paymentFrequency, setPaymentFrequency] = useState('Monthly');
+  const [maturity, setMaturity] = useState('');
+  
+  // Step 2: Loan Accounts (auto-generated)
+  const loanAccounts = [
+    'Outstanding Principal',
+    'Interest Expense',
+    'Penalty Charges',
+    'Insurance',
+    'Processing Fees',
+    'Monthly Amortization',
+    'Advance Payments',
+    'Loan Balance',
+    'Remaining Interest',
+  ];
 
   useEffect(() => {
     if (!monitoredApplications.length) {
@@ -217,6 +244,37 @@ export default function LoanMonitoringPage() {
     () => buildAiAdvisor(snapshot),
     [snapshot],
   );
+
+  const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
+    {
+      id: 1,
+      label: 'Loan Master',
+      description: 'Define the loan with core details.',
+    },
+    {
+      id: 2,
+      label: 'Loan Accounts',
+      description: 'View auto-generated loan subaccounts.',
+    },
+    {
+      id: 3,
+      label: 'Payment Schedule',
+      description: 'View automatically generated installments.',
+    },
+    {
+      id: 4,
+      label: 'Monthly Monitoring',
+      description: 'Monitor monthly payment workflow.',
+    },
+    {
+      id: 5,
+      label: 'AI Recommendations',
+      description: 'Get AI-driven insights and strategies.',
+    },
+  ];
+
+  const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Loan Workflow';
+  const stepperButtonClass = 'loan-stepper-button';
 
   const handleRunAdditionalInstallmentSchedule = () => {
     const parsedLoanAmount = Number(newLoanAmount);
@@ -268,6 +326,10 @@ export default function LoanMonitoringPage() {
         </div>
       </section>
 
+      <section className="psychometric-summary-grid" style={{ marginBottom: '12px' }}>
+        <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
+      </section>
+
       <section className="psychometric-summary-grid loan-monitoring-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Monitored Loans</span>
@@ -299,375 +361,429 @@ export default function LoanMonitoringPage() {
       </section>
 
       <section className="budget-dashboard-layout">
-        <div className="budget-dashboard-main">
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Loan Statement</span>
-                <h2>Borrower running balance and installment schedule</h2>
+        {step === 1 ? (
+          <div className="budget-dashboard-main">
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">Step 1</span>
+                  <h2>Loan Master</h2>
+                </div>
               </div>
-              <div className="dashboard-header-actions">
-                <Link to="/lending-scorecard" className="auth-link-button">
-                  Loan Setup
-                </Link>
-                <button
-                  type="button"
-                  className="psychometric-reset-button"
-                  onClick={reload}
-                  disabled={loading}
-                >
-                  {loading ? 'Refreshing...' : 'Refresh Data'}
-                </button>
-              </div>
-            </div>
 
-            {error ? (
-              <p className="psychometric-section-note" role="alert">
-                {error}
+              <p className="psychometric-section-note">
+                Define the loan with core details. Created once.
               </p>
-            ) : null}
 
-            <p className="psychometric-section-note">
-              {snapshot.sourceLabel} | {snapshot.sourceApplicationNo}
-              {lastUpdated ? ` | Updated ${lastUpdated.toLocaleString()}` : ''}
-            </p>
-
-            <div className="budget-dashboard-category-summary" style={{ marginBottom: '18px' }}>
-              <div className="budget-dashboard-category-summary-card">
-                <span>Application Reference Number</span>
-                <strong>{snapshot.sourceApplicationNo}</strong>
+              <div className="budget-dashboard-category-summary">
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Loan Name</span>
+                  <input
+                    type="text"
+                    value={loanName}
+                    onChange={(event) => setLoanName(event.target.value)}
+                    className="budget-dashboard-category-input"
+                    placeholder="e.g., Toyota Auto Loan"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Loan Type</span>
+                  <select
+                    value={loanType}
+                    onChange={(event) => setLoanType(event.target.value)}
+                    className="budget-dashboard-category-input"
+                  >
+                    <option value="">Select Loan Type</option>
+                    <option value="Auto Loan">Auto Loan</option>
+                    <option value="Home Loan">Home Loan</option>
+                    <option value="Personal Loan">Personal Loan</option>
+                    <option value="Business Loan">Business Loan</option>
+                    <option value="Student Loan">Student Loan</option>
+                    <option value="Mortgage">Mortgage</option>
+                    <option value="Other">Other</option>
+                  </select>
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Lender</span>
+                  <input
+                    type="text"
+                    value={lender}
+                    onChange={(event) => setLender(event.target.value)}
+                    className="budget-dashboard-category-input"
+                    placeholder="e.g., BDO"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Borrower</span>
+                  <input
+                    type="text"
+                    value={borrower}
+                    onChange={(event) => setBorrower(event.target.value)}
+                    className="budget-dashboard-category-input"
+                    placeholder="e.g., Jorge Dioneda"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Original Amount</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={originalAmount}
+                    onChange={(event) => setOriginalAmount(event.target.value)}
+                    className="budget-dashboard-category-input"
+                    placeholder="₱1,500,000"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Date Granted</span>
+                  <input
+                    type="date"
+                    value={dateGranted}
+                    onChange={(event) => setDateGranted(event.target.value)}
+                    className="budget-dashboard-category-input"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Interest Rate (%)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={interestRateForMaster}
+                    onChange={(event) => setInterestRateForMaster(event.target.value)}
+                    className="budget-dashboard-category-input"
+                    placeholder="8.5"
+                  />
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Payment Frequency</span>
+                  <select
+                    value={paymentFrequency}
+                    onChange={(event) => setPaymentFrequency(event.target.value)}
+                    className="budget-dashboard-category-input"
+                  >
+                    <option value="Monthly">Monthly</option>
+                    <option value="Quarterly">Quarterly</option>
+                    <option value="Semi-Annual">Semi-Annual</option>
+                    <option value="Annual">Annual</option>
+                    <option value="Bi-Weekly">Bi-Weekly</option>
+                  </select>
+                </label>
+                <label className="budget-dashboard-category-summary-card">
+                  <span>Maturity Date</span>
+                  <input
+                    type="date"
+                    value={maturity}
+                    onChange={(event) => setMaturity(event.target.value)}
+                    className="budget-dashboard-category-input"
+                  />
+                </label>
               </div>
-              <div className="budget-dashboard-category-summary-card">
-                <span>Choose Loan / Application Reference</span>
-                <select
-                  value={selectedApplicationNo}
-                  onChange={(event) => setSelectedApplicationNo(event.target.value)}
-                  disabled={monitoredApplications.length <= 1}
-                  className="budget-dashboard-category-input"
-                  aria-label="Choose loan or application reference number"
-                >
-                  {monitoredApplications.map((record) => (
-                    <option key={record.application_no} value={record.application_no}>
-                      {record.application_no}
-                    </option>
-                  ))}
-                  {monitoredApplications.length === 0 ? (
-                    <option value="">No application reference available</option>
-                  ) : null}
-                </select>
-              </div>
-              <div className="budget-dashboard-category-summary-card">
-                <span>Current Status</span>
-                <strong>{snapshot.sourceRecordStatus}</strong>
-              </div>
-            </div>
 
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Month/Year</th>
-                    <th>Total Running Balance from Previous Month</th>
-                    <th>Principal</th>
-                    <th>Interest</th>
-                    <th>End Balance</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.statementRows.map((row) => (
-                    <tr key={row.id}>
-                      <td data-label="Month/Year">{row.monthLabel}</td>
-                      <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
-                      <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
-                      <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
-                      <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
-                    </tr>
-                  ))}
-                  {snapshot.statementRows.length === 0 ? (
-                    <tr>
-                      <td colSpan={5}>No loan statement available yet. Use Loan Setup to create or complete an application.</td>
-                    </tr>
-                  ) : null}
-                </tbody>
-              </table>
-            </div>
-
-            <div className="budget-workflow-step-block" style={{ marginTop: '16px' }}>
               <div className="budget-workflow-inline-actions">
                 <button
                   type="button"
                   className="psychometric-reset-button"
                   onClick={() => {
-                    setShowAddLoanForm((previous) => !previous);
-                    setAdditionalScheduleMessage('');
+                    setLoanName('');
+                    setLoanType('');
+                    setLender('');
+                    setBorrower('');
+                    setOriginalAmount('');
+                    setDateGranted('');
+                    setInterestRateForMaster('');
+                    setPaymentFrequency('Monthly');
+                    setMaturity('');
                   }}
                 >
-                  {showAddLoanForm ? 'Hide Additional Loan Form' : 'Add Another Loan and Installment Schedule'}
+                  Clear Form
+                </button>
+                <button
+                  type="button"
+                  className="psychometric-reset-button"
+                  onClick={() => {
+                    if (loanName && loanType && lender && originalAmount && dateGranted) {
+                      alert(`Loan Master "${loanName}" created successfully.`);
+                    } else {
+                      alert('Please fill in required fields: Loan Name, Type, Lender, Amount, and Date Granted.');
+                    }
+                  }}
+                >
+                  Save Loan Master
                 </button>
               </div>
+            </article>
+          </div>
+        ) : null}
 
-              {showAddLoanForm ? (
-                <>
-                  <div className="budget-dashboard-category-summary">
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Amount of Loan</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={newLoanAmount}
-                        onChange={(event) => setNewLoanAmount(event.target.value)}
-                        className="budget-dashboard-category-input"
-                        placeholder="Enter amount"
-                      />
-                    </label>
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Interest Rate (%)</span>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.01"
-                        value={newLoanInterestRate}
-                        onChange={(event) => setNewLoanInterestRate(event.target.value)}
-                        className="budget-dashboard-category-input"
-                        placeholder="Enter annual rate"
-                      />
-                    </label>
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Term (Months)</span>
-                      <input
-                        type="number"
-                        min={1}
-                        step="1"
-                        value={newLoanTerm}
-                        onChange={(event) => setNewLoanTerm(event.target.value)}
-                        className="budget-dashboard-category-input"
-                        placeholder="Enter term"
-                      />
-                    </label>
-                  </div>
+        {step === 2 ? (
+          <div className="budget-dashboard-main">
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">Step 2</span>
+                  <h2>Loan Accounts</h2>
+                </div>
+              </div>
 
-                  <div className="budget-workflow-inline-actions">
-                    <button
-                      type="button"
-                      className="psychometric-reset-button"
-                      onClick={handleRunAdditionalInstallmentSchedule}
-                    >
-                      Run Installment Schedule
-                    </button>
-                  </div>
-                </>
-              ) : null}
+              <p className="psychometric-section-note">
+                Auto-generated subaccounts created from the Loan Master. These accounts track all aspects of the loan lifecycle.
+              </p>
 
-              {additionalScheduleMessage ? (
-                <p className="psychometric-section-note" role="status">
-                  {additionalScheduleMessage}
-                </p>
-              ) : null}
+              {loanName ? (
+                <div className="psychometric-scale-table-wrap">
+                  <h3>{loanName}</h3>
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Account Name</th>
+                        <th>Description</th>
+                        <th>Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loanAccounts.map((account, index) => (
+                        <tr key={index}>
+                          <td data-label="Account Name">{account}</td>
+                          <td data-label="Description">
+                            {account === 'Outstanding Principal' && 'Remaining principal balance'}
+                            {account === 'Interest Expense' && 'Accumulated interest charges'}
+                            {account === 'Penalty Charges' && 'Late payment penalties'}
+                            {account === 'Insurance' && 'Loan protection insurance'}
+                            {account === 'Processing Fees' && 'Loan origination and processing fees'}
+                            {account === 'Monthly Amortization' && 'Regular monthly payment'}
+                            {account === 'Advance Payments' && 'Payments made ahead of schedule'}
+                            {account === 'Loan Balance' && 'Current total loan balance'}
+                            {account === 'Remaining Interest' && 'Interest yet to be accrued'}
+                          </td>
+                          <td data-label="Status">
+                            <span style={{ color: '#10b981', fontWeight: 'bold' }}>Active</span>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="psychometric-section-note" style={{ padding: '20px', textAlign: 'center' }}>
+                  <p>Complete Step 1 (Loan Master) to generate loan accounts automatically.</p>
+                </div>
+              )}
+            </article>
+          </div>
+        ) : null}
+
+        {step === 3 ? (
+          <div className="budget-dashboard-main">
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">Step 3</span>
+                  <h2>Payment Schedule</h2>
+                </div>
+              </div>
+
+              <p className="psychometric-section-note">
+                Automatically generated installment schedule showing all monthly payments with due dates, principal, interest, and remaining balance.
+              </p>
+
+              {snapshot.statementRows.length > 0 ? (
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Installment</th>
+                        <th>Due Date</th>
+                        <th>Principal</th>
+                        <th>Interest</th>
+                        <th>Balance</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {snapshot.statementRows.slice(0, 60).map((row, index) => (
+                        <tr key={row.id}>
+                          <td data-label="Installment">{index + 1}</td>
+                          <td data-label="Due Date">{row.monthLabel}</td>
+                          <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
+                          <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
+                          <td data-label="Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="psychometric-section-note" style={{ padding: '20px', textAlign: 'center' }}>
+                  <p>Complete Steps 1 & 2 (Loan Master and Loan Accounts) to generate the payment schedule.</p>
+                </div>
+              )}
 
               {additionalSchedules.map((schedule, scheduleIndex) => (
-                <div key={schedule.id} className="psychometric-scale-table-wrap">
-                  <h3>{`Additional Loan Statement ${scheduleIndex + 1}`}</h3>
+                <div key={schedule.id} className="psychometric-scale-table-wrap" style={{ marginTop: '20px' }}>
+                  <h3>{`${schedule.id} Schedule - ${formatMetricValue(schedule.loanAmount, 'currency')}`}</h3>
                   <p className="psychometric-section-note">
-                    Amount: {formatMetricValue(schedule.loanAmount, 'currency')} | Interest Rate: {schedule.interestRate.toFixed(2)}% | Term: {schedule.termMonths} months | Monthly Installment: {formatMetricValue(schedule.monthlyPayment, 'currency')}
+                    Term: {schedule.termMonths} months | Interest Rate: {schedule.interestRate.toFixed(2)}% | Monthly: {formatMetricValue(schedule.monthlyPayment, 'currency')}
                   </p>
                   <table className="psychometric-scale-table">
                     <thead>
                       <tr>
-                        <th>Month/Year</th>
-                        <th>Total Running Balance from Previous Month</th>
+                        <th>Installment</th>
+                        <th>Due Date</th>
                         <th>Principal</th>
                         <th>Interest</th>
-                        <th>End Balance</th>
+                        <th>Balance</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {schedule.rows.map((row) => (
+                      {schedule.rows.map((row, index) => (
                         <tr key={row.id}>
-                          <td data-label="Month/Year">{row.monthLabel}</td>
-                          <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
+                          <td data-label="Installment">{index + 1}</td>
+                          <td data-label="Due Date">{row.monthLabel}</td>
                           <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
                           <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
-                          <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
+                          <td data-label="Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
                 </div>
               ))}
-            </div>
-          </article>
+            </article>
+          </div>
+        ) : null}
 
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Loan Controls</span>
-                <h2>Borrower payment and capacity controls</h2>
+        {step === 4 ? (
+          <div className="budget-dashboard-main">
+            <article className="psychometric-panel">
+              <div className="psychometric-panel-header">
+                <div>
+                  <span className="psychometric-panel-kicker">Step 4</span>
+                  <h2>Monthly Monitoring</h2>
+                </div>
               </div>
-            </div>
 
-            <div className="psychometric-scale-table-wrap">
-              <table className="psychometric-scale-table">
-                <thead>
-                  <tr>
-                    <th>Control</th>
-                    <th>Actual</th>
-                    <th>Target</th>
-                    <th>Variance</th>
-                    <th>Status</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {snapshot.controlItems.map((item) => (
-                    <tr key={item.id}>
-                      <td data-label="Control">{item.label}</td>
-                      <td data-label="Actual">{formatMetricValue(item.actual, item.unit)}</td>
-                      <td data-label="Target">{formatMetricValue(item.target, item.unit)}</td>
-                      <td data-label="Variance">{formatMetricValue(item.variance, item.unit)}</td>
-                      <td data-label="Status">{getStatusLabel(item.status)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+              <p className="psychometric-section-note">
+                Track monthly payment workflow: Payment Due → Reminder → User Pays → Upload Receipt → Balance Updated → Credit Score Updated → Financial Health Updated
+              </p>
 
-            <div className="budget-dashboard-comparison-grid">
-              {snapshot.controlItems.map((item) => (
-                <article key={item.id} className={`budget-dashboard-comparison-card budget-dashboard-status-${item.status}`}>
-                  <div className="budget-dashboard-card-header">
-                    <span>{item.label}</span>
-                    <strong>{getStatusLabel(item.status)}</strong>
-                  </div>
-                  <div className="budget-dashboard-comparison-values">
-                    <div>
-                      <small>Actual</small>
-                      <strong>{formatMetricValue(item.actual, item.unit)}</strong>
-                    </div>
-                    <div>
-                      <small>Target</small>
-                      <strong>{formatMetricValue(item.target, item.unit)}</strong>
-                    </div>
-                  </div>
-                  <div className="psychometric-progress-track budget-dashboard-progress-track" aria-hidden="true">
-                    <div className="psychometric-progress-bar" style={{ width: `${Math.min(item.attainment, 100)}%` }} />
-                  </div>
-                  <p>{item.note}</p>
+              <div className="budget-dashboard-indicator-row">
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>1. Payment Due</span>
+                  <strong>Status: Current</strong>
+                  <p>Next payment is due on the scheduled date</p>
                 </article>
-              ))}
-            </div>
-          </article>
-
-          <article className="psychometric-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Loan Health Indicators</span>
-                <h2>Borrower indicators to maintain and review</h2>
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>2. Reminder</span>
+                  <strong>Notification Sent</strong>
+                  <p>Email/SMS reminder sent 10 days before due date</p>
+                </article>
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>3. User Pays</span>
+                  <strong>Payment Required</strong>
+                  <p>Make payment through your bank or payment platform</p>
+                </article>
               </div>
-            </div>
 
-            <div className="budget-dashboard-indicator-row">
-              {snapshot.indicators.map((indicator) => (
-                <article key={indicator.id} className={`budget-dashboard-indicator budget-dashboard-status-${indicator.status}`}>
-                  <span>{indicator.label}</span>
-                  <strong>
-                    {indicator.id === 'avg-open-age' || indicator.id === 'average-final-score'
-                      ? indicator.id === 'avg-open-age'
-                        ? `${indicator.value.toFixed(1)} days`
-                        : indicator.value.toFixed(1)
-                      : `${indicator.value.toFixed(0)}%`}
-                  </strong>
-                  <small>
-                    Target {indicator.id === 'avg-open-age' || indicator.id === 'average-final-score'
-                      ? indicator.id === 'avg-open-age'
-                        ? `${indicator.target.toFixed(1)} days`
-                        : indicator.target.toFixed(1)
-                      : `${indicator.target.toFixed(0)}%`}
-                  </small>
-                  <p>{indicator.note}</p>
+              <div className="budget-dashboard-indicator-row" style={{ marginTop: '16px' }}>
+                <article className="budget-dashboard-indicator budget-dashboard-status-watch">
+                  <span>4. Upload Receipt</span>
+                  <strong>Pending</strong>
+                  <p>Upload proof of payment for record keeping</p>
                 </article>
-              ))}
-            </div>
-          </article>
-        </div>
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>5. Balance Updated</span>
+                  <strong>Automatic</strong>
+                  <p>Loan balance and accounts automatically updated</p>
+                </article>
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>6. Score Updated</span>
+                  <strong>Automatic</strong>
+                  <p>Credit score recalculated based on payment history</p>
+                </article>
+              </div>
 
-        <aside className="budget-dashboard-side">
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Action</span>
-            <h2>{snapshot.actionLabel}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Loan amount</span>
-                <strong>{formatMetricValue(snapshot.totalRequestedAmount, 'currency')}</strong>
-              </li>
-              <li>
-                <span>Monthly payment</span>
-                <strong>{formatMetricValue(snapshot.monthlyPayment, 'currency')}</strong>
-              </li>
-              <li>
-                <span>End balance</span>
-                <strong>{formatMetricValue(snapshot.endBalance, 'currency')}</strong>
-              </li>
-            </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Product Type</span>
-            <h2>{snapshot.loanMarket}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Loan health score</span>
-                <strong>{snapshot.healthScore.toFixed(1)}</strong>
-              </li>
-              <li>
-                <span>Past dues</span>
-                <strong>{snapshot.pastDueCount}</strong>
-              </li>
-              <li>
-                <span>Status</span>
-                <strong>{snapshot.sourceRecordStatus}</strong>
-              </li>
-            </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Monitoring Notes</span>
-            <h2>Borrower tool focus</h2>
-            <p className="psychometric-section-note">
-              Available credit is estimated from application fields across the lending workflow, and the
-              loan statement is projected from the monitored loan amount, rate, and term when no payment
-              ledger is available yet.
-            </p>
-          </article>
-        </aside>
+              <div className="budget-dashboard-indicator-row" style={{ marginTop: '16px' }}>
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain" style={{ flex: '1 1 100%' }}>
+                  <span>7. Financial Health Updated</span>
+                  <strong>Complete</strong>
+                  <p>Overall financial health score refreshed with latest payment and loan data</p>
+                </article>
+              </div>
+            </article>
+          </div>
+        ) : null}
       </section>
 
       <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">AI Advisor</span>
-            <h2>Borrower guidance from the monitored loan</h2>
-          </div>
-        </div>
+        {step === 5 ? (
+          <article className="psychometric-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Step 5</span>
+                <h2>AI Recommendations</h2>
+              </div>
+            </div>
 
-        <div className="budget-dashboard-indicator-row">
-          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.interestAdvice.status}`}>
-            <span>Ways to Save Interest</span>
-            <strong>Interest Strategy</strong>
-            <p>{advisor.interestAdvice.text}</p>
-          </article>
+            <p className="psychometric-section-note">
+              Continuous AI-driven recommendations for loan optimization and financial improvement opportunities.
+            </p>
 
-          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.dsrStatus.status}`}>
-            <span>DSR Status</span>
-            <strong>Capacity Trend</strong>
-            <p>{advisor.dsrStatus.text}</p>
-          </article>
+            <div className="budget-dashboard-indicator-row">
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.interestAdvice.status}`}>
+                <span>Interest Too High?</span>
+                <strong>Interest Review</strong>
+                <p>{advisor.interestAdvice.text}</p>
+              </article>
 
-          <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.refinancingQuality.status}`}>
-            <span>Quality of Refinancing</span>
-            <strong>Refinancing View</strong>
-            <p>{advisor.refinancingQuality.text}</p>
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.refinancingQuality.status}`}>
+                <span>Refinancing Options</span>
+                <strong>Rate Optimization</strong>
+                <p>{advisor.refinancingQuality.text}</p>
+              </article>
+
+              <article className={`budget-dashboard-indicator budget-dashboard-status-${advisor.dsrStatus.status}`}>
+                <span>Debt Consolidation</span>
+                <strong>Consolidation View</strong>
+                <p>{advisor.dsrStatus.text}</p>
+              </article>
+            </div>
+
+            <div className="budget-dashboard-indicator-row" style={{ marginTop: '16px' }}>
+              <article className="budget-dashboard-indicator budget-dashboard-status-watch">
+                <span>Early Settlement</span>
+                <strong>Settlement Analysis</strong>
+                <p>Evaluate the benefits of paying off this loan early to save on interest expenses</p>
+              </article>
+
+              <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                <span>Borrowing Capacity</span>
+                <strong>Capacity Assessment</strong>
+                <p>Your current loan balance and payment history determine your available borrowing capacity</p>
+              </article>
+            </div>
           </article>
-        </div>
+        ) : null}
+      </section>
+
+      <section style={{ padding: '20px', display: 'flex', justifyContent: 'center', gap: '12px', flexWrap: 'wrap' }}>
+        {workflowSteps.map((workflowStep) => {
+          const isActive = step === workflowStep.id;
+          return (
+            <button
+              key={workflowStep.id}
+              type="button"
+              onClick={() => setStep(workflowStep.id)}
+              className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+              aria-current={isActive ? 'step' : undefined}
+            >
+              <div>
+                <span>{`Step ${workflowStep.id}`}</span>
+                <strong>{workflowStep.label}</strong>
+              </div>
+            </button>
+          );
+        })}
       </section>
     </div>
   );
