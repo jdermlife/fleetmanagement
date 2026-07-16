@@ -85,6 +85,44 @@ function buildPendingSubscriptionNumber(plan: SubscriptionPlan): string {
   return `SUB-${plan.plan_code}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50)
 }
 
+function formatPayPalGatewayError(message: string, action: 'create' | 'capture'): string {
+  const normalized = message.trim().toUpperCase()
+
+  if (normalized.includes('ORDER_NOT_APPROVED')) {
+    return 'PayPal approval is not completed yet. Finish approval in PayPal, then click Capture PayPal Payment again.'
+  }
+
+  if (normalized.includes('INSTRUMENT_DECLINED')) {
+    return 'PayPal declined the selected payment method. Choose another card or funding source in PayPal and try again.'
+  }
+
+  if (normalized.includes('PAYER_ACTION_REQUIRED')) {
+    return 'PayPal requires additional payer action. Re-open PayPal checkout and complete the requested verification steps.'
+  }
+
+  if (normalized.includes('PAYMENT_DENIED')) {
+    return 'PayPal denied the payment. Verify the payer account status and funding source, then retry.'
+  }
+
+  if (normalized.includes('DUPLICATE_INVOICE_ID')) {
+    return 'This invoice reference was already used in PayPal. Use a new invoice reference and start checkout again.'
+  }
+
+  if (normalized.includes('UNPROCESSABLE_ENTITY')) {
+    return 'PayPal could not process this request. Start a new PayPal checkout and try again.'
+  }
+
+  if (normalized.includes('INVALID_RESOURCE_ID')) {
+    return 'The PayPal order reference is no longer valid. Start a new PayPal checkout and try again.'
+  }
+
+  if (action === 'capture' && normalized.includes('RESOURCE_NOT_FOUND')) {
+    return 'PayPal order was not found for capture. Start a new PayPal checkout to continue.'
+  }
+
+  return message
+}
+
 export default function SubscriptionPaymentPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -317,7 +355,8 @@ export default function SubscriptionPaymentPage() {
       window.open(order.approval_url, '_blank', 'noopener,noreferrer')
       setPaymentMessage('PayPal order created. Complete approval in the opened tab, then click Capture PayPal Payment.')
     } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to start PayPal checkout right now.'))
+      const fallback = getErrorMessage(error, 'Unable to start PayPal checkout right now.')
+      setPaymentMessage(formatPayPalGatewayError(fallback, 'create'))
     } finally {
       setIsStartingPayPal(false)
     }
@@ -348,7 +387,8 @@ export default function SubscriptionPaymentPage() {
       const subscriptionRows = await listSubscriptions()
       setSubscriptions(subscriptionRows)
     } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to capture PayPal payment right now.'))
+      const fallback = getErrorMessage(error, 'Unable to capture PayPal payment right now.')
+      setPaymentMessage(formatPayPalGatewayError(fallback, 'capture'))
     } finally {
       setIsCapturingPayPal(false)
     }
