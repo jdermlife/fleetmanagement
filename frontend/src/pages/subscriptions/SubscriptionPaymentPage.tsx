@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
+  capturePayPalOrder,
+  createPayPalOrder,
   createSubscriptionCheckout,
   createSubscription,
   createSubscriptionPayment,
@@ -97,9 +99,14 @@ export default function SubscriptionPaymentPage() {
   const paymentMethod = DEFAULT_PAYMENT_CHANNEL
   const [invoiceNo, setInvoiceNo] = useState('')
   const [paymentAmount, setPaymentAmount] = useState('')
+  const [isStartingPayPal, setIsStartingPayPal] = useState(false)
+  const [isCapturingPayPal, setIsCapturingPayPal] = useState(false)
+  const [pendingPayPalOrderId, setPendingPayPalOrderId] = useState('')
 
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
+  const paypalOrderToken = searchParams.get('token')
+  const paypalResult = searchParams.get('paypal')
 
   useEffect(() => {
     const loadData = async () => {
@@ -130,6 +137,21 @@ export default function SubscriptionPaymentPage() {
       setPaymentMessage('Checkout was cancelled. No subscription access was activated.')
     }
   }, [searchParams])
+
+  useEffect(() => {
+    if (paypalResult === 'success') {
+      setPaymentMessage('PayPal approved. Capture the order to complete subscription activation.')
+    } else if (paypalResult === 'cancel') {
+      setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
+    }
+  }, [paypalResult])
+
+  useEffect(() => {
+    if (paypalOrderToken && paypalOrderToken.trim().length > 0) {
+      setPendingPayPalOrderId(paypalOrderToken.trim())
+      setPaymentMessage('PayPal approval detected. Complete capture to finalize your payment.')
+    }
+  }, [paypalOrderToken])
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
@@ -269,6 +291,69 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
+  const handleStartPayPalCheckout = async () => {
+    setIsStartingPayPal(true)
+    setPaymentMessage('')
+
+    try {
+      const subscriptionForPayment = await ensureSubscriptionForPayment()
+      if (!subscriptionForPayment) {
+        setPaymentMessage('Please select a valid subscription plan before starting PayPal checkout.')
+        return
+      }
+
+      const order = await createPayPalOrder({
+        subscription_id: subscriptionForPayment.id,
+        invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
+      })
+
+      setPendingPayPalOrderId(order.order_id)
+
+      if (!order.approval_url) {
+        setPaymentMessage('PayPal order created, but no approval link was returned. Contact support.')
+        return
+      }
+
+      window.open(order.approval_url, '_blank', 'noopener,noreferrer')
+      setPaymentMessage('PayPal order created. Complete approval in the opened tab, then click Capture PayPal Payment.')
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start PayPal checkout right now.'))
+    } finally {
+      setIsStartingPayPal(false)
+    }
+  }
+
+  const handleCapturePayPalPayment = async () => {
+    if (!pendingPayPalOrderId.trim()) {
+      setPaymentMessage('No PayPal order is ready for capture yet. Start PayPal checkout first.')
+      return
+    }
+
+    setIsCapturingPayPal(true)
+    setPaymentMessage('')
+
+    try {
+      const captureResult = await capturePayPalOrder({
+        order_id: pendingPayPalOrderId.trim(),
+        subscription_id: paymentSubscription?.id,
+      })
+
+      if (captureResult.already_processed) {
+        setPaymentMessage('PayPal payment was already processed and remains successful.')
+      } else {
+        setPaymentMessage('PayPal payment captured successfully. Your subscription is now updated.')
+      }
+
+      setPendingPayPalOrderId('')
+      const subscriptionRows = await listSubscriptions()
+      setSubscriptions(subscriptionRows)
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to capture PayPal payment right now.'))
+    } finally {
+      setIsCapturingPayPal(false)
+    }
+  }
+
   const handleCopyChannelDetails = async () => {
     const textToCopy = [paymentChannel.title, paymentChannel.summary, ...paymentChannel.detailLines].join('\n')
 
@@ -323,6 +408,32 @@ export default function SubscriptionPaymentPage() {
             </div>
             <p className="status-message">
               Available methods depend on the payment methods enabled for your PayMongo merchant account.
+            </p>
+          </div>
+
+          <div className="card" style={{ marginTop: '16px' }}>
+            <h4>PayPal Checkout</h4>
+            <p className="intro">
+              Create a PayPal order, approve it in PayPal, then capture it here to finalize and activate your subscription.
+            </p>
+            <div className="form-actions">
+              <button
+                type="button"
+                onClick={() => void handleStartPayPalCheckout()}
+                disabled={isStartingPayPal || isCapturingPayPal || (!paymentSubscription && !selectedPlan)}
+              >
+                {isStartingPayPal ? 'Creating PayPal order...' : 'Start PayPal Checkout'}
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleCapturePayPalPayment()}
+                disabled={isCapturingPayPal || pendingPayPalOrderId.trim().length === 0}
+              >
+                {isCapturingPayPal ? 'Capturing PayPal payment...' : 'Capture PayPal Payment'}
+              </button>
+            </div>
+            <p className="status-message">
+              Pending Order ID: <strong>{pendingPayPalOrderId || 'None'}</strong>
             </p>
           </div>
 

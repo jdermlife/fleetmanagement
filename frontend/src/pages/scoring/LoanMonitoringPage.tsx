@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { NumericFormat } from 'react-number-format';
 
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
@@ -586,12 +587,6 @@ export default function LoanMonitoringPage() {
       </section>
 
       <section className="psychometric-summary-grid loan-monitoring-summary-grid">
-        <article className="psychometric-summary-card psychometric-summary-card-highlight">
-          <span>Progress</span>
-          <strong>{workflowProgressPercent}%</strong>
-          <small>{currentStepLabel}</small>
-        </article>
-
         <article className="psychometric-summary-card">
           <span>Monitored Loans</span>
           <strong>{snapshot.monitoredLoansCount}</strong>
@@ -612,6 +607,12 @@ export default function LoanMonitoringPage() {
           <span>Number of Past Dues</span>
           <strong>{snapshot.pastDueCount}</strong>
           <small>Projected elapsed installments from the monitored loan statement</small>
+        </article>
+
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Progress</span>
+          <strong>{workflowProgressPercent}%</strong>
+          <small>{currentStepLabel}</small>
         </article>
 
       </section>
@@ -726,12 +727,13 @@ export default function LoanMonitoringPage() {
                 <div className="budget-dashboard-category-summary">
                   <label className="budget-dashboard-category-summary-card">
                     <span>Original Loan Amount</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={newLoanAmount}
-                      onChange={(event) => setNewLoanAmount(event.target.value)}
+                      thousandSeparator=","
+                      decimalScale={2}
+                      fixedDecimalScale
+                      allowNegative={false}
+                      onValueChange={(values) => setNewLoanAmount(values.value)}
                       className="budget-dashboard-category-input"
                       placeholder="Enter original amount"
                     />
@@ -762,12 +764,13 @@ export default function LoanMonitoringPage() {
                   </label>
                   <label className="budget-dashboard-category-summary-card">
                     <span>Outstanding Balance</span>
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={outstandingBalanceInput}
-                      onChange={(event) => setOutstandingBalanceInput(event.target.value)}
+                      thousandSeparator=","
+                      decimalScale={2}
+                      fixedDecimalScale
+                      allowNegative={false}
+                      onValueChange={(values) => setOutstandingBalanceInput(values.value)}
                       className="budget-dashboard-category-input"
                       placeholder="Enter outstanding balance"
                     />

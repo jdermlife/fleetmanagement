@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import axios from "axios";
 
 import { api, getErrorMessage } from "../../api";
 import {
@@ -76,29 +77,41 @@ function formatDateTime(value: string | null | undefined) {
   return parsed.toLocaleString();
 }
 
-function getGraphColor(label: WorkflowStatus | "Total Applications" | "Visible Records") {
-  switch (label) {
-    case "Total Applications":
-      return "#0f172a";
-    case "Visible Records":
-      return "#0891b2";
-    case "Draft":
-      return "#64748b";
-    case "Submitted":
-      return "#2563eb";
-    case "Under Review":
-      return "#d97706";
-    case "Credit Review":
-      return "#7c3aed";
-    case "Approved":
-      return "#059669";
-    case "Rejected":
-      return "#dc2626";
-    case "Released":
-      return "#4f46e5";
-    default:
-      return "#475569";
+function getStatusTransitionErrorMessage(error: unknown, status: WorkflowStatus): string {
+  if (!axios.isAxiosError(error)) {
+    return `Failed to update loan status to ${status}.`;
   }
+
+  const detail = error.response?.data && typeof error.response.data === "object" && "detail" in error.response.data
+    ? (error.response.data as { detail?: unknown }).detail
+    : undefined;
+  const detailText = typeof detail === "string" ? detail : "";
+
+  if (error.response?.status === 403) {
+    if (detailText.toLowerCase().includes("approve loan applications")) {
+      return "Approval failed: your account is missing approve:loans permission.";
+    }
+
+    if (detailText.toLowerCase().includes("not allowed to access this loan application")) {
+      return "Approval failed: you can only approve records you created, unless you are an admin.";
+    }
+
+    if (status === "Approved") {
+      return "Approval failed: permission denied. You need approve:loans access for this record.";
+    }
+
+    if (status === "Released") {
+      return "Release failed: permission denied. You need final_approve:loans access for this record.";
+    }
+
+    return "Status update failed: permission denied for this record.";
+  }
+
+  if (detailText) {
+    return detailText;
+  }
+
+  return `Failed to update loan status to ${status}.`;
 }
 
 const DEFAULT_STATUS_FILTER: "All" | WorkflowStatus = "Draft";
@@ -218,14 +231,6 @@ export default function LoanRepository() {
     ],
     [filteredApplications.length, stats.total],
   );
-  const maxPortfolioValue = useMemo(
-    () => Math.max(1, ...summaryCards.map((item) => item.value)),
-    [summaryCards],
-  );
-  const maxRecordCountValue = useMemo(
-    () => Math.max(1, ...recordsCountItems.map((item) => item.value)),
-    [recordsCountItems],
-  );
 
   const messageIsError = message.toLowerCase().includes("failed");
 
@@ -338,7 +343,7 @@ export default function LoanRepository() {
       setMessage(result.message);
       await loadApplications();
     } catch (error) {
-      setMessage(getErrorMessage(error, "Failed to update loan status."));
+      setMessage(getStatusTransitionErrorMessage(error, status));
     }
   };
 
@@ -456,156 +461,45 @@ export default function LoanRepository() {
                   Portfolio Snapshot and Repository Counts
                 </h2>
                 <p className="mt-1 text-sm text-slate-500">
-                  Half-page vertical bar views arranged for quick executive review.
+                  Quick numeric overview arranged for executive review.
                 </p>
               </div>
             </div>
 
             <div className="grid gap-4 xl:grid-cols-2">
-              <div
-                style={{
-                  width: "100%",
-                  display: "grid",
-                  gap: "18px",
-                  padding: "18px",
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "20px",
-                  boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
-                }}
-              >
-                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#64748b" }}>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Repository Record Counts
+                </h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                  {recordsCountItems.map((item) => (
+                    <article key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-3xl font-bold text-slate-900">{item.value.toLocaleString()}</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-700">{item.label}</div>
+                      <p className="mt-1 text-xs text-slate-500">{item.note}</p>
+                    </article>
+                  ))}
                 </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(76px, 1fr))",
-                    gap: "14px",
-                    alignItems: "end",
-                    minHeight: "250px",
-                  }}
-                >
-                  {recordsCountItems.map((item) => {
-                    const height = `${Math.max(18, (item.value / maxRecordCountValue) * 100)}%`;
-                    const barColor = getGraphColor(item.label);
-
-                    return (
-                      <div
-                        key={item.label}
-                        style={{
-                          display: "grid",
-                          gap: "10px",
-                          justifyItems: "center",
-                          minWidth: 0,
-                        }}
-                      >
-                        <div style={{ fontSize: "22px", lineHeight: 1, fontWeight: 700, color: "#1e293b" }}>{item.value}</div>
-                        <div
-                          style={{
-                            width: "100%",
-                            maxWidth: "74px",
-                            height: "160px",
-                            borderRadius: "18px",
-                            background: "#e2e8f0",
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "flex-end",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "100%",
-                              height,
-                              borderRadius: "18px 18px 0 0",
-                              background: `linear-gradient(180deg, ${barColor}, ${barColor}CC)`,
-                            }}
-                          />
-                        </div>
-                        <div style={{ display: "grid", gap: "4px", textAlign: "center" }}>
-                          <span style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b", lineHeight: 1.25 }}>{item.label}</span>
-                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.35 }}>{item.note}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-                <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", marginTop: "4px", fontSize: "12px", color: "#64748b" }}>
-                  <span>Active Filter: <strong style={{ color: "#1e293b" }}>{appliedStatusFilter}</strong></span>
+                <div className="mt-4 flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:justify-between">
+                  <span>
+                    Active Filter: <strong className="text-slate-700">{appliedStatusFilter}</strong>
+                  </span>
                   <span>{appliedDateFrom || appliedDateTo ? `${appliedDateFrom || "Start"} to ${appliedDateTo || "Present"}` : "All Dates"}</span>
                 </div>
               </div>
 
-              <div
-                style={{
-                  width: "100%",
-                  display: "grid",
-                  gap: "18px",
-                  padding: "18px",
-                  background: "#ffffff",
-                  border: "1px solid #e2e8f0",
-                  borderRadius: "20px",
-                  boxShadow: "0 10px 24px rgba(15,23,42,0.05)",
-                }}
-              >
-                <div style={{ fontSize: "11px", fontWeight: 700, letterSpacing: "0.22em", textTransform: "uppercase", color: "#64748b" }}>
+              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
                   Portfolio Snapshot
-                </div>
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(84px, 1fr))",
-                    gap: "14px",
-                    alignItems: "end",
-                    minHeight: "250px",
-                  }}
-                >
-                  {summaryCards.map((card) => {
-                    const height = `${Math.max(18, (card.value / maxPortfolioValue) * 100)}%`;
-                    const barColor = getGraphColor(card.label as WorkflowStatus | "Total Applications");
-
-                    return (
-                      <div
-                        key={card.label}
-                        style={{
-                          display: "grid",
-                          gap: "10px",
-                          justifyItems: "center",
-                          minWidth: 0,
-                        }}
-                      >
-                        <div style={{ fontSize: "22px", lineHeight: 1, fontWeight: 700, color: barColor }}>{card.value}</div>
-                        <div
-                          style={{
-                            width: "100%",
-                            maxWidth: "76px",
-                            height: "164px",
-                            borderRadius: "18px",
-                            background: "#e2e8f0",
-                            overflow: "hidden",
-                            display: "flex",
-                            alignItems: "flex-end",
-                            justifyContent: "center",
-                          }}
-                        >
-                          <div
-                            style={{
-                              width: "100%",
-                              height,
-                              borderRadius: "18px 18px 0 0",
-                              background: `linear-gradient(180deg, ${barColor}, ${barColor}CC)`,
-                              boxShadow: "inset 0 -1px 0 rgba(255,255,255,0.18)",
-                            }}
-                          />
-                        </div>
-                        <div style={{ display: "grid", gap: "4px", textAlign: "center" }}>
-                          <div style={{ fontSize: "12px", fontWeight: 700, color: "#1e293b", lineHeight: 1.25 }}>{card.label}</div>
-                          <div style={{ fontSize: "11px", color: "#64748b", lineHeight: 1.35 }}>{card.note}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                </h3>
+                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                  {summaryCards.map((card) => (
+                    <article key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <div className="text-2xl font-bold text-slate-900">{card.value.toLocaleString()}</div>
+                      <div className="mt-1 text-sm font-semibold text-slate-700">{card.label}</div>
+                      <p className="mt-1 text-xs text-slate-500">{card.note}</p>
+                    </article>
+                  ))}
                 </div>
               </div>
             </div>
@@ -921,6 +815,12 @@ export default function LoanRepository() {
                       </button>
                     ) : null}
 
+                    {row.status === "Credit Review" && !canApproveLoans ? (
+                      <p className="text-xs text-amber-700">
+                        Approval actions require approve:loans permission.
+                      </p>
+                    ) : null}
+
                     {row.status === "Approved" && canFinalApproveLoans ? (
                       <button
                         onClick={() => handleStatusUpdate(row.application_no, "Released")}
@@ -1072,6 +972,12 @@ export default function LoanRepository() {
                               Reject
                             </button>
                           </>
+                        )}
+
+                        {row.status === "Credit Review" && !canApproveLoans && (
+                          <p className="text-xs font-medium text-amber-700">
+                            Approval actions require approve:loans permission.
+                          </p>
                         )}
 
                         {row.status === "Approved" && canFinalApproveLoans && (

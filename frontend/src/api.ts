@@ -1046,6 +1046,23 @@ export interface PayMongoCheckoutSession {
   payment: SubscriptionPayment
 }
 
+export interface PayPalOrderSession {
+  order_id: string
+  status: string
+  approval_url: string | null
+  amount: number
+  currency: string
+  payment: SubscriptionPayment
+}
+
+export interface PayPalCaptureResult {
+  captured: boolean
+  already_processed?: boolean
+  order_id?: string
+  capture_id?: string | null
+  payment: SubscriptionPayment
+}
+
 export interface SubscriptionInvoice {
   id: number
   invoice_no: string
@@ -1342,6 +1359,22 @@ export async function createPayMongoCheckout(payload: {
     '/api/subscriptions/payments/paymongo/checkout',
     payload,
   )
+  return response.data
+}
+
+export async function createPayPalOrder(payload: {
+  subscription_id: number
+  invoice_no?: string
+}): Promise<PayPalOrderSession> {
+  const response = await api.post<PayPalOrderSession>('/api/paypal/create-order', payload)
+  return response.data
+}
+
+export async function capturePayPalOrder(payload: {
+  order_id: string
+  subscription_id?: number
+}): Promise<PayPalCaptureResult> {
+  const response = await api.post<PayPalCaptureResult>('/api/paypal/capture-order', payload)
   return response.data
 }
 
