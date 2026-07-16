@@ -24,66 +24,6 @@ interface AdditionalLoanSchedule {
   rows: AdditionalLoanStatementRow[];
 }
 
-function addMonths(date: Date, months: number): Date {
-  const next = new Date(date);
-  next.setMonth(next.getMonth() + months);
-  return next;
-}
-
-function toMonthYearLabel(date: Date): string {
-  return date.toLocaleDateString(undefined, {
-    month: 'short',
-    year: 'numeric',
-  });
-}
-
-function buildAdditionalLoanSchedule(loanAmount: number, annualRate: number, termMonths: number): AdditionalLoanSchedule {
-  const normalizedAmount = Math.max(0, loanAmount);
-  const normalizedRate = Math.max(0, annualRate);
-  const normalizedTerm = Math.max(1, Math.round(termMonths));
-  const monthlyRate = normalizedRate / 100 / 12;
-
-  let monthlyPayment = 0;
-  if (normalizedAmount > 0) {
-    if (monthlyRate <= 0) {
-      monthlyPayment = normalizedAmount / normalizedTerm;
-    } else {
-      const numerator = monthlyRate * ((1 + monthlyRate) ** normalizedTerm);
-      const denominator = ((1 + monthlyRate) ** normalizedTerm) - 1;
-      monthlyPayment = denominator > 0 ? normalizedAmount * (numerator / denominator) : normalizedAmount / normalizedTerm;
-    }
-  }
-
-  const startDate = new Date();
-  let runningBalance = normalizedAmount;
-
-  const rows = Array.from({ length: normalizedTerm }, (_, index) => {
-    const previousBalance = runningBalance;
-    const interest = monthlyRate > 0 ? previousBalance * monthlyRate : 0;
-    const principal = Math.min(previousBalance, Math.max(monthlyPayment - interest, 0));
-    const endBalance = Math.max(previousBalance - principal, 0);
-    runningBalance = endBalance;
-
-    return {
-      id: `additional-statement-${index + 1}`,
-      monthLabel: toMonthYearLabel(addMonths(startDate, index)),
-      previousBalance,
-      principal,
-      interest,
-      endBalance,
-    };
-  });
-
-  return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    loanAmount: normalizedAmount,
-    interestRate: normalizedRate,
-    termMonths: normalizedTerm,
-    monthlyPayment,
-    rows,
-  };
-}
-
 function formatMetricValue(value: number, unit: 'percent' | 'days' | 'score' | 'currency' | 'count') {
   if (unit === 'currency') {
     return new Intl.NumberFormat(undefined, {
@@ -106,16 +46,6 @@ function formatMetricValue(value: number, unit: 'percent' | 'days' | 'score' | '
   }
 
   return `${value.toFixed(0)}%`;
-}
-
-function getStatusLabel(status: 'maintain' | 'watch' | 'attention') {
-  if (status === 'maintain') {
-    return 'Maintain';
-  }
-  if (status === 'watch') {
-    return 'Watch';
-  }
-  return 'Needs Attention';
 }
 
 function getControlActual(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>, controlId: string) {
@@ -184,7 +114,7 @@ function buildAiAdvisor(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>
 }
 
 export default function LoanMonitoringPage() {
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const { applications } = useLoanApplicationsMetrics();
   const monitoredApplications = useMemo(
     () =>
       applications.filter(
@@ -193,12 +123,7 @@ export default function LoanMonitoringPage() {
     [applications],
   );
   const [selectedApplicationNo, setSelectedApplicationNo] = useState('');
-  const [showAddLoanForm, setShowAddLoanForm] = useState(false);
-  const [newLoanAmount, setNewLoanAmount] = useState('');
-  const [newLoanInterestRate, setNewLoanInterestRate] = useState('');
-  const [newLoanTerm, setNewLoanTerm] = useState('');
-  const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
-  const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
+  const [additionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
   const [step, setStep] = useState<WorkflowStep>(1);
   
   // Step 1: Loan Master
@@ -275,34 +200,6 @@ export default function LoanMonitoringPage() {
 
   const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Loan Workflow';
   const stepperButtonClass = 'loan-stepper-button';
-
-  const handleRunAdditionalInstallmentSchedule = () => {
-    const parsedLoanAmount = Number(newLoanAmount);
-    const parsedInterestRate = Number(newLoanInterestRate);
-    const parsedTerm = Number(newLoanTerm);
-
-    if (!Number.isFinite(parsedLoanAmount) || parsedLoanAmount <= 0) {
-      setAdditionalScheduleMessage('Please enter a valid Amount of Loan greater than zero.');
-      return;
-    }
-
-    if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
-      setAdditionalScheduleMessage('Please enter a valid Interest Rate (zero or higher).');
-      return;
-    }
-
-    if (!Number.isFinite(parsedTerm) || parsedTerm <= 0) {
-      setAdditionalScheduleMessage('Please enter a valid Term in months greater than zero.');
-      return;
-    }
-
-    const schedule = buildAdditionalLoanSchedule(parsedLoanAmount, parsedInterestRate, parsedTerm);
-    setAdditionalSchedules((previous) => [schedule, ...previous]);
-    setAdditionalScheduleMessage('Additional loan installment schedule generated.');
-    setNewLoanAmount('');
-    setNewLoanInterestRate('');
-    setNewLoanTerm('');
-  };
 
   return (
     <div className="psychometric-page loan-monitoring-dashboard-page">
@@ -619,7 +516,7 @@ export default function LoanMonitoringPage() {
                 </div>
               )}
 
-              {additionalSchedules.map((schedule, scheduleIndex) => (
+              {additionalSchedules.map((schedule) => (
                 <div key={schedule.id} className="psychometric-scale-table-wrap" style={{ marginTop: '20px' }}>
                   <h3>{`${schedule.id} Schedule - ${formatMetricValue(schedule.loanAmount, 'currency')}`}</h3>
                   <p className="psychometric-section-note">
