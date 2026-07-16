@@ -261,10 +261,10 @@ export default function LoanMonitoringPage() {
     [applications],
   );
   const [selectedApplicationNo, setSelectedApplicationNo] = useState('');
-  const [showAddLoanForm, setShowAddLoanForm] = useState(false);
   const [newLoanAmount, setNewLoanAmount] = useState('');
   const [newLoanInterestRate, setNewLoanInterestRate] = useState('');
   const [newLoanTerm, setNewLoanTerm] = useState('');
+  const [outstandingBalanceInput, setOutstandingBalanceInput] = useState('');
   const [loanType, setLoanType] = useState('');
   const [entityIssuer, setEntityIssuer] = useState('');
   const [collateralIfAny, setCollateralIfAny] = useState('');
@@ -295,6 +295,40 @@ export default function LoanMonitoringPage() {
     () => monitoredApplications.find((record) => record.application_no === selectedApplicationNo) ?? null,
     [monitoredApplications, selectedApplicationNo],
   );
+
+  useEffect(() => {
+    if (!selectedRecord) {
+      return;
+    }
+
+    if (!newLoanAmount.trim()) {
+      const seededLoanAmount = Number(selectedRecord.loan_amount);
+      if (Number.isFinite(seededLoanAmount) && seededLoanAmount > 0) {
+        setNewLoanAmount(seededLoanAmount.toFixed(2));
+      }
+    }
+
+    if (!newLoanInterestRate.trim()) {
+      const seededRate = Number(selectedRecord.interest_rate);
+      if (Number.isFinite(seededRate) && seededRate >= 0) {
+        setNewLoanInterestRate(seededRate.toFixed(2));
+      }
+    }
+
+    if (!newLoanTerm.trim()) {
+      const seededTerm = Number(selectedRecord.term_months);
+      if (Number.isFinite(seededTerm) && seededTerm > 0) {
+        setNewLoanTerm(String(Math.round(seededTerm)));
+      }
+    }
+
+    if (!outstandingBalanceInput.trim() && snapshot.statementRows.length > 0) {
+      const seededOutstanding = snapshot.statementRows[snapshot.statementRows.length - 1]?.endBalance ?? 0;
+      if (Number.isFinite(seededOutstanding) && seededOutstanding >= 0) {
+        setOutstandingBalanceInput(seededOutstanding.toFixed(2));
+      }
+    }
+  }, [selectedRecord, snapshot.statementRows, newLoanAmount, newLoanInterestRate, newLoanTerm, outstandingBalanceInput]);
   const summaryDashboardRows = useMemo(() => {
     const selectedOriginalAmount = Number(selectedRecord?.loan_amount ?? 0);
     const selectedRate = Number(selectedRecord?.interest_rate ?? 0);
@@ -689,71 +723,66 @@ export default function LoanMonitoringPage() {
                   </label>
                 </div>
 
+                <div className="budget-dashboard-category-summary">
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Original Loan Amount</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={newLoanAmount}
+                      onChange={(event) => setNewLoanAmount(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Enter original amount"
+                    />
+                  </label>
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Interest Rate (%)</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={newLoanInterestRate}
+                      onChange={(event) => setNewLoanInterestRate(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Enter annual rate"
+                    />
+                  </label>
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Term (Months)</span>
+                    <input
+                      type="number"
+                      min={1}
+                      step="1"
+                      value={newLoanTerm}
+                      onChange={(event) => setNewLoanTerm(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Enter term"
+                    />
+                  </label>
+                  <label className="budget-dashboard-category-summary-card">
+                    <span>Outstanding Balance</span>
+                    <input
+                      type="number"
+                      min={0}
+                      step="0.01"
+                      value={outstandingBalanceInput}
+                      onChange={(event) => setOutstandingBalanceInput(event.target.value)}
+                      className="budget-dashboard-category-input"
+                      placeholder="Enter outstanding balance"
+                    />
+                  </label>
+                </div>
+
                 <div className="budget-workflow-inline-actions">
                   <button
                     type="button"
                     className="psychometric-reset-button"
-                    onClick={() => {
-                      setShowAddLoanForm((previous) => !previous);
-                      setAdditionalScheduleMessage('');
-                    }}
+                    onClick={handleRunAdditionalInstallmentSchedule}
                   >
-                    {showAddLoanForm ? 'Hide Additional Loan Form' : 'Add Another Loan and Installment Schedule'}
+                    Add Another Loan and Installment Schedule
                   </button>
                 </div>
-
-                {showAddLoanForm ? (
-                  <>
-                    <div className="budget-dashboard-category-summary">
-                      <label className="budget-dashboard-category-summary-card">
-                        <span>Amount of Loan</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={newLoanAmount}
-                          onChange={(event) => setNewLoanAmount(event.target.value)}
-                          className="budget-dashboard-category-input"
-                          placeholder="Enter amount"
-                        />
-                      </label>
-                      <label className="budget-dashboard-category-summary-card">
-                        <span>Interest Rate (%)</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
-                          value={newLoanInterestRate}
-                          onChange={(event) => setNewLoanInterestRate(event.target.value)}
-                          className="budget-dashboard-category-input"
-                          placeholder="Enter annual rate"
-                        />
-                      </label>
-                      <label className="budget-dashboard-category-summary-card">
-                        <span>Term (Months)</span>
-                        <input
-                          type="number"
-                          min={1}
-                          step="1"
-                          value={newLoanTerm}
-                          onChange={(event) => setNewLoanTerm(event.target.value)}
-                          className="budget-dashboard-category-input"
-                          placeholder="Enter term"
-                        />
-                      </label>
-                    </div>
-
-                    <div className="budget-workflow-inline-actions">
-                      <button
-                        type="button"
-                        className="psychometric-reset-button"
-                        onClick={handleRunAdditionalInstallmentSchedule}
-                      >
-                        Run Installment Schedule
-                      </button>
-                    </div>
-                  </>
-                ) : null}
 
                 {additionalScheduleMessage ? (
                   <p className="psychometric-section-note" role="status">
