@@ -402,29 +402,22 @@ def list_plans(
 
 
 @router.post("/plans")
-def list_plans():
-    db = SessionLocal()
-
+def create_plan(
+    payload: SubscriptionPlanCreate,
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    db = _session_with_rls(user)
     try:
-        rows = (
-            db.query(SubscriptionPlan)
-            .filter(SubscriptionPlan.is_active == True)
-            .filter(SubscriptionPlan.is_public == True)
-            .order_by(SubscriptionPlan.display_order.asc())
-            .all()
-        )
-
-        return [_serialize_plan(item) for item in rows]
-
-    finally:
-        db.close()
+        existing = db.query(SubscriptionPlan).filter(SubscriptionPlan.plan_code == payload.plan_code).first()
+        if existing:
+            raise HTTPException(status_code=409, detail="Plan code already exists")
 
         row = SubscriptionPlan(**payload.model_dump())
-         db.add(row)
-         db.commit()
-         db.refresh(row)
+        db.add(row)
+        db.commit()
+        db.refresh(row)
         return _serialize_plan(row)
-      finally:
+    finally:
         db.close()
 
 
