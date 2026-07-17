@@ -23,6 +23,7 @@ import {
   type SubscriptionRecord,
 } from '../../api'
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
+import SubscriptionAccessDeniedCard from './SubscriptionAccessDeniedCard'
 
 type SubmitEvent = FormEvent<HTMLFormElement>
 
@@ -364,16 +365,7 @@ export default function SubscriptionManagementPage() {
 
       {!loading && hasBillingAccessDenied ? (
         <div className="card" style={{ marginBottom: 16 }}>
-          <h3>Billing Access Required</h3>
-          <p className="status-message">
-            Your account can sign in, but it is not allowed to manage subscription billing records.
-          </p>
-          <p className="status-message">
-            Ask an administrator to grant billing access, then refresh this page.
-          </p>
-          <div className="form-actions">
-            <button type="button" onClick={() => navigate('/account')}>Go to Account</button>
-          </div>
+          <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
         </div>
       ) : null}
 

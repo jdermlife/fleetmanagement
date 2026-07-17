@@ -11,6 +11,7 @@ import {
   type SubscriptionPayment,
   type SubscriptionRecord,
 } from '../../api'
+import SubscriptionAccessDeniedCard from './SubscriptionAccessDeniedCard'
 
 export default function BillingPage() {
   const navigate = useNavigate()
@@ -65,16 +66,7 @@ export default function BillingPage() {
 
       {!isLoading && hasBillingAccessDenied ? (
         <div className="card auth-helper-card">
-          <h3>Billing Access Required</h3>
-          <p className="status-message">
-            Your account can sign in, but it is not allowed to access billing details and invoices.
-          </p>
-          <p className="status-message">
-            Ask an administrator to grant billing access, then return to this page.
-          </p>
-          <div className="form-actions">
-            <button type="button" onClick={() => navigate('/account')}>Go to Account</button>
-          </div>
+          <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
         </div>
       ) : null}
 
