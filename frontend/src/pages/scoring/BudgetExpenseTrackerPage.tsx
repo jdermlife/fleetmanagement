@@ -644,6 +644,17 @@ export default function BudgetExpenseTrackerPage() {
             Navigate a guided workflow to set period coverage, build the budget setup, then monitor actual
             versus setup variances with AI guidance.
           </p>
+            <p>
+                             
+        The Wealth Building or Net Worth Positioning Score is based on the variance of actual values versus setup values.  The score is a measure of how well you are positioned to achieve your financial goals. Financial Goal was  established in Financial Health Scorecard.  To reassess the goal, please compare your income and wealth standing globally using World Inequality Database Comparitor:                      <a
+          href="https://wid.world/income-comparator/"
+          target="_blank"
+          rel="noreferrer"
+          className="auth-link-button"
+        >
+          Record your Income and Expenses by taking a picture of Receipts and Invoices.
+        </a>
+          </p>
         </div>
 
         <div className="psychometric-hero-metric budget-dashboard-scorecard">
