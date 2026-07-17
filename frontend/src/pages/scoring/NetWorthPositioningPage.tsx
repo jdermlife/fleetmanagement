@@ -1017,7 +1017,7 @@ export default function NetWorthPositioningPage() {
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker"></span>
-            <h2>Three Steps in Setting Up Net Worth and Goal Tracking</h2>
+            <h2>Four  Steps in Setting Up Net Worth and Goal Tracking</h2>
           </div>
         </div>
         <p className="psychometric-section-note">
@@ -1028,15 +1028,15 @@ export default function NetWorthPositioningPage() {
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
          <article className="psychometric-summary-card">
           <span>Where do you want to be?</span>
-          <strong>Set Your Financial Goals</strong>
-          <small>Create Financial Goals.  Assign Priorities. Set target amounts and dealine.</small>
+          
+          <small>Create Your  Financial Goals.  Assign Priorities. Set target amounts and dealine.</small>
         </article>
  
  
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>What do you own and what do you owe?</span>
-          <strong>Assess and Establish Existing Net Worth</strong>
-          <small>Record All Assets. Record All Liabilities.Calculate Net Worth</small>
+         
+          <small>Assess and Establish Existing Net Worth. Record All Assets. Record All Liabilities. Calculate Net Worth</small>
         </article>
 
 
@@ -1044,13 +1044,13 @@ export default function NetWorthPositioningPage() {
 
         <article className="psychometric-summary-card">
           <span>How will you achieve your goals?</span>
-          <strong>Create Your Financial Action Plan</strong>
-          <small>Determine monthly goal  for savings and investment plan. Create strategies.</small>
+       
+          <small>Create Your Financial Action Plan. Determine monthly goal  for savings and investment plan. Create strategies.</small>
         </article>
 
         <article className="psychometric-summary-card">
           <span>Are you getting closer to your goals?</span>
-          <strong>Monitor Progress</strong>
+        
           <small>Track progress. Get insights to continuously improve.</small>
         </article>
       </section>
