@@ -193,6 +193,37 @@ def test_subscriber_subscription_owner_scope_smoke(
     assert rows[0]["subscription_no"] == "SUB-OWN-001"
 
 
+def test_subscriber_can_fetch_own_subscription_me_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    own_subscription = Subscription(
+        id=3,
+        subscription_no="SUB-ME-001",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    foreign_subscription = Subscription(
+        id=4,
+        subscription_no="SUB-ME-OTHER",
+        user_id=99,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [foreign_subscription, own_subscription]
+
+    response = client.get("/api/subscriptions/me", headers=subscriber_headers)
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload is not None
+    assert payload["subscription_no"] == "SUB-ME-001"
+
+
 def test_subscriber_cannot_pay_foreign_subscription_smoke(
     client: TestClient,
     fake_db: FakeSession,

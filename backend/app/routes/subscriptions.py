@@ -9,7 +9,7 @@ import uuid
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
 
 from app.database import SessionLocal, set_rls_context
-from app.fastapi_auth import CurrentUser, require_roles
+from app.fastapi_auth import CurrentUser, require_authenticated_user, require_roles
 from app.models.subscription import (
     Feature,
     PaymentProvider,
@@ -469,7 +469,7 @@ def list_subscriptions(
 
 @router.get("/me")
 def get_my_subscription(
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = _session_with_rls(user)
     try:

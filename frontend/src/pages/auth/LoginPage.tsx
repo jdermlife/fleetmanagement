@@ -146,9 +146,18 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const resolvePostLoginPath = async (user: AuthUser): Promise<string> => {
-    const subscription = await getMySubscription()
-    if (subscription?.status !== 'ACTIVE') {
-      return '/subscription/payment'
+    try {
+      const subscription = await getMySubscription()
+      if (subscription?.status !== 'ACTIVE') {
+        return '/subscription/payment'
+      }
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status !== 403) {
+        throw error
+      }
+
+      // Some roles (for example legal/read-only) are not allowed to query subscription data.
+      // Do not block sign-in when subscription lookup is forbidden.
     }
 
     if (isBorrowerSubscriberRole(user.role)) {
