@@ -697,19 +697,7 @@ export default function BudgetExpenseTrackerPage() {
                 <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               
-              <button
-                type="button"
-                className="psychometric-reset-button"
-                onClick={reload}
-                disabled={loading}
-              >
-                {loading ? 'Refreshing...' : 'Invite Partner to Co-Manage Budget'}
-              </button>
-
-
-
-
-              <button
+               <button
                 type="button"
                 className="psychometric-reset-button"
                 onClick={reload}
