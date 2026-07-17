@@ -4310,9 +4310,9 @@ export default function LendingScorecard() {
 
           {step === 1 && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Product Selection</h3>
+              <h3 className="workflow-duplicate-step-title col-span-full text-lg font-bold text-slate-800 border-b pb-2">Step 1: Goal Setting </h3>
+              {renderInput('loan', 'purpose', 'FINANCIAL GOAL / PURPOSE')}
               {renderSelect('loan', 'productType', 'Product Being Applied For', ['Home Loan', 'Auto Loan', 'Motorcycle Loan', 'Credit Card', 'Personal Loan', 'Margin Loan'])}
-              {renderInput('loan', 'purpose', 'Purpose of Loan')}
               {renderFormattedNumberInput('loan', 'amount', 'Requested Loan Amount')}
               {renderInput('loan', 'termMonths', 'Loan Term (Months)', 'number')}
               {renderInput('loan', 'interestRate', 'Annual Interest Rate (%)', 'number')}
