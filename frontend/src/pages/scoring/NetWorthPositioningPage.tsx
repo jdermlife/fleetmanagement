@@ -994,7 +994,7 @@ export default function NetWorthPositioningPage() {
           </p>
           <p>
             Financial Goal was  established in Financial Health Scorecard.  In addition, please compare your income and wealth standing globally using World Inequality Database Comparitor: 
-            The Net Worth Positioning Score is based on the variance of actual values versus setup values.  The score is a measure of how well you are positioned to achieve your financial goals.
+            
                     <a
           href="https://wid.world/income-comparator/"
           target="_blank"
@@ -1003,6 +1003,7 @@ export default function NetWorthPositioningPage() {
         >
           Open WID Income Comparator
         </a>
+        The Net Worth Positioning Score is based on the variance of actual values versus setup values.  The score is a measure of how well you are positioned to achieve your financial goals.
           </p>
         </div>
 
