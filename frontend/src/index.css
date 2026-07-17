@@ -4588,3 +4588,621 @@ th { color: var(--dark-gold); }
 }
 
 }
+
+/* ========================
+   FINANCIAL HEALTH SUMMARY
+   ======================== */
+.financial-health-page {
+  --financial-health-ink: #0f172a;
+  --financial-health-muted: #64748b;
+  --financial-health-teal: #0f766e;
+  --financial-health-gold: #eab308;
+  font-variant-numeric: tabular-nums;
+}
+
+.financial-health-hero {
+  align-items: center;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 88% 8%, rgba(50, 173, 230, 0.22), transparent 25%),
+    radial-gradient(circle at 72% 96%, rgba(48, 184, 92, 0.18), transparent 28%),
+    linear-gradient(135deg, #0f172a 0%, #1e293b 57%, #7c5f10 100%);
+}
+
+.financial-health-hero-copy {
+  flex: 1 1 560px;
+}
+
+.financial-health-status-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.34);
+}
+
+.financial-health-status-row strong {
+  color: #ffffff;
+}
+
+.financial-health-status-row span:last-child {
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.82rem;
+}
+
+.financial-health-status-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+  background: #30d158;
+  box-shadow: 0 0 0 4px rgba(48, 209, 88, 0.14);
+}
+
+.financial-health-ring-figure {
+  min-width: 318px;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 24px;
+  background: rgba(15, 23, 42, 0.36);
+  box-shadow: inset 0 1px rgba(255, 255, 255, 0.05);
+}
+
+.financial-health-ring-visual {
+  position: relative;
+  width: 184px;
+  height: 184px;
+  flex: 0 0 184px;
+}
+
+.financial-health-ring-visual svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.financial-health-ring-track,
+.financial-health-ring-progress {
+  fill: none;
+  stroke-width: 11;
+}
+
+.financial-health-ring-track {
+  stroke: rgba(255, 255, 255, 0.09);
+}
+
+.financial-health-ring-progress {
+  stroke-linecap: round;
+  animation: financial-health-ring-draw 700ms ease-out both;
+}
+
+.financial-health-ring-score {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  color: #ffffff;
+  pointer-events: none;
+}
+
+.financial-health-ring-score strong {
+  font-size: 2.25rem;
+  line-height: 1;
+  letter-spacing: -0.045em;
+}
+
+.financial-health-ring-score span {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.financial-health-ring-legend {
+  display: grid;
+  gap: 9px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.78rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.financial-health-ring-legend span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.financial-health-ring-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.financial-health-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.financial-health-summary-tile {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+  padding: 18px 20px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 20px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.99), rgba(255, 248, 220, 0.9));
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.financial-health-summary-tile-primary {
+  background:
+    radial-gradient(circle at top right, rgba(15, 118, 110, 0.18), transparent 34%),
+    linear-gradient(180deg, #fffef7, #f0fdf4);
+}
+
+.financial-health-summary-tile span,
+.financial-health-summary-tile small {
+  color: var(--financial-health-muted);
+}
+
+.financial-health-summary-tile span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.financial-health-summary-tile strong {
+  color: var(--financial-health-ink);
+  font-size: clamp(1.75rem, 3vw, 2.15rem);
+  line-height: 1;
+}
+
+.financial-health-summary-tile small {
+  line-height: 1.35;
+}
+
+.financial-health-vitals-panel h2,
+.financial-health-chart-panel h2,
+.financial-health-side-stack h2,
+.financial-health-provisional h1 {
+  margin: 4px 0 0;
+  color: var(--financial-health-ink);
+}
+
+.financial-health-panel-intro,
+.financial-health-formula-panel > p,
+.financial-health-focus-panel > p,
+.financial-health-provisional p {
+  max-width: 68ch;
+  margin: 8px 0 0;
+  color: var(--financial-health-muted);
+  line-height: 1.55;
+}
+
+.financial-health-target-chip {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 13px;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #0f766e;
+  font-size: 0.8rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.financial-health-vitals-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.financial-health-vital-card {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--health-accent) 24%, #dbe2ea);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffffff, var(--health-soft));
+}
+
+.financial-health-mini-ring {
+  position: relative;
+  width: 58px;
+  height: 58px;
+  flex: 0 0 58px;
+}
+
+.financial-health-mini-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.financial-health-mini-track,
+.financial-health-mini-progress {
+  fill: none;
+  stroke-width: 6;
+}
+
+.financial-health-mini-track {
+  stroke: rgba(148, 163, 184, 0.18);
+}
+
+.financial-health-mini-progress {
+  stroke: var(--health-accent);
+  stroke-linecap: round;
+  animation: financial-health-ring-draw 700ms ease-out both;
+}
+
+.financial-health-mini-ring strong {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: var(--financial-health-ink);
+  font-size: 0.92rem;
+}
+
+.financial-health-vital-copy {
+  min-width: 0;
+}
+
+.financial-health-vital-copy h3 {
+  margin: 0;
+  color: var(--financial-health-ink);
+  font-size: 0.94rem;
+  line-height: 1.25;
+}
+
+.financial-health-vital-copy span {
+  display: block;
+  margin-top: 5px;
+  color: var(--health-accent);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.financial-health-detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.8fr) minmax(300px, 0.72fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.financial-health-side-stack {
+  position: sticky;
+  top: 96px;
+  display: grid;
+  gap: 20px;
+}
+
+.financial-health-chart-head,
+.financial-health-chart-row {
+  display: grid;
+  grid-template-columns: minmax(140px, 1.1fr) minmax(170px, 2fr) 52px 58px 64px;
+  gap: 12px;
+  align-items: center;
+}
+
+.financial-health-chart-head {
+  margin-top: 20px;
+  padding: 0 10px 8px;
+  color: var(--financial-health-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.financial-health-chart-head span:nth-child(n + 3) {
+  text-align: right;
+}
+
+.financial-health-chart {
+  display: grid;
+}
+
+.financial-health-chart-row {
+  min-height: 62px;
+  padding: 10px;
+  border-top: 1px solid rgba(226, 232, 240, 0.78);
+}
+
+.financial-health-chart-label,
+.financial-health-chart-value {
+  color: var(--financial-health-ink);
+}
+
+.financial-health-chart-label {
+  font-size: 0.86rem;
+}
+
+.financial-health-chart-value,
+.financial-health-chart-weight,
+.financial-health-chart-points {
+  text-align: right;
+}
+
+.financial-health-chart-weight,
+.financial-health-chart-points {
+  color: var(--financial-health-muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.financial-health-chart-points {
+  color: #0f766e;
+}
+
+.financial-health-bar-track {
+  position: relative;
+  height: 10px;
+  overflow: visible;
+  border-radius: 999px;
+  background: rgba(148, 163, 184, 0.16);
+}
+
+.financial-health-bar-fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--health-accent);
+  transform-origin: left center;
+  animation: financial-health-bar-fill 450ms ease-out both;
+}
+
+.financial-health-target-line {
+  position: absolute;
+  z-index: 1;
+  top: -4px;
+  bottom: -4px;
+  left: 80%;
+  width: 2px;
+  border-radius: 999px;
+  background: #0f172a;
+  opacity: 0.58;
+}
+
+.financial-health-equation {
+  display: grid;
+  gap: 6px;
+  margin-top: 16px;
+  padding: 16px;
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  border-radius: 18px;
+  background: linear-gradient(135deg, #fff7d6, #efe8ff);
+}
+
+.financial-health-equation span,
+.financial-health-equation small {
+  color: var(--financial-health-muted);
+}
+
+.financial-health-equation strong {
+  color: var(--financial-health-ink);
+  font-size: 1.2rem;
+}
+
+.financial-health-method-note {
+  font-size: 0.84rem;
+}
+
+.financial-health-band-list,
+.financial-health-graph-guide ul {
+  list-style: none;
+  padding: 0;
+  margin: 16px 0 0;
+}
+
+.financial-health-band-list {
+  display: grid;
+  gap: 7px;
+}
+
+.financial-health-band-list li {
+  display: grid;
+  grid-template-columns: 9px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 9px;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  color: var(--financial-health-muted);
+  font-size: 0.8rem;
+}
+
+.financial-health-band-list li i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.financial-health-band-list li strong {
+  color: var(--financial-health-ink);
+  font-size: 0.76rem;
+}
+
+.financial-health-band-list .financial-health-band-current {
+  border-color: rgba(15, 118, 110, 0.18);
+  background: #ecfdf5;
+  color: #0f766e;
+  font-weight: 800;
+}
+
+.financial-health-band-excellent { background: #30b85c; }
+.financial-health-band-healthy { background: #32ade6; }
+.financial-health-band-good { background: #5856d6; }
+.financial-health-band-building { background: #ff9f0a; }
+.financial-health-band-attention { background: #e85d5d; }
+
+.financial-health-focus-score {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-top: 12px;
+  color: #e11d48;
+}
+
+.financial-health-focus-score strong {
+  font-size: 2.5rem;
+  line-height: 1;
+}
+
+.financial-health-focus-score span {
+  color: var(--financial-health-muted);
+  font-weight: 700;
+}
+
+.financial-health-graph-guide ul {
+  display: grid;
+  gap: 10px;
+}
+
+.financial-health-graph-guide li {
+  padding-left: 13px;
+  border-left: 3px solid rgba(15, 118, 110, 0.24);
+  color: var(--financial-health-muted);
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.financial-health-graph-guide li strong {
+  color: var(--financial-health-ink);
+}
+
+.financial-health-provisional {
+  max-width: 720px;
+  margin: 40px auto;
+}
+
+@keyframes financial-health-ring-draw {
+  from { stroke-dashoffset: 100; }
+  to { stroke-dashoffset: 0; }
+}
+
+@keyframes financial-health-bar-fill {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@media (max-width: 1040px) {
+  .financial-health-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .financial-health-hero-copy {
+    flex-basis: auto;
+  }
+
+  .financial-health-ring-figure {
+    width: 100%;
+  }
+
+  .financial-health-vitals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .financial-health-detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-health-side-stack {
+    position: static;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .financial-health-summary-grid,
+  .financial-health-side-stack {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .financial-health-chart-head {
+    display: none;
+  }
+
+  .financial-health-chart-row {
+    grid-template-columns: minmax(0, 1fr) 48px 56px 62px;
+    grid-template-areas:
+      "label score weight points"
+      "bar bar bar bar";
+  }
+
+  .financial-health-chart-label { grid-area: label; }
+  .financial-health-bar-track { grid-area: bar; }
+  .financial-health-chart-value { grid-area: score; }
+  .financial-health-chart-weight { grid-area: weight; }
+  .financial-health-chart-points { grid-area: points; }
+}
+
+@media (max-width: 640px) {
+  .financial-health-hero {
+    padding: 18px;
+  }
+
+  .financial-health-ring-figure {
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .financial-health-ring-visual {
+    width: 180px;
+    height: 180px;
+    flex-basis: 180px;
+  }
+
+  .financial-health-ring-legend {
+    grid-template-columns: repeat(3, auto);
+    white-space: normal;
+  }
+
+  .financial-health-vitals-grid,
+  .financial-health-summary-grid,
+  .financial-health-side-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-health-vital-card {
+    min-height: 84px;
+  }
+
+  .financial-health-chart-row {
+    gap: 8px;
+    padding: 12px 4px;
+  }
+
+  .financial-health-chart-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .financial-health-ring-progress,
+  .financial-health-mini-progress,
+  .financial-health-bar-fill {
+    animation: none;
+  }
+}

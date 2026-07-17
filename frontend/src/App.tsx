@@ -38,6 +38,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
 
 const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/DashboardSnapshot'))
 const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
+const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
 const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
 const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
@@ -101,6 +102,7 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 const menuLinks: MenuLink[] = [
   { id: 'dashboard', label: 'Financial Snapshot' },
+  { id: 'financial-health-summary', label: 'Financial Health Summary' },
   { id: 'lending-scorecard', label: 'Financial Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth & Net Worth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
@@ -231,6 +233,7 @@ const subscriberHiddenMenus = [
 ]
 
 const subscriberAlwaysVisibleMenus = [
+  'financial-health-summary',
   'lending-scorecard',
   'budget-expense-tracker',
   'loan-monitoring',
@@ -240,6 +243,7 @@ const subscriberAlwaysVisibleMenus = [
 ]
 
 const borrowerVisibleMenus = [
+  'financial-health-summary',
   'lending-scorecard',
   'budget-expense-tracker',
   'loan-monitoring',
@@ -1261,6 +1265,15 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/account"
               element={authenticatedPage(<AccountSettingsPage />, [])}
+            />
+
+            <Route
+              path="/financial-health-summary"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <FinancialHealthSummaryPage />
+                </ProtectedRoute>
+              }
             />
 
             <Route

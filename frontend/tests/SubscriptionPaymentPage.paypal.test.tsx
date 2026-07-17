@@ -32,7 +32,7 @@ const plan = {
   monthly_price: 100,
   yearly_price: 1200,
   minimum_monthly_fee: 100,
-  currency: 'USD',
+  currency: 'PHP',
   support_level: 'STANDARD',
 }
 
@@ -52,7 +52,7 @@ const payment = {
   provider_id: 3,
   invoice_no: 'SUB-PRO-99',
   amount: 100,
-  currency: 'USD',
+  currency: 'PHP',
   payment_method: 'PayPal Capture',
   payment_status: 'SUCCESS',
   provider_transaction_id: 'ORDER-123',
@@ -71,7 +71,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       status: 'CREATED',
       approval_url: null,
       amount: 100,
-      currency: 'USD',
+      currency: 'PHP',
       payment: { ...payment, payment_status: 'PENDING' },
     })
     apiMocks.capturePayPalOrder.mockResolvedValue({

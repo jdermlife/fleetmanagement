@@ -240,6 +240,11 @@ export default function SubscriptionPaymentPage() {
     return billingAmount(activePlan)
   }, [selectedPlan, selectedSubscriptionPlan])
 
+  const canRenderPayPalButtons =
+    !isLoading &&
+    !hasSubscriptionAccessDenied &&
+    Boolean(selectedSubscription || selectedPlan)
+
   useEffect(() => {
     if (!paymentAmount && dueAmount > 0) {
       setPaymentAmount(dueAmount.toFixed(2))
@@ -272,6 +277,10 @@ export default function SubscriptionPaymentPage() {
   invoiceNoRef.current = invoiceNo
 
   useEffect(() => {
+    if (!canRenderPayPalButtons) {
+      return
+    }
+
     const container = paypalButtonContainerRef.current
     if (!container) {
       return
@@ -396,7 +405,7 @@ export default function SubscriptionPaymentPage() {
       void Promise.resolve(buttons?.close?.()).catch(() => undefined)
       container.replaceChildren()
     }
-  }, [paypalCurrency])
+  }, [canRenderPayPalButtons, paypalCurrency])
 
   const handleSubmitPayment = async () => {
     if (!paymentReference.trim()) {
