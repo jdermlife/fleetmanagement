@@ -67,13 +67,9 @@ export default function AccountSettingsPage() {
 
     const loadCurrentUser = async () => {
       try {
-        const [currentUser, planRows] = await Promise.all([
-          fetchCurrentUser(),
-          listSubscriptionPlans(),
-        ])
+        const currentUser = await fetchCurrentUser()
         setUser(currentUser)
         setLenderDataSharingChoice(currentUser.lenderDataSharingConsent ? 'share' : 'do_not_share')
-        setPlans(planRows)
       } catch (error) {
         setLoadMessage(getErrorMessage(error, 'Unable to load account details.'))
       } finally {
@@ -81,7 +77,17 @@ export default function AccountSettingsPage() {
       }
     }
 
+    const loadSubscriptionPlans = async () => {
+      try {
+        setPlans(await listSubscriptionPlans())
+      } catch {
+        // Subscription-plan access is optional and must not hide an authenticated account.
+        setPlans([])
+      }
+    }
+
     void loadCurrentUser()
+    void loadSubscriptionPlans()
   }, [])
 
   useEffect(() => {
