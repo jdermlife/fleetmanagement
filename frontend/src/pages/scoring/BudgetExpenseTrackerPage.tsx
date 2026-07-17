@@ -650,7 +650,7 @@ export default function BudgetExpenseTrackerPage() {
           rel="noreferrer"
           className="auth-link-button"
         >
-          Record your Income and Expenses by taking a picture of Receipts and Invoices.
+          Click here !! Record your Income and Expenses by taking a picture of Receipts and Invoices.
         </a>
           </p>
         </div>
@@ -693,9 +693,22 @@ export default function BudgetExpenseTrackerPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <span className="psychometric-panel-kicker">Workflow Form </span>
                 <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
+              
+              <button
+                type="button"
+                className="psychometric-reset-button"
+                onClick={reload}
+                disabled={loading}
+              >
+                {loading ? 'Refreshing...' : 'Invite Partner to Co-Manage Budget'}
+              </button>
+
+
+
+
               <button
                 type="button"
                 className="psychometric-reset-button"
