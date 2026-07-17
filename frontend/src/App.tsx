@@ -81,8 +81,6 @@ const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionMana
 const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazy(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const BillingPage = lazy(() => import('./pages/subscriptions/BillingPage'))
-const PaymentSuccess = lazy(() => import('./pages/payment/PaymentSuccess'))
-const PaymentCancelled = lazy(() => import('./pages/payment/PaymentCancelled'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
 const CompliancePage = lazy(() => import('./pages/governance/CompliancePage'))
 
@@ -1139,24 +1137,6 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin']}>
                   <BillingPage />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/payment/success"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <PaymentSuccess />
-                </ProtectedRoute>
-              }
-            />
-
-            <Route
-              path="/payment/cancel"
-              element={
-                <ProtectedRoute roles={['admin']}>
-                  <PaymentCancelled />
                 </ProtectedRoute>
               }
             />
