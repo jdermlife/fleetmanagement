@@ -987,14 +987,22 @@ export default function NetWorthPositioningPage() {
     <div className="psychometric-page networth-dashboard-page">
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Net Worth Workflow Controls</span>
-          <h1>Net Worth  and Goal Tracking</h1>
+          <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
+          <h1>Wealth  Building Score </h1>
           <p>
             Period:  <strong>{snapshot.dateLabel}</strong>
           </p>
           <p>
-            Navigate a guided net-worth workflow to set period coverage, build setup amounts, then compare
-            actual values and track variances with AI guidance.
+            Financial Goal was  established in Financial Health Scorecard.  In addition, please compare your income and wealth standing globally using World Inequality Database Comparitor: 
+            The Net Worth Positioning Score is based on the variance of actual values versus setup values.  The score is a measure of how well you are positioned to achieve your financial goals.
+                    <a
+          href="https://wid.world/income-comparator/"
+          target="_blank"
+          rel="noreferrer"
+          className="auth-link-button"
+        >
+          Open WID Income Comparator
+        </a>
           </p>
         </div>
 

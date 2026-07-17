@@ -4236,11 +4236,11 @@ export default function LendingScorecard() {
     <div className="psychometric-page lending-psychometric-page">
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Advanced Origination Workflow</span>
+          <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Financial Health </h1>
           <p>
-            Run the end-to-end loan workflow across product intake, underwriting details, and
-            FILScore certification : Credit Scorecard, Credit Values and Social Scorecards
+            FILScore is  composed of Credit Scorecard, Credit Values Indicator  and Social Scorecard
+            It captures the holistic financial health of a person and provides a comprehensive view of their creditworthiness, enabling informed lending decisions.
           </p>
         </div>
 
