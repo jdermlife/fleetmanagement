@@ -78,9 +78,9 @@ const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPa
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
-const SubscriptionManagementPage = lazy(() => import('./pages/subscriptions/SubscriptionManagementPage'))
-const SubscriptionPaymentPage = lazy(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
-const BillingPage = lazy(() => import('./pages/subscriptions/BillingPage'))
+const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
+const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
+const BillingPage = lazyWithRetry(() => import('./pages/subscriptions/BillingPage'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
 const CompliancePage = lazy(() => import('./pages/governance/CompliancePage'))
 

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 import {
   getErrorMessage,
@@ -17,6 +18,7 @@ export default function BillingPage() {
   const [payments, setPayments] = useState<SubscriptionPayment[]>([])
   const [invoices, setInvoices] = useState<SubscriptionInvoice[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [hasBillingAccessDenied, setHasBillingAccessDenied] = useState(false)
   const [message, setMessage] = useState('')
 
   useEffect(() => {
@@ -30,7 +32,15 @@ export default function BillingPage() {
         setSubscriptions(subscriptionRows)
         setPayments(paymentRows)
         setInvoices(invoiceRows)
+        setHasBillingAccessDenied(false)
       } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setHasBillingAccessDenied(true)
+          setMessage('You do not have access to billing records. Contact your administrator to request billing permissions.')
+          return
+        }
+
+        setHasBillingAccessDenied(false)
         setMessage(getErrorMessage(error, 'Unable to load billing data right now.'))
       } finally {
         setIsLoading(false)
@@ -53,7 +63,23 @@ export default function BillingPage() {
       {isLoading ? <p>Loading billing data...</p> : null}
       {message ? <p className="status-message status-error">{message}</p> : null}
 
-      <div className="card auth-helper-card" style={{ marginBottom: '16px' }}>
+      {!isLoading && hasBillingAccessDenied ? (
+        <div className="card auth-helper-card">
+          <h3>Billing Access Required</h3>
+          <p className="status-message">
+            Your account can sign in, but it is not allowed to access billing details and invoices.
+          </p>
+          <p className="status-message">
+            Ask an administrator to grant billing access, then return to this page.
+          </p>
+          <div className="form-actions">
+            <button type="button" onClick={() => navigate('/account')}>Go to Account</button>
+          </div>
+        </div>
+      ) : null}
+
+      {!hasBillingAccessDenied ? (
+        <div className="card auth-helper-card" style={{ marginBottom: '16px' }}>
         <h3>Current Plan</h3>
         <p className="status-message">{currentPlan?.subscription_no ?? 'No active subscription found.'}</p>
         <div className="form-actions">
@@ -62,8 +88,10 @@ export default function BillingPage() {
           <button type="button" onClick={() => setMessage('Receipt download links are available once invoice PDFs are generated.')}>Download Receipt</button>
         </div>
       </div>
+      ) : null}
 
-      <div className="card auth-helper-card" style={{ marginBottom: '16px' }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card auth-helper-card" style={{ marginBottom: '16px' }}>
         <h3>Payment History</h3>
         {payments.length === 0 ? (
           <p className="status-message">No payment records yet.</p>
@@ -92,8 +120,10 @@ export default function BillingPage() {
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="card auth-helper-card">
+      {!hasBillingAccessDenied ? (
+        <div className="card auth-helper-card">
         <h3>Invoices</h3>
         {invoices.length === 0 ? (
           <p className="status-message">No invoices yet.</p>
@@ -122,6 +152,7 @@ export default function BillingPage() {
           </div>
         )}
       </div>
+      ) : null}
     </div>
   )
 }

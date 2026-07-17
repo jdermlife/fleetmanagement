@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
+import axios from 'axios'
 
 import {
   capturePayPalOrder,
@@ -175,6 +176,7 @@ export default function SubscriptionPaymentPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [loadMessage, setLoadMessage] = useState('')
+  const [hasSubscriptionAccessDenied, setHasSubscriptionAccessDenied] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -197,7 +199,15 @@ export default function SubscriptionPaymentPage() {
         ])
         setPlans(planRows)
         setSubscriptions(subscriptionRows)
+        setHasSubscriptionAccessDenied(false)
       } catch (error) {
+        if (axios.isAxiosError(error) && error.response?.status === 403) {
+          setHasSubscriptionAccessDenied(true)
+          setLoadMessage('You do not have access to subscription billing. Contact your administrator to request billing permissions.')
+          return
+        }
+
+        setHasSubscriptionAccessDenied(false)
         setLoadMessage(getErrorMessage(error, 'Unable to load subscription payment details.'))
       } finally {
         setIsLoading(false)
@@ -527,7 +537,7 @@ export default function SubscriptionPaymentPage() {
             <div className="px-6 py-10 text-sm text-slate-600 md:px-8">Loading payment details...</div>
           ) : null}
 
-          {!isLoading && (selectedSubscription || selectedPlan) ? (
+          {!isLoading && !hasSubscriptionAccessDenied && (selectedSubscription || selectedPlan) ? (
             <div className="grid gap-6 px-6 py-6 md:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] xl:items-start">
               <div className="space-y-5">
                 <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
@@ -795,7 +805,26 @@ export default function SubscriptionPaymentPage() {
             </div>
           ) : null}
 
-          {!isLoading && !selectedSubscription && !selectedPlan ? (
+          {!isLoading && hasSubscriptionAccessDenied ? (
+            <div className="px-6 py-10 md:px-8">
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-center shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-amber-800">Billing Access Required</p>
+                <p className="mt-3 text-sm text-amber-950">
+                  Your account can sign in, but it is not allowed to view subscription billing records.
+                </p>
+                <p className="mt-2 text-sm text-amber-900">
+                  Ask an administrator to grant subscription billing access, then refresh this page.
+                </p>
+                <div className="mt-4 flex justify-center">
+                  <button type="button" onClick={() => navigate('/account')}>
+                    Go to Account
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {!isLoading && !hasSubscriptionAccessDenied && !selectedSubscription && !selectedPlan ? (
             <div className="px-6 py-10 md:px-8">
               <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                 <p className="text-sm text-slate-600">

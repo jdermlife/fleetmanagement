@@ -1,4 +1,6 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 import {
   createFeature,
@@ -29,6 +31,7 @@ function toDateValue(value: string): string {
 }
 
 export default function SubscriptionManagementPage() {
+  const navigate = useNavigate()
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [payments, setPayments] = useState<SubscriptionPayment[]>([])
@@ -36,6 +39,7 @@ export default function SubscriptionManagementPage() {
   const [providers, setProviders] = useState<PaymentProvider[]>([])
   const [planFeatures, setPlanFeatures] = useState<Record<number, Feature[]>>({})
   const [loading, setLoading] = useState(true)
+  const [hasBillingAccessDenied, setHasBillingAccessDenied] = useState(false)
   const [statusMessage, setStatusMessage] = useState('')
 
   const [planCode, setPlanCode] = useState('')
@@ -155,6 +159,7 @@ export default function SubscriptionManagementPage() {
       setPayments(paymentRows)
       setFeatures(featureRows)
       setProviders(providerRows)
+      setHasBillingAccessDenied(false)
 
       const planFeatureEntries = await Promise.all(
         planRows.slice(0, 5).map(async (plan) => {
@@ -164,6 +169,13 @@ export default function SubscriptionManagementPage() {
       )
       setPlanFeatures(Object.fromEntries(planFeatureEntries))
     } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 403) {
+        setHasBillingAccessDenied(true)
+        setStatusMessage('You do not have access to subscription management. Contact your administrator to request billing permissions.')
+        return
+      }
+
+      setHasBillingAccessDenied(false)
       setStatusMessage(getErrorMessage(error, 'Failed to load subscription billing data.'))
     } finally {
       setLoading(false)
@@ -350,7 +362,23 @@ export default function SubscriptionManagementPage() {
 
       {statusMessage ? <p className="status-message">{statusMessage}</p> : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!loading && hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <h3>Billing Access Required</h3>
+          <p className="status-message">
+            Your account can sign in, but it is not allowed to manage subscription billing records.
+          </p>
+          <p className="status-message">
+            Ask an administrator to grant billing access, then refresh this page.
+          </p>
+          <div className="form-actions">
+            <button type="button" onClick={() => navigate('/account')}>Go to Account</button>
+          </div>
+        </div>
+      ) : null}
+
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Create Plan</h3>
         <form onSubmit={(event) => void handleCreatePlan(event)}>
           <div className="auth-profile-grid">
@@ -419,8 +447,10 @@ export default function SubscriptionManagementPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Create Subscription</h3>
         <form onSubmit={(event) => void handleCreateSubscription(event)}>
           <div className="auth-profile-grid">
@@ -506,8 +536,10 @@ export default function SubscriptionManagementPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Create Feature</h3>
         <form onSubmit={(event) => void handleCreateFeature(event)}>
           <div className="auth-profile-grid">
@@ -525,8 +557,10 @@ export default function SubscriptionManagementPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Edit Plan</h3>
         <form onSubmit={(event) => void handleUpdatePlan(event)}>
           <div className="auth-profile-grid">
@@ -581,8 +615,10 @@ export default function SubscriptionManagementPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Edit Subscription</h3>
         <form onSubmit={(event) => void handleUpdateSubscription(event)}>
           <div className="auth-profile-grid">
@@ -654,8 +690,10 @@ export default function SubscriptionManagementPage() {
           </div>
         </form>
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Plans</h3>
         {loading ? (
           <p>Loading plans...</p>
@@ -698,8 +736,10 @@ export default function SubscriptionManagementPage() {
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Subscriptions</h3>
         {loading ? (
           <p>Loading subscriptions...</p>
@@ -740,8 +780,10 @@ export default function SubscriptionManagementPage() {
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Payment Providers</h3>
         {loading ? (
           <p>Loading providers...</p>
@@ -772,8 +814,10 @@ export default function SubscriptionManagementPage() {
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="card" style={{ marginBottom: 16 }}>
+      {!hasBillingAccessDenied ? (
+        <div className="card" style={{ marginBottom: 16 }}>
         <h3>Subscription Payments</h3>
         {loading ? (
           <p>Loading payments...</p>
@@ -835,8 +879,10 @@ export default function SubscriptionManagementPage() {
           </div>
         )}
       </div>
+      ) : null}
 
-      <div className="card">
+      {!hasBillingAccessDenied ? (
+        <div className="card">
         <h3>Features</h3>
         {loading ? (
           <p>Loading features...</p>
@@ -850,6 +896,7 @@ export default function SubscriptionManagementPage() {
           </ul>
         )}
       </div>
+      ) : null}
     </div>
   )
 }
