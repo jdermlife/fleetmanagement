@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 
@@ -14,6 +14,7 @@ import {
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
+import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 import SubscriptionAccessDeniedCard from './SubscriptionAccessDeniedCard'
 
 function billingAmount(plan: SubscriptionPlan): number {
@@ -87,57 +88,20 @@ function buildPendingSubscriptionNumber(plan: SubscriptionPlan): string {
   return `SUB-${plan.plan_code}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50)
 }
 
-const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
-const PAYPAL_SDK_SCRIPT_ID = 'paypal-js-sdk'
-
-let paypalSdkLoadCache: { src: string; promise: Promise<void> } | null = null
-
-function loadPayPalSdk(clientId: string, currency: string): Promise<void> {
-  if (typeof window === 'undefined') {
-    return Promise.reject(new Error('PayPal SDK can only load in a browser.'))
+function buildPayPalRequestId(): string {
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
   }
-
-  const sdkUrl = `https://www.paypal.com/sdk/js?client-id=${encodeURIComponent(clientId)}&currency=${encodeURIComponent(currency)}&intent=capture`
-  const existingWindow = window as Window & { paypal?: { Buttons?: unknown } }
-
-  if (existingWindow.paypal?.Buttons) {
-    return Promise.resolve()
-  }
-
-  if (paypalSdkLoadCache?.src === sdkUrl) {
-    return paypalSdkLoadCache.promise
-  }
-
-  const existingScript = document.getElementById(PAYPAL_SDK_SCRIPT_ID) as HTMLScriptElement | null
-  if (existingScript && existingScript.src !== sdkUrl) {
-    existingScript.remove()
-  }
-
-  const promise = new Promise<void>((resolve, reject) => {
-    const script = document.createElement('script')
-    script.id = PAYPAL_SDK_SCRIPT_ID
-    script.async = true
-    script.src = sdkUrl
-    script.crossOrigin = 'anonymous'
-    script.onload = () => resolve()
-    script.onerror = () => reject(new Error('Unable to load the PayPal JavaScript SDK.'))
-    document.body.appendChild(script)
-  })
-
-  paypalSdkLoadCache = { src: sdkUrl, promise }
-
-  return promise.finally(() => {
-    if (paypalSdkLoadCache?.src === sdkUrl) {
-      paypalSdkLoadCache = null
-    }
-  })
+  return `checkout-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`
 }
+
+const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
 
 function formatPayPalGatewayError(message: string, action: 'create' | 'capture'): string {
   const normalized = message.trim().toUpperCase()
 
   if (normalized.includes('ORDER_NOT_APPROVED')) {
-    return 'PayPal approval is not completed yet. Finish approval in PayPal, then click Capture PayPal Payment again.'
+    return 'PayPal approval was not completed. Restart PayPal checkout and finish approval before trying again.'
   }
 
   if (normalized.includes('INSTRUMENT_DECLINED')) {
@@ -187,6 +151,10 @@ export default function SubscriptionPaymentPage() {
   const [invoiceNo, setInvoiceNo] = useState('')
   const [paymentAmount, setPaymentAmount] = useState('')
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
+  const invoiceNoRef = useRef('')
+  const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
+  const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
+  const paypalStageRef = useRef<'create' | 'capture'>('create')
 
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
@@ -278,120 +246,7 @@ export default function SubscriptionPaymentPage() {
     }
   }, [dueAmount, paymentAmount])
 
-  useEffect(() => {
-    const container = paypalButtonContainerRef.current
-    if (!container) {
-      return
-    }
-
-    container.innerHTML = ''
-
-    if (!PAYPAL_CLIENT_ID) {
-      setPaymentMessage('PayPal Buttons are unavailable because VITE_PAYPAL_CLIENT_ID is not configured.')
-      return
-    }
-
-    let cancelled = false
-
-    const renderPayPalButtons = async () => {
-      try {
-        await loadPayPalSdk(PAYPAL_CLIENT_ID, paypalCurrency)
-
-        if (cancelled || !paypalButtonContainerRef.current) {
-          return
-        }
-
-        const paypalWindow = window as Window & {
-          paypal?: {
-            Buttons?: (options: {
-              style?: Record<string, unknown>
-              createOrder: () => Promise<string>
-              onApprove: (data: { orderID?: string | null }) => Promise<void>
-              onCancel?: () => void
-              onError?: (error: unknown) => void
-            }) => {
-              render: (target: HTMLElement) => Promise<void> | void
-            }
-          }
-        }
-
-        if (!paypalWindow.paypal?.Buttons) {
-          setPaymentMessage('PayPal Buttons are unavailable right now. Please try again later.')
-          return
-        }
-
-        const buttons = paypalWindow.paypal.Buttons({
-          style: {
-            layout: 'vertical',
-            shape: 'rect',
-            color: 'gold',
-            label: 'paypal',
-            tagline: false,
-          },
-          createOrder: async () => {
-            setPaymentMessage('')
-
-            const subscriptionForPayment = await ensureSubscriptionForPayment()
-            if (!subscriptionForPayment) {
-              throw new Error('Please select a valid subscription plan before starting PayPal checkout.')
-            }
-
-            const order = await createPayPalOrder({
-              subscription_id: subscriptionForPayment.id,
-              invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
-            })
-
-            return order.order_id
-          },
-          onApprove: async (data) => {
-            const orderId = data.orderID?.trim() ?? ''
-            if (!orderId) {
-              throw new Error('PayPal did not return an order id.')
-            }
-
-            const captureResult = await capturePayPalOrder({
-              order_id: orderId,
-              subscription_id: paymentSubscription?.id ?? undefined,
-            })
-
-            if (captureResult.already_processed) {
-              setPaymentMessage('PayPal payment was already processed and remains successful.')
-            } else {
-              setPaymentMessage('PayPal payment captured successfully. Your subscription is now updated.')
-            }
-
-            const subscriptionRows = await listSubscriptions()
-            setSubscriptions(subscriptionRows)
-          },
-          onCancel: () => {
-            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
-          },
-          onError: (error) => {
-            const fallback = error instanceof Error ? error.message : 'Unable to process PayPal checkout right now.'
-            setPaymentMessage(formatPayPalGatewayError(fallback, 'capture'))
-          },
-        })
-
-        await Promise.resolve(buttons.render(container))
-      } catch (error) {
-        if (cancelled) {
-          return
-        }
-
-        const fallback = getErrorMessage(error, 'Unable to load PayPal Buttons right now.')
-        setPaymentMessage(formatPayPalGatewayError(fallback, 'create'))
-      }
-    }
-
-    void renderPayPalButtons()
-
-    return () => {
-      cancelled = true
-      container.innerHTML = ''
-    }
-  }, [invoiceNo, paypalCurrency, paymentSubscription?.id, selectedPlan?.id])
-
-  const ensureSubscriptionForPayment = async (): Promise<SubscriptionRecord | null> => {
+  const ensureSubscriptionForPayment = useCallback(async (): Promise<SubscriptionRecord | null> => {
     if (paymentSubscription) {
       return paymentSubscription
     }
@@ -410,7 +265,138 @@ export default function SubscriptionPaymentPage() {
 
     setSubscriptions((prev) => [createdSubscription, ...prev])
     return createdSubscription
-  }
+  }, [paymentSubscription, selectedPlan])
+
+  const ensureSubscriptionForPaymentRef = useRef(ensureSubscriptionForPayment)
+  ensureSubscriptionForPaymentRef.current = ensureSubscriptionForPayment
+  invoiceNoRef.current = invoiceNo
+
+  useEffect(() => {
+    const container = paypalButtonContainerRef.current
+    if (!container) {
+      return
+    }
+
+    container.innerHTML = ''
+
+    if (!PAYPAL_CLIENT_ID) {
+      setPaymentMessage('PayPal Buttons are unavailable because VITE_PAYPAL_CLIENT_ID is not configured.')
+      return
+    }
+
+    let cancelled = false
+    let buttons: PayPalButtonsInstance | null = null
+
+    const renderPayPalButtons = async () => {
+      try {
+        const paypal = await loadPayPalSdk(PAYPAL_CLIENT_ID, paypalCurrency)
+
+        if (cancelled || !paypalButtonContainerRef.current) {
+          return
+        }
+
+        buttons = paypal.Buttons({
+          style: {
+            layout: 'vertical',
+            shape: 'rect',
+            color: 'gold',
+            label: 'paypal',
+            tagline: false,
+          },
+          createOrder: async () => {
+            paypalStageRef.current = 'create'
+            paypalCheckoutContextRef.current = null
+            setPaymentMessage('Creating a secure PayPal order...')
+
+            const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
+            if (!subscriptionForPayment) {
+              throw new Error('Please select a valid subscription plan before starting PayPal checkout.')
+            }
+
+            const existingRequestContext = paypalRequestContextRef.current
+            const requestId = existingRequestContext?.subscriptionId === subscriptionForPayment.id
+              ? existingRequestContext.requestId
+              : buildPayPalRequestId()
+            paypalRequestContextRef.current = {
+              requestId,
+              subscriptionId: subscriptionForPayment.id,
+            }
+
+            const order = await createPayPalOrder({
+              subscription_id: subscriptionForPayment.id,
+              invoice_no: invoiceNoRef.current.trim() || subscriptionForPayment.subscription_no,
+              request_id: requestId,
+            })
+
+            paypalCheckoutContextRef.current = {
+              orderId: order.order_id,
+              subscriptionId: subscriptionForPayment.id,
+            }
+            return order.order_id
+          },
+          onApprove: async (data) => {
+            paypalStageRef.current = 'capture'
+            const orderId = data.orderID?.trim() ?? ''
+            if (!orderId) {
+              throw new Error('PayPal did not return an order id.')
+            }
+
+            const checkoutContext = paypalCheckoutContextRef.current
+            if (!checkoutContext || checkoutContext.orderId !== orderId) {
+              throw new Error('PayPal returned an unexpected order id. Restart checkout and try again.')
+            }
+
+            setPaymentMessage('PayPal approved the order. Finalizing payment...')
+            const captureResult = await capturePayPalOrder({
+              order_id: orderId,
+              subscription_id: checkoutContext.subscriptionId,
+            })
+            paypalCheckoutContextRef.current = null
+            paypalRequestContextRef.current = null
+
+            const successMessage = captureResult.already_processed
+              ? 'PayPal payment was already processed and remains successful.'
+              : 'PayPal payment captured successfully. Your subscription is now updated.'
+
+            try {
+              const subscriptionRows = await listSubscriptions()
+              setSubscriptions(subscriptionRows)
+              setPaymentMessage(successMessage)
+            } catch {
+              setPaymentMessage(`${successMessage} Refresh the page to update the subscription summary.`)
+            }
+          },
+          onCancel: () => {
+            paypalCheckoutContextRef.current = null
+            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
+          },
+          onError: (error) => {
+            paypalCheckoutContextRef.current = null
+            const fallback = error instanceof Error ? error.message : 'Unable to process PayPal checkout right now.'
+            setPaymentMessage(formatPayPalGatewayError(fallback, paypalStageRef.current))
+          },
+        })
+
+        await Promise.resolve(buttons.render(container))
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        const fallback = getErrorMessage(error, 'Unable to load PayPal Buttons right now.')
+        setPaymentMessage(formatPayPalGatewayError(fallback, 'create'))
+      }
+    }
+
+    void renderPayPalButtons()
+
+    return () => {
+      cancelled = true
+      paypalCheckoutContextRef.current = null
+      void Promise.resolve(buttons?.close?.()).catch(() => undefined)
+      container.replaceChildren()
+    }
+  }, [paypalCurrency])
 
   const handleSubmitPayment = async () => {
     if (!paymentReference.trim()) {

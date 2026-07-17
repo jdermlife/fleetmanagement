@@ -1053,6 +1053,7 @@ export interface PayPalOrderSession {
   amount: number
   currency: string
   payment: SubscriptionPayment
+  reused?: boolean
 }
 
 export interface PayPalCaptureResult {
@@ -1365,6 +1366,7 @@ export async function createPayMongoCheckout(payload: {
 export async function createPayPalOrder(payload: {
   subscription_id: number
   invoice_no?: string
+  request_id?: string
 }): Promise<PayPalOrderSession> {
   const response = await api.post<PayPalOrderSession>('/api/paypal/create-order', payload)
   return response.data

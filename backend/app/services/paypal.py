@@ -1,7 +1,8 @@
 from __future__ import annotations
 
-import os
+import hashlib
 import json
+import os
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 from urllib.parse import urlparse
@@ -49,6 +50,15 @@ def _amount_to_paypal_string(amount: Decimal) -> str:
     return str(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
 
+def _paypal_request_id(value: str) -> str:
+    normalized = value.strip()
+    if not normalized:
+        raise ValueError("PayPal request ID is required")
+    if len(normalized) <= 38:
+        return normalized
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()[:38]
+
+
 def _get_access_token() -> tuple[str, str]:
     client_id = _required_environment_value("PAYPAL_CLIENT_ID")
     client_secret = _required_environment_value("PAYPAL_CLIENT_SECRET")
@@ -91,6 +101,7 @@ def create_order(
     payment_reference: str,
     custom_id: str,
     invoice_id: str | None = None,
+    request_id: str | None = None,
 ) -> dict[str, Any]:
     if amount <= 0:
         raise ValueError("Order amount must be greater than zero")
@@ -125,6 +136,7 @@ def create_order(
             headers={
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
+                "PayPal-Request-Id": _paypal_request_id(request_id or payment_reference),
             },
             timeout=_timeout_seconds(),
         )
@@ -169,7 +181,7 @@ def create_order(
     }
 
 
-def capture_order(order_id: str) -> dict[str, Any]:
+def capture_order(order_id: str, *, request_id: str | None = None) -> dict[str, Any]:
     if not order_id or len(order_id.strip()) < 3:
         raise ValueError("order_id is required")
 
@@ -181,6 +193,7 @@ def capture_order(order_id: str) -> dict[str, Any]:
             headers={
                 "Authorization": f"Bearer {token}",
                 "Content-Type": "application/json",
+                "PayPal-Request-Id": _paypal_request_id(request_id or f"capture-{order_id}"),
             },
             timeout=_timeout_seconds(),
         )

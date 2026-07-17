@@ -6,6 +6,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    Index,
     Integer,
     Numeric,
     String,
@@ -187,6 +188,12 @@ class SubscriptionPayment(Base):
             "payment_status IN ('PENDING','SUCCESS','FAILED','REFUNDED')",
             name="ck_subscription_payments_status",
         ),
+        Index(
+            "uq_subscription_payments_provider_transaction_id",
+            "provider_id",
+            "provider_transaction_id",
+            unique=True,
+        ),
     )
 
     subscription = relationship("Subscription", back_populates="payments", lazy="selectin")
@@ -259,11 +266,21 @@ class PaymentWebhook(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     provider_id = Column(BigInteger, ForeignKey("payment_providers.id"), index=True)
+    provider_event_id = Column(String(255))
     event_type = Column(String(100))
     payload = Column(JSONB)
     processed = Column(Boolean, nullable=False, default=False)
     processed_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index(
+            "uq_payment_webhooks_provider_event_id",
+            "provider_id",
+            "provider_event_id",
+            unique=True,
+        ),
+    )
 
     provider = relationship("PaymentProvider", back_populates="webhooks", lazy="selectin")
 

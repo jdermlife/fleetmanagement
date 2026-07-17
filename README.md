@@ -54,6 +54,7 @@ The backend runs on `http://localhost:5000`.
 Note: Python 3.13+ is not currently supported for the FastAPI smoke-test stack in this project.
 
 For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first.
+Before deploying the hardened PayPal flow, run `python migrate_paypal_payment_integrity.py` from `backend`.
 
 ### Frontend
 
@@ -207,6 +208,12 @@ docker compose -f docker-compose.yml.txt up -d backend prometheus grafana
 | APPLE_JWKS_CACHE_TTL_SECONDS | TTL (seconds) for cached Apple JWKS public keys | 3600 |
 | VITE_APPLE_CLIENT_ID | Apple Service ID exposed to frontend Apple Sign-In flow | empty |
 | VITE_APPLE_REDIRECT_URI | Frontend Apple Sign-In redirect URI registered in Apple console | empty |
+| VITE_PAYPAL_CLIENT_ID | PayPal JavaScript SDK client ID; must match the backend sandbox or live environment | empty |
+| PAYPAL_CLIENT_ID | PayPal REST API client ID | Required for PayPal payments |
+| PAYPAL_CLIENT_SECRET | PayPal REST API client secret; backend only | Required for PayPal payments |
+| PAYPAL_WEBHOOK_ID | PayPal webhook ID used for signature verification | Required for PayPal webhooks |
+| PAYPAL_API_BASE_URL | PayPal REST API base URL; sandbox or live must match the credentials | https://api-m.sandbox.paypal.com |
+| PAYPAL_TIMEOUT_SECONDS | PayPal REST API request timeout | 15 |
 | SENTRY_DSN | Sentry DSN for error monitoring | empty (disabled) |
 | SENTRY_ENVIRONMENT | Sentry environment name | development |
 | SENTRY_RELEASE | Sentry release identifier | empty |

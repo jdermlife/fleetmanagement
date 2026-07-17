@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 
 import pytest
 from fastapi import HTTPException
@@ -11,6 +12,8 @@ from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.schemas.subscription_schema import (
     PayMongoCheckoutCreate,
+    PayPalCaptureOrderRequest,
+    PayPalCreateOrderRequest,
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionPaymentCreate,
@@ -40,6 +43,9 @@ class FakeQuery:
         return self
 
     def order_by(self, *_args, **_kwargs):
+        return self
+
+    def with_for_update(self):
         return self
 
     def join(self, *_args, **_kwargs):
@@ -263,6 +269,261 @@ def test_subscriber_checkout_uses_server_plan_amount(fake_db, monkeypatch):
     assert result["amount"] == 999.0
     assert result["payment"]["payment_status"] == "PENDING"
     assert result["payment"]["provider_transaction_id"] == "cs_test_checkout"
+
+
+def test_paypal_capture_requires_exact_stored_order_id(fake_db, monkeypatch):
+    subscription = Subscription(
+        id=14,
+        subscription_no="SUB-PAYPAL-EXACT",
+        user_id=42,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    payment = SubscriptionPayment(
+        id=40,
+        payment_reference="PP-EXACT",
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        payment_status="PENDING",
+        provider_transaction_id="ORDER-STORED",
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    monkeypatch.setattr(
+        subscription_routes,
+        "capture_paypal_order_api",
+        lambda *_args, **_kwargs: pytest.fail("mismatched order must not be captured"),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.capture_paypal_order(
+            payload=PayPalCaptureOrderRequest(
+                order_id="ORDER-NOT-STORED",
+                subscription_id=subscription.id,
+            ),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 404
+
+
+def test_paypal_create_reuses_pending_order_for_same_request_id(fake_db, monkeypatch):
+    plan = SubscriptionPlan(
+        id=1,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+        monthly_price=999,
+        currency="PHP",
+    )
+    subscription = Subscription(
+        id=18,
+        subscription_no="SUB-PAYPAL-CREATE",
+        user_id=42,
+        plan_id=plan.id,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    subscription.plan = plan
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    calls: list[dict[str, object]] = []
+
+    def fake_create(**kwargs):
+        calls.append(kwargs)
+        return {
+            "order_id": "ORDER-CREATE-001",
+            "status": "CREATED",
+            "approval_url": "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-CREATE-001",
+        }
+
+    monkeypatch.setattr(subscription_routes, "create_paypal_order_api", fake_create)
+    payload = PayPalCreateOrderRequest(
+        subscription_id=subscription.id,
+        request_id="checkout-request-001",
+    )
+    user = CurrentUser(id=42, username="subscriber", role="SUBSCRIBER")
+
+    first = subscription_routes.create_paypal_order(payload=payload, user=user)
+    second = subscription_routes.create_paypal_order(payload=payload, user=user)
+
+    assert len(calls) == 1
+    assert calls[0]["request_id"] == "checkout-request-001"
+    assert first["order_id"] == "ORDER-CREATE-001"
+    assert first["reused"] is False
+    assert second["order_id"] == "ORDER-CREATE-001"
+    assert second["reused"] is True
+    assert len(fake_db.rows_by_model[SubscriptionPayment]) == 1
+
+
+def test_paypal_capture_enforces_payment_ownership(fake_db, monkeypatch):
+    subscription = Subscription(
+        id=15,
+        subscription_no="SUB-PAYPAL-FOREIGN",
+        user_id=99,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    payment = SubscriptionPayment(
+        id=41,
+        payment_reference="PP-FOREIGN",
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        payment_status="PENDING",
+        provider_transaction_id="ORDER-FOREIGN",
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    monkeypatch.setattr(
+        subscription_routes,
+        "capture_paypal_order_api",
+        lambda *_args, **_kwargs: pytest.fail("foreign order must not be captured"),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.capture_paypal_order(
+            payload=PayPalCaptureOrderRequest(order_id="ORDER-FOREIGN"),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.parametrize("payment_status", ["FAILED", "REFUNDED"])
+def test_paypal_capture_rejects_non_pending_terminal_states(
+    fake_db,
+    monkeypatch,
+    payment_status,
+):
+    subscription = Subscription(
+        id=16,
+        subscription_no="SUB-PAYPAL-TERMINAL",
+        user_id=42,
+        plan_id=1,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    payment = SubscriptionPayment(
+        id=42,
+        payment_reference="PP-TERMINAL",
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        payment_status=payment_status,
+        provider_transaction_id="ORDER-TERMINAL",
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    monkeypatch.setattr(
+        subscription_routes,
+        "capture_paypal_order_api",
+        lambda *_args, **_kwargs: pytest.fail("terminal payment must not be captured"),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.capture_paypal_order(
+            payload=PayPalCaptureOrderRequest(order_id="ORDER-TERMINAL"),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 409
+
+
+def test_paypal_capture_pending_order_uses_stable_request_id(fake_db, monkeypatch):
+    plan = SubscriptionPlan(
+        id=1,
+        plan_code="PRO",
+        plan_name="Pro",
+        billing_cycle="MONTHLY",
+    )
+    subscription = Subscription(
+        id=17,
+        subscription_no="SUB-PAYPAL-CAPTURE",
+        user_id=42,
+        plan_id=plan.id,
+        status="SUSPENDED",
+        subscription_start=date.today(),
+    )
+    subscription.plan = plan
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    payment = SubscriptionPayment(
+        id=43,
+        payment_reference="PP-CAPTURE-001",
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        invoice_no=subscription.subscription_no,
+        amount=999,
+        currency="PHP",
+        payment_status="PENDING",
+        provider_transaction_id="ORDER-CAPTURE",
+    )
+    payment.subscription = subscription
+    fake_db.rows_by_model[SubscriptionPlan] = [plan]
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionPayment] = [payment]
+    captured: dict[str, object] = {}
+
+    def fake_capture(order_id, **kwargs):
+        captured["order_id"] = order_id
+        captured.update(kwargs)
+        return {
+            "status": "COMPLETED",
+            "capture_id": "CAPTURE-001",
+            "amount": Decimal("999.00"),
+            "currency": "PHP",
+        }
+
+    monkeypatch.setattr(subscription_routes, "capture_paypal_order_api", fake_capture)
+
+    result = subscription_routes.capture_paypal_order(
+        payload=PayPalCaptureOrderRequest(
+            order_id="ORDER-CAPTURE",
+            subscription_id=subscription.id,
+        ),
+        user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+    )
+
+    assert captured == {
+        "order_id": "ORDER-CAPTURE",
+        "request_id": "C-PP-CAPTURE-001",
+    }
+    assert result["captured"] is True
+    assert payment.payment_status == "SUCCESS"
 
 
 def test_admin_can_confirm_payment_and_activate_subscription(fake_db):

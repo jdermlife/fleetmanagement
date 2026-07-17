@@ -61,6 +61,7 @@ def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypat
     assert captured["token_auth"] == ("paypal_client_id", "paypal_secret")
     assert captured["order_url"] == "https://api-m.sandbox.paypal.com/v2/checkout/orders"
     assert captured["headers"]["Authorization"] == "Bearer ACCESS_TOKEN"
+    assert captured["headers"]["PayPal-Request-Id"] == "PP-TEST-001"
     assert captured["json"]["purchase_units"][0]["amount"]["value"] == "999.00"
     assert result["order_id"] == "ORDER-TEST-123"
     assert result["approval_url"].startswith("https://www.sandbox.paypal.com/")
@@ -69,6 +70,8 @@ def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypat
 def test_capture_order_returns_completed_amount(monkeypatch):
     monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
     monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
+
+    captured: dict[str, object] = {}
 
     def fake_post(url, **kwargs):
         if url.endswith("/v1/oauth2/token"):
@@ -80,6 +83,8 @@ def test_capture_order_returns_completed_amount(monkeypatch):
                     return {"access_token": "ACCESS_TOKEN"}
 
             return TokenResponse()
+
+        captured.update(kwargs)
 
         class CaptureResponse:
             ok = True
@@ -112,6 +117,7 @@ def test_capture_order_returns_completed_amount(monkeypatch):
     assert result["capture_id"] == "CAPTURE-123"
     assert result["amount"] == Decimal("999.00")
     assert result["currency"] == "PHP"
+    assert captured["headers"]["PayPal-Request-Id"] == "capture-ORDER-TEST-123"
 
 
 def test_verify_webhook_signature_calls_paypal_verification(monkeypatch):

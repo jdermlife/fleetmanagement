@@ -193,6 +193,12 @@ class PayPalCreateOrderRequest(BaseModel):
 
     subscription_id: int
     invoice_no: str | None = Field(default=None, max_length=50)
+    request_id: str | None = Field(
+        default=None,
+        min_length=8,
+        max_length=38,
+        pattern=r"^[A-Za-z0-9._-]+$",
+    )
 
 
 class PayPalCaptureOrderRequest(BaseModel):

@@ -7,6 +7,7 @@ import json
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
+from sqlalchemy.exc import IntegrityError
 
 from app.database import SessionLocal, set_rls_context
 from app.fastapi_auth import CurrentUser, require_authenticated_user, require_roles
@@ -387,6 +388,24 @@ def _mark_payment_success(
     except Exception:
         # Email or invoice rendering issues should not fail payment activation.
         pass
+
+
+def _commit_paypal_webhook(db, webhook: PaymentWebhook) -> PaymentWebhook | None:
+    db.add(webhook)
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        duplicate = (
+            db.query(PaymentWebhook)
+            .filter(PaymentWebhook.provider_id == webhook.provider_id)
+            .filter(PaymentWebhook.provider_event_id == webhook.provider_event_id)
+            .first()
+        )
+        if duplicate is None:
+            raise
+        return duplicate
+    return None
 
 
 @router.get("/plans")
@@ -956,10 +975,9 @@ async def receive_paymongo_webhook(
         db.close()
 
 
-@router.post("/payments/paypal/create-order")
-def create_paypal_order(
+def _create_paypal_order_for_user(
     payload: PayPalCreateOrderRequest,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser,
 ):
     db = _session_with_rls(user)
     try:
@@ -977,6 +995,39 @@ def create_paypal_order(
         if provider is None or provider.is_active is False:
             raise HTTPException(status_code=503, detail="PayPal payment provider is not active")
 
+        payment_reference = (
+            f"PP-{payload.request_id}"
+            if payload.request_id
+            else f"PP-{uuid.uuid4().hex.upper()}"[:35]
+        )
+        if payload.request_id:
+            existing_payment = (
+                db.query(SubscriptionPayment)
+                .filter(SubscriptionPayment.provider_id == provider.id)
+                .filter(SubscriptionPayment.payment_reference == payment_reference)
+                .first()
+            )
+            if existing_payment is not None:
+                if existing_payment.subscription_id != subscription.id:
+                    raise HTTPException(status_code=409, detail="PayPal request ID is already in use")
+                if existing_payment.payment_status not in {"PENDING", "SUCCESS"}:
+                    raise HTTPException(status_code=409, detail="PayPal request cannot be retried")
+                if not existing_payment.provider_transaction_id:
+                    raise HTTPException(status_code=409, detail="PayPal order is unavailable")
+                return {
+                    "order_id": existing_payment.provider_transaction_id,
+                    "status": (
+                        "COMPLETED"
+                        if existing_payment.payment_status == "SUCCESS"
+                        else "CREATED"
+                    ),
+                    "approval_url": None,
+                    "amount": float(existing_payment.amount or 0),
+                    "currency": existing_payment.currency,
+                    "payment": _serialize_subscription_payment(existing_payment),
+                    "reused": True,
+                }
+
         plan = getattr(subscription, "plan", None)
         if plan is None:
             plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
@@ -988,7 +1039,6 @@ def create_paypal_order(
             raise HTTPException(status_code=422, detail="Subscription plan has no payable amount")
 
         currency = (plan.currency or "PHP").upper()
-        payment_reference = f"PP-{uuid.uuid4().hex.upper()}"[:35]
 
         try:
             order = create_paypal_order_api(
@@ -998,6 +1048,7 @@ def create_paypal_order(
                 payment_reference=payment_reference,
                 custom_id=payment_reference,
                 invoice_id=payload.invoice_no or subscription.subscription_no,
+                request_id=payload.request_id or payment_reference,
             )
         except PayPalConfigurationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
@@ -1016,24 +1067,58 @@ def create_paypal_order(
             provider_transaction_id=order["order_id"],
         )
         db.add(payment)
-        db.commit()
-        db.refresh(payment)
+        try:
+            db.commit()
+        except IntegrityError:
+            db.rollback()
+            if not payload.request_id:
+                raise
+            payment = (
+                db.query(SubscriptionPayment)
+                .filter(SubscriptionPayment.provider_id == provider.id)
+                .filter(SubscriptionPayment.payment_reference == payment_reference)
+                .first()
+            )
+            if payment is None or payment.subscription_id != subscription.id:
+                raise
+        else:
+            db.refresh(payment)
         return {
-            "order_id": order["order_id"],
-            "status": order["status"],
-            "approval_url": order["approval_url"],
-            "amount": float(amount),
-            "currency": currency,
+            "order_id": payment.provider_transaction_id,
+            "status": (
+                order["status"]
+                if payment.provider_transaction_id == order["order_id"]
+                else "CREATED"
+            ),
+            "approval_url": (
+                order["approval_url"]
+                if payment.provider_transaction_id == order["order_id"]
+                else None
+            ),
+            "amount": float(payment.amount or 0),
+            "currency": payment.currency,
             "payment": _serialize_subscription_payment(payment),
+            "reused": payment.provider_transaction_id != order["order_id"],
         }
     finally:
         db.close()
 
 
-@router.post("/payments/paypal/capture-order")
-def capture_paypal_order(
-    payload: PayPalCaptureOrderRequest,
+@router.post(
+    "/payments/paypal/create-order",
+    deprecated=True,
+    include_in_schema=False,
+)
+def create_paypal_order(
+    payload: PayPalCreateOrderRequest,
     user: CurrentUser = Depends(require_roles("Admin")),
+):
+    return _create_paypal_order_for_user(payload=payload, user=user)
+
+
+def _capture_paypal_order_for_user(
+    payload: PayPalCaptureOrderRequest,
+    user: CurrentUser,
 ):
     db = _session_with_rls(user)
     try:
@@ -1049,16 +1134,9 @@ def capture_paypal_order(
             db.query(SubscriptionPayment)
             .filter(SubscriptionPayment.provider_id == provider.id)
             .filter(SubscriptionPayment.provider_transaction_id == payload.order_id)
+            .with_for_update()
             .first()
         )
-        if payment is None and payload.subscription_id is not None:
-            payment = (
-                db.query(SubscriptionPayment)
-                .filter(SubscriptionPayment.subscription_id == payload.subscription_id)
-                .filter(SubscriptionPayment.provider_id == provider.id)
-                .order_by(SubscriptionPayment.created_at.desc())
-                .first()
-            )
         if payment is None:
             raise HTTPException(status_code=404, detail="Pending PayPal order not found")
 
@@ -1067,6 +1145,8 @@ def capture_paypal_order(
             raise HTTPException(status_code=404, detail="Subscription not found for payment")
         if not _is_admin(user) and subscription.user_id != user.id:
             raise HTTPException(status_code=403, detail="Cannot capture another user's payment")
+        if payload.subscription_id is not None and payment.subscription_id != payload.subscription_id:
+            raise HTTPException(status_code=409, detail="PayPal order does not match subscription")
 
         if payment.payment_status == "SUCCESS":
             return {
@@ -1074,9 +1154,14 @@ def capture_paypal_order(
                 "already_processed": True,
                 "payment": _serialize_subscription_payment(payment),
             }
+        if payment.payment_status != "PENDING":
+            raise HTTPException(status_code=409, detail="PayPal payment is not pending")
 
         try:
-            capture_result = capture_paypal_order_api(payload.order_id)
+            capture_result = capture_paypal_order_api(
+                payload.order_id,
+                request_id=f"C-{payment.payment_reference or payload.order_id}",
+            )
         except PayPalConfigurationError as exc:
             raise HTTPException(status_code=503, detail=str(exc)) from exc
         except PayPalAPIError as exc:
@@ -1096,7 +1181,6 @@ def capture_paypal_order(
             raise HTTPException(status_code=409, detail="Captured amount does not match")
 
         processed_at = datetime.now(timezone.utc)
-        payment.provider_transaction_id = payload.order_id
         _mark_payment_success(
             db,
             payment=payment,
@@ -1130,8 +1214,19 @@ def capture_paypal_order(
         db.close()
 
 
-@router.post("/payments/paypal/webhook")
-async def receive_paypal_webhook(request: Request):
+@router.post(
+    "/payments/paypal/capture-order",
+    deprecated=True,
+    include_in_schema=False,
+)
+def capture_paypal_order(
+    payload: PayPalCaptureOrderRequest,
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    return _capture_paypal_order_for_user(payload=payload, user=user)
+
+
+async def _receive_paypal_webhook(request: Request):
     raw_payload = await request.body()
     verification_headers = {
         "PAYPAL-AUTH-ALGO": request.headers.get("PayPal-Auth-Algo", ""),
@@ -1152,7 +1247,7 @@ async def receive_paypal_webhook(request: Request):
 
     try:
         payload = json.loads(raw_payload)
-        event_id = str(payload["id"])
+        event_id = str(payload["id"] or "").strip()
         event_type = str(payload["event_type"])
         resource = payload["resource"]
     except (json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
@@ -1171,16 +1266,36 @@ async def receive_paypal_webhook(request: Request):
         if provider is None or provider.is_active is False:
             raise HTTPException(status_code=503, detail="PayPal payment provider is not active")
 
+        existing_webhook = (
+            db.query(PaymentWebhook)
+            .filter(PaymentWebhook.provider_id == provider.id)
+            .filter(PaymentWebhook.provider_event_id == event_id)
+            .first()
+        )
+        if existing_webhook is not None:
+            return {
+                "received": True,
+                "processed": bool(existing_webhook.processed),
+                "duplicate": True,
+            }
+
         if event_type != "PAYMENT.CAPTURE.COMPLETED":
-            db.add(
+            duplicate = _commit_paypal_webhook(
+                db,
                 PaymentWebhook(
                     provider_id=provider.id,
+                    provider_event_id=event_id,
                     event_type=event_type,
                     payload=payload,
                     processed=False,
-                )
+                ),
             )
-            db.commit()
+            if duplicate is not None:
+                return {
+                    "received": True,
+                    "processed": bool(duplicate.processed),
+                    "duplicate": True,
+                }
             return {"received": True, "processed": False}
 
         related_ids = (
@@ -1189,8 +1304,8 @@ async def receive_paypal_webhook(request: Request):
         )
         order_id = str(related_ids.get("order_id") or "").strip()
         capture_id = str(resource.get("id") or "").strip()
-        custom_id = str(resource.get("custom_id") or "").strip()
-        invoice_id = str(resource.get("invoice_id") or "").strip()
+        if not order_id:
+            raise HTTPException(status_code=400, detail="PayPal order identifier is required")
 
         amount_payload = resource.get("amount") or {}
         paid_currency = str(amount_payload.get("currency_code") or "").upper()
@@ -1199,31 +1314,17 @@ async def receive_paypal_webhook(request: Request):
         except (ArithmeticError, ValueError):
             raise HTTPException(status_code=400, detail="Invalid PayPal capture amount")
 
-        payment = None
-        if order_id:
-            payment = (
-                db.query(SubscriptionPayment)
-                .filter(SubscriptionPayment.provider_id == provider.id)
-                .filter(SubscriptionPayment.provider_transaction_id == order_id)
-                .first()
-            )
-        if payment is None and custom_id:
-            payment = (
-                db.query(SubscriptionPayment)
-                .filter(SubscriptionPayment.provider_id == provider.id)
-                .filter(SubscriptionPayment.payment_reference == custom_id)
-                .first()
-            )
-        if payment is None and invoice_id:
-            payment = (
-                db.query(SubscriptionPayment)
-                .filter(SubscriptionPayment.provider_id == provider.id)
-                .filter(SubscriptionPayment.invoice_no == invoice_id)
-                .order_by(SubscriptionPayment.created_at.desc())
-                .first()
-            )
+        payment = (
+            db.query(SubscriptionPayment)
+            .filter(SubscriptionPayment.provider_id == provider.id)
+            .filter(SubscriptionPayment.provider_transaction_id == order_id)
+            .with_for_update()
+            .first()
+        )
         if payment is None:
             raise HTTPException(status_code=404, detail="Pending PayPal payment not found")
+        if payment.payment_status not in {"PENDING", "SUCCESS"}:
+            raise HTTPException(status_code=409, detail="PayPal payment cannot be completed")
 
         expected_amount_centavos = _amount_to_centavos(Decimal(str(payment.amount or 0)))
         expected_currency = (payment.currency or "").upper()
@@ -1232,8 +1333,6 @@ async def receive_paypal_webhook(request: Request):
             raise HTTPException(status_code=409, detail="Captured amount does not match")
 
         processed_at = datetime.now(timezone.utc)
-        if order_id:
-            payment.provider_transaction_id = order_id
         _mark_payment_success(
             db,
             payment=payment,
@@ -1243,16 +1342,23 @@ async def receive_paypal_webhook(request: Request):
             paid_at=processed_at,
         )
 
-        db.add(
+        duplicate = _commit_paypal_webhook(
+            db,
             PaymentWebhook(
                 provider_id=provider.id,
+                provider_event_id=event_id,
                 event_type=event_type,
                 payload=payload,
                 processed=True,
                 processed_at=processed_at,
-            )
+            ),
         )
-        db.commit()
+        if duplicate is not None:
+            return {
+                "received": True,
+                "processed": bool(duplicate.processed),
+                "duplicate": True,
+            }
         return {
             "received": True,
             "processed": True,
@@ -1261,6 +1367,15 @@ async def receive_paypal_webhook(request: Request):
         }
     finally:
         db.close()
+
+
+@router.post(
+    "/payments/paypal/webhook",
+    deprecated=True,
+    include_in_schema=False,
+)
+async def receive_paypal_webhook(request: Request):
+    return await _receive_paypal_webhook(request=request)
 
 
 @router.post("/payments")

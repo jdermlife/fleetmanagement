@@ -4,9 +4,9 @@ from fastapi import APIRouter, Depends, Request
 
 from app.fastapi_auth import CurrentUser, require_roles
 from app.routes.subscriptions import (
-    capture_paypal_order,
-    create_paypal_order,
-    receive_paypal_webhook,
+    _capture_paypal_order_for_user,
+    _create_paypal_order_for_user,
+    _receive_paypal_webhook,
 )
 from app.schemas.subscription_schema import (
     PayPalCaptureOrderRequest,
@@ -23,7 +23,7 @@ def paypal_create_order(
         require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
     ),
 ):
-    return create_paypal_order(payload=payload, user=user)
+    return _create_paypal_order_for_user(payload=payload, user=user)
 
 
 @router.post("/capture-order")
@@ -33,9 +33,9 @@ def paypal_capture_order(
         require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
     ),
 ):
-    return capture_paypal_order(payload=payload, user=user)
+    return _capture_paypal_order_for_user(payload=payload, user=user)
 
 
 @router.post("/webhook")
 async def paypal_webhook(request: Request):
-    return await receive_paypal_webhook(request=request)
+    return await _receive_paypal_webhook(request=request)
