@@ -4266,18 +4266,18 @@ export default function LendingScorecard() {
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
-          <h1>Filscore</h1>
+          <h1>Credit Health</h1>
           <p>
-            Filscore is composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
+            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
            
           </p>
         </div>
 
 
            <div className="psychometric-hero-metric">
-          <span>FILSCORE</span>
+          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Pending'}</span>
           <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
-          <small>{currentStepLabel}</small>
+          <small> Status{currentStepLabel}{completionPercent}%</small>
         </div>
       </section>
 
