@@ -4281,6 +4281,13 @@ export default function LendingScorecard() {
           <small> Workflow Status  {currentStepLabel}</small>
           <small> Information Provided {completionPercent}%</small>
         </div>
+               <button
+                  type="button"
+                  onClick={handleOpenCertification}
+                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  Credit Health Certification
+                </button>
       </section>
 
       <section className="psychometric-summary-grid lending-psychometric-summary-grid">
@@ -5205,6 +5212,7 @@ export default function LendingScorecard() {
                 >
                   {showLoanStatement ? 'Hide Loan Statement' : 'Generate Loan Statement'}
                 </button>
+                <span className="mx-2" />
                 <button
                   type="button"
                   onClick={handleOpenCertification}
