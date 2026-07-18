@@ -5749,7 +5749,7 @@ export default function LendingScorecard() {
                 onClick={() => void handleReviewApplication()}
                 className={`${topNavButtonClass} loan-toolbar-button-secondary lending-psychometric-tool-button`}
               >
-                {isBorrowerSubscriber || isSingleApplicant ? 'Review Application' : 'Review Applications'}
+                {isBorrowerSubscriber || isSingleApplicant ? 'Review Record' : 'Review Record'}
               </button>
               <button
                 onClick={() => void handleStepChange(8)}
