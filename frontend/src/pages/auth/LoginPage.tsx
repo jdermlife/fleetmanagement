@@ -3,7 +3,7 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { getErrorMessage, getMySubscription, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
+import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
@@ -108,20 +108,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
 
   const resolvePostLoginPath = async (user: AuthUser): Promise<string> => {
-    try {
-      const subscription = await getMySubscription()
-      if (subscription?.status !== 'ACTIVE') {
-        return '/subscription/payment'
-      }
-    } catch (error) {
-      if (axios.isAxiosError(error) && error.response?.status !== 403) {
-        throw error
-      }
-
-      // Some roles (for example legal/read-only) are not allowed to query subscription data.
-      // Do not block sign-in when subscription lookup is forbidden.
-    }
-
     if (isBorrowerSubscriberRole(user.role)) {
       return resolveBorrowerRedirectPath(redirectTo)
     }

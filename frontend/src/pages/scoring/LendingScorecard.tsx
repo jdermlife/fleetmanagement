@@ -4239,14 +4239,20 @@ export default function LendingScorecard() {
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Financial Health </h1>
           <p>
-            FILScore is  composed of Credit Scorecard, Credit Values Indicator  and Social Scorecard
-            It captures the holistic financial health of a person and provides a comprehensive view of their creditworthiness, enabling informed lending decisions.
+            FILScore's FFinancial Health is composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
+           
           </p>
         </div>
 
         <div className="psychometric-hero-metric">
           <span>Current Step</span>
           <strong>{step}/{stepLabels.length}</strong>
+          <small>{currentStepLabel}</small>
+        </div>
+
+           <div className="psychometric-hero-metric">
+          <span>FILSCORE</span>
+          <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
           <small>{currentStepLabel}</small>
         </div>
       </section>
