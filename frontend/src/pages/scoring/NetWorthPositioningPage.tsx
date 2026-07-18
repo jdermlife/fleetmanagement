@@ -1232,6 +1232,7 @@ export default function NetWorthPositioningPage() {
                   </label>
                 </div>
 
+               <div className="table-responsive">
                 <div className="psychometric-scale-table-wrap">
                   <table className="psychometric-scale-table networth-compact-table">
                       <colgroup>
@@ -1289,6 +1290,8 @@ export default function NetWorthPositioningPage() {
                     </tbody>
                   </table>
                 </div>
+               </div>
+               
 
                 {accordionSetupRows.length > 0 ? (
                   <div style={{ marginTop: '12px' }}>
