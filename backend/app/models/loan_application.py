@@ -380,7 +380,9 @@ class OverallScore(Base):
     profitability_score = Column(Numeric(10, 2))
     relationship_score = Column(Numeric(10, 2))
     final_score = Column(Numeric(10, 2))
+    composite_score = Column(Numeric(10, 2))
     final_grade = Column(String(10))
+    final_rating = Column(String(50))
     final_decision = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 

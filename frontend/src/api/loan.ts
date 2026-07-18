@@ -484,7 +484,9 @@ export interface OverallScoreRecord {
   profitability_score?: number | null
   relationship_score?: number | null
   final_score?: number | null
+  composite_score?: number | null
   final_grade?: string | null
+  final_rating?: string | null
   final_decision?: string | null
 }
 
@@ -556,7 +558,9 @@ export interface QuantScoresSummary {
   relationship_score: number
   profitability_score: number
   overall_score: number
+  composite_score: number
   final_grade: string
+  final_rating: string
   decision: string
 }
 
@@ -568,7 +572,9 @@ export interface QuantScoresApiSummary {
   relationshipScore: number
   profitabilityScore: number
   overallScore: number
+  compositeScore?: number
   finalGrade: string
+  finalRating?: string
   decision: string
 }
 

@@ -56,7 +56,9 @@ class QuantScoringServiceTests(unittest.TestCase):
                 "relationshipScore": 88,
                 "profitabilityScore": 79,
                 "overallScore": 36,
-                "finalGrade": "D",
+                "compositeScore": 360,
+                "finalGrade": "F",
+                "finalRating": "Critical",
                 "decision": "DECLINE",
             },
         )

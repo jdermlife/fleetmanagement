@@ -59,6 +59,7 @@ const buildCertificationSnapshot = (
   record: LoanApplicationRecord,
 ): CertificationSnapshot => {
   const finalGrade = record.overall_scores?.final_grade?.trim() || 'Pending'
+  const finalRating = record.overall_scores?.final_rating?.trim() || ''
   const finalDecision = record.overall_scores?.final_decision?.trim() || record.status || 'Pending'
   const applicationNo = record.application_no
 
@@ -74,7 +75,7 @@ const buildCertificationSnapshot = (
       socialScore: record.overall_scores?.social_score ?? null,
       nonStarterScore: record.overall_scores?.fraud_score ?? null,
     }),
-    label: finalGrade,
+    label: finalRating ? `${finalGrade} - ${finalRating}` : finalGrade,
     decision: finalDecision,
     creditScore: record.overall_scores?.credit_score ?? null,
     fraudScore: record.overall_scores?.fraud_score ?? null,

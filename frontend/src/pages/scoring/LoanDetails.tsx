@@ -231,6 +231,16 @@ export default function LoanDetails() {
               </div>
             </div>
 
+            <div className="rounded border bg-indigo-50 p-4">
+              <div className="text-xs uppercase tracking-wide text-indigo-600">Composite Score</div>
+              <div className="mt-1 text-2xl font-bold text-indigo-700">
+                {formatScore(loan.overall_scores?.composite_score)}
+              </div>
+              <div className="mt-1 text-xs text-indigo-700">
+                {loan.overall_scores?.final_grade || "N/A"} - {loan.overall_scores?.final_rating || "N/A"}
+              </div>
+            </div>
+
             <div className="rounded border bg-rose-50 p-4">
               <div className="text-xs uppercase tracking-wide text-rose-500">Non-Starter Score</div>
               <div className="mt-1 text-2xl font-bold text-rose-700">

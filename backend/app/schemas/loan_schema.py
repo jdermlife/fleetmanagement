@@ -105,7 +105,9 @@ class OverallScorePayload(BaseModel):
     profitability_score: float | None = None
     relationship_score: float | None = None
     final_score: float | None = None
+    composite_score: float | None = None
     final_grade: str | None = None
+    final_rating: str | None = None
     final_decision: str | None = None
 
 

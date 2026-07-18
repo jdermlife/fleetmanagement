@@ -138,15 +138,19 @@ def test_compute_quant_scores_returns_200_with_summary(client, subscriber_header
     assert "relationshipScore" in summary
     assert "profitabilityScore" in summary
     assert "overallScore" in summary
+    assert "compositeScore" in summary
     assert "finalGrade" in summary
+    assert "finalRating" in summary
     assert "decision" in summary
 
     # Verify types and ranges
     assert isinstance(summary["creditScore"], (int, float))
     assert isinstance(summary["fraudScore"], (int, float))
     assert isinstance(summary["overallScore"], (int, float))
+    assert isinstance(summary["compositeScore"], (int, float))
     assert isinstance(summary["finalGrade"], str)
-    assert summary["finalGrade"] in ["A", "A-", "B+", "B", "C", "D"]
+    assert isinstance(summary["finalRating"], str)
+    assert summary["finalGrade"] in ["A++", "A+", "A", "B+", "B", "C+", "C", "D", "F"]
     assert summary["decision"] in ["APPROVE", "REVIEW", "DECLINE"]
 
 
@@ -186,7 +190,9 @@ def test_compute_quant_scores_deterministic_values(client, subscriber_headers):
     assert summary["relationshipScore"] == 88
     assert summary["profitabilityScore"] == 79
     assert summary["overallScore"] == 85
+    assert summary["compositeScore"] == 850
     assert summary["finalGrade"] == "A"
+    assert summary["finalRating"] == "Excellent"
     assert summary["decision"] == "APPROVE"
 
 

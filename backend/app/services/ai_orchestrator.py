@@ -94,7 +94,9 @@ class AIOrchestrator:
                 risk.get("relationship_scores", {}).get("relationship_score")
             ),
             "final_score": _to_float(decision.get("final_score")),
+            "composite_score": _to_float(decision.get("composite_score")),
             "final_grade": str(decision.get("final_grade", "")),
+            "final_rating": str(decision.get("final_rating", "")),
             "final_decision": str(decision.get("decision", "")),
         }
 
@@ -122,7 +124,9 @@ class AIOrchestrator:
             "relationshipScore": _to_int(overall_scores["relationship_score"]),
             "profitabilityScore": _to_int(overall_scores["profitability_score"]),
             "overallScore": _to_int(overall_scores["final_score"]),
+            "compositeScore": _to_int(overall_scores["composite_score"]),
             "finalGrade": overall_scores["final_grade"],
+            "finalRating": overall_scores["final_rating"],
             "decision": overall_scores["final_decision"],
         }
 

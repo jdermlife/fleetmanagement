@@ -175,7 +175,9 @@ const mapBackendQuantSummary = (
         relationshipScore?: number;
         profitabilityScore?: number;
         overallScore?: number;
+        compositeScore?: number;
         finalGrade?: string;
+        finalRating?: string;
         decision?: string;
       }
     | null
@@ -193,7 +195,9 @@ const mapBackendQuantSummary = (
     relationship_score: Math.round(summary.relationshipScore ?? 0),
     profitability_score: Math.round(summary.profitabilityScore ?? 0),
     overall_score: Math.round(summary.overallScore ?? 0),
+    composite_score: Math.round(summary.compositeScore ?? ((summary.overallScore ?? 0) * 10)),
     final_grade: summary.finalGrade ?? 'N/A',
+    final_rating: summary.finalRating ?? 'N/A',
     decision: (summary.decision ?? 'PENDING').toUpperCase(),
   };
 };
@@ -213,7 +217,11 @@ const mapRecordQuantSummary = (
     relationship_score: Math.round(record.overall_scores.relationship_score ?? 0),
     profitability_score: Math.round(record.overall_scores.profitability_score ?? 0),
     overall_score: Math.round(record.overall_scores.final_score ?? 0),
+    composite_score: Math.round(
+      record.overall_scores.composite_score ?? ((record.overall_scores.final_score ?? 0) * 10),
+    ),
     final_grade: record.overall_scores.final_grade ?? 'N/A',
+    final_rating: record.overall_scores.final_rating ?? 'N/A',
     decision: (record.overall_scores.final_decision ?? 'PENDING').toUpperCase(),
   };
 };
@@ -4177,9 +4185,19 @@ export default function LendingScorecard() {
     {
       label: 'Composite Score',
       value:
-        compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null
-          ? toFilscore(compositeInternalScore)!.toString()
-          : 'Pending',
+        displayedQuantSummary
+          ? displayedQuantSummary.composite_score.toString()
+          : compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null
+            ? toFilscore(compositeInternalScore)!.toString()
+            : 'Pending',
+    },
+    {
+      label: 'Composite Grade',
+      value: displayedQuantSummary?.final_grade ?? 'Pending',
+    },
+    {
+      label: 'Composite Rating',
+      value: displayedQuantSummary?.final_rating ?? 'Pending',
     },
     {
       label: 'AI Approval Probability',
@@ -4193,6 +4211,17 @@ export default function LendingScorecard() {
       label: 'Non-Starter Score',
       value: creditRiskInsights.nonStarterScore.toFixed(0),
     },
+  ];
+  const compositeGradeBands = [
+    { range: '950-1000', grade: 'A++', rating: 'World Class' },
+    { range: '900-949', grade: 'A+', rating: 'Exceptional' },
+    { range: '850-899', grade: 'A', rating: 'Excellent' },
+    { range: '800-849', grade: 'B+', rating: 'Very Good' },
+    { range: '750-799', grade: 'B', rating: 'Good' },
+    { range: '700-749', grade: 'C+', rating: 'Fair' },
+    { range: '650-699', grade: 'C', rating: 'Needs Improvement' },
+    { range: '600-649', grade: 'D', rating: 'High Risk' },
+    { range: 'Below 600', grade: 'F', rating: 'Critical' },
   ];
   const workflowActionButtonClass =
     workflowActionState === 'processing'
@@ -4237,18 +4266,13 @@ export default function LendingScorecard() {
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
-          <h1>Financial Health </h1>
+          <h1>Filscore</h1>
           <p>
-            FILScore's FFinancial Health is composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
+            Filscore is composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
            
           </p>
         </div>
 
-        <div className="psychometric-hero-metric">
-          <span>Current Step</span>
-          <strong>{step}/{stepLabels.length}</strong>
-          <small>{currentStepLabel}</small>
-        </div>
 
            <div className="psychometric-hero-metric">
           <span>FILSCORE</span>
@@ -5232,6 +5256,32 @@ export default function LendingScorecard() {
                         </p>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                <div className="border-t border-slate-200 pt-6">
+                  <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
+                    Composite Grade Bands
+                  </h4>
+                  <div className="overflow-x-auto rounded-md border border-amber-300 bg-amber-50">
+                    <table className="min-w-full">
+                      <thead>
+                        <tr className="border-b border-amber-300">
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Composite Score</th>
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Grade</th>
+                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Rating</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {compositeGradeBands.map((band) => (
+                          <tr key={band.range} className="border-b border-amber-200 last:border-b-0">
+                            <td className="px-3 py-2 text-sm font-semibold text-amber-900">{band.range}</td>
+                            <td className="px-3 py-2 text-sm font-bold text-amber-900">{band.grade}</td>
+                            <td className="px-3 py-2 text-sm text-slate-700">{band.rating}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
 

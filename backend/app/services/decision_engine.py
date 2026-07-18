@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Any
 
 
@@ -19,18 +20,36 @@ def _normalize_score_100(value: Any) -> float:
     return min(numeric / 10.0, 100.0)
 
 
-def _grade_for_score(final_score: float) -> str:
-    if final_score >= 85:
-        return "A"
-    if final_score >= 80:
-        return "A-"
-    if final_score >= 75:
-        return "B+"
-    if final_score >= 70:
-        return "B"
-    if final_score >= 60:
-        return "C"
-    return "D"
+@dataclass(frozen=True)
+class CompositeGradeBand:
+    minimum: int
+    grade: str
+    rating: str
+
+
+COMPOSITE_GRADE_BANDS = [
+    CompositeGradeBand(950, "A++", "World Class"),
+    CompositeGradeBand(900, "A+", "Exceptional"),
+    CompositeGradeBand(850, "A", "Excellent"),
+    CompositeGradeBand(800, "B+", "Very Good"),
+    CompositeGradeBand(750, "B", "Good"),
+    CompositeGradeBand(700, "C+", "Fair"),
+    CompositeGradeBand(650, "C", "Needs Improvement"),
+    CompositeGradeBand(600, "D", "High Risk"),
+    CompositeGradeBand(0, "F", "Critical"),
+]
+
+
+def _to_composite_score(final_score: float) -> int:
+    normalized_score = max(0.0, min(final_score, 100.0))
+    return int(round(normalized_score * 10.0))
+
+
+def _composite_grade_for_score(composite_score: int) -> CompositeGradeBand:
+    for band in COMPOSITE_GRADE_BANDS:
+        if composite_score >= band.minimum:
+            return band
+    return COMPOSITE_GRADE_BANDS[-1]
 
 
 def compute_decision(final_score: float, requested_grade: str | None = None) -> dict[str, str]:
@@ -84,12 +103,15 @@ def evaluate(
         and component_scores["profit_score"] >= 75
     ) else 0.0
     final_score = float(round(min(weighted_score + decision_uplift, 100.0)))
-    final_grade = _grade_for_score(final_score)
-    outcome = compute_decision(final_score, requested_grade=final_grade)
+    composite_score = _to_composite_score(final_score)
+    composite_grade_band = _composite_grade_for_score(composite_score)
+    outcome = compute_decision(final_score, requested_grade=composite_grade_band.grade)
 
     return {
         "component_scores": component_scores,
         "final_score": final_score,
+        "composite_score": composite_score,
         "final_grade": outcome["final_grade"],
+        "final_rating": composite_grade_band.rating,
         "decision": outcome["decision"],
     }
