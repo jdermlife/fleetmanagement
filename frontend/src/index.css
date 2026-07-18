@@ -3821,6 +3821,24 @@ th { color: var(--dark-gold); }
     position: static;
   }
 
+  .bill-reminder-dashboard-page .budget-dashboard-side,
+  .loan-monitoring-dashboard-page .budget-dashboard-side,
+  .networth-dashboard-page .budget-dashboard-side {
+    display: none !important;
+  }
+
+  .bill-reminder-dashboard-page .budget-dashboard-layout,
+  .loan-monitoring-dashboard-page .budget-dashboard-layout,
+  .networth-dashboard-page .budget-dashboard-layout {
+    display: block;
+  }
+
+  .bill-reminder-dashboard-page .budget-dashboard-main,
+  .loan-monitoring-dashboard-page .budget-dashboard-main,
+  .networth-dashboard-page .budget-dashboard-main {
+    width: 100%;
+  }
+
   .lending-psychometric-footer-actions {
     flex-direction: column;
   }
@@ -4113,19 +4131,18 @@ th { color: var(--dark-gold); }
   }
 
   .lending-psychometric-step-list {
-    display: flex;
+    display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
-    overflow-x: auto;
-    padding-bottom: 4px;
-    scroll-snap-type: x proximity;
+    overflow-x: visible;
+    padding-bottom: 0;
+    scroll-snap-type: none;
   }
 
   .lending-psychometric-step-button {
-    min-width: 220px;
-    flex: 0 0 auto;
+    min-width: 0;
     min-height: 64px;
     padding: 10px 12px;
-    scroll-snap-align: start;
   }
 
   .lending-psychometric-step-copy strong {
@@ -4377,6 +4394,74 @@ th { color: var(--dark-gold); }
   }
 
   .networth-dashboard-page .psychometric-hero-metric strong {
+    font-size: clamp(1.4rem, 7vw, 1.9rem);
+  }
+
+  .bill-reminder-dashboard-page .psychometric-hero,
+  .loan-monitoring-dashboard-page .psychometric-hero {
+    gap: 10px;
+    padding: 10px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-panel,
+  .loan-monitoring-dashboard-page .psychometric-panel {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-summary-card,
+  .loan-monitoring-dashboard-page .psychometric-summary-card {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-summary-grid,
+  .loan-monitoring-dashboard-page .budget-dashboard-category-summary {
+    gap: 8px;
+  }
+
+  .bill-reminder-dashboard-page .budget-dashboard-category-summary-card,
+  .loan-monitoring-dashboard-page .budget-dashboard-category-summary-card,
+  .bill-reminder-dashboard-page .budget-workflow-ai-card,
+  .loan-monitoring-dashboard-page .budget-workflow-ai-card {
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-scale-table tr,
+  .loan-monitoring-dashboard-page .psychometric-scale-table tr {
+    gap: 8px;
+    margin-bottom: 8px;
+    padding: 10px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-panel-header,
+  .loan-monitoring-dashboard-page .psychometric-panel-header {
+    margin-bottom: 8px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-hero-copy h1,
+  .loan-monitoring-dashboard-page .psychometric-hero-copy h1 {
+    font-size: clamp(1.15rem, 4.8vw, 1.45rem);
+    line-height: 1.05;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-hero-copy p,
+  .loan-monitoring-dashboard-page .psychometric-hero-copy p {
+    font-size: 0.82rem;
+    line-height: 1.3;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-hero-metric,
+  .loan-monitoring-dashboard-page .psychometric-hero-metric {
+    min-width: 150px;
+    padding: 10px;
+    gap: 4px;
+    border-radius: 12px;
+  }
+
+  .bill-reminder-dashboard-page .psychometric-hero-metric strong,
+  .loan-monitoring-dashboard-page .psychometric-hero-metric strong {
     font-size: clamp(1.4rem, 7vw, 1.9rem);
   }
 }
