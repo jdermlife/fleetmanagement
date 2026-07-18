@@ -4246,8 +4246,8 @@ export default function LendingScorecard() {
           ? `Retry ${selectedWorkflowAction}`
           : `Save as ${selectedWorkflowAction}`;
   const allStepLabels = [
-    'Product Selection',
-    'Applicant Info',
+    'Goal Setting & Product Selection',
+    'General Information',
     'Employment, Income and Credit Values',
     'Co-Borrower',
     'Banking',
@@ -4276,8 +4276,10 @@ export default function LendingScorecard() {
 
            <div className="psychometric-hero-metric">
           <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Pending'}</span>
+          <span>{compositeGradeBands.find(band => band.rating === displayedQuantSummary?.final_rating)?.rating ?? 'Pending'}</span>
           <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
-          <small> Status{currentStepLabel}{completionPercent}%</small>
+          <small> Workflow Status  {currentStepLabel}</small>
+          <small> Information Provided {completionPercent}%</small>
         </div>
       </section>
 
