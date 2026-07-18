@@ -200,6 +200,14 @@ function buildAiVarianceReason(utilityType: string, variance: number) {
   return 'AI reason: A usage spike, pricing update, penalties, or one-time charges may explain this higher-than-budget payment.';
 }
 
+function SaveCheckIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: '18px', height: '18px' }}>
+      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor" />
+    </svg>
+  );
+}
+
 export default function BillReminderPage() {
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -1134,8 +1142,13 @@ export default function BillReminderPage() {
                       <button type="button" className="budget-dashboard-category-reset" onClick={handleFixBaselineAllocation}>
                         Fix Baseline Allocation
                       </button>
-                      <button type="button" className="psychometric-reset-button" onClick={handleSaveSetup}>
-                        Save Setup and Continue to Step 3
+                      <button
+                        type="button"
+                        className="psychometric-save-circle"
+                        onClick={handleSaveSetup}
+                        aria-label="Save setup and continue to step 3"
+                      >
+                        <SaveCheckIcon />
                       </button>
                     </>
                   )}
@@ -1240,8 +1253,13 @@ export default function BillReminderPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>
-                  <button type="button" className="psychometric-reset-button" onClick={handleSaveVarianceRecord}>
-                    Save
+                  <button
+                    type="button"
+                    className="psychometric-save-circle"
+                    onClick={handleSaveVarianceRecord}
+                    aria-label="Save"
+                  >
+                    <SaveCheckIcon />
                   </button>
                 </div>
 

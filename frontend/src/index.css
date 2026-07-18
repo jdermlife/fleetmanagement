@@ -2376,6 +2376,45 @@ button.loan-repository-action-release { background: #4f46e5; }
   border-color: #0b5f5a;
 }
 
+.psychometric-save-circle {
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: #0f766e;
+  border: 1px solid #0f766e;
+  color: #ffffff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.psychometric-save-circle:hover:not(:disabled) {
+  background: #0b5f5a;
+  border-color: #0b5f5a;
+  transform: translateY(-1px);
+}
+
+.psychometric-save-circle:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.psychometric-save-circle:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.psychometric-save-circle.saving {
+  animation: save-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes save-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
 .psychometric-scale-table-wrap {
   overflow-x: auto;
   max-width: 100%;
@@ -4085,6 +4124,11 @@ th { color: var(--dark-gold); }
   .budget-workflow-inline-actions {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .budget-workflow-inline-actions .psychometric-save-circle {
+    align-self: center;
+    flex-shrink: 0;
   }
 
   .budget-dashboard-form-actions {
