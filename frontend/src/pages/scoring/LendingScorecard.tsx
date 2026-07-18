@@ -4268,23 +4268,23 @@ export default function LendingScorecard() {
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Credit Health</h1>
           <p>
-            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
+            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard:  
                           <button
                   type="button"
                   onClick={handleOpenCertification}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
                 >
-                  Credit Health Certification
+                 Report
                 </button>
           </p>
         </div>
 
 
            <div className="psychometric-hero-metric">
-          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Pending'}</span>
+          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Please complete record form'}</span>
           <span>{compositeGradeBands.find(band => band.rating === displayedQuantSummary?.final_rating)?.rating ?? 'Pending'}</span>
           <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
-          <small> Workflow Status  {currentStepLabel}</small>
+          <small>  Status  {currentStepLabel}</small>
           <small> Information Provided {completionPercent}%</small>
         </div>
 
@@ -5743,7 +5743,7 @@ export default function LendingScorecard() {
                 onClick={handleCreateNew}
                 className={`${topNavButtonClass} loan-toolbar-button-primary lending-psychometric-tool-button`}
               >
-                Create New Application
+                Create New Record
               </button>
               <button
                 onClick={() => void handleReviewApplication()}
