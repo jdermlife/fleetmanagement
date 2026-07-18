@@ -4,41 +4,19 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getErrorMessage, getMySubscription, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
-import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
-const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
-const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard'])
-
-function getMostRecentBorrowerApplication(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
-  if (records.length === 0) {
-    return null
-  }
-
-  const recordsWithTimestamp = records
-    .map((record) => {
-      const timestampSource = record.updated_at || record.created_at
-      const timestamp = timestampSource ? Date.parse(timestampSource) : Number.NaN
-      return {
-        record,
-        timestamp,
-      }
-    })
-    .filter((entry) => Number.isFinite(entry.timestamp))
-    .sort((left, right) => right.timestamp - left.timestamp)
-
-  if (recordsWithTimestamp.length > 0) {
-    return recordsWithTimestamp[0].record
-  }
-
-  return records[0]
-}
+const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
 
 async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> {
   if (redirectTo.startsWith('/lending-scorecard')) {
+    return redirectTo
+  }
+
+  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
     return redirectTo
   }
 
@@ -49,27 +27,11 @@ async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> 
     return `/lending-scorecard?applicationNo=${encodeURIComponent(redirectApplicationNo)}`
   }
 
-  try {
-    const applications = await fetchLoanApplications({ limit: 25 })
-    const mostRecentApplication = getMostRecentBorrowerApplication(applications)
-
-    if (mostRecentApplication?.application_no) {
-      return `/lending-scorecard?applicationNo=${encodeURIComponent(mostRecentApplication.application_no)}`
-    }
-  } catch {
-    // Fallback to scorecard when the lookup fails.
-  }
-
-  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
-    return redirectTo
-  }
-
-  return '/lending-scorecard'
+  return '/financial-health-summary'
 }
 
 function getDefaultRedirectPath() {
-  const storedPath = window.localStorage.getItem(LAST_ROUTE_STORAGE_KEY)
-  return storedPath || '/dashboard'
+  return '/financial-health-summary'
 }
 
 function MailIcon() {

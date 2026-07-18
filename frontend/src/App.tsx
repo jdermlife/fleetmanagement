@@ -256,7 +256,7 @@ const borrowerVisibleMenus = [
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
 const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
 const isAdminUser = currentUser?.role?.toLowerCase() === 'admin'
-const defaultHomePath = isBorrowerSubscriber ? '/lending-scorecard' : '/dashboard'
+const defaultHomePath = '/financial-health-summary'
 
 const visibleMenuLinks = isBorrowerSubscriber
   ? menuLinks.filter((item) => borrowerVisibleMenus.includes(item.id))
@@ -290,7 +290,7 @@ const adminMenuItems = isAdminUser
   : []
 
 const isLoginRoute = location.pathname === '/login'
-const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
+const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/financial-health-summary', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
 
   useEffect(() => {
@@ -829,7 +829,7 @@ const isSignedIn = authReady && Boolean(currentUser)
               path="/"
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <DashboardSnapshot />}
+                  <Navigate to="/financial-health-summary" replace />
                 </ProtectedRoute>
               }
             />

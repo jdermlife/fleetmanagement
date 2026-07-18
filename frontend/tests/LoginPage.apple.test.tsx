@@ -92,7 +92,7 @@ describe('LoginPage Apple sign-in', () => {
     mockLoginWithApple.mockReset()
   })
 
-  it('clicking Continue with Apple requests token, exchanges identity token, and redirects to dashboard', async () => {
+  it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
     })
@@ -133,7 +133,7 @@ describe('LoginPage Apple sign-in', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/dashboard')
+      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary')
     })
   })
 

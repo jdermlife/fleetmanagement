@@ -69,7 +69,7 @@ export default function RegisterPage() {
       })
       const loginResponse = await login({ username, password })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/subscription/payment', { replace: true })
+      navigate('/financial-health-summary', { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
     } finally {
@@ -108,7 +108,7 @@ export default function RegisterPage() {
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/subscription/payment', { replace: true })
+      navigate('/financial-health-summary', { replace: true })
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
@@ -146,7 +146,7 @@ export default function RegisterPage() {
         lenderDataSharingConsent: lenderDataSharingChoice === 'share',
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/subscription/payment', { replace: true })
+      navigate('/financial-health-summary', { replace: true })
     } catch (error) {
       if (error instanceof Error && error.message) {
         setAppleMessage(error.message)

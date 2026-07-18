@@ -106,6 +106,6 @@ describe('RegisterPage Apple sign-up', () => {
       subscriberType: 'borrower',
       lenderDataSharingConsent: true,
     })
-    expect(mockNavigate).toHaveBeenCalledWith('/subscription/payment', { replace: true })
+    expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
   })
 })
