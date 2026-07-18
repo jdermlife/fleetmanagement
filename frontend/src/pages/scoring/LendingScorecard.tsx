@@ -4246,7 +4246,7 @@ export default function LendingScorecard() {
           ? `Retry ${selectedWorkflowAction}`
           : `Save as ${selectedWorkflowAction}`;
   const allStepLabels = [
-    'Goal Setting & Product Selection',
+    'Baseline:Goal & Product Setting',
     'General Information',
     'Employment, Income and Credit Values',
     'Co-Borrower',
