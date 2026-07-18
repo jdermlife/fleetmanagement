@@ -4269,7 +4269,13 @@ export default function LendingScorecard() {
           <h1>Credit Health</h1>
           <p>
             Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard
-           
+                          <button
+                  type="button"
+                  onClick={handleOpenCertification}
+                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
+                >
+                  Credit Health Certification
+                </button>
           </p>
         </div>
 
@@ -4281,13 +4287,7 @@ export default function LendingScorecard() {
           <small> Workflow Status  {currentStepLabel}</small>
           <small> Information Provided {completionPercent}%</small>
         </div>
-               <button
-                  type="button"
-                  onClick={handleOpenCertification}
-                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
-                >
-                  Credit Health Certification
-                </button>
+
       </section>
 
       <section className="psychometric-summary-grid lending-psychometric-summary-grid">
