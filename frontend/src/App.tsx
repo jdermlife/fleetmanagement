@@ -36,8 +36,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
   })
 }
 
-const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/DashboardSnapshot'))
-const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
+
 const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
 const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
@@ -46,6 +45,8 @@ const CreditScoring = lazy(() => import('./pages/scoring/CreditScoring'))
 const BudgetExpenseTrackerPage = lazy(() => import('./pages/scoring/BudgetExpenseTrackerPage'))
 const LoanMonitoringPage = lazy(() => import('./pages/scoring/LoanMonitoringPage'))
 const BillReminderPage = lazy(() => import('./pages/scoring/BillReminderPage'))
+const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/DashboardSnapshot'))
+const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
 const CollateralMonitoringPage = lazy(() => import('./pages/scoring/CollateralMonitoringPage'))
 const NetWorthPositioningPage = lazy(() => import('./pages/scoring/NetWorthPositioningPage'))
 const AuditTrailPanel = lazy(() => import('./pages/audit/AuditTrailPanel'))
