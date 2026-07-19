@@ -4268,7 +4268,8 @@ export default function LendingScorecard() {
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Credit Health</h1>
           <p>
-            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard. Complete the Workflow Form and Click Step 8: Filscore to produce report.  
+            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard. 
+            <strong>Complete the</strong>Complete the Workflow Form and Click Step 8: Filscore to produce report.  
                           <button
                   type="button"
                   onClick={handleOpenCertification}
