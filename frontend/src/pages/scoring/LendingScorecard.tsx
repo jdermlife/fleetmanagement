@@ -5272,7 +5272,7 @@ export default function LendingScorecard() {
 
                 <div className="border-t border-slate-200 pt-6">
                   <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
-                    Composite Grade Bands
+                   End
                   </h4>
                   <div className="overflow-x-auto rounded-md border border-amber-300 bg-amber-50">
                     <table className="min-w-full">
@@ -5283,15 +5283,7 @@ export default function LendingScorecard() {
                           <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Rating</th>
                         </tr>
                       </thead>
-                      <tbody>
-                        {compositeGradeBands.map((band) => (
-                          <tr key={band.range} className="border-b border-amber-200 last:border-b-0">
-                            <td className="px-3 py-2 text-sm font-semibold text-amber-900">{band.range}</td>
-                            <td className="px-3 py-2 text-sm font-bold text-amber-900">{band.grade}</td>
-                            <td className="px-3 py-2 text-sm text-slate-700">{band.rating}</td>
-                          </tr>
-                        ))}
-                      </tbody>
+
                     </table>
                   </div>
                 </div>
