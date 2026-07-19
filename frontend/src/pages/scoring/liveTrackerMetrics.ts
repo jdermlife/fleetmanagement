@@ -13,6 +13,24 @@ import type { TrackerItem } from './FinancialTrackerTemplate';
 type DecisionBand = 'approve' | 'review' | 'decline' | 'unknown';
 type BudgetStatus = 'maintain' | 'watch' | 'attention';
 
+type NetWorthPositioningGradeBand = {
+  minimum: number;
+  grade: string;
+  rating: string;
+};
+
+const NET_WORTH_POSITIONING_GRADE_BANDS: NetWorthPositioningGradeBand[] = [
+  { minimum: 950, grade: 'A++', rating: 'World Class' },
+  { minimum: 900, grade: 'A+', rating: 'Exceptional' },
+  { minimum: 850, grade: 'A', rating: 'Excellent' },
+  { minimum: 800, grade: 'B+', rating: 'Very Good' },
+  { minimum: 750, grade: 'B', rating: 'Good' },
+  { minimum: 700, grade: 'C+', rating: 'Fair' },
+  { minimum: 650, grade: 'C', rating: 'Needs Improvement' },
+  { minimum: 600, grade: 'D', rating: 'High Risk' },
+  { minimum: 0, grade: 'F', rating: 'Critical' },
+];
+
 export type BudgetFlowItem = {
   id: string;
   label: string;
@@ -165,6 +183,8 @@ export type NetWorthPositioningSnapshot = {
   sourceApplicationNo: string;
   healthScore: number;
   performanceBand: string;
+  grade: string;
+  rating: string;
   portfolioCount: number;
   strongPositionCount: number;
   watchlistCount: number;
@@ -522,6 +542,18 @@ function getLoanMonitoringPerformanceBand(score: number): string {
   }
 
   return 'Needs Attention';
+}
+
+function getNetWorthPositioningGradeBand(score: number): NetWorthPositioningGradeBand {
+  const compositeScore = Math.round(clamp(score, 0, 100) * 10);
+
+  for (const band of NET_WORTH_POSITIONING_GRADE_BANDS) {
+    if (compositeScore >= band.minimum) {
+      return band;
+    }
+  }
+
+  return NET_WORTH_POSITIONING_GRADE_BANDS[NET_WORTH_POSITIONING_GRADE_BANDS.length - 1];
 }
 
 function getMostRecentRecord(records: LoanApplicationRecord[]): LoanApplicationRecord | null {
@@ -1605,6 +1637,7 @@ export function buildNetWorthPositioningSnapshot(records: LoanApplicationRecord[
   ];
 
   const healthScore = Math.round(mean([...controlItems.map((item) => item.attainment), ...indicators.map((item) => item.attainment)]));
+  const gradeBand = getNetWorthPositioningGradeBand(healthScore);
 
   return {
     periodLabel: toMonthLabel(referenceDate),
@@ -1613,6 +1646,8 @@ export function buildNetWorthPositioningSnapshot(records: LoanApplicationRecord[
     sourceApplicationNo: latestRecord?.application_no ?? 'No recent loan record',
     healthScore,
     performanceBand: getLoanMonitoringPerformanceBand(healthScore),
+    grade: gradeBand.grade,
+    rating: gradeBand.rating,
     portfolioCount: records.length,
     strongPositionCount,
     watchlistCount,

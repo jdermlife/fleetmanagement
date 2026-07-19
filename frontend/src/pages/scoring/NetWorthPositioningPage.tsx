@@ -153,6 +153,18 @@ const CURRENCY_OPTIONS = [
   { code: 'SGD', label: 'SGD (S$)' },
 ] as const;
 
+const NET_WORTH_GRADE_BANDS = [
+  { range: '950-1000', grade: 'A++', rating: 'World Class' },
+  { range: '900-949', grade: 'A+', rating: 'Exceptional' },
+  { range: '850-899', grade: 'A', rating: 'Excellent' },
+  { range: '800-849', grade: 'B+', rating: 'Very Good' },
+  { range: '750-799', grade: 'B', rating: 'Good' },
+  { range: '700-749', grade: 'C+', rating: 'Fair' },
+  { range: '650-699', grade: 'C', rating: 'Needs Improvement' },
+  { range: '600-649', grade: 'D', rating: 'High Risk' },
+  { range: 'Below 600', grade: 'F', rating: 'Critical' },
+] as const;
+
 const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
   { id: 'asset-cash-on-hand', label: 'Cash on Hand', section: 'assets', category: '1. Cash & Bank Accounts' },
   { id: 'asset-savings-account', label: 'Savings Account', section: 'assets', category: '1. Cash & Bank Accounts' },
@@ -1054,14 +1066,7 @@ export default function NetWorthPositioningPage() {
           <p>
                              
         <div className="flex gap-4 mt-4">
-  <a
-    href="https://wid.world/income-comparator/"
-    target="_blank"
-    rel="noreferrer"
-    className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs"
-  >
-    Open WID Income Comparator
-  </a>
+
 
   <button
     type="button"
@@ -1092,7 +1097,16 @@ export default function NetWorthPositioningPage() {
         </div>
         <p className="psychometric-section-note">
           Set your goals, encode setup amounts, then compare actual values to monitor variance.
+          Assess your net worth position relative to global income distribution.
         </p>
+          <a
+    href="https://wid.world/income-comparator/"
+    target="_blank"
+    rel="noreferrer"
+    className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs"
+  >
+    Open WID Income Comparator
+  </a>
       </section>
 
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
@@ -1147,8 +1161,37 @@ export default function NetWorthPositioningPage() {
         <article className="psychometric-summary-card">
           <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
           <strong>{formatSignedCurrency(setupNetWorth)}</strong>
-          <small>{snapshot.performanceBand}</small>
+          <small>{snapshot.grade} - {snapshot.rating}</small>
         </article>
+      </section>
+
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Grade Bands</span>
+            <h2>Net Worth Position Grade Scale</h2>
+          </div>
+        </div>
+        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+          <table className="min-w-full">
+            <thead>
+              <tr className="border-b border-slate-200 bg-slate-50">
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Score</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Grade</th>
+                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {NET_WORTH_GRADE_BANDS.map((band) => (
+                <tr key={band.range} className="border-b border-slate-100 last:border-b-0">
+                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">{band.range}</td>
+                  <td className="px-4 py-3 text-sm font-bold text-slate-900">{band.grade}</td>
+                  <td className="px-4 py-3 text-sm text-slate-700">{band.rating}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <section className="budget-dashboard-layout">
@@ -1901,11 +1944,19 @@ export default function NetWorthPositioningPage() {
 
           <article className="psychometric-panel psychometric-sticky-panel">
             <span className="psychometric-panel-kicker">Position Health</span>
-            <h2>{snapshot.performanceBand}</h2>
+            <h2>{snapshot.grade}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
                 <span>Health Score</span>
                 <strong>{snapshot.healthScore.toFixed(1)}</strong>
+              </li>
+              <li>
+                <span>Rating</span>
+                <strong>{snapshot.rating}</strong>
+              </li>
+              <li>
+                <span>Performance Band</span>
+                <strong>{snapshot.performanceBand}</strong>
               </li>
               <li>
                 <span>Action</span>
