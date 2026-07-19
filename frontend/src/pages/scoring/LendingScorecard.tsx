@@ -5275,16 +5275,7 @@ export default function LendingScorecard() {
                    End
                   </h4>
                   <div className="overflow-x-auto rounded-md border border-amber-300 bg-amber-50">
-                    <table className="min-w-full">
-                      <thead>
-                        <tr className="border-b border-amber-300">
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Composite Score</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Grade</th>
-                          <th className="px-3 py-2 text-left text-xs font-bold uppercase tracking-wide text-amber-800">Rating</th>
-                        </tr>
-                      </thead>
 
-                    </table>
                   </div>
                 </div>
 
