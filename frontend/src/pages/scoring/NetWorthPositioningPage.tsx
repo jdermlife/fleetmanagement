@@ -1178,34 +1178,8 @@ export default function NetWorthPositioningPage() {
         </article>
       </section>
 
-      <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Grade Bands</span>
-            <h2>Net Worth Position Grade Scale</h2>
-          </div>
-        </div>
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
-          <table className="min-w-full">
-            <thead>
-              <tr className="border-b border-slate-200 bg-slate-50">
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Score</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Grade</th>
-                <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">Rating</th>
-              </tr>
-            </thead>
-            <tbody>
-              {NET_WORTH_GRADE_BANDS.map((band) => (
-                <tr key={band.range} className="border-b border-slate-100 last:border-b-0">
-                  <td className="px-4 py-3 text-sm font-semibold text-slate-900">{band.range}</td>
-                  <td className="px-4 py-3 text-sm font-bold text-slate-900">{band.grade}</td>
-                  <td className="px-4 py-3 text-sm text-slate-700">{band.rating}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+
+       
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
