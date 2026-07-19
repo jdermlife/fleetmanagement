@@ -454,22 +454,6 @@ export default function LoanRepository() {
           </div>
 
 
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Portfolio Snapshot
-                </h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                  {summaryCards.map((card) => (
-                    <article key={card.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-2xl font-bold text-slate-900">{card.value.toLocaleString()}</div>
-                      <div className="mt-1 text-sm font-semibold text-slate-700">{card.label}</div>
-                      <p className="mt-1 text-xs text-slate-500">{card.note}</p>
-                    </article>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
 
           <div className="border-b border-slate-200 bg-white px-6 py-6 md:px-8">
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
