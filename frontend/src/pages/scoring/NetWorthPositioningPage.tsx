@@ -91,6 +91,57 @@ const FINANCIAL_GOAL_OPTIONS = [
   'Support Social Responsibility',
   'Achieve Financial Independence',
   'Build Retirement Savings',
+  'Vacation Fund',
+  'Wedding Fund',
+  'Holiday Fund',
+  'Gadget Fund',
+  'Home Renovation',
+  'Buy First Home',
+  'Upgrade Home',
+  'Buy Condominium',
+  'Buy Land',
+  'Build House',
+  'Buy Motorcycle',
+  'Buy Car',
+  'Buy Commercial Vehicle',
+  'Upgrade Vehicle',
+  'Start Investing',
+  'Build Stock Portfolio',
+  'Mutual Funds',
+  'UITF',
+  'Bonds',
+  'REITs',
+  'Cryptocurrency',
+  'Gold Investment',
+  'Marriage Fund',
+  'Children\'s Education',
+  'Childcare Fund',
+  'Parents Support',
+  'Family Emergency Fund',
+  'Start Business',
+  'Expand Business',
+  'Franchise Business',
+  'Working Capital',
+  'Equipment Purchase',
+  'Life Insurance',
+  'Health Insurance',
+  'HMO',
+  'Critical Illness Insurance',
+  'Disability Insurance',
+  'Eliminate Credit Card Debt',
+  'Pay Personal Loans',
+  'Pay Mortgage',
+  'Become Debt-Free',
+  'Retirement Fund',
+  'Pension Enhancement',
+  'Passive Income',
+  'Financial Independence',
+  'Reach First ₱1 Million',
+  'Reach First ₱10 Million',
+  'High-Net-Worth Status',
+  'Generational Wealth',
+  'Estate Planning',
+  'Belonging to 1% of the Population',
   'Others',
 ] as const;
 
@@ -1002,7 +1053,7 @@ export default function NetWorthPositioningPage() {
           </p>
           <p>
                              
-        The Wealth Building or Net Worth Positioning Score is based on the variance of actual values versus setup values.  The score is a measure of how well you are positioned to achieve your financial goals. Financial Goal was  established in Financial Health Scorecard.  To reassess the goal, please compare your income and wealth standing globally using World Inequality Database Comparitor:                      <a
+        The Wealth Building Score is  a measure of how well you are positioned to achieve your financial goals. Financial Goal was  established in Financial Health Scorecard.  Re-assess the goal, please compare your income and wealth standing globally using World Inequality Database Comparitor:                      <a
           href="https://wid.world/income-comparator/"
           target="_blank"
           rel="noreferrer"
@@ -1010,6 +1061,16 @@ export default function NetWorthPositioningPage() {
         >
           Open WID Income Comparator
         </a>
+
+             <button
+                  type="button"
+                  
+                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
+                >
+                 Complete the Workflow Form Step 1 to 4, then click this button for FILSCORE Wealth Building Scorecard and  AI Recommendations.
+              </button>
+
+
           </p>
         </div>
 

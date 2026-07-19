@@ -4269,13 +4269,13 @@ export default function LendingScorecard() {
           <h1>Credit Health</h1>
           <p>
             Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard. 
-       
+            Once Steps 1 to 8 are complete, click the Credit Health Certification button to generate the FILSCORE Report.
                           <button
                   type="button"
                   onClick={handleOpenCertification}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
                 >
-                 Complete the Workflow Form and Click Step 8: Filscore to produce this FILSCORE Certification Report
+                  FILSCORE Credit Health Report
                 </button>
           </p>
         </div>
