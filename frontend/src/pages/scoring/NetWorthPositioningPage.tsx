@@ -1053,22 +1053,23 @@ export default function NetWorthPositioningPage() {
           </p>
           <p>
                              
-        The Wealth Building Score is  a measure of how well you are positioned to achieve your financial goals. Financial Goal was  established in Financial Health Scorecard.  Re-assess the goal, please compare your income and wealth standing globally using World Inequality Database Comparitor:                      <a
-          href="https://wid.world/income-comparator/"
-          target="_blank"
-          rel="noreferrer"
-          className="auth-link-button"
-        >
-          Open WID Income Comparator
-        </a>
+        <div className="flex gap-4 mt-4">
+  <a
+    href="https://wid.world/income-comparator/"
+    target="_blank"
+    rel="noreferrer"
+    className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs"
+  >
+    Open WID Income Comparator
+  </a>
 
-             <button
-                  type="button"
-                  
-                  className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
-                >
-                 Complete the Workflow Form Step 1 to 4, then click this button for FILSCORE Wealth Building Scorecard and  AI Recommendations.
-              </button>
+  <button
+    type="button"
+    className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+  >
+    Complete the Workflow Form Step 1 to 4, then click this button for FILSCORE Wealth Building Scorecard and AI Recommendations
+  </button>
+</div>
 
 
           </p>
