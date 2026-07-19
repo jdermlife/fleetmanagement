@@ -442,51 +442,17 @@ export default function LoanRepository() {
           <div className="border-b border-slate-700 bg-slate-900 p-6 text-white md:p-8">
             <div className="space-y-2">
               <p className="text-xs font-semibold uppercase tracking-[0.28em] text-slate-400">
-                Credit Operations
+                Record Review
               </p>
               <h1 className="text-3xl font-semibold tracking-tight text-white">
-                Loan Repository
+                Record Repository
               </h1>
               <p className="max-w-3xl text-sm text-slate-300 md:text-base">
-                Centralized loan origination monitoring, workflow oversight, and
-                records management for credit operations teams.
+                
               </p>
             </div>
           </div>
 
-          <div className="border-b border-slate-200 bg-slate-50 px-6 py-5 md:px-8">
-            <div className="mb-3 flex items-center justify-between gap-3">
-              <div>
-                <h2 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
-                  Portfolio Snapshot and Repository Counts
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Quick numeric overview arranged for executive review.
-                </p>
-              </div>
-            </div>
-
-            <div className="grid gap-4 xl:grid-cols-2">
-              <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">
-                  Repository Record Counts
-                </h3>
-                <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                  {recordsCountItems.map((item) => (
-                    <article key={item.label} className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <div className="text-3xl font-bold text-slate-900">{item.value.toLocaleString()}</div>
-                      <div className="mt-1 text-sm font-semibold text-slate-700">{item.label}</div>
-                      <p className="mt-1 text-xs text-slate-500">{item.note}</p>
-                    </article>
-                  ))}
-                </div>
-                <div className="mt-4 flex flex-col gap-1 text-xs text-slate-500 sm:flex-row sm:justify-between">
-                  <span>
-                    Active Filter: <strong className="text-slate-700">{appliedStatusFilter}</strong>
-                  </span>
-                  <span>{appliedDateFrom || appliedDateTo ? `${appliedDateFrom || "Start"} to ${appliedDateTo || "Present"}` : "All Dates"}</span>
-                </div>
-              </div>
 
               <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
                 <h3 className="text-xs font-semibold uppercase tracking-[0.22em] text-slate-500">

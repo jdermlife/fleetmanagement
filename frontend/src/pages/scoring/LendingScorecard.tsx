@@ -4246,7 +4246,7 @@ export default function LendingScorecard() {
           ? `Retry ${selectedWorkflowAction}`
           : `Save as ${selectedWorkflowAction}`;
   const allStepLabels = [
-    'Baseline:Goal & Product Setting',
+    'Baseline Setting',
     'General Information',
     'Employment, Income and Credit Values',
     'Co-Borrower',
@@ -4268,7 +4268,7 @@ export default function LendingScorecard() {
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Credit Health</h1>
           <p>
-            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard:  
+            Credit Health is  composed of Credit Scorecard, Credit Values Indicator and Social Scorecard. Complete the Workflow Form and Click Step 8: Filscore to produce report.  
                           <button
                   type="button"
                   onClick={handleOpenCertification}
@@ -4281,8 +4281,8 @@ export default function LendingScorecard() {
 
 
            <div className="psychometric-hero-metric">
-          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Please complete record form'}</span>
-          <span>{compositeGradeBands.find(band => band.rating === displayedQuantSummary?.final_rating)?.rating ?? 'Pending'}</span>
+          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Please complete workflow form'}</span>
+          <span>{compositeGradeBands.find(band => band.rating === displayedQuantSummary?.final_rating)?.rating ?? 'Ensure to provide information'}</span>
           <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
           <small>  Status  {currentStepLabel}</small>
           <small> Information Provided {completionPercent}%</small>
