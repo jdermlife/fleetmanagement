@@ -1072,7 +1072,7 @@ export default function NetWorthPositioningPage() {
     type="button"
     className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
   >
-    Complete the Workflow Form Step 1 to 4, then click this button for FILSCORE Wealth Building Scorecard and AI Recommendations
+    Finish Steps 1 to 4 of the Workflow Form, then select this button to access your FILSCORE Wealth Building Scorecard and AI Driven Insights.
   </button>
 </div>
 
@@ -1099,14 +1099,27 @@ export default function NetWorthPositioningPage() {
           Set your goals, encode setup amounts, then compare actual values to monitor variance.
           Assess your net worth position relative to global income distribution.
         </p>
-          <a
-    href="https://wid.world/income-comparator/"
-    target="_blank"
-    rel="noreferrer"
-    className="loan-inline-button loan-inline-button-primary px-2 py-1 text-xs"
-  >
-    Open WID Income Comparator
-  </a>
+
+      </section>
+
+            <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Global Comparator</span>
+            <h2>Your Income and Wealth Standing in the World</h2>
+          </div>
+        </div>
+        <p className="psychometric-section-note">
+          Compare your income and wealth standing globally using the World Inequality Database comparator.
+        </p>
+        <a
+          href="https://wid.world/income-comparator/"
+          target="_blank"
+          rel="noreferrer"
+          className="auth-link-button"
+        >
+          Open WID Income Comparator
+        </a>
       </section>
 
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
