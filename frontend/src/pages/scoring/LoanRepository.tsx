@@ -24,16 +24,6 @@ const statusOptions: Array<"All" | WorkflowStatus> = [
   "Released",
 ];
 
-const workflowStatuses: WorkflowStatus[] = [
-  "Draft",
-  "Submitted",
-  "Under Review",
-  "Credit Review",
-  "Approved",
-  "Rejected",
-  "Released",
-];
-
 function getStatusColor(status: WorkflowStatus) {
   switch (status) {
     case "Draft":
@@ -186,51 +176,6 @@ export default function LoanRepository() {
       return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
     });
   }, [applications, appliedDateFrom, appliedDateTo, appliedSearchText, appliedStatusFilter]);
-
-  const stats = useMemo(
-    () => ({
-      total: totalApplications,
-      byStatus: workflowStatuses.reduce(
-        (accumulator, status) => {
-          accumulator[status] = applications.filter(
-            (item) => item.status === status,
-          ).length;
-          return accumulator;
-        },
-        {} as Record<WorkflowStatus, number>,
-      ),
-    }),
-    [applications, totalApplications],
-  );
-
-  const summaryCards = useMemo(
-    () => [
-      { label: "Total Applications", value: stats.total, note: "All active records" },
-      { label: "Draft", value: stats.byStatus.Draft, note: "Work in progress" },
-      { label: "Submitted", value: stats.byStatus.Submitted, note: "Awaiting next review" },
-      { label: "Under Review", value: stats.byStatus["Under Review"], note: "Initial assessment" },
-      { label: "Credit Review", value: stats.byStatus["Credit Review"], note: "Credit committee lane" },
-      { label: "Approved", value: stats.byStatus.Approved, note: "Cleared for release prep" },
-      { label: "Rejected", value: stats.byStatus.Rejected, note: "Closed applications" },
-      { label: "Released", value: stats.byStatus.Released, note: "Fully booked accounts" },
-    ],
-    [stats],
-  );
-  const recordsCountItems = useMemo(
-    () => [
-      {
-        label: "Visible Records" as const,
-        value: filteredApplications.length,
-        note: "Records shown after search, date, and status filters",
-      },
-      {
-        label: "Total Applications" as const,
-        value: stats.total,
-        note: "All records currently loaded in the repository",
-      },
-    ],
-    [filteredApplications.length, stats.total],
-  );
 
   const messageIsError = message.toLowerCase().includes("failed");
 
