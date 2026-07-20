@@ -8,6 +8,10 @@ import {
 } from '../../autosave/draftApi';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
+import {
+  computeNetWorthBuildingScore,
+  NET_WORTH_BUILDING_GRADE_BANDS,
+} from './netWorthBuildingEngine';
 
 type WorkflowStep = 1 | 2 | 3;
 type StatementSection =
@@ -151,18 +155,6 @@ const CURRENCY_OPTIONS = [
   { code: 'EUR', label: 'EUR (€)' },
   { code: 'JPY', label: 'JPY (¥)' },
   { code: 'SGD', label: 'SGD (S$)' },
-] as const;
-
-const NET_WORTH_GRADE_BANDS = [
-  { range: '950-1000', grade: 'A++', rating: 'World Class' },
-  { range: '900-949', grade: 'A+', rating: 'Exceptional' },
-  { range: '850-899', grade: 'A', rating: 'Excellent' },
-  { range: '800-849', grade: 'B+', rating: 'Very Good' },
-  { range: '750-799', grade: 'B', rating: 'Good' },
-  { range: '700-749', grade: 'C+', rating: 'Fair' },
-  { range: '650-699', grade: 'C', rating: 'Needs Improvement' },
-  { range: '600-649', grade: 'D', rating: 'High Risk' },
-  { range: 'Below 600', grade: 'F', rating: 'Critical' },
 ] as const;
 
 const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
@@ -435,6 +427,18 @@ export default function NetWorthPositioningPage() {
   const [hasCertifiedConsistencyAssumption, setHasCertifiedConsistencyAssumption] = useState(false);
   const [hasCertifiedConsent, setHasCertifiedConsent] = useState(false);
 
+  const netWorthBuildingScore = useMemo(
+    () => computeNetWorthBuildingScore({
+      amounts,
+      savedSetup,
+      actualEntries,
+      selectedFinancialGoal,
+      targetAmount,
+      targetMonths,
+    }),
+    [actualEntries, amounts, savedSetup, selectedFinancialGoal, targetAmount, targetMonths],
+  );
+
   const autosaveValue = useMemo<NetWorthPositioningDraft>(() => ({
     step,
     asOfDate,
@@ -569,6 +573,21 @@ export default function NetWorthPositioningPage() {
     }
     return absoluteAmount;
   }, [formatCurrency]);
+
+  const aiGeneratedValues = useMemo(() => ({
+    'ai-net-worth': formatSignedCurrency(netWorthBuildingScore.metrics.netWorth),
+    'ai-liquid-net-worth': formatSignedCurrency(netWorthBuildingScore.metrics.liquidAssets),
+    'ai-monthly-cash-flow': formatSignedCurrency(netWorthBuildingScore.metrics.monthlyCashFlow),
+    'ai-savings-rate': `${netWorthBuildingScore.metrics.savingsRatePercent.toFixed(1)}%`,
+    'ai-dti': `${netWorthBuildingScore.metrics.debtToIncomeRatioPercent.toFixed(1)}%`,
+    'ai-dta': `${netWorthBuildingScore.metrics.debtToAssetRatioPercent.toFixed(1)}%`,
+    'ai-emergency-fund-months': `${netWorthBuildingScore.metrics.emergencyFundMonths.toFixed(1)} months`,
+    'ai-credit-health': `${netWorthBuildingScore.componentScores.leverageControl.toFixed(0)}/100`,
+    'ai-investment-readiness': `${netWorthBuildingScore.componentScores.investmentReadiness.toFixed(0)}/100`,
+    'ai-retirement-readiness': `${netWorthBuildingScore.componentScores.retirementReadiness.toFixed(0)}/100`,
+    'ai-financial-independence-index': `${netWorthBuildingScore.componentScores.financialIndependence.toFixed(0)}/100`,
+    'ai-overall-financial-wellness': `${netWorthBuildingScore.score} | ${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`,
+  }), [formatSignedCurrency, netWorthBuildingScore]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -1061,7 +1080,7 @@ export default function NetWorthPositioningPage() {
           <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
           <h1>Wealth  Building Score </h1>
           <p>
-            Period:  <strong>{snapshot.dateLabel}</strong>
+            Period:  <strong>{asOfDate || snapshot.dateLabel}</strong>
           </p>
           <p>
                              
@@ -1081,9 +1100,9 @@ export default function NetWorthPositioningPage() {
         </div>
 
         <div className="psychometric-hero-metric networth-dashboard-scorecard">
-          <span>Net Worth Position Score</span>
-          <strong>{snapshot.healthScore.toFixed(1)}</strong>
-          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
+          <span>Net Worth Building Score</span>
+          <strong>{netWorthBuildingScore.score}</strong>
+          <small>{`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating} | Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
         </div>
   
       </section>
@@ -1092,7 +1111,7 @@ export default function NetWorthPositioningPage() {
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker"></span>
-            <h2>Four  Steps in Setting Up Net Worth and Goal Tracking</h2>
+            <h2>Five  Steps in Setting Up Net Worth and Goal Tracking</h2>
           </div>
         </div>
         <p className="psychometric-section-note">
@@ -1105,12 +1124,12 @@ export default function NetWorthPositioningPage() {
             <section className="psychometric-panel">
         <div className="psychometric-panel-header">
           <div>
-            <span className="psychometric-panel-kicker">Global Comparator</span>
-            <h2>Your Income and Wealth Standing in the World</h2>
+           
+            <span>1. Assess Your Income and Wealth Standing in the World</span>
           </div>
         </div>
         <p className="psychometric-section-note">
-          Compare your income and wealth standing globally using the World Inequality Database comparator.
+          Use Global Comparator to compare your income and wealth standing globally using the World Inequality Database comparator.
         </p>
         <a
           href="https://wid.world/income-comparator/"
@@ -1124,7 +1143,7 @@ export default function NetWorthPositioningPage() {
 
             <section className="psychometric-summary-grid budget-dashboard-summary-grid">
          <article className="psychometric-summary-card">
-          <span>Where do you want to be?</span>
+          <span>2. Where do you want to be?</span>
           
           <small>Create Your  Financial Goals.  Assign Priorities. Set target amounts and dealine.</small>
         </article>
@@ -1140,13 +1159,13 @@ export default function NetWorthPositioningPage() {
 
 
         <article className="psychometric-summary-card">
-          <span>How will you achieve your goals?</span>
+          <span>4. How will you achieve your goals?</span>
        
           <small>Create Your Financial Action Plan. Determine monthly goal  for savings and investment plan. Create strategies.</small>
         </article>
 
         <article className="psychometric-summary-card">
-          <span>Are you getting closer to your goals?</span>
+          <span>5. Are you getting closer to your goals?</span>
         
           <small>Track progress. Get insights to continuously improve.</small>
         </article>
@@ -1174,8 +1193,37 @@ export default function NetWorthPositioningPage() {
         <article className="psychometric-summary-card">
           <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
           <strong>{formatSignedCurrency(setupNetWorth)}</strong>
-          <small>{snapshot.grade} - {snapshot.rating}</small>
+          <small>{netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}</small>
         </article>
+      </section>
+
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Net Worth Building Bands</span>
+            <h2>10-tier grade bands</h2>
+          </div>
+        </div>
+        <div className="psychometric-scale-table-wrap">
+          <table className="psychometric-scale-table networth-compact-table">
+            <thead>
+              <tr>
+                <th>Range Score</th>
+                <th>Grade</th>
+                <th>Rating</th>
+              </tr>
+            </thead>
+            <tbody>
+              {NET_WORTH_BUILDING_GRADE_BANDS.map((band) => (
+                <tr key={band.rangeScore}>
+                  <td data-label="Range Score">{band.rangeScore}</td>
+                  <td data-label="Grade">{band.grade}</td>
+                  <td data-label="Rating">{band.rating}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </section>
 
 
@@ -1367,7 +1415,7 @@ export default function NetWorthPositioningPage() {
                           </td>
                           <td data-label="Setup Amount">
                             {row.autoGenerated ? (
-                              <span className="psychometric-section-note">Automatically Generated</span>
+                              <span className="psychometric-section-note">{aiGeneratedValues[row.id] ?? 'Auto-calculated from the Wealth Building engine'}</span>
                             ) : (
                               <input
                                 type="number"
@@ -1444,7 +1492,7 @@ export default function NetWorthPositioningPage() {
                                 </td>
                                 <td data-label="Setup Amount">
                                   {row.autoGenerated ? (
-                                    <span className="psychometric-section-note">Automatically Generated</span>
+                                    <span className="psychometric-section-note">{aiGeneratedValues[row.id] ?? 'Auto-calculated from the Wealth Building engine'}</span>
                                   ) : (
                                     <input
                                       type="number"
@@ -1931,27 +1979,31 @@ export default function NetWorthPositioningPage() {
 
           <article className="psychometric-panel psychometric-sticky-panel">
             <span className="psychometric-panel-kicker">Position Health</span>
-            <h2>{snapshot.grade}</h2>
+            <h2>{netWorthBuildingScore.grade}</h2>
             <ul className="psychometric-breakdown-list">
               <li>
                 <span>Health Score</span>
-                <strong>{snapshot.healthScore.toFixed(1)}</strong>
+                <strong>{netWorthBuildingScore.score}</strong>
+              </li>
+              <li>
+                <span>Range Score</span>
+                <strong>{netWorthBuildingScore.rangeScore}</strong>
               </li>
               <li>
                 <span>Rating</span>
-                <strong>{snapshot.rating}</strong>
+                <strong>{netWorthBuildingScore.rating}</strong>
               </li>
               <li>
-                <span>Performance Band</span>
-                <strong>{snapshot.performanceBand}</strong>
+                <span>Building Index</span>
+                <strong>{netWorthBuildingScore.normalizedScore.toFixed(1)} / 100</strong>
               </li>
               <li>
-                <span>Action</span>
-                <strong>{snapshot.actionLabel}</strong>
+                <span>Goal Position</span>
+                <strong>{positionStatement.title}</strong>
               </li>
               <li>
                 <span>Source</span>
-                <strong>{snapshot.sourceApplicationNo || 'N/A'}</strong>
+                <strong>{savedSetup.length > 0 ? 'Saved workflow inputs' : 'Current workflow inputs'}</strong>
               </li>
             </ul>
           </article>

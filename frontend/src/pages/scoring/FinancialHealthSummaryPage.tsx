@@ -1,23 +1,26 @@
 import type { CSSProperties } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+
+import { fetchAutosaveDraft } from '../../autosave/draftApi'
 
 import {
+  buildFinancialHealthGroupRings,
   calculateFinancialHealthIndex,
   calculateWeightedContribution,
   financialHealthIndicators,
   getFinancialHealthBand,
   scaleFinancialHealthIndex,
 } from './financialHealthModel'
+import {
+  computeNetWorthBuildingScore,
+  type NetWorthBuildingDraftInput,
+  type NetWorthBuildingScoreResult,
+} from './netWorthBuildingEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
   '--health-soft': string
 }
-
-const groupRings = [
-  { label: 'Foundation', value: 91, displayValue: '91.0', color: '#30b85c', radius: 78 },
-  { label: 'Control', value: 80.5, displayValue: '80.5', color: '#32ade6', radius: 61 },
-  { label: 'Future', value: 77.3, displayValue: '77.3', color: '#d94b7d', radius: 44 },
-] as const
 
 const healthBands = [
   { label: 'Excellent', range: '840–1000', className: 'financial-health-band-excellent' },
@@ -35,6 +38,37 @@ function indicatorStyle(accent: string, softAccent: string): IndicatorStyle {
 }
 
 export default function FinancialHealthSummaryPage() {
+  const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
+
+  useEffect(() => {
+    let disposed = false
+
+    const loadNetWorthDraft = async () => {
+      try {
+        const remoteDraft = await fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', 'primary')
+        if (disposed || !remoteDraft?.payload) {
+          return
+        }
+
+        setNetWorthBuildingScore(computeNetWorthBuildingScore(remoteDraft.payload))
+      } catch {
+        if (!disposed) {
+          setNetWorthBuildingScore(null)
+        }
+      }
+    }
+
+    void loadNetWorthDraft()
+
+    return () => {
+      disposed = true
+    }
+  }, [])
+
+  const groupRings = useMemo(
+    () => buildFinancialHealthGroupRings(financialHealthIndicators),
+    [],
+  )
   const index = calculateFinancialHealthIndex(financialHealthIndicators)
 
   if (index === null) {
@@ -141,6 +175,41 @@ export default function FinancialHealthSummaryPage() {
           <strong>{strongestIndicator.score}</strong>
           <small>{strongestIndicator.label}</small>
         </article>
+      </section>
+
+      <section className="psychometric-panel" aria-labelledby="net-worth-building-summary-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Additional Summary Item</span>
+            <h2 id="net-worth-building-summary-title">Net Worth Building Score</h2>
+            <p className="financial-health-panel-intro">
+              Added below the existing Financial Health summary without changing the original health indicators.
+            </p>
+          </div>
+        </div>
+
+        <section className="financial-health-summary-grid" aria-label="Net Worth Building highlights">
+          <article className="financial-health-summary-tile financial-health-summary-tile-primary">
+            <span>Net Worth Building Score</span>
+            <strong>{netWorthBuildingScore ? netWorthBuildingScore.score : 'Pending'}</strong>
+            <small>{netWorthBuildingScore ? `${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}` : 'Loads from the saved Net Worth workflow'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Range Score</span>
+            <strong>{netWorthBuildingScore ? netWorthBuildingScore.rangeScore : 'Pending'}</strong>
+            <small>10-tier band from 200 to 900</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Net Worth</span>
+            <strong>{netWorthBuildingScore ? netWorthBuildingScore.metrics.netWorth.toLocaleString() : 'Pending'}</strong>
+            <small>Computed from saved workflow inputs</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Monthly Cash Flow</span>
+            <strong>{netWorthBuildingScore ? netWorthBuildingScore.metrics.monthlyCashFlow.toLocaleString() : 'Pending'}</strong>
+            <small>Supports the wealth-building position</small>
+          </article>
+        </section>
       </section>
 
       <section className="psychometric-panel financial-health-vitals-panel" aria-labelledby="health-vitals-title">
