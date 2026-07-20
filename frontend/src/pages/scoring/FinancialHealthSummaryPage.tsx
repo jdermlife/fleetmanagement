@@ -392,7 +392,7 @@ export default function FinancialHealthSummaryPage() {
             <span className="psychometric-panel-kicker">Wealth Foundation Engine</span>
             <h2 id="wealth-foundation-summary-title">Wealth Foundation Score</h2>
             <p className="financial-health-panel-intro">
-              Scaled from a 0 to 35 model into a 0 to 1000 summary score with a rating and positioning band.
+              Scaled from a 0 to 35 model into a 0 to 1000 summary score with a positioning band.
             </p>
           </div>
         </div>
@@ -404,19 +404,23 @@ export default function FinancialHealthSummaryPage() {
             <small>{wealthFoundationScore ? `${wealthFoundationScore.rawScore.toFixed(0)} / 35 raw` : 'Loads from the saved Net Worth workflow'}</small>
           </article>
           <article className="financial-health-summary-tile">
-            <span>Rating</span>
-            <strong>{wealthFoundationScore ? wealthFoundationScore.rating : 'Pending'}</strong>
-            <small>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Awaiting saved workflow inputs'}</small>
-          </article>
-          <article className="financial-health-summary-tile">
             <span>Position</span>
             <strong>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Pending'}</strong>
             <small>{wealthFoundationScore ? wealthFoundationScore.rangeScore : '0 to 35 tier range'}</small>
           </article>
           <article className="financial-health-summary-tile">
-            <span>Reason</span>
-            <strong>{wealthFoundationInsight ? 'See below' : 'Pending'}</strong>
-            <small>{wealthFoundationInsight ? wealthFoundationInsight.reason : 'Awaiting saved workflow inputs'}</small>
+            <span>Emergency Fund</span>
+            <strong>
+              {wealthFoundationScore ? `${wealthFoundationScore.metrics.emergencyFundMonths.toFixed(1)} months` : 'Pending'}
+            </strong>
+            <small>Coverage from available liquid reserves</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Cash Flow</span>
+            <strong>
+              {wealthFoundationScore ? wealthFoundationScore.metrics.positiveCashflowScore.toLocaleString() : 'Pending'}
+            </strong>
+            <small>Monthly income minus monthly expenses</small>
           </article>
         </div>
 

@@ -44,7 +44,10 @@ export type WealthFoundationScoreResult = {
   }
 }
 
-
+export type WealthFoundationInsight = {
+  reason: string
+  recommendations: string[]
+}
 
 const LIQUID_ASSET_IDS = new Set([
   'asset-cash-on-hand',
@@ -168,7 +171,10 @@ function buildRecommendationPool(result: WealthFoundationScoreResult) {
   ]
 }
 
-export function explainWealthFoundationResult(result: WealthFoundationScoreResult): WealthFoundationInsight {
+export function explainWealthFoundationResult(result: WealthFoundationScoreResult): {
+  reason: string
+  recommendations: string[]
+} {
   const weakestComponent = Object.entries(result.componentScores).reduce<{
     key: keyof WealthFoundationScoreResult['componentScores']
     score: number
