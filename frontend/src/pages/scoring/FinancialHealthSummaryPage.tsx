@@ -16,6 +16,10 @@ import {
   type NetWorthBuildingDraftInput,
   type NetWorthBuildingScoreResult,
 } from './netWorthBuildingEngine'
+import {
+  computeWealthFoundationScore,
+  type WealthFoundationScoreResult,
+} from './wealthFoundationEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -39,6 +43,7 @@ function indicatorStyle(accent: string, softAccent: string): IndicatorStyle {
 
 export default function FinancialHealthSummaryPage() {
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
+  const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
 
   useEffect(() => {
     let disposed = false
@@ -51,9 +56,11 @@ export default function FinancialHealthSummaryPage() {
         }
 
         setNetWorthBuildingScore(computeNetWorthBuildingScore(remoteDraft.payload))
+        setWealthFoundationScore(computeWealthFoundationScore(remoteDraft.payload))
       } catch {
         if (!disposed) {
           setNetWorthBuildingScore(null)
+          setWealthFoundationScore(null)
         }
       }
     }
@@ -210,6 +217,41 @@ export default function FinancialHealthSummaryPage() {
             <small>Supports the wealth-building position</small>
           </article>
         </section>
+      </section>
+
+      <section className="psychometric-panel" aria-labelledby="wealth-foundation-summary-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Wealth Foundation Engine</span>
+            <h2 id="wealth-foundation-summary-title">Wealth Foundation Score</h2>
+            <p className="financial-health-panel-intro">
+              Scaled from a 0 to 35 model into a 0 to 1000 summary score for the bottom of the financial graphs.
+            </p>
+          </div>
+        </div>
+
+        <div className="financial-health-summary-grid" aria-label="Wealth Foundation highlights">
+          <article className="financial-health-summary-tile financial-health-summary-tile-primary">
+            <span>Scaled Score</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.score : 'Pending'}</strong>
+            <small>{wealthFoundationScore ? wealthFoundationScore.rating : 'Loads from the saved Net Worth workflow'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Raw Score</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.rawScore.toFixed(0) : 'Pending'}</strong>
+            <small>0 to 35 engine output</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Positioning Band</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Pending'}</strong>
+            <small>{wealthFoundationScore ? wealthFoundationScore.rangeScore : '0 to 35 tier range'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Rating</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.rating : 'Pending'}</strong>
+            <small>Shown at the bottom of the graphs</small>
+          </article>
+        </div>
       </section>
 
       <section className="psychometric-panel financial-health-vitals-panel" aria-labelledby="health-vitals-title">
@@ -370,6 +412,15 @@ export default function FinancialHealthSummaryPage() {
               <li><strong>Horizontal bars</strong> for accurate comparison and weights.</li>
               <li><strong>Trend lines</strong> once three or more reporting periods exist.</li>
             </ul>
+            <div className="financial-health-equation">
+              <span>Wealth Foundation footer</span>
+              <strong>{wealthFoundationScore ? `${wealthFoundationScore.score} / 1000` : 'Pending'}</strong>
+              <small>
+                {wealthFoundationScore
+                  ? `${wealthFoundationScore.positioningBand} · ${wealthFoundationScore.rating}`
+                  : 'Awaiting saved workflow inputs'}
+              </small>
+            </div>
           </article>
         </aside>
       </section>
