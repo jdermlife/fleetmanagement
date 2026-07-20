@@ -1388,18 +1388,7 @@ export default function NetWorthPositioningPage() {
     return Math.max(0, Math.min(100, Math.round((suitabilityPercent * 75) + (alignmentBonus * 25))));
   }, [goalForecast.possibilityPercent, suitabilityScore]);
 
-  const handleDownloadWealthCertification = useCallback(() => {
-    if (!wealthCertificationGenerated) {
-      setSetupStatusMessage('Generate the FILSCORE-Wealth certification before downloading it.');
-      return;
-    }
-
-    const issuedAt = wealthCertificationIssuedAt || new Date().toISOString();
-    const issuedLabel = new Date(issuedAt).toLocaleString();
-    const certificationState = isCertificationComplete ? 'Complete' : 'Pending completion';
-    const outputName = `wealth-certification-${snapshot.sourceApplicationNo || 'draft'}.html`;
-
-    const html = `<!DOCTYPE html>
+  const buildWealthCertificationHtml = useCallback((issuedLabel: string, certificationState: string) => `<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -1606,7 +1595,36 @@ export default function NetWorthPositioningPage() {
     </div>
   </section>
 </body>
-</html>`;
+
+</html>`, [
+    certificationDate,
+    certifierName,
+    certifierRole,
+    hasCertifiedAccuracy,
+    hasCertifiedConsent,
+    hasCertifiedConsistencyAssumption,
+    netWorthBuildingScore.grade,
+    netWorthBuildingScore.rating,
+    netWorthBuildingScore.score,
+    snapshot.sourceApplicationNo,
+    wealthAuthenticityScore,
+    wealthBehaviourScore,
+    wealthCertificationBand,
+    wealthFoundationScore.rating,
+    wealthFoundationScore.score,
+  ]);
+
+  const handleDownloadWealthCertification = useCallback(() => {
+    if (!wealthCertificationGenerated) {
+      setSetupStatusMessage('Generate the FILSCORE-Wealth certification before downloading it.');
+      return;
+    }
+
+    const issuedAt = wealthCertificationIssuedAt || new Date().toISOString();
+    const issuedLabel = new Date(issuedAt).toLocaleString();
+    const certificationState = isCertificationComplete ? 'Complete' : 'Pending completion';
+    const outputName = `wealth-certification-${snapshot.sourceApplicationNo || 'draft'}.html`;
+    const html = buildWealthCertificationHtml(issuedLabel, certificationState);
 
     const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
     const downloadUrl = URL.createObjectURL(blob);
@@ -1638,6 +1656,44 @@ export default function NetWorthPositioningPage() {
     wealthCertificationIssuedAt,
     wealthFoundationScore.rating,
     wealthFoundationScore.score,
+    buildWealthCertificationHtml,
+  ]);
+
+  const handlePrintWealthCertification = useCallback(() => {
+    if (!wealthCertificationGenerated) {
+      setSetupStatusMessage('Generate the FILSCORE-Wealth certification before printing it.');
+      return;
+    }
+
+    const issuedAt = wealthCertificationIssuedAt || new Date().toISOString();
+    const issuedLabel = new Date(issuedAt).toLocaleString();
+    const certificationState = isCertificationComplete ? 'Complete' : 'Pending completion';
+    const html = buildWealthCertificationHtml(issuedLabel, certificationState);
+    const printWindow = window.open('', '_blank', 'noopener,noreferrer,width=900,height=1200');
+
+    if (!printWindow) {
+      setSetupStatusMessage('Allow pop-ups to print or save the certification as PDF.');
+      return;
+    }
+
+    printWindow.document.open();
+    printWindow.document.write(html);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.onload = () => {
+      printWindow.focus();
+      printWindow.print();
+    };
+    printWindow.onafterprint = () => {
+      printWindow.close();
+    };
+    setSetupStatusMessage('Wealth certification opened for print / PDF export.');
+  }, [
+    buildWealthCertificationHtml,
+    isCertificationComplete,
+    snapshot.sourceApplicationNo,
+    wealthCertificationGenerated,
+    wealthCertificationIssuedAt,
   ]);
 
   const topVarianceRows = useMemo(() => {
@@ -3103,6 +3159,14 @@ export default function NetWorthPositioningPage() {
                   disabled={!wealthCertificationGenerated}
                 >
                   Download Certificate
+                </button>
+                <button
+                  type="button"
+                  className="psychometric-reset-button"
+                  onClick={handlePrintWealthCertification}
+                  disabled={!wealthCertificationGenerated}
+                >
+                  Print / Save PDF
                 </button>
               </div>
 
