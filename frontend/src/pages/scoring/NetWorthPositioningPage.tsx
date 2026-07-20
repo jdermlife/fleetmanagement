@@ -12,7 +12,7 @@ import {
   computeNetWorthBuildingScore,
 } from './netWorthBuildingEngine';
 
-type WorkflowStep = 1 | 2 | 3;
+type WorkflowStep = 1 | 2 | 3 | 4;
 type StatementSection =
   | 'assets'
   | 'liabilities'
@@ -55,6 +55,7 @@ interface NetWorthPositioningDraft {
   amounts: Record<string, string>;
   monthlyExpenseAllocationDraft: Record<string, string>;
   savedSetup: SavedLine[];
+  suitabilityAnswers: Record<string, number>;
   actualEntries: Record<string, string>;
   varianceNotes: Record<string, string>;
   certifierName: string;
@@ -77,6 +78,7 @@ const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   amounts: {},
   monthlyExpenseAllocationDraft: {},
   savedSetup: [],
+  suitabilityAnswers: {},
   actualEntries: {},
   varianceNotes: {},
   certifierName: '',
@@ -161,6 +163,130 @@ const CURRENCY_OPTIONS = [
   { code: 'JPY', label: 'JPY (¥)' },
   { code: 'SGD', label: 'SGD (S$)' },
 ] as const;
+
+const SUITABILITY_ASSESSMENT_QUESTIONS: Array<{
+  id: string;
+  prompt: string;
+  options: Array<{ score: 1 | 2 | 3 | 4; label: string }>;
+}> = [
+  {
+    id: 'suitability-q1',
+    prompt: 'What is your key investment objective?',
+    options: [
+      { score: 1, label: 'To protect principal and preserve income.' },
+      { score: 2, label: 'To preserve real value and generate returns.' },
+      { score: 3, label: 'To grow through income and capital appreciation.' },
+      { score: 4, label: 'To grow aggressively for significant capital appreciation.' },
+    ],
+  },
+  {
+    id: 'suitability-q2',
+    prompt: 'What portion of your investments can be placed for long-term growth (1 to 3 years)?',
+    options: [
+      { score: 1, label: '10% to 30%' },
+      { score: 2, label: 'More than 30% up to 60%' },
+      { score: 3, label: 'More than 60% up to 80%' },
+      { score: 4, label: 'More than 80% up to 100%' },
+    ],
+  },
+  {
+    id: 'suitability-q3',
+    prompt: 'Do you have regular liquidity requirements?',
+    options: [
+      { score: 1, label: 'I need regular income and may use principal in the short term.' },
+      { score: 2, label: 'I do not need regular income but may use some principal.' },
+      { score: 3, label: 'I have other liquidity and do not expect to use these funds for 5 to 10 years.' },
+      { score: 4, label: 'I have other liquidity and do not expect to use these funds for more than 10 years.' },
+    ],
+  },
+  {
+    id: 'suitability-q4',
+    prompt: 'Which investments have you previously owned or are currently invested in?',
+    options: [
+      { score: 1, label: 'Savings, time deposits, and similar cash instruments.' },
+      { score: 2, label: 'Government securities and similar fixed-income products.' },
+      { score: 3, label: 'Corporate bonds or corporate notes.' },
+      { score: 4, label: 'Equities, derivatives, or hedged investments.' },
+    ],
+  },
+  {
+    id: 'suitability-q5',
+    prompt: 'How many years of investment experience do you have through a fund manager?',
+    options: [
+      { score: 1, label: '1 year or less' },
+      { score: 2, label: 'More than 1 year up to 5 years' },
+      { score: 3, label: 'More than 5 years up to 10 years' },
+      { score: 4, label: 'More than 10 years' },
+    ],
+  },
+  {
+    id: 'suitability-q6',
+    prompt: 'What is your tolerance for risk?',
+    options: [
+      { score: 1, label: 'I accept steady returns and minimal principal fluctuation.' },
+      { score: 2, label: 'I accept minimal principal fluctuations in pursuit of better returns.' },
+      { score: 3, label: 'I accept fair volatility to pursue above-average growth.' },
+      { score: 4, label: 'I am prepared for high volatility and possible short-term losses for higher long-term returns.' },
+    ],
+  },
+  {
+    id: 'suitability-q7',
+    prompt: 'If your investments decline by 30% in one year, what would you do?',
+    options: [
+      { score: 1, label: 'I would be very concerned and move to cash immediately.' },
+      { score: 2, label: 'I would be very concerned and move to safer investments.' },
+      { score: 3, label: 'I would review my profile and risk level.' },
+      { score: 4, label: 'I would stay invested and focus on long-term performance.' },
+    ],
+  },
+  {
+    id: 'suitability-q8',
+    prompt: 'What is your average net worth over the last 2 years?',
+    options: [
+      { score: 1, label: 'Below PHP 5 million' },
+      { score: 2, label: 'Over PHP 5 million up to PHP 30 million' },
+      { score: 3, label: 'Over PHP 30 million up to PHP 60 million' },
+      { score: 4, label: 'Over PHP 60 million' },
+    ],
+  },
+];
+
+const SUITABILITY_RESULT_BANDS: Array<{
+  min: number;
+  max: number;
+  profile: string;
+  description: string;
+  recommendedProduct: string;
+}> = [
+  {
+    min: 1,
+    max: 8,
+    profile: 'Risk Averse',
+    description: 'Client wants to preserve capital and ensure income is secured.',
+    recommendedProduct: 'Savings / Time Deposits',
+  },
+  {
+    min: 9,
+    max: 16,
+    profile: 'Conservative',
+    description: 'Client prefers low-risk assets and limited volatility.',
+    recommendedProduct: 'Fixed Income and Savings Bonds',
+  },
+  {
+    min: 17,
+    max: 27,
+    profile: 'Moderate',
+    description: 'Client accepts moderate risk for potentially higher returns.',
+    recommendedProduct: 'Income Deposits, Government and Corporate Bonds, and Top-Tier Equities',
+  },
+  {
+    min: 28,
+    max: Number.POSITIVE_INFINITY,
+    profile: 'Aggressive',
+    description: 'Client accepts higher volatility and capital risk for stronger long-term growth.',
+    recommendedProduct: 'Fixed Income, Equities, and High Yield Securities',
+  },
+];
 
 const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
   { id: 'asset-cash-on-hand', label: 'Cash on Hand', section: 'assets', category: '1. Cash & Bank Accounts' },
@@ -456,6 +582,7 @@ export default function NetWorthPositioningPage() {
   const [amounts, setAmounts] = useState<Record<string, string>>({});
   const [monthlyExpenseAllocationDraft, setMonthlyExpenseAllocationDraft] = useState<Record<string, string>>({});
   const [savedSetup, setSavedSetup] = useState<SavedLine[]>([]);
+  const [suitabilityAnswers, setSuitabilityAnswers] = useState<Record<string, number>>({});
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
@@ -501,6 +628,7 @@ export default function NetWorthPositioningPage() {
     amounts,
     monthlyExpenseAllocationDraft,
     savedSetup,
+    suitabilityAnswers,
     actualEntries,
     varianceNotes,
     certifierName,
@@ -523,6 +651,7 @@ export default function NetWorthPositioningPage() {
     monthlyExpenseAllocationDraft,
     selectedFinancialGoal,
     savedSetup,
+    suitabilityAnswers,
     step,
     targetAmount,
     targetMonths,
@@ -539,6 +668,7 @@ export default function NetWorthPositioningPage() {
     setAmounts(draft.amounts ?? {});
     setMonthlyExpenseAllocationDraft(draft.monthlyExpenseAllocationDraft ?? {});
     setSavedSetup(draft.savedSetup ?? []);
+    setSuitabilityAnswers(draft.suitabilityAnswers ?? {});
     setActualEntries(draft.actualEntries ?? {});
     setVarianceNotes(draft.varianceNotes ?? {});
     setCertifierName(draft.certifierName ?? '');
@@ -654,6 +784,11 @@ export default function NetWorthPositioningPage() {
     },
     {
       id: 3,
+      label: 'Suitability Assessment',
+      description: 'Assess investment profile and recommended product mix.',
+    },
+    {
+      id: 4,
       label: 'Actual vs Setup Variance',
       description: 'Enter actual values and review variance.',
     },
@@ -848,6 +983,12 @@ export default function NetWorthPositioningPage() {
       ? 100
       : clamp(((enteredSetupRatio * 0.65) + (allocationReady ? 0.15 : 0) + (setupSaved ? 0.2 : 0)) * 100);
 
+    const suitabilityAnsweredCount = SUITABILITY_ASSESSMENT_QUESTIONS.filter((question) => {
+      const answer = suitabilityAnswers[question.id];
+      return answer >= 1 && answer <= 4;
+    }).length;
+    const step3Percent = clamp((suitabilityAnsweredCount / SUITABILITY_ASSESSMENT_QUESTIONS.length) * 100);
+
     const setupCount = savedSetup.length;
     const actualCompleted = setupCount > 0
       ? savedSetup.filter((line) => !isBlank(actualEntries[line.id])).length / setupCount
@@ -855,7 +996,7 @@ export default function NetWorthPositioningPage() {
     const notesCompleted = setupCount > 0
       ? savedSetup.filter((line) => !isBlank(varianceNotes[line.id])).length / setupCount
       : 0;
-    const step3Percent = setupCount === 0
+    const step4Percent = setupCount === 0
       ? 0
       : clamp(((actualCompleted * 0.8) + (notesCompleted * 0.2)) * 100);
 
@@ -863,6 +1004,7 @@ export default function NetWorthPositioningPage() {
       1: step1Percent,
       2: step2Percent,
       3: step3Percent,
+      4: step4Percent,
     };
   }, [
     actualEntries,
@@ -874,8 +1016,30 @@ export default function NetWorthPositioningPage() {
     savedSetup,
     selectedFinancialGoal,
     setupRows,
+    suitabilityAnswers,
     varianceNotes,
   ]);
+
+  const suitabilityAnsweredCount = useMemo(
+    () => SUITABILITY_ASSESSMENT_QUESTIONS.filter((question) => {
+      const answer = suitabilityAnswers[question.id];
+      return answer >= 1 && answer <= 4;
+    }).length,
+    [suitabilityAnswers],
+  );
+
+  const suitabilityScore = useMemo(
+    () => SUITABILITY_ASSESSMENT_QUESTIONS.reduce((total, question) => {
+      const answer = suitabilityAnswers[question.id];
+      return total + (answer >= 1 && answer <= 4 ? answer : 0);
+    }, 0),
+    [suitabilityAnswers],
+  );
+
+  const suitabilityResult = useMemo(
+    () => SUITABILITY_RESULT_BANDS.find((band) => suitabilityScore >= band.min && suitabilityScore <= band.max) ?? null,
+    [suitabilityScore],
+  );
 
   const handleNormalizeMonthlyExpenseAllocation = () => {
     const currentTotal = monthlyExpenseRows.reduce((sum, row) => {
@@ -967,7 +1131,7 @@ export default function NetWorthPositioningPage() {
     setSavedSetup(setupLines);
     setActualEntries({});
     setVarianceNotes({});
-    setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
+    setSetupStatusMessage('Setup saved. Continue with Step 3 to complete the Suitability Assessment.');
     setStep(3);
   };
 
@@ -1177,7 +1341,7 @@ export default function NetWorthPositioningPage() {
 
     const hasAnyActual = varianceRows.some((row) => row.hasActual);
     if (!hasAnyActual) {
-      return ['Enter actual values in Step 3 to unlock AI recommendations for net worth variance.'];
+      return ['Enter actual values in Step 4 to unlock AI recommendations for net worth variance.'];
     }
 
     const prioritized = varianceRows
@@ -1736,7 +1900,7 @@ export default function NetWorthPositioningPage() {
               <div className="budget-workflow-step-block">
                 <h3 className="workflow-duplicate-step-title">Step 2: Set Up Baseline</h3>
                 <p className="psychometric-section-note">
-                  Review setup values, then click save setup so lines appear in Step 3 first column.
+                  Review setup values, then click save setup so lines appear in Step 4 first column.
                 </p>
 
                 <div className="budget-dashboard-category-summary">
@@ -1956,7 +2120,131 @@ export default function NetWorthPositioningPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Suitability Assessment</h3>
+                <p className="psychometric-section-note">
+                  Complete all suitability questions to determine investor profile and recommended product portfolio.
+                </p>
+
+                <p className="psychometric-section-note">
+                  Completion: {suitabilityAnsweredCount}/{SUITABILITY_ASSESSMENT_QUESTIONS.length} questions answered.
+                </p>
+
+                <div className="psychometric-scale-table-wrap">
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Question</th>
+                        <th>1</th>
+                        <th>2</th>
+                        <th>3</th>
+                        <th>4</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SUITABILITY_ASSESSMENT_QUESTIONS.map((question) => (
+                        <tr key={question.id}>
+                          <td data-label="Question">
+                            <strong>{question.prompt}</strong>
+                          </td>
+                          {question.options.map((option) => (
+                            <td key={option.score} data-label={`Option ${option.score}`}>
+                              <label style={{ display: 'grid', gap: '6px', justifyItems: 'center' }}>
+                                <input
+                                  type="radio"
+                                  name={question.id}
+                                  checked={suitabilityAnswers[question.id] === option.score}
+                                  onChange={() => {
+                                    setSuitabilityAnswers((previous) => ({
+                                      ...previous,
+                                      [question.id]: option.score,
+                                    }));
+                                  }}
+                                  aria-label={`${question.prompt} option ${option.score}`}
+                                />
+                                <small>{option.label}</small>
+                              </label>
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-dashboard-category-summary" style={{ marginTop: '12px' }}>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Total Score</span>
+                    <strong>{suitabilityScore}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Investor Profile</span>
+                    <strong>{suitabilityResult?.profile ?? 'Pending completion'}</strong>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Description</span>
+                    <small>{suitabilityResult?.description ?? 'Answer all questions to finalize the profile.'}</small>
+                  </div>
+                  <div className="budget-dashboard-category-summary-card">
+                    <span>Recommended Product / Portfolio</span>
+                    <small>{suitabilityResult?.recommendedProduct ?? 'Answer all questions to generate recommendation.'}</small>
+                  </div>
+                </div>
+
+                <div className="psychometric-scale-table-wrap" style={{ marginTop: '12px' }}>
+                  <table className="psychometric-scale-table">
+                    <thead>
+                      <tr>
+                        <th>Score</th>
+                        <th>Investor Profile</th>
+                        <th>Description</th>
+                        <th>Recommended Product / Portfolio</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {SUITABILITY_RESULT_BANDS.map((band) => {
+                        const isActiveBand = suitabilityScore >= band.min && suitabilityScore <= band.max;
+                        const scoreRange = Number.isFinite(band.max)
+                          ? `${band.min} to ${band.max}`
+                          : `${band.min} and above`;
+
+                        return (
+                          <tr key={`${band.min}-${band.max}`} style={isActiveBand ? { background: '#eff6ff' } : undefined}>
+                            <td data-label="Score">{scoreRange}</td>
+                            <td data-label="Investor Profile">
+                              <strong>{band.profile}</strong>
+                            </td>
+                            <td data-label="Description">{band.description}</td>
+                            <td data-label="Recommended Product / Portfolio">{band.recommendedProduct}</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button
+                    type="button"
+                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    onClick={handleSaveDraft}
+                    disabled={isSavingDraft}
+                    aria-label={isSavingDraft ? 'Saving...' : 'Save'}
+                  >
+                    <SaveCheckIcon />
+                  </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
+                    Back to Step 3
+                  </button>
+                  <button type="button" className="psychometric-reset-button" onClick={() => setStep(4)}>
+                    Continue to Step 4
+                  </button>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="budget-workflow-step-block">
+                <h3 className="workflow-duplicate-step-title">Step 4: Actual vs Setup Variance</h3>
                 <p className="psychometric-section-note">
                   First column shows saved setup. Second column is blank for actual entry. Third column is variance.
                   Fourth column shows variance explanation in small letters.
@@ -1983,7 +2271,7 @@ export default function NetWorthPositioningPage() {
                           value={selectedStep3Section}
                           onChange={(event) => setSelectedStep3Section(event.target.value as 'all' | StatementSection)}
                           className="budget-dashboard-category-input"
-                          aria-label="Step 3 filter by statement section"
+                          aria-label="Step 4 filter by statement section"
                         >
                           <option value="all">All Sections</option>
                           {(['assets', 'liabilities', 'monthly-income', 'monthly-expenses', 'financial-goals', 'insurance-coverage', 'ai-analysis'] as const).map((section) => (
@@ -2000,7 +2288,7 @@ export default function NetWorthPositioningPage() {
                           value={selectedStep3Category}
                           onChange={(event) => setSelectedStep3Category(event.target.value)}
                           className="budget-dashboard-category-input"
-                          aria-label="Step 3 filter by account group"
+                          aria-label="Step 4 filter by account group"
                         >
                           <option value="all">All Account Groups</option>
                           {step3CategoryFilterOptions.map((category) => (
@@ -2019,7 +2307,7 @@ export default function NetWorthPositioningPage() {
                           onChange={(event) => setStep3LineItemSearch(event.target.value)}
                           className="budget-dashboard-category-input"
                           placeholder="Search line item"
-                          aria-label="Step 3 filter by line item"
+                          aria-label="Step 4 filter by line item"
                         />
                       </div>
 
@@ -2102,7 +2390,7 @@ export default function NetWorthPositioningPage() {
                         ))}
                         {filteredVarianceRows.length === 0 ? (
                           <tr>
-                            <td colSpan={4}>No matching saved setup rows found. Adjust the Step 3 filters.</td>
+                            <td colSpan={4}>No matching saved setup rows found. Adjust the Step 4 filters.</td>
                           </tr>
                         ) : null}
                       </tbody>
@@ -2121,15 +2409,15 @@ export default function NetWorthPositioningPage() {
                   >
                     <SaveCheckIcon />
                   </button>
-                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
-                    Back to Step 2
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
+                    Back to Step 3
                   </button>
                 </div>
               </div>
             ) : null}
           </article>
 
-          {step === 3 ? (
+          {step === 4 ? (
             <article className="psychometric-panel">
               <div className="psychometric-panel-header">
                 <div>
