@@ -3105,6 +3105,20 @@ export default function NetWorthPositioningPage() {
                 </div>
               </div>
 
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Financial Health Tips</span>
+            <h2>Use the 50-30-20 Rule: Allocate 50% for essentials, 30% for discretionary spending, and 20% for savings or debt repayment.</h2>
+          </div>
+        </div>
+        <div className="psychometric-scale-table-wrap">
+
+        </div>
+      </section>
+
+
+
               <p className="psychometric-section-note">
                 Review the four wealth ratings, then generate the certification for formal use.
               </p>
