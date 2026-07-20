@@ -44,6 +44,11 @@ export type WealthFoundationScoreResult = {
   }
 }
 
+export type WealthFoundationInsight = {
+  reason: string
+  recommendations: string[]
+}
+
 const LIQUID_ASSET_IDS = new Set([
   'asset-cash-on-hand',
   'asset-savings-account',
@@ -131,6 +136,80 @@ function getBand(rawScore: number) {
   }
 
   return WEALTH_FOUNDATION_BANDS[WEALTH_FOUNDATION_BANDS.length - 1]
+}
+
+function buildRecommendationPool(result: WealthFoundationScoreResult) {
+  return [
+    {
+      score: result.componentScores.emergencyFund,
+      recommendation: 'Build liquid reserves so you can hold at least 3 to 6 months of expenses in an emergency fund.',
+    },
+    {
+      score: result.componentScores.positiveCashflow,
+      recommendation: 'Increase monthly surplus by trimming expenses or raising recurring income.',
+    },
+    {
+      score: result.componentScores.budgetManagement,
+      recommendation: 'Use a written budget and review spending monthly to keep cash flow visible.',
+    },
+    {
+      score: result.componentScores.debtUnderControl,
+      recommendation: 'Lower liabilities and keep debt pressure under control relative to assets.',
+    },
+    {
+      score: result.componentScores.basicInsurance,
+      recommendation: 'Add life, health, HMO, and related protection so the family base is better covered.',
+    },
+    {
+      score: result.componentScores.bankAccountRelationship,
+      recommendation: 'Keep 2 to 3 active banking relationships to strengthen formal financial access.',
+    },
+    {
+      score: result.componentScores.financialGoals,
+      recommendation: 'Document SMART wealth goals and review them regularly so the plan stays measurable.',
+    },
+  ]
+}
+
+export function explainWealthFoundationResult(result: WealthFoundationScoreResult): WealthFoundationInsight {
+  const weakestComponent = Object.entries(result.componentScores).reduce<{
+    key: keyof WealthFoundationScoreResult['componentScores']
+    score: number
+  } | null>((weakest, [key, score]) => {
+    const typedKey = key as keyof WealthFoundationScoreResult['componentScores']
+    if (!weakest || score < weakest.score) {
+      return { key: typedKey, score }
+    }
+    return weakest
+  }, null)
+
+  const reasonByComponent: Record<keyof WealthFoundationScoreResult['componentScores'], string> = {
+    emergencyFund: 'The rating is driven by emergency reserve coverage, which reflects how long the household can absorb shocks.',
+    positiveCashflow: 'The rating is driven by monthly cash flow, because recurring surplus is the engine of wealth creation.',
+    budgetManagement: 'The rating is driven by budget discipline, because predictable spending supports sustained accumulation.',
+    debtUnderControl: 'The rating is driven by debt pressure, because a thinner liability load supports stronger wealth growth.',
+    basicInsurance: 'The rating is driven by insurance protection, because the foundation is stronger when major risks are covered.',
+    bankAccountRelationship: 'The rating is driven by banking relationships, because active formal accounts improve access and tracking.',
+    financialGoals: 'The rating is driven by goal clarity, because documented goals keep wealth-building measurable and consistent.',
+  }
+
+  const focusedReason = weakestComponent ? reasonByComponent[weakestComponent.key] : 'The rating reflects a balanced mix of emergency reserves, cash flow, debt control, insurance, banking, and goals.'
+  const summaryReason = result.rawScore >= 31
+    ? 'The rating is strong because the household already shows solid financial building blocks across the core indicators.'
+    : `The rating is ${result.rating.toLowerCase()} because ${focusedReason.toLowerCase()}`
+
+  const recommendations = buildRecommendationPool(result)
+    .filter((item) => item.score < 4)
+    .sort((left, right) => left.score - right.score)
+    .map((item) => item.recommendation)
+    .slice(0, 4)
+
+  return {
+    reason: summaryReason,
+    recommendations: recommendations.length > 0
+      ? recommendations
+      : ['Maintain the current savings, protection, and goal-setting discipline to keep the foundation strong.'],
+  }
 }
 
 export function computeWealthFoundationScore(
