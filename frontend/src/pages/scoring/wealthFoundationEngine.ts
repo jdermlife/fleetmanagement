@@ -44,10 +44,7 @@ export type WealthFoundationScoreResult = {
   }
 }
 
-export type WealthFoundationInsight = {
-  reason: string
-  recommendations: string[]
-}
+
 
 const LIQUID_ASSET_IDS = new Set([
   'asset-cash-on-hand',
