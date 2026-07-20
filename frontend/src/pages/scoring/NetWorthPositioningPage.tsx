@@ -6,6 +6,7 @@ import {
   isAutosaveConflictError,
   saveAutosaveDraftRemote,
 } from '../../autosave/draftApi';
+import { APP_NAME, brandLogoDataUri } from '../../brand';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 import {
@@ -478,6 +479,15 @@ function formatPercentInput(value: number) {
   }
 
   return value.toFixed(2).replace(/\.00$/, '');
+}
+
+function escapeHtml(value: string) {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function getSectionLabel(section: StatementSection) {
@@ -1377,6 +1387,258 @@ export default function NetWorthPositioningPage() {
 
     return Math.max(0, Math.min(100, Math.round((suitabilityPercent * 75) + (alignmentBonus * 25))));
   }, [goalForecast.possibilityPercent, suitabilityScore]);
+
+  const handleDownloadWealthCertification = useCallback(() => {
+    if (!wealthCertificationGenerated) {
+      setSetupStatusMessage('Generate the FILSCORE-Wealth certification before downloading it.');
+      return;
+    }
+
+    const issuedAt = wealthCertificationIssuedAt || new Date().toISOString();
+    const issuedLabel = new Date(issuedAt).toLocaleString();
+    const certificationState = isCertificationComplete ? 'Complete' : 'Pending completion';
+    const outputName = `wealth-certification-${snapshot.sourceApplicationNo || 'draft'}.html`;
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${APP_NAME} Wealth Certification</title>
+  <style>
+    @page { size: A4 portrait; margin: 10mm; }
+    body {
+      margin: 0;
+      padding: 12px;
+      background: #f5f7fb;
+      color: #0f2547;
+      font-family: Arial, Helvetica, sans-serif;
+    }
+    .certificate {
+      max-width: 760px;
+      margin: 0 auto;
+      background: #fff;
+      border: 7px solid #0038a8;
+      border-radius: 18px;
+      box-shadow: 0 16px 40px rgba(15, 37, 71, 0.14);
+      overflow: hidden;
+    }
+    .frame {
+      padding: 22px 26px 26px;
+      border: 2px solid #f4d36a;
+      border-radius: 12px;
+      margin: 8px;
+    }
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      justify-content: center;
+      margin-bottom: 18px;
+    }
+    .brand img {
+      width: 56px;
+      height: 56px;
+      object-fit: contain;
+    }
+    .kicker {
+      text-align: center;
+      color: #0f766e;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      margin: 0;
+    }
+    h1 {
+      margin: 4px 0 0;
+      text-align: center;
+      font-size: 28px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #0038a8;
+    }
+    h2 {
+      margin: 6px 0 0;
+      text-align: center;
+      color: #7a5a00;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.14em;
+    }
+    .reference,
+    .meta,
+    .message {
+      text-align: center;
+      margin: 10px 0 0;
+      line-height: 1.5;
+    }
+    .name {
+      margin: 18px 0 8px;
+      text-align: center;
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .summary {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .card {
+      background: #f8fafc;
+      border: 1px solid #d8e0ea;
+      border-radius: 14px;
+      padding: 14px;
+      text-align: center;
+    }
+    .card span {
+      display: block;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      color: #4c5f78;
+    }
+    .card strong {
+      display: block;
+      margin-top: 8px;
+      font-size: 24px;
+      color: #0f2547;
+    }
+    .card small {
+      display: block;
+      margin-top: 4px;
+      color: #546275;
+      line-height: 1.35;
+    }
+    .notes {
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid #d8e0ea;
+      color: #4c5f78;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+    .footer {
+      margin-top: 20px;
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+      font-size: 12px;
+      color: #334155;
+    }
+    .signature {
+      padding-top: 14px;
+      border-top: 1px solid #d8e0ea;
+    }
+    .signature strong {
+      display: block;
+      margin-top: 4px;
+      color: #0f2547;
+    }
+    @media print {
+      body { background: #fff; padding: 0; }
+      .certificate { box-shadow: none; }
+    }
+  </style>
+</head>
+<body>
+  <section class="certificate">
+    <div class="frame">
+      <div class="brand">
+        <img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo" />
+        <div>
+          <p class="kicker">Certification of Wealth Assessment</p>
+          <h1>${escapeHtml(APP_NAME)}</h1>
+          <h2>FILSCORE-Wealth Certification</h2>
+        </div>
+      </div>
+
+      <p class="reference">Application / Reference No. <strong>${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</strong></p>
+      <p class="meta">Issued ${escapeHtml(issuedLabel)} | Status: <strong>${escapeHtml(certificationState)}</strong></p>
+      <div class="name">${escapeHtml(certifierName.trim() || 'Unnamed Certifier')}</div>
+      <p class="message">
+        This certificate summarizes the FILSCORE-Wealth result generated from the current net worth,
+        suitability, and certification inputs on file.
+      </p>
+
+      <div class="summary">
+        <div class="card">
+          <span>Net Worth Building</span>
+          <strong>${netWorthBuildingScore.score}</strong>
+          <small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small>
+        </div>
+        <div class="card">
+          <span>Wealth Authenticity</span>
+          <strong>${wealthAuthenticityScore}</strong>
+          <small>${escapeHtml(wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity'))}</small>
+        </div>
+        <div class="card">
+          <span>Wealth Foundation</span>
+          <strong>${wealthFoundationScore.score}</strong>
+          <small>${escapeHtml(wealthFoundationScore.rating)}</small>
+        </div>
+        <div class="card">
+          <span>Wealth Behaviour</span>
+          <strong>${wealthBehaviourScore}</strong>
+          <small>${escapeHtml(wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour'))}</small>
+        </div>
+      </div>
+
+      <div class="notes">
+        Accuracy Declaration: ${hasCertifiedAccuracy ? 'Confirmed' : 'Not confirmed'}<br />
+        Consistency Assumption: ${hasCertifiedConsistencyAssumption ? 'Confirmed' : 'Not confirmed'}<br />
+        Consent: ${hasCertifiedConsent ? 'Confirmed' : 'Not confirmed'}<br />
+        Certification Date: ${escapeHtml(certificationDate)}
+      </div>
+
+      <div class="footer">
+        <div class="signature">
+          Certifier Name
+          <strong>${escapeHtml(certifierName.trim() || 'Not provided')}</strong>
+        </div>
+        <div class="signature">
+          Role
+          <strong>${escapeHtml(certifierRole.trim() || 'Borrower')}</strong>
+        </div>
+      </div>
+    </div>
+  </section>
+</body>
+</html>`;
+
+    const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+    const downloadUrl = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = downloadUrl;
+    link.download = outputName;
+    link.rel = 'noopener';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
+    setSetupStatusMessage('Wealth certification downloaded.');
+  }, [
+    certifierName,
+    certifierRole,
+    certificationDate,
+    hasCertifiedAccuracy,
+    hasCertifiedConsent,
+    hasCertifiedConsistencyAssumption,
+    isCertificationComplete,
+    netWorthBuildingScore.grade,
+    netWorthBuildingScore.rating,
+    netWorthBuildingScore.score,
+    snapshot.sourceApplicationNo,
+    wealthAuthenticityScore,
+    wealthBehaviourScore,
+    wealthCertificationBand,
+    wealthCertificationGenerated,
+    wealthCertificationIssuedAt,
+    wealthFoundationScore.rating,
+    wealthFoundationScore.score,
+  ]);
 
   const topVarianceRows = useMemo(() => {
     return varianceRows
@@ -2833,6 +3095,14 @@ export default function NetWorthPositioningPage() {
                   onClick={handleProduceWealthCertification}
                 >
                   Produce Certification
+                </button>
+                <button
+                  type="button"
+                  className="budget-dashboard-category-reset"
+                  onClick={handleDownloadWealthCertification}
+                  disabled={!wealthCertificationGenerated}
+                >
+                  Download Certificate
                 </button>
               </div>
 
