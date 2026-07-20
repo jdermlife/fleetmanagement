@@ -324,62 +324,6 @@ export default function FinancialHealthSummaryPage() {
           </div>
         </article>
 
-        <section className="psychometric-panel" aria-labelledby="wealth-foundation-summary-title">
-          <div className="psychometric-panel-header">
-            <div>
-              <span className="psychometric-panel-kicker">Wealth Foundation Engine</span>
-              <h2 id="wealth-foundation-summary-title">Wealth Foundation Score</h2>
-              <p className="financial-health-panel-intro">
-                Scaled from a 0 to 35 model into a 0 to 1000 summary score with a rating and positioning band.
-              </p>
-            </div>
-          </div>
-
-          <div className="financial-health-summary-grid" aria-label="Wealth Foundation highlights">
-            <article className="financial-health-summary-tile financial-health-summary-tile-primary">
-              <span>Score</span>
-              <strong>{wealthFoundationScore ? wealthFoundationScore.score : 'Pending'}</strong>
-              <small>{wealthFoundationScore ? `${wealthFoundationScore.rawScore.toFixed(0)} / 35 raw` : 'Loads from the saved Net Worth workflow'}</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Rating</span>
-              <strong>{wealthFoundationScore ? wealthFoundationScore.rating : 'Pending'}</strong>
-              <small>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Awaiting saved workflow inputs'}</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Position</span>
-              <strong>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Pending'}</strong>
-              <small>{wealthFoundationScore ? wealthFoundationScore.rangeScore : '0 to 35 tier range'}</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Reason</span>
-              <strong>{wealthFoundationInsight ? 'See below' : 'Pending'}</strong>
-              <small>{wealthFoundationInsight ? wealthFoundationInsight.reason : 'Awaiting saved workflow inputs'}</small>
-            </article>
-          </div>
-
-          <div className="financial-health-detail-layout" style={{ marginTop: '16px' }}>
-            <article className="psychometric-panel financial-health-chart-panel">
-              <span className="psychometric-panel-kicker">Improve next</span>
-              <h2>Recommendations to strengthen the foundation</h2>
-              <ul className="financial-health-band-list">
-                {wealthFoundationInsight?.recommendations.map((item) => (
-                  <li key={item}>
-                    <i className="financial-health-band-building" aria-hidden="true" />
-                    <span>{item}</span>
-                  </li>
-                ))}
-                {!wealthFoundationInsight ? (
-                  <li>
-                    <i className="financial-health-band-building" aria-hidden="true" />
-                    <span>Awaiting saved workflow inputs before recommendations can be generated.</span>
-                  </li>
-                ) : null}
-              </ul>
-            </article>
-          </div>
-        </section>
-
         <aside className="financial-health-side-stack">
           <article className="psychometric-panel financial-health-formula-panel">
             <span className="psychometric-panel-kicker">Recommended formula</span>
@@ -440,6 +384,62 @@ export default function FinancialHealthSummaryPage() {
             </ul>
           </article>
         </aside>
+      </section>
+
+      <section className="psychometric-panel" aria-labelledby="wealth-foundation-summary-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Wealth Foundation Engine</span>
+            <h2 id="wealth-foundation-summary-title">Wealth Foundation Score</h2>
+            <p className="financial-health-panel-intro">
+              Scaled from a 0 to 35 model into a 0 to 1000 summary score with a rating and positioning band.
+            </p>
+          </div>
+        </div>
+
+        <div className="financial-health-summary-grid" aria-label="Wealth Foundation highlights">
+          <article className="financial-health-summary-tile financial-health-summary-tile-primary">
+            <span>Score</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.score : 'Pending'}</strong>
+            <small>{wealthFoundationScore ? `${wealthFoundationScore.rawScore.toFixed(0)} / 35 raw` : 'Loads from the saved Net Worth workflow'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Rating</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.rating : 'Pending'}</strong>
+            <small>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Awaiting saved workflow inputs'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Position</span>
+            <strong>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Pending'}</strong>
+            <small>{wealthFoundationScore ? wealthFoundationScore.rangeScore : '0 to 35 tier range'}</small>
+          </article>
+          <article className="financial-health-summary-tile">
+            <span>Reason</span>
+            <strong>{wealthFoundationInsight ? 'See below' : 'Pending'}</strong>
+            <small>{wealthFoundationInsight ? wealthFoundationInsight.reason : 'Awaiting saved workflow inputs'}</small>
+          </article>
+        </div>
+
+        <div className="financial-health-detail-layout" style={{ marginTop: '16px' }}>
+          <article className="psychometric-panel financial-health-chart-panel">
+            <span className="psychometric-panel-kicker">Improve next</span>
+            <h2>Recommendations to strengthen the foundation</h2>
+            <ul className="financial-health-band-list">
+              {wealthFoundationInsight?.recommendations.map((item) => (
+                <li key={item}>
+                  <i className="financial-health-band-building" aria-hidden="true" />
+                  <span>{item}</span>
+                </li>
+              ))}
+              {!wealthFoundationInsight ? (
+                <li>
+                  <i className="financial-health-band-building" aria-hidden="true" />
+                  <span>Awaiting saved workflow inputs before recommendations can be generated.</span>
+                </li>
+              ) : null}
+            </ul>
+          </article>
+        </div>
       </section>
     </div>
   )
