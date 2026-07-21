@@ -585,14 +585,6 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
     : 'Value declined below setup and weakens net worth';
 }
 
-function SaveCheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false" style={{ width: '18px', height: '18px' }}>
-      <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z" fill="currentColor" />
-    </svg>
-  );
-}
-
 export default function NetWorthPositioningPage() {
   const DARK_GOLD_COLOR = '#B8860B';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
@@ -1977,18 +1969,18 @@ export default function NetWorthPositioningPage() {
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Accordion Sections</span>
+                <span className="psychometric-panel-kicker">Workflow Form Sections</span>
                 <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               <div className="budget-workflow-inline-actions">
                 <button
                   type="button"
-                  className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                  className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                   onClick={handleSaveDraft}
                   disabled={isSavingDraft}
                   aria-label={isSavingDraft ? 'Saving...' : 'Save all steps'}
                 >
-                  <SaveCheckIcon />
+                  {isSavingDraft ? 'Saving...' : 'Save'}
                 </button>
                 <button
                   type="button"
@@ -2256,12 +2248,12 @@ export default function NetWorthPositioningPage() {
                 <div className="budget-workflow-inline-actions">
                   <button
                     type="button"
-                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                     onClick={handleSaveDraft}
                     disabled={isSavingDraft}
                     aria-label={isSavingDraft ? 'Saving...' : 'Save'}
                   >
-                    <SaveCheckIcon />
+                    {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" className="psychometric-reset-button" onClick={() => setStep(2)}>
                     Continue to Step 2
@@ -2469,12 +2461,12 @@ export default function NetWorthPositioningPage() {
                 <div className="budget-workflow-inline-actions">
                   <button
                     type="button"
-                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                     onClick={handleSaveDraft}
                     disabled={isSavingDraft}
                     aria-label={isSavingDraft ? 'Saving...' : 'Save'}
                   >
-                    <SaveCheckIcon />
+                    {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(1)}>
                     Back to Step 1
@@ -2599,12 +2591,12 @@ export default function NetWorthPositioningPage() {
                 <div className="budget-workflow-inline-actions">
                   <button
                     type="button"
-                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                     onClick={handleSaveDraft}
                     disabled={isSavingDraft}
                     aria-label={isSavingDraft ? 'Saving...' : 'Save'}
                   >
-                    <SaveCheckIcon />
+                    {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
                     Back to Step 3
@@ -2776,12 +2768,12 @@ export default function NetWorthPositioningPage() {
                 <div className="budget-workflow-inline-actions">
                   <button
                     type="button"
-                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                     onClick={handleSaveDraft}
                     disabled={isSavingDraft}
                     aria-label={isSavingDraft ? 'Saving...' : 'Save'}
                   >
-                    <SaveCheckIcon />
+                    {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
                     Back to Step 3
@@ -2804,7 +2796,27 @@ export default function NetWorthPositioningPage() {
                 <h2>Position Scorecards</h2>
               </div>
             </div>
-            <p className="psychometric-section-note">Snapshot of your current net worth positioning and forecast.</p>
+            <ul className="psychometric-breakdown-list">
+              <li>
+                <span>Net Worth Positioning Score</span>
+                <strong>{netWorthBuildingScore.score}</strong>
+              </li>
+              <li>
+                <span>Wealth Behaviour Score</span>
+                <strong>{wealthBehaviourScore}</strong>
+              </li>
+              <li>
+                <span>Wealth Foundation Score</span>
+                <strong>{wealthFoundationScore.score}</strong>
+              </li>
+              <li>
+                <span>Wealth Authenticity Score</span>
+                <strong>{wealthAuthenticityScore}</strong>
+              </li>
+            </ul>
+            <p className="psychometric-section-note">
+              Net Worth Positioning: {netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}
+            </p>
           </article>
 
           <article className="psychometric-panel psychometric-sticky-panel networth-mobile-charts">
@@ -3080,12 +3092,12 @@ export default function NetWorthPositioningPage() {
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
                     type="button"
-                    className={`psychometric-save-circle${isSavingDraft ? ' saving' : ''}`}
+                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
                     onClick={handleSaveDraft}
                     disabled={isSavingDraft}
                     aria-label={isSavingDraft ? 'Saving...' : 'Save'}
                   >
-                    <SaveCheckIcon />
+                    {isSavingDraft ? 'Saving...' : 'Save'}
                   </button>
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(4)}>
                     Back to Step 4

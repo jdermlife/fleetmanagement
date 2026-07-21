@@ -2410,6 +2410,17 @@ button.loan-repository-action-release { background: #4f46e5; }
   animation: save-pulse 1.2s ease-in-out infinite;
 }
 
+.networth-dashboard-page .networth-save-button {
+  width: auto;
+  min-width: 72px;
+  height: 34px;
+  padding: 0 14px;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
 @keyframes save-pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.35; }
