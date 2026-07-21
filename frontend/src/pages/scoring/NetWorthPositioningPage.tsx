@@ -2817,6 +2817,56 @@ export default function NetWorthPositioningPage() {
                     <small>{wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity')}</small>
                   </article>
                 </section>
+
+                {!hasWealthDataForCertification ? (
+                  <div className="loan-rating-readiness-notice" role="alert" style={{ marginTop: '12px' }}>
+                    <strong>FILSCORE-Wealth Data Not Available</strong>
+                    <span>
+                      FILSCORE-Wealth data are not yet available to produce a report or certification.
+                    </span>
+                    <small>
+                      Save setup inputs and complete prior workflow entries, then return to Step 5.
+                    </small>
+                  </div>
+                ) : (
+                  <div className="loan-rating-readiness-notice" role="status" style={{ marginTop: '12px' }}>
+                    <strong>FILSCORE-Wealth Data Available</strong>
+                    <span>
+                      FILSCORE-Wealth data are available to produce a report or certification.
+                    </span>
+                    <small>
+                      Review the scores below, then produce certification when ready.
+                    </small>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6" style={{ marginTop: '12px' }}>
+                  <h3 className="workflow-duplicate-step-title mb-4 text-lg font-bold text-amber-900">Step 5: FILSCORE-Wealth</h3>
+
+                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                    {wealthExecutiveSummaryItems.map((item) => (
+                      <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
+                        <p className="text-sm font-bold text-amber-800">{item.label}</p>
+                        <p className="mt-3 text-3xl font-bold leading-none text-amber-900">{item.value}</p>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">{item.detail}</p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="border-t border-slate-200 pt-6">
+                    <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
+                      Scoring Signals
+                    </h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      {wealthScoringSignalItems.map((item) => (
+                        <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
+                          <p className="text-sm font-bold text-amber-800">{item.label}</p>
+                          <p className="mt-3 text-2xl font-bold leading-none text-amber-900">{item.value}</p>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : null}
           </article>
@@ -2933,6 +2983,18 @@ export default function NetWorthPositioningPage() {
                     <span>Top Variance Lines</span>
                     <strong>{topVarianceRows.length}</strong>
                   </li>
+                </ul>
+              </article>
+
+              <article className="psychometric-panel">
+                <span className="psychometric-panel-kicker">Recommendations</span>
+                <h2>Actionable Next Steps</h2>
+                <ul className="psychometric-breakdown-list">
+                  {aiRecommendations.map((item) => (
+                    <li key={item}>
+                      <span>{item}</span>
+                    </li>
+                  ))}
                 </ul>
               </article>
             </section>
@@ -3096,18 +3158,6 @@ export default function NetWorthPositioningPage() {
             </div>
           </article>
 
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Recommendations</span>
-            <h2>Actionable Next Steps</h2>
-            <ul className="psychometric-breakdown-list">
-              {aiRecommendations.map((item) => (
-                <li key={item}>
-                  <span>{item}</span>
-                </li>
-              ))}
-            </ul>
-          </article>
-
           <section className="psychometric-panel psychometric-sticky-panel">
               <div className="space-y-6">
                 <div className="flex flex-wrap justify-end gap-3">
@@ -3147,56 +3197,6 @@ export default function NetWorthPositioningPage() {
                   >
                     Print / Save PDF
                   </button>
-                </div>
-
-                {!hasWealthDataForCertification ? (
-                  <div className="loan-rating-readiness-notice" role="alert">
-                    <strong>FILSCORE-Wealth Data Not Available</strong>
-                    <span>
-                      FILSCORE-Wealth data are not yet available to produce a report or certification.
-                    </span>
-                    <small>
-                      Save setup inputs and complete prior workflow entries, then return to Step 5.
-                    </small>
-                  </div>
-                ) : (
-                  <div className="loan-rating-readiness-notice" role="status">
-                    <strong>FILSCORE-Wealth Data Available</strong>
-                    <span>
-                      FILSCORE-Wealth data are available to produce a report or certification.
-                    </span>
-                    <small>
-                      Review the scores below, then produce certification when ready.
-                    </small>
-                  </div>
-                )}
-
-                <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6">
-                  <h3 className="workflow-duplicate-step-title mb-4 text-lg font-bold text-amber-900">Step 5: FILSCORE-Wealth</h3>
-
-                  <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                    {wealthExecutiveSummaryItems.map((item) => (
-                      <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
-                        <p className="text-sm font-bold text-amber-800">{item.label}</p>
-                        <p className="mt-3 text-3xl font-bold leading-none text-amber-900">{item.value}</p>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">{item.detail}</p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <div className="border-t border-slate-200 pt-6">
-                    <h4 className="mb-3 text-sm font-bold uppercase tracking-wide text-amber-800">
-                      Scoring Signals
-                    </h4>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      {wealthScoringSignalItems.map((item) => (
-                        <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
-                          <p className="text-sm font-bold text-amber-800">{item.label}</p>
-                          <p className="mt-3 text-2xl font-bold leading-none text-amber-900">{item.value}</p>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
                 </div>
 
                 {wealthCertificationGenerated ? (
