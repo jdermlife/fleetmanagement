@@ -2787,6 +2787,56 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: linear-gradient(90deg, #dc2626, #f59e0b);
 }
 
+.networth-dashboard-page .networth-workflow-step-row {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-button {
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 8px;
+  min-height: 58px;
+  padding: 8px 10px;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-index {
+  width: 28px;
+  height: 28px;
+  font-size: 0.7rem;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-copy {
+  gap: 2px;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-copy strong {
+  font-size: 0.75rem;
+  line-height: 1.1;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-copy span {
+  font-size: 0.66rem;
+}
+
+.networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-copy small {
+  font-size: 0.62rem;
+  line-height: 1.2;
+}
+
+@media (max-width: 1200px) {
+  .networth-dashboard-page .networth-workflow-step-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(180px, 1fr);
+    overflow-x: auto;
+    padding-bottom: 6px;
+  }
+
+  .networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-button {
+    min-width: 180px;
+  }
+}
+
 .loan-rating-readiness-notice {
   display: grid;
   gap: 8px;

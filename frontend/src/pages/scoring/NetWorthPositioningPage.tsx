@@ -1930,7 +1930,7 @@ export default function NetWorthPositioningPage() {
             <h2>Navigate Workflow Steps</h2>
           </div>
         </div>
-        <div className="lending-psychometric-step-list">
+        <div className="lending-psychometric-step-list networth-workflow-step-row">
           {workflowSteps.map((workflowStep) => {
             const isActive = step === workflowStep.id;
             const isCompleted = step > workflowStep.id;
@@ -2821,6 +2821,123 @@ export default function NetWorthPositioningPage() {
             ) : null}
           </article>
 
+          {step === 5 ? (
+            <section className="budget-workflow-ai-grid">
+              <article className="psychometric-panel">
+                <span className="psychometric-panel-kicker">Position vs Goal</span>
+                <h2 style={{ color: goalForecast.statusColor }}>{goalForecast.status}</h2>
+                <ul className="psychometric-breakdown-list">
+                  <li>
+                    <span>Goal Target</span>
+                    <strong>{formatCurrency(goalForecast.effectiveTargetAmount)}</strong>
+                  </li>
+                  <li>
+                    <span>Time Frame</span>
+                    <strong>{goalForecast.sanitizedMonths > 0 ? `${goalForecast.sanitizedMonths} months` : 'Not set'}</strong>
+                  </li>
+                  <li>
+                    <span>Current Net Worth Position</span>
+                    <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
+                  </li>
+                  <li>
+                    <span>Net Worth Variance (Per Cycle)</span>
+                    <strong>{formatSignedCurrency(goalForecast.netWorthVariancePerCycle)}</strong>
+                  </li>
+                  <li>
+                    <span>Required Monthly Gain</span>
+                    <strong>{formatCurrency(goalForecast.requiredMonthlyGain)}</strong>
+                  </li>
+                  <li>
+                    <span>Projected Position at Deadline</span>
+                    <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
+                  </li>
+                  <li>
+                    <span>Possibility to Reach Goal</span>
+                    <strong style={{ color: goalForecast.statusColor }}>{goalForecast.possibilityPercent}%</strong>
+                  </li>
+                  <li>
+                    <span>Confidence Buffer for "Likely"</span>
+                    <strong>{Math.round(goalForecast.likelyAchievableThreshold * 100)}%</strong>
+                  </li>
+                  <li>
+                    <span>Achievable in Time Frame</span>
+                    <strong>{goalForecast.isAchievable ? 'Yes' : 'No'}</strong>
+                  </li>
+                  <li>
+                    <span>Estimated Months to Goal</span>
+                    <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
+                  </li>
+                </ul>
+                <p className="psychometric-section-note">
+                  Forecast assumes net worth variance per cycle remains consistent. "Likely achievable" requires at least a {Math.round(goalForecast.likelyAchievableThreshold * 100)}% projected coverage buffer; {Math.round(goalForecast.atRiskThreshold * 100)}% to below that is marked as at risk.
+                </p>
+              </article>
+
+              <article className="psychometric-panel">
+                <span className="psychometric-panel-kicker">Statement of Position</span>
+                <h2 style={{ color: positionStatement.color }}>{positionStatement.title}</h2>
+                <ul className="psychometric-breakdown-list">
+                  <li>
+                    <span>Total Assets (Projected)</span>
+                    <strong>{formatCurrency(totals.projectedAssets)}</strong>
+                  </li>
+                  <li>
+                    <span>Total Liabilities (Projected)</span>
+                    <strong>{formatCurrency(totals.projectedLiabilities)}</strong>
+                  </li>
+                  <li>
+                    <span>Current Net Worth Position</span>
+                    <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
+                  </li>
+                  <li>
+                    <span>Net Worth Variance</span>
+                    <strong>{formatSignedCurrency(positionStatement.netWorthVariance)}</strong>
+                  </li>
+                  <li>
+                    <span>Projected Net Worth at Target Date</span>
+                    <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
+                  </li>
+                  <li>
+                    <span>Goal Coverage Probability</span>
+                    <strong style={{ color: positionStatement.color }}>{positionStatement.projectedCoverage}%</strong>
+                  </li>
+                  <li>
+                    <span>Time-to-Goal Estimate</span>
+                    <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
+                  </li>
+                </ul>
+                <p className="psychometric-section-note">
+                  {positionStatement.conclusion}
+                </p>
+                <p className="psychometric-section-note">
+                  {positionStatement.complianceNote}
+                </p>
+              </article>
+
+              <article className="psychometric-panel">
+                <span className="psychometric-panel-kicker">AI Analysis</span>
+                <h2>Net Worth Variance Coaching</h2>
+                <p className="psychometric-section-note">
+                  AI-assisted analysis highlights your current variance trend and key financial pressure points.
+                </p>
+                <ul className="psychometric-breakdown-list">
+                  <li>
+                    <span>Position Status</span>
+                    <strong>{goalForecast.status}</strong>
+                  </li>
+                  <li>
+                    <span>Projected Net Worth</span>
+                    <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
+                  </li>
+                  <li>
+                    <span>Top Variance Lines</span>
+                    <strong>{topVarianceRows.length}</strong>
+                  </li>
+                </ul>
+              </article>
+            </section>
+          ) : null}
+
         </div>
 
         <aside className="budget-dashboard-side">
@@ -2890,119 +3007,6 @@ export default function NetWorthPositioningPage() {
               <li>
                 <span>Source</span>
                 <strong>{savedSetup.length > 0 ? 'Saved workflow inputs' : 'Current workflow inputs'}</strong>
-              </li>
-            </ul>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Position vs Goal</span>
-            <h2 style={{ color: goalForecast.statusColor }}>{goalForecast.status}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Goal Target</span>
-                <strong>{formatCurrency(goalForecast.effectiveTargetAmount)}</strong>
-              </li>
-              <li>
-                <span>Time Frame</span>
-                <strong>{goalForecast.sanitizedMonths > 0 ? `${goalForecast.sanitizedMonths} months` : 'Not set'}</strong>
-              </li>
-              <li>
-                <span>Current Net Worth Position</span>
-                <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
-              </li>
-              <li>
-                <span>Net Worth Variance (Per Cycle)</span>
-                <strong>{formatSignedCurrency(goalForecast.netWorthVariancePerCycle)}</strong>
-              </li>
-              <li>
-                <span>Required Monthly Gain</span>
-                <strong>{formatCurrency(goalForecast.requiredMonthlyGain)}</strong>
-              </li>
-              <li>
-                <span>Projected Position at Deadline</span>
-                <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
-              </li>
-              <li>
-                <span>Possibility to Reach Goal</span>
-                <strong style={{ color: goalForecast.statusColor }}>{goalForecast.possibilityPercent}%</strong>
-              </li>
-              <li>
-                <span>Confidence Buffer for "Likely"</span>
-                <strong>{Math.round(goalForecast.likelyAchievableThreshold * 100)}%</strong>
-              </li>
-              <li>
-                <span>Achievable in Time Frame</span>
-                <strong>{goalForecast.isAchievable ? 'Yes' : 'No'}</strong>
-              </li>
-              <li>
-                <span>Estimated Months to Goal</span>
-                <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
-              </li>
-            </ul>
-            <p className="psychometric-section-note">
-              Forecast assumes net worth variance per cycle remains consistent. "Likely achievable" requires at least a {Math.round(goalForecast.likelyAchievableThreshold * 100)}% projected coverage buffer; {Math.round(goalForecast.atRiskThreshold * 100)}% to below that is marked as at risk.
-            </p>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">Statement of Position</span>
-            <h2 style={{ color: positionStatement.color }}>{positionStatement.title}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Total Assets (Projected)</span>
-                <strong>{formatCurrency(totals.projectedAssets)}</strong>
-              </li>
-              <li>
-                <span>Total Liabilities (Projected)</span>
-                <strong>{formatCurrency(totals.projectedLiabilities)}</strong>
-              </li>
-              <li>
-                <span>Current Net Worth Position</span>
-                <strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong>
-              </li>
-              <li>
-                <span>Net Worth Variance</span>
-                <strong>{formatSignedCurrency(positionStatement.netWorthVariance)}</strong>
-              </li>
-              <li>
-                <span>Projected Net Worth at Target Date</span>
-                <strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong>
-              </li>
-              <li>
-                <span>Goal Coverage Probability</span>
-                <strong style={{ color: positionStatement.color }}>{positionStatement.projectedCoverage}%</strong>
-              </li>
-              <li>
-                <span>Time-to-Goal Estimate</span>
-                <strong>{goalForecast.monthsToGoal ? `${goalForecast.monthsToGoal} months` : 'Not enough positive variance yet'}</strong>
-              </li>
-            </ul>
-            <p className="psychometric-section-note">
-              {positionStatement.conclusion}
-            </p>
-            <p className="psychometric-section-note">
-              {positionStatement.complianceNote}
-            </p>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <span className="psychometric-panel-kicker">AI Analysis</span>
-            <h2>Net Worth Variance Coaching</h2>
-            <p className="psychometric-section-note">
-              AI-assisted analysis highlights your current variance trend and key financial pressure points.
-            </p>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Position Status</span>
-                <strong>{goalForecast.status}</strong>
-              </li>
-              <li>
-                <span>Projected Net Worth</span>
-                <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
-              </li>
-              <li>
-                <span>Top Variance Lines</span>
-                <strong>{topVarianceRows.length}</strong>
               </li>
             </ul>
           </article>
