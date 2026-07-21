@@ -1923,47 +1923,6 @@ export default function NetWorthPositioningPage() {
 
 
        
-      <section className="psychometric-panel">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Workflow</span>
-            <h2>Navigate Workflow Steps</h2>
-          </div>
-        </div>
-        <div className="lending-psychometric-step-list networth-workflow-step-row">
-          {workflowSteps.map((workflowStep) => {
-            const isActive = step === workflowStep.id;
-            const isCompleted = step > workflowStep.id;
-            const stepPercent = stepCompletionById[workflowStep.id];
-            const statusLabel = `${stepPercent}% information provided`;
-
-            return (
-              <button
-                key={workflowStep.id}
-                type="button"
-                onClick={() => setStep(workflowStep.id)}
-                className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
-              >
-                <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                  {workflowStep.id}
-                </div>
-                <div className="lending-psychometric-step-copy">
-                  <strong>{workflowStep.label}</strong>
-                  <span>{statusLabel}</span>
-                  <div className="lending-step-information-track" aria-hidden="true">
-                    <div
-                      className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
-                      style={{ width: `${stepPercent}%` }}
-                    />
-                  </div>
-                  <small>{workflowStep.description}</small>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
           <article className="psychometric-panel">
@@ -3003,6 +2962,47 @@ export default function NetWorthPositioningPage() {
         </div>
 
         <aside className="budget-dashboard-side">
+          <article className="psychometric-panel psychometric-sticky-panel networth-mobile-workflow">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+            <div className="lending-psychometric-step-list networth-workflow-step-row">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                  >
+                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="lending-psychometric-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{statusLabel}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%` }}
+                        />
+                      </div>
+                      <small>{workflowStep.description}</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
           <article className="psychometric-panel psychometric-sticky-panel networth-mobile-ai-dashboard">
             <div className="psychometric-panel-header">
               <div>

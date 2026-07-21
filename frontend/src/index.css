@@ -3985,10 +3985,11 @@ th { color: var(--dark-gold); }
     display: none;
   }
 
-  .networth-dashboard-page .budget-dashboard-side > :not(.networth-mobile-ai-dashboard):not(.networth-mobile-charts):not(.networth-mobile-recommendations) {
+  .networth-dashboard-page .budget-dashboard-side > :not(.networth-mobile-workflow):not(.networth-mobile-ai-dashboard):not(.networth-mobile-charts):not(.networth-mobile-recommendations) {
     display: none;
   }
 
+  .networth-dashboard-page .networth-mobile-workflow,
   .networth-dashboard-page .networth-mobile-ai-dashboard,
   .networth-dashboard-page .networth-mobile-charts,
   .networth-dashboard-page .networth-mobile-recommendations {
