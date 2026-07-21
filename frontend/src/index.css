@@ -2788,8 +2788,8 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .networth-dashboard-page .networth-workflow-step-row {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: 1fr;
+  gap: 12px;
 }
 
 .networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-button {
@@ -2826,14 +2826,15 @@ button.loan-repository-action-release { background: #4f46e5; }
 @media (max-width: 1200px) {
   .networth-dashboard-page .networth-workflow-step-row {
     display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: minmax(180px, 1fr);
-    overflow-x: auto;
-    padding-bottom: 6px;
+    grid-template-columns: 1fr;
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    overflow-x: visible;
+    padding-bottom: 0;
   }
 
   .networth-dashboard-page .networth-workflow-step-row .lending-psychometric-step-button {
-    min-width: 180px;
+    min-width: 0;
   }
 }
 

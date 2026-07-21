@@ -2966,7 +2966,7 @@ export default function NetWorthPositioningPage() {
             <div className="psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow</span>
-                <h2>Navigate Workflow Steps</h2>
+                <h2>Navigate the scorecard</h2>
               </div>
             </div>
             <div className="lending-psychometric-step-list networth-workflow-step-row">
