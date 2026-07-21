@@ -3292,49 +3292,7 @@ export default function NetWorthPositioningPage() {
             </div>
           </article>
 
-          <section className="psychometric-panel psychometric-sticky-panel">
-              <div className="space-y-6">
-                <div className="flex flex-wrap justify-end gap-3">
-                  <button
-                    type="button"
-                    className={`psychometric-save-circle networth-save-button${isSavingDraft ? ' saving' : ''}`}
-                    onClick={handleSaveDraft}
-                    disabled={isSavingDraft}
-                    aria-label={isSavingDraft ? 'Saving...' : 'Save'}
-                  >
-                    {isSavingDraft ? 'Saving...' : 'Save'}
-                  </button>
-                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(4)}>
-                    Back to Step 4
-                  </button>
-                  <button
-                    type="button"
-                    className="psychometric-reset-button"
-                    onClick={handleProduceWealthCertification}
-                    disabled={!hasWealthDataForCertification}
-                  >
-                    Produce Certification
-                  </button>
-                  <button
-                    type="button"
-                    className="budget-dashboard-category-reset"
-                    onClick={handleDownloadWealthCertification}
-                    disabled={!wealthCertificationGenerated}
-                  >
-                    Download Certificate
-                  </button>
-                  <button
-                    type="button"
-                    className="psychometric-reset-button"
-                    onClick={handlePrintWealthCertification}
-                    disabled={!wealthCertificationGenerated}
-                  >
-                    Print / Save PDF
-                  </button>
-                </div>
 
-              </div>
-            </section>
 
           <section className="psychometric-panel psychometric-sticky-panel">
             <div className="psychometric-panel-header">
