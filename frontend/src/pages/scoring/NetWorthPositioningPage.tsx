@@ -2799,6 +2799,98 @@ export default function NetWorthPositioningPage() {
                   </div>
                 )}
 
+                {wealthCertificationGenerated ? (
+                  <div className="psychometric-panel" style={{ marginTop: '12px' }}>
+                    <div className="psychometric-panel-header">
+                      <div>
+                        <span className="psychometric-panel-kicker">Certification of Wealth Assessment</span>
+                        <h2>FILSCORE-Wealth Certification</h2>
+                      </div>
+                    </div>
+
+                    <p className="psychometric-section-note">
+                      Application: <strong>{snapshot.sourceApplicationNo}</strong> | Issued{' '}
+                      <strong>{new Date(wealthCertificationIssuedAt || Date.now()).toLocaleString()}</strong>
+                    </p>
+
+                    <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
+                      <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+                        <span>Accuracy Declaration</span>
+                        <input
+                          type="checkbox"
+                          checked={hasCertifiedAccuracy}
+                          onChange={(event) => setHasCertifiedAccuracy(event.target.checked)}
+                        />
+                        <small>I certify that all values entered are true and complete to the best of my knowledge.</small>
+                      </label>
+
+                      <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+                        <span>Consistency Assumption</span>
+                        <input
+                          type="checkbox"
+                          checked={hasCertifiedConsistencyAssumption}
+                          onChange={(event) => setHasCertifiedConsistencyAssumption(event.target.checked)}
+                        />
+                        <small>I understand that forecasted achievability assumes consistent net worth variance behavior.</small>
+                      </label>
+
+                      <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
+                        <span>Consent</span>
+                        <input
+                          type="checkbox"
+                          checked={hasCertifiedConsent}
+                          onChange={(event) => setHasCertifiedConsent(event.target.checked)}
+                        />
+                        <small>I authorize the use of this statement for financial assessment and planning.</small>
+                      </label>
+                    </div>
+
+                    <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
+                      <label className="budget-dashboard-category-summary-card">
+                        <span>Certifier Name</span>
+                        <input
+                          type="text"
+                          value={certifierName}
+                          onChange={(event) => setCertifierName(event.target.value)}
+                          className="budget-dashboard-category-input"
+                          placeholder="Enter full name"
+                        />
+                      </label>
+
+                      <label className="budget-dashboard-category-summary-card">
+                        <span>Role</span>
+                        <input
+                          type="text"
+                          value={certifierRole}
+                          onChange={(event) => setCertifierRole(event.target.value)}
+                          className="budget-dashboard-category-input"
+                          placeholder="Borrower"
+                        />
+                      </label>
+
+                      <label className="budget-dashboard-category-summary-card">
+                        <span>Certification Date</span>
+                        <input
+                          type="date"
+                          value={certificationDate}
+                          onChange={(event) => setCertificationDate(event.target.value)}
+                          className="budget-dashboard-category-input"
+                        />
+                      </label>
+                    </div>
+
+                    <p className="psychometric-section-note" style={{ color: isCertificationComplete ? '#047857' : '#b45309' }}>
+                      {isCertificationComplete
+                        ? `Certification complete. Signed by ${certifierName.trim()} (${certifierRole.trim() || 'Borrower'}) on ${certificationDate}.`
+                        : 'Certification incomplete. Confirm all declarations and complete signer details.'}
+                    </p>
+                  </div>
+                ) : (
+                  <p className="psychometric-section-note" style={{ marginTop: '12px' }}>
+                    Click Produce Certification to generate the FILSCORE-Wealth certification.
+                  </p>
+                )}
+
                 <div className="rounded-xl border border-slate-200 bg-white p-6 space-y-6" style={{ marginTop: '12px' }}>
                   <h3 className="workflow-duplicate-step-title mb-4 text-lg font-bold text-amber-900">Step 5: FILSCORE-Wealth</h3>
 
@@ -3199,97 +3291,6 @@ export default function NetWorthPositioningPage() {
                   </button>
                 </div>
 
-                {wealthCertificationGenerated ? (
-                <div className="psychometric-panel" style={{ marginTop: '16px' }}>
-                  <div className="psychometric-panel-header">
-                    <div>
-                      <span className="psychometric-panel-kicker">Certification of Wealth Assessment</span>
-                      <h2>FILSCORE-Wealth Certification</h2>
-                    </div>
-                  </div>
-
-                  <p className="psychometric-section-note">
-                    Application: <strong>{snapshot.sourceApplicationNo}</strong> | Issued{' '}
-                    <strong>{new Date(wealthCertificationIssuedAt || Date.now()).toLocaleString()}</strong>
-                  </p>
-
-                  <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
-                    <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
-                      <span>Accuracy Declaration</span>
-                      <input
-                        type="checkbox"
-                        checked={hasCertifiedAccuracy}
-                        onChange={(event) => setHasCertifiedAccuracy(event.target.checked)}
-                      />
-                      <small>I certify that all values entered are true and complete to the best of my knowledge.</small>
-                    </label>
-
-                    <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
-                      <span>Consistency Assumption</span>
-                      <input
-                        type="checkbox"
-                        checked={hasCertifiedConsistencyAssumption}
-                        onChange={(event) => setHasCertifiedConsistencyAssumption(event.target.checked)}
-                      />
-                      <small>I understand that forecasted achievability assumes consistent net worth variance behavior.</small>
-                    </label>
-
-                    <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
-                      <span>Consent</span>
-                      <input
-                        type="checkbox"
-                        checked={hasCertifiedConsent}
-                        onChange={(event) => setHasCertifiedConsent(event.target.checked)}
-                      />
-                      <small>I authorize the use of this statement for financial assessment and planning.</small>
-                    </label>
-                  </div>
-
-                  <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Certifier Name</span>
-                      <input
-                        type="text"
-                        value={certifierName}
-                        onChange={(event) => setCertifierName(event.target.value)}
-                        className="budget-dashboard-category-input"
-                        placeholder="Enter full name"
-                      />
-                    </label>
-
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Role</span>
-                      <input
-                        type="text"
-                        value={certifierRole}
-                        onChange={(event) => setCertifierRole(event.target.value)}
-                        className="budget-dashboard-category-input"
-                        placeholder="Borrower"
-                      />
-                    </label>
-
-                    <label className="budget-dashboard-category-summary-card">
-                      <span>Certification Date</span>
-                      <input
-                        type="date"
-                        value={certificationDate}
-                        onChange={(event) => setCertificationDate(event.target.value)}
-                        className="budget-dashboard-category-input"
-                      />
-                    </label>
-                  </div>
-
-                  <p className="psychometric-section-note" style={{ color: isCertificationComplete ? '#047857' : '#b45309' }}>
-                    {isCertificationComplete
-                      ? `Certification complete. Signed by ${certifierName.trim()} (${certifierRole.trim() || 'Borrower'}) on ${certificationDate}.`
-                      : 'Certification incomplete. Confirm all declarations and complete signer details.'}
-                  </p>
-                </div>
-              ) : (
-                <p className="psychometric-section-note">
-                  Click Produce Certification to generate the FILSCORE-Wealth certification.
-                </p>
-              )}
               </div>
             </section>
 
