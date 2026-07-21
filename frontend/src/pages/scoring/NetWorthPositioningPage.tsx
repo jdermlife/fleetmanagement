@@ -2784,6 +2784,41 @@ export default function NetWorthPositioningPage() {
                 </div>
               </div>
             ) : null}
+
+            {step === 5 ? (
+              <div className="budget-workflow-step-block">
+                <h3 className="workflow-duplicate-step-title">Step 5: Result Scores</h3>
+                <p className="psychometric-section-note">
+                  Net Worth Positioning result scores are shown here for quick review.
+                </p>
+
+                <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+                  <article className="psychometric-summary-card psychometric-summary-card-highlight">
+                    <span>Net Worth Positioning Score</span>
+                    <strong>{netWorthBuildingScore.score}</strong>
+                    <small>{netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}</small>
+                  </article>
+
+                  <article className="psychometric-summary-card">
+                    <span>Wealth Behaviour Score</span>
+                    <strong>{wealthBehaviourScore}</strong>
+                    <small>{wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour')}</small>
+                  </article>
+
+                  <article className="psychometric-summary-card">
+                    <span>Wealth Foundation Score</span>
+                    <strong>{wealthFoundationScore.score}</strong>
+                    <small>{wealthFoundationScore.rating}</small>
+                  </article>
+
+                  <article className="psychometric-summary-card">
+                    <span>Wealth Authenticity Score</span>
+                    <strong>{wealthAuthenticityScore}</strong>
+                    <small>{wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity')}</small>
+                  </article>
+                </section>
+              </div>
+            ) : null}
           </article>
 
         </div>
@@ -2796,26 +2831,8 @@ export default function NetWorthPositioningPage() {
                 <h2>Position Scorecards</h2>
               </div>
             </div>
-            <ul className="psychometric-breakdown-list">
-              <li>
-                <span>Net Worth Positioning Score</span>
-                <strong>{netWorthBuildingScore.score}</strong>
-              </li>
-              <li>
-                <span>Wealth Behaviour Score</span>
-                <strong>{wealthBehaviourScore}</strong>
-              </li>
-              <li>
-                <span>Wealth Foundation Score</span>
-                <strong>{wealthFoundationScore.score}</strong>
-              </li>
-              <li>
-                <span>Wealth Authenticity Score</span>
-                <strong>{wealthAuthenticityScore}</strong>
-              </li>
-            </ul>
             <p className="psychometric-section-note">
-              Net Worth Positioning: {netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}
+              Scorecards are displayed on the left side in Step 5 to maximize review space.
             </p>
           </article>
 
