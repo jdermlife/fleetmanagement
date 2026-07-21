@@ -3887,21 +3887,51 @@ th { color: var(--dark-gold); }
   }
 
   .bill-reminder-dashboard-page .budget-dashboard-side,
-  .loan-monitoring-dashboard-page .budget-dashboard-side,
-  .networth-dashboard-page .budget-dashboard-side {
+  .loan-monitoring-dashboard-page .budget-dashboard-side {
     display: none !important;
   }
 
   .bill-reminder-dashboard-page .budget-dashboard-layout,
-  .loan-monitoring-dashboard-page .budget-dashboard-layout,
-  .networth-dashboard-page .budget-dashboard-layout {
+  .loan-monitoring-dashboard-page .budget-dashboard-layout {
     display: block;
   }
 
   .bill-reminder-dashboard-page .budget-dashboard-main,
-  .loan-monitoring-dashboard-page .budget-dashboard-main,
-  .networth-dashboard-page .budget-dashboard-main {
+  .loan-monitoring-dashboard-page .budget-dashboard-main {
     width: 100%;
+  }
+
+  .networth-dashboard-page .budget-dashboard-layout {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .networth-dashboard-page .budget-dashboard-main {
+    order: 1;
+    width: 100%;
+    gap: 14px;
+  }
+
+  .networth-dashboard-page .budget-dashboard-side {
+    order: 2;
+    width: 100%;
+    display: grid !important;
+    gap: 12px;
+  }
+
+  .networth-dashboard-page .networth-mobile-supplementary {
+    display: none;
+  }
+
+  .networth-dashboard-page .budget-dashboard-side > :not(.networth-mobile-ai-dashboard):not(.networth-mobile-charts):not(.networth-mobile-recommendations) {
+    display: none;
+  }
+
+  .networth-dashboard-page .networth-mobile-ai-dashboard,
+  .networth-dashboard-page .networth-mobile-charts,
+  .networth-dashboard-page .networth-mobile-recommendations {
+    position: static;
   }
 
   .lending-psychometric-footer-actions {

@@ -511,6 +511,26 @@ function getSectionLabel(section: StatementSection) {
   return 'G. FILSCORE AI Analysis';
 }
 
+const STEP1_SECTION_ORDER: StatementSection[] = [
+  'assets',
+  'liabilities',
+  'monthly-income',
+  'monthly-expenses',
+  'financial-goals',
+  'insurance-coverage',
+  'ai-analysis',
+];
+
+const STEP1_SECTION_SHORT_LABELS: Record<StatementSection, string> = {
+  assets: 'Assets',
+  liabilities: 'Liabilities',
+  'monthly-income': 'Income',
+  'monthly-expenses': 'Expenses',
+  'financial-goals': 'Goals',
+  'insurance-coverage': 'Insurance',
+  'ai-analysis': 'AI Analysis',
+};
+
 function buildCategoryFilterOptions<T extends FilterableStatementRow>(
   rows: T[],
   selectedSection: 'all' | StatementSection,
@@ -574,7 +594,6 @@ function SaveCheckIcon() {
 }
 
 export default function NetWorthPositioningPage() {
-  const INITIAL_VISIBLE_SETUP_ROWS = 3;
   const DARK_GOLD_COLOR = '#B8860B';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -607,7 +626,6 @@ export default function NetWorthPositioningPage() {
   const [selectedStep3Section, setSelectedStep3Section] = useState<'all' | StatementSection>('all');
   const [selectedStep3Category, setSelectedStep3Category] = useState('all');
   const [step3LineItemSearch, setStep3LineItemSearch] = useState('');
-  const [visibleRemainingRowsCount, setVisibleRemainingRowsCount] = useState(0);
   const [isStep2SetupReviewExpanded, setIsStep2SetupReviewExpanded] = useState(false);
   const [certifierName, setCertifierName] = useState('');
   const [certifierRole, setCertifierRole] = useState('Borrower');
@@ -877,34 +895,10 @@ export default function NetWorthPositioningPage() {
     [setupRows],
   );
 
-  const alwaysVisibleSetupRows = useMemo(
-    () => filteredSetupRows.slice(0, INITIAL_VISIBLE_SETUP_ROWS),
-    [filteredSetupRows],
-  );
-
-  const accordionSetupRows = useMemo(
-    () => filteredSetupRows.slice(INITIAL_VISIBLE_SETUP_ROWS),
-    [filteredSetupRows],
-  );
-
-  const visibleRemainingSetupRows = useMemo(
-    () => accordionSetupRows.slice(0, visibleRemainingRowsCount),
-    [accordionSetupRows, visibleRemainingRowsCount],
-  );
-
-  const handleShowMoreRemainingRows = useCallback(() => {
-    setVisibleRemainingRowsCount(accordionSetupRows.length);
-  }, [accordionSetupRows.length]);
-
-  const handleHideRemainingRows = useCallback(() => {
-    setVisibleRemainingRowsCount(0);
-  }, []);
-
   const handleResetSetupFilters = useCallback(() => {
     setSelectedSetupSection('all');
     setSelectedSetupCategory('all');
     setLineItemSearch('');
-    setVisibleRemainingRowsCount(0);
   }, []);
 
   const handleResetStep2Filters = useCallback(() => {
@@ -918,10 +912,6 @@ export default function NetWorthPositioningPage() {
     setSelectedStep3Category('all');
     setStep3LineItemSearch('');
   }, []);
-
-  useEffect(() => {
-    setVisibleRemainingRowsCount(0);
-  }, [lineItemSearch, selectedSetupCategory, selectedSetupSection]);
 
   useEffect(() => {
     if (selectedSetupCategory === 'all') {
@@ -1851,7 +1841,7 @@ export default function NetWorthPositioningPage() {
 
       </section>
 
-            <section className="psychometric-panel">
+            <section className="psychometric-panel networth-mobile-supplementary">
         <div className="psychometric-panel-header">
           <div>
            
@@ -1927,7 +1917,7 @@ export default function NetWorthPositioningPage() {
         </article>
       </section>
 
-      <section className="psychometric-panel">
+      <section className="psychometric-panel networth-mobile-supplementary">
         <div className="psychometric-panel-header">
           <div>
             <span className="psychometric-panel-kicker">Financial Health Tips</span>
@@ -1941,13 +1931,53 @@ export default function NetWorthPositioningPage() {
 
 
        
+      <section className="psychometric-panel">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Workflow</span>
+            <h2>Navigate Workflow Steps</h2>
+          </div>
+        </div>
+        <div className="lending-psychometric-step-list">
+          {workflowSteps.map((workflowStep) => {
+            const isActive = step === workflowStep.id;
+            const isCompleted = step > workflowStep.id;
+            const stepPercent = stepCompletionById[workflowStep.id];
+            const statusLabel = `${stepPercent}% information provided`;
+
+            return (
+              <button
+                key={workflowStep.id}
+                type="button"
+                onClick={() => setStep(workflowStep.id)}
+                className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+              >
+                <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                  {workflowStep.id}
+                </div>
+                <div className="lending-psychometric-step-copy">
+                  <strong>{workflowStep.label}</strong>
+                  <span>{statusLabel}</span>
+                  <div className="lending-step-information-track" aria-hidden="true">
+                    <div
+                      className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                      style={{ width: `${stepPercent}%` }}
+                    />
+                  </div>
+                  <small>{workflowStep.description}</small>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Workflow Form</span>
+                <span className="psychometric-panel-kicker">Accordion Sections</span>
                 <h2>{`Step ${step}: ${currentStepLabel}`}</h2>
               </div>
               <div className="budget-workflow-inline-actions">
@@ -2160,126 +2190,42 @@ export default function NetWorthPositioningPage() {
                   </div>
                 </div>
 
-               <div className="table-responsive">
-                <div className="psychometric-scale-table-wrap">
-                  <table className="psychometric-scale-table networth-compact-table">
-                      <colgroup>
-                      <col style={{ width: '15%' }} />   {/* Statement Section */}
-                      <col style={{ width: '25%' }} />   {/* Account Group */}
-                      <col style={{ width: '25%' }} />   {/* Line Item */}
-                      <col style={{ width: '25%' }} />   {/* Setup Amount */}
-                      <col style={{ width: '10%' }} />   {/* Remarks */}
-                       </colgroup>
+                <div className="table-responsive" style={{ display: 'grid', gap: '10px' }}>
+                  {STEP1_SECTION_ORDER.map((section) => {
+                    const sectionRows = filteredSetupRows.filter((row) => row.section === section);
+                    const isOpenByDefault = selectedSetupSection === section || (selectedSetupSection === 'all' && section === 'assets');
 
-                    <thead>
-                      <tr>
-                        <th>Statement Section</th>
-                        <th> Account Group</th>
-                        <th>Line Item</th>
-                        <th>Setup Amount</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {alwaysVisibleSetupRows.length > 0 ? alwaysVisibleSetupRows.map((row) => (
-                        <tr key={row.id}>
-                          <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
-                          <td data-label="Account Group">{row.category}</td>
-                          <td data-label="Line Item">
-                            <div className="networth-line-item-primary">{row.label}</div>
-                            <details className="networth-line-item-details">
-                              <summary>View details</summary>
-                              <div><strong>Statement Section:</strong> {getSectionLabel(row.section)}</div>
-                              <div><strong>Account Group:</strong> {row.category}</div>
-                            </details>
-                          </td>
-                          <td data-label="Setup Amount">
-                            {row.autoGenerated ? (
-                              <span className="psychometric-section-note">{aiGeneratedValues[row.id] ?? 'Auto-calculated from the Wealth Building engine'}</span>
-                            ) : (
-                              <input
-                                type="number"
-                                min={0}
-                                step="0.01"
-                                value={row.raw}
-                                onChange={(event) => {
-                                  setAmounts((previous) => ({
-                                    ...previous,
-                                    [row.id]: event.target.value,
-                                  }));
-                                }}
-                                className="budget-dashboard-category-input"
-                                placeholder="0"
-                                aria-label={`${row.label} setup amount`}
-                              />
-                            )}
-                          </td>
-                        </tr>
-                      )) : (
-                        <tr>
-                          <td colSpan={4}>
-                            <span className="psychometric-section-note">
-                              No matching rows found. Adjust the Statement Section, Account Group, or Line Item filters.
-                            </span>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-               </div>
-               
-
-                {accordionSetupRows.length > 0 ? (
-                  <div style={{ marginTop: '12px' }}>
-                    <div className="budget-workflow-inline-actions" style={{ marginBottom: '10px' }}>
-                      <button
-                        type="button"
-                        className="budget-dashboard-category-reset"
-                        onClick={handleShowMoreRemainingRows}
-                        disabled={visibleRemainingRowsCount === accordionSetupRows.length}
-                      >
-                        {visibleRemainingRowsCount === accordionSetupRows.length
-                          ? 'All Remaining Accounts Shown'
-                          : `Show Remaining Accounts (${accordionSetupRows.length})`}
-                      </button>
-                      {visibleRemainingRowsCount > 0 ? (
-                        <button
-                          type="button"
-                          className="budget-dashboard-category-reset"
-                          onClick={handleHideRemainingRows}
+                    return (
+                      <details key={section} className="psychometric-panel" open={isOpenByDefault}>
+                        <summary
+                          style={{
+                            cursor: 'pointer',
+                            fontWeight: 700,
+                            padding: '10px 12px',
+                            color: '#0f172a',
+                          }}
                         >
-                          Hide Remaining Accounts
-                        </button>
-                      ) : null}
-                    </div>
+                          {`${STEP1_SECTION_SHORT_LABELS[section]} ▶`}
+                          <span style={{ marginLeft: '8px', color: '#64748b', fontWeight: 600 }}>
+                            ({sectionRows.length})
+                          </span>
+                        </summary>
 
-                    {visibleRemainingSetupRows.length > 0 ? (
-                      <div className="psychometric-scale-table-wrap">
-                        <table className="psychometric-scale-table networth-compact-table">
-                          <thead>
-                            <tr>
-                              <th style={{ color: DARK_GOLD_COLOR }}>Remaining Accounts</th>
-                              <th>Account Group</th>
-                              <th>Line Item</th>
-                              <th>Setup Amount</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-                            {visibleRemainingSetupRows.map((row) => (
-                              <tr key={row.id}>
-                                <td data-label="Statement Section">{getSectionLabel(row.section)}</td>
-                                <td data-label="Account Group">{row.category}</td>
-                                <td data-label="Line Item">
-                                  <div className="networth-line-item-primary">{row.label}</div>
-                                  <details className="networth-line-item-details">
-                                    <summary>View details</summary>
-                                    <div><strong>Statement Section:</strong> {getSectionLabel(row.section)}</div>
-                                    <div><strong>Account Group:</strong> {row.category}</div>
-                                  </details>
-                                </td>
-                                <td data-label="Setup Amount">
+                        <div style={{ padding: '8px 12px 12px' }}>
+                          {sectionRows.length === 0 ? (
+                            <p className="psychometric-section-note">
+                              No matching sub-accounts in this section for current filters.
+                            </p>
+                          ) : (
+                            <div className="budget-dashboard-category-summary">
+                              {sectionRows.map((row) => (
+                                <div key={row.id} className="budget-dashboard-category-summary-card">
+                                  <span>{row.label}</span>
+                                  <small>{row.category}</small>
                                   {row.autoGenerated ? (
-                                    <span className="psychometric-section-note">{aiGeneratedValues[row.id] ?? 'Auto-calculated from the Wealth Building engine'}</span>
+                                    <small className="psychometric-section-note">
+                                      {aiGeneratedValues[row.id] ?? 'Auto-calculated from the Wealth Building engine'}
+                                    </small>
                                   ) : (
                                     <input
                                       type="number"
@@ -2297,15 +2243,15 @@ export default function NetWorthPositioningPage() {
                                       aria-label={`${row.label} setup amount`}
                                     />
                                   )}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : null}
-                  </div>
-                ) : null}
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </details>
+                    );
+                  })}
+                </div>
 
                 <div className="budget-workflow-inline-actions">
                   <button
@@ -2848,156 +2794,20 @@ export default function NetWorthPositioningPage() {
             ) : null}
           </article>
 
-          {step === 4 ? (
-            <article className="psychometric-panel">
-              <div className="psychometric-panel-header">
-                <div>
-                  <span className="psychometric-panel-kicker">AI Recommendations and Graphs</span>
-                  <h2>Net worth variance coaching and visuals</h2>
-                </div>
-              </div>
-
-              <div className="budget-workflow-ai-grid">
-                <article className="budget-workflow-ai-card">
-                  <h3>AI Recommendations</h3>
-                  <ul className="psychometric-breakdown-list">
-                    {aiRecommendations.map((item) => (
-                      <li key={item}>
-                        <span>{item}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </article>
-
-                <article className="budget-workflow-ai-card">
-                  <h3>Setup vs Projected Net Worth Graph</h3>
-                  <div className="budget-workflow-graph-row">
-                    <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
-                    <div className="budget-workflow-graph-track">
-                      <div
-                        className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.abs(totals.setupNetWorth) > 0
-                              ? (Math.abs(totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
-                              : 0,
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{formatSignedCurrency(totals.setupNetWorth)}</strong>
-                  </div>
-
-                  <div className="budget-workflow-graph-row">
-                    <span>{actualEntryCompletion.isComplete ? 'Actual Net Worth' : 'Projected Net Worth'}</span>
-                    <div className="budget-workflow-graph-track">
-                      <div
-                        className={`budget-workflow-graph-bar ${totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.abs(totals.projectedNetWorth) > 0
-                              ? (Math.abs(totals.projectedNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
-                              : 0,
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
-                  </div>
-
-                  <div className="budget-workflow-graph-row">
-                    <span>Net Worth Variance</span>
-                    <div className="budget-workflow-graph-track">
-                      <div
-                        className={`budget-workflow-graph-bar ${totals.projectedNetWorth - totals.setupNetWorth < 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
-                        style={{
-                          width: `${Math.min(
-                            100,
-                            Math.abs(totals.projectedNetWorth - totals.setupNetWorth) > 0
-                              ? (Math.abs(totals.projectedNetWorth - totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), 1)) * 100
-                              : 0,
-                          )}%`,
-                        }}
-                      />
-                    </div>
-                    <strong>{formatSignedCurrency(totals.projectedNetWorth - totals.setupNetWorth)}</strong>
-                  </div>
-                </article>
-
-                <article className="budget-workflow-ai-card">
-                  <h3>Top Variance Graph</h3>
-                  {topVarianceRows.length === 0 ? (
-                    <p className="psychometric-section-note">Enter actual values to visualize top variance lines.</p>
-                  ) : (
-                    <div className="budget-workflow-variance-chart">
-                      {topVarianceRows.map((row) => (
-                        <div key={row.id} className="budget-workflow-variance-row">
-                          <span>{row.label}</span>
-                          <div className="budget-workflow-graph-track">
-                            <div
-                              className={`budget-workflow-graph-bar ${row.section === 'liabilities' && row.variance > 0 ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-setup'}`}
-                              style={{
-                                width: `${maxVarianceMagnitude > 0 ? (row.magnitude / maxVarianceMagnitude) * 100 : 0}%`,
-                              }}
-                            />
-                          </div>
-                          <strong>{formatSignedCurrency(row.variance)}</strong>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </article>
-              </div>
-            </article>
-          ) : null}
         </div>
 
         <aside className="budget-dashboard-side">
-          <article className="psychometric-panel psychometric-sticky-panel">
+          <article className="psychometric-panel psychometric-sticky-panel networth-mobile-ai-dashboard">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Workflow Steps</span>
-                <h2>Navigate Workflow Steps</h2>
+                <span className="psychometric-panel-kicker">Scorecards</span>
+                <h2>Position Scorecards</h2>
               </div>
             </div>
-
-            <div className="lending-psychometric-step-list">
-              {workflowSteps.map((workflowStep) => {
-                const isActive = step === workflowStep.id;
-                const isCompleted = step > workflowStep.id;
-                const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
-
-                return (
-                  <button
-                    key={workflowStep.id}
-                    type="button"
-                    onClick={() => setStep(workflowStep.id)}
-                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
-                  >
-                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                      {workflowStep.id}
-                    </div>
-                    <div className="lending-psychometric-step-copy">
-                      <strong>{workflowStep.label}</strong>
-                      <span>{statusLabel}</span>
-                      <div className="lending-step-information-track" aria-hidden="true">
-                        <div
-                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
-                          style={{ width: `${stepPercent}%` }}
-                        />
-                      </div>
-                      <small>{workflowStep.description}</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            <p className="psychometric-section-note">Snapshot of your current net worth positioning and forecast.</p>
           </article>
 
-          <article className="psychometric-panel psychometric-sticky-panel">
+          <article className="psychometric-panel psychometric-sticky-panel networth-mobile-charts">
             <span className="psychometric-panel-kicker">Setup Snapshot</span>
             <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Draft Setup'}</h2>
             <ul className="psychometric-breakdown-list">
@@ -3024,7 +2834,7 @@ export default function NetWorthPositioningPage() {
             </ul>
           </article>
 
-          <article className="psychometric-panel psychometric-sticky-panel">
+          <article className="psychometric-panel psychometric-sticky-panel networth-mobile-recommendations">
             <span className="psychometric-panel-kicker">Position Health</span>
             <h2>{netWorthBuildingScore.grade}</h2>
             <ul className="psychometric-breakdown-list">
@@ -3146,8 +2956,126 @@ export default function NetWorthPositioningPage() {
             </p>
           </article>
 
-          {step === 5 ? (
-            <section className="psychometric-panel psychometric-sticky-panel">
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">AI Analysis</span>
+            <h2>Net Worth Variance Coaching</h2>
+            <p className="psychometric-section-note">
+              AI-assisted analysis highlights your current variance trend and key financial pressure points.
+            </p>
+            <ul className="psychometric-breakdown-list">
+              <li>
+                <span>Position Status</span>
+                <strong>{goalForecast.status}</strong>
+              </li>
+              <li>
+                <span>Projected Net Worth</span>
+                <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
+              </li>
+              <li>
+                <span>Top Variance Lines</span>
+                <strong>{topVarianceRows.length}</strong>
+              </li>
+            </ul>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Charts</span>
+            <h2>Net Worth Visuals</h2>
+            <div className="budget-workflow-ai-card">
+              <h3>Setup vs Projected Net Worth Graph</h3>
+              <div className="budget-workflow-graph-row">
+                <span style={{ color: DARK_GOLD_COLOR }}>Setup Net Worth</span>
+                <div className="budget-workflow-graph-track">
+                  <div
+                    className="budget-workflow-graph-bar budget-workflow-graph-bar-setup"
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.abs(totals.setupNetWorth) > 0
+                          ? (Math.abs(totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
+                          : 0,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <strong>{formatSignedCurrency(totals.setupNetWorth)}</strong>
+              </div>
+
+              <div className="budget-workflow-graph-row">
+                <span>{actualEntryCompletion.isComplete ? 'Actual Net Worth' : 'Projected Net Worth'}</span>
+                <div className="budget-workflow-graph-track">
+                  <div
+                    className={`budget-workflow-graph-bar ${totals.projectedNetWorth < totals.setupNetWorth ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-actual'}`}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.abs(totals.projectedNetWorth) > 0
+                          ? (Math.abs(totals.projectedNetWorth) / Math.max(Math.abs(totals.setupNetWorth), Math.abs(totals.projectedNetWorth), 1)) * 100
+                          : 0,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong>
+              </div>
+
+              <div className="budget-workflow-graph-row">
+                <span>Net Worth Variance</span>
+                <div className="budget-workflow-graph-track">
+                  <div
+                    className={`budget-workflow-graph-bar ${totals.projectedNetWorth - totals.setupNetWorth < 0 ? 'budget-workflow-graph-bar-alert' : 'budget-workflow-graph-bar-actual'}`}
+                    style={{
+                      width: `${Math.min(
+                        100,
+                        Math.abs(totals.projectedNetWorth - totals.setupNetWorth) > 0
+                          ? (Math.abs(totals.projectedNetWorth - totals.setupNetWorth) / Math.max(Math.abs(totals.setupNetWorth), 1)) * 100
+                          : 0,
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <strong>{formatSignedCurrency(totals.projectedNetWorth - totals.setupNetWorth)}</strong>
+              </div>
+            </div>
+
+            <div className="budget-workflow-ai-card" style={{ marginTop: '12px' }}>
+              <h3>Top Variance Graph</h3>
+              {topVarianceRows.length === 0 ? (
+                <p className="psychometric-section-note">Enter actual values to visualize top variance lines.</p>
+              ) : (
+                <div className="budget-workflow-variance-chart">
+                  {topVarianceRows.map((row) => (
+                    <div key={row.id} className="budget-workflow-variance-row">
+                      <span>{row.label}</span>
+                      <div className="budget-workflow-graph-track">
+                        <div
+                          className={`budget-workflow-graph-bar ${row.section === 'liabilities' && row.variance > 0 ? 'budget-workflow-graph-bar-warning' : 'budget-workflow-graph-bar-setup'}`}
+                          style={{
+                            width: `${maxVarianceMagnitude > 0 ? (row.magnitude / maxVarianceMagnitude) * 100 : 0}%`,
+                          }}
+                        />
+                      </div>
+                      <strong>{formatSignedCurrency(row.variance)}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </article>
+
+          <article className="psychometric-panel psychometric-sticky-panel">
+            <span className="psychometric-panel-kicker">Recommendations</span>
+            <h2>Actionable Next Steps</h2>
+            <ul className="psychometric-breakdown-list">
+              {aiRecommendations.map((item) => (
+                <li key={item}>
+                  <span>{item}</span>
+                </li>
+              ))}
+            </ul>
+          </article>
+
+          <section className="psychometric-panel psychometric-sticky-panel">
               <div className="space-y-6">
                 <div className="flex flex-wrap justify-end gap-3">
                   <button
@@ -3331,26 +3259,36 @@ export default function NetWorthPositioningPage() {
               )}
               </div>
             </section>
-          ) : null}
 
           <section className="psychometric-panel psychometric-sticky-panel">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Global Comparator</span>
-                <h2>Your Income and Wealth Standing in the World</h2>
+                <span className="psychometric-panel-kicker">History</span>
+                <h2>Activity Timeline</h2>
               </div>
             </div>
-            <p className="psychometric-section-note">
-              Compare your income and wealth standing globally using the World Inequality Database comparator.
-            </p>
-            <a
-              href="https://wid.world/income-comparator/"
-              target="_blank"
-              rel="noreferrer"
-              className="auth-link-button"
-            >
-              Open WID Income Comparator
-            </a>
+            <ul className="psychometric-breakdown-list">
+              <li>
+                <span>Application Source</span>
+                <strong>{snapshot.sourceLabel}</strong>
+              </li>
+              <li>
+                <span>Application Number</span>
+                <strong>{snapshot.sourceApplicationNo}</strong>
+              </li>
+              <li>
+                <span>Last Updated</span>
+                <strong>{lastUpdated ? lastUpdated.toLocaleString() : 'Not yet saved'}</strong>
+              </li>
+              <li>
+                <span>Current Workflow Step</span>
+                <strong>{`Step ${step}: ${currentStepLabel}`}</strong>
+              </li>
+              <li>
+                <span>Certification Issued</span>
+                <strong>{wealthCertificationIssuedAt ? new Date(wealthCertificationIssuedAt).toLocaleString() : 'Pending'}</strong>
+              </li>
+            </ul>
           </section>
         </aside>
       </section>
