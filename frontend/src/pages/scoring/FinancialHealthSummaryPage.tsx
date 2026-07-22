@@ -571,55 +571,6 @@ export default function FinancialHealthSummaryPage() {
       </section>
 
       <section className="financial-health-detail-layout">
-        <article className="psychometric-panel financial-health-chart-panel" aria-labelledby="health-profile-title">
-          <div className="psychometric-panel-header">
-            <div>
-              <span className="psychometric-panel-kicker">Comparative graph</span>
-              <h2 id="health-profile-title">Health profile and weighted contribution</h2>
-              <p className="financial-health-panel-intro">
-                Bar length shows the indicator score. The marker shows the recommended 80-point target.
-              </p>
-            </div>
-          </div>
-
-          <div className="financial-health-chart-head" aria-hidden="true">
-            <span>Indicator</span>
-            <span>Score profile</span>
-            <span>Score</span>
-            <span>Weight</span>
-            <span>Points</span>
-          </div>
-
-          <div className="financial-health-chart" role="list" aria-label="Indicator score comparison">
-            {financialHealthIndicators.map((indicator) => (
-              <div
-                key={indicator.id}
-                className="financial-health-chart-row"
-                role="listitem"
-                style={indicatorStyle(indicator.accent, indicator.softAccent)}
-              >
-                <strong className="financial-health-chart-label">{indicator.label}</strong>
-                <div
-                  className="financial-health-bar-track"
-                  role="progressbar"
-                  aria-label={`${indicator.label} score`}
-                  aria-valuemin={0}
-                  aria-valuemax={100}
-                  aria-valuenow={indicator.score}
-                >
-                  <span className="financial-health-target-line" aria-hidden="true" />
-                  <span className="financial-health-bar-fill" style={{ width: `${indicator.score}%` }} />
-                </div>
-                <strong className="financial-health-chart-value">{indicator.score}</strong>
-                <span className="financial-health-chart-weight">{indicator.weight}%</span>
-                <span className="financial-health-chart-points">
-                  {calculateWeightedContribution(indicator).toFixed(2)}
-                </span>
-              </div>
-            ))}
-          </div>
-        </article>
-
         <article className="psychometric-panel financial-health-leaf-panel" aria-labelledby="lending-leaf-title">
           <div className="psychometric-panel-header">
             <div>
@@ -691,6 +642,55 @@ export default function FinancialHealthSummaryPage() {
               Awaiting a saved loan application draft to paint the leaf with live lending scores.
             </p>
           ) : null}
+        </article>
+
+        <article className="psychometric-panel financial-health-chart-panel" aria-labelledby="health-profile-title">
+          <div className="psychometric-panel-header">
+            <div>
+              <span className="psychometric-panel-kicker">Comparative graph</span>
+              <h2 id="health-profile-title">Health profile and weighted contribution</h2>
+              <p className="financial-health-panel-intro">
+                Bar length shows the indicator score. The marker shows the recommended 80-point target.
+              </p>
+            </div>
+          </div>
+
+          <div className="financial-health-chart-head" aria-hidden="true">
+            <span>Indicator</span>
+            <span>Score profile</span>
+            <span>Score</span>
+            <span>Weight</span>
+            <span>Points</span>
+          </div>
+
+          <div className="financial-health-chart" role="list" aria-label="Indicator score comparison">
+            {financialHealthIndicators.map((indicator) => (
+              <div
+                key={indicator.id}
+                className="financial-health-chart-row"
+                role="listitem"
+                style={indicatorStyle(indicator.accent, indicator.softAccent)}
+              >
+                <strong className="financial-health-chart-label">{indicator.label}</strong>
+                <div
+                  className="financial-health-bar-track"
+                  role="progressbar"
+                  aria-label={`${indicator.label} score`}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={indicator.score}
+                >
+                  <span className="financial-health-target-line" aria-hidden="true" />
+                  <span className="financial-health-bar-fill" style={{ width: `${indicator.score}%` }} />
+                </div>
+                <strong className="financial-health-chart-value">{indicator.score}</strong>
+                <span className="financial-health-chart-weight">{indicator.weight}%</span>
+                <span className="financial-health-chart-points">
+                  {calculateWeightedContribution(indicator).toFixed(2)}
+                </span>
+              </div>
+            ))}
+          </div>
         </article>
 
         <aside className="financial-health-side-stack">
