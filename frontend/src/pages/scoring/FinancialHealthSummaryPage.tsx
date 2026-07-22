@@ -72,7 +72,7 @@ function blendChannel(start: number, end: number, ratio: number): number {
 
 function scoreTone(score: number | null, alpha = 1): string {
   if (score === null) {
-    return `rgba(203, 213, 225, ${alpha})`
+    return `rgba(134, 239, 172, ${alpha})`
   }
 
   const normalized = clampScore(score) / 100
