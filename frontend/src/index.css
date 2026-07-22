@@ -5138,6 +5138,12 @@ th { color: var(--dark-gold); }
   align-items: start;
 }
 
+.financial-health-main-stack {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+
 .financial-health-side-stack {
   position: sticky;
   top: 96px;

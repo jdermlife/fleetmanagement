@@ -25,7 +25,7 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getAllByText('Excellent').length).toBeGreaterThan(0)
     expect(screen.getByText('84.2 × 10 = 842')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Lending score leaf graph' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Credit Health' })).toBeTruthy()
     expect(screen.getByText('Awaiting a saved loan application draft to paint the leaf with live lending scores.')).toBeTruthy()
 
     expect(screen.getByRole('progressbar', { name: 'Credit Health: 91 out of 100' })).toBeTruthy()
