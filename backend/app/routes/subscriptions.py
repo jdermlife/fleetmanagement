@@ -45,6 +45,7 @@ from app.schemas.subscription_schema import (
     SubscriptionUsageCreate,
 )
 from app.services.email_service import send_email
+from app.services.account_access_service import renew_account_access_after_payment
 from app.services.paymongo import (
     PayMongoAPIError,
     PayMongoConfigurationError,
@@ -250,6 +251,7 @@ def _apply_successful_payment(
     owning_user = db.query(User).filter(User.id == target_subscription.user_id).first()
     if owning_user is not None:
         owning_user.subscription_id = target_subscription.id
+        renew_account_access_after_payment(owning_user, paid_at)
 
 
 def _subscription_checkout_amount(plan: SubscriptionPlan) -> Decimal:

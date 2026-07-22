@@ -13,12 +13,14 @@ from app.models.users import User
 from app.routes.security import (
     _build_login_payload,
     _ensure_default_role,
+    _enforce_login_access_policy,
     _generate_unique_username,
     _resolve_registration_role,
     _username_from_google_email,
     _verify_apple_id_token,
     get_db,
 )
+from app.services.account_access_service import configure_new_account_access
 from security.auth import hash_password
 
 
@@ -87,23 +89,14 @@ def login_with_apple_identity_token(
             lender_data_sharing_consent=payload.lender_data_sharing_consent,
             lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
         )
+        configure_new_account_access(user)
         db.add(user)
         db.flush()
         _ensure_default_role(user, db, role_name)
         db.commit()
         db.refresh(user)
 
-    if not user.is_active:
-        raise HTTPException(status_code=403, detail="Account is disabled")
-
-    if user.is_deleted:
-        raise HTTPException(status_code=403, detail="Account is deleted")
-
-    if user.account_status and user.account_status.upper() != "ACTIVE":
-        raise HTTPException(status_code=403, detail=f"Account status is {user.account_status}")
-
-    if user.locked_until and user.locked_until > datetime.now(timezone.utc):
-        raise HTTPException(status_code=423, detail="Account is locked")
+    _enforce_login_access_policy(user, db)
 
     if not user.email_verified:
         user.email_verified = True

@@ -12,6 +12,8 @@ import {
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 export default function RegisterPage() {
+  const monthlyPlanFee = 160
+  const freeTrialDays = 2
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
@@ -25,13 +27,20 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
-  const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share' | ''>('')
+  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [paymentProvider, setPaymentProvider] = useState<'PAYMONGO' | 'PAYPAL' | ''>('')
+  const [debitAccountName, setDebitAccountName] = useState('')
+  const [debitPaymentReference, setDebitPaymentReference] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [appleMessage, setAppleMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
+  const hasPaymentDetails =
+    paymentProvider.length > 0
+    && debitAccountName.trim().length > 1
+    && debitPaymentReference.trim().length > 3
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -51,8 +60,8 @@ export default function RegisterPage() {
       return
     }
 
-    if (!lenderDataSharingChoice) {
-      setMessage('Please choose whether lenders can view your information and score for offers.')
+    if (!hasPaymentDetails) {
+      setMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
       return
     }
 
@@ -65,7 +74,7 @@ export default function RegisterPage() {
         email,
         password,
         subscriberType,
-        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+        lenderDataSharingConsent: marketingConsent,
       })
       const loginResponse = await login({ username, password })
       await createFreeSubscription({ user_id: loginResponse.user.id })
@@ -94,8 +103,8 @@ export default function RegisterPage() {
       return
     }
 
-    if (!lenderDataSharingChoice) {
-      setMessage('Choose your lender data-sharing preference before continuing with Google.')
+    if (!hasPaymentDetails) {
+      setMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
       return
     }
 
@@ -105,7 +114,7 @@ export default function RegisterPage() {
       const loginResponse = await loginWithGoogle({
         idToken,
         subscriberType,
-        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+        lenderDataSharingConsent: marketingConsent,
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
@@ -127,8 +136,8 @@ export default function RegisterPage() {
       return
     }
 
-    if (!lenderDataSharingChoice) {
-      setAppleMessage('Choose your lender data-sharing preference before continuing with Apple.')
+    if (!hasPaymentDetails) {
+      setAppleMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
       return
     }
 
@@ -143,7 +152,7 @@ export default function RegisterPage() {
       const loginResponse = await loginWithApple({
         idToken: appleTokenResult.idToken,
         subscriberType,
-        lenderDataSharingConsent: lenderDataSharingChoice === 'share',
+        lenderDataSharingConsent: marketingConsent,
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
@@ -217,38 +226,85 @@ export default function RegisterPage() {
         </fieldset>
 
         <fieldset className="auth-role-fieldset">
-          <legend>Lender Offer Preference</legend>
+          <legend>Marketing Consent</legend>
           <p className="auth-role-copy">
-            Choose whether lenders may view your information and score to offer financing.
+            Tick the box if you agree to receive marketing materials, notices, and related updates.
           </p>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={marketingConsent}
+              onChange={(event) => setMarketingConsent(event.target.checked)}
+            />
+            <span>
+              I agree to receive marketing materials, notices, and related product updates.
+            </span>
+          </label>
+        </fieldset>
+
+        <fieldset className="auth-role-fieldset">
+          <legend>Plan and Debit Payment</legend>
+          <p className="auth-role-copy register-payment-plan">
+            Plan fee: PHP {monthlyPlanFee} per month. Free for the first {freeTrialDays} days.
+          </p>
+          <p className="auth-role-copy">
+            Provide debit payment details via PayMongo or PayPal to unlock the Create Account section.
+          </p>
+
           <div className="auth-role-options">
             <label className="auth-role-option">
               <input
                 type="radio"
-                name="lender-data-sharing"
-                value="share"
-                checked={lenderDataSharingChoice === 'share'}
-                onChange={() => setLenderDataSharingChoice('share')}
+                name="debit-payment-provider"
+                value="PAYMONGO"
+                checked={paymentProvider === 'PAYMONGO'}
+                onChange={() => setPaymentProvider('PAYMONGO')}
               />
               <span>
-                <strong>Okay to share information and score for lender offers</strong>
-                <small>Lenders can use your profile and score to send relevant offers.</small>
+                <strong>PayMongo</strong>
+                <small>Debit or card payment processed through PayMongo.</small>
               </span>
             </label>
             <label className="auth-role-option">
               <input
                 type="radio"
-                name="lender-data-sharing"
-                value="do_not_share"
-                checked={lenderDataSharingChoice === 'do_not_share'}
-                onChange={() => setLenderDataSharingChoice('do_not_share')}
+                name="debit-payment-provider"
+                value="PAYPAL"
+                checked={paymentProvider === 'PAYPAL'}
+                onChange={() => setPaymentProvider('PAYPAL')}
               />
               <span>
-                <strong>Do not share information and score for lender offers</strong>
-                <small>Your information is not used for lender offer matching.</small>
+                <strong>PayPal</strong>
+                <small>Debit payment routed through your PayPal checkout.</small>
               </span>
             </label>
           </div>
+
+          <label>
+            Debit Account Name
+            <input
+              value={debitAccountName}
+              onChange={(event) => setDebitAccountName(event.target.value)}
+              autoComplete="cc-name"
+              placeholder="Account or cardholder name"
+            />
+          </label>
+
+          <label>
+            Payment Reference / Last 4 Digits
+            <input
+              value={debitPaymentReference}
+              onChange={(event) => setDebitPaymentReference(event.target.value)}
+              autoComplete="off"
+              placeholder="Reference number or last 4 digits"
+            />
+          </label>
+
+          <p className="status-message">
+            {hasPaymentDetails
+              ? 'Payment details captured. Create Account section is now unlocked.'
+              : 'Create Account section is blurred until payment details are provided.'}
+          </p>
         </fieldset>
       </div>
 
@@ -302,7 +358,11 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <form className="stack-panel auth-panel" onSubmit={handleSubmit}>
+      <div className="register-form-gate">
+        <form
+          className={`stack-panel auth-panel ${hasPaymentDetails ? '' : 'register-form-blurred'}`}
+          onSubmit={handleSubmit}
+        >
         <label>
           Username
           <input
@@ -358,8 +418,15 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-        {message ? <p className="status-message status-error">{message}</p> : null}
-      </form>
+          {message ? <p className="status-message status-error">{message}</p> : null}
+        </form>
+
+        {!hasPaymentDetails ? (
+          <div className="register-form-lock-overlay" role="status" aria-live="polite">
+            Complete payment details to unlock account creation.
+          </div>
+        ) : null}
+      </div>
 
       <div className="auth-support-links">
         <Link to="/subscription-fees">Subscription Fees</Link>

@@ -34,12 +34,15 @@ import RegisterPage from '../src/pages/auth/RegisterPage'
 
 async function completeAppleRegistrationChoices() {
   const user = userEvent.setup()
-  const termsAndPrivacy = screen.getAllByRole('checkbox')
+  const consentBoxes = screen.getAllByRole('checkbox')
 
-  await user.click(termsAndPrivacy[0])
-  await user.click(termsAndPrivacy[1])
+  await user.click(consentBoxes[0])
+  await user.click(consentBoxes[1])
   await user.click(screen.getByRole('radio', { name: /subscriber single application/i }))
-  await user.click(screen.getByRole('radio', { name: /okay to share information/i }))
+  await user.click(screen.getByRole('checkbox', { name: /i agree to receive marketing materials/i }))
+  await user.click(screen.getByRole('radio', { name: /paymongo/i }))
+  await user.type(screen.getByLabelText(/debit account name/i), 'Sample Account Holder')
+  await user.type(screen.getByLabelText(/payment reference \/ last 4 digits/i), '1234')
 
   return user
 }

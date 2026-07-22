@@ -132,6 +132,7 @@ def test_register_endpoint_exists(app_client):
 
     assert response.status_code == 201
     assert response.json()["user"]["username"] == "testuser"
+    assert response.json()["user"]["account_access_expires_at"] is not None
     assert len(fake_db.rows_by_model[User]) == 1
 
 
@@ -160,6 +161,34 @@ def test_login_endpoint_exists(app_client):
     payload = response.json()
     assert "access_token" in payload
     assert "refresh_token" in payload
+
+
+def test_login_deactivates_expired_unpaid_account(app_client):
+    client, auth_module, fake_db = app_client
+
+    user = User(
+        id=11,
+        username="expireduser",
+        email="expired@example.com",
+        password_hash=auth_module.hash_password("password123"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+        account_access_expires_at=datetime.now(timezone.utc) - timedelta(days=1),
+    )
+    fake_db.rows_by_model[User] = [user]
+
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "expireduser", "password": "password123"},
+    )
+
+    assert response.status_code == 403
+    assert response.json()["detail"] == "Account expired due to non-payment. Complete payment to reactivate access."
+    assert user.is_active is False
+    assert user.account_status == "SUSPENDED"
 
 
 def test_apple_callback_route_accepts_apples_form_post_without_exposing_tokens(app_client):

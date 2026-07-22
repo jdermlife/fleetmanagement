@@ -171,6 +171,7 @@ def test_verified_paypal_webhook_activates_subscription(monkeypatch):
     assert subscription.status == "ACTIVE"
     assert subscription.payment_provider_id == provider.id
     assert user.subscription_id == subscription.id
+    assert user.account_access_expires_at is not None
 
     assert len(fake_db.rows_by_model[PaymentWebhook]) == 1
     assert fake_db.rows_by_model[PaymentWebhook][0].processed is True
