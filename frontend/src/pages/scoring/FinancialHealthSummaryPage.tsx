@@ -47,6 +47,114 @@ type LendingLeafSegment = {
   fill: string
 }
 
+type JourneyStepId = 'creditHealth' | 'wealthBuilder' | 'budgetTargets' | 'billsLoans' | 'aiAdvisor'
+
+type JourneyStep = {
+  id: JourneyStepId
+  label: string
+  launchLabel: string
+  route: string
+  description: string
+}
+
+const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
+  {
+    id: 'creditHealth',
+    label: 'Credit Health',
+    launchLabel: 'Launch Credit Health',
+    route: '/lending-scorecard',
+    description:
+      'Launch the Credit Health section and complete your personal profile to improve score precision.',
+  },
+  {
+    id: 'wealthBuilder',
+    label: 'Wealth Building',
+    launchLabel: 'Launch Wealth Builder',
+    route: '/net-worth-positioning',
+    description:
+      'Define long-term goals, complete your initial net worth profile, and record your assets and liabilities.',
+  },
+  {
+    id: 'budgetTargets',
+    label: 'Budget Targets',
+    launchLabel: 'Arrange My Targets',
+    route: '/budget-expense-tracker',
+    description:
+      'Set monthly income, spending limits, savings goals, and investment targets to track progress accurately.',
+  },
+  {
+    id: 'billsLoans',
+    label: 'Bills & Loans',
+    launchLabel: 'Manage Loans & Bills',
+    route: '/loan-monitoring',
+    description:
+      'Enter loans, credit cards, monthly bills, and due dates for optimization recommendations.',
+  },
+  {
+    id: 'aiAdvisor',
+    label: 'AI Advisor',
+    launchLabel: 'Activate My AI Advisor',
+    route: '/ai-dashboard',
+    description:
+      'Activate the FILSCORE AI Trainer for personalized coaching, reminders, and financial insights.',
+  },
+]
+
+const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
+const JOURNEY_AI_ACTIVATED_STORAGE_KEY = 'fms:journey:ai-advisor-activated'
+const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
+
+function safeStorageGet(key: string): string | null {
+  if (typeof window === 'undefined') {
+    return null
+  }
+
+  const storage = window.localStorage as Partial<Storage> | undefined
+  if (!storage || typeof storage.getItem !== 'function') {
+    return null
+  }
+
+  try {
+    return storage.getItem(key)
+  } catch {
+    return null
+  }
+}
+
+function safeStorageSet(key: string, value: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const storage = window.localStorage as Partial<Storage> | undefined
+  if (!storage || typeof storage.setItem !== 'function') {
+    return
+  }
+
+  try {
+    storage.setItem(key, value)
+  } catch {
+    // Ignore storage write failures.
+  }
+}
+
+function safeStorageRemove(key: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  const storage = window.localStorage as Partial<Storage> | undefined
+  if (!storage || typeof storage.removeItem !== 'function') {
+    return
+  }
+
+  try {
+    storage.removeItem(key)
+  } catch {
+    // Ignore storage removal failures.
+  }
+}
+
 const healthBands = [
   { label: 'Excellent', range: '840–1000', className: 'financial-health-band-excellent' },
   { label: 'Very Good', range: '760–839', className: 'financial-health-band-healthy' },
@@ -93,6 +201,34 @@ function numberValue(value: unknown): number {
 
 function textValue(value: unknown): string {
   return typeof value === 'string' ? value.trim() : ''
+}
+
+function hasMeaningfulValue(value: unknown): boolean {
+  if (value === null || value === undefined) {
+    return false
+  }
+
+  if (typeof value === 'string') {
+    return value.trim().length > 0
+  }
+
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value !== 0
+  }
+
+  if (typeof value === 'boolean') {
+    return value
+  }
+
+  if (Array.isArray(value)) {
+    return value.some((entry) => hasMeaningfulValue(entry))
+  }
+
+  if (typeof value === 'object') {
+    return Object.values(value as Record<string, unknown>).some((entry) => hasMeaningfulValue(entry))
+  }
+
+  return false
 }
 
 function averageScore(values: Array<number | null | undefined>): number {
@@ -273,35 +409,79 @@ export default function FinancialHealthSummaryPage() {
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
+  const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
+    creditHealth: false,
+    wealthBuilder: false,
+    budgetTargets: false,
+    billsLoans: false,
+    aiAdvisor: false,
+  })
+  const [isJourneyMinimized, setIsJourneyMinimized] = useState<boolean>(() => {
+    return safeStorageGet(JOURNEY_MINIMIZED_STORAGE_KEY) === '1'
+  })
+  const [doNotShowJourneyAgain, setDoNotShowJourneyAgain] = useState<boolean>(() => {
+    return safeStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1'
+  })
+  const [isJourneyDismissed, setIsJourneyDismissed] = useState<boolean>(() => {
+    return safeStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1'
+  })
 
   useEffect(() => {
     let disposed = false
 
     const loadNetWorthDraft = async () => {
+      const aiAdvisorActivated =
+        safeStorageGet(JOURNEY_AI_ACTIVATED_STORAGE_KEY) === '1'
+
       try {
-        const remoteDraft = await fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', 'primary')
-        if (disposed || !remoteDraft?.payload) {
+        const [
+          netWorthDraft,
+          lendingDraft,
+          budgetDraft,
+          billReminderDraft,
+          creditHealthDraft,
+        ] = await Promise.all([
+          fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', 'primary'),
+          fetchAutosaveDraft<unknown>('loan-application', 'new'),
+          fetchAutosaveDraft<unknown>('budget-expense-tracker', 'primary'),
+          fetchAutosaveDraft<unknown>('bill-reminder', 'primary'),
+          fetchAutosaveDraft<unknown>('credit-scoring', 'primary'),
+        ])
+
+        if (disposed || !netWorthDraft?.payload) {
           setNetWorthBuildingScore(null)
           setWealthFoundationScore(null)
         } else {
-          setNetWorthBuildingScore(computeNetWorthBuildingScore(remoteDraft.payload))
-          setWealthFoundationScore(computeWealthFoundationScore(remoteDraft.payload))
+          setNetWorthBuildingScore(computeNetWorthBuildingScore(netWorthDraft.payload))
+          setWealthFoundationScore(computeWealthFoundationScore(netWorthDraft.payload))
+        }
+
+        if (!disposed) {
+          const lendingPayload = lendingDraft?.payload
+          const billPayload = billReminderDraft?.payload
+          const budgetPayload = budgetDraft?.payload
+          const creditPayload = creditHealthDraft?.payload
+          const wealthPayload = netWorthDraft?.payload
+
+          setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
+
+          setJourneyStepCompletion({
+            creditHealth: hasMeaningfulValue(creditPayload) || hasMeaningfulValue(lendingPayload),
+            wealthBuilder: hasMeaningfulValue(wealthPayload),
+            budgetTargets: hasMeaningfulValue(budgetPayload),
+            billsLoans: hasMeaningfulValue(billPayload) || hasMeaningfulValue(lendingPayload),
+            aiAdvisor: aiAdvisorActivated,
+          })
         }
       } catch {
         if (!disposed) {
           setNetWorthBuildingScore(null)
           setWealthFoundationScore(null)
-        }
-      }
-
-      try {
-        const lendingDraft = await fetchAutosaveDraft<unknown>('loan-application', 'new')
-        if (!disposed) {
-          setLendingLeafScores(lendingDraft?.payload ? deriveLendingLeafScores(lendingDraft.payload) : null)
-        }
-      } catch {
-        if (!disposed) {
           setLendingLeafScores(null)
+          setJourneyStepCompletion((current) => ({
+            ...current,
+            aiAdvisor: aiAdvisorActivated,
+          }))
         }
       }
     }
@@ -321,7 +501,45 @@ export default function FinancialHealthSummaryPage() {
     () => (wealthFoundationScore ? explainWealthFoundationResult(wealthFoundationScore) : null),
     [wealthFoundationScore],
   )
+  const completedJourneyCount = useMemo(
+    () => Object.values(journeyStepCompletion).filter(Boolean).length,
+    [journeyStepCompletion],
+  )
+  const journeyCompletionPercent = Math.round((completedJourneyCount / FINANCIAL_HEALTH_JOURNEY_STEPS.length) * 100)
+  const isJourneyComplete = journeyCompletionPercent >= 100
   const index = calculateFinancialHealthIndex(financialHealthIndicators)
+
+  const minimizeJourney = () => {
+    if (doNotShowJourneyAgain) {
+      safeStorageSet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY, '1')
+      safeStorageRemove(JOURNEY_MINIMIZED_STORAGE_KEY)
+      setIsJourneyDismissed(true)
+      setIsJourneyMinimized(true)
+      return
+    }
+
+    setIsJourneyMinimized(true)
+    safeStorageSet(JOURNEY_MINIMIZED_STORAGE_KEY, '1')
+  }
+
+  const openJourney = () => {
+    setIsJourneyMinimized(false)
+    safeStorageRemove(JOURNEY_MINIMIZED_STORAGE_KEY)
+  }
+
+  const launchJourneyStep = (step: JourneyStep) => {
+    if (step.id === 'aiAdvisor') {
+      safeStorageSet(JOURNEY_AI_ACTIVATED_STORAGE_KEY, '1')
+      setJourneyStepCompletion((current) => ({
+        ...current,
+        aiAdvisor: true,
+      }))
+    }
+
+    if (typeof window !== 'undefined') {
+      window.location.assign(step.route)
+    }
+  }
 
   if (index === null) {
     return (
@@ -402,6 +620,123 @@ export default function FinancialHealthSummaryPage() {
 
   return (
     <div className="psychometric-page financial-health-page">
+      {isJourneyMinimized && !isJourneyDismissed ? (
+        <button
+          type="button"
+          className="financial-health-journey-fab"
+          onClick={openJourney}
+        >
+          Open Financial Health Journey
+        </button>
+      ) : null}
+
+      {!isJourneyMinimized && !isJourneyDismissed ? (
+        <section className="financial-health-journey-overlay" role="dialog" aria-modal="true" aria-labelledby="financial-health-journey-title">
+          <article className="financial-health-journey-modal">
+            <button
+              type="button"
+              className="financial-health-journey-minimize"
+              onClick={minimizeJourney}
+              aria-label="Minimize Financial Health Journey"
+            >
+              Minimize
+            </button>
+
+            <p className="financial-health-journey-kicker">Welcome to FILSCORE</p>
+            <h2 id="financial-health-journey-title">Welcome to Your FILSCORE Financial Health Journey!</h2>
+            <p>
+              Congratulations on creating your FILSCORE account. Complete these steps to unlock
+              the full power of your profile and receive more accurate financial recommendations.
+            </p>
+
+            <div className="financial-health-journey-step-list" role="list" aria-label="Financial Health journey checklist">
+              {FINANCIAL_HEALTH_JOURNEY_STEPS.map((step) => {
+                const isCompleted = journeyStepCompletion[step.id]
+                return (
+                  <article
+                    key={step.id}
+                    className={`financial-health-journey-step ${isCompleted ? 'financial-health-journey-step-complete' : ''}`}
+                    role="listitem"
+                  >
+                    <div className="financial-health-journey-step-copy">
+                      <h3>
+                        {isCompleted ? '☑' : '☐'} {step.label}
+                      </h3>
+                      <p>{step.description}</p>
+                    </div>
+                    <button
+                      type="button"
+                      className="financial-health-journey-action"
+                      onClick={() => launchJourneyStep(step)}
+                    >
+                      {step.launchLabel}
+                    </button>
+                  </article>
+                )
+              })}
+            </div>
+
+            <div className="financial-health-journey-progress" aria-live="polite">
+              <h3>Financial Health Journey</h3>
+              <div className="financial-health-journey-progress-list">
+                {FINANCIAL_HEALTH_JOURNEY_STEPS.map((step) => (
+                  <span key={`progress-${step.id}`}>
+                    {journeyStepCompletion[step.id] ? '☑' : '☐'} {step.label}
+                  </span>
+                ))}
+              </div>
+              <strong>{journeyCompletionPercent}% Complete</strong>
+            </div>
+
+            <label className="financial-health-journey-toggle">
+              <input
+                type="checkbox"
+                checked={doNotShowJourneyAgain}
+                onChange={(event) => {
+                  const shouldHide = event.target.checked
+                  setDoNotShowJourneyAgain(shouldHide)
+                  if (shouldHide) {
+                    safeStorageSet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY, '1')
+                  } else {
+                    safeStorageRemove(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
+                    setIsJourneyDismissed(false)
+                  }
+                }}
+              />
+              <span>Do not show this welcome pop-up again</span>
+            </label>
+
+            {isJourneyComplete ? (
+              <div className="financial-health-journey-complete">
+                <p>
+                  🎉 <strong>Excellent!</strong> Your Financial Health Profile is now established.
+                  FILSCORE is ready to monitor, analyze, and guide your journey with personalized insights.
+                </p>
+                <button
+                  type="button"
+                  className="financial-health-journey-action"
+                  onClick={() => {
+                    if (typeof window !== 'undefined') {
+                      window.location.assign('/financial-health-summary')
+                    }
+                  }}
+                >
+                  Go to Financial Health Dashboard
+                </button>
+              </div>
+            ) : null}
+
+            <button
+              type="button"
+              className="financial-health-journey-skip"
+              onClick={minimizeJourney}
+            >
+              Skip for Now
+            </button>
+          </article>
+        </section>
+      ) : null}
+
       <section className="psychometric-hero financial-health-hero" aria-labelledby="financial-health-title">
         <div className="psychometric-hero-copy financial-health-hero-copy">
           <span className="psychometric-eyebrow">FILSCORE Financial Vital Signs</span>
