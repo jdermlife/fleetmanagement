@@ -3,11 +3,17 @@
 from sqlalchemy import text
 
 from app.database import engine
+import os
+
+PAYPAL_API = os.getenv(
+    "PAYPAL_API_BASE_URL",
+    "https://api-m.paypal.com"
+)
 
 
 UPSERT_PAYPAL_PROVIDER_SQL = """
 INSERT INTO payment_providers (provider_code, provider_name, api_endpoint, webhook_url, is_active)
-VALUES ('PAYPAL', 'PayPal', 'https://api-m.sandbox.paypal.com', NULL, TRUE)
+VALUES ('PAYPAL', 'PayPal', '{PAYPAL_API}', NULL, TRUE)
 ON CONFLICT (provider_code)
 DO UPDATE SET
     provider_name = EXCLUDED.provider_name,
