@@ -4891,8 +4891,9 @@ th { color: var(--dark-gold); }
   inset: 0;
   z-index: 1200;
   display: grid;
-  place-items: center;
-  padding: 18px;
+  justify-items: center;
+  align-items: start;
+  padding: 88px 18px 18px;
   background: rgba(15, 23, 42, 0.56);
   backdrop-filter: blur(2px);
 }
@@ -5105,6 +5106,10 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 760px) {
+  .financial-health-journey-overlay {
+    padding-top: 72px;
+  }
+
   .financial-health-journey-modal {
     padding: 16px;
   }
