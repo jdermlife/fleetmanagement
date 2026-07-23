@@ -7,9 +7,12 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from app.fastapi_auth import CurrentUser
 from app.models.roles import Role
+from app.models.subscription import Subscription, SubscriptionPlan
 from app.models.users import User
 from app.routes import apple_auth as apple_auth_routes
+from app.routes import subscriptions as subscriptions_routes
 from app.routes import security as security_routes
 
 
@@ -116,6 +119,32 @@ def apple_auth_client(monkeypatch, fake_db: FakeSession):
     app.dependency_overrides.clear()
 
 
+@pytest.fixture
+def subscriptions_client(monkeypatch, fake_db: FakeSession):
+    monkeypatch.setenv("ENFORCE_AUTH", "true")
+    monkeypatch.setenv("SECRET_KEY", "test-secret-key-for-fastapi-auth")
+    monkeypatch.setenv("ENABLE_RATE_LIMIT", "false")
+
+    import security.auth as auth_module
+
+    auth_module = importlib.reload(auth_module)
+    subscriptions_module = importlib.reload(subscriptions_routes)
+
+    app = FastAPI()
+    app.include_router(subscriptions_module.router, prefix="/api")
+    monkeypatch.setattr(subscriptions_module, "SessionLocal", lambda: fake_db)
+    app.dependency_overrides[subscriptions_module.require_authenticated_user] = lambda: CurrentUser(
+        id=11,
+        username="subscriber",
+        role="subscriber_borrower",
+    )
+
+    with TestClient(app) as client:
+        yield client, auth_module, fake_db
+
+    app.dependency_overrides.clear()
+
+
 def test_register_endpoint_exists(app_client):
     client, _auth_module, fake_db = app_client
 
@@ -216,6 +245,32 @@ def test_apple_callback_route_has_a_readiness_page(app_client):
 
     assert response.status_code == 200
     assert "callback is ready" in response.text
+
+
+def test_create_free_subscription_allows_authenticated_subscriber(subscriptions_client):
+    client, _auth_module, fake_db = subscriptions_client
+
+    fake_db.rows_by_model[SubscriptionPlan] = [
+        SubscriptionPlan(
+            id=1,
+            plan_code="FREE",
+            plan_name="Free",
+            billing_cycle="MONTHLY",
+            is_active=True,
+            is_public=True,
+        )
+    ]
+    fake_db.rows_by_model[Subscription] = []
+
+    response = client.post(
+        "/api/subscriptions/create-free",
+        json={"user_id": 11},
+    )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["user_id"] == 11
+    assert payload["subscription_type"] == "FREE"
 
 
 def test_apple_callback_route_rejects_non_form_payloads(app_client):

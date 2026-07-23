@@ -11,6 +11,71 @@ import {
 } from '../../authRoles'
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
+function extractBackendErrorMessage(error: unknown): string | null {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return null
+  }
+
+  const response = (error as {
+    response?: {
+      data?: unknown
+    }
+  }).response
+
+  const payload = response?.data
+  if (!payload) {
+    return null
+  }
+
+  if (typeof payload === 'string' && payload.trim().length > 0) {
+    return payload.trim()
+  }
+
+  if (typeof payload !== 'object' || payload === null) {
+    return null
+  }
+
+  const candidate = payload as {
+    detail?: unknown
+    error?: unknown
+    message?: unknown
+  }
+
+  if (typeof candidate.detail === 'string' && candidate.detail.trim().length > 0) {
+    return candidate.detail.trim()
+  }
+
+  if (Array.isArray(candidate.detail)) {
+    const firstString = candidate.detail.find((entry) => typeof entry === 'string')
+    if (typeof firstString === 'string' && firstString.trim().length > 0) {
+      return firstString.trim()
+    }
+  }
+
+  if (typeof candidate.error === 'string' && candidate.error.trim().length > 0) {
+    return candidate.error.trim()
+  }
+
+  if (typeof candidate.message === 'string' && candidate.message.trim().length > 0) {
+    return candidate.message.trim()
+  }
+
+  return null
+}
+
+function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string {
+  const backendMessage = extractBackendErrorMessage(error)
+  if (backendMessage) {
+    return backendMessage
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return getErrorMessage(error, fallback)
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
@@ -101,7 +166,7 @@ export default function RegisterPage() {
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
     } catch (error) {
-      setMessage(getErrorMessage(error, 'Unable to continue with Google right now.'))
+      setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
       setIsSaving(false)
     }
@@ -134,11 +199,7 @@ export default function RegisterPage() {
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
     } catch (error) {
-      if (error instanceof Error && error.message) {
-        setAppleMessage(error.message)
-        return
-      }
-      setAppleMessage(getErrorMessage(error, 'Unable to continue with Apple right now.'))
+      setAppleMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Apple right now.'))
     } finally {
       setIsSaving(false)
       setIsAppleSaving(false)
@@ -228,14 +289,16 @@ export default function RegisterPage() {
         </p>
         <p className="auth-role-copy">Google Account</p>
         {isGoogleEnabled ? (
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
-            text="signup_with"
-            size="large"
-            theme="outline"
-            shape="rectangular"
-          />
+          <div className="register-google-button-wrap">
+            <GoogleLogin
+              onSuccess={handleGoogleSuccess}
+              onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+              text="signup_with"
+              size="large"
+              theme="outline"
+              shape="rectangular"
+            />
+          </div>
         ) : null}
         {!isGoogleEnabled ? (
           isGoogleConfigured

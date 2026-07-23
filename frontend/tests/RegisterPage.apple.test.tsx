@@ -91,6 +91,30 @@ describe('RegisterPage Apple sign-up', () => {
     expect((multipleProfile as HTMLInputElement).checked).toBe(false)
   })
 
+  it('shows backend Apple 403 detail message', async () => {
+    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
+    mockLoginWithApple.mockRejectedValue({
+      response: {
+        status: 403,
+        data: {
+          detail: 'Account expired due to non-payment. Complete payment to reactivate access.',
+        },
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent).toBe('Account expired due to non-payment. Complete payment to reactivate access.')
+  })
+
   it('exchanges the Apple token after all registration choices are completed', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
     mockLoginWithApple.mockResolvedValue({

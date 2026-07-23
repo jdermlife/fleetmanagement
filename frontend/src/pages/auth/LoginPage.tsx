@@ -1,4 +1,3 @@
-import axios from 'axios'
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
@@ -32,6 +31,70 @@ async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> 
 
 function getDefaultRedirectPath() {
   return '/financial-health-summary'
+}
+
+function getBackendErrorPayload(error: unknown): { status?: number; detail?: string } {
+  if (typeof error !== 'object' || error === null || !('response' in error)) {
+    return {}
+  }
+
+  const response = (error as {
+    response?: {
+      status?: unknown
+      data?: unknown
+    }
+  }).response
+
+  const status = typeof response?.status === 'number' ? response.status : undefined
+  const payload = response?.data
+
+  if (typeof payload === 'string' && payload.trim().length > 0) {
+    return { status, detail: payload.trim() }
+  }
+
+  if (typeof payload !== 'object' || payload === null) {
+    return { status }
+  }
+
+  const candidate = payload as {
+    detail?: unknown
+    error?: unknown
+    message?: unknown
+  }
+
+  if (typeof candidate.detail === 'string' && candidate.detail.trim().length > 0) {
+    return { status, detail: candidate.detail.trim() }
+  }
+
+  if (Array.isArray(candidate.detail)) {
+    const firstString = candidate.detail.find((entry) => typeof entry === 'string')
+    if (typeof firstString === 'string' && firstString.trim().length > 0) {
+      return { status, detail: firstString.trim() }
+    }
+  }
+
+  if (typeof candidate.error === 'string' && candidate.error.trim().length > 0) {
+    return { status, detail: candidate.error.trim() }
+  }
+
+  if (typeof candidate.message === 'string' && candidate.message.trim().length > 0) {
+    return { status, detail: candidate.message.trim() }
+  }
+
+  return { status }
+}
+
+function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string {
+  const { detail } = getBackendErrorPayload(error)
+  if (detail) {
+    return detail
+  }
+
+  if (error instanceof Error && error.message.trim().length > 0) {
+    return error.message
+  }
+
+  return getErrorMessage(error, fallback)
 }
 
 function MailIcon() {
@@ -147,25 +210,20 @@ export default function LoginPage() {
       const nextPath = await resolvePostLoginPath(loginResponse.user)
       navigate(nextPath)
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const detail =
-          typeof error.response?.data === 'object' && error.response?.data !== null
-            ? (error.response.data as { detail?: unknown }).detail
-            : undefined
-
-        if (
-          error.response?.status === 400 &&
-          typeof detail === 'string' &&
-          (
-            detail.toLowerCase().includes('first-time google sign-in') ||
-            detail.toLowerCase().includes('data-sharing preference')
-          )
-        ) {
-          setMessage('For first-time Google users, please use Create Account to select account type and preferences.')
-          return
-        }
+      const { status, detail } = getBackendErrorPayload(error)
+      if (
+        status === 400 &&
+        typeof detail === 'string' &&
+        (
+          detail.toLowerCase().includes('first-time google sign-in') ||
+          detail.toLowerCase().includes('data-sharing preference')
+        )
+      ) {
+        setMessage('For first-time Google users, please use Create Account to select account type and preferences.')
+        return
       }
-      setMessage(getErrorMessage(error, 'Unable to sign in with Google right now.'))
+
+      setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Google right now.'))
     } finally {
       setIsSaving(false)
     }
@@ -192,29 +250,20 @@ export default function LoginPage() {
       const nextPath = await resolvePostLoginPath(loginResponse.user)
       navigate(nextPath)
     } catch (error) {
-      if (axios.isAxiosError(error)) {
-        const detail =
-          typeof error.response?.data === 'object' && error.response?.data !== null
-            ? (error.response.data as { detail?: unknown }).detail
-            : undefined
-
-        if (
-          error.response?.status === 400 &&
-          typeof detail === 'string' &&
-          (
-            detail.toLowerCase().includes('first-time apple sign-in') ||
-            detail.toLowerCase().includes('data-sharing preference')
-          )
-        ) {
-          setMessage('For first-time Apple users, please use Create Account to select account type and preferences.')
-          return
-        }
-      }
-      if (error instanceof Error && error.message) {
-        setMessage(error.message)
+      const { status, detail } = getBackendErrorPayload(error)
+      if (
+        status === 400 &&
+        typeof detail === 'string' &&
+        (
+          detail.toLowerCase().includes('first-time apple sign-in') ||
+          detail.toLowerCase().includes('data-sharing preference')
+        )
+      ) {
+        setMessage('For first-time Apple users, please use Create Account to select account type and preferences.')
         return
       }
-      setMessage(getErrorMessage(error, 'Unable to sign in with Apple right now.'))
+
+      setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Apple right now.'))
     } finally {
       setIsSaving(false)
     }

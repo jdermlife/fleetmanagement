@@ -173,4 +173,31 @@ describe('LoginPage Apple sign-in', () => {
       )
     ).toBeTruthy()
   })
+
+  it('shows backend 403 detail for Apple sign-in failures', async () => {
+    mockRequestAppleSignInToken.mockResolvedValue({
+      idToken: 'apple-identity-token-123',
+    })
+    mockLoginWithApple.mockRejectedValue({
+      response: {
+        status: 403,
+        data: {
+          detail: 'Account expired due to non-payment. Complete payment to reactivate access.',
+        },
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /continue with apple/i }))
+
+    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(
+      await screen.findByText('Account expired due to non-payment. Complete payment to reactivate access.')
+    ).toBeTruthy()
+  })
 })

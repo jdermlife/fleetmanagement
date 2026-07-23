@@ -509,7 +509,7 @@ def get_my_subscription(
 @router.post("/create-free")
 def create_free_subscription(
     payload: FreeSubscriptionCreateRequest,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = _session_with_rls(user)
     try:

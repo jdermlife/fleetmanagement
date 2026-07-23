@@ -3455,6 +3455,19 @@ th { color: var(--dark-gold); }
 
 .auth-apple-button {
   gap: 8px;
+  width: 100%;
+}
+
+.register-google-button-wrap {
+  width: 100%;
+}
+
+.register-google-button-wrap > div {
+  width: 100% !important;
+}
+
+.register-google-button-wrap iframe {
+  width: 100% !important;
 }
 
 .auth-apple-icon {
