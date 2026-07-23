@@ -24,14 +24,6 @@ const PLAN_OPTIONS: PlanOption[] = [
   },
 ]
 
-function planById(planId: string | null): PlanOption | null {
-  if (planId !== 'single' && planId !== 'multiple') {
-    return null
-  }
-
-  return PLAN_OPTIONS.find((option) => option.id === planId) ?? null
-}
-
 export default function TrialExpiredReminderPage() {
   const navigate = useNavigate()
   return (
