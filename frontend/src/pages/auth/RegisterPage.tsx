@@ -170,9 +170,9 @@ export default function RegisterPage() {
 
   return (
     <div className="standalone-card auth-screen">
-      <h1>Create Account</h1>
+      <h1>Welcome to  FILSCORE ! Please Create Account</h1>
       <p className="intro">
-        Register a user. Review the legal disclosures and agree by ticking the boxes
+        Review the legal disclosures and agree by ticking the boxes
         before continuing.
       </p>
 
@@ -200,6 +200,25 @@ export default function RegisterPage() {
         </label>
 
         <fieldset className="auth-role-fieldset">
+          <legend>Marketing Consent</legend>
+          <p className="auth-role-copy">
+            Tick the box if you agree to receive marketing materials, notices, and related updates.
+          </p>
+          <label className="checkbox-label">
+            <input
+              type="checkbox"
+              checked={marketingConsent}
+              onChange={(event) => setMarketingConsent(event.target.checked)}
+            />
+            <span>
+              I agree to receive marketing materials, notices, and related product updates.
+            </span>
+          </label>
+        </fieldset>
+
+
+
+        <fieldset className="auth-role-fieldset">
           <legend>Subscriber type</legend>
           <p className="auth-role-copy">
             Select the access this new account should receive.
@@ -225,22 +244,7 @@ export default function RegisterPage() {
           </div>
         </fieldset>
 
-        <fieldset className="auth-role-fieldset">
-          <legend>Marketing Consent</legend>
-          <p className="auth-role-copy">
-            Tick the box if you agree to receive marketing materials, notices, and related updates.
-          </p>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={marketingConsent}
-              onChange={(event) => setMarketingConsent(event.target.checked)}
-            />
-            <span>
-              I agree to receive marketing materials, notices, and related product updates.
-            </span>
-          </label>
-        </fieldset>
+
 
         <fieldset className="auth-role-fieldset">
           <legend>Plan and Debit Payment</legend>
