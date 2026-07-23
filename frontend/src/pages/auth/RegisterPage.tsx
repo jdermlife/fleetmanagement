@@ -170,7 +170,7 @@ export default function RegisterPage() {
 
   return (
     <div className="standalone-card auth-screen">
-      <h1>Welcome to  FILSCORE ! Please Create Account</h1>
+      <h1>Welcome to your financial journey with FILSCORE!</h1>
       <p className="intro">
         Review the legal disclosures and agree by ticking the boxes
         before continuing.
