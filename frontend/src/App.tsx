@@ -136,6 +136,7 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
+  { id: 'subscription-payment', label: 'Subscription Payment' },
   { id: 'trial-expired', label: 'Trial Expired Reminder' },
 ]
 
@@ -216,6 +217,7 @@ const adminMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'subscription-payment',
   'trial-expired',
 ]
 
@@ -231,6 +233,7 @@ const subscriberHiddenMenus = [
   'risk-management',
   'compliance',
   'subscriptions',
+  'subscription-payment',
   'admin-users',
   'admin-roles',
   'admin-permissions',
