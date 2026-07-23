@@ -7,7 +7,6 @@ import {
   createPayPalOrder,
   createSubscriptionCheckout,
   createSubscription,
-  createSubscriptionPayment,
   getAuthToken,
   getErrorMessage,
   listSubscriptionPlans,
@@ -32,57 +31,6 @@ function billingAmount(plan: SubscriptionPlan): number {
     return monthlyPrice * 3 || minimumFee
   }
   return monthlyPrice || minimumFee
-}
-
-type PaymentChannel = 'Bank Transfer' | 'GCash' | 'Maya' | 'Manual Invoice' | 'Over-the-Counter'
-
-const DEFAULT_PAYMENT_CHANNEL = (import.meta.env.VITE_PAYMENT_DEFAULT_CHANNEL || 'Bank Transfer') as PaymentChannel
-
-const PAYMENT_CHANNEL_DETAILS: Record<PaymentChannel, { title: string; summary: string; referenceHint: string; detailLines: string[] }> = {
-  'Bank Transfer': {
-    title: 'Bank Transfer',
-    summary: 'Send the amount due to the bank account below and keep the transfer reference.',
-    referenceHint: 'Bank transfer reference or deposit slip number',
-    detailLines: [
-      `Bank: ${import.meta.env.VITE_PAYMENT_BANK_NAME || 'Replace with bank name'}`,
-      `Account Name: ${import.meta.env.VITE_PAYMENT_BANK_ACCOUNT_NAME || 'Replace with legal business name'}`,
-      `Account No.: ${import.meta.env.VITE_PAYMENT_BANK_ACCOUNT_NO || 'Replace with bank account number'}`,
-    ],
-  },
-  GCash: {
-    title: 'GCash',
-    summary: 'Pay to the GCash number below and save the transaction ID for submission.',
-    referenceHint: 'GCash reference number or transaction ID',
-    detailLines: [
-      `GCash No.: ${import.meta.env.VITE_PAYMENT_GCASH_NUMBER || 'Replace with GCash number'}`,
-      `Account Name: ${import.meta.env.VITE_PAYMENT_GCASH_NAME || 'Replace with wallet account name'}`,
-    ],
-  },
-  Maya: {
-    title: 'Maya',
-    summary: 'Pay to the Maya wallet below and keep the transfer reference for confirmation.',
-    referenceHint: 'Maya reference number or transaction ID',
-    detailLines: [
-      `Maya No.: ${import.meta.env.VITE_PAYMENT_MAYA_NUMBER || 'Replace with Maya number'}`,
-      `Account Name: ${import.meta.env.VITE_PAYMENT_MAYA_NAME || 'Replace with wallet account name'}`,
-    ],
-  },
-  'Manual Invoice': {
-    title: 'Manual Invoice',
-    summary: 'Use the invoice number issued by your team and submit the billing reference below.',
-    referenceHint: 'Invoice number or billing reference',
-    detailLines: [
-      `Billing Contact: ${import.meta.env.VITE_PAYMENT_SUPPORT_EMAIL || 'Replace with support email'}`,
-    ],
-  },
-  'Over-the-Counter': {
-    title: 'Over-the-Counter',
-    summary: 'Use the official receipt number from the counter or remittance center.',
-    referenceHint: 'Official receipt number',
-    detailLines: [
-      `Support Email: ${import.meta.env.VITE_PAYMENT_SUPPORT_EMAIL || 'Replace with support email'}`,
-    ],
-  },
 }
 
 function buildPendingSubscriptionNumber(plan: SubscriptionPlan): string {
@@ -197,14 +145,8 @@ export default function SubscriptionPaymentPage() {
   const [hasSubscriptionAccessDenied, setHasSubscriptionAccessDenied] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
-  const [paymentReference, setPaymentReference] = useState('')
-  const paymentMethod = DEFAULT_PAYMENT_CHANNEL
-  const [invoiceNo, setInvoiceNo] = useState('')
-  const [paymentAmount, setPaymentAmount] = useState('')
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
-  const invoiceNoRef = useRef('')
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
   const paypalStageRef = useRef<'create' | 'capture'>('create')
@@ -289,11 +231,6 @@ export default function SubscriptionPaymentPage() {
     [plans, paymentSubscription?.plan_id, selectedPlan],
   )
 
-  const paymentChannel = useMemo(
-    () => PAYMENT_CHANNEL_DETAILS[paymentMethod as PaymentChannel] ?? PAYMENT_CHANNEL_DETAILS['Bank Transfer'],
-    [paymentMethod],
-  )
-
   const paypalCurrency = useMemo(
     () => (selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP').toUpperCase(),
     [selectedSubscriptionPlan?.currency, selectedPlan?.currency],
@@ -318,12 +255,6 @@ export default function SubscriptionPaymentPage() {
     !hasSubscriptionAccessDenied &&
     Boolean(selectedSubscription || selectedPlan)
 
-  useEffect(() => {
-    if (!paymentAmount && dueAmount > 0) {
-      setPaymentAmount(dueAmount.toFixed(2))
-    }
-  }, [dueAmount, paymentAmount])
-
   const ensureSubscriptionForPayment = useCallback(async (): Promise<SubscriptionRecord | null> => {
     if (paymentSubscription) {
       return paymentSubscription
@@ -347,7 +278,6 @@ export default function SubscriptionPaymentPage() {
 
   const ensureSubscriptionForPaymentRef = useRef(ensureSubscriptionForPayment)
   ensureSubscriptionForPaymentRef.current = ensureSubscriptionForPayment
-  invoiceNoRef.current = invoiceNo
 
   useEffect(() => {
     if (!canRenderPayPalButtons) {
@@ -406,7 +336,7 @@ export default function SubscriptionPaymentPage() {
 
             const order = await createPayPalOrder({
               subscription_id: subscriptionForPayment.id,
-              invoice_no: invoiceNoRef.current.trim() || subscriptionForPayment.subscription_no,
+              invoice_no: subscriptionForPayment.subscription_no,
               request_id: requestId,
             })
 
@@ -480,45 +410,6 @@ export default function SubscriptionPaymentPage() {
     }
   }, [canRenderPayPalButtons, paypalCurrency])
 
-  const handleSubmitPayment = async () => {
-    if (!paymentReference.trim()) {
-      setPaymentMessage('Enter a payment reference before submitting.')
-      return
-    }
-
-    setIsSubmitting(true)
-    setPaymentMessage('')
-
-    try {
-      const subscriptionForPayment = await ensureSubscriptionForPayment()
-      if (!subscriptionForPayment) {
-        setPaymentMessage('Please select a valid subscription plan before submitting payment.')
-        return
-      }
-
-      await createSubscriptionPayment({
-        payment_reference: paymentReference.trim(),
-        subscription_id: subscriptionForPayment.id,
-        invoice_no: invoiceNo.trim() || subscriptionForPayment.subscription_no,
-        amount: Number(paymentAmount) || dueAmount,
-        currency: selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP',
-        payment_method: paymentMethod,
-        payment_status: 'PENDING',
-      })
-
-      navigate(`/subscription/payment?subscriptionId=${subscriptionForPayment.id}`, { replace: true })
-      setPaymentMessage(
-        'Payment submitted. Your subscription is awaiting confirmation and will activate once the payment is verified.',
-      )
-      setPaymentReference('')
-      setInvoiceNo('')
-    } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to submit payment right now.'))
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
   const handleStartCheckout = async () => {
     setIsStartingCheckout(true)
     setPaymentMessage('')
@@ -542,468 +433,181 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
-  const handleCopyChannelDetails = async () => {
-    const textToCopy = [paymentChannel.title, paymentChannel.summary, ...paymentChannel.detailLines].join('\n')
-
-    try {
-      await navigator.clipboard.writeText(textToCopy)
-      setPaymentMessage('Payment channel details copied to clipboard.')
-    } catch {
-      setPaymentMessage('Unable to copy details automatically. Please select and copy the instructions manually.')
-    }
-  }
-
   if (guestTrialPlan && guestPaymentLinks) {
     return (
-      <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(234,179,8,0.18),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#fff7e6_100%)] px-4 py-6 md:px-6">
-        <div className="mx-auto max-w-4xl">
-          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
-            <div className="border-b border-amber-200 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-700 px-6 py-7 text-white md:px-8">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-200">
-                Subscription Billing
-              </p>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
-                Subscription Payment
-              </h1>
-              <p className="mt-2 text-sm text-slate-200 md:text-base">
-                Continue your FILSCORE access by choosing a payment channel for the selected plan.
-              </p>
+      <div className="standalone-card auth-screen trial-expired-page subscription-payment-guest-page">
+        <h1>Subscription Payment</h1>
+        <p className="intro">
+          Continue your FILSCORE access by choosing a payment channel for the selected plan.
+        </p>
+
+        <section className="stack-panel auth-panel trial-expired-plan-summary">
+          <h2>{guestTrialPlan.title}</h2>
+          <p className="trial-expired-price">
+            {guestTrialPlan.currency} {guestTrialPlan.price.toFixed(2)}
+          </p>
+          <p>{guestTrialPlan.note}</p>
+        </section>
+
+        <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
+          <h2>Choose Payment Channel</h2>
+          <p>Select one secure payment option below.</p>
+          <div className="trial-expired-payment-buttons">
+            <div className="trial-expired-payment-option register-social-option">
+              <h3>PayMongo</h3>
+              <p>Continue to PayMongo for card, wallet, or other enabled checkout options.</p>
+              {isGuestPaymongoConfigured ? (
+                <a
+                  className="auth-link-button auth-apple-button"
+                  href={guestPaymentLinks.paymongo ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  Pay with PayMongo
+                </a>
+              ) : (
+                <>
+                  <button type="button" className="auth-link-button auth-apple-button" disabled>
+                    Pay with PayMongo
+                  </button>
+                  <p className="trial-expired-payment-error">PayMongo payment link is not configured yet.</p>
+                </>
+              )}
             </div>
 
-            <div className="grid gap-6 px-6 py-6 md:px-8">
-              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Current Selection</p>
-                <h2 className="mt-2 text-2xl font-semibold text-slate-900">{guestTrialPlan.title}</h2>
-                <p className="mt-3 text-lg font-semibold text-amber-900">
-                  {guestTrialPlan.currency} {guestTrialPlan.price.toFixed(2)}
-                </p>
-                <p className="mt-2 text-sm text-slate-600">{guestTrialPlan.note}</p>
-              </div>
-
-              <div className="grid gap-5 lg:grid-cols-2">
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-                    PayMongo Checkout
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Continue to PayMongo for card, wallet, or other enabled checkout options.
-                  </p>
-                  <div className="mt-5 form-actions">
-                    {isGuestPaymongoConfigured ? (
-                      <a
-                        className="auth-link-button"
-                        href={guestPaymentLinks.paymongo ?? undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Pay with PayMongo
-                      </a>
-                    ) : (
-                      <button type="button" className="auth-link-button" disabled>
-                        Pay with PayMongo
-                      </button>
-                    )}
-                  </div>
-                  {!isGuestPaymongoConfigured ? (
-                    <p className="mt-3 text-sm text-rose-700">
-                      PayMongo payment link is not configured yet.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-                    PayPal Checkout
-                  </h3>
-                  <p className="mt-2 text-sm text-slate-500">
-                    Continue to PayPal for secure approval and payment completion.
-                  </p>
-                  <div className="mt-5 form-actions">
-                    {isGuestPaypalConfigured ? (
-                      <a
-                        className="auth-link-button"
-                        href={guestPaymentLinks.paypal ?? undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        Pay with PayPal
-                      </a>
-                    ) : (
-                      <button type="button" className="auth-link-button" disabled>
-                        Pay with PayPal
-                      </button>
-                    )}
-                  </div>
-                  {!isGuestPaypalConfigured ? (
-                    <p className="mt-3 text-sm text-rose-700">
-                      PayPal payment link is not configured yet.
-                    </p>
-                  ) : null}
-                </div>
-              </div>
-
-              <div className="form-actions">
-                <button
-                  type="button"
-                  className="auth-link-button"
-                  onClick={() => navigate('/trial-expired')}
+            <div className="trial-expired-payment-option register-social-option">
+              <h3>PayPal</h3>
+              <p>Continue to PayPal for secure approval and payment completion.</p>
+              {isGuestPaypalConfigured ? (
+                <a
+                  className="auth-link-button auth-apple-button"
+                  href={guestPaymentLinks.paypal ?? undefined}
+                  target="_blank"
+                  rel="noreferrer"
                 >
-                  Choose Another Plan
-                </button>
-                <Link className="auth-link-button" to="/login">
-                  Back to Login
-                </Link>
-              </div>
+                  Pay with PayPal
+                </a>
+              ) : (
+                <>
+                  <button type="button" className="auth-link-button auth-apple-button" disabled>
+                    Pay with PayPal
+                  </button>
+                  <p className="trial-expired-payment-error">PayPal payment link is not configured yet.</p>
+                </>
+              )}
             </div>
           </div>
+        </section>
+
+        <div className="form-actions">
+          <button
+            type="button"
+            className="auth-link-button"
+            onClick={() => navigate('/trial-expired')}
+          >
+            Choose Another Plan
+          </button>
+          <Link className="auth-link-button" to="/login">
+            Back to Login
+          </Link>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(234,179,8,0.18),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#fff7e6_100%)] px-4 py-6 md:px-6">
-      <div className="mx-auto max-w-6xl">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
-          <div className="border-b border-amber-200 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-700 px-6 py-7 text-white md:px-8">
-            <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-              <div className="max-w-3xl space-y-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-200">
-                  Subscription Billing
-                </p>
-                <div>
-                  <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">
-                    Subscription Payment
-                  </h1>
-                  <p className="mt-2 text-sm text-slate-200 md:text-base">
-                    Pay with PayMongo, PayPal, or a manual channel. Every path resolves into the same subscription ledger.
-                  </p>
-                </div>
+    <div className="standalone-card auth-screen trial-expired-page subscription-payment-guest-page">
+      <h1>Subscription Payment</h1>
+      <p className="intro">
+        Choose a secure payment option to continue or renew your FILSCORE access.
+      </p>
+
+      {loadMessage ? <p className="status-message status-error">{loadMessage}</p> : null}
+      {paymentMessage ? <p className="status-message">{paymentMessage}</p> : null}
+
+      {isLoading ? <p className="status-message">Loading payment details...</p> : null}
+
+      {!isLoading && !hasSubscriptionAccessDenied && (selectedSubscription || selectedPlan) ? (
+        <>
+          <section className="stack-panel auth-panel trial-expired-plan-summary">
+            <h2>{selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}</h2>
+            <p className="trial-expired-price">
+              {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)}
+            </p>
+            <p>
+              Billing cycle: {(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
+            </p>
+            <p>
+              Subscription reference: {paymentSubscription ? paymentSubscription.subscription_no : selectedPlan?.plan_code ?? 'Pending'}
+            </p>
+            {!paymentSubscription && selectedPlan ? (
+              <p>
+                A pending subscription for <strong>{selectedPlan.plan_name}</strong> will be created automatically when you start payment.
+              </p>
+            ) : null}
+          </section>
+
+          <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
+            <h2>Choose Payment Channel</h2>
+            <p>Select one secure payment option below.</p>
+
+            <div className="trial-expired-payment-buttons">
+              <div className="trial-expired-payment-option register-social-option">
+                <h3>PayMongo</h3>
+                <p>Pay by an available card or e-wallet on PayMongo&apos;s hosted checkout page.</p>
+                <button
+                  type="button"
+                  className="auth-link-button auth-apple-button"
+                  onClick={() => void handleStartCheckout()}
+                  disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
+                >
+                  {isStartingCheckout ? 'Starting secure checkout...' : 'Pay with PayMongo'}
+                </button>
               </div>
 
-              <div className="grid gap-2 text-sm text-slate-100 sm:grid-cols-2 lg:grid-cols-1 lg:text-right">
-                <div className="rounded-2xl border border-amber-200/20 bg-white/10 px-4 py-3 backdrop-blur">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-300">Amount Due</div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)}
-                  </div>
-                </div>
-                <div className="rounded-2xl border border-amber-200/20 bg-white/10 px-4 py-3 backdrop-blur">
-                  <div className="text-[11px] uppercase tracking-[0.2em] text-slate-300">Billing Cycle</div>
-                  <div className="mt-1 text-lg font-semibold">
-                    {(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {loadMessage ? (
-            <div className="border-b border-rose-200 bg-rose-50 px-6 py-4 text-sm text-rose-700 md:px-8">
-              {loadMessage}
-            </div>
-          ) : null}
-
-          {paymentMessage ? (
-            <div className="border-b border-slate-200 bg-slate-50 px-6 py-4 text-sm text-slate-700 md:px-8">
-              {paymentMessage}
-            </div>
-          ) : null}
-
-          {isLoading ? (
-            <div className="px-6 py-10 text-sm text-slate-600 md:px-8">Loading payment details...</div>
-          ) : null}
-
-          {!isLoading && !hasSubscriptionAccessDenied && (selectedSubscription || selectedPlan) ? (
-            <div className="grid gap-6 px-6 py-6 md:px-8 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)] xl:items-start">
-              <div className="space-y-5">
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                    <div>
-                      <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Current Selection</p>
-                      <h2 className="mt-2 text-2xl font-semibold text-slate-900">
-                        {selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}
-                      </h2>
-                    </div>
-                    <div className="rounded-full border border-amber-200 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.16em] text-amber-700">
-                      {paymentSubscription ? paymentSubscription.subscription_no : selectedPlan?.plan_code ?? 'Pending'}
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-3">
-                    <div className="rounded-2xl border border-amber-100 bg-white p-4">
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Support Level</div>
-                      <div className="mt-2 text-sm font-semibold text-slate-900">
-                        {selectedSubscriptionPlan?.support_level ?? selectedPlan?.support_level ?? 'N/A'}
-                      </div>
-                    </div>
-                    <div className="rounded-2xl border border-amber-100 bg-white p-4">
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Payment Path</div>
-                      <div className="mt-2 text-sm font-semibold text-slate-900">Hosted, PayPal, or manual</div>
-                    </div>
-                    <div className="rounded-2xl border border-amber-100 bg-white p-4">
-                      <div className="text-[11px] uppercase tracking-[0.2em] text-slate-500">Status</div>
-                      <div className="mt-2 text-sm font-semibold text-slate-900">Ready for payment</div>
-                    </div>
-                  </div>
-
-                  {!paymentSubscription && selectedPlan ? (
-                    <p className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-950">
-                      A pending subscription for <strong>{selectedPlan.plan_name}</strong> will be created automatically when you submit payment.
-                    </p>
-                  ) : null}
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-                        Secure Online Checkout
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Pay by an available card or e-wallet on PayMongo&apos;s hosted checkout page.
-                      </p>
-                    </div>
-                  </div>
-                  <div className="form-actions">
-                    <button
-                      type="button"
-                      onClick={() => void handleStartCheckout()}
-                      disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
-                      className="min-h-[48px] rounded-full border border-slate-950 bg-slate-950 px-6 text-sm font-semibold tracking-wide text-white shadow-[0_10px_18px_rgba(15,23,42,0.12)] transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      {isStartingCheckout ? 'Starting secure checkout...' : 'Pay Now with PayMongo'}
+              <div className="trial-expired-payment-option register-social-option">
+                <h3>PayPal</h3>
+                <p>Use the official PayPal button to approve and complete payment securely.</p>
+                {PAYPAL_CLIENT_ID ? (
+                  <div
+                    ref={paypalButtonContainerRef}
+                    className="trial-expired-paypal-container register-google-button-wrap"
+                    style={{ minHeight: '56px' }}
+                  />
+                ) : (
+                  <>
+                    <button type="button" className="auth-link-button auth-apple-button" disabled>
+                      Pay with PayPal
                     </button>
-                  </div>
-                  <p className="mt-3 text-sm text-slate-500">
-                    Available methods depend on the payment methods enabled for your PayMongo merchant account.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-                        PayPal Checkout
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Use the official PayPal button to approve and complete payment in PayPal.
-                      </p>
-                    </div>
-                  </div>
-                  {PAYPAL_CLIENT_ID ? (
-                    <div
-                      ref={paypalButtonContainerRef}
-                      className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-white p-4 shadow-inner"
-                      style={{ minHeight: '56px' }}
-                    />
-                  ) : (
-                    <p className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                    <p className="trial-expired-payment-error">
                       PayPal Buttons are unavailable because VITE_PAYPAL_CLIENT_ID is not configured.
                     </p>
-                  )}
-                  <p className="mt-3 text-sm text-slate-500">
-                    Secure approval and capture are handled through the official PayPal SDK.
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-slate-600">
-                        Manual Payment Instructions
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Use the configured channel below, keep the reference or receipt number, then submit it for confirmation.
-                      </p>
-                    </div>
-                    <button type="button" onClick={() => void handleCopyChannelDetails()} className="rounded-full border border-amber-700 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.12em] text-amber-800 shadow-sm transition hover:bg-amber-50">
-                      Copy details
-                    </button>
-                  </div>
-                  <div className="rounded-xl border border-amber-100 bg-amber-50 p-4">
-                    <h5 className="text-sm font-semibold text-slate-800">{paymentChannel.title}</h5>
-                    <p className="mt-1 text-sm text-slate-600">{paymentChannel.summary}</p>
-                    <ul className="mt-3 space-y-1 text-sm text-slate-700">
-                      {paymentChannel.detailLines.map((line) => (
-                        <li key={line}>• {line}</li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
-                        Submit Manual Payment Details
-                      </h3>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Submit references only after the payment has been sent.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid gap-4 md:grid-cols-2">
-                    <label className="block md:col-span-2">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Subscription
-                      </span>
-                      <select
-                        value={paymentSubscription?.id ?? ''}
-                        onChange={(event) => {
-                          const subscriptionId = Number(event.target.value)
-                          const nextSubscription = subscriptions.find((item) => item.id === subscriptionId) ?? null
-                          if (nextSubscription) {
-                            navigate(`/subscription-payment?subscriptionId=${nextSubscription.id}`)
-                          }
-                        }}
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                      >
-                        {!paymentSubscription && selectedPlan ? <option value="">Create a new subscription for this plan</option> : null}
-                        {subscriptions.length === 0 ? <option value="">No subscriptions available</option> : null}
-                        {subscriptions.map((subscription) => (
-                          <option key={subscription.id} value={subscription.id}>
-                            {subscription.subscription_no} - {subscription.status}
-                          </option>
-                        ))}
-                      </select>
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Payment Method
-                      </span>
-                      <input value={paymentMethod} readOnly className="w-full rounded-2xl border border-slate-300 bg-slate-50 px-4 py-3 text-sm text-slate-800 shadow-sm" />
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Amount Paid
-                      </span>
-                      <input
-                        type="number"
-                        step="0.01"
-                        min="0"
-                        value={paymentAmount}
-                        onChange={(event) => setPaymentAmount(event.target.value)}
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                      />
-                    </label>
-
-                    <label className="block">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Payment Reference / Transaction ID
-                      </span>
-                      <input
-                        value={paymentReference}
-                        onChange={(event) => setPaymentReference(event.target.value)}
-                        placeholder={paymentChannel.referenceHint}
-                        required
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100 md:col-span-2"
-                      />
-                    </label>
-
-                    <label className="block md:col-span-2">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                        Invoice No. / Billing Reference
-                      </span>
-                      <input
-                        value={invoiceNo}
-                        onChange={(event) => setInvoiceNo(event.target.value)}
-                        placeholder={paymentSubscription?.subscription_no ?? 'Enter invoice reference'}
-                        className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-amber-500 focus:ring-2 focus:ring-amber-100"
-                      />
-                    </label>
-                  </div>
-
-                  <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-                    <p className="text-sm text-slate-500">
-                      Submitted payments stay <strong className="text-slate-700">PENDING</strong> until verified or confirmed.
-                    </p>
-                    <div className="form-actions">
-                      <button
-                        type="button"
-                        onClick={() => void handleSubmitPayment()}
-                        disabled={isSubmitting || (!paymentSubscription && !selectedPlan)}
-                        className="min-h-[48px] rounded-full border border-amber-700 bg-amber-600 px-6 text-sm font-semibold tracking-wide text-white shadow-[0_10px_18px_rgba(217,119,6,0.22)] transition hover:bg-amber-700 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isSubmitting ? 'Submitting...' : 'Submit Payment'}
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <aside className="space-y-5">
-                <div className="rounded-2xl border border-amber-100 bg-amber-50/60 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)] xl:sticky xl:top-6">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
-                    Payment Overview
-                  </p>
-                  <div className="mt-4 space-y-4">
-                    <div>
-                      <div className="text-sm text-slate-500">Plan</div>
-                      <div className="mt-1 font-semibold text-slate-900">
-                        {selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-slate-500">Subscription</div>
-                      <div className="mt-1 font-semibold text-slate-900">
-                        {paymentSubscription ? paymentSubscription.subscription_no : 'Pending creation'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-slate-500">Currency</div>
-                      <div className="mt-1 font-semibold text-slate-900">
-                        {selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP'}
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-sm text-slate-500">Due Amount</div>
-                      <div className="mt-1 text-2xl font-semibold text-slate-900">
-                        {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                  <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">
-                    Quick Notes
-                  </p>
-                  <ul className="mt-4 space-y-3 text-sm text-slate-600">
-                    <li className="rounded-xl bg-slate-50 px-4 py-3">PayPal approval is handled by the official SDK button.</li>
-                    <li className="rounded-xl bg-slate-50 px-4 py-3">Manual references should match the submitted payment exactly.</li>
-                    <li className="rounded-xl bg-slate-50 px-4 py-3">Gateway errors are translated into action-oriented messages.</li>
-                  </ul>
-                </div>
-              </aside>
-            </div>
-          ) : null}
-
-          {!isLoading && hasSubscriptionAccessDenied ? (
-            <div className="px-6 py-10 md:px-8">
-              <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
-            </div>
-          ) : null}
-
-          {!isLoading && !hasSubscriptionAccessDenied && !selectedSubscription && !selectedPlan ? (
-            <div className="px-6 py-10 md:px-8">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-6 text-center shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
-                <p className="text-sm text-slate-600">
-                  No subscription selected. Please choose or create a subscription from your account page first.
-                </p>
-                <div className="mt-4 flex justify-center">
-                  <button type="button" onClick={() => navigate('/account')}>
-                    Go to Account
-                  </button>
-                </div>
+                  </>
+                )}
               </div>
             </div>
-          ) : null}
+          </section>
+        </>
+      ) : null}
+
+      {!isLoading && hasSubscriptionAccessDenied ? (
+        <div className="stack-panel auth-panel">
+          <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
         </div>
-      </div>
+      ) : null}
+
+      {!isLoading && !hasSubscriptionAccessDenied && !selectedSubscription && !selectedPlan ? (
+        <section className="stack-panel auth-panel">
+          <p className="status-message">
+            No subscription selected. Please choose or create a subscription from your account page first.
+          </p>
+          <div className="form-actions">
+            <button type="button" className="auth-link-button" onClick={() => navigate('/account')}>
+              Go to Account
+            </button>
+          </div>
+        </section>
+      ) : null}
     </div>
   )
 }

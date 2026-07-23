@@ -5098,6 +5098,35 @@ th { color: var(--dark-gold); }
   gap: 10px;
 }
 
+.trial-expired-payment-option {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(184, 134, 11, 0.24);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.trial-expired-payment-option h3,
+.trial-expired-payment-option p {
+  margin: 0;
+}
+
+.trial-expired-paypal-container {
+  width: min(100%, 420px);
+}
+
+.trial-expired-paypal-container > div,
+.trial-expired-paypal-container iframe {
+  width: 100% !important;
+}
+
+.trial-expired-payment-error {
+  color: #b42318;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 @media (max-width: 760px) {
   .trial-expired-plan-grid,
   .trial-expired-payment-buttons {
