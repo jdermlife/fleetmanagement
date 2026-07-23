@@ -287,48 +287,55 @@ export default function RegisterPage() {
         <p className="auth-role-copy">
           <strong>Create Account Using:</strong>
         </p>
-        <p className="auth-role-copy">Google Account</p>
-        {isGoogleEnabled ? (
-          <div className="register-google-button-wrap">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
-              text="signup_with"
-              size="large"
-              theme="outline"
-              shape="rectangular"
-            />
-          </div>
-        ) : null}
-        {!isGoogleEnabled ? (
-          isGoogleConfigured
-            ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
-            : <p className="status-message">Google Sign-Up is available when configured.</p>
-        ) : null}
+        <div className="register-social-option">
+          <p className="auth-role-copy register-social-label">Google Account</p>
+          {isGoogleEnabled ? (
+            <div className="register-google-button-wrap">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+                text="signup_with"
+                size="large"
+                theme="outline"
+                shape="rectangular"
+                width={420}
+              />
+            </div>
+          ) : null}
+          {!isGoogleEnabled ? (
+            isGoogleConfigured
+              ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
+              : <p className="status-message">Google Sign-Up is available when configured.</p>
+          ) : null}
+        </div>
 
-        <p className="auth-role-copy">Apple Account</p>
-        <button
-          type="button"
-          className="auth-link-button auth-apple-button"
-          onClick={() => {
-            void handleAppleSignUp()
-          }}
-          disabled={isSaving}
-          aria-describedby={appleMessage ? 'apple-sign-up-message' : undefined}
-        >
-          <svg className="auth-apple-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-            <path
-              fill="currentColor"
-              d="M11.182.008c0 .99-.37 1.98-1.04 2.68-.7.73-1.84 1.29-2.84 1.21-.13-.98.34-2 1.02-2.7.74-.76 1.93-1.3 2.86-1.19zM14.6 11.32c-.1.22-.2.42-.32.62-.18.29-.36.58-.56.86-.28.4-.5.68-.69.86-.29.3-.6.45-.93.46-.24 0-.53-.07-.86-.2-.34-.13-.65-.2-.94-.2-.3 0-.62.07-.97.2-.35.13-.63.2-.85.21-.32.01-.64-.15-.94-.47-.2-.2-.43-.5-.72-.9-.31-.44-.57-.95-.77-1.52-.22-.61-.33-1.2-.33-1.76 0-.65.14-1.22.42-1.71.22-.39.52-.7.88-.93.37-.23.77-.35 1.2-.35.26 0 .6.08 1 .24.4.16.67.24.78.24.08 0 .37-.09.85-.28.46-.18.85-.26 1.17-.24.88.07 1.53.42 1.97 1.05-.79.47-1.18 1.12-1.17 1.95 0 .65.24 1.2.72 1.63.22.2.46.35.73.45-.06.2-.12.39-.2.57z"
-            />
-          </svg>
-          {isAppleSaving ? 'Continuing with Apple...' : 'Sign with Apple'}
-        </button>
-        {appleMessage ? (
-          <p id="apple-sign-up-message" className="status-message status-error" role="alert">
-            {appleMessage}
-          </p>
-        ) : null}
+        <div className="register-social-divider" aria-hidden="true" />
+
+        <div className="register-social-option">
+          <p className="auth-role-copy register-social-label">Apple Account</p>
+          <button
+            type="button"
+            className="auth-link-button auth-apple-button"
+            onClick={() => {
+              void handleAppleSignUp()
+            }}
+            disabled={isSaving}
+            aria-describedby={appleMessage ? 'apple-sign-up-message' : undefined}
+          >
+            <svg className="auth-apple-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
+              <path
+                fill="currentColor"
+                d="M11.182.008c0 .99-.37 1.98-1.04 2.68-.7.73-1.84 1.29-2.84 1.21-.13-.98.34-2 1.02-2.7.74-.76 1.93-1.3 2.86-1.19zM14.6 11.32c-.1.22-.2.42-.32.62-.18.29-.36.58-.56.86-.28.4-.5.68-.69.86-.29.3-.6.45-.93.46-.24 0-.53-.07-.86-.2-.34-.13-.65-.2-.94-.2-.3 0-.62.07-.97.2-.35.13-.63.2-.85.21-.32.01-.64-.15-.94-.47-.2-.2-.43-.5-.72-.9-.31-.44-.57-.95-.77-1.52-.22-.61-.33-1.2-.33-1.76 0-.65.14-1.22.42-1.71.22-.39.52-.7.88-.93.37-.23.77-.35 1.2-.35.26 0 .6.08 1 .24.4.16.67.24.78.24.08 0 .37-.09.85-.28.46-.18.85-.26 1.17-.24.88.07 1.53.42 1.97 1.05-.79.47-1.18 1.12-1.17 1.95 0 .65.24 1.2.72 1.63.22.2.46.35.73.45-.06.2-.12.39-.2.57z"
+              />
+            </svg>
+            {isAppleSaving ? 'Continuing with Apple...' : 'Sign with Apple'}
+          </button>
+          {appleMessage ? (
+            <p id="apple-sign-up-message" className="status-message status-error" role="alert">
+              {appleMessage}
+            </p>
+          ) : null}
+        </div>
 
         <p className="auth-role-copy">
           <strong>Other Email</strong>
