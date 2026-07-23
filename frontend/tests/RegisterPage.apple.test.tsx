@@ -91,7 +91,7 @@ describe('RegisterPage Apple sign-up', () => {
     expect((multipleProfile as HTMLInputElement).checked).toBe(false)
   })
 
-  it('shows backend Apple 403 detail message', async () => {
+  it('redirects expired trial users to the trial reminder page', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
     mockLoginWithApple.mockRejectedValue({
       response: {
@@ -111,8 +111,9 @@ describe('RegisterPage Apple sign-up', () => {
     const user = await completeAppleRegistrationChoices()
     await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
 
-    const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toBe('Account expired due to non-payment. Complete payment to reactivate access.')
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/trial-expired?source=register-apple')
+    })
   })
 
   it('exchanges the Apple token after all registration choices are completed', async () => {

@@ -82,6 +82,7 @@ const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage')
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
+const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
 const BillingPage = lazyWithRetry(() => import('./pages/subscriptions/BillingPage'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
 const CompliancePage = lazy(() => import('./pages/governance/CompliancePage'))
@@ -1251,6 +1252,16 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/register"
               element={<RegisterPage />}
+            />
+
+            <Route
+              path="/trial-expired"
+              element={<TrialExpiredReminderPage />}
+            />
+
+            <Route
+              path="/trial-expired/payment"
+              element={<TrialExpiredReminderPage />}
             />
 
             <Route

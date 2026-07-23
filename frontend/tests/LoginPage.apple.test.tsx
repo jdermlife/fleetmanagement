@@ -174,7 +174,7 @@ describe('LoginPage Apple sign-in', () => {
     ).toBeTruthy()
   })
 
-  it('shows backend 403 detail for Apple sign-in failures', async () => {
+  it('redirects expired trial users to the trial reminder page', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
     })
@@ -195,9 +195,8 @@ describe('LoginPage Apple sign-in', () => {
 
     await userEvent.click(screen.getByRole('button', { name: /continue with apple/i }))
 
-    expect(mockNavigate).not.toHaveBeenCalled()
-    expect(
-      await screen.findByText('Account expired due to non-payment. Complete payment to reactivate access.')
-    ).toBeTruthy()
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/trial-expired?source=apple')
+    })
   })
 })

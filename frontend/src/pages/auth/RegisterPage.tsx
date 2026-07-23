@@ -76,6 +76,15 @@ function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string
   return getErrorMessage(error, fallback)
 }
 
+function isTrialExpiredMessage(message: string | null | undefined): boolean {
+  const normalized = (message || '').trim().toLowerCase()
+  if (!normalized) {
+    return false
+  }
+
+  return normalized.includes('expired due to non-payment')
+}
+
 export default function RegisterPage() {
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
@@ -166,6 +175,12 @@ export default function RegisterPage() {
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
     } catch (error) {
+      const backendMessage = extractBackendErrorMessage(error)
+      if (isTrialExpiredMessage(backendMessage)) {
+        navigate('/trial-expired?source=register-google')
+        return
+      }
+
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
       setIsSaving(false)
@@ -199,6 +214,12 @@ export default function RegisterPage() {
       await createFreeSubscription({ user_id: loginResponse.user.id })
       navigate('/financial-health-summary', { replace: true })
     } catch (error) {
+      const backendMessage = extractBackendErrorMessage(error)
+      if (isTrialExpiredMessage(backendMessage)) {
+        navigate('/trial-expired?source=register-apple')
+        return
+      }
+
       setAppleMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Apple right now.'))
     } finally {
       setIsSaving(false)
@@ -279,6 +300,28 @@ export default function RegisterPage() {
                 </span>
               </label>
             ))}
+          </div>
+        </fieldset>
+
+        <fieldset className="auth-role-fieldset">
+          <legend>Subscription Plan</legend>
+          <p className="auth-role-copy">
+            Default subscription plan for new accounts.
+          </p>
+          <div className="auth-role-options">
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="subscription-plan"
+                value="FREE_TRIAL"
+                checked
+                readOnly
+              />
+              <span>
+                <strong>Free</strong>
+                <small>Trial for 2 days</small>
+              </span>
+            </label>
           </div>
         </fieldset>
       </div>

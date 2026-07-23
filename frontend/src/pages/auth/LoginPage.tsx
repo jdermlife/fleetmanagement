@@ -97,6 +97,15 @@ function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string
   return getErrorMessage(error, fallback)
 }
 
+function isTrialExpiredMessage(message: string | undefined): boolean {
+  const normalized = (message || '').trim().toLowerCase()
+  if (!normalized) {
+    return false
+  }
+
+  return normalized.includes('expired due to non-payment')
+}
+
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -188,7 +197,13 @@ export default function LoginPage() {
       const nextPath = await resolvePostLoginPath(response.user)
       navigate(nextPath)
     } catch (error) {
-      setMessage(getErrorMessage(error, 'Unable to sign in right now.'))
+      const resolvedMessage = getErrorMessage(error, 'Unable to sign in right now.')
+      if (isTrialExpiredMessage(resolvedMessage)) {
+        navigate('/trial-expired?source=login')
+        return
+      }
+
+      setMessage(resolvedMessage)
     } finally {
       setIsSaving(false)
     }
@@ -220,6 +235,11 @@ export default function LoginPage() {
         )
       ) {
         setMessage('For first-time Google users, please use Create Account to select account type and preferences.')
+        return
+      }
+
+      if (isTrialExpiredMessage(detail)) {
+        navigate('/trial-expired?source=google')
         return
       }
 
@@ -260,6 +280,11 @@ export default function LoginPage() {
         )
       ) {
         setMessage('For first-time Apple users, please use Create Account to select account type and preferences.')
+        return
+      }
+
+      if (isTrialExpiredMessage(detail)) {
+        navigate('/trial-expired?source=apple')
         return
       }
 
