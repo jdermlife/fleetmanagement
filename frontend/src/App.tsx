@@ -136,6 +136,7 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
+  { id: 'trial-expired', label: 'Trial Expired Reminder' },
 ]
 
 const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
@@ -215,6 +216,7 @@ const adminMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'trial-expired',
 ]
 
 const subscriberHiddenMenus = [
@@ -232,6 +234,7 @@ const subscriberHiddenMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'trial-expired',
 ]
 
 const subscriberAlwaysVisibleMenus = [

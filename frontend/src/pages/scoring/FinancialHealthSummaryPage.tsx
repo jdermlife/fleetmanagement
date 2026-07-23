@@ -47,7 +47,7 @@ type LendingLeafSegment = {
   fill: string
 }
 
-type JourneyStepId = 'creditHealth' | 'wealthBuilder' | 'budgetTargets' | 'billsLoans' | 'aiAdvisor'
+type JourneyStepId = 'creditHealth' | 'wealthBuilder' | 'budgetTargets' | 'billsLoans' | 'billManager'
 
 type JourneyStep = {
   id: JourneyStepId
@@ -84,24 +84,23 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billsLoans',
-    label: 'Bills & Loans',
-    launchLabel: 'Manage Loans & Bills',
+    label: 'Loans',
+    launchLabel: 'Optimize Loan',
     route: '/loan-monitoring',
     description:
-      'Enter loans, credit cards, monthly bills, and due dates for optimization recommendations.',
+      'Enter loans and credit obligations to get optimization recommendations.',
   },
   {
-    id: 'aiAdvisor',
-    label: 'AI Advisor',
-    launchLabel: 'Activate My AI Advisor',
-    route: '/ai-dashboard',
+    id: 'billManager',
+    label: 'Bill Manager',
+    launchLabel: 'Manage Bills',
+    route: '/bill-reminder',
     description:
-      'Activate the FILSCORE AI Trainer for personalized coaching, reminders, and financial insights.',
+      'Manage your bills.',
   },
 ]
 
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
-const JOURNEY_AI_ACTIVATED_STORAGE_KEY = 'fms:journey:ai-advisor-activated'
 const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
 
 function safeStorageGet(key: string): string | null {
@@ -414,7 +413,7 @@ export default function FinancialHealthSummaryPage() {
     wealthBuilder: false,
     budgetTargets: false,
     billsLoans: false,
-    aiAdvisor: false,
+    billManager: false,
   })
   const [isJourneyMinimized, setIsJourneyMinimized] = useState<boolean>(() => {
     return safeStorageGet(JOURNEY_MINIMIZED_STORAGE_KEY) === '1'
@@ -430,9 +429,6 @@ export default function FinancialHealthSummaryPage() {
     let disposed = false
 
     const loadNetWorthDraft = async () => {
-      const aiAdvisorActivated =
-        safeStorageGet(JOURNEY_AI_ACTIVATED_STORAGE_KEY) === '1'
-
       try {
         const [
           netWorthDraft,
@@ -470,7 +466,7 @@ export default function FinancialHealthSummaryPage() {
             wealthBuilder: hasMeaningfulValue(wealthPayload),
             budgetTargets: hasMeaningfulValue(budgetPayload),
             billsLoans: hasMeaningfulValue(billPayload) || hasMeaningfulValue(lendingPayload),
-            aiAdvisor: aiAdvisorActivated,
+            billManager: hasMeaningfulValue(billPayload),
           })
         }
       } catch {
@@ -480,7 +476,7 @@ export default function FinancialHealthSummaryPage() {
           setLendingLeafScores(null)
           setJourneyStepCompletion((current) => ({
             ...current,
-            aiAdvisor: aiAdvisorActivated,
+            billManager: false,
           }))
         }
       }
@@ -528,14 +524,6 @@ export default function FinancialHealthSummaryPage() {
   }
 
   const launchJourneyStep = (step: JourneyStep) => {
-    if (step.id === 'aiAdvisor') {
-      safeStorageSet(JOURNEY_AI_ACTIVATED_STORAGE_KEY, '1')
-      setJourneyStepCompletion((current) => ({
-        ...current,
-        aiAdvisor: true,
-      }))
-    }
-
     if (typeof window !== 'undefined') {
       window.location.assign(step.route)
     }
