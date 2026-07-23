@@ -1363,6 +1363,17 @@ export async function createPayMongoCheckout(payload: {
   return response.data
 }
 
+export async function createPublicTrialPayMongoCheckout(payload: {
+  account_identifier: string
+  plan: 'single' | 'multiple'
+}): Promise<PayMongoCheckoutSession> {
+  const response = await api.post<PayMongoCheckoutSession>(
+    '/api/subscriptions/public/payments/paymongo/checkout',
+    payload,
+  )
+  return response.data
+}
+
 export async function createPayPalOrder(payload: {
   subscription_id: number
   invoice_no?: string
@@ -1372,11 +1383,35 @@ export async function createPayPalOrder(payload: {
   return response.data
 }
 
+export async function createPublicTrialPayPalOrder(payload: {
+  account_identifier: string
+  plan: 'single' | 'multiple'
+  request_id?: string
+}): Promise<PayPalOrderSession> {
+  const response = await api.post<PayPalOrderSession>(
+    '/api/subscriptions/public/payments/paypal/create-order',
+    payload,
+  )
+  return response.data
+}
+
 export async function capturePayPalOrder(payload: {
   order_id: string
   subscription_id?: number
 }): Promise<PayPalCaptureResult> {
   const response = await api.post<PayPalCaptureResult>('/api/paypal/capture-order', payload)
+  return response.data
+}
+
+export async function capturePublicTrialPayPalOrder(payload: {
+  account_identifier: string
+  plan: 'single' | 'multiple'
+  order_id: string
+}): Promise<PayPalCaptureResult> {
+  const response = await api.post<PayPalCaptureResult>(
+    '/api/subscriptions/public/payments/paypal/capture-order',
+    payload,
+  )
   return response.data
 }
 

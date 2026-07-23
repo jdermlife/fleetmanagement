@@ -4,6 +4,7 @@ from calendar import monthrange
 from datetime import date, datetime, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
+import os
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
@@ -30,6 +31,9 @@ from app.schemas.subscription_schema import (
     PayPalCaptureOrderRequest,
     PayPalCreateOrderRequest,
     PaymentProviderCreate,
+    PublicTrialPaymentRequest,
+    PublicTrialPayPalCaptureOrderRequest,
+    PublicTrialPayPalCreateOrderRequest,
     PayMongoCheckoutCreate,
     PaymentWebhookCreate,
     PlanFeatureAssignRequest,
@@ -64,6 +68,9 @@ from app.services.paypal import (
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
+
+PUBLIC_TRIAL_SINGLE_PLAN_CODE = os.getenv("PUBLIC_TRIAL_SINGLE_PLAN_CODE", "SINGLE_PROFILE").strip().upper()
+PUBLIC_TRIAL_MULTIPLE_PLAN_CODE = os.getenv("PUBLIC_TRIAL_MULTIPLE_PLAN_CODE", "MULTIPLE_PROFILE").strip().upper()
 
 
 def _session_with_rls(user: CurrentUser):
@@ -269,6 +276,178 @@ def _subscription_checkout_amount(plan: SubscriptionPlan) -> Decimal:
     if amount <= 0:
         amount = minimum_fee
     return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _resolve_public_trial_plan(db, plan_key: str) -> SubscriptionPlan:
+    normalized_key = plan_key.strip().lower()
+    if normalized_key not in {"single", "multiple"}:
+        raise HTTPException(status_code=422, detail="Invalid public subscription plan")
+
+    target_price = Decimal("160.00") if normalized_key == "single" else Decimal("1600.00")
+    target_plan_code = (
+        PUBLIC_TRIAL_SINGLE_PLAN_CODE if normalized_key == "single" else PUBLIC_TRIAL_MULTIPLE_PLAN_CODE
+    )
+
+    plan = (
+        db.query(SubscriptionPlan)
+        .filter(SubscriptionPlan.plan_code == target_plan_code)
+        .filter(SubscriptionPlan.is_active.is_(True))
+        .first()
+    )
+    if plan is not None:
+        return plan
+
+    plan_rows = (
+        db.query(SubscriptionPlan)
+        .filter(SubscriptionPlan.is_active.is_(True))
+        .filter(SubscriptionPlan.billing_cycle == "MONTHLY")
+        .all()
+    )
+    for candidate in plan_rows:
+        candidate_price = Decimal(str(candidate.monthly_price or 0)).quantize(Decimal("0.01"))
+        if candidate_price == target_price:
+            return candidate
+
+    raise HTTPException(
+        status_code=422,
+        detail="Subscription plan configuration is missing for this payment option.",
+    )
+
+
+def _resolve_trial_payment_user(db, account_identifier: str) -> User:
+    raw_identifier = account_identifier.strip()
+    normalized_identifier = raw_identifier.lower()
+    if not normalized_identifier:
+        raise HTTPException(status_code=422, detail="Account identifier is required")
+
+    user = (
+        db.query(User)
+        .filter((User.username == normalized_identifier) | (User.email == normalized_identifier))
+        .first()
+    )
+    if user is None and raw_identifier != normalized_identifier:
+        user = (
+            db.query(User)
+            .filter((User.username == raw_identifier) | (User.email == raw_identifier))
+            .first()
+        )
+    if user is None:
+        raise HTTPException(status_code=404, detail="Expired account not found")
+
+    access_expired = (
+        user.account_access_expires_at is not None
+        and user.account_access_expires_at <= datetime.now(timezone.utc)
+    )
+    normalized_status = (user.account_status or "").upper()
+    if normalized_status != "SUSPENDED" and not access_expired and user.is_active:
+        raise HTTPException(status_code=409, detail="This account is not currently in expired-trial status")
+
+    return user
+
+
+def _ensure_public_trial_subscription(db, user: User, plan: SubscriptionPlan) -> Subscription:
+    existing = (
+        db.query(Subscription)
+        .filter(Subscription.user_id == user.id)
+        .filter(Subscription.plan_id == plan.id)
+        .filter(Subscription.status.in_(["PENDING", "TRIAL", "ACTIVE", "SUSPENDED"]))
+        .order_by(Subscription.created_at.desc())
+        .first()
+    )
+    if existing is not None:
+        return existing
+
+    subscription = Subscription(
+        subscription_no=_build_subscription_no("SUB"),
+        user_id=user.id,
+        plan_id=plan.id,
+        status="SUSPENDED",
+        subscription_type="PAID",
+        subscription_start=date.today(),
+        auto_renew=True,
+    )
+    db.add(subscription)
+    db.flush()
+    return subscription
+
+
+def _create_paymongo_checkout_for_user(
+    payload: PayMongoCheckoutCreate,
+    user: CurrentUser,
+):
+    db = _session_with_rls(user)
+    try:
+        subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
+        if not subscription:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if not _is_admin(user) and subscription.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot pay for another user's subscription")
+
+        provider = (
+            db.query(PaymentProvider)
+            .filter(PaymentProvider.provider_code == "PAYMONGO")
+            .first()
+        )
+        if provider is None or provider.is_active is False:
+            raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
+
+        plan = getattr(subscription, "plan", None)
+        if plan is None:
+            plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
+        if plan is None:
+            raise HTTPException(status_code=422, detail="Subscription plan is unavailable")
+
+        amount = _subscription_checkout_amount(plan)
+        if amount <= 0:
+            raise HTTPException(status_code=422, detail="Subscription plan has no payable amount")
+
+        currency = (plan.currency or "PHP").upper()
+        payment_reference = f"PM-{uuid.uuid4().hex.upper()}"[:35]
+        owning_user = db.query(User).filter(User.id == subscription.user_id).first()
+
+        try:
+            checkout = create_checkout_session(
+                amount_centavos=_amount_to_centavos(amount),
+                currency=currency,
+                description=f"{plan.plan_name} subscription payment",
+                item_name=f"{plan.plan_name} subscription",
+                reference_number=payment_reference,
+                customer_name=getattr(owning_user, "username", None),
+                customer_email=getattr(owning_user, "email", None),
+                metadata={
+                    "user_id": str(subscription.user_id),
+                    "subscription_id": str(subscription.id),
+                    "plan": plan.plan_code,
+                },
+            )
+        except PayMongoConfigurationError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except PayMongoAPIError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        payment = SubscriptionPayment(
+            payment_reference=payment_reference,
+            subscription_id=subscription.id,
+            provider_id=provider.id,
+            invoice_no=payload.invoice_no or subscription.subscription_no,
+            amount=amount,
+            currency=currency,
+            payment_method="PayMongo Checkout",
+            payment_status="PENDING",
+            provider_transaction_id=checkout["checkout_id"],
+        )
+        db.add(payment)
+        db.commit()
+        db.refresh(payment)
+        return {
+            "checkout_id": checkout["checkout_id"],
+            "checkout_url": checkout["checkout_url"],
+            "amount": float(amount),
+            "currency": currency,
+            "payment": _serialize_subscription_payment(payment),
+        }
+    finally:
+        db.close()
 
 
 def _amount_to_centavos(amount: Decimal) -> int:
@@ -767,77 +946,26 @@ def create_paymongo_checkout(
     payload: PayMongoCheckoutCreate,
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
-    db = _session_with_rls(user)
+    return _create_paymongo_checkout_for_user(payload=payload, user=user)
+
+
+@router.post("/public/payments/paymongo/checkout")
+def create_public_trial_paymongo_checkout(payload: PublicTrialPaymentRequest):
+    db = SessionLocal()
     try:
-        subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
-        if not subscription:
-            raise HTTPException(status_code=404, detail="Subscription not found")
-        if not _is_admin(user) and subscription.user_id != user.id:
-            raise HTTPException(status_code=403, detail="Cannot pay for another user's subscription")
-
-        provider = (
-            db.query(PaymentProvider)
-            .filter(PaymentProvider.provider_code == "PAYMONGO")
-            .first()
-        )
-        if provider is None or provider.is_active is False:
-            raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
-
-        plan = getattr(subscription, "plan", None)
-        if plan is None:
-            plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
-        if plan is None:
-            raise HTTPException(status_code=422, detail="Subscription plan is unavailable")
-
-        amount = _subscription_checkout_amount(plan)
-        if amount <= 0:
-            raise HTTPException(status_code=422, detail="Subscription plan has no payable amount")
-
-        currency = (plan.currency or "PHP").upper()
-        payment_reference = f"PM-{uuid.uuid4().hex.upper()}"[:35]
-        owning_user = db.query(User).filter(User.id == subscription.user_id).first()
-
-        try:
-            checkout = create_checkout_session(
-                amount_centavos=_amount_to_centavos(amount),
-                currency=currency,
-                description=f"{plan.plan_name} subscription payment",
-                item_name=f"{plan.plan_name} subscription",
-                reference_number=payment_reference,
-                customer_name=getattr(owning_user, "username", None),
-                customer_email=getattr(owning_user, "email", None),
-                metadata={
-                    "user_id": str(subscription.user_id),
-                    "subscription_id": str(subscription.id),
-                    "plan": plan.plan_code,
-                },
-            )
-        except PayMongoConfigurationError as exc:
-            raise HTTPException(status_code=503, detail=str(exc)) from exc
-        except PayMongoAPIError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
-
-        payment = SubscriptionPayment(
-            payment_reference=payment_reference,
-            subscription_id=subscription.id,
-            provider_id=provider.id,
-            invoice_no=payload.invoice_no or subscription.subscription_no,
-            amount=amount,
-            currency=currency,
-            payment_method="PayMongo Checkout",
-            payment_status="PENDING",
-            provider_transaction_id=checkout["checkout_id"],
-        )
-        db.add(payment)
+        user = _resolve_trial_payment_user(db, payload.account_identifier)
+        plan = _resolve_public_trial_plan(db, payload.plan)
+        subscription = _ensure_public_trial_subscription(db, user, plan)
         db.commit()
-        db.refresh(payment)
-        return {
-            "checkout_id": checkout["checkout_id"],
-            "checkout_url": checkout["checkout_url"],
-            "amount": float(amount),
-            "currency": currency,
-            "payment": _serialize_subscription_payment(payment),
-        }
+        db.refresh(subscription)
+        current_user = CurrentUser(id=user.id, username=user.username, role=user.role)
+        return _create_paymongo_checkout_for_user(
+            payload=PayMongoCheckoutCreate(
+                subscription_id=subscription.id,
+                invoice_no=subscription.subscription_no,
+            ),
+            user=current_user,
+        )
     finally:
         db.close()
 
@@ -1118,6 +1246,28 @@ def create_paypal_order(
     return _create_paypal_order_for_user(payload=payload, user=user)
 
 
+@router.post("/public/payments/paypal/create-order")
+def create_public_trial_paypal_order(payload: PublicTrialPayPalCreateOrderRequest):
+    db = SessionLocal()
+    try:
+        user = _resolve_trial_payment_user(db, payload.account_identifier)
+        plan = _resolve_public_trial_plan(db, payload.plan)
+        subscription = _ensure_public_trial_subscription(db, user, plan)
+        db.commit()
+        db.refresh(subscription)
+        current_user = CurrentUser(id=user.id, username=user.username, role=user.role)
+        return _create_paypal_order_for_user(
+            payload=PayPalCreateOrderRequest(
+                subscription_id=subscription.id,
+                invoice_no=subscription.subscription_no,
+                request_id=payload.request_id,
+            ),
+            user=current_user,
+        )
+    finally:
+        db.close()
+
+
 def _capture_paypal_order_for_user(
     payload: PayPalCaptureOrderRequest,
     user: CurrentUser,
@@ -1226,6 +1376,27 @@ def capture_paypal_order(
     user: CurrentUser = Depends(require_roles("Admin")),
 ):
     return _capture_paypal_order_for_user(payload=payload, user=user)
+
+
+@router.post("/public/payments/paypal/capture-order")
+def capture_public_trial_paypal_order(payload: PublicTrialPayPalCaptureOrderRequest):
+    db = SessionLocal()
+    try:
+        user = _resolve_trial_payment_user(db, payload.account_identifier)
+        plan = _resolve_public_trial_plan(db, payload.plan)
+        subscription = _ensure_public_trial_subscription(db, user, plan)
+        db.commit()
+        db.refresh(subscription)
+        current_user = CurrentUser(id=user.id, username=user.username, role=user.role)
+        return _capture_paypal_order_for_user(
+            payload=PayPalCaptureOrderRequest(
+                order_id=payload.order_id,
+                subscription_id=subscription.id,
+            ),
+            user=current_user,
+        )
+    finally:
+        db.close()
 
 
 async def _receive_paypal_webhook(request: Request):

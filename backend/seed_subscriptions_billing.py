@@ -33,6 +33,8 @@ SEED_STATEMENTS = [
      ai_enabled, api_enabled, reporting_enabled, is_active)
     VALUES
     ('FREE', 'Free', 'Starter Plan', 'MONTHLY', 0, 0, 'PHP', 1, 5, 5, 2, TRUE, FALSE, TRUE, TRUE),
+    ('SINGLE_PROFILE', 'Subscriber Single Profile Plan', 'Single profile monthly subscription', 'MONTHLY', 160, 1920, 'PHP', 1, 5, 5, 2, TRUE, FALSE, TRUE, TRUE),
+    ('MULTIPLE_PROFILE', 'Subscriber Multiple Profile Plan', 'Multiple profile monthly subscription', 'MONTHLY', 1600, 19200, 'PHP', 20, 50, 20, 20, TRUE, TRUE, TRUE, TRUE),
     ('STARTER', 'Starter', 'Small Business', 'MONTHLY', 999, 9990, 'PHP', 5, 50, 20, 20, TRUE, TRUE, TRUE, TRUE),
     ('PRO', 'Professional', 'Growing Business', 'MONTHLY', 2999, 29990, 'PHP', 20, 500, 100, 100, TRUE, TRUE, TRUE, TRUE),
     ('ENTERPRISE', 'Enterprise', 'Unlimited Enterprise', 'YEARLY', 0, 0, 'PHP', 999999, 999999, 999999, 999999, TRUE, TRUE, TRUE, TRUE)
@@ -72,6 +74,24 @@ SEED_STATEMENTS = [
     FROM subscription_plans p
     JOIN features f ON f.feature_code IN ('DASHBOARD', 'FLEET', 'REPORTS')
     WHERE p.plan_code = 'FREE'
+    ON CONFLICT DO NOTHING;
+    """,
+    # 4b. Assign Features to SINGLE_PROFILE Plan
+    """
+    INSERT INTO plan_features (plan_id, feature_id)
+    SELECT p.id, f.id
+    FROM subscription_plans p
+    JOIN features f ON f.feature_code IN ('DASHBOARD', 'FLEET', 'REPORTS', 'LENDING')
+    WHERE p.plan_code = 'SINGLE_PROFILE'
+    ON CONFLICT DO NOTHING;
+    """,
+    # 4c. Assign Features to MULTIPLE_PROFILE Plan
+    """
+    INSERT INTO plan_features (plan_id, feature_id)
+    SELECT p.id, f.id
+    FROM subscription_plans p
+    JOIN features f ON f.feature_code IN ('DASHBOARD', 'FLEET', 'REPORTS', 'LENDING', 'AI_CHAT', 'API_ACCESS')
+    WHERE p.plan_code = 'MULTIPLE_PROFILE'
     ON CONFLICT DO NOTHING;
     """,
     # 5. Assign Features to STARTER Plan

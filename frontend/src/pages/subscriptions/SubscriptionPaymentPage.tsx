@@ -3,7 +3,10 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 
 import {
+  capturePublicTrialPayPalOrder,
   capturePayPalOrder,
+  createPublicTrialPayMongoCheckout,
+  createPublicTrialPayPalOrder,
   createPayPalOrder,
   createSubscriptionCheckout,
   createSubscription,
@@ -111,31 +114,6 @@ const GUEST_TRIAL_PLANS: Record<GuestTrialPlanId, GuestTrialPlan> = {
   },
 }
 
-function resolveGuestPaymentLinks(planId: GuestTrialPlanId) {
-  const defaultPaymongo = import.meta.env.VITE_PAYMONGO_CHECKOUT_URL?.trim() || null
-  const defaultPaypal = import.meta.env.VITE_PAYPAL_CHECKOUT_URL?.trim() || null
-
-  if (planId === 'single') {
-    return {
-      paymongo:
-        import.meta.env.VITE_PAYMONGO_CHECKOUT_SINGLE_PROFILE_URL?.trim()
-        || defaultPaymongo,
-      paypal:
-        import.meta.env.VITE_PAYPAL_CHECKOUT_SINGLE_PROFILE_URL?.trim()
-        || defaultPaypal,
-    }
-  }
-
-  return {
-    paymongo:
-      import.meta.env.VITE_PAYMONGO_CHECKOUT_MULTIPLE_PROFILE_URL?.trim()
-      || defaultPaymongo,
-    paypal:
-      import.meta.env.VITE_PAYPAL_CHECKOUT_MULTIPLE_PROFILE_URL?.trim()
-      || defaultPaypal,
-  }
-}
-
 export default function SubscriptionPaymentPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -150,18 +128,24 @@ export default function SubscriptionPaymentPage() {
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
   const paypalStageRef = useRef<'create' | 'capture'>('create')
+  const [guestAccountIdentifier, setGuestAccountIdentifier] = useState('')
 
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
   const selectedGuestPlanId = searchParams.get('plan')
+  const guestAccountQuery = searchParams.get('account')?.trim() || ''
   const isAuthenticated = Boolean(getAuthToken())
   const guestTrialPlan =
     !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
       : null
-  const guestPaymentLinks = guestTrialPlan ? resolveGuestPaymentLinks(guestTrialPlan.id) : null
-  const isGuestPaymongoConfigured = Boolean(guestPaymentLinks?.paymongo)
-  const isGuestPaypalConfigured = Boolean(guestPaymentLinks?.paypal)
+
+  useEffect(() => {
+    if (!guestTrialPlan) {
+      return
+    }
+    setGuestAccountIdentifier(guestAccountQuery)
+  }, [guestAccountQuery, guestTrialPlan])
 
   useEffect(() => {
     if (guestTrialPlan) {
@@ -254,6 +238,10 @@ export default function SubscriptionPaymentPage() {
     !isLoading &&
     !hasSubscriptionAccessDenied &&
     Boolean(selectedSubscription || selectedPlan)
+  const canRenderGuestPayPalButtons =
+    Boolean(guestTrialPlan)
+    && guestAccountIdentifier.trim().length >= 3
+    && Boolean(PAYPAL_CLIENT_ID)
 
   const ensureSubscriptionForPayment = useCallback(async (): Promise<SubscriptionRecord | null> => {
     if (paymentSubscription) {
@@ -410,6 +398,99 @@ export default function SubscriptionPaymentPage() {
     }
   }, [canRenderPayPalButtons, paypalCurrency])
 
+  useEffect(() => {
+    if (!canRenderGuestPayPalButtons || !guestTrialPlan) {
+      return
+    }
+
+    const container = paypalButtonContainerRef.current
+    if (!container) {
+      return
+    }
+
+    container.innerHTML = ''
+
+    let cancelled = false
+    let buttons: PayPalButtonsInstance | null = null
+
+    const renderPayPalButtons = async () => {
+      try {
+        const paypal = await loadPayPalSdk(PAYPAL_CLIENT_ID, guestTrialPlan.currency)
+
+        if (cancelled || !paypalButtonContainerRef.current) {
+          return
+        }
+
+        buttons = paypal.Buttons({
+          style: {
+            layout: 'vertical',
+            shape: 'rect',
+            color: 'gold',
+            label: 'paypal',
+            tagline: false,
+          },
+          createOrder: async () => {
+            paypalStageRef.current = 'create'
+            setPaymentMessage('Creating a secure PayPal order...')
+
+            const requestId = buildPayPalRequestId()
+            const order = await createPublicTrialPayPalOrder({
+              account_identifier: guestAccountIdentifier.trim(),
+              plan: guestTrialPlan.id,
+              request_id: requestId,
+            })
+
+            paypalCheckoutContextRef.current = {
+              orderId: order.order_id,
+              subscriptionId: order.payment.subscription_id,
+            }
+            return order.order_id
+          },
+          onApprove: async (data) => {
+            paypalStageRef.current = 'capture'
+            const orderId = data.orderID?.trim() ?? ''
+            if (!orderId) {
+              throw new Error('PayPal did not return an order id.')
+            }
+
+            setPaymentMessage('PayPal approved the order. Finalizing payment...')
+            await capturePublicTrialPayPalOrder({
+              account_identifier: guestAccountIdentifier.trim(),
+              plan: guestTrialPlan.id,
+              order_id: orderId,
+            })
+            setPaymentMessage('PayPal payment captured successfully. Your subscription is now updated.')
+          },
+          onCancel: () => {
+            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
+          },
+          onError: (error) => {
+            const fallback = error instanceof Error ? error.message : 'Unable to process PayPal checkout right now.'
+            setPaymentMessage(formatPayPalGatewayError(fallback, paypalStageRef.current))
+          },
+        })
+
+        await Promise.resolve(buttons.render(container))
+      } catch (error) {
+        if (cancelled) {
+          return
+        }
+
+        const fallback = getErrorMessage(error, 'Unable to load PayPal Buttons right now.')
+        setPaymentMessage(formatPayPalGatewayError(fallback, 'create'))
+      }
+    }
+
+    void renderPayPalButtons()
+
+    return () => {
+      cancelled = true
+      paypalCheckoutContextRef.current = null
+      void Promise.resolve(buttons?.close?.()).catch(() => undefined)
+      container.replaceChildren()
+    }
+  }, [canRenderGuestPayPalButtons, guestAccountIdentifier, guestTrialPlan])
+
   const handleStartCheckout = async () => {
     setIsStartingCheckout(true)
     setPaymentMessage('')
@@ -433,7 +514,33 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
-  if (guestTrialPlan && guestPaymentLinks) {
+  const handleStartGuestCheckout = async () => {
+    if (!guestTrialPlan) {
+      return
+    }
+
+    if (guestAccountIdentifier.trim().length < 3) {
+      setPaymentMessage('Enter your registered username or email before starting payment.')
+      return
+    }
+
+    setIsStartingCheckout(true)
+    setPaymentMessage('')
+
+    try {
+      const checkout = await createPublicTrialPayMongoCheckout({
+        account_identifier: guestAccountIdentifier.trim(),
+        plan: guestTrialPlan.id,
+      })
+      window.location.href = checkout.checkout_url
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
+    } finally {
+      setIsStartingCheckout(false)
+    }
+  }
+
+  if (guestTrialPlan) {
     return (
       <div className="standalone-card auth-screen trial-expired-page subscription-payment-guest-page">
         <h1>Subscription Payment</h1>
@@ -449,6 +556,19 @@ export default function SubscriptionPaymentPage() {
           <p>{guestTrialPlan.note}</p>
         </section>
 
+        <section className="stack-panel auth-panel">
+          <label>
+            Registered Username or Email
+            <input
+              value={guestAccountIdentifier}
+              onChange={(event) => setGuestAccountIdentifier(event.target.value)}
+              placeholder="Enter your registered username or email"
+              autoComplete="username"
+              required
+            />
+          </label>
+        </section>
+
         <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
           <h2>Choose Payment Channel</h2>
           <p>Select one secure payment option below.</p>
@@ -456,43 +576,35 @@ export default function SubscriptionPaymentPage() {
             <div className="trial-expired-payment-option register-social-option">
               <h3>PayMongo</h3>
               <p>Continue to PayMongo for card, wallet, or other enabled checkout options.</p>
-              {isGuestPaymongoConfigured ? (
-                <a
-                  className="auth-link-button auth-apple-button"
-                  href={guestPaymentLinks.paymongo ?? undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Pay with PayMongo
-                </a>
-              ) : (
-                <>
-                  <button type="button" className="auth-link-button auth-apple-button" disabled>
-                    Pay with PayMongo
-                  </button>
-                  <p className="trial-expired-payment-error">PayMongo payment link is not configured yet.</p>
-                </>
-              )}
+              <button
+                type="button"
+                className="auth-link-button auth-apple-button"
+                onClick={() => void handleStartGuestCheckout()}
+                disabled={isStartingCheckout || guestAccountIdentifier.trim().length < 3}
+              >
+                {isStartingCheckout ? 'Starting secure checkout...' : 'Pay with PayMongo'}
+              </button>
             </div>
 
             <div className="trial-expired-payment-option register-social-option">
               <h3>PayPal</h3>
-              <p>Continue to PayPal for secure approval and payment completion.</p>
-              {isGuestPaypalConfigured ? (
-                <a
-                  className="auth-link-button auth-apple-button"
-                  href={guestPaymentLinks.paypal ?? undefined}
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  Pay with PayPal
-                </a>
+              <p>Use the official PayPal button to approve and complete payment securely.</p>
+              {canRenderGuestPayPalButtons ? (
+                <div
+                  ref={paypalButtonContainerRef}
+                  className="trial-expired-paypal-container register-google-button-wrap"
+                  style={{ minHeight: '56px' }}
+                />
               ) : (
                 <>
                   <button type="button" className="auth-link-button auth-apple-button" disabled>
                     Pay with PayPal
                   </button>
-                  <p className="trial-expired-payment-error">PayPal payment link is not configured yet.</p>
+                  <p className="trial-expired-payment-error">
+                    {PAYPAL_CLIENT_ID
+                      ? 'Enter your registered username or email to enable PayPal.'
+                      : 'PayPal Buttons are unavailable because VITE_PAYPAL_CLIENT_ID is not configured.'}
+                  </p>
                 </>
               )}
             </div>

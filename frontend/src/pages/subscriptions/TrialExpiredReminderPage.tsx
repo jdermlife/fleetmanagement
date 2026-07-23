@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 type PlanOptionId = 'single' | 'multiple'
 
@@ -26,6 +26,8 @@ const PLAN_OPTIONS: PlanOption[] = [
 
 export default function TrialExpiredReminderPage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const accountQuery = searchParams.get('account')?.trim() || ''
   return (
     <div className="standalone-card auth-screen trial-expired-page">
       <h1>Trial Reminder</h1>
@@ -42,7 +44,7 @@ export default function TrialExpiredReminderPage() {
             <button
               type="button"
               className="auth-link-button"
-              onClick={() => navigate(`/subscription/payment?plan=${plan.id}`)}
+              onClick={() => navigate(`/subscription/payment?plan=${plan.id}${accountQuery ? `&account=${encodeURIComponent(accountQuery)}` : ''}`)}
             >
               Select Plan
             </button>

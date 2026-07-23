@@ -199,7 +199,8 @@ export default function LoginPage() {
     } catch (error) {
       const resolvedMessage = getErrorMessage(error, 'Unable to sign in right now.')
       if (isTrialExpiredMessage(resolvedMessage)) {
-        navigate('/trial-expired?source=login')
+        const account = encodeURIComponent(username.trim())
+        navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')
         return
       }
 

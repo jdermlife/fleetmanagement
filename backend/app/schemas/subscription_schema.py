@@ -208,6 +208,26 @@ class PayPalCaptureOrderRequest(BaseModel):
     subscription_id: int | None = None
 
 
+class PublicTrialPaymentRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    account_identifier: str = Field(min_length=3, max_length=255)
+    plan: str = Field(min_length=3, max_length=20)
+
+
+class PublicTrialPayPalCreateOrderRequest(PublicTrialPaymentRequest):
+    request_id: str | None = Field(
+        default=None,
+        min_length=8,
+        max_length=38,
+        pattern=r"^[A-Za-z0-9._-]+$",
+    )
+
+
+class PublicTrialPayPalCaptureOrderRequest(PublicTrialPaymentRequest):
+    order_id: str = Field(min_length=3, max_length=120)
+
+
 class FreeSubscriptionCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
