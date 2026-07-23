@@ -40,9 +40,6 @@ async function completeAppleRegistrationChoices() {
   await user.click(consentBoxes[1])
   await user.click(screen.getByRole('radio', { name: /subscriber single application/i }))
   await user.click(screen.getByRole('checkbox', { name: /i agree to receive marketing materials/i }))
-  await user.click(screen.getByRole('radio', { name: /paymongo/i }))
-  await user.type(screen.getByLabelText(/debit account name/i), 'Sample Account Holder')
-  await user.type(screen.getByLabelText(/payment reference \/ last 4 digits/i), '1234')
 
   return user
 }

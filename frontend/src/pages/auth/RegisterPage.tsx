@@ -12,8 +12,6 @@ import {
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 export default function RegisterPage() {
-  const monthlyPlanFee = 160
-  const freeTrialDays = 2
   const navigate = useNavigate()
   const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
@@ -24,23 +22,17 @@ export default function RegisterPage() {
   const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
+  const [cellphoneNumber, setCellphoneNumber] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
   const [marketingConsent, setMarketingConsent] = useState(false)
-  const [paymentProvider, setPaymentProvider] = useState<'PAYMONGO' | 'PAYPAL' | ''>('')
-  const [debitAccountName, setDebitAccountName] = useState('')
-  const [debitPaymentReference, setDebitPaymentReference] = useState('')
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [appleMessage, setAppleMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
-  const hasPaymentDetails =
-    paymentProvider.length > 0
-    && debitAccountName.trim().length > 1
-    && debitPaymentReference.trim().length > 3
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -57,11 +49,6 @@ export default function RegisterPage() {
 
     if (!acceptedTerms || !acceptedPrivacy) {
       setMessage('Review and accept the terms and privacy disclosures to continue.')
-      return
-    }
-
-    if (!hasPaymentDetails) {
-      setMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
       return
     }
 
@@ -103,11 +90,6 @@ export default function RegisterPage() {
       return
     }
 
-    if (!hasPaymentDetails) {
-      setMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
-      return
-    }
-
     setIsSaving(true)
     setMessage('')
     try {
@@ -133,11 +115,6 @@ export default function RegisterPage() {
 
     if (!acceptedTerms || !acceptedPrivacy) {
       setAppleMessage('Review and accept the terms and privacy disclosures to continue.')
-      return
-    }
-
-    if (!hasPaymentDetails) {
-      setAppleMessage('Provide your debit payment details using PayMongo or PayPal to continue.')
       return
     }
 
@@ -243,73 +220,6 @@ export default function RegisterPage() {
             ))}
           </div>
         </fieldset>
-
-
-
-        <fieldset className="auth-role-fieldset">
-          <legend>Plan and Debit Payment</legend>
-          <p className="auth-role-copy register-payment-plan">
-            Plan fee: PHP {monthlyPlanFee} per month. Free for the first {freeTrialDays} days.
-          </p>
-          <p className="auth-role-copy">
-            Provide debit payment details via PayMongo or PayPal to unlock the Create Account section.
-          </p>
-
-          <div className="auth-role-options">
-            <label className="auth-role-option">
-              <input
-                type="radio"
-                name="debit-payment-provider"
-                value="PAYMONGO"
-                checked={paymentProvider === 'PAYMONGO'}
-                onChange={() => setPaymentProvider('PAYMONGO')}
-              />
-              <span>
-                <strong>PayMongo</strong>
-                <small>Debit or card payment processed through PayMongo.</small>
-              </span>
-            </label>
-            <label className="auth-role-option">
-              <input
-                type="radio"
-                name="debit-payment-provider"
-                value="PAYPAL"
-                checked={paymentProvider === 'PAYPAL'}
-                onChange={() => setPaymentProvider('PAYPAL')}
-              />
-              <span>
-                <strong>PayPal</strong>
-                <small>Debit payment routed through your PayPal checkout.</small>
-              </span>
-            </label>
-          </div>
-
-          <label>
-            Debit Account Name
-            <input
-              value={debitAccountName}
-              onChange={(event) => setDebitAccountName(event.target.value)}
-              autoComplete="cc-name"
-              placeholder="Account or cardholder name"
-            />
-          </label>
-
-          <label>
-            Payment Reference / Last 4 Digits
-            <input
-              value={debitPaymentReference}
-              onChange={(event) => setDebitPaymentReference(event.target.value)}
-              autoComplete="off"
-              placeholder="Reference number or last 4 digits"
-            />
-          </label>
-
-          <p className="status-message">
-            {hasPaymentDetails
-              ? 'Payment details captured. Create Account section is now unlocked.'
-              : 'Create Account section is blurred until payment details are provided.'}
-          </p>
-        </fieldset>
       </div>
 
       <div className="stack-panel auth-panel" aria-live="polite">
@@ -362,11 +272,7 @@ export default function RegisterPage() {
         </p>
       </div>
 
-      <div className="register-form-gate">
-        <form
-          className={`stack-panel auth-panel ${hasPaymentDetails ? '' : 'register-form-blurred'}`}
-          onSubmit={handleSubmit}
-        >
+      <form className="stack-panel auth-panel" onSubmit={handleSubmit}>
         <label>
           Username
           <input
@@ -385,6 +291,18 @@ export default function RegisterPage() {
             value={email}
             onChange={(event) => setEmail(event.target.value)}
             autoComplete="email"
+            required
+          />
+        </label>
+
+        <label>
+          Cellphone Number
+          <input
+            type="tel"
+            value={cellphoneNumber}
+            onChange={(event) => setCellphoneNumber(event.target.value)}
+            autoComplete="tel"
+            placeholder="09XXXXXXXXX"
             required
           />
         </label>
@@ -422,15 +340,8 @@ export default function RegisterPage() {
           </Link>
         </div>
 
-          {message ? <p className="status-message status-error">{message}</p> : null}
-        </form>
-
-        {!hasPaymentDetails ? (
-          <div className="register-form-lock-overlay" role="status" aria-live="polite">
-            Complete payment details to unlock account creation.
-          </div>
-        ) : null}
-      </div>
+        {message ? <p className="status-message status-error">{message}</p> : null}
+      </form>
 
       <div className="auth-support-links">
         <Link to="/subscription-fees">Subscription Fees</Link>

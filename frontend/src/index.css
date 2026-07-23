@@ -3412,31 +3412,6 @@ label { display: block; margin-bottom: 12px; }
 .auth-role-option span { display: grid; gap: 4px; }
 .auth-role-option strong { color: #0f172a; }
 .auth-role-option small { color: #64748b; line-height: 1.45; }
-.register-payment-plan { font-weight: 700; color: #0f172a; }
-.register-form-gate {
-  position: relative;
-}
-.register-form-blurred {
-  position: relative;
-  filter: blur(3px);
-  opacity: 0.62;
-  pointer-events: none;
-  user-select: none;
-}
-.register-form-lock-overlay {
-  position: absolute;
-  inset: 0;
-  display: grid;
-  place-items: center;
-  text-align: center;
-  padding: 20px;
-  border-radius: 12px;
-  background: rgba(15, 23, 42, 0.38);
-  color: #ffffff;
-  font-weight: 800;
-  letter-spacing: 0.01em;
-  backdrop-filter: blur(1px);
-}
 .vehicle-grid, .access-grid, .fuel-management .fuel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .stack-panel { display: grid; gap: 20px; }
 .backup-code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
