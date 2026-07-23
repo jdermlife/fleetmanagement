@@ -25,7 +25,7 @@ export default function RegisterPage() {
   const [cellphoneNumber, setCellphoneNumber] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
-  const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType | ''>('')
+  const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType>('borrower')
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)

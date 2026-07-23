@@ -11,12 +11,12 @@ export const REGISTER_SUBSCRIBER_OPTIONS: Array<{
 }> = [
   {
     value: 'borrower',
-    label: 'Subscriber Single Application / Assessment',
+    label: 'Subscriber Single Profile',
     description: '',
   },
   {
     value: 'lender',
-    label: 'Subscriber Multiple Applications / Assessment ',
+    label: 'Subscriber Multiple Profile',
     description: '',
   },
 ]

@@ -38,7 +38,7 @@ async function completeAppleRegistrationChoices() {
 
   await user.click(consentBoxes[0])
   await user.click(consentBoxes[1])
-  await user.click(screen.getByRole('radio', { name: /subscriber single application/i }))
+  await user.click(screen.getByRole('radio', { name: /subscriber single profile/i }))
   await user.click(screen.getByRole('checkbox', { name: /i agree to receive marketing materials/i }))
 
   return user
@@ -72,9 +72,23 @@ describe('RegisterPage Apple sign-up', () => {
     await userEvent.click(appleButton)
 
     const alert = await screen.findByRole('alert')
-    expect(alert.textContent).toBe('Select borrower or lender before continuing with Apple.')
+    expect(alert.textContent).toBe('Review and accept the terms and privacy disclosures to continue.')
     expect(appleButton.closest('.auth-panel')?.contains(alert)).toBe(true)
     expect(mockRequestAppleSignInToken).not.toHaveBeenCalled()
+  })
+
+  it('defaults subscriber type to Subscriber Single Profile', () => {
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const singleProfile = screen.getByRole('radio', { name: /subscriber single profile/i })
+    const multipleProfile = screen.getByRole('radio', { name: /subscriber multiple profile/i })
+
+    expect((singleProfile as HTMLInputElement).checked).toBe(true)
+    expect((multipleProfile as HTMLInputElement).checked).toBe(false)
   })
 
   it('exchanges the Apple token after all registration choices are completed', async () => {
