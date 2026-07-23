@@ -48,6 +48,12 @@ function buildPayPalRequestId(): string {
 }
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
+console.log("VITE_PAYPAL_CLIENT_ID =", import.meta.env.VITE_PAYPAL_CLIENT_ID)
+console.log("MODE =", import.meta.env.MODE)
+console.log(import.meta.env)
+
+
+
 
 function formatPayPalGatewayError(message: string, action: 'create' | 'capture'): string {
   const normalized = message.trim().toUpperCase()
