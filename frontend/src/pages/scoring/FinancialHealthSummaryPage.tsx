@@ -1068,8 +1068,8 @@ export default function FinancialHealthSummaryPage() {
           </article>
 
           <article className="psychometric-panel financial-health-graph-guide">
-            <span className="psychometric-panel-kicker">Graph style</span>
-            <h2>Apple Health–inspired system</h2>
+            <span className="psychometric-panel-kicker">Health Monitoring Style</span>
+            <h2>Ring Health–inspired system</h2>
             <ul>
               <li><strong>Activity rings</strong> for the overall glance.</li>
               <li><strong>Vital cards</strong> for the eight current readings.</li>

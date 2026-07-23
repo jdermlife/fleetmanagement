@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate, useSearchParams } from 'react-router-dom'
+import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import axios from 'axios'
 
 import {
@@ -8,6 +8,7 @@ import {
   createSubscriptionCheckout,
   createSubscription,
   createSubscriptionPayment,
+  getAuthToken,
   getErrorMessage,
   listSubscriptionPlans,
   listSubscriptions,
@@ -135,6 +136,58 @@ function formatPayPalGatewayError(message: string, action: 'create' | 'capture')
   return message
 }
 
+type GuestTrialPlanId = 'single' | 'multiple'
+
+type GuestTrialPlan = {
+  id: GuestTrialPlanId
+  title: string
+  price: number
+  currency: string
+  note: string
+}
+
+const GUEST_TRIAL_PLANS: Record<GuestTrialPlanId, GuestTrialPlan> = {
+  single: {
+    id: 'single',
+    title: 'Subscriber Single Profile Plan',
+    price: 160,
+    currency: 'PHP',
+    note: 'Php 160.00 per month',
+  },
+  multiple: {
+    id: 'multiple',
+    title: 'Subscriber Multiple Profile Plan',
+    price: 1600,
+    currency: 'PHP',
+    note: 'Php 1,600.00 per month',
+  },
+}
+
+function resolveGuestPaymentLinks(planId: GuestTrialPlanId) {
+  const defaultPaymongo = import.meta.env.VITE_PAYMONGO_CHECKOUT_URL?.trim() || null
+  const defaultPaypal = import.meta.env.VITE_PAYPAL_CHECKOUT_URL?.trim() || null
+
+  if (planId === 'single') {
+    return {
+      paymongo:
+        import.meta.env.VITE_PAYMONGO_CHECKOUT_SINGLE_PROFILE_URL?.trim()
+        || defaultPaymongo,
+      paypal:
+        import.meta.env.VITE_PAYPAL_CHECKOUT_SINGLE_PROFILE_URL?.trim()
+        || defaultPaypal,
+    }
+  }
+
+  return {
+    paymongo:
+      import.meta.env.VITE_PAYMONGO_CHECKOUT_MULTIPLE_PROFILE_URL?.trim()
+      || defaultPaymongo,
+    paypal:
+      import.meta.env.VITE_PAYPAL_CHECKOUT_MULTIPLE_PROFILE_URL?.trim()
+      || defaultPaypal,
+  }
+}
+
 export default function SubscriptionPaymentPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
@@ -158,8 +211,23 @@ export default function SubscriptionPaymentPage() {
 
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
+  const selectedGuestPlanId = searchParams.get('plan')
+  const isAuthenticated = Boolean(getAuthToken())
+  const guestTrialPlan =
+    !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
+      ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
+      : null
+  const guestPaymentLinks = guestTrialPlan ? resolveGuestPaymentLinks(guestTrialPlan.id) : null
+  const isGuestPaymongoConfigured = Boolean(guestPaymentLinks?.paymongo)
+  const isGuestPaypalConfigured = Boolean(guestPaymentLinks?.paypal)
 
   useEffect(() => {
+    if (guestTrialPlan) {
+      setIsLoading(false)
+      setHasSubscriptionAccessDenied(false)
+      return
+    }
+
     const loadData = async () => {
       try {
         const [planRows, subscriptionRows] = await Promise.all([
@@ -184,7 +252,7 @@ export default function SubscriptionPaymentPage() {
     }
 
     void loadData()
-  }, [])
+  }, [guestTrialPlan])
 
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
@@ -232,15 +300,20 @@ export default function SubscriptionPaymentPage() {
   )
 
   const dueAmount = useMemo(() => {
+    if (guestTrialPlan) {
+      return guestTrialPlan.price
+    }
+
     const activePlan = selectedSubscriptionPlan ?? selectedPlan
     if (!activePlan) {
       return 0
     }
 
     return billingAmount(activePlan)
-  }, [selectedPlan, selectedSubscriptionPlan])
+  }, [guestTrialPlan, selectedPlan, selectedSubscriptionPlan])
 
   const canRenderPayPalButtons =
+    !guestTrialPlan &&
     !isLoading &&
     !hasSubscriptionAccessDenied &&
     Boolean(selectedSubscription || selectedPlan)
@@ -478,6 +551,114 @@ export default function SubscriptionPaymentPage() {
     } catch {
       setPaymentMessage('Unable to copy details automatically. Please select and copy the instructions manually.')
     }
+  }
+
+  if (guestTrialPlan && guestPaymentLinks) {
+    return (
+      <div className="min-h-screen bg-[radial-gradient(circle_at_top_right,rgba(234,179,8,0.18),transparent_28%),linear-gradient(180deg,#f8fafc_0%,#fff7e6_100%)] px-4 py-6 md:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.12)]">
+            <div className="border-b border-amber-200 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-700 px-6 py-7 text-white md:px-8">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-amber-200">
+                Subscription Billing
+              </p>
+              <h1 className="mt-2 text-3xl font-semibold tracking-tight md:text-4xl">
+                Subscription Payment
+              </h1>
+              <p className="mt-2 text-sm text-slate-200 md:text-base">
+                Continue your FILSCORE access by choosing a payment channel for the selected plan.
+              </p>
+            </div>
+
+            <div className="grid gap-6 px-6 py-6 md:px-8">
+              <div className="rounded-2xl border border-amber-100 bg-amber-50/70 p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                <p className="text-xs font-semibold uppercase tracking-[0.22em] text-amber-700">Current Selection</p>
+                <h2 className="mt-2 text-2xl font-semibold text-slate-900">{guestTrialPlan.title}</h2>
+                <p className="mt-3 text-lg font-semibold text-amber-900">
+                  {guestTrialPlan.currency} {guestTrialPlan.price.toFixed(2)}
+                </p>
+                <p className="mt-2 text-sm text-slate-600">{guestTrialPlan.note}</p>
+              </div>
+
+              <div className="grid gap-5 lg:grid-cols-2">
+                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
+                    PayMongo Checkout
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Continue to PayMongo for card, wallet, or other enabled checkout options.
+                  </p>
+                  <div className="mt-5 form-actions">
+                    {isGuestPaymongoConfigured ? (
+                      <a
+                        className="auth-link-button"
+                        href={guestPaymentLinks.paymongo ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Pay with PayMongo
+                      </a>
+                    ) : (
+                      <button type="button" className="auth-link-button" disabled>
+                        Pay with PayMongo
+                      </button>
+                    )}
+                  </div>
+                  {!isGuestPaymongoConfigured ? (
+                    <p className="mt-3 text-sm text-rose-700">
+                      PayMongo payment link is not configured yet.
+                    </p>
+                  ) : null}
+                </div>
+
+                <div className="rounded-2xl border border-amber-100 bg-white p-5 shadow-[0_10px_24px_rgba(15,23,42,0.05)]">
+                  <h3 className="text-sm font-semibold uppercase tracking-[0.18em] text-amber-800">
+                    PayPal Checkout
+                  </h3>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Continue to PayPal for secure approval and payment completion.
+                  </p>
+                  <div className="mt-5 form-actions">
+                    {isGuestPaypalConfigured ? (
+                      <a
+                        className="auth-link-button"
+                        href={guestPaymentLinks.paypal ?? undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        Pay with PayPal
+                      </a>
+                    ) : (
+                      <button type="button" className="auth-link-button" disabled>
+                        Pay with PayPal
+                      </button>
+                    )}
+                  </div>
+                  {!isGuestPaypalConfigured ? (
+                    <p className="mt-3 text-sm text-rose-700">
+                      PayPal payment link is not configured yet.
+                    </p>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="form-actions">
+                <button
+                  type="button"
+                  className="auth-link-button"
+                  onClick={() => navigate('/trial-expired')}
+                >
+                  Choose Another Plan
+                </button>
+                <Link className="auth-link-button" to="/login">
+                  Back to Login
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
