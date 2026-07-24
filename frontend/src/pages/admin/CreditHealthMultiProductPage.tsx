@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { fetchCurrentUser, getErrorMessage } from '../../api'
 import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
-import { toFilscore, getFilscoreBand } from './filscoreScale'
+import { toFilscore, getFilscoreBand } from '../scoring/filscoreScale'
 
 interface CreditScore {
   score: number | null
@@ -41,9 +41,8 @@ export default function CreditHealthMultiProductPage() {
       setLoading(true)
       setMessage('')
       try {
-        // Get current user to check if admin
-        const currentUser = await fetchCurrentUser()
-        const isAdmin = currentUser?.role?.toLowerCase() === 'admin'
+        // Get current user
+        await fetchCurrentUser()
 
         // Fetch loan applications
         let allApplications: LoanApplicationRecord[] = []
