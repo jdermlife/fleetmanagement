@@ -154,21 +154,191 @@ export default function CreditHealthMultiProductPage() {
     record.name.toLowerCase().includes(searchTerm.toLowerCase()),
   )
 
-  const renderScoreCard = (score: CreditScore, icon: string) => (
+  const renderFilscoreCertificate = (product: ProductCredit) => (
     <div
       style={{
-        padding: '12px',
-        borderRadius: '8px',
-        backgroundColor: '#f8f9fa',
+        backgroundColor: '#fffaf0',
+        border: '6px solid #1e3a8a',
+        borderRadius: '12px',
+        padding: '40px',
+        marginBottom: 24,
         textAlign: 'center',
+        pageBreakInside: 'avoid',
       }}
     >
-      <div style={{ fontSize: '14px', color: '#666', marginBottom: '6px' }}>{score.label}</div>
-      <div style={{ fontSize: '24px', fontWeight: 'bold', marginBottom: '4px' }}>
-        {score.score !== null ? score.score : 'N/A'}
+      {/* Header */}
+      <div style={{ marginBottom: 20 }}>
+        <div style={{ fontSize: '12px', letterSpacing: '2px', color: '#d97706', fontWeight: '600' }}>
+          CERTIFICATION OF CREDIT READINESS ASSESSMENT
+        </div>
+        <div style={{ fontSize: '36px', fontWeight: '900', color: '#1e3a8a', margin: '12px 0' }}>
+          FILSCORE
+        </div>
       </div>
-      {score.grade && <div style={{ fontSize: '12px', color: '#0f766e', fontWeight: '600' }}>{score.grade}</div>}
-      <div style={{ fontSize: '24px', marginTop: '8px' }}>{icon}</div>
+
+      {/* Reference and Product */}
+      <div style={{ fontSize: '12px', color: '#666', marginBottom: 20, borderBottom: '1px solid #e5e7eb', paddingBottom: 16 }}>
+        <div>REFERENCE NO. {product.applicationNo}</div>
+        <div style={{ marginTop: 4 }}>PRODUCT BEING APPLIED FOR: {product.productType.toUpperCase()}</div>
+      </div>
+
+      {/* Applicant Name */}
+      <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e3a8a', margin: '24px 0' }}>
+        {product.borrowerName}
+      </div>
+
+      {/* Certification Statement */}
+      <div style={{ fontSize: '12px', color: '#666', marginBottom: 24, fontStyle: 'italic' }}>
+        This certifies that the above application completed the FILSCORE assessment workflow and the summarized results below were generated for credit evaluation and certification use.
+      </div>
+
+      {/* Main Score Boxes - 3 column layout */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: 24 }}>
+        {/* Composite Score */}
+        <div
+          style={{
+            backgroundColor: '#fef3c7',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>COMPOSITE SCORE</div>
+          <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.compositeScore || 'N/A'}
+          </div>
+        </div>
+
+        {/* Label (Grade) */}
+        <div
+          style={{
+            backgroundColor: '#fef3c7',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>LABEL</div>
+          <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.finalGrade || 'N/A'}
+          </div>
+        </div>
+
+        {/* Decision/Rating */}
+        <div
+          style={{
+            backgroundColor: '#fef3c7',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>DECISION</div>
+          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.finalRating ? product.finalRating.toUpperCase() : 'N/A'}
+          </div>
+        </div>
+      </div>
+
+      {/* Individual Scores - 2x2 grid */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 24 }}>
+        {/* Credit Score */}
+        <div
+          style={{
+            backgroundColor: '#dbeafe',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
+            CREDIT SCORE - {product.productType.toUpperCase()}
+          </div>
+          {product.creditScore.grade && (
+            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+              {product.creditScore.grade}
+            </div>
+          )}
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.creditScore.score || 'N/A'}
+          </div>
+        </div>
+
+        {/* Non-Starter Score (Fraud) */}
+        <div
+          style={{
+            backgroundColor: '#dbeafe',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
+            NON-STARTER SCORE
+          </div>
+          {product.fraudScore.grade && (
+            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+              {product.fraudScore.grade}
+            </div>
+          )}
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.fraudScore.score || 'N/A'}
+          </div>
+        </div>
+
+        {/* Social Score */}
+        <div
+          style={{
+            backgroundColor: '#dbeafe',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>SOCIAL SCORE</div>
+          {product.socialScore.grade && (
+            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+              {product.socialScore.grade}
+            </div>
+          )}
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.socialScore.score || 'N/A'}
+          </div>
+        </div>
+
+        {/* Credit Values Score */}
+        <div
+          style={{
+            backgroundColor: '#dbeafe',
+            borderRadius: '8px',
+            padding: '16px',
+            textAlign: 'left',
+          }}
+        >
+          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>CREDIT VALUES SCORE</div>
+          {product.psychometricScore.grade && (
+            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+              {product.psychometricScore.grade}
+            </div>
+          )}
+          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+            {product.psychometricScore.score || 'N/A'}
+          </div>
+        </div>
+      </div>
+
+      {/* Certificate Details Footer */}
+      <div style={{ fontSize: '11px', color: '#666', textAlign: 'left', borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
+        <div>Certificate ID: {product.applicationNo}</div>
+        <div>Issued: {product.issuedAt ? new Date(product.issuedAt).toLocaleString() : 'N/A'}</div>
+        <div>Valid Until: {product.issuedAt ? new Date(new Date(product.issuedAt).getTime() + 365 * 24 * 60 * 60 * 1000).toLocaleDateString() : 'N/A'}</div>
+        <div style={{ marginTop: 8 }}>
+          <strong>Information Provided: 95%</strong>
+        </div>
+        <div style={{ fontSize: '10px', marginTop: 4, fontStyle: 'italic', color: '#999' }}>
+          AI-assisted recommendations may contain mistakes.
+        </div>
+      </div>
     </div>
   )
 
@@ -226,70 +396,15 @@ export default function CreditHealthMultiProductPage() {
 
           {/* Selected Applicant Details */}
           {selectedApplicant && (
-            <div className="card">
-              <h2>{selectedApplicant.name}</h2>
-              <p className="intro">Credit Health Across {selectedApplicant.products.length} Product(s)</p>
+            <div>
+              <h2 style={{ marginBottom: 8 }}>{selectedApplicant.name}</h2>
+              <p className="intro" style={{ marginBottom: 24 }}>
+                FILSCORE Certification and Credit Scores for {selectedApplicant.products.length} Product(s)
+              </p>
 
               {selectedApplicant.products.map((product, index) => (
-                <div key={index} style={{ marginBottom: 32, borderBottom: '1px solid #e2e8f0', paddingBottom: 24 }}>
-                  {/* Product Header */}
-                  <div style={{ marginBottom: 16 }}>
-                    <h3 style={{ marginTop: 0 }}>{product.productType}</h3>
-                    <div style={{ fontSize: '12px', color: '#666' }}>
-                      <div>Application No: {product.applicationNo}</div>
-                      {product.issuedAt && (
-                        <div>Issued: {new Date(product.issuedAt).toLocaleDateString()}</div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* FILSCORE Certification Summary */}
-                  {product.finalGrade && (
-                    <div
-                      style={{
-                        padding: '16px',
-                        borderRadius: '8px',
-                        backgroundColor: '#0f766e',
-                        color: 'white',
-                        marginBottom: 16,
-                      }}
-                    >
-                      <div style={{ fontSize: '12px', opacity: 0.9, marginBottom: '8px' }}>
-                        FILSCORE CERTIFICATION
-                      </div>
-                      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
-                        <div>
-                          <div style={{ fontSize: '12px', opacity: 0.8 }}>Grade</div>
-                          <div style={{ fontSize: '28px', fontWeight: 'bold' }}>
-                            {product.finalGrade}
-                          </div>
-                        </div>
-                        <div>
-                          <div style={{ fontSize: '12px', opacity: 0.8 }}>Rating</div>
-                          <div style={{ fontSize: '16px' }}>{product.finalRating}</div>
-                          {product.compositeScore && (
-                            <div style={{ fontSize: '12px', marginTop: '4px' }}>
-                              Composite: {product.compositeScore}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Credit Score Cards Grid */}
-                  <div
-                    style={{
-                      display: 'grid',
-                      gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
-                      gap: '12px',
-                    }}
-                  >
-                    {renderScoreCard(product.creditScore, '💳')}
-                    {renderScoreCard(product.psychometricScore, '🧠')}
-                    {renderScoreCard(product.socialScore, '👥')}
-                    {renderScoreCard(product.fraudScore, '🛡️')}
-                  </div>
+                <div key={index}>
+                  {renderFilscoreCertificate(product)}
                 </div>
               ))}
             </div>
