@@ -22,9 +22,9 @@ Run the validation steps from:
 
 | Surface | Browser | Device | Result | Notes |
 | --- | --- | --- | --- | --- |
-| `/support` |  |  |  |  |
-| `/privacy` |  |  |  |  |
-| `/terms` |  |  |  |  |
+| `https://fleetmanagement-flame.vercel.app/support` |  |  |  | Public support page |
+| `https://fleetmanagement-flame.vercel.app/privacy` |  |  |  | Public privacy page |
+| `https://fleetmanagement-flame.vercel.app/terms` |  |  |  | Public terms page |
 
 ## Required Flows
 

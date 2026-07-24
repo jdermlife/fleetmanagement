@@ -55,9 +55,9 @@ Use:
 - `documents/release-evidence/reviewer-demo-account-evidence.md`
 - `documents/release-evidence/reviewer-demo-account-fill-guide.md`
 
-### 6. Publish the public legal/support pages
+### 6. Validate public legal/support pages remain stable
 
-Routes already exist in the app:
+Routes already exist in the app and are deployed:
 
 - `/support`
 - `/privacy`
@@ -65,8 +65,8 @@ Routes already exist in the app:
 
 What remains:
 
-- deploy them to a real HTTPS domain
-- update `frontend/store-metadata.template.json`
+- confirm HTTPS availability and uptime before submission
+- confirm URLs in `frontend/store-metadata.template.json` remain unchanged
 
 Use:
 

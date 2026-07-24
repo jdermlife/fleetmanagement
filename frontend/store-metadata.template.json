@@ -7,15 +7,15 @@
     "secondaryCategory": "Productivity",
     "supportEmail": "admin@quantech.international",
     "inAppSupportRoute": "/support",
-    "supportUrl": "https://your-public-domain.example/support",
-    "marketingUrl": "https://your-public-domain.example",
-    "privacyPolicyUrl": "https://your-public-domain.example/privacy",
-    "termsUrl": "https://your-public-domain.example/terms",
+    "supportUrl": "https://fleetmanagement-flame.vercel.app/support",
+    "marketingUrl": "https://fleetmanagement-flame.vercel.app",
+    "privacyPolicyUrl": "https://fleetmanagement-flame.vercel.app/privacy",
+    "termsUrl": "https://fleetmanagement-flame.vercel.app/terms",
     "publicPagesChecklist": {
       "supportRouteImplemented": true,
       "privacyRouteImplemented": true,
       "termsRouteImplemented": true,
-      "publicDomainDeployed": false
+      "publicDomainDeployed": true
     }
   },
   "googlePlay": {

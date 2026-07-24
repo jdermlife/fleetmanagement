@@ -23,6 +23,34 @@ Related evidence folder:
   Action plan to unify backend verification around the current FastAPI stack.
 - `google-play-submission-draft.md`
   Draft checklist and declaration notes for Play Console.
+- `google-play-go-live-blockers.md`
+  Strict blocker-only gate for deciding whether Google Play production submission is allowed.
+- `google-play-console-answers-draft.md`
+  Ready-to-paste working draft for Play Console Data safety and content-rating completion.
+- `android-gp06-gp07-device-qa-checklist.md`
+  Android release QA checklist focused on closing GP-06 and GP-07 with evidence.
+- `google-play-blocker-owner-tracker.md`
+  Owner, date, and evidence tracker for open Google Play blockers GP-03 through GP-08.
+- `google-play-closure-plan-2026-07-24-to-2026-08-02.md`
+  Day-by-day execution plan to close remaining Google Play blockers through 2026-08-02.
+- `gp03-gp04-stakeholder-signoff-pack.md`
+  Approval capture sheet for Product, Legal, Compliance, and Engineering to close GP-03 and GP-04.
+- `gp03-gp04-console-capture-checklist.md`
+  Console-entry and screenshot-capture checklist for completing GP-03 and GP-04 evidence.
+- `../release-evidence/gp03-gp04-screenshot-index.md`
+  Canonical screenshot status tracker for GP-03 and GP-04 closure evidence.
+- `gp05-gp08-execution-checklist.md`
+  Unified execution checklist for closing remaining Google Play blockers GP-05 through GP-08.
+- `google-play-command-center.md`
+  One-page run sheet for GP-03 through GP-08 execution and closeout updates.
+- `google-play-daily-ops-log.md`
+  Daily execution log for blocker status, risks, and next checkpoint tracking.
+- `google-play-status-update-playbook.md`
+  Standard operating playbook for consistent blocker status updates across all tracking docs.
+- `google-play-2026-07-26-kickoff-brief.md`
+  Next-session kickoff brief with owners, run order, and status transition targets.
+- `google-play-single-source-map.md`
+  Authoritative mapping of which file controls blocker state, ownership, procedure, and evidence.
 - `apple-app-store-submission-draft.md`
   Draft checklist and declaration notes for App Store Connect and App Review.
 - `reviewer-access-and-qa-template.md`
@@ -58,16 +86,14 @@ Related evidence folder:
 
 1. No proven iOS release archive or TestFlight upload exists in the repo yet.
 2. Real-device QA evidence is still missing.
-3. Public store metadata assets are still incomplete:
-   screenshots, support URL, published privacy-policy URL, review notes,
-   age-rating answers, and final content-rating questionnaires.
+3. Public store metadata assets are still incomplete: screenshots, review notes, age-rating answers, and final content-rating questionnaires.
 4. Privacy declarations in Play Console and App Store Connect still need human
    confirmation against legal, infrastructure, and third-party vendor behavior.
 
 ## Recommended Order
 
 1. Finalize `privacy-data-inventory.md` with legal/product review.
-2. Replace placeholder public URLs in `frontend/store-metadata.template.json`.
+2. Complete GP-03 and GP-04 stakeholder approvals and Play Console evidence capture.
 3. Create the first iOS/TestFlight release artifact.
 4. Run Android and iPhone device QA and record results in the release-evidence package.
-5. Copy the approved answers into Play Console and App Store Connect.
+5. Close remaining blockers in `google-play-go-live-blockers.md` with evidence paths.

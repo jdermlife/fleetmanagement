@@ -48,6 +48,14 @@ Use it to store proof for the remaining red blockers before:
   Capture reviewer/demo credentials, access notes, and validation status.
 - `reviewer-demo-account-fill-guide.md`
   Step-by-step guide for preparing the reviewer/demo-account package.
+- `data-safety-final-answers.md`
+  Final Play Console Data safety selections, approvals, and screenshot evidence.
+- `content-rating-final-evidence.md`
+  Final Play content-rating questionnaire responses, assigned rating, and evidence.
+- `android-permission-prompt-evidence.md`
+  Physical-device evidence for Android runtime permission prompts and disclosure behavior.
+- `gp03-gp04-screenshot-index.md`
+  Canonical screenshot tracker for Play Console GP-03 and GP-04 evidence capture.
 
 ## What This Folder Should Eventually Hold
 

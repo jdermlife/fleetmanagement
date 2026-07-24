@@ -38,17 +38,22 @@ Fill this with help from:
 ## Review Environment
 
 - Public frontend URL:
-  `Not deployed yet`
+  `https://fleetmanagement-flame.vercel.app`
 - Public support URL:
-  `https://your-public-domain.example/support`
+  `https://fleetmanagement-flame.vercel.app/support`
 - Public privacy URL:
-  `https://your-public-domain.example/privacy`
+  `https://fleetmanagement-flame.vercel.app/privacy`
 - Public terms URL:
-  `https://your-public-domain.example/terms`
+  `https://fleetmanagement-flame.vercel.app/terms`
 - Backend health URL:
-  `Pending public deployment`
+  `https://fleetmanagement-dq9t.onrender.com/health`
 - Backend ready URL:
-  `Pending public deployment`
+  `https://fleetmanagement-dq9t.onrender.com/ready`
+
+Backend endpoint verification status:
+
+- `GET /health` returned `{"status":"healthy"}` on 2026-07-24
+- `GET /ready` returned `{"status":"ready"}` on 2026-07-24
 
 ## Reviewer Scope
 
@@ -93,5 +98,6 @@ Draft reviewer note:
 Final submission note status:
 
 - `Draft prepared`
-- `Needs public URL confirmation`
+- `Public URL confirmation complete`
+- `Backend health and ready endpoints verified`
 - `Needs signed-build validation`

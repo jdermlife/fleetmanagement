@@ -41,6 +41,13 @@ Use this file to track store-listing asset completion.
 - Reviewer:
 - Final approval date:
 
+## Copy Sources
+
+- Working metadata and listing copy source:
+	documents/store-submission/public-facing-submission-metadata-draft.md
+- Play policy/support URL source:
+	frontend/store-metadata.template.json
+
 ## File Locations
 
 - Source design files:

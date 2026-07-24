@@ -17,6 +17,8 @@ Official references:
 - Release build no longer falls back to debug signing
 - `RECORD_AUDIO` permission is declared
 - Android backup/data extraction is explicitly disabled
+- Signed Android release `AAB` exists locally
+- Public support/privacy/terms URLs are deployed and referenced in metadata
 
 Observed in:
 
@@ -26,10 +28,10 @@ Observed in:
 
 ## Must Complete Before Submission
 
-1. Create a real signed release `AAB`.
+1. Upload existing signed release `AAB` to Play internal testing.
 2. Configure Play App Signing.
-3. Replace placeholder support/privacy/marketing URLs in
-   `frontend/store-metadata.template.json`.
+3. Keep support/privacy/marketing URLs stable in
+  `frontend/store-metadata.template.json`.
 4. Complete Data safety declarations from `privacy-data-inventory.md`.
 5. Complete the content rating questionnaire.
 6. Prepare screenshots, app icon validation, short description, full
@@ -75,10 +77,7 @@ Use this as a draft only. Final answers must be confirmed by legal/product.
 
 ## Missing Repo Artifacts
 
-- No signed `.aab` in repo
 - No Play listing screenshots in repo
-- No final support URL
-- No final public privacy-policy URL
 - No completed Data safety export or worksheet
 
 ## Recommended Console Attachments

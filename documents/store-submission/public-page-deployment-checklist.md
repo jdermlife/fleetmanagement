@@ -6,11 +6,11 @@ URLs into Google Play Console or App Store Connect.
 ## Target Public URLs
 
 - Support:
-  `https://your-public-domain.example/support`
+  `https://fleetmanagement-flame.vercel.app/support`
 - Privacy:
-  `https://your-public-domain.example/privacy`
+  `https://fleetmanagement-flame.vercel.app/privacy`
 - Terms:
-  `https://your-public-domain.example/terms`
+  `https://fleetmanagement-flame.vercel.app/terms`
 
 ## Matching In-App Routes
 

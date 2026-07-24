@@ -39,29 +39,27 @@ This app is intended for authorized operational and credit-workflow use cases.
 Users should only submit information they are authorized to collect, review,
 and manage.
 
-## Support and Policy URL Placeholders
-
-Replace these before submission:
+## Support and Policy URLs
 
 - Support URL:
-  `https://your-public-domain.example/support`
+  `https://fleetmanagement-flame.vercel.app/support`
   Source route in app:
   `/support`
 - Marketing URL:
-  `https://your-public-domain.example`
+  `https://fleetmanagement-flame.vercel.app`
 - Privacy Policy URL:
-  `https://your-public-domain.example/privacy`
+  `https://fleetmanagement-flame.vercel.app/privacy`
   Source route in app:
   `/privacy`
 - Terms URL:
-  `https://your-public-domain.example/terms`
+  `https://fleetmanagement-flame.vercel.app/terms`
   Source route in app:
   `/terms`
 - Support email:
   `admin@quantech.international`
 
-The current frontend now includes these public-facing routes, but they still
-need to be deployed on a real public domain before store submission.
+The current frontend includes these public-facing routes and they are deployed
+on a public domain. Keep these URLs stable through submission.
 
 ## Reviewer Notes Draft
 
