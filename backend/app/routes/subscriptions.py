@@ -1130,33 +1130,8 @@ def _create_paypal_order_for_user(
             if payload.request_id
             else f"PP-{uuid.uuid4().hex.upper()}"[:35]
         )
-        if payload.request_id:
-            existing_payment = (
-                db.query(SubscriptionPayment)
-                .filter(SubscriptionPayment.provider_id == provider.id)
-                .filter(SubscriptionPayment.payment_reference == payment_reference)
-                .first()
-            )
-            if existing_payment is not None:
-                if existing_payment.subscription_id != subscription.id:
-                    raise HTTPException(status_code=409, detail="PayPal request ID is already in use")
-                if existing_payment.payment_status not in {"PENDING", "SUCCESS"}:
-                    raise HTTPException(status_code=409, detail="PayPal request cannot be retried")
-                if not existing_payment.provider_transaction_id:
-                    raise HTTPException(status_code=409, detail="PayPal order is unavailable")
-                return {
-                    "order_id": existing_payment.provider_transaction_id,
-                    "status": (
-                        "COMPLETED"
-                        if existing_payment.payment_status == "SUCCESS"
-                        else "CREATED"
-                    ),
-                    "approval_url": None,
-                    "amount": float(existing_payment.amount or 0),
-                    "currency": existing_payment.currency,
-                    "payment": _serialize_subscription_payment(existing_payment),
-                    "reused": True,
-                }
+        # TEMPORARILY DISABLE REUSE
+        existing_payment = None
 
         plan = getattr(subscription, "plan", None)
         if plan is None:
