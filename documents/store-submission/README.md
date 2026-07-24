@@ -53,6 +53,14 @@ Related evidence folder:
   Authoritative mapping of which file controls blocker state, ownership, procedure, and evidence.
 - `apple-app-store-submission-draft.md`
   Draft checklist and declaration notes for App Store Connect and App Review.
+- `apple-app-store-go-live-blockers.md`
+  Strict blocker-only gate for deciding whether Apple App Review submission is allowed.
+- `apple-app-store-blocker-owner-tracker.md`
+  Owner, date, and evidence tracker for open Apple App Store blockers AP-03 through AP-08.
+- `apple-app-store-command-center.md`
+  One-page run sheet for AP-03 through AP-08 execution and closeout updates.
+- `apple-ap03-testflight-handoff.md`
+  AP-03 execution packet for macOS operator to archive, upload to TestFlight, and return evidence updates.
 - `reviewer-access-and-qa-template.md`
   Template for review credentials, TestFlight / Play test evidence, and device QA.
 - `public-page-deployment-checklist.md`

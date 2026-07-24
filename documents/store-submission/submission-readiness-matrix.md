@@ -27,20 +27,22 @@ Legend:
 
 ## Apple App Store
 
+Status sync reference: `documents/store-submission/apple-app-store-go-live-blockers.md` (baseline synced 2026-07-25).
+
 | Item | Current status | Owner | Evidence needed | Current repo evidence | Blocker | Next action |
 | --- | --- | --- | --- | --- | --- | --- |
-| Bundle ID and iOS metadata base | Green | Mobile engineer | Xcode archive with matching metadata | `com.fms.mobile`, `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` in Xcode project | No | Increment versions before submission |
+| AP-02 Bundle ID and iOS metadata base | Green | Mobile engineer | Xcode archive with matching metadata | `com.fms.mobile`, `MARKETING_VERSION`, `CURRENT_PROJECT_VERSION` in Xcode project | No | Increment versions before submission |
 | Microphone usage disclosure | Green | Mobile engineer | Device prompt matches declared usage string | `NSMicrophoneUsageDescription` present in `Info.plist` | No | Validate on real iPhone |
 | Sign in with Apple availability | Green | Mobile engineer / Product | Reviewable Apple sign-in flow | Apple sign-in path exists alongside Google sign-in | No | Validate with Apple test account |
 | In-app account deletion | Amber | Backend engineer / QA | Real-device evidence that deletion works end-to-end | Delete-account flow now exists in app and backend | Yes | Verify on device and include in reviewer notes |
-| Signed iOS/TestFlight build | Red | Mobile engineer / Release manager | Release archive and TestFlight upload | No `.ipa`, `.xcarchive`, or TestFlight evidence in repo | Yes | Follow `documents/release-evidence/ios-testflight-release-runbook.md`, then log the result in `documents/release-evidence/signed-build-evidence.md` |
-| App Privacy answers | Amber | Product / Legal / Engineering | Final App Store Connect privacy answers | Draft data inventory and App Store notes exist | Yes | Finalize App Privacy responses from verified flows |
-| Privacy manifest / SDK manifest review | Amber | iOS engineer | Confirm whether `PrivacyInfo.xcprivacy` is needed for final SDK set | No `PrivacyInfo.xcprivacy` file found in repo | Maybe | Audit SDK requirements and add manifest if needed |
-| Public privacy policy URL | Green | Product / Web / Legal | Live policy URL | Public URL is deployed and referenced in metadata | No | Keep URL stable and monitored |
-| Support URL | Green | Product / Ops | Live support URL | Public URL is deployed and referenced in metadata | No | Confirm support response process remains active |
-| App Review notes and demo account | Red | Product / QA / Ops | Final review note text plus working credentials | Draft exists in `public-facing-submission-metadata-draft.md` | Yes | Finalize reviewer package and validate access in `documents/release-evidence/reviewer-demo-account-evidence.md` |
-| Real iPhone / TestFlight QA evidence | Red | QA / Mobile engineer | Device/OS matrix with pass/fail evidence | No real-device QA evidence in repo | Yes | Run TestFlight QA and record results in `documents/release-evidence/device-qa-matrix.md` |
-| Store screenshots and metadata assets | Red | Product / Design / Marketing | iPhone screenshots and final listing copy | Draft copy exists; no final assets | Yes | Produce App Store asset package and track completion in `documents/release-evidence/screenshot-asset-checklist.md` |
+| AP-03 Signed iOS/TestFlight build | Red | Mobile engineer / Release manager | Release archive and TestFlight upload | No `.ipa`, `.xcarchive`, or TestFlight evidence in repo | Yes | Follow `documents/release-evidence/ios-testflight-release-runbook.md`, then log the result in `documents/release-evidence/signed-build-evidence.md` |
+| AP-06 App Privacy answers | Amber | Product / Legal / Engineering | Final App Store Connect privacy answers | Draft data inventory and App Store notes exist | Yes | Finalize App Privacy responses from verified flows |
+| AP-08 Privacy manifest / SDK manifest review | Amber | iOS engineer | Confirm whether `PrivacyInfo.xcprivacy` is needed for final SDK set | No `PrivacyInfo.xcprivacy` file found in repo | Maybe | Audit SDK requirements and add manifest if needed |
+| AP-01 Public privacy policy URL | Green | Product / Web / Legal | Live policy URL | Public URL is deployed and referenced in metadata | No | Keep URL stable and monitored |
+| AP-01 Support URL | Green | Product / Ops | Live support URL | Public URL is deployed and referenced in metadata | No | Confirm support response process remains active |
+| AP-05 App Review notes and demo account | Red | Product / QA / Ops | Final review note text plus working credentials | Draft exists in `public-facing-submission-metadata-draft.md` | Yes | Finalize reviewer package and validate access in `documents/release-evidence/reviewer-demo-account-evidence.md` |
+| AP-04 Real iPhone / TestFlight QA evidence | Red | QA / Mobile engineer | Device/OS matrix with pass/fail evidence | No real-device QA evidence in repo | Yes | Run TestFlight QA and record results in `documents/release-evidence/device-qa-matrix.md` |
+| AP-07 Store screenshots and metadata assets | Red | Product / Design / Marketing | iPhone screenshots and final listing copy | Draft copy exists; no final assets | Yes | Produce App Store asset package and track completion in `documents/release-evidence/screenshot-asset-checklist.md` |
 
 ## Global Production Launch
 
