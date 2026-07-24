@@ -13,6 +13,7 @@ interface ProductCredit {
   productType: string
   applicationNo: string
   borrowerName: string
+  rawProductType: string
   creditScore: CreditScore
   psychometricScore: CreditScore
   socialScore: CreditScore
@@ -26,7 +27,27 @@ interface ProductCredit {
 interface ApplicantRecord {
   id: string
   name: string
+  mainProduct: ProductCredit
   products: ProductCredit[]
+}
+
+const SUPPLEMENTAL_PRODUCT_TYPES = ['Personal Loan', 'Credit Card', 'Home Loan'] as const
+
+const normalizeProductType = (value?: string): string =>
+  (value || '').trim().toLowerCase().replace(/[-_]/g, ' ')
+
+const formatProductType = (value?: string): string => {
+  const normalized = normalizeProductType(value)
+  if (normalized === 'personal loan') return 'Personal Loan'
+  if (normalized === 'credit card') return 'Credit Card'
+  if (normalized === 'home loan') return 'Home Loan'
+  return value?.trim() || 'Unknown Product'
+}
+
+const getIssuedTimestamp = (product: ProductCredit): number => {
+  if (!product.issuedAt) return 0
+  const parsed = Date.parse(product.issuedAt)
+  return Number.isNaN(parsed) ? 0 : parsed
 }
 
 export default function CreditHealthMultiProductPage() {
@@ -55,7 +76,22 @@ export default function CreditHealthMultiProductPage() {
           return
         }
 
-        const applicantRecord = toApplicantRecord(latestApplication)
+        const allApplications = await fetchLoanApplications({
+          limit: 1000,
+          offset: 0,
+          summary: false,
+        })
+
+        const sameBorrowerApplications = allApplications.filter(
+          (application) =>
+            (application.borrower_name || '').trim().toLowerCase() ===
+            (latestApplication.borrower_name || '').trim().toLowerCase(),
+        )
+
+        const applicantRecord = toApplicantRecord(
+          latestApplication,
+          sameBorrowerApplications.length > 0 ? sameBorrowerApplications : [latestApplication],
+        )
         setSelectedApplicant(applicantRecord)
       } catch (error) {
         setMessage(getErrorMessage(error, 'Failed to load applicant records.'))
@@ -67,68 +103,108 @@ export default function CreditHealthMultiProductPage() {
     void loadApplicantRecords()
   }, [])
 
-  const toApplicantRecord = (app: LoanApplicationRecord): ApplicantRecord => {
-    const borrowerName = app.borrower_name || 'Unknown Applicant'
+  const toApplicantRecord = (
+    latestApplication: LoanApplicationRecord,
+    borrowerApplications: LoanApplicationRecord[],
+  ): ApplicantRecord => {
+    const borrowerName = latestApplication.borrower_name || 'Unknown Applicant'
 
-    // Convert raw scores to FILSCORE for the certificate panel.
-    const creditFilscore = app.overall_scores?.credit_score
-      ? toFilscore(app.overall_scores.credit_score)
-      : null
-    const creditBand = creditFilscore ? getFilscoreBand(creditFilscore) : null
+    const toProductCredit = (app: LoanApplicationRecord): ProductCredit => {
+      const borrowerNameForProduct = app.borrower_name || 'Unknown Applicant'
+      const normalizedProductType = formatProductType(app.product_type)
 
-    const fraudFilscore = app.overall_scores?.fraud_score
-      ? toFilscore(app.overall_scores.fraud_score)
-      : null
-    const fraudBand = fraudFilscore ? getFilscoreBand(fraudFilscore) : null
+      // Convert raw scores to FILSCORE for the certificate panel.
+      const creditFilscore = app.overall_scores?.credit_score
+        ? toFilscore(app.overall_scores.credit_score)
+        : null
+      const creditBand = creditFilscore ? getFilscoreBand(creditFilscore) : null
 
-    const socialFilscore = app.overall_scores?.social_score
-      ? toFilscore(app.overall_scores.social_score)
-      : null
-    const socialBand = socialFilscore ? getFilscoreBand(socialFilscore) : null
+      const fraudFilscore = app.overall_scores?.fraud_score
+        ? toFilscore(app.overall_scores.fraud_score)
+        : null
+      const fraudBand = fraudFilscore ? getFilscoreBand(fraudFilscore) : null
 
-    const psychoFilscore = app.overall_scores?.psychometric_score
-      ? toFilscore(app.overall_scores.psychometric_score)
-      : null
-    const psychoBand = psychoFilscore ? getFilscoreBand(psychoFilscore) : null
+      const socialFilscore = app.overall_scores?.social_score
+        ? toFilscore(app.overall_scores.social_score)
+        : null
+      const socialBand = socialFilscore ? getFilscoreBand(socialFilscore) : null
 
-    const product: ProductCredit = {
-      productType: app.product_type || 'Unknown Product',
-      applicationNo: app.application_no,
-      borrowerName,
-      creditScore: {
-        score: creditFilscore,
-        label: 'Credit Score',
-        grade: creditBand?.grade,
-      },
-      psychometricScore: {
-        score: psychoFilscore,
-        label: 'Credit Values Score',
-        grade: psychoBand?.grade,
-      },
-      socialScore: {
-        score: socialFilscore,
-        label: 'Social Score',
-        grade: socialBand?.grade,
-      },
-      fraudScore: {
-        score: fraudFilscore,
-        label: 'Non-Starter Score',
-        grade: fraudBand?.grade,
-      },
-      finalGrade: app.overall_scores?.final_grade,
-      finalRating: app.overall_scores?.final_rating,
-      compositeScore: app.overall_scores?.composite_score,
-      issuedAt: app.overall_scores?.created_at || app.created_at,
+      const psychoFilscore = app.overall_scores?.psychometric_score
+        ? toFilscore(app.overall_scores.psychometric_score)
+        : null
+      const psychoBand = psychoFilscore ? getFilscoreBand(psychoFilscore) : null
+
+      return {
+        productType: normalizedProductType,
+        rawProductType: app.product_type || '',
+        applicationNo: app.application_no,
+        borrowerName: borrowerNameForProduct,
+        creditScore: {
+          score: creditFilscore,
+          label: 'Credit Score',
+          grade: creditBand?.grade,
+        },
+        psychometricScore: {
+          score: psychoFilscore,
+          label: 'Credit Values Score',
+          grade: psychoBand?.grade,
+        },
+        socialScore: {
+          score: socialFilscore,
+          label: 'Social Score',
+          grade: socialBand?.grade,
+        },
+        fraudScore: {
+          score: fraudFilscore,
+          label: 'Non-Starter Score',
+          grade: fraudBand?.grade,
+        },
+        finalGrade: app.overall_scores?.final_grade,
+        finalRating: app.overall_scores?.final_rating,
+        compositeScore: app.overall_scores?.composite_score,
+        issuedAt: app.overall_scores?.created_at || app.created_at,
+      }
     }
 
+    const allBorrowerProducts = borrowerApplications.map(toProductCredit)
+    const latestByProductType = new Map<string, ProductCredit>()
+    allBorrowerProducts.forEach((product) => {
+      const key = normalizeProductType(product.productType)
+      const existing = latestByProductType.get(key)
+      if (!existing || getIssuedTimestamp(product) >= getIssuedTimestamp(existing)) {
+        latestByProductType.set(key, product)
+      }
+    })
+
+    const mainProduct = toProductCredit(latestApplication)
+    latestByProductType.set(normalizeProductType(mainProduct.productType), mainProduct)
+
+    const products = Array.from(latestByProductType.values())
+      .sort((a, b) => getIssuedTimestamp(b) - getIssuedTimestamp(a))
+
     return {
-      id: app.application_no,
+      id: latestApplication.application_no,
       name: borrowerName,
-      products: [product],
+      mainProduct,
+      products,
     }
   }
 
-  const renderFilscoreCertificate = (product: ProductCredit) => (
+  const renderFilscoreCertificate = (product: ProductCredit, allProducts: ProductCredit[]) => {
+    const mainProductType = normalizeProductType(product.productType)
+    const supplementalProducts = SUPPLEMENTAL_PRODUCT_TYPES
+      .map((productType) => {
+        const match = allProducts.find(
+          (p) => normalizeProductType(p.productType) === normalizeProductType(productType),
+        )
+        return {
+          productType,
+          score: match?.compositeScore ?? match?.creditScore.score ?? null,
+        }
+      })
+      .filter((item) => normalizeProductType(item.productType) !== mainProductType)
+
+    return (
     <div
       style={{
         backgroundColor: '#fffaf0',
@@ -301,6 +377,36 @@ export default function CreditHealthMultiProductPage() {
         </div>
       </div>
 
+      {/* Other Product Scores */}
+      {supplementalProducts.length > 0 && (
+        <div style={{ marginBottom: 24 }}>
+          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', marginBottom: 10, letterSpacing: '0.06em' }}>
+            OTHER PRODUCT SCORES
+          </div>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
+            {supplementalProducts.map((item) => (
+              <div
+                key={item.productType}
+                style={{
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '8px',
+                  padding: '14px 10px',
+                  textAlign: 'center',
+                  border: '1px solid #fde68a',
+                }}
+              >
+                <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', marginBottom: 6 }}>
+                  {item.productType.toUpperCase()}
+                </div>
+                <div style={{ fontSize: '30px', color: '#0f766e', fontWeight: 'bold', lineHeight: 1 }}>
+                  {item.score ?? 'N/A'}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Certificate Details Footer */}
       <div style={{ fontSize: '11px', color: '#666', textAlign: 'left', borderTop: '1px solid #e5e7eb', paddingTop: 16 }}>
         <div>Certificate ID: {product.applicationNo}</div>
@@ -315,6 +421,7 @@ export default function CreditHealthMultiProductPage() {
       </div>
     </div>
   )
+  }
 
   return (
     <div className="standalone-card">
@@ -338,11 +445,7 @@ export default function CreditHealthMultiProductPage() {
                 FILSCORE Certification and Credit Scores for the latest record
               </p>
 
-              {selectedApplicant.products.map((product, index) => (
-                <div key={index}>
-                  {renderFilscoreCertificate(product)}
-                </div>
-              ))}
+              {renderFilscoreCertificate(selectedApplicant.mainProduct, selectedApplicant.products)}
             </div>
           )}
 
