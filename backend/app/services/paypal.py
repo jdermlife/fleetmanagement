@@ -30,7 +30,7 @@ def _required_environment_value(name: str) -> str:
 
 
 def _paypal_api_base_url() -> str:
-    api_base_url = os.getenv("PAYPAL_API_BASE_URL", "https://api-m.sandbox.paypal.com").rstrip("/")
+    api_base_url = os.getenv("PAYPAL_API_BASE_URL", "https://api-m.paypal.com").rstrip("/")
     parsed_api_url = urlparse(api_base_url)
     if parsed_api_url.scheme != "https" or not parsed_api_url.hostname:
         raise PayPalConfigurationError("PAYPAL_API_BASE_URL must be an absolute HTTPS URL")
