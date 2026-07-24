@@ -17,7 +17,7 @@ class FakeResponse:
             "id": "ORDER-TEST-123",
             "status": "CREATED",
             "links": [
-                {"rel": "approve", "href": "https://www.sandbox.paypal.com/checkoutnow?token=ORDER-TEST-123"}
+                {"rel": "approve", "href": "https://api-m.paypal.com/checkoutnow?token=ORDER-TEST-123"}
             ],
         }
 
@@ -25,7 +25,7 @@ class FakeResponse:
 def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypatch):
     monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
     monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
-    monkeypatch.setenv("PAYPAL_API_BASE_URL", "https://api-m.sandbox.paypal.com")
+    monkeypatch.setenv("PAYPAL_API_BASE_URL", "https://api-m.paypal.com":)
 
     captured: dict[str, object] = {}
 
@@ -57,14 +57,14 @@ def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypat
         invoice_id="SUB-TEST-001",
     )
 
-    assert captured["token_url"] == "https://api-m.sandbox.paypal.com/v1/oauth2/token"
+    assert captured["token_url"] == "https://api-m.paypal.com/v1/oauth2/token"
     assert captured["token_auth"] == ("paypal_client_id", "paypal_secret")
-    assert captured["order_url"] == "https://api-m.sandbox.paypal.com/v2/checkout/orders"
+    assert captured["order_url"] == "https://api-m.paypal.com/v2/checkout/orders"
     assert captured["headers"]["Authorization"] == "Bearer ACCESS_TOKEN"
     assert captured["headers"]["PayPal-Request-Id"] == "PP-TEST-001"
     assert captured["json"]["purchase_units"][0]["amount"]["value"] == "999.00"
     assert result["order_id"] == "ORDER-TEST-123"
-    assert result["approval_url"].startswith("https://www.sandbox.paypal.com/")
+    assert result["approval_url"].startswith("https://https://api-m.paypal.com/")
 
 
 def test_capture_order_returns_completed_amount(monkeypatch):
