@@ -165,6 +165,13 @@ def create_order(
         order_id = str(order_payload["id"])
         status = str(order_payload.get("status") or "CREATED")
         links = order_payload.get("links") or []
+
+        print("========== PAYPAL ORDER ==========")
+        print("ORDER ID:", order_id)
+        print("STATUS:", status)
+        print("RAW RESPONSE:", json.dumps(order_payload, indent=2))
+        print("==================================")
+
     except (KeyError, TypeError, ValueError) as exc:
         raise PayPalAPIError("PayPal returned an invalid order response") from exc
 
@@ -181,15 +188,7 @@ def create_order(
         "raw": order_payload,
     }
 
-print("========== PAYPAL ORDER ==========")
-print("ORDER ID:", order_id)
-print("STATUS:", order_payload.get("status"))
-print("APPROVAL URL:", next(
-    (x.get("href") for x in order_payload.get("links", [])
-     if x.get("rel") == "approve"),
-    None,
-))
-print("==================================")
+
 
 def capture_order(order_id: str, *, request_id: str | None = None) -> dict[str, Any]:
     if not order_id or len(order_id.strip()) < 3:
