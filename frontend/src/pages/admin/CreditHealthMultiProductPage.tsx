@@ -30,11 +30,9 @@ interface ApplicantRecord {
 }
 
 export default function CreditHealthMultiProductPage() {
-  const [records, setRecords] = useState<ApplicantRecord[]>([])
   const [selectedApplicant, setSelectedApplicant] = useState<ApplicantRecord | null>(null)
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
 
   useEffect(() => {
     const loadApplicantRecords = async () => {
@@ -44,101 +42,21 @@ export default function CreditHealthMultiProductPage() {
         // Get current user
         await fetchCurrentUser()
 
-        // Fetch loan applications
-        let allApplications: LoanApplicationRecord[] = []
-        try {
-          const response = await fetch('/api/loan-applications?limit=1000&offset=0&summary=false')
-          if (response.ok) {
-            const data = await response.json()
-            allApplications = data.records || []
-          }
-        } catch (error) {
-          // Fallback if API call fails
-          allApplications = await fetchLoanApplications()
-        }
-
-        // Group applications by borrower name and convert to applicant records
-        const applicantMap = new Map<string, ProductCredit[]>()
-
-        allApplications.forEach((app: LoanApplicationRecord) => {
-          const borrowerName = app.borrower_name || 'Unknown Applicant'
-          
-          // Convert scores to FILSCORE scale
-          const creditFilscore = app.overall_scores?.credit_score
-            ? toFilscore(app.overall_scores.credit_score)
-            : null
-          const creditBand = creditFilscore ? getFilscoreBand(creditFilscore) : null
-          
-          const fraudFilscore = app.overall_scores?.fraud_score
-            ? toFilscore(app.overall_scores.fraud_score)
-            : null
-          const fraudBand = fraudFilscore ? getFilscoreBand(fraudFilscore) : null
-          
-          const socialFilscore = app.overall_scores?.social_score
-            ? toFilscore(app.overall_scores.social_score)
-            : null
-          const socialBand = socialFilscore ? getFilscoreBand(socialFilscore) : null
-          
-          const psychoFilscore = app.overall_scores?.psychometric_score
-            ? toFilscore(app.overall_scores.psychometric_score)
-            : null
-          const psychoBand = psychoFilscore ? getFilscoreBand(psychoFilscore) : null
-
-          const product: ProductCredit = {
-            productType: app.product_type || 'Unknown Product',
-            applicationNo: app.application_no,
-            borrowerName,
-            creditScore: {
-              score: creditFilscore,
-              label: 'Credit Score',
-              grade: creditBand?.grade,
-            },
-            psychometricScore: {
-              score: psychoFilscore,
-              label: 'Credit Values Score',
-              grade: psychoBand?.grade,
-            },
-            socialScore: {
-              score: socialFilscore,
-              label: 'Social Score',
-              grade: socialBand?.grade,
-            },
-            fraudScore: {
-              score: fraudFilscore,
-              label: 'Non-Starter Score',
-              grade: fraudBand?.grade,
-            },
-            finalGrade: app.overall_scores?.final_grade,
-            finalRating: app.overall_scores?.final_rating,
-            compositeScore: app.overall_scores?.composite_score,
-            issuedAt: app.overall_scores?.created_at || app.created_at,
-          }
-
-          if (!applicantMap.has(borrowerName)) {
-            applicantMap.set(borrowerName, [])
-          }
-          applicantMap.get(borrowerName)?.push(product)
+        const latestApplications = await fetchLoanApplications({
+          limit: 1,
+          offset: 0,
+          summary: false,
         })
 
-        // Convert map to applicant records
-        const applicantRecords: ApplicantRecord[] = Array.from(applicantMap.entries()).map(
-          ([name, products], index) => ({
-            id: `app-${index}`,
-            name,
-            products,
-          }),
-        )
-
-        // Auto-select first applicant if available
-        if (applicantRecords.length > 0) {
-          setSelectedApplicant(applicantRecords[0])
-        }
-
-        setRecords(applicantRecords)
-
-        if (applicantRecords.length === 0) {
+        const latestApplication = latestApplications[0]
+        if (!latestApplication) {
+          setSelectedApplicant(null)
           setMessage('No loan applications found.')
+          return
         }
+
+        const applicantRecord = toApplicantRecord(latestApplication)
+        setSelectedApplicant(applicantRecord)
       } catch (error) {
         setMessage(getErrorMessage(error, 'Failed to load applicant records.'))
       } finally {
@@ -149,9 +67,66 @@ export default function CreditHealthMultiProductPage() {
     void loadApplicantRecords()
   }, [])
 
-  const filteredRecords = records.filter((record) =>
-    record.name.toLowerCase().includes(searchTerm.toLowerCase()),
-  )
+  const toApplicantRecord = (app: LoanApplicationRecord): ApplicantRecord => {
+    const borrowerName = app.borrower_name || 'Unknown Applicant'
+
+    // Convert raw scores to FILSCORE for the certificate panel.
+    const creditFilscore = app.overall_scores?.credit_score
+      ? toFilscore(app.overall_scores.credit_score)
+      : null
+    const creditBand = creditFilscore ? getFilscoreBand(creditFilscore) : null
+
+    const fraudFilscore = app.overall_scores?.fraud_score
+      ? toFilscore(app.overall_scores.fraud_score)
+      : null
+    const fraudBand = fraudFilscore ? getFilscoreBand(fraudFilscore) : null
+
+    const socialFilscore = app.overall_scores?.social_score
+      ? toFilscore(app.overall_scores.social_score)
+      : null
+    const socialBand = socialFilscore ? getFilscoreBand(socialFilscore) : null
+
+    const psychoFilscore = app.overall_scores?.psychometric_score
+      ? toFilscore(app.overall_scores.psychometric_score)
+      : null
+    const psychoBand = psychoFilscore ? getFilscoreBand(psychoFilscore) : null
+
+    const product: ProductCredit = {
+      productType: app.product_type || 'Unknown Product',
+      applicationNo: app.application_no,
+      borrowerName,
+      creditScore: {
+        score: creditFilscore,
+        label: 'Credit Score',
+        grade: creditBand?.grade,
+      },
+      psychometricScore: {
+        score: psychoFilscore,
+        label: 'Credit Values Score',
+        grade: psychoBand?.grade,
+      },
+      socialScore: {
+        score: socialFilscore,
+        label: 'Social Score',
+        grade: socialBand?.grade,
+      },
+      fraudScore: {
+        score: fraudFilscore,
+        label: 'Non-Starter Score',
+        grade: fraudBand?.grade,
+      },
+      finalGrade: app.overall_scores?.final_grade,
+      finalRating: app.overall_scores?.final_rating,
+      compositeScore: app.overall_scores?.composite_score,
+      issuedAt: app.overall_scores?.created_at || app.created_at,
+    }
+
+    return {
+      id: app.application_no,
+      name: borrowerName,
+      products: [product],
+    }
+  }
 
   const renderFilscoreCertificate = (product: ProductCredit) => (
     <div
@@ -345,60 +320,22 @@ export default function CreditHealthMultiProductPage() {
     <div className="standalone-card">
       <h1>Credit Health Multi Product</h1>
       <p className="intro">
-        View FILSCORE Certification and all Credit Scores across all products for applicants and records.
+        View FILSCORE Certification and Credit Scores for the latest applicant record.
       </p>
 
       {message ? <p className="status-message">{message}</p> : null}
 
       {loading ? (
         <div className="card">
-          <p>Loading applicant records...</p>
+          <p>Loading latest applicant record...</p>
         </div>
       ) : (
         <>
-          {/* Search Section */}
-          <div className="card" style={{ marginBottom: 16 }}>
-            <label>
-              Search Applicant
-              <input
-                type="text"
-                placeholder="Enter applicant name..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                style={{ width: '100%' }}
-              />
-            </label>
-          </div>
-
-          {/* Applicant List */}
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(250px, 1fr))', gap: '12px', marginBottom: 24 }}>
-            {filteredRecords.map((record) => (
-              <div
-                key={record.id}
-                onClick={() => setSelectedApplicant(record)}
-                style={{
-                  padding: '16px',
-                  borderRadius: '8px',
-                  border: `2px solid ${selectedApplicant?.id === record.id ? '#0f766e' : '#e2e8f0'}`,
-                  backgroundColor: selectedApplicant?.id === record.id ? '#f0fdf4' : '#fff',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
-              >
-                <div style={{ fontWeight: '600', marginBottom: '4px' }}>{record.name}</div>
-                <div style={{ fontSize: '12px', color: '#666' }}>
-                  {record.products.length} product{record.products.length !== 1 ? 's' : ''}
-                </div>
-              </div>
-            ))}
-          </div>
-
-          {/* Selected Applicant Details */}
           {selectedApplicant && (
             <div>
               <h2 style={{ marginBottom: 8 }}>{selectedApplicant.name}</h2>
               <p className="intro" style={{ marginBottom: 24 }}>
-                FILSCORE Certification and Credit Scores for {selectedApplicant.products.length} Product(s)
+                FILSCORE Certification and Credit Scores for the latest record
               </p>
 
               {selectedApplicant.products.map((product, index) => (
@@ -409,10 +346,10 @@ export default function CreditHealthMultiProductPage() {
             </div>
           )}
 
-          {!selectedApplicant && filteredRecords.length === 0 && (
+          {!selectedApplicant && (
             <div className="card">
               <p style={{ textAlign: 'center', color: '#666' }}>
-                {searchTerm ? 'No applicants found matching your search.' : 'No applicant records available.'}
+                No applicant records available.
               </p>
             </div>
           )}
