@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
-import { getErrorMessage } from '../../api'
+import { fetchCurrentUser, getErrorMessage } from '../../api'
+import { fetchLoanApplications, type LoanApplicationRecord } from '../../api/loan'
+import { toFilscore, getFilscoreBand } from './filscoreScale'
 
 interface CreditScore {
   score: number | null
@@ -39,30 +41,105 @@ export default function CreditHealthMultiProductPage() {
       setLoading(true)
       setMessage('')
       try {
-        // TODO: Replace with actual API call to fetch all applicants with their credit scores
-        // For now, this is a placeholder that shows the structure
-        const mockData: ApplicantRecord[] = [
-          {
-            id: 'app-001',
-            name: 'Sample Applicant 1',
-            products: [
-              {
-                productType: 'Auto Loan',
-                applicationNo: 'APP-2024-001',
-                borrowerName: 'Sample Applicant 1',
-                creditScore: { score: 75, label: 'Credit Score', grade: 'Gold 1' },
-                psychometricScore: { score: 68, label: 'Credit Values Score', grade: 'Silver 1' },
-                socialScore: { score: 72, label: 'Social Score', grade: 'Gold 2' },
-                fraudScore: { score: 45, label: 'Non-Starter Score', grade: 'Silver 2' },
-                finalGrade: 'A',
-                finalRating: 'Excellent',
-                compositeScore: 850,
-                issuedAt: new Date().toISOString(),
-              },
-            ],
-          },
-        ]
-        setRecords(mockData)
+        // Get current user to check if admin
+        const currentUser = await fetchCurrentUser()
+        const isAdmin = currentUser?.role?.toLowerCase() === 'admin'
+
+        // Fetch loan applications
+        let allApplications: LoanApplicationRecord[] = []
+        try {
+          const response = await fetch('/api/loan-applications?limit=1000&offset=0&summary=false')
+          if (response.ok) {
+            const data = await response.json()
+            allApplications = data.records || []
+          }
+        } catch (error) {
+          // Fallback if API call fails
+          allApplications = await fetchLoanApplications()
+        }
+
+        // Group applications by borrower name and convert to applicant records
+        const applicantMap = new Map<string, ProductCredit[]>()
+
+        allApplications.forEach((app: LoanApplicationRecord) => {
+          const borrowerName = app.borrower_name || 'Unknown Applicant'
+          
+          // Convert scores to FILSCORE scale
+          const creditFilscore = app.overall_scores?.credit_score
+            ? toFilscore(app.overall_scores.credit_score)
+            : null
+          const creditBand = creditFilscore ? getFilscoreBand(creditFilscore) : null
+          
+          const fraudFilscore = app.overall_scores?.fraud_score
+            ? toFilscore(app.overall_scores.fraud_score)
+            : null
+          const fraudBand = fraudFilscore ? getFilscoreBand(fraudFilscore) : null
+          
+          const socialFilscore = app.overall_scores?.social_score
+            ? toFilscore(app.overall_scores.social_score)
+            : null
+          const socialBand = socialFilscore ? getFilscoreBand(socialFilscore) : null
+          
+          const psychoFilscore = app.overall_scores?.psychometric_score
+            ? toFilscore(app.overall_scores.psychometric_score)
+            : null
+          const psychoBand = psychoFilscore ? getFilscoreBand(psychoFilscore) : null
+
+          const product: ProductCredit = {
+            productType: app.product_type || 'Unknown Product',
+            applicationNo: app.application_no,
+            borrowerName,
+            creditScore: {
+              score: creditFilscore,
+              label: 'Credit Score',
+              grade: creditBand?.grade,
+            },
+            psychometricScore: {
+              score: psychoFilscore,
+              label: 'Credit Values Score',
+              grade: psychoBand?.grade,
+            },
+            socialScore: {
+              score: socialFilscore,
+              label: 'Social Score',
+              grade: socialBand?.grade,
+            },
+            fraudScore: {
+              score: fraudFilscore,
+              label: 'Non-Starter Score',
+              grade: fraudBand?.grade,
+            },
+            finalGrade: app.overall_scores?.final_grade,
+            finalRating: app.overall_scores?.final_rating,
+            compositeScore: app.overall_scores?.composite_score,
+            issuedAt: app.overall_scores?.created_at || app.created_at,
+          }
+
+          if (!applicantMap.has(borrowerName)) {
+            applicantMap.set(borrowerName, [])
+          }
+          applicantMap.get(borrowerName)?.push(product)
+        })
+
+        // Convert map to applicant records
+        const applicantRecords: ApplicantRecord[] = Array.from(applicantMap.entries()).map(
+          ([name, products], index) => ({
+            id: `app-${index}`,
+            name,
+            products,
+          }),
+        )
+
+        // Auto-select first applicant if available
+        if (applicantRecords.length > 0) {
+          setSelectedApplicant(applicantRecords[0])
+        }
+
+        setRecords(applicantRecords)
+
+        if (applicantRecords.length === 0) {
+          setMessage('No loan applications found.')
+        }
       } catch (error) {
         setMessage(getErrorMessage(error, 'Failed to load applicant records.'))
       } finally {
