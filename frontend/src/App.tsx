@@ -80,6 +80,7 @@ const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPa
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
+const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHealthMultiProductPage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
@@ -133,6 +134,7 @@ const menuLinks: MenuLink[] = [
   { id: 'compliance', label: 'Compliance' },
 
   /* ADMIN */
+  { id: 'credit-health-multi-product', label: 'Credit Health Multi Product' },
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
@@ -214,6 +216,7 @@ const governanceMenus = [
 ]
 
 const adminMenus = [
+  'credit-health-multi-product',
   'admin-users',
   'admin-roles',
   'admin-permissions',
@@ -1347,6 +1350,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin']} permissions={['manage:system']}>
                   <PermissionManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/credit-health-multi-product"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <CreditHealthMultiProductPage />
                 </ProtectedRoute>
               }
             />
