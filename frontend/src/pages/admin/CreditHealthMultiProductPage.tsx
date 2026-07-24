@@ -76,22 +76,7 @@ export default function CreditHealthMultiProductPage() {
           return
         }
 
-        const allApplications = await fetchLoanApplications({
-          limit: 1000,
-          offset: 0,
-          summary: false,
-        })
-
-        const sameBorrowerApplications = allApplications.filter(
-          (application) =>
-            (application.borrower_name || '').trim().toLowerCase() ===
-            (latestApplication.borrower_name || '').trim().toLowerCase(),
-        )
-
-        const applicantRecord = toApplicantRecord(
-          latestApplication,
-          sameBorrowerApplications.length > 0 ? sameBorrowerApplications : [latestApplication],
-        )
+        const applicantRecord = toApplicantRecord(latestApplication, [latestApplication])
         setSelectedApplicant(applicantRecord)
       } catch (error) {
         setMessage(getErrorMessage(error, 'Failed to load applicant records.'))
