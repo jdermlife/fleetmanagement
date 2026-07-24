@@ -64,7 +64,9 @@ def _get_access_token() -> tuple[str, str]:
     client_secret = _required_environment_value("PAYPAL_CLIENT_SECRET")
     api_base_url = _paypal_api_base_url()
 
+   
     try:
+
         response = requests.post(
             f"{api_base_url}/v1/oauth2/token",
             auth=(client_id, client_secret),
@@ -108,12 +110,13 @@ def create_order(
 
     token, api_base_url = _get_access_token()
     normalized_currency = (currency or "PHP").upper()
-    print("===== PAYPAL DEBUG =====")
+    print("========== PAYPAL CREATE ORDER ==========")
     print("API URL:", api_base_url)
+    print("Amount:", amount)
     print("Currency:", normalized_currency)
     print("Invoice:", invoice_id)
     print("Reference:", payment_reference)
-    print("========================")
+    print("=========================================")
     purchase_unit: dict[str, Any] = {
         "reference_id": payment_reference,
         "description": description[:127],
@@ -150,20 +153,12 @@ def create_order(
         raise PayPalAPIError("PayPal create order is temporarily unavailable") from exc
 
     if not response.ok:
-        detail = "PayPal rejected order creation"
-        try:
-            body = response.json()
-            if isinstance(body, dict):
-                details = body.get("details")
-                if isinstance(details, list) and details and isinstance(details[0], dict):
-                    issue = details[0].get("issue")
-                    if issue:
-                        detail = str(issue)
-                elif body.get("message"):
-                    detail = str(body["message"])
-        except ValueError:
-            pass
-        raise PayPalAPIError(detail)
+        print("========== PAYPAL ERROR ==========")
+        print("Status:", response.status_code)
+        print(response.text)
+        print("==================================")
+
+        raise PayPalAPIError(response.text)
 
     try:
         order_payload = response.json()
@@ -186,6 +181,15 @@ def create_order(
         "raw": order_payload,
     }
 
+print("========== PAYPAL ORDER ==========")
+print("ORDER ID:", order_id)
+print("STATUS:", order_payload.get("status"))
+print("APPROVAL URL:", next(
+    (x.get("href") for x in order_payload.get("links", [])
+     if x.get("rel") == "approve"),
+    None,
+))
+print("==================================")
 
 def capture_order(order_id: str, *, request_id: str | None = None) -> dict[str, Any]:
     if not order_id or len(order_id.strip()) < 3:
