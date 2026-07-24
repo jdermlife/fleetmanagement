@@ -108,6 +108,12 @@ def create_order(
 
     token, api_base_url = _get_access_token()
     normalized_currency = (currency or "PHP").upper()
+    print("===== PAYPAL DEBUG =====")
+    print("API URL:", api_base_url)
+    print("Currency:", normalized_currency)
+    print("Invoice:", invoice_id)
+    print("Reference:", payment_reference)
+    print("========================")
     purchase_unit: dict[str, Any] = {
         "reference_id": payment_reference,
         "description": description[:127],
