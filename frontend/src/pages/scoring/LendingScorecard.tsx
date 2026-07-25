@@ -46,7 +46,8 @@ import {
   type InformationStepNumber,
 } from './applicationCompleteness';
 import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
-import { buildLendingScoreRecommendation } from './lendingScoreRecommendations';
+import { getLendingImprovementAreas } from './lendingScoreRecommendations';
+import CreditHealthJourney from './CreditHealthJourney';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
@@ -4213,12 +4214,7 @@ export default function LendingScorecard() {
       value: creditRiskInsights.nonStarterScore.toFixed(0),
     },
   ];
-  const scoreImprovementRecommendations = [
-    buildLendingScoreRecommendation('credit', displayedQuantSummary?.credit_score),
-    buildLendingScoreRecommendation('non-starter', displayedQuantSummary?.fraud_score),
-    buildLendingScoreRecommendation('social', displayedQuantSummary?.social_score),
-    buildLendingScoreRecommendation('credit-values', displayedQuantSummary?.psychometric_score),
-  ];
+  const improvementAreas = getLendingImprovementAreas();
   const compositeGradeBands = [
     { range: '950-1000', grade: 'A++', rating: 'World Class' },
     { range: '900-949', grade: 'A+', rating: 'Exceptional' },
@@ -4270,6 +4266,8 @@ export default function LendingScorecard() {
 
   return (
     <div className="psychometric-page lending-psychometric-page">
+      <CreditHealthJourney />
+
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
@@ -5283,42 +5281,22 @@ export default function LendingScorecard() {
                   </h4>
                   <div className="rounded-md border border-amber-300 bg-amber-50 p-4">
                     <div className="mb-4">
-                      <h5 className="text-base font-bold text-amber-950">Recommendations to Improve Each Score by One Notch</h5>
+                      <h5 className="text-base font-bold text-amber-950">Recommended Areas for Improvement</h5>
                       <p className="mt-1 text-sm text-amber-900/80">
-                        Targets use the next FILScore band. Recompute FILScore after the underlying information has materially changed and supporting records are updated.
+                        Focus on the areas below and keep all supporting information complete, current, and verifiable.
                       </p>
                     </div>
 
                     <div className="grid grid-cols-1 gap-4 xl:grid-cols-2">
-                      {scoreImprovementRecommendations.map((recommendation) => (
+                      {improvementAreas.map((area) => (
                         <article
-                          key={recommendation.kind}
+                          key={area.kind}
                           className="rounded-md border border-amber-200 bg-white p-4"
                         >
-                          <div className="flex flex-wrap items-start justify-between gap-3">
-                            <div>
-                              <h6 className="font-bold text-slate-900">{recommendation.label}</h6>
-                              <p className="mt-1 text-xs text-slate-500">Current band: {recommendation.currentBand}</p>
-                            </div>
-                            <div className="text-right">
-                              <strong className="block text-2xl leading-none text-amber-900">
-                                {recommendation.currentScore ?? 'Pending'}
-                              </strong>
-                              <span className="text-xs font-semibold text-amber-700">FILSCORE</span>
-                            </div>
-                          </div>
-
-                          <div className="mt-3 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-950">
-                            <strong>{recommendation.summary}</strong>
-                            {recommendation.pointsNeeded !== null && recommendation.pointsNeeded > 0 ? (
-                              <span className="mt-1 block text-xs text-amber-800">
-                                Required lift: {recommendation.pointsNeeded} points from the current score.
-                              </span>
-                            ) : null}
-                          </div>
+                          <h6 className="font-bold text-slate-900">{area.label}</h6>
 
                           <ul className="mt-3 list-disc space-y-2 pl-5 text-sm text-slate-700">
-                            {recommendation.actions.map((action) => (
+                            {area.actions.map((action) => (
                               <li key={action}>{action}</li>
                             ))}
                           </ul>
@@ -5327,7 +5305,7 @@ export default function LendingScorecard() {
                     </div>
                   </div>
                   <p className="mt-3 text-xs text-slate-500">
-                    Recommendations are educational and do not guarantee approval. Scores change only after verified application data is updated and FILScore is recomputed.
+                    Recommendations are educational and do not guarantee approval. Any updated information remains subject to verification and review.
                   </p>
                 </div>
 
