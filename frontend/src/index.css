@@ -5391,6 +5391,147 @@ th { color: var(--dark-gold); }
   font-size: 1.15rem;
 }
 
+.financial-health-engine-total code {
+  width: fit-content;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: #e8f7f1;
+  color: #115e59;
+  font-size: 0.8rem;
+  white-space: normal;
+}
+
+.calculation-source-notes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+  background: rgba(148, 163, 184, 0.24);
+}
+
+.calculation-source-notes > div {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px;
+  background: #fff;
+}
+
+.calculation-source-notes strong,
+.calculation-reference-table th {
+  color: var(--financial-health-ink);
+}
+
+.calculation-source-notes span,
+.calculation-reference-table span,
+.calculation-governance-note {
+  color: var(--financial-health-muted);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.calculation-reference-table-wrap {
+  margin-top: 18px;
+  overflow-x: auto;
+  border: 1px solid rgba(148, 163, 184, 0.24);
+  border-radius: 8px;
+}
+
+.calculation-reference-table {
+  width: 100%;
+  min-width: 980px;
+  border-collapse: collapse;
+  background: #fff;
+  text-align: left;
+}
+
+.calculation-reference-table th,
+.calculation-reference-table td {
+  padding: 14px;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  vertical-align: top;
+}
+
+.calculation-reference-table thead th {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.72rem;
+  text-transform: uppercase;
+}
+
+.calculation-reference-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.calculation-reference-table tbody th {
+  width: 140px;
+  font-size: 0.88rem;
+}
+
+.calculation-reference-table td:nth-child(2),
+.calculation-reference-table td:nth-child(3) {
+  width: 70px;
+  color: #0f766e;
+}
+
+.calculation-reference-table td:nth-child(4) {
+  width: 250px;
+}
+
+.calculation-reference-table td > strong,
+.calculation-reference-table td > span,
+.calculation-reference-table td > code {
+  display: block;
+}
+
+.calculation-reference-table td > strong,
+.calculation-reference-table td > code {
+  margin-bottom: 6px;
+}
+
+.calculation-reference-table code {
+  overflow-wrap: anywhere;
+  color: #115e59;
+  font-size: 0.76rem;
+  line-height: 1.5;
+  white-space: normal;
+}
+
+.calculation-band-list {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.calculation-band-list > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border-left: 3px solid #0f766e;
+  background: #f8fafc;
+}
+
+.calculation-band-list strong {
+  color: var(--financial-health-ink);
+  font-size: 0.84rem;
+}
+
+.calculation-band-list span {
+  color: var(--financial-health-muted);
+  font-size: 0.78rem;
+}
+
+.calculation-governance-note {
+  margin: 16px 0 0;
+}
+
 .financial-health-summary-tile {
   min-width: 0;
   display: grid;
@@ -5908,6 +6049,11 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-engine-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .calculation-source-notes,
+  .calculation-band-list {
     grid-template-columns: 1fr;
   }
 
