@@ -660,7 +660,11 @@ export default function FinancialHealthSummaryPage() {
               the full power of your profile and receive more accurate financial recommendations.
             </p>
 
-            <div className="financial-health-journey-step-list" role="list" aria-label="Financial Health journey checklist">
+            <div
+              className="financial-health-journey-step-list financial-health-journey-cycle"
+              role="list"
+              aria-label="Financial Health journey checklist"
+            >
               {FINANCIAL_HEALTH_JOURNEY_STEPS.map((step) => {
                 const isCompleted = journeyStepCompletion[step.id]
                 return (
@@ -685,6 +689,11 @@ export default function FinancialHealthSummaryPage() {
                   </article>
                 )
               })}
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-1" aria-hidden="true">→</span>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-2" aria-hidden="true">→</span>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true">→</span>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-4" aria-hidden="true">→</span>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-5" aria-hidden="true">→</span>
             </div>
 
             <div className="financial-health-journey-progress" aria-live="polite">
