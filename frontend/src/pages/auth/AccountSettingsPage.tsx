@@ -19,6 +19,14 @@ import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
 const THEME_STORAGE_KEY = 'fms:theme'
+const JOURNEY_PREFERENCE_STORAGE_KEYS = [
+  'fms:journey:minimized',
+  'fms:journey:do-not-show',
+  'fms:credit-health-journey:minimized',
+  'fms:credit-health-journey:do-not-show',
+  'fms:net-worth-journey:minimized',
+  'fms:net-worth-journey:do-not-show',
+] as const
 
 const themeOptions: Array<{ id: ThemeId; label: string; description: string }> = [
   { id: 'classic', label: 'Classic', description: 'Current gold-based FILSCORE look.' },
@@ -36,6 +44,7 @@ export default function AccountSettingsPage() {
   const [passwordMessage, setPasswordMessage] = useState('')
   const [deleteMessage, setDeleteMessage] = useState('')
   const [preferencesMessage, setPreferencesMessage] = useState('')
+  const [journeyPreferencesMessage, setJourneyPreferencesMessage] = useState('')
   const [currentPassword, setCurrentPassword] = useState('')
   const [newPassword, setNewPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
@@ -195,6 +204,17 @@ export default function AccountSettingsPage() {
       setPreferencesMessage(getErrorMessage(error, 'Unable to save your preference right now.'))
     } finally {
       setIsUpdatingPreferences(false)
+    }
+  }
+
+  const handleRestoreWelcomePopups = () => {
+    try {
+      JOURNEY_PREFERENCE_STORAGE_KEYS.forEach((key) => window.localStorage.removeItem(key))
+      setJourneyPreferencesMessage(
+        'Welcome pop-ups restored. They will appear when you next open Financial Health, Credit Health, and Wealth Building.',
+      )
+    } catch {
+      setJourneyPreferencesMessage('Unable to restore welcome pop-ups in this browser.')
     }
   }
 
@@ -387,6 +407,22 @@ export default function AccountSettingsPage() {
         <p className="status-message">
           {themeOptions.find((option) => option.id === theme)?.description}
         </p>
+      </div>
+
+      <div className="card auth-helper-card">
+        <h3>Welcome Pop-ups</h3>
+        <p className="intro">
+          Restore the Financial Health, Credit Health, and Wealth Building guides after selecting
+          &quot;Do not show this pop-up again.&quot;
+        </p>
+        <div className="form-actions">
+          <button type="button" onClick={handleRestoreWelcomePopups}>
+            Restore welcome pop-ups
+          </button>
+        </div>
+        {journeyPreferencesMessage ? (
+          <p className="status-message" role="status">{journeyPreferencesMessage}</p>
+        ) : null}
       </div>
 
       <form className="card auth-panel" onSubmit={handlePasswordChange}>
