@@ -759,7 +759,7 @@ export default function BillReminderPage() {
       <section className="psychometric-hero bill-reminder-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Billing Workflow Controls</span>
-          <h1>Bill Reminder</h1>
+          <h1>Bill Manager</h1>
           <p>
             Period: <strong>{snapshot.periodLabel}</strong> | Date: <strong>{snapshot.dateLabel}</strong>
           </p>

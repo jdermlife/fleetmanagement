@@ -6,6 +6,19 @@ export type FilscoreBand = {
   internalGrade: string
 }
 
+export const FILSCORE_BANDS = [
+  { minimum: 860, grade: 'Platinum 1', internalGrade: 'Exceptional' },
+  { minimum: 820, grade: 'Platinum 2', internalGrade: 'Excellent' },
+  { minimum: 780, grade: 'Gold 1', internalGrade: 'Very Strong' },
+  { minimum: 740, grade: 'Gold 2', internalGrade: 'Strong' },
+  { minimum: 680, grade: 'Silver 1', internalGrade: 'Good' },
+  { minimum: 620, grade: 'Silver 2', internalGrade: 'Acceptable' },
+  { minimum: 540, grade: 'Bronze 1', internalGrade: 'Moderate Risk' },
+  { minimum: 460, grade: 'Bronze 2', internalGrade: 'High Risk' },
+  { minimum: 330, grade: 'Red 1', internalGrade: 'Very High Risk' },
+  { minimum: 200, grade: 'Red 2', internalGrade: 'Critical Risk' },
+] as const
+
 export const toFilscore = (internalScore: number | null | undefined) => {
   if (typeof internalScore !== 'number' || !Number.isFinite(internalScore)) {
     return null
@@ -20,16 +33,10 @@ export const getFilscoreBand = (filscore: number | null | undefined): FilscoreBa
     return null
   }
 
-  if (filscore >= 860) return { grade: 'Platinum 1', internalGrade: 'Exceptional' }
-  if (filscore >= 820) return { grade: 'Platinum 2', internalGrade: 'Excellent' }
-  if (filscore >= 780) return { grade: 'Gold 1', internalGrade: 'Very Strong' }
-  if (filscore >= 740) return { grade: 'Gold 2', internalGrade: 'Strong' }
-  if (filscore >= 680) return { grade: 'Silver 1', internalGrade: 'Good' }
-  if (filscore >= 620) return { grade: 'Silver 2', internalGrade: 'Acceptable' }
-  if (filscore >= 540) return { grade: 'Bronze 1', internalGrade: 'Moderate Risk' }
-  if (filscore >= 460) return { grade: 'Bronze 2', internalGrade: 'High Risk' }
-  if (filscore >= 330) return { grade: 'Red 1', internalGrade: 'Very High Risk' }
-  return { grade: 'Red 2', internalGrade: 'Critical Risk' }
+  const band = FILSCORE_BANDS.find((candidate) => filscore >= candidate.minimum)
+  return band
+    ? { grade: band.grade, internalGrade: band.internalGrade }
+    : { grade: 'Red 2', internalGrade: 'Critical Risk' }
 }
 
 type CompositeInputs = {
