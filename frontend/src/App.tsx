@@ -81,6 +81,7 @@ const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage')
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHealthMultiProductPage'))
+const CalculationPage = lazy(() => import('./pages/admin/CalculationPage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
@@ -134,6 +135,7 @@ const menuLinks: MenuLink[] = [
   { id: 'compliance', label: 'Compliance' },
 
   /* ADMIN */
+  { id: 'calculation', label: 'Calculation Models' },
   { id: 'credit-health-multi-product', label: 'Credit Health Multi Product' },
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
@@ -216,6 +218,7 @@ const governanceMenus = [
 ]
 
 const adminMenus = [
+  'calculation',
   'credit-health-multi-product',
   'admin-users',
   'admin-roles',
@@ -1289,6 +1292,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <FinancialHealthSummaryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/calculation"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <CalculationPage />
                 </ProtectedRoute>
               }
             />
