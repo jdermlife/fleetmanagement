@@ -5101,10 +5101,87 @@ th { color: var(--dark-gold); }
   font-weight: 800;
 }
 
+.credit-health-journey-note {
+  display: grid;
+  gap: 5px;
+  padding: 12px 14px;
+  border-left: 4px solid #0f766e;
+  background: #ecfdf5;
+  color: #134e4a;
+}
+
+.credit-health-journey-note p {
+  color: #475569;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
 .credit-health-journey-fab {
   border-color: rgba(15, 118, 110, 0.7);
   background: #ccfbf1;
   color: #115e59;
+}
+
+.net-worth-journey-modal {
+  width: min(100%, 1040px);
+}
+
+.net-worth-journey-components {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.net-worth-journey-tools {
+  display: grid;
+  gap: 10px;
+  padding-top: 2px;
+}
+
+.net-worth-journey-tools > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.net-worth-journey-tools > div:first-child p {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+.net-worth-journey-tool-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.net-worth-journey-tool-list > article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(184, 134, 11, 0.36);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.net-worth-journey-tool-list p {
+  color: #475569;
+  font-size: 0.84rem;
+  line-height: 1.45;
+}
+
+.net-worth-journey-tool-list .financial-health-journey-action {
+  align-self: end;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  text-align: center;
+  text-decoration: none;
+}
+
+.net-worth-journey-fab {
+  border-color: rgba(184, 134, 11, 0.7);
+  background: #fef3c7;
+  color: #6d4c00;
 }
 
 .trial-expired-page {
@@ -5218,6 +5295,11 @@ th { color: var(--dark-gold); }
 
   .credit-health-journey-components,
   .credit-health-journey-step-list {
+    grid-template-columns: 1fr;
+  }
+
+  .net-worth-journey-components,
+  .net-worth-journey-tool-list {
     grid-template-columns: 1fr;
   }
 }

@@ -12,6 +12,7 @@ import {
   computeNetWorthBuildingScore,
 } from './netWorthBuildingEngine';
 import { computeWealthFoundationScore } from './wealthFoundationEngine';
+import NetWorthJourney from './NetWorthJourney';
 
 type WorkflowStep = 1 | 2 | 3 | 4 | 5;
 type StatementSection =
@@ -1787,6 +1788,8 @@ export default function NetWorthPositioningPage() {
 
   return (
     <div className="psychometric-page networth-dashboard-page">
+      <NetWorthJourney />
+
       <section className="psychometric-hero networth-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>

@@ -216,6 +216,14 @@ export default function CreditHealthJourney() {
           ))}
         </div>
 
+        <aside className="credit-health-journey-note" aria-label="Credit Health next steps">
+          <strong>Continue improving after Step 8</strong>
+          <p>
+            Take note of the FILSCORE recommendations. Use your Wealth Building Score to
+            continuously improve your Credit Health while building and increasing your wealth.
+          </p>
+        </aside>
+
         <label className="financial-health-journey-toggle">
           <input
             type="checkbox"
