@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
@@ -30,10 +30,15 @@ describe('FinancialHealthSummaryPage', () => {
 
     expect(screen.getByRole('progressbar', { name: 'Credit Health: 91 out of 100' })).toBeTruthy()
     expect(screen.getByRole('progressbar', { name: 'Goal Health: 82 out of 100' })).toBeTruthy()
+    expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('80.5', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('77.3', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Financial Health Summary Engine' })).toBeTruthy()
+    expect(screen.getByText('(91 x 15 + 88 x 14 + 94 x 14) / 43 = 91.0')).toBeTruthy()
     expect(screen.getAllByRole('progressbar')).toHaveLength(16)
   })
 
-  it('posts the net worth building score when a saved workflow exists', async () => {
+  it('publishes saved workflow figures only after the compute button is clicked', async () => {
     fetchAutosaveDraft.mockResolvedValue({
       payload: {
         amounts: {
@@ -66,7 +71,17 @@ describe('FinancialHealthSummaryPage', () => {
     render(<FinancialHealthSummaryPage />)
 
     expect(await screen.findByRole('heading', { name: 'Net Worth Building Score' })).toBeTruthy()
+    expect(await screen.findByText('Saved inputs are ready for review.')).toBeTruthy()
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
+    expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Compute Latest Financial Health' }))
+
+    expect(await screen.findByText('964', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
+    expect(screen.getByText('96.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('98.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('92.7', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('(91 x 15 + 100 x 14 + 100 x 14) / 43 = 96.9')).toBeTruthy()
     expect(await screen.findByText('A+ - Exceptional Wealth Builder')).toBeTruthy()
     expect(await screen.findByText('830-900')).toBeTruthy()
     expect(await screen.findByText('10-tier band from 200 to 900')).toBeTruthy()

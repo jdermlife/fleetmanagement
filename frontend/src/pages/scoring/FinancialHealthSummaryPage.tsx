@@ -5,12 +5,13 @@ import { fetchAutosaveDraft } from '../../autosave/draftApi'
 
 import {
   buildFinancialHealthGroupRings,
-  calculateFinancialHealthIndex,
   calculateWeightedContribution,
-  financialHealthIndicators,
   getFinancialHealthBand,
-  scaleFinancialHealthIndex,
 } from './financialHealthModel'
+import {
+  computeFinancialHealthSummary,
+  type FinancialHealthSummaryInputs,
+} from './financialHealthSummaryEngine'
 import { toFilscore } from './filscoreScale'
 import {
   computeNetWorthBuildingScore,
@@ -408,6 +409,9 @@ export default function FinancialHealthSummaryPage() {
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
+  const [publishedSummary, setPublishedSummary] = useState(() => computeFinancialHealthSummary())
+  const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
+  const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
     creditHealth: false,
     wealthBuilder: false,
@@ -479,6 +483,10 @@ export default function FinancialHealthSummaryPage() {
             billManager: false,
           }))
         }
+      } finally {
+        if (!disposed) {
+          setSummaryInputsLoaded(true)
+        }
       }
     }
 
@@ -489,10 +497,6 @@ export default function FinancialHealthSummaryPage() {
     }
   }, [])
 
-  const groupRings = useMemo(
-    () => buildFinancialHealthGroupRings(financialHealthIndicators),
-    [],
-  )
   const wealthFoundationInsight = useMemo(
     () => (wealthFoundationScore ? explainWealthFoundationResult(wealthFoundationScore) : null),
     [wealthFoundationScore],
@@ -503,7 +507,38 @@ export default function FinancialHealthSummaryPage() {
   )
   const journeyCompletionPercent = Math.round((completedJourneyCount / FINANCIAL_HEALTH_JOURNEY_STEPS.length) * 100)
   const isJourneyComplete = journeyCompletionPercent >= 100
-  const index = calculateFinancialHealthIndex(financialHealthIndicators)
+  const latestSummaryInputs = useMemo<FinancialHealthSummaryInputs>(() => {
+    const netWorthComponents = netWorthBuildingScore?.componentScores
+    const wealthComponents = wealthFoundationScore?.componentScores
+    const investmentScore = netWorthComponents
+      ? averageScore([
+          netWorthComponents.investmentReadiness,
+          netWorthComponents.retirementReadiness,
+          netWorthComponents.financialIndependence,
+        ])
+      : null
+    return {
+      credit: lendingLeafScores?.creditScore ?? null,
+      'cash-flow': netWorthComponents?.cashFlowStrength ?? null,
+      wealth: netWorthBuildingScore?.normalizedScore ?? null,
+      budget: wealthComponents ? wealthComponents.budgetManagement * 20 : null,
+      payment: netWorthComponents?.leverageControl ?? null,
+      protection: netWorthComponents?.protectionCoverage ?? null,
+      investment: investmentScore,
+      goal: netWorthComponents?.goalMomentum ?? null,
+    }
+  }, [lendingLeafScores, netWorthBuildingScore, wealthFoundationScore])
+  const financialHealthIndicators = publishedSummary.indicators
+  const groupRings = useMemo(
+    () => buildFinancialHealthGroupRings(financialHealthIndicators),
+    [financialHealthIndicators],
+  )
+  const index = publishedSummary.index
+
+  const computeLatestFinancialHealth = () => {
+    setPublishedSummary(computeFinancialHealthSummary(latestSummaryInputs))
+    setSummaryComputedAt(new Date())
+  }
 
   const minimizeJourney = () => {
     if (doNotShowJourneyAgain) {
@@ -529,19 +564,7 @@ export default function FinancialHealthSummaryPage() {
     }
   }
 
-  if (index === null) {
-    return (
-      <div className="psychometric-page financial-health-page">
-        <section className="psychometric-panel financial-health-provisional">
-          <span className="psychometric-panel-kicker">Financial Health</span>
-          <h1>Provisional result</h1>
-          <p>All eight weighted indicators are required before a Financial Health score can be shown.</p>
-        </section>
-      </div>
-    )
-  }
-
-  const score = scaleFinancialHealthIndex(index)
+  const score = publishedSummary.score
   const band = getFinancialHealthBand(score)
   const strongestIndicator = financialHealthIndicators.reduce((strongest, indicator) =>
     indicator.score > strongest.score ? indicator : strongest,
@@ -630,8 +653,8 @@ export default function FinancialHealthSummaryPage() {
               Minimize
             </button>
 
-            <p className="financial-health-journey-kicker">Welcome to FILSCORE</p>
-            <h2 id="financial-health-journey-title">Welcome to Your FILSCORE Financial Health Journey!</h2>
+            <p className="financial-health-journey-kicker">GREETINGS! We wish you well today. </p>
+            <h2 id="financial-health-journey-title">Welcome to Your Financial Health Journey!</h2>
             <p>
               Congratulations on creating your FILSCORE account. Complete these steps to unlock
               the full power of your profile and receive more accurate financial recommendations.
@@ -785,20 +808,41 @@ export default function FinancialHealthSummaryPage() {
         </figure>
       </section>
 
+      <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
+        <div>
+          <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health model displayed'}</strong>
+          <span>
+            {summaryComputedAt
+              ? `Computed ${summaryComputedAt.toLocaleString()}`
+              : summaryInputsLoaded
+                ? 'Saved inputs are ready for review.'
+                : 'Checking saved inputs...'}
+          </span>
+        </div>
+        <button
+          type="button"
+          className="psychometric-reset-button financial-health-compute-button"
+          onClick={computeLatestFinancialHealth}
+          disabled={!summaryInputsLoaded}
+        >
+          Compute Latest Financial Health
+        </button>
+      </section>
+
       <section className="financial-health-summary-grid" aria-label="Financial Health highlights">
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Foundation & reliability</span>
-          <strong>91.0</strong>
+          <strong>{groupRings[0].displayValue}</strong>
           <small>Credit, cash flow, and payment</small>
         </article>
         <article className="financial-health-summary-tile">
           <span>Control & resilience</span>
-          <strong>80.5</strong>
+          <strong>{groupRings[1].displayValue}</strong>
           <small>Budget, wealth, and protection</small>
         </article>
         <article className="financial-health-summary-tile">
           <span>Future progress</span>
-          <strong>77.3</strong>
+          <strong>{groupRings[2].displayValue}</strong>
           <small>Investment and goal health</small>
         </article>
         <article className="financial-health-summary-tile">
@@ -806,6 +850,35 @@ export default function FinancialHealthSummaryPage() {
           <strong>{strongestIndicator.score}</strong>
           <small>{strongestIndicator.label}</small>
         </article>
+      </section>
+
+      <section className="psychometric-panel financial-health-summary-engine" aria-labelledby="financial-health-summary-engine-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Calculation model</span>
+            <h2 id="financial-health-summary-engine-title">Financial Health Summary Engine</h2>
+            <p className="financial-health-panel-intro">
+              Each section is a weighted average of its published indicators. The overall index uses all eight indicator weights.
+            </p>
+          </div>
+        </div>
+
+        <div className="financial-health-engine-grid">
+          {publishedSummary.groups.map((group) => (
+            <article key={group.id} className="financial-health-engine-card">
+              <span>{group.label}</span>
+              <strong>{group.displayValue}</strong>
+              <small>{group.description}</small>
+              <code>{group.formula}</code>
+            </article>
+          ))}
+        </div>
+
+        <div className="financial-health-engine-total">
+          <span>Overall Financial Health</span>
+          <strong>{index.toFixed(1)} x 10 = {score}</strong>
+          <small>Sum of each indicator score x weight, divided by 100, then scaled to 1000.</small>
+        </div>
       </section>
 
       <section className="psychometric-panel" aria-labelledby="net-worth-building-summary-title">
