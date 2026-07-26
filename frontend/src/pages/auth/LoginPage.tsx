@@ -6,7 +6,6 @@ import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser 
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
-import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
 
@@ -169,9 +168,8 @@ export default function LoginPage() {
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
   const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
     || 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
-  const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
-  const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
+  const isGoogleEnabled = isGoogleConfigured
   const isAppleConfigured = appleClientId.length > 0
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
@@ -354,9 +352,7 @@ export default function LoginPage() {
             </div>
 
             {!isGoogleEnabled ? (
-              isGoogleConfigured
-                ? <p className="login-art-service-note">Google Sign-In is enabled on approved domains only.</p>
-                : <p className="login-art-service-note">Google Sign-In is available when configured.</p>
+              <p className="login-art-service-note">Google Sign-In is available when configured.</p>
             ) : null}
             {!isAppleConfigured ? (
               <p className="login-art-service-note">Apple Sign-In is available when configured.</p>

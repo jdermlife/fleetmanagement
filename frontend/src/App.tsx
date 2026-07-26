@@ -38,6 +38,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
 
 
 const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
+const BuildProfilePage = lazyWithRetry(() => import('./pages/scoring/BuildProfilePage'))
 const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
 const InsuranceManagementPage = lazy(() => import('./pages/insurance/InsuranceManagementPage'))
@@ -107,6 +108,7 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 const menuLinks: MenuLink[] = [
   
   { id: 'financial-health-summary', label: 'Financial Health Dashboard' },
+  { id: 'build-profile', label: 'Build Profile' },
   { id: 'lending-scorecard', label: 'Credit Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
@@ -218,6 +220,7 @@ const governanceMenus = [
 ]
 
 const adminMenus = [
+  'build-profile',
   'calculation',
   'credit-health-multi-product',
   'admin-users',
@@ -228,6 +231,7 @@ const adminMenus = [
 ]
 
 const subscriberHiddenMenus = [
+  'build-profile',
   'snapshot',
   'lease-scorecard',
   'insurance-management',
@@ -861,6 +865,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
                   {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <Snapshot />}
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/build-profile"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <BuildProfilePage />
                 </ProtectedRoute>
               }
             />

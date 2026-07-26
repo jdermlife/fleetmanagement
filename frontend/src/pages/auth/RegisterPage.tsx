@@ -9,7 +9,6 @@ import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
 } from '../../authRoles'
-import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
 
@@ -93,9 +92,8 @@ export default function RegisterPage() {
   const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
   const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
     || 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
-  const isGoogleHostAllowed = isGoogleSignInAllowedForCurrentHost()
   const isGoogleConfigured = googleClientId.length > 0
-  const isGoogleEnabled = isGoogleConfigured && isGoogleHostAllowed
+  const isGoogleEnabled = isGoogleConfigured
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState('')
   const [cellphoneNumber, setCellphoneNumber] = useState('')
@@ -391,9 +389,7 @@ export default function RegisterPage() {
             </div>
           ) : null}
           {!isGoogleEnabled ? (
-            isGoogleConfigured
-              ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
-              : <p className="status-message">Google Sign-Up is available when configured.</p>
+            <p className="status-message">Google Sign-Up is available when configured.</p>
           ) : null}
         </div>
 

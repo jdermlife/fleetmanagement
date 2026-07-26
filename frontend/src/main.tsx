@@ -7,7 +7,6 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App'
-import { isGoogleSignInAllowedForCurrentHost } from './googleAuthHostGuard'
 import './index.css'
 
 const setupNativeMobileRuntime = async () => {
@@ -28,7 +27,6 @@ const setupNativeMobileRuntime = async () => {
 void setupNativeMobileRuntime()
 
 const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-const isGoogleSignInAllowed = isGoogleSignInAllowedForCurrentHost()
 
 const appNode = (
   <BrowserRouter>
@@ -38,7 +36,7 @@ const appNode = (
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
-    {googleClientId && isGoogleSignInAllowed
+    {googleClientId
       ? (
         <GoogleOAuthProvider clientId={googleClientId}>
           {appNode}
