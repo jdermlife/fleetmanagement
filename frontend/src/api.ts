@@ -158,7 +158,7 @@ export function getRefreshToken(): string | null {
 }
 
 // Initialize token from storage on load
-if (typeof window !== 'undefined') {
+if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function') {
   const storedAuthToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
   const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   if (storedAuthToken || storedRefreshToken) {

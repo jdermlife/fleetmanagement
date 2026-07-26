@@ -3565,7 +3565,7 @@ th { color: var(--dark-gold); }
 
 .build-profile-layout {
   display: grid;
-  grid-template-columns: minmax(0, 2fr) minmax(280px, 0.9fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 20px;
   align-items: start;
 }
@@ -3577,10 +3577,24 @@ th { color: var(--dark-gold); }
 }
 
 .build-profile-workflow-panel {
-  position: sticky;
-  top: 20px;
-  max-height: calc(100vh - 40px);
-  overflow-y: auto;
+  position: static;
+  max-height: none;
+  overflow: visible;
+}
+
+.build-profile-workflow-panel .lending-psychometric-step-list {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: stretch;
+}
+
+.build-profile-workflow-panel .lending-psychometric-step-button {
+  min-width: 0;
+  height: 100%;
+  align-items: start;
+}
+
+.build-profile-workflow-panel .lending-psychometric-step-copy small {
+  line-height: 1.35;
 }
 
 .build-profile-step-content h3 {
@@ -3718,6 +3732,64 @@ th { color: var(--dark-gold); }
   font-size: 1.12rem;
 }
 
+.build-profile-score-links {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.build-profile-score-links article {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #f8fbff;
+}
+
+.build-profile-score-links span {
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.build-profile-score-links h4,
+.build-profile-score-links p {
+  margin: 0;
+}
+
+.build-profile-score-links h4 {
+  color: #172554;
+  font-size: 1.05rem;
+}
+
+.build-profile-score-links p {
+  color: #475569;
+  line-height: 1.55;
+}
+
+.build-profile-score-links a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 42px;
+  margin-top: 8px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-weight: 800;
+  text-decoration: none;
+}
+
+.build-profile-score-links a:hover {
+  background: #1e40af;
+}
+
 .build-profile-question-list {
   display: grid;
   gap: 14px;
@@ -3752,20 +3824,372 @@ th { color: var(--dark-gold); }
   margin-top: 3px;
 }
 
+.build-profile-detail-section {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #dbe4f0;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.build-profile-detail-section > h4,
+.build-profile-detail-section > h5,
+.build-profile-detail-section > p {
+  margin: 0;
+}
+
+.build-profile-detail-section > h4 {
+  color: #172554;
+  font-size: 1rem;
+}
+
+.build-profile-detail-section > p {
+  margin-top: 6px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.build-profile-detail-section .build-profile-form-grid {
+  margin-top: 16px;
+}
+
+.build-profile-detail-section textarea {
+  min-width: 0;
+  width: 100%;
+  resize: vertical;
+  border-color: rgba(148, 163, 184, 0.55);
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.build-profile-checkbox-field {
+  display: flex !important;
+  grid-column: auto;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.build-profile-checkbox-field input {
+  min-height: 0;
+  margin-top: 2px;
+}
+
+.build-profile-totals-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.build-profile-totals-grid > div {
+  display: grid;
+  gap: 5px;
+  padding: 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #eff6ff;
+}
+
+.build-profile-totals-grid span {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.build-profile-totals-grid strong {
+  color: #1e3a8a;
+}
+
+.build-profile-filter-result {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.build-profile-filter-result strong {
+  color: #172554;
+  font-size: 1.35rem;
+}
+
+.build-profile-filter-result button {
+  justify-self: start;
+}
+
+.build-profile-wealth-sections {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.build-profile-wealth-sections .build-profile-detail-section {
+  margin-top: 0;
+}
+
+.build-profile-wealth-sections summary {
+  cursor: pointer;
+  color: #172554;
+  font-weight: 800;
+}
+
+.build-profile-wealth-sections summary span {
+  margin-left: 6px;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.build-profile-wealth-entry-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.build-profile-wealth-entry-grid label {
+  display: grid;
+  align-content: start;
+  gap: 6px;
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe4f0;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #334155;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.build-profile-wealth-entry-grid small {
+  min-height: 2.5em;
+  color: #64748b;
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.build-profile-wealth-entry-grid input {
+  min-width: 0;
+  min-height: 42px;
+}
+
+.build-profile-wealth-entry-grid output {
+  overflow-wrap: anywhere;
+  color: #1e3a8a;
+  font-weight: 800;
+}
+
+.build-profile-target-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.build-profile-target-table {
+  margin-top: 16px;
+}
+
+.build-profile-target-table input {
+  min-width: 90px;
+  width: 100%;
+}
+
+.build-profile-variance-table td {
+  vertical-align: top;
+}
+
+.build-profile-variance-table td > div {
+  margin-top: 3px;
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.build-profile-variance-table td > input {
+  min-width: 140px;
+}
+
+.build-profile-variance-copy {
+  display: block;
+  margin-bottom: 8px;
+  color: #475569;
+  line-height: 1.4;
+}
+
+.build-profile-target-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.build-profile-suitability-table,
+.build-profile-suitability-bands {
+  margin-top: 16px;
+  border: 1px solid #dbe4f0;
+  border-radius: 6px;
+}
+
+.build-profile-suitability-table th:not(:first-child),
+.build-profile-suitability-table td:not(:first-child) {
+  width: 17%;
+  text-align: center;
+}
+
+.build-profile-suitability-table td:first-child {
+  width: 32%;
+  color: #172554;
+}
+
+.build-profile-suitability-table label {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  color: #475569;
+  line-height: 1.35;
+}
+
+.build-profile-suitability-table input {
+  width: 18px;
+  height: 18px;
+  accent-color: #1d4ed8;
+}
+
+.build-profile-suitability-summary {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.build-profile-suitability-summary small {
+  color: #334155;
+  line-height: 1.45;
+}
+
+.build-profile-suitability-bands td:last-child,
+.build-profile-suitability-bands th:last-child {
+  width: auto;
+  text-align: left;
+}
+
+.build-profile-suitability-band-active td {
+  border-color: #93c5fd;
+  background: #dbeafe;
+  color: #172554;
+}
+
+.build-profile-credit-values {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.build-profile-credit-values-sections {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.build-profile-credit-values-sections > section {
+  padding: 16px;
+  border: 1px solid #c7d2fe;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.build-profile-credit-values-sections h5 {
+  margin: 0;
+  color: #312e81;
+  font-size: 0.92rem;
+}
+
+.build-profile-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.build-profile-section-heading h4,
+.build-profile-section-heading h5 {
+  margin: 0;
+  color: #172554;
+}
+
+.build-profile-section-heading button {
+  flex: 0 0 auto;
+}
+
+.build-profile-related-party-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.build-profile-related-party-list > article {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.build-profile-applicability-note {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+  background: #f8fafc;
+  color: #64748b;
+  font-size: 0.86rem;
+  font-style: italic;
+}
+
+.build-profile-banking-radio-field {
+  min-width: 0;
+  margin: 0;
+  padding: 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+}
+
+.build-profile-banking-radio-field legend {
+  padding: 0 6px;
+  color: #172554;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.build-profile-banking-radio-options {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px 14px;
+}
+
+.build-profile-banking-radio-options label {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  color: #334155;
+  font-size: 0.86rem;
+  font-weight: 600;
+}
+
+.build-profile-banking-radio-options input {
+  flex: 0 0 auto;
+  width: 16px;
+  height: 16px;
+  margin-top: 1px;
+  accent-color: #1d4ed8;
+}
+
 .build-profile-save {
   width: 100%;
   justify-content: center;
 }
 
 @media (max-width: 960px) {
-  .build-profile-layout {
-    grid-template-columns: 1fr;
-  }
-
-  .build-profile-workflow-panel {
-    position: static;
-    max-height: none;
-    order: -1;
+  .build-profile-workflow-panel .lending-psychometric-step-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -3810,6 +4234,100 @@ th { color: var(--dark-gold); }
 
   .build-profile-workflow-panel .lending-psychometric-step-button {
     min-width: 0;
+  }
+
+  .build-profile-workflow-panel .lending-psychometric-step-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-score-links {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-detail-section {
+    padding: 14px;
+  }
+
+  .build-profile-totals-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-wealth-entry-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-target-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-suitability-summary {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-suitability-table table,
+  .build-profile-suitability-table thead,
+  .build-profile-suitability-table tbody,
+  .build-profile-suitability-table tr,
+  .build-profile-suitability-table th,
+  .build-profile-suitability-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .build-profile-suitability-table thead {
+    display: none;
+  }
+
+  .build-profile-suitability-table tr {
+    padding: 12px;
+    border-bottom: 1px solid #dbe4f0;
+  }
+
+  .build-profile-suitability-table tr:last-child {
+    border-bottom: 0;
+  }
+
+  .build-profile-suitability-table td:first-child,
+  .build-profile-suitability-table td:not(:first-child) {
+    width: 100%;
+    text-align: left;
+  }
+
+  .build-profile-suitability-table td:not(:first-child) {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  .build-profile-suitability-table label {
+    grid-template-columns: 24px minmax(0, 1fr);
+    justify-items: start;
+  }
+
+  .build-profile-target-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-target-actions button {
+    width: 100%;
+  }
+
+  .build-profile-variance-table td > input {
+    min-width: 0;
+  }
+
+  .build-profile-section-heading {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .build-profile-section-heading button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .build-profile-banking-radio-options {
+    grid-template-columns: minmax(0, 1fr);
   }
 }
 

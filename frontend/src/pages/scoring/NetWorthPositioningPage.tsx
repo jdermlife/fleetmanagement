@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
 import {
@@ -15,7 +16,7 @@ import { computeWealthFoundationScore } from './wealthFoundationEngine';
 import NetWorthJourney from './NetWorthJourney';
 
 type WorkflowStep = 1 | 2 | 3 | 4 | 5;
-type StatementSection =
+export type StatementSection =
   | 'assets'
   | 'liabilities'
   | 'monthly-income'
@@ -24,7 +25,7 @@ type StatementSection =
   | 'insurance-coverage'
   | 'ai-analysis';
 
-type StatementEntry = {
+export type StatementEntry = {
   id: string;
   label: string;
   section: StatementSection;
@@ -91,7 +92,7 @@ const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   hasCertifiedConsent: false,
 };
 
-const FINANCIAL_GOAL_OPTIONS = [
+export const FINANCIAL_GOAL_OPTIONS = [
   'Build Emergency Fund',
   'Pay off High Interest Debt',
   'Save for Major Purchase (10k above)',
@@ -158,7 +159,7 @@ const FINANCIAL_GOAL_OPTIONS = [
   'Others',
 ] as const;
 
-const CURRENCY_OPTIONS = [
+export const CURRENCY_OPTIONS = [
   { code: 'PHP', label: 'PHP (₱)' },
   { code: 'USD', label: 'USD ($)' },
   { code: 'EUR', label: 'EUR (€)' },
@@ -290,7 +291,7 @@ const SUITABILITY_RESULT_BANDS: Array<{
   },
 ];
 
-const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
+export const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
   { id: 'asset-cash-on-hand', label: 'Cash on Hand', section: 'assets', category: '1. Cash & Bank Accounts' },
   { id: 'asset-savings-account', label: 'Savings Account', section: 'assets', category: '1. Cash & Bank Accounts' },
   { id: 'asset-checking-account', label: 'Checking Account', section: 'assets', category: '1. Cash & Bank Accounts' },
@@ -512,7 +513,7 @@ function getSectionLabel(section: StatementSection) {
   return 'G. FILSCORE AI Analysis';
 }
 
-const STEP1_SECTION_ORDER: StatementSection[] = [
+export const STEP1_SECTION_ORDER: StatementSection[] = [
   'assets',
   'liabilities',
   'monthly-income',
@@ -522,7 +523,7 @@ const STEP1_SECTION_ORDER: StatementSection[] = [
   'ai-analysis',
 ];
 
-const STEP1_SECTION_SHORT_LABELS: Record<StatementSection, string> = {
+export const STEP1_SECTION_SHORT_LABELS: Record<StatementSection, string> = {
   assets: 'Assets',
   liabilities: 'Liabilities',
   'monthly-income': 'Income',
