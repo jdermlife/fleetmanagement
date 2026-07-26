@@ -3571,8 +3571,22 @@ th { color: var(--dark-gold); }
 }
 
 .build-profile-form-panel,
-.build-profile-goal-card {
+.build-profile-goal-card,
+.build-profile-workflow-panel {
   min-width: 0;
+}
+
+.build-profile-workflow-panel {
+  position: sticky;
+  top: 20px;
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
+}
+
+.build-profile-step-content h3 {
+  margin: 18px 0 4px;
+  color: #172554;
+  font-size: 1.05rem;
 }
 
 .build-profile-form-grid {
@@ -3647,6 +3661,97 @@ th { color: var(--dark-gold); }
   color: #047857;
 }
 
+.build-profile-form-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 24px;
+  padding-top: 18px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.build-profile-form-actions button {
+  min-width: 110px;
+  justify-content: center;
+}
+
+.build-profile-upload-zone {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  margin: 20px 0;
+  padding: 28px 18px;
+  border: 2px dashed #93c5fd;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1e3a8a;
+  text-align: center;
+  cursor: pointer;
+}
+
+.build-profile-upload-zone input {
+  width: min(100%, 310px);
+}
+
+.build-profile-upload-zone span {
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+.build-profile-calculation-card {
+  display: grid;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 16px;
+  border-left: 4px solid #ca8a04;
+  border-radius: 6px;
+  background: #fffbeb;
+}
+
+.build-profile-calculation-card span,
+.build-profile-calculation-card small {
+  color: #64748b;
+}
+
+.build-profile-calculation-card strong {
+  color: #713f12;
+  font-size: 1.12rem;
+}
+
+.build-profile-question-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.build-profile-question-list fieldset {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+}
+
+.build-profile-question-list legend {
+  padding: 0 5px;
+  color: #172554;
+  font-weight: 800;
+}
+
+.build-profile-question-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  color: #334155;
+}
+
+.build-profile-question-list input {
+  flex: 0 0 auto;
+  margin-top: 3px;
+}
+
 .build-profile-save {
   width: 100%;
   justify-content: center;
@@ -3655,6 +3760,12 @@ th { color: var(--dark-gold); }
 @media (max-width: 960px) {
   .build-profile-layout {
     grid-template-columns: 1fr;
+  }
+
+  .build-profile-workflow-panel {
+    position: static;
+    max-height: none;
+    order: -1;
   }
 }
 
@@ -3680,6 +3791,25 @@ th { color: var(--dark-gold); }
 
   .build-profile-field-wide {
     grid-column: auto;
+  }
+
+  .build-profile-form-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .build-profile-form-actions .loan-inline-button-primary {
+    grid-column: 1 / -1;
+    grid-row: 1;
+  }
+
+  .build-profile-form-actions button {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .build-profile-workflow-panel .lending-psychometric-step-button {
+    min-width: 0;
   }
 }
 

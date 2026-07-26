@@ -23,17 +23,41 @@ describe('BuildProfilePage', () => {
     vi.unstubAllGlobals()
   })
 
-  it('shows Profile ID, Financial Goal, and zero initial completion', () => {
+  it('shows the eleven-step profile workflow and initial profile state', () => {
     render(<BuildProfilePage />)
 
     expect(screen.getByRole('heading', { name: 'Shape Your Financial Future' })).toBeTruthy()
-    expect(screen.getByText('Profile ID')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Build your Profile' })).toBeTruthy()
     expect(screen.getByText(/^PRO-[A-Z0-9]{6}$/)).toBeTruthy()
-    expect(screen.getByRole('combobox', { name: 'Financial Goal' })).toBeTruthy()
     expect(screen.getByLabelText('0% profile completion')).toBeTruthy()
+    expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(11)
+    expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
   })
 
-  it('calculates completion from entered profile and goal data', async () => {
+  it('navigates through source-derived lending and net worth steps', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Applicant Information/ }))
+    expect(screen.getByLabelText('Government ID Number')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Goal Setting/ }))
+    expect(screen.getByLabelText('Financial Goal / Purpose')).toBeTruthy()
+    expect(screen.getByLabelText('Product Being Considered')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Document Upload Center/ }))
+    expect(screen.getByText('Choose supporting documents')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Set As Of Date/ }))
+    expect(screen.getByRole('combobox', { name: 'Financial Goal' })).toBeTruthy()
+    expect(screen.getByLabelText('Target Amount (PHP)')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Suitability Assessment/ }))
+    expect(screen.getByText('What is your key investment objective?')).toBeTruthy()
+    expect(screen.getAllByRole('radio')).toHaveLength(20)
+  })
+
+  it('tracks step completion and persists profile values', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
@@ -41,19 +65,20 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Email Address'), 'jordan@example.com')
     await user.type(screen.getByLabelText('Mobile Number'), '09171234567')
     await user.type(screen.getByLabelText('Date of Birth'), '1990-01-02')
-    await user.type(screen.getByLabelText('Address'), 'Makati City')
-    await user.selectOptions(screen.getByLabelText('Employment Status'), 'Employed')
-    await user.type(screen.getByLabelText('Occupation'), 'Analyst')
-    await user.type(screen.getByLabelText('Gross Monthly Income'), '50000')
+    await user.type(screen.getByLabelText('Present Address'), 'Makati City')
+
+    expect(screen.getByText('100% complete')).toBeTruthy()
+    expect(screen.getByLabelText('9% profile completion')).toBeTruthy()
+
+    await user.click(screen.getByRole('button', { name: /Set As Of Date/ }))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('Target Amount (PHP)'), '250000')
-    await user.type(screen.getByLabelText('Target Timeframe (Months)'), '18')
-
-    expect(screen.getByLabelText('100% profile completion')).toBeTruthy()
-    expect(screen.getAllByText('Complete').length).toBeGreaterThan(0)
-
+    await user.type(screen.getByLabelText('Months to Achieve'), '18')
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
+
     expect(screen.getByRole('status').textContent).toBe('Profile saved successfully.')
-    expect(window.localStorage.getItem('fms:build-profile')).toContain('Build Emergency Fund')
+    const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+    expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
+    expect(savedProfile.step).toBe(9)
   })
 })
