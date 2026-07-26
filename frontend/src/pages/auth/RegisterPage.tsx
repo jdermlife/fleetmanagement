@@ -11,6 +11,8 @@ import {
 } from '../../authRoles'
 import { isGoogleSignInAllowedForCurrentHost } from '../../googleAuthHostGuard'
 
+type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
+
 function extractBackendErrorMessage(error: unknown): string | null {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
     return null
@@ -100,11 +102,13 @@ export default function RegisterPage() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType>('borrower')
+  const [subscriptionPlan, setSubscriptionPlan] = useState<RegisterSubscriptionPlan>('FREE_TRIAL')
   const [marketingConsent, setMarketingConsent] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [appleMessage, setAppleMessage] = useState('')
+  const [showEmailRegistration, setShowEmailRegistration] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
 
@@ -229,7 +233,7 @@ export default function RegisterPage() {
 
   return (
     <div className="standalone-card auth-screen">
-      <h1>Welcome to your financial journey with FILSCORE!</h1>
+      <h1 className="register-journey-title">Unlock Your Sustainable Credit Health &amp; Wealth!</h1>
       <p className="intro">
         Review the legal disclosures and agree by ticking the boxes
         before continuing.
@@ -258,38 +262,37 @@ export default function RegisterPage() {
           </span>
         </label>
 
-        <fieldset className="auth-role-fieldset">
-          <legend>Marketing Consent</legend>
-          <p className="auth-role-copy">
-            Tick the box if you agree to receive marketing materials, notices, and related updates.
-          </p>
-          <label className="checkbox-label">
-            <input
-              type="checkbox"
-              checked={marketingConsent}
-              onChange={(event) => setMarketingConsent(event.target.checked)}
-            />
-            <span>
-              I agree to receive marketing materials, notices, and related product updates.
-            </span>
-          </label>
-        </fieldset>
-
-
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={marketingConsent}
+            onChange={(event) => setMarketingConsent(event.target.checked)}
+          />
+          <span>
+            I agree to receive marketing materials, notices, and related products and services updates.
+          </span>
+        </label>
 
         <fieldset className="auth-role-fieldset">
           <legend>Subscriber type</legend>
           <p className="auth-role-copy">
             Select the access this new account should receive.
           </p>
-          <div className="auth-role-options">
-            {REGISTER_SUBSCRIBER_OPTIONS.map((option) => (
-              <label key={option.value} className="auth-role-option">
+          <div className="auth-role-options subscriber-type-options">
+            {REGISTER_SUBSCRIBER_OPTIONS.map((option) => {
+              const isDisabled = option.value === 'lender'
+
+              return (
+              <label
+                key={option.value}
+                className={`auth-role-option${isDisabled ? ' auth-role-option-disabled' : ''}`}
+              >
                 <input
                   type="radio"
                   name="subscriber-type"
                   value={option.value}
                   checked={subscriberType === option.value}
+                  disabled={isDisabled}
                   onChange={(event) =>
                     setSubscriberType(event.target.value as RegisterSubscriberType)
                   }
@@ -299,7 +302,8 @@ export default function RegisterPage() {
                   <small>{option.description}</small>
                 </span>
               </label>
-            ))}
+              )
+            })}
           </div>
         </fieldset>
 
@@ -308,18 +312,31 @@ export default function RegisterPage() {
           <p className="auth-role-copy">
             Default subscription plan for new accounts.
           </p>
-          <div className="auth-role-options">
+          <div className="auth-role-options subscription-plan-options">
             <label className="auth-role-option">
               <input
                 type="radio"
                 name="subscription-plan"
                 value="FREE_TRIAL"
-                checked
-                readOnly
+                checked={subscriptionPlan === 'FREE_TRIAL'}
+                onChange={() => setSubscriptionPlan('FREE_TRIAL')}
               />
               <span>
                 <strong>Free</strong>
                 <small>Trial for 2 days</small>
+              </span>
+            </label>
+            <label className="auth-role-option">
+              <input
+                type="radio"
+                name="subscription-plan"
+                value="STARTER"
+                checked={subscriptionPlan === 'STARTER'}
+                onChange={() => setSubscriptionPlan('STARTER')}
+              />
+              <span>
+                <strong>Starter</strong>
+                <small>Php 160.00 per month</small>
               </span>
             </label>
           </div>
@@ -330,30 +347,6 @@ export default function RegisterPage() {
         <p className="auth-role-copy">
           <strong>Create Account Using:</strong>
         </p>
-        <div className="register-social-option">
-          <p className="auth-role-copy register-social-label">Google Account</p>
-          {isGoogleEnabled ? (
-            <div className="register-google-button-wrap">
-              <GoogleLogin
-                onSuccess={handleGoogleSuccess}
-                onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
-                text="signup_with"
-                size="large"
-                theme="outline"
-                shape="rectangular"
-                width={420}
-              />
-            </div>
-          ) : null}
-          {!isGoogleEnabled ? (
-            isGoogleConfigured
-              ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
-              : <p className="status-message">Google Sign-Up is available when configured.</p>
-          ) : null}
-        </div>
-
-        <div className="register-social-divider" aria-hidden="true" />
-
         <div className="register-social-option">
           <p className="auth-role-copy register-social-label">Apple Account</p>
           <button
@@ -380,12 +373,47 @@ export default function RegisterPage() {
           ) : null}
         </div>
 
-        <p className="auth-role-copy">
-          <strong>Other Email</strong>
-        </p>
+        <div className="register-social-divider" aria-hidden="true" />
+
+        <div className="register-social-option">
+          <p className="auth-role-copy register-social-label">Google Account</p>
+          {isGoogleEnabled ? (
+            <div className="register-google-button-wrap">
+              <GoogleLogin
+                onSuccess={handleGoogleSuccess}
+                onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+                text="signup_with"
+                size="large"
+                theme="outline"
+                shape="rectangular"
+                width={420}
+              />
+            </div>
+          ) : null}
+          {!isGoogleEnabled ? (
+            isGoogleConfigured
+              ? <p className="status-message">Google Sign-Up is enabled on approved domains only.</p>
+              : <p className="status-message">Google Sign-Up is available when configured.</p>
+          ) : null}
+        </div>
+
+        <div className="register-social-divider" aria-hidden="true" />
+
+        {!showEmailRegistration ? (
+          <button
+            type="button"
+            className="auth-link-button register-other-email-button"
+            onClick={() => setShowEmailRegistration(true)}
+            aria-controls="register-email-form"
+            aria-expanded="false"
+          >
+            Other Email
+          </button>
+        ) : null}
       </div>
 
-      <form className="stack-panel auth-panel" onSubmit={handleSubmit}>
+      {showEmailRegistration ? (
+      <form id="register-email-form" className="stack-panel auth-panel" onSubmit={handleSubmit}>
         <label>
           Username
           <input
@@ -455,6 +483,7 @@ export default function RegisterPage() {
 
         {message ? <p className="status-message status-error">{message}</p> : null}
       </form>
+      ) : null}
 
       <div className="auth-support-links">
         <Link to="/subscription-fees">Subscription Fees</Link>

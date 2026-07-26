@@ -441,6 +441,41 @@ textarea {
 }
 .standalone-card { max-width: 720px; margin: 48px auto; padding: 24px; }
 
+.register-journey-title {
+  font-size: 1.55rem;
+  white-space: nowrap;
+}
+
+@media (max-width: 520px) {
+  .standalone-card.auth-screen {
+    margin: 24px auto;
+    padding: 12px;
+  }
+
+  .register-journey-title {
+    font-size: 1.05rem;
+    white-space: normal;
+  }
+
+  .auth-screen .auth-panel {
+    padding: 14px;
+  }
+
+  .auth-screen .auth-role-fieldset {
+    padding: 12px;
+  }
+
+  .auth-screen .auth-role-option {
+    gap: 6px;
+    padding: 10px 8px;
+  }
+
+  .auth-screen .auth-role-option strong,
+  .auth-screen .auth-role-option small {
+    overflow-wrap: anywhere;
+  }
+}
+
 .app-topbar-row {
   display: flex;
   width: 100%;
@@ -3407,11 +3442,14 @@ label { display: block; margin-bottom: 12px; }
 .auth-role-fieldset legend { padding: 0 6px; font-weight: 700; color: #0f172a; }
 .auth-role-copy { margin: 0; color: #64748b; font-size: 0.92rem; }
 .auth-role-options { display: grid; gap: 10px; margin-top: 12px; }
+.subscriber-type-options, .subscription-plan-options { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .auth-role-option { display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 10px; background: rgba(248, 250, 252, 0.8); }
 .auth-role-option input { width: auto; margin-top: 2px; }
 .auth-role-option span { display: grid; gap: 4px; }
 .auth-role-option strong { color: #0f172a; }
 .auth-role-option small { color: #64748b; line-height: 1.45; }
+.auth-role-option-disabled { opacity: 0.5; cursor: not-allowed; }
+.auth-role-option-disabled input { cursor: not-allowed; }
 .vehicle-grid, .access-grid, .fuel-management .fuel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .stack-panel { display: grid; gap: 20px; }
 .backup-code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }
@@ -3428,8 +3466,9 @@ th { color: var(--dark-gold); }
 .status-error { color: var(--danger); }
 .status-success { color: var(--success); }
 .form-actions { display: flex; gap: 10px; flex-wrap: wrap; }
-.auth-screen { display: grid; gap: 18px; }
-.auth-panel { padding: 20px; border-radius: 12px; }
+.auth-screen { display: grid; gap: 18px; min-width: 0; width: 100%; }
+.auth-screen > * { min-width: 0; }
+.auth-panel { min-width: 0; width: 100%; padding: 20px; border-radius: 12px; }
 .auth-danger-panel { border: 1px solid rgba(180, 35, 24, 0.22); background: #fff8f7; }
 .auth-helper-card { display: grid; gap: 12px; }
 .auth-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
@@ -3475,6 +3514,11 @@ th { color: var(--dark-gold); }
 .auth-apple-button {
   gap: 8px;
   width: min(100%, 420px);
+}
+
+.register-other-email-button {
+  width: min(100%, 420px);
+  justify-self: center;
 }
 
 .register-google-button-wrap {
@@ -3839,8 +3883,12 @@ th { color: var(--dark-gold); }
   align-items: center;
   gap: 6px;
   color: #5d3300;
-  font-size: 0.92rem;
-  font-weight: 700;
+  font-size: 1.15rem;
+  font-weight: 800;
+}
+
+.login-art-new-user a {
+  font-size: inherit;
 }
 
 .login-art-support-links {
@@ -4443,10 +4491,12 @@ th { color: var(--dark-gold); }
 
   .login-art-service-note,
   .login-art-message,
-  .login-art-forgot,
-  .login-art-new-user,
-  .login-art-new-user a {
+  .login-art-forgot {
     font-size: 0.82rem;
+  }
+
+  .login-art-new-user {
+    font-size: 1rem;
   }
 }
 
@@ -4953,6 +5003,16 @@ th { color: var(--dark-gold); }
   margin: 4px auto;
 }
 
+.financial-health-journey-cycle::before {
+  content: '';
+  position: absolute;
+  z-index: 0;
+  inset: 48px 88px 50px;
+  border: 3px solid #176b8d;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
 .financial-health-journey-cycle .financial-health-journey-step {
   position: absolute;
   z-index: 1;
@@ -4966,6 +5026,16 @@ th { color: var(--dark-gold); }
   border-radius: 9px;
   color: #ffffff;
   box-shadow: 0 7px 14px rgba(15, 23, 42, 0.22);
+  overflow: hidden;
+}
+
+.financial-health-journey-cycle .financial-health-journey-step-copy,
+.financial-health-journey-cycle .financial-health-journey-step-copy h3,
+.financial-health-journey-cycle .financial-health-journey-action {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(1) {
@@ -5035,9 +5105,10 @@ th { color: var(--dark-gold); }
 .financial-health-journey-arrow {
   position: absolute;
   z-index: 0;
-  font-size: 2rem;
+  font-size: 2.65rem;
   line-height: 1;
-  font-weight: 400;
+  font-weight: 800;
+  text-shadow: 0 0 1px currentColor;
 }
 
 .financial-health-journey-arrow-1 {
@@ -5413,39 +5484,99 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-journey-cycle {
-    display: grid;
     width: 100%;
-    height: auto;
+    height: 340px;
   }
 
   .financial-health-journey-cycle::before {
-    display: none;
+    display: block;
+    inset: 38px 42px 44px;
+    border-width: 3px;
   }
 
   .financial-health-journey-arrow {
-    display: none;
+    display: block;
+    font-size: 1.9rem;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step {
-    position: static;
-    width: 100%;
-    min-height: 0;
-    transform: none;
+    position: absolute;
+    width: 112px;
+    min-height: 76px;
+    gap: 5px;
+    padding: 7px;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(1) {
-    transform: none;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step:nth-child(2) {
+    top: 78px;
+    right: 0;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step:nth-child(3) {
+    right: 26px;
+    bottom: 0;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step:nth-child(4) {
+    bottom: 0;
+    left: 26px;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step:nth-child(5) {
+    top: 78px;
+    left: 0;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step-copy h3 {
+    font-size: 0.7rem;
+    line-height: 1.2;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step-copy p {
-    position: static;
-    width: auto;
-    height: auto;
-    margin: 0;
-    overflow: visible;
-    clip: auto;
-    white-space: normal;
-    color: rgba(255, 255, 255, 0.88);
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-action {
+    min-height: 28px;
+    padding: 3px 4px;
+    font-size: 0.62rem;
+    line-height: 1.15;
+  }
+
+  .financial-health-journey-arrow-1 {
+    top: 50px;
+    right: 57px;
+  }
+
+  .financial-health-journey-arrow-2 {
+    right: 15px;
+    bottom: 91px;
+  }
+
+  .financial-health-journey-arrow-3 {
+    bottom: 21px;
+  }
+
+  .financial-health-journey-arrow-4 {
+    bottom: 91px;
+    left: 15px;
+  }
+
+  .financial-health-journey-arrow-5 {
+    top: 50px;
+    left: 57px;
   }
 
   .financial-health-journey-action {

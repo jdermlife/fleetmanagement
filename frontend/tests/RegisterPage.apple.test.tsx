@@ -89,6 +89,54 @@ describe('RegisterPage Apple sign-up', () => {
 
     expect((singleProfile as HTMLInputElement).checked).toBe(true)
     expect((multipleProfile as HTMLInputElement).checked).toBe(false)
+    expect((multipleProfile as HTMLInputElement).disabled).toBe(true)
+  })
+
+  it('allows the Starter subscription plan to be selected', async () => {
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const freePlan = screen.getByRole('radio', { name: /free\s*trial for 2 days/i })
+    const starterPlan = screen.getByRole('radio', { name: /starter\s*php 160\.00 per month/i })
+
+    expect((freePlan as HTMLInputElement).checked).toBe(true)
+    expect((starterPlan as HTMLInputElement).checked).toBe(false)
+
+    await userEvent.click(starterPlan)
+
+    expect((freePlan as HTMLInputElement).checked).toBe(false)
+    expect((starterPlan as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('orders Apple before Google and reveals credential fields from Other Email', async () => {
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const appleLabel = screen.getByText('Apple Account')
+    const googleLabel = screen.getByText('Google Account')
+    const otherEmailButton = screen.getByRole('button', { name: /other email/i })
+
+    expect(appleLabel.compareDocumentPosition(googleLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByLabelText('Username')).toBeNull()
+    expect(screen.queryByLabelText('Email')).toBeNull()
+    expect(screen.queryByLabelText('Cellphone Number')).toBeNull()
+    expect(screen.queryByLabelText('Password')).toBeNull()
+    expect(screen.queryByLabelText('Confirm password')).toBeNull()
+
+    await userEvent.click(otherEmailButton)
+
+    expect(screen.getByLabelText('Username')).toBeTruthy()
+    expect(screen.getByLabelText('Email')).toBeTruthy()
+    expect(screen.getByLabelText('Cellphone Number')).toBeTruthy()
+    expect(screen.getByLabelText('Password')).toBeTruthy()
+    expect(screen.getByLabelText('Confirm password')).toBeTruthy()
+    expect(screen.getByRole('button', { name: /create account/i })).toBeTruthy()
   })
 
   it('redirects expired trial users to the trial reminder page', async () => {

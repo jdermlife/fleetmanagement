@@ -92,6 +92,25 @@ describe('LoginPage Apple sign-in', () => {
     mockLoginWithApple.mockReset()
   })
 
+  it('reveals email and password login only after Other Email is selected', async () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    expect(screen.queryByPlaceholderText('Email or username')).toBeNull()
+    expect(screen.queryByPlaceholderText('Password')).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Log In' })).toBeNull()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Other Email' }))
+
+    expect(screen.getByPlaceholderText('Email or username')).toBeTruthy()
+    expect(screen.getByPlaceholderText('Password')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Log In' })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+  })
+
   it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
