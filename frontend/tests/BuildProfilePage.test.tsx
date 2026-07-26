@@ -1,4 +1,4 @@
-import { cleanup, render, screen } from '@testing-library/react'
+import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -26,12 +26,43 @@ describe('BuildProfilePage', () => {
   it('shows the twelve-step profile workflow and initial profile state', () => {
     render(<BuildProfilePage />)
 
-    expect(screen.getByRole('heading', { name: 'Shape Your Financial Future' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Build your Profile' })).toBeTruthy()
     expect(screen.getByText(/^PRO-[A-Z0-9]{6}$/)).toBeTruthy()
     expect(screen.getByLabelText('4% profile completion')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(12)
     expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
+  })
+
+  it('collapses and expands the Build your Profile workflow menu', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    const accordion = screen.getByText('Build your Profile').closest('details')
+    const summary = screen.getByText('Build your Profile').closest('summary')
+
+    expect(accordion?.hasAttribute('open')).toBe(true)
+    expect(summary).toBeTruthy()
+
+    await user.click(summary!)
+    expect(accordion?.hasAttribute('open')).toBe(false)
+
+    await user.click(summary!)
+    expect(accordion?.hasAttribute('open')).toBe(true)
+  })
+
+  it('selects the Financial Goal immediately after Profile ID', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    const goalDropdown = screen.getByRole('combobox', { name: 'Profile Financial Goal' })
+    expect(goalDropdown).toBeTruthy()
+
+    await user.selectOptions(goalDropdown, 'Build Emergency Fund')
+    expect((goalDropdown as HTMLSelectElement).value).toBe('Build Emergency Fund')
+
+    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    expect((screen.getByRole('combobox', { name: 'Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
   })
 
   it('navigates through source-derived lending and net worth steps', async () => {
@@ -314,8 +345,9 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
 
     expect(screen.getByRole('heading', { name: 'Step 8: Wealth Position Base Setting' })).toBeTruthy()
-    expect(screen.getByRole('combobox', { name: 'Financial Goal' })).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Reach First ₱10 Million' })).toBeTruthy()
+    const financialGoal = screen.getByRole('combobox', { name: 'Financial Goal' })
+    expect(financialGoal).toBeTruthy()
+    expect(within(financialGoal).getByRole('option', { name: 'Reach First ₱10 Million' })).toBeTruthy()
     expect(screen.getByLabelText('Target Amount')).toBeTruthy()
     expect(screen.getByLabelText('Months to Achieve')).toBeTruthy()
     expect(screen.getByLabelText('As Of')).toBeTruthy()

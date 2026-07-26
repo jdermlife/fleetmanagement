@@ -3580,16 +3580,62 @@ th { color: var(--dark-gold); }
   position: static;
   max-height: none;
   overflow: visible;
+  padding: 0;
+}
+
+.build-profile-workflow-accordion > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.build-profile-workflow-accordion > summary::-webkit-details-marker {
+  display: none;
+}
+
+.build-profile-workflow-accordion > summary h2 {
+  margin: 3px 0 0;
+}
+
+.build-profile-workflow-accordion > summary small {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  line-height: 1.35;
+}
+
+.build-profile-workflow-chevron {
+  flex: 0 0 auto;
+  width: 12px;
+  height: 12px;
+  border-right: 2px solid #1e3a8a;
+  border-bottom: 2px solid #1e3a8a;
+  transform: rotate(45deg);
+  transition: transform 160ms ease;
+}
+
+.build-profile-workflow-accordion[open] .build-profile-workflow-chevron {
+  transform: rotate(225deg);
+}
+
+.build-profile-workflow-accordion[open] > summary {
+  border-bottom: 1px solid #dbe4f0;
 }
 
 .build-profile-workflow-panel .lending-psychometric-step-list {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
+  gap: 8px;
+  padding: 12px;
 }
 
 .build-profile-workflow-panel .lending-psychometric-step-button {
   min-width: 0;
-  height: 100%;
+  width: 100%;
   align-items: start;
 }
 
@@ -3646,8 +3692,23 @@ th { color: var(--dark-gold); }
   color: #493500;
 }
 
-.build-profile-goal-summary strong {
-  overflow-wrap: anywhere;
+.build-profile-goal-summary label {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.build-profile-goal-summary select {
+  min-width: 0;
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #bfdbfe;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #172554;
+  font: inherit;
+  font-weight: 700;
 }
 
 .build-profile-goal-snapshot {

@@ -1101,26 +1101,38 @@ export default function BuildProfilePage() {
 
   return <div className="psychometric-page lending-psychometric-page build-profile-page">
     <section className="psychometric-hero lending-psychometric-hero">
-      <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Personal Financial Profile</span><h1>Shape Your Financial Future</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
+      <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1>Create Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
       <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}><span>Profile Completion</span><strong>{completionPercent}%</strong><small>Step {profile.step} of 12: {currentStep.label}</small><div className="build-profile-progress-track" aria-hidden="true"><div style={{ width: `${completionPercent}%` }} /></div></div>
     </section>
 
     <section className="psychometric-summary-grid lending-psychometric-summary-grid">
       <article className="psychometric-summary-card psychometric-summary-card-highlight"><span>Profile ID</span><strong>{profile.profileId}</strong><small>Your personal profile reference</small></article>
-      <article className="psychometric-summary-card build-profile-goal-summary"><span>Financial Goal</span><strong>{profile.values.financialGoal || profile.values.loanPurpose || 'Not selected'}</strong><small>{formatCurrency(profile.values.targetAmount || profile.values.requestedAmount)}</small></article>
+      <article className="psychometric-summary-card build-profile-goal-summary">
+        <label htmlFor="build-profile-summary-financial-goal">Financial Goal</label>
+        <select id="build-profile-summary-financial-goal" aria-label="Profile Financial Goal" value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>
+          <option value="">Select Financial Goal</option>
+          {NET_WORTH_FINANCIAL_GOAL_OPTIONS.map((goal) => <option key={goal} value={goal}>{goal}</option>)}
+        </select>
+        <small>{formatCurrency(profile.values.targetAmount || profile.values.requestedAmount)}</small>
+      </article>
       <article className="psychometric-summary-card"><span>Profile Status</span><strong>{profileStatus}</strong><small>Based on information provided</small></article>
       <article className="psychometric-summary-card"><span>Current Step</span><strong>{profile.step} / 12</strong><small>{currentStep.label}</small></article>
     </section>
 
     <section className="build-profile-layout">
       <aside className="psychometric-panel lending-psychometric-step-panel build-profile-workflow-panel">
-        <div className="psychometric-panel-header"><div><span className="psychometric-panel-kicker">Workflow Steps</span><h2>Build your Profile</h2></div></div>
-        <div className="lending-psychometric-step-list">
-          {WORKFLOW_STEPS.map((workflowStep) => <button key={workflowStep.id} type="button" onClick={() => goToStep(workflowStep.id)} className={`loan-stepper-button lending-psychometric-step-button ${profile.step === workflowStep.id ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}>
-            <div className={`lending-psychometric-step-index ${profile.step >= workflowStep.id ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>{workflowStep.id}</div>
-            <div className="lending-psychometric-step-copy"><strong>{workflowStep.label}</strong><span>{stepCompletion[workflowStep.id]}% information provided</span><div className="lending-step-information-track" aria-hidden="true"><div className={`lending-step-information-bar${stepCompletion[workflowStep.id] < 60 ? ' lending-step-information-bar-low' : ''}`} style={{ width: `${stepCompletion[workflowStep.id]}%` }} /></div><small>{workflowStep.description}</small></div>
-          </button>)}
-        </div>
+        <details className="build-profile-workflow-accordion" open>
+          <summary>
+            <div><span className="psychometric-panel-kicker">Workflow Steps</span><h2>Build your Profile</h2><small>Step {profile.step} of 12: {currentStep.label}</small></div>
+            <span className="build-profile-workflow-chevron" aria-hidden="true" />
+          </summary>
+          <div className="lending-psychometric-step-list">
+            {WORKFLOW_STEPS.map((workflowStep) => <button key={workflowStep.id} type="button" onClick={() => goToStep(workflowStep.id)} className={`loan-stepper-button lending-psychometric-step-button ${profile.step === workflowStep.id ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}>
+              <div className={`lending-psychometric-step-index ${profile.step >= workflowStep.id ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>{workflowStep.id}</div>
+              <div className="lending-psychometric-step-copy"><strong>{workflowStep.label}</strong><span>{stepCompletion[workflowStep.id]}% information provided</span><div className="lending-step-information-track" aria-hidden="true"><div className={`lending-step-information-bar${stepCompletion[workflowStep.id] < 60 ? ' lending-step-information-bar-low' : ''}`} style={{ width: `${stepCompletion[workflowStep.id]}%` }} /></div><small>{workflowStep.description}</small></div>
+            </button>)}
+          </div>
+        </details>
       </aside>
 
       <article className="psychometric-panel build-profile-form-panel">
