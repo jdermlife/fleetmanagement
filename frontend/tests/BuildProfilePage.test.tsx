@@ -51,6 +51,24 @@ describe('BuildProfilePage', () => {
     expect(accordion?.hasAttribute('open')).toBe(true)
   })
 
+  it('shows number-only workflow boxes with completion color states', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    const stepTwo = screen.getByRole('button', { name: /Step 2: Applicant Information/ })
+    expect(stepTwo.textContent).toBe('2')
+    expect(stepTwo.classList.contains('build-profile-workflow-step-incomplete')).toBe(true)
+
+    await user.click(stepTwo)
+    await user.type(screen.getByLabelText('Government ID Number'), 'ID-123')
+    await user.type(screen.getByLabelText('Place of Birth'), 'Manila')
+    await user.selectOptions(screen.getByLabelText('Gender'), 'Female')
+    expect(stepTwo.classList.contains('build-profile-workflow-step-progress')).toBe(true)
+
+    await user.type(screen.getByLabelText('Number of Dependents'), '1')
+    expect(stepTwo.classList.contains('build-profile-workflow-step-complete')).toBe(true)
+  })
+
   it('selects the Financial Goal immediately after Profile ID', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)

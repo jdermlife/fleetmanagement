@@ -177,6 +177,12 @@ function calculateAge(dateOfBirth: string): string {
   return age >= 0 ? String(age) : ''
 }
 
+function getWorkflowStepCompletionClass(completion: number): string {
+  if (completion === 100) return 'build-profile-workflow-step-complete'
+  if (completion > 60) return 'build-profile-workflow-step-progress'
+  return 'build-profile-workflow-step-incomplete'
+}
+
 export default function BuildProfilePage() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [saveMessage, setSaveMessage] = useState('')
@@ -1126,11 +1132,20 @@ export default function BuildProfilePage() {
             <div><span className="psychometric-panel-kicker">Workflow Steps</span><h2>Build your Profile</h2><small>Step {profile.step} of 12: {currentStep.label}</small></div>
             <span className="build-profile-workflow-chevron" aria-hidden="true" />
           </summary>
-          <div className="lending-psychometric-step-list">
-            {WORKFLOW_STEPS.map((workflowStep) => <button key={workflowStep.id} type="button" onClick={() => goToStep(workflowStep.id)} className={`loan-stepper-button lending-psychometric-step-button ${profile.step === workflowStep.id ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}>
-              <div className={`lending-psychometric-step-index ${profile.step >= workflowStep.id ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>{workflowStep.id}</div>
-              <div className="lending-psychometric-step-copy"><strong>{workflowStep.label}</strong><span>{stepCompletion[workflowStep.id]}% information provided</span><div className="lending-step-information-track" aria-hidden="true"><div className={`lending-step-information-bar${stepCompletion[workflowStep.id] < 60 ? ' lending-step-information-bar-low' : ''}`} style={{ width: `${stepCompletion[workflowStep.id]}%` }} /></div><small>{workflowStep.description}</small></div>
-            </button>)}
+          <div className="build-profile-workflow-steps">
+            {WORKFLOW_STEPS.map((workflowStep) => {
+              const completion = stepCompletion[workflowStep.id]
+              return <button
+                key={workflowStep.id}
+                type="button"
+                onClick={() => goToStep(workflowStep.id)}
+                className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
+                aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
+                title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
+              >
+                {workflowStep.id}
+              </button>
+            })}
           </div>
         </details>
       </aside>

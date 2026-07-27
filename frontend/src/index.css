@@ -3626,21 +3626,53 @@ th { color: var(--dark-gold); }
   border-bottom: 1px solid #dbe4f0;
 }
 
-.build-profile-workflow-panel .lending-psychometric-step-list {
-  grid-template-columns: minmax(0, 1fr);
-  align-items: stretch;
-  gap: 8px;
+.build-profile-workflow-steps {
+  display: grid;
+  grid-template-columns: repeat(6, 40px);
+  justify-content: start;
+  gap: 10px;
   padding: 12px;
 }
 
-.build-profile-workflow-panel .lending-psychometric-step-button {
-  min-width: 0;
-  width: 100%;
-  align-items: start;
+.build-profile-workflow-step {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  line-height: 1;
+  cursor: pointer;
+  transition: filter 160ms ease, outline-color 160ms ease, transform 160ms ease;
 }
 
-.build-profile-workflow-panel .lending-psychometric-step-copy small {
-  line-height: 1.35;
+.build-profile-workflow-step:hover {
+  filter: brightness(0.94);
+  transform: translateY(-1px);
+}
+
+.build-profile-workflow-step:focus-visible,
+.build-profile-workflow-step-active {
+  outline: 3px solid #1d4ed8;
+  outline-offset: 2px;
+}
+
+.build-profile-workflow-step-complete {
+  background: #15803d;
+  color: #ffffff;
+}
+
+.build-profile-workflow-step-progress {
+  background: #facc15;
+  color: #422006;
+}
+
+.build-profile-workflow-step-incomplete {
+  background: #dc2626;
+  color: #ffffff;
 }
 
 .build-profile-step-content h3 {
@@ -4249,8 +4281,8 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 960px) {
-  .build-profile-workflow-panel .lending-psychometric-step-list {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .build-profile-workflow-steps {
+    grid-template-columns: repeat(6, 40px);
   }
 }
 
@@ -4293,12 +4325,8 @@ th { color: var(--dark-gold); }
     width: 100%;
   }
 
-  .build-profile-workflow-panel .lending-psychometric-step-button {
-    min-width: 0;
-  }
-
-  .build-profile-workflow-panel .lending-psychometric-step-list {
-    grid-template-columns: minmax(0, 1fr);
+  .build-profile-workflow-steps {
+    grid-template-columns: repeat(4, 40px);
   }
 
   .build-profile-score-links {
