@@ -557,6 +557,7 @@ export interface LoanMutationResponse {
 
 export interface QuantScoresSummary {
   credit_score: number
+  credit_bureau_score: number
   fraud_score: number
   social_score: number
   psychometric_score: number
@@ -571,6 +572,7 @@ export interface QuantScoresSummary {
 
 export interface QuantScoresApiSummary {
   creditScore: number
+  creditBureauScore: number
   fraudScore: number
   socialScore: number
   psychometricScore: number

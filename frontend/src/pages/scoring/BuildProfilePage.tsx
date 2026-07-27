@@ -659,6 +659,7 @@ export default function BuildProfilePage() {
       else if (id === 3) {
         const completedFields = STEP_3_FIELDS.filter((field) => {
           if (field.key === 'grossMonthlyIncome') return Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0) > 0
+          if (field.mustBeChecked) return profile.values[field.key] === 'true'
           return profile.values[field.key] !== undefined && profile.values[field.key] !== ''
         }).length
         const answeredQuestions = CREDIT_VALUES_QUESTIONS.filter((question) => profile.values[`creditValues.${question.field}`]?.trim()).length
@@ -684,7 +685,9 @@ export default function BuildProfilePage() {
         result[id] = applicableChecks.length === 0 ? 0 : Math.round((applicableChecks.filter(Boolean).length / applicableChecks.length) * 100)
       }
       else if (id === 5) {
-        const completedFields = BANKING_RELATIONSHIP_FIELDS.filter((field) => profile.values[field.key]?.trim()).length
+        const completedFields = BANKING_RELATIONSHIP_FIELDS.filter((field) => field.type === 'calculated'
+          ? Number(profile.values.creditLimit || 0) > 0
+          : profile.values[field.key]?.trim()).length
         result[id] = Math.round((completedFields / BANKING_RELATIONSHIP_FIELDS.length) * 100)
       }
       else if (id === 6) {
@@ -836,7 +839,7 @@ export default function BuildProfilePage() {
 
     if (field.type === 'checkbox') {
       return <label key={field.key} className="build-profile-checkbox-field">
-        <input aria-invalid={profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
+        <input aria-invalid={field.mustBeChecked ? value !== 'true' : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
         <span>{field.label}</span>
       </label>
     }
@@ -859,6 +862,16 @@ export default function BuildProfilePage() {
   const renderBankingField = (field: BankingField) => {
     const value = profile.values[field.key] ?? ''
     const datalistId = `build-profile-${field.key}-options`
+
+    if (field.type === 'calculated') {
+      const creditLimit = Number(profile.values.creditLimit || 0)
+      const outstandingBalance = Math.max(0, Number(profile.values.outstandingBalance || 0))
+      const utilization = creditLimit > 0 ? (outstandingBalance / creditLimit) * 100 : null
+      return <fieldset key={field.key} aria-invalid={utilization === null} className="build-profile-banking-radio-field build-profile-field-wide">
+        <legend>{field.label}</legend>
+        <output>{utilization === null ? 'Enter Total Credit Limit to calculate utilization.' : `${utilization.toFixed(2)}%`}</output>
+      </fieldset>
+    }
 
     if (field.type === 'radio') {
       return <fieldset key={field.key} aria-invalid={!value.trim()} className="build-profile-banking-radio-field build-profile-field-wide">
@@ -937,7 +950,6 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-three">
         <h3>Step 3: Source of Income &amp; Wealth and Credit Values</h3>
-        <p className="psychometric-section-note">Complete employment, income, wealth, verification, and Credit Values details from the Lending Scorecard.</p>
         {STEP_3_SECTIONS.slice(0, 2).map((section, index) => <section key={section.title} className="build-profile-detail-section">
           <h4>{section.title}</h4>
           {section.note ? <p>{section.note}</p> : null}

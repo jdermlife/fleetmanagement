@@ -24,6 +24,7 @@ type CertificationSnapshot = {
   label: string
   decision: string
   creditScore: number | null
+  creditBureauScore: number | null
   fraudScore: number | null
   socialScore: number | null
   creditValueScore: number | null
@@ -77,6 +78,7 @@ const buildCertificationSnapshot = (
     label: finalRating ? `${finalGrade} - ${finalRating}` : finalGrade,
     decision: finalDecision,
     creditScore: record.overall_scores?.credit_score ?? null,
+    creditBureauScore: record.credit_bureau_reports?.bureau_score ?? null,
     fraudScore: record.overall_scores?.fraud_score ?? null,
     socialScore: record.overall_scores?.social_score ?? null,
     creditValueScore: record.overall_scores?.psychometric_score ?? null,
@@ -97,6 +99,9 @@ const formatBand = (value: number | null) => {
 
 const formatInformationProvided = (value: number) =>
   `${Math.max(0, Math.min(100, Math.round(value)))}%`
+
+const formatCreditBureauScore = (value: number | null | undefined, hasRating: boolean) =>
+  hasRating && typeof value === 'number' ? `${value.toFixed(0)} / 100` : 'Not Produced'
 
 const getCertificationMetadata = (applicationNo: string, issuedAt: string) => {
   const issuedDate = new Date(issuedAt)
@@ -527,6 +532,7 @@ export default function LoanCertificationPage() {
       </div>
       <div class="metrics">
         <div class="metric"><div class="metric-label">${getCreditScoreLabel(certification.productType)}</div><div class="metric-band">${bandDisplay(certification.creditScore)}</div><div class="metric-value">${scoreDisplay(certification.creditScore)}</div></div>
+        <div class="metric"><div class="metric-label">Credit Bureau Score</div><div class="metric-band">100-Point Bureau Model</div><div class="metric-value">${formatCreditBureauScore(certification.creditBureauScore, hasRating)}</div></div>
         <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${bandDisplay(certification.fraudScore)}</div><div class="metric-value">${scoreDisplay(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${bandDisplay(certification.socialScore)}</div><div class="metric-value">${scoreDisplay(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${bandDisplay(certification.creditValueScore)}</div><div class="metric-value">${scoreDisplay(certification.creditValueScore)}</div></div>
@@ -699,6 +705,11 @@ export default function LoanCertificationPage() {
                   label: getCreditScoreLabel(certification.productType),
                   value: scoreDisplay(certification.creditScore),
                   band: bandDisplay(certification.creditScore),
+                },
+                {
+                  label: 'Credit Bureau Score',
+                  value: formatCreditBureauScore(certification.creditBureauScore, hasRating),
+                  band: '100-Point Bureau Model',
                 },
                 {
                   label: 'Non-Starter Score',

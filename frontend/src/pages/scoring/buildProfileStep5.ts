@@ -1,7 +1,7 @@
 export type BankingField = {
   key: string
   label: string
-  type?: 'datalist' | 'date' | 'number' | 'radio' | 'select' | 'text' | 'textarea'
+  type?: 'calculated' | 'datalist' | 'date' | 'number' | 'radio' | 'select' | 'text' | 'textarea'
   options?: string[]
   rows?: number
 }
@@ -43,25 +43,78 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
   },
   {
     title: 'Credit Bureau Records',
-    description: 'Select one answer for each credit bureau question.',
+    description: 'Complete each credit bureau item. Credit utilization is calculated automatically.',
     fields: [
       {
-        key: 'creditBureauUnpaidDebtRecord',
-        label: '1. Do you have a record of unpaid debt in Credit Bureau and when?',
+        key: 'creditBureauLatePaymentFrequency',
+        label: '1. In your recollection, how many times have you made a late payment on any loan or credit card?',
         type: 'radio',
-        options: ['None', 'Yes - in last 5 years', 'Yes - in the last 10 years', 'Yes - More than 10 years already'],
+        options: ['No late payments', '1–2 late payments (30 days or less)', '3–5 late payments', 'More than 5 late payments', 'Loan currently in default'],
+      },
+      {
+        key: 'creditBureauDelinquencyDefaultHistory',
+        label: '2. Have you ever had a delinquent or defaulted loan?',
+        type: 'radio',
+        options: ['No delinquency/default', 'Delinquency resolved over 5 years ago', 'Delinquency resolved within last 5 years', 'Current delinquency', 'Current default / foreclosure / repossession'],
+      },
+      {
+        key: 'creditBureauOverallBalanceRatio',
+        label: '3. Approximately what percentage of your approved credit is currently outstanding?',
+        type: 'radio',
+        options: ['Less than 20%', '20–40%', '41–60%', '61–80%', 'Above 80%'],
+      },
+      {
+        key: 'creditBureauCreditLimitUtilization',
+        label: '4. Credit utilization calculated from Total Credit Limit and Current Outstanding Balance',
+        type: 'calculated',
+      },
+      {
+        key: 'creditBureauActiveLoanCount',
+        label: '5. How many active loans or credit facilities do you currently have?',
+        type: 'radio',
+        options: ['1–2', '3–4', '5–6', '7–8', 'More than 8'],
+      },
+      {
+        key: 'creditBureauCollectionCallsLast12Months',
+        label: '6. How many collection calls, emails, or demand notices have you received during the last 12 months?',
+        type: 'radio',
+        options: ['None', '1–2', '3–4', '5–6', 'More than 6'],
+      },
+      {
+        key: 'creditBureauCreditHistoryLength',
+        label: '7. How long have you been using loans or credit facilities?',
+        type: 'radio',
+        options: ['More than 10 years', '5–10 years', '3–5 years', '1–3 years', 'Less than 1 year'],
+      },
+      {
+        key: 'creditBureauWrittenOffAccountStatus',
+        label: '8. Have you ever had a loan or credit account that was written off or settled?',
+        type: 'radio',
+        options: ['No written-off account', 'Settled with full payment', 'Settled for less than full amount', 'Written-off but already closed', 'Active written-off account'],
+      },
+      {
+        key: 'creditBureauLegalCaseCollectionStatus',
+        label: '9. Do you currently have any legal cases or collection actions related to unpaid loans?',
+        type: 'radio',
+        options: ['None', 'Previous case already dismissed/resolved', 'Previous collection fully paid', 'Active collection account', 'Active legal case'],
+      },
+      {
+        key: 'creditBureauUnpaidDebtRecord',
+        label: '10. Have you ever had an unpaid debt reported to a Credit Bureau?',
+        type: 'radio',
+        options: ['None', 'Yes – More than 10 years ago', 'Yes – Within the last 10 years', 'Yes – Within the last 5 years'],
       },
       {
         key: 'creditBureauLoanAmount',
-        label: '2. What is the amount of the loan?',
+        label: '11. What was the approximate amount of your largest unpaid loan?',
         type: 'radio',
-        options: ['Less than 1,000', 'More than 1,000 but less than 5,000', 'More than 5,000', 'Not Applicable'],
+        options: ['Less than 1,000', '1,000–5,000', 'More than 5,000', 'Not Applicable'],
       },
       {
         key: 'creditBureauLoanPaidStatus',
-        label: '3. Is the loan paid?',
+        label: '12. Has that loan already been paid?',
         type: 'radio',
-        options: ['Fully paid with Certification', 'Fully paid without Certification', 'Not yet', 'Not Applicable - No loan'],
+        options: ['Fully paid with certification', 'Fully paid without certification', 'Not yet paid', 'Not Applicable'],
       },
     ],
   },

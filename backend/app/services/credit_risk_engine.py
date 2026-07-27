@@ -3,6 +3,7 @@ from __future__ import annotations
 from datetime import UTC, date, datetime
 from typing import Any
 
+from app.services.credit_bureau_scoring_engine import compute_credit_bureau_score
 from app.services.credit_scoring.auto_loan import compute_auto_loan_collateral_breakdown
 from app.services.credit_scoring.motorcycle_loan import compute_motorcycle_loan_collateral_breakdown
 from app.services.credit_scoring_engine import compute_credit_score
@@ -81,13 +82,25 @@ def _compute_relationship_score(payload: Any) -> dict[str, date | float | int | 
 def _compute_credit_bureau_report(payload: Any, credit_scores: dict[str, Any]) -> dict[str, Any]:
     banking = _requirements_section(payload, "bankingRelationships")
     due_diligence = _requirements_section(payload, "enhancedDueDiligence")
+    build_profile = _requirements_section(payload, "buildProfile")
+    profile_values = build_profile.get("values", {})
+    if not isinstance(profile_values, dict):
+        profile_values = {}
 
     total_loans = _to_int(due_diligence.get("numberOfActiveLoans"), 0)
-    outstanding_balance = _to_float(banking.get("loanCurrentBalance"), 0.0)
+    outstanding_balance = _to_float(
+        banking.get("outstandingBalance", banking.get("loanCurrentBalance")),
+        0.0,
+    )
+    score_result = compute_credit_bureau_score(
+        profile_values,
+        banking.get("creditLimit"),
+        outstanding_balance,
+    )
 
     return {
-        "bureau_name": "Quant Score Bureau Proxy",
-        "bureau_score": credit_scores.get("bureau_score", credit_scores["total_credit_score"]),
+        "bureau_name": score_result["model_name"],
+        "bureau_score": score_result["score"],
         "total_loans": total_loans,
         "active_loans": total_loans,
         "closed_loans": 0,
@@ -96,7 +109,7 @@ def _compute_credit_bureau_report(payload: Any, credit_scores: dict[str, Any]) -
         "outstanding_balance": outstanding_balance,
         "report_json": {
             "source": "quant-scoring-engine",
-            "version": "v1",
+            **score_result,
         },
         "report_date": datetime.now(UTC),
     }

@@ -175,6 +175,7 @@ const mapBackendQuantSummary = (
   summary:
     | {
         creditScore?: number;
+        creditBureauScore?: number;
         fraudScore?: number;
         socialScore?: number;
         psychometricScore?: number;
@@ -195,6 +196,7 @@ const mapBackendQuantSummary = (
 
   return {
     credit_score: Math.round(summary.creditScore ?? 0),
+    credit_bureau_score: Math.round(summary.creditBureauScore ?? 0),
     fraud_score: Math.round(summary.fraudScore ?? 0),
     social_score: Math.round(summary.socialScore ?? 0),
     psychometric_score: Math.round(summary.psychometricScore ?? 0),
@@ -217,6 +219,7 @@ const mapRecordQuantSummary = (
 
   return {
     credit_score: Math.round(record.overall_scores.credit_score ?? 0),
+    credit_bureau_score: Math.round(record.credit_bureau_reports?.bureau_score ?? 0),
     fraud_score: Math.round(record.overall_scores.fraud_score ?? 0),
     social_score: Math.round(record.overall_scores.social_score ?? 0),
     psychometric_score: Math.round(record.overall_scores.psychometric_score ?? 0),
@@ -4231,6 +4234,7 @@ export default function LendingScorecard() {
           label: ratingSummary?.final_grade ?? 'Rating Not Produced',
           decision: ratingSummary?.decision ?? 'Insufficient Information',
           creditScore: ratingSummary?.credit_score ?? null,
+          creditBureauScore: ratingSummary?.credit_bureau_score ?? null,
           fraudScore: ratingSummary?.fraud_score ?? null,
           socialScore: ratingSummary?.social_score ?? null,
           creditValueScore: ratingSummary?.psychometric_score ?? null,
@@ -4251,6 +4255,12 @@ export default function LendingScorecard() {
         displayedQuantSummary && toFilscore(displayedQuantSummary.credit_score) !== null
           ? toFilscore(displayedQuantSummary.credit_score)!.toString()
           : 'Pending',
+    },
+    {
+      label: 'Credit Bureau Score',
+      value: displayedQuantSummary
+        ? `${displayedQuantSummary.credit_bureau_score} / 100`
+        : 'Pending',
     },
     {
       label: 'Non-Starter Score',

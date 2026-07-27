@@ -36,6 +36,10 @@ describe('LoanCertificationPage', () => {
       borrower_name: 'Jordan Santos',
       product_type: 'Auto Loan',
       status: 'CREDIT_REVIEW',
+      credit_bureau_reports: {
+        bureau_name: 'FILSCORE Credit Bureau Scorecard',
+        bureau_score: 91,
+      },
       overall_scores: {
         final_score: 80,
         final_grade: 'B+',
@@ -86,5 +90,8 @@ describe('LoanCertificationPage', () => {
     expect(compositeCard).toBeTruthy()
     expect(within(compositeCard!).getByText('760')).toBeTruthy()
     expect(within(compositeCard!).queryByText('270')).toBeNull()
+    const bureauCard = screen.getByText('Credit Bureau Score').closest('div')
+    expect(bureauCard).toBeTruthy()
+    expect(within(bureauCard!).getByText('91 / 100')).toBeTruthy()
   })
 })

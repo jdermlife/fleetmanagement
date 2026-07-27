@@ -4,6 +4,7 @@ export type Step3Field = {
   type?: 'checkbox' | 'date' | 'number' | 'select' | 'tel' | 'text' | 'textarea'
   options?: string[]
   readOnly?: boolean
+  mustBeChecked?: boolean
 }
 
 export type Step3Section = {
@@ -158,6 +159,12 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'forgedBankStatement', label: 'Forged Bank Statement', type: 'checkbox' },
       { key: 'identityTheftIndicator', label: 'Identity Theft Indicator', type: 'checkbox' },
       { key: 'sanctionsPepMatch', label: 'Sanctions / PEP Match', type: 'checkbox' },
+      {
+        key: 'fraudAndDocumentAuthenticityAttestation',
+        label: 'I confirm that my profile has no record of fraudulent events or acts and that all documents I have provided are authentic. I am fully aware that otherwise, the credit health measurement results may be inaccurate.',
+        type: 'checkbox',
+        mustBeChecked: true,
+      },
     ],
   },
 ]

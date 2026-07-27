@@ -7,6 +7,7 @@ from types import SimpleNamespace
 import tests._warning_filters  # noqa: F401
 
 from app.services.credit_risk_engine import compute_credit_risk_package
+from app.services.credit_bureau_scoring_engine import compute_credit_bureau_score
 
 
 class CreditRiskEngineTests(unittest.TestCase):
@@ -36,10 +37,41 @@ class CreditRiskEngineTests(unittest.TestCase):
         self.assertEqual(result["relationship_scores"]["number_of_accounts"], 3)
         self.assertEqual(result["relationship_scores"]["deposit_balance"], 1234.56)
         self.assertEqual(result["relationship_scores"]["prior_loans"], 2)
-        self.assertEqual(result["credit_bureau_reports"]["bureau_score"], 393.5)
+        self.assertEqual(result["credit_bureau_reports"]["bureau_score"], 0.0)
         self.assertEqual(result["credit_bureau_reports"]["active_loans"], 2)
         self.assertEqual(result["credit_bureau_reports"]["outstanding_balance"], 2500.0)
         self.assertEqual(result["collateral_scores"]["overall_collateral_score"], 81.0)
+
+    def test_credit_bureau_scorecard_normalizes_stated_110_points_to_100(self) -> None:
+        values = {
+            "creditBureauLatePaymentFrequency": "No late payments",
+            "creditBureauDelinquencyDefaultHistory": "No delinquency/default",
+            "creditBureauOverallBalanceRatio": "Less than 20%",
+            "creditBureauActiveLoanCount": "1–2",
+            "creditBureauCollectionCallsLast12Months": "None",
+            "creditBureauCreditHistoryLength": "More than 10 years",
+            "creditBureauWrittenOffAccountStatus": "No written-off account",
+            "creditBureauLegalCaseCollectionStatus": "None",
+            "creditBureauUnpaidDebtRecord": "None",
+            "creditBureauLoanAmount": "Not Applicable",
+            "creditBureauLoanPaidStatus": "Not Applicable",
+        }
+
+        result = compute_credit_bureau_score(values, 100000, 20000)
+
+        self.assertEqual(result["raw_score"], 110)
+        self.assertEqual(result["score"], 100.0)
+        self.assertEqual(result["utilization_percent"], 20.0)
+        self.assertEqual(result["section_scores"]["credit_utilization"], 10)
+        self.assertEqual(result["completion_percent"], 100.0)
+        self.assertEqual(result["payment_history_interpretation"], "Excellent payment discipline")
+
+    def test_credit_bureau_scorecard_calculates_utilization_boundary(self) -> None:
+        result = compute_credit_bureau_score({}, 100000, 50000)
+
+        self.assertEqual(result["utilization_percent"], 50.0)
+        self.assertEqual(result["section_scores"]["credit_utilization"], 8)
+        self.assertEqual(result["answered_sections"], 1)
 
     def test_credit_risk_package_applies_safe_defaults(self) -> None:
         payload = SimpleNamespace(requirements={"bankingRelationships": {}, "enhancedDueDiligence": {}})

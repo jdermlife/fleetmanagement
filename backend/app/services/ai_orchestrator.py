@@ -118,6 +118,9 @@ class AIOrchestrator:
 
         quant_scores = {
             "creditScore": _to_int(overall_scores["credit_score"]),
+            "creditBureauScore": _to_int(
+                risk.get("credit_bureau_reports", {}).get("bureau_score")
+            ),
             "fraudScore": _to_int(overall_scores["fraud_score"]),
             "socialScore": _to_int(overall_scores["social_score"]),
             "psychometricScore": _to_int(overall_scores["psychometric_score"]),
