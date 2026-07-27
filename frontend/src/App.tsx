@@ -1282,7 +1282,7 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/trial-expired/payment"
-              element={<TrialExpiredReminderPage />}
+              element={<SubscriptionPaymentPage />}
             />
 
             <Route
