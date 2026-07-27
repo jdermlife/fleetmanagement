@@ -234,7 +234,7 @@ export default function LoginPage() {
           detail.toLowerCase().includes('data-sharing preference')
         )
       ) {
-        setMessage('For first-time Google users, please use Create Account to select account type and preferences.')
+        navigate('/register', { replace: true, state: { socialProvider: 'google' } })
         return
       }
 
@@ -279,7 +279,7 @@ export default function LoginPage() {
           detail.toLowerCase().includes('data-sharing preference')
         )
       ) {
-        setMessage('For first-time Apple users, please use Create Account to select account type and preferences.')
+        navigate('/register', { replace: true, state: { socialProvider: 'apple' } })
         return
       }
 

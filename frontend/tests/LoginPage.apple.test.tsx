@@ -3,10 +3,19 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockNavigate, mockRequestAppleSignInToken, mockLoginWithApple } = vi.hoisted(() => ({
+const { mockNavigate, mockRequestAppleSignInToken, mockLoginWithApple, mockLoginWithGoogle } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockRequestAppleSignInToken: vi.fn(),
   mockLoginWithApple: vi.fn(),
+  mockLoginWithGoogle: vi.fn(),
+}))
+
+vi.mock('@react-oauth/google', () => ({
+  GoogleLogin: ({ onSuccess }: { onSuccess: (response: { credential?: string }) => void }) => (
+    <button type="button" onClick={() => onSuccess({ credential: 'google-identity-token-123' })}>
+      Continue with Google
+    </button>
+  ),
 }))
 
 vi.mock('react-router-dom', async () => {
@@ -33,7 +42,7 @@ vi.mock('../src/api', () => ({
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
   getMySubscription: vi.fn().mockResolvedValue({ status: 'ACTIVE' }),
   login: vi.fn(),
-  loginWithGoogle: vi.fn(),
+  loginWithGoogle: mockLoginWithGoogle,
   loginWithApple: mockLoginWithApple,
 }))
 
@@ -71,6 +80,7 @@ describe('LoginPage Apple sign-in', () => {
   })
 
   beforeEach(() => {
+    vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'google-client-id')
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     vi.stubEnv(
       'VITE_APPLE_REDIRECT_URI',
@@ -90,6 +100,7 @@ describe('LoginPage Apple sign-in', () => {
     mockNavigate.mockReset()
     mockRequestAppleSignInToken.mockReset()
     mockLoginWithApple.mockReset()
+    mockLoginWithGoogle.mockReset()
   })
 
   it('reveals email and password login only after Other Email is selected', async () => {
@@ -156,7 +167,7 @@ describe('LoginPage Apple sign-in', () => {
     })
   })
 
-  it('shows first-time Apple guidance message when backend requires account type selection', async () => {
+  it('moves first-time Apple users to registration when account type selection is required', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
     })
@@ -185,12 +196,42 @@ describe('LoginPage Apple sign-in', () => {
       })
     })
 
-    expect(mockNavigate).not.toHaveBeenCalled()
-    expect(
-      await screen.findByText(
-        'For first-time Apple users, please use Create Account to select account type and preferences.'
-      )
-    ).toBeTruthy()
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/register', {
+        replace: true,
+        state: { socialProvider: 'apple' },
+      })
+    })
+  })
+
+  it('moves first-time Google users to registration when account type selection is required', async () => {
+    mockLoginWithGoogle.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 400,
+        data: {
+          detail: 'Select borrower or lender for first-time Google sign-in',
+        },
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /continue with google/i }))
+
+    await waitFor(() => {
+      expect(mockLoginWithGoogle).toHaveBeenCalledWith({
+        idToken: 'google-identity-token-123',
+      })
+      expect(mockNavigate).toHaveBeenCalledWith('/register', {
+        replace: true,
+        state: { socialProvider: 'google' },
+      })
+    })
   })
 
   it('redirects expired trial users to the trial reminder page', async () => {
