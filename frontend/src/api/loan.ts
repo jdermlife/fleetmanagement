@@ -48,6 +48,10 @@ export interface LoanApplicationRequirements {
     maritalStatus: string
     mothersMaidenName: string
   }
+  dependents?: Array<{
+    name: string
+    dateOfBirth: string
+  }>
   contactInformation: {
     mobileNumber: string
     mobileYearsUsed: string

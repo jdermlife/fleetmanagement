@@ -84,17 +84,15 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
-    const stepTwo = screen.getByRole('button', { name: /Step 2: Applicant Information/ })
+    const stepTwo = screen.getByRole('button', { name: /Step 2: Spouse and Dependents/ })
     expect(stepTwo.textContent).toBe('2')
     expect(stepTwo.classList.contains('build-profile-workflow-step-incomplete')).toBe(true)
 
-    await user.click(stepTwo)
     await user.type(screen.getByLabelText('Government ID Number'), 'ID-123')
     await user.type(screen.getByLabelText('Place of Birth'), 'Manila')
     await user.selectOptions(screen.getByLabelText('Gender'), 'Female')
-    expect(stepTwo.classList.contains('build-profile-workflow-step-progress')).toBe(true)
-
-    await user.type(screen.getByLabelText('Number of Dependents'), '1')
+    await user.type(screen.getByLabelText('Number of Dependents'), '0')
+    await user.selectOptions(screen.getByLabelText('Civil Status'), 'Single')
     expect(stepTwo.classList.contains('build-profile-workflow-step-complete')).toBe(true)
   })
 
@@ -249,8 +247,10 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
-    await user.click(screen.getByRole('button', { name: /Applicant Information/ }))
     expect(screen.getByLabelText('Government ID Number')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Spouse and Dependents/ }))
+    expect(screen.getByRole('heading', { name: 'Step 2: Spouse and Dependents' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Add Dependent' })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: /Goal Setting/ }))
     expect(screen.getByLabelText('Financial Goal / Purpose')).toBeTruthy()
@@ -287,7 +287,7 @@ describe('BuildProfilePage', () => {
     )
     expect(screen.getByLabelText('Age').getAttribute('value')).toBe(String(expectedAge))
     expect(screen.getByLabelText('Age').getAttribute('readonly')).not.toBeNull()
-    expect(screen.getByText('29% complete')).toBeTruthy()
+    expect(screen.getByText('24% complete')).toBeTruthy()
     expect(screen.getByLabelText('6% profile completion')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
@@ -311,7 +311,15 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('combobox', { name: 'Citizenship' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Filipino' })).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Civil Status' })).toBeTruthy()
-    expect(screen.getByRole('option', { name: 'Widow' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Single' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Married' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Divorced' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Legally Separated' })).toBeTruthy()
+    expect(screen.queryByRole('option', { name: 'Widow' })).toBeNull()
+    expect(screen.getByLabelText('Government ID Number')).toBeTruthy()
+    expect(screen.getByLabelText('Place of Birth')).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Gender' })).toBeTruthy()
+    expect(screen.getByLabelText('Number of Dependents')).toBeTruthy()
     expect(screen.getByLabelText('Home Phone Number')).toBeTruthy()
     expect(screen.getByLabelText('TIN Number')).toBeTruthy()
     expect(screen.getByLabelText('SSS / GSIS Number')).toBeTruthy()
@@ -348,16 +356,39 @@ describe('BuildProfilePage', () => {
     expect(screen.getAllByLabelText(/^\d+\. /)).toHaveLength(50)
   })
 
-  it('provides conditional spouse and repeatable co-borrower and guarantor requirements in Step 4', async () => {
+  it('provides spouse and repeatable dependent requirements in Step 2', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Civil Status' }), 'Married')
-    await user.click(screen.getByRole('button', { name: /Spouse, Co-Borrower, and Guarantor Information/ }))
+    await user.type(screen.getByLabelText('Number of Dependents'), '1')
+    await user.click(screen.getByRole('button', { name: /Step 2: Spouse and Dependents/ }))
 
-    expect(screen.getByRole('heading', { name: 'Step 4: Spouse, Co-Borrower, and Guarantor Information (as applicable)' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Step 2: Spouse and Dependents' })).toBeTruthy()
     expect(screen.getByLabelText('Spouse Full Name')).toBeTruthy()
     expect(screen.getByLabelText('Spouse Date of Birth')).toBeTruthy()
+    expect(screen.getByLabelText('Spouse Place of Birth')).toBeTruthy()
+    expect(screen.getByLabelText('Spouse Citizenship')).toBeTruthy()
+    expect(screen.getByLabelText('Spouse Mobile Number')).toBeTruthy()
+    expect(screen.getByLabelText('Spouse Present Address')).toBeTruthy()
+    expect(screen.getByLabelText('Dependent 1 Full Name')).toBeTruthy()
+    expect(screen.getByLabelText('Dependent 1 Date of Birth')).toBeTruthy()
+
+    await user.type(screen.getByLabelText('Dependent 1 Full Name'), 'Jamie Santos')
+    await user.type(screen.getByLabelText('Dependent 1 Date of Birth'), '2015-04-03')
+    await user.click(screen.getByRole('button', { name: 'Save Profile' }))
+    const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+    expect(savedProfile.dependents[0]).toMatchObject({ name: 'Jamie Santos', dateOfBirth: '2015-04-03' })
+  })
+
+  it('provides conditional spouse employment and repeatable co-borrower and guarantor requirements in Step 4', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Civil Status' }), 'Married')
+    await user.click(screen.getByRole('button', { name: /Spouse Employment, Co-Borrower, and Guarantor Information/ }))
+
+    expect(screen.getByRole('heading', { name: 'Step 4: Spouse Employment, Co-Borrower, and Guarantor Information (as applicable)' })).toBeTruthy()
     expect(screen.getByLabelText('Spouse Gross Monthly Income')).toBeTruthy()
 
     expect(screen.getByRole('button', { name: '+ Add a Co-Borrower' })).toBeTruthy()
@@ -442,15 +473,19 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Annual Interest Rate (%)')).toBeTruthy()
     expect(screen.getByText('Est. Monthly Amortization')).toBeTruthy()
     expect(screen.getByText('Loan-to-Value Ratio (LTV)')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Step 1 Review Capture' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Step 1 Review Capture' })).toBeNull()
+    expect(screen.getByText('Take a picture of a valid ID for inclusion and fasten profile review.')).toBeTruthy()
 
     await user.type(screen.getByLabelText('Financial Goal / Purpose'), 'Purchase a family home')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Product Being Applied For' }), 'Home Loan')
     await user.type(screen.getByLabelText('Requested Loan Amount'), '1200000')
+    expect(screen.getByLabelText('Requested Loan Amount')).toHaveProperty('value', '1,200,000.00')
     await user.type(screen.getByLabelText('Loan Term (Months)'), '120')
     await user.type(screen.getByLabelText('Annual Interest Rate (%)'), '7')
     expect(screen.getByText('100% complete')).toBeTruthy()
-    expect(screen.getByText(/₱13,933/)).toBeTruthy()
+    const amortization = screen.getByText('Est. Monthly Amortization').parentElement
+    expect(amortization?.textContent).toMatch(/13,\d{3}\.\d{2}/)
+    expect(amortization?.textContent).not.toContain('₱')
 
     const idCapture = new File(['id-image'], 'valid-id.jpg', { type: 'image/jpeg' })
     await user.upload(screen.getByLabelText(/Take Picture of ID/), idCapture)
@@ -460,7 +495,7 @@ describe('BuildProfilePage', () => {
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.loanPurpose).toBe('Purchase a family home')
     expect(savedProfile.values.productType).toBe('Home Loan')
-    expect(savedProfile.values.requestedAmount).toBe('1200000')
+    expect(savedProfile.values.requestedAmount).toBe('1200000.00')
     expect(savedProfile.documents).toContain('valid-id.jpg')
   })
 

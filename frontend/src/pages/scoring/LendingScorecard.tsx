@@ -53,6 +53,7 @@ import { readReplicatedBuildProfile, type ReplicatedBuildProfile } from './build
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
 interface CoBorrower { id: string; name: string; relationship: string; monthlyIncome: number; debtObligations: number; creditStanding: string; }
+interface Dependent { name: string; dateOfBirth: string; }
 interface Employment { history: string; monthlyIncome: number; otherIncome: number; debtObligations: number; }
 interface LoanDetails { amount: number; termMonths: number; interestRate: number; purpose: string; productType: ProductType; }
 interface Collateral { securityClassification: string; assetType: string; maker: string; brand: string; model: string; year: string; vehicleMarketabilityCategory: string; vehicleConditionCategory: string; vehicleTypeCategory: string; motorcycleIntendedUse: string; useAsCollateral: boolean; appraisedValue: number; insuranceProviderCompany: string; policyNumber: string; orNumber: string; crNumber: string; vehicleInfo: string; insurance: string; registration: string; }
@@ -87,6 +88,7 @@ interface LoanApplication {
   buildProfileSnapshot: Record<string, unknown>;
   borrower: BorrowerInfo;
   coBorrowers: CoBorrower[];
+  dependents: Dependent[];
   employment: Employment;
   loan: LoanDetails;
   collateral: Collateral;
@@ -238,6 +240,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   buildProfileSnapshot: {},
   borrower: { fullName: '', email: '', phone: '', govId: '', address: '' },
   coBorrowers: [],
+  dependents: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
   loan: { amount: 0, termMonths: 12, interestRate: 5.5, purpose: '', productType: 'Auto Loan' },
   collateral: { securityClassification: '', assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, appraisedValue: 0, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', vehicleInfo: '', insurance: '', registration: '' },
@@ -299,6 +302,7 @@ const replicateBuildProfileToLendingApplication = (
     buildProfileSnapshot: profile as unknown as Record<string, unknown>,
     borrower: { fullName: values.fullName || '', email: values.email || '', phone: values.mobileNumber || '', govId: values.governmentId || values.otherGovernmentIdNumber || '', address: values.address || '' },
     coBorrowers: profile.coBorrowers.map((item, index) => ({ id: item.id || `CO-${index + 1}`, name: item.name || '', relationship: item.relationship || '', monthlyIncome: Number(item.monthlyIncome) || 0, debtObligations: Number(item.debtObligations) || 0, creditStanding: item.creditStanding || '' })),
+    dependents: profile.dependents?.map(({ name, dateOfBirth }) => ({ name, dateOfBirth })) ?? application.dependents,
     employment: { history: values.employmentHistory || '', monthlyIncome: numberValue('monthlyIncome'), otherIncome: numberValue('otherIncome'), debtObligations: numberValue('debtObligations') },
     loan: { amount: numberValue('requestedAmount'), termMonths: numberValue('loanTerm'), interestRate: numberValue('interestRate'), purpose: values.loanPurpose || '', productType },
     applicantPersonal: { ...application.applicantPersonal, dateOfBirth: values.dateOfBirth || '', placeOfBirth: values.placeOfBirth || '', age: numberValue('age'), gender: values.gender || '', citizenship: values.citizenship || '', numberOfDependents: numberValue('dependents'), maritalStatus: values.civilStatus || '' },
@@ -347,6 +351,7 @@ const buildLoanRequirements = (
         application.signatures.extensionCardholderSignature.length > 0,
     },
     applicantPersonal: application.applicantPersonal,
+    dependents: application.dependents,
     contactInformation: application.contactInformation,
     governmentIds: application.governmentIds,
     addressInformation: application.addressInformation,

@@ -12,6 +12,9 @@ export const SPOUSE_FIELDS: RelatedPartyField[] = [
   { key: 'spouseCitizenship', label: 'Spouse Citizenship' },
   { key: 'spouseMobileNumber', label: 'Spouse Mobile Number', type: 'tel' },
   { key: 'spousePresentAddress', label: 'Spouse Present Address' },
+]
+
+export const SPOUSE_EMPLOYMENT_FIELDS: RelatedPartyField[] = [
   { key: 'spouseEmployerBusinessName', label: 'Spouse Employer / Business Name' },
   { key: 'spouseOfficeAddress', label: 'Spouse Office Address' },
   { key: 'spouseOccupation', label: 'Spouse Occupation' },

@@ -20,7 +20,7 @@ export type CreditValuesSection = {
 
 export const STEP_3_SECTIONS: Step3Section[] = [
   {
-    title: 'Employment and Income Summary',
+    title: 'Employment and Income  - Borrower',
     fields: [
       { key: 'employmentHistory', label: 'Employment History (Current Employer)' },
       { key: 'monthlyIncome', label: 'Primary Monthly Income', type: 'number' },
@@ -28,6 +28,19 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'debtObligations', label: 'Existing Monthly Debt Obligations', type: 'number' },
     ],
   },
+  {
+    title: 'Employment and Income  - Spouse',
+    fields: [
+      { key: 'employmentHistory', label: 'Employment History (Current Employer)' },
+      { key: 'monthlyIncome', label: 'Primary Monthly Income', type: 'number' },
+      { key: 'otherIncome', label: 'Other Sources of Income', type: 'number' },
+      { key: 'debtObligations', label: 'Existing Monthly Debt Obligations', type: 'number' },
+    ],
+
+
+  },
+
+
   {
     title: 'Detailed Employment Information',
     fields: [

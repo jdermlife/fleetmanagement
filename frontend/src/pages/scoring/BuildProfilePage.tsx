@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { NumericFormat } from 'react-number-format'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
@@ -30,6 +31,7 @@ import {
   CO_BORROWER_FIELDS,
   GUARANTOR_FIELDS,
   SPOUSE_FIELDS,
+  SPOUSE_EMPLOYMENT_FIELDS,
   createCoBorrower,
   createGuarantor,
   type CoBorrower,
@@ -67,6 +69,13 @@ type ProfileData = {
   coBorrowers: CoBorrower[]
   guarantors: Guarantor[]
   additionalCollaterals: AdditionalCollateral[]
+  dependents: Dependent[]
+}
+
+type Dependent = {
+  id: string
+  name: string
+  dateOfBirth: string
 }
 
 type FieldDefinition = {
@@ -83,9 +92,9 @@ const profileApplicationRequests = new Map<string, Promise<LoanApplicationRecord
 
 const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: string }> = [
   { id: 1, label: 'Tell Us About Yourself', description: 'Start with your essential personal and contact details.' },
-  { id: 2, label: 'Applicant Information', description: 'Complete identity, household, and residence information.' },
+  { id: 2, label: 'Spouse and Dependents', description: 'Complete applicable spouse and dependent information.' },
   { id: 3, label: 'Source of Income & Wealth and Credit Values', description: 'Record income, wealth, employment, verification, and Credit Values information.' },
-  { id: 4, label: 'Spouse, Co-Borrower, and Guarantor Information (as applicable)', description: 'Add applicable spouse, co-borrower, and guarantor information.' },
+  { id: 4, label: 'Spouse Employment, Co-Borrower, and Guarantor Information (as applicable)', description: 'Add applicable spouse employment, co-borrower, and guarantor information.' },
   { id: 5, label: 'Banking Relationships', description: 'Describe credit cards, bank accounts, and existing loans.' },
   { id: 6, label: 'Goal Setting', description: 'Define the financial purpose, product, amount, and timeframe.' },
   { id: 7, label: 'Collateral Assets (based on Goal and Product Requested).', description: 'Identify security and assets based on the goal and product requested.' },
@@ -103,8 +112,12 @@ const STEP_FIELDS: Record<Exclude<ProfileStep, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 
     { key: 'mobileNumber', label: 'Mobile Number', type: 'tel' },
     { key: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
     { key: 'age', label: 'Age', type: 'number', readOnly: true },
+    { key: 'governmentId', label: 'Government ID Number' },
+    { key: 'placeOfBirth', label: 'Place of Birth' },
+    { key: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Prefer not to say'] },
+    { key: 'dependents', label: 'Number of Dependents', type: 'number' },
     { key: 'citizenship', label: 'Citizenship', type: 'select', options: ['Filipino', 'American', 'Australian', 'British', 'Canadian', 'Chinese', 'Indian', 'Indonesian', 'Japanese', 'Korean', 'Malaysian', 'Singaporean', 'Thai', 'Vietnamese', 'Dual Citizen', 'Other'] },
-    { key: 'civilStatus', label: 'Civil Status', type: 'select', options: ['Single', 'Married', 'Widow', 'Separated'] },
+    { key: 'civilStatus', label: 'Civil Status', type: 'select', options: ['Single', 'Married', 'Divorced', 'Legally Separated'] },
     { key: 'homePhoneNumber', label: 'Home Phone Number', type: 'tel' },
     { key: 'tin', label: 'TIN Number' },
     { key: 'sssGsis', label: 'SSS / GSIS Number' },
@@ -120,11 +133,7 @@ const STEP_FIELDS: Record<Exclude<ProfileStep, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 
     { key: 'education', label: 'Educational Attainment', type: 'select', options: ['PHD', 'PostGraduate', 'College Degree', 'HighSchool'] },
     { key: 'numberOfVehiclesOwned', label: 'Number of Vehicles Owned', type: 'number' },
   ],
-  2: [
-    { key: 'governmentId', label: 'Government ID Number' }, { key: 'placeOfBirth', label: 'Place of Birth' },
-    { key: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Prefer not to say'] },
-    { key: 'dependents', label: 'Number of Dependents', type: 'number' },
-  ],
+  2: [],
 }
 
 const SUITABILITY_QUESTIONS = [
@@ -150,7 +159,11 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [] }
+  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], dependents: [] }
+}
+
+function createDependent(): Dependent {
+  return { id: `DEP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`, name: '', dateOfBirth: '' }
 }
 
 function loadProfile(): ProfileData {
@@ -180,6 +193,10 @@ function formatCurrency(value: string): string {
   const amount = Number(value)
   if (!Number.isFinite(amount) || amount <= 0) return 'Not set'
   return new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 }).format(amount)
+}
+
+function formatNumber(value: number): string {
+  return new Intl.NumberFormat('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(value)
 }
 
 function calculateAge(dateOfBirth: string): string {
@@ -240,6 +257,10 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
     ...(persistedProfile ?? (isSameProfile ? current : {})),
     profileId: application.application_no,
   }
+  const dependentRecords = requirements.dependents ?? profileBase.dependents
+  const dependents = dependentRecords.length > 0
+    ? dependentRecords.map((dependent, index) => ({ id: 'id' in dependent && typeof dependent.id === 'string' ? dependent.id : `DEP-${application.application_no}-${index + 1}`, name: dependent.name, dateOfBirth: dependent.dateOfBirth }))
+    : Array.from({ length: applicant.numberOfDependents || 0 }, () => createDependent())
   const values = { ...profileBase.values }
 
   Object.assign(values, {
@@ -360,6 +381,7 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
       ...item,
       appraisedValue: String(item.appraisedValue || ''),
     })),
+    dependents,
   }
 }
 
@@ -383,6 +405,7 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
     numberOfDependents: numberValue('dependents'),
     maritalStatus: values.civilStatus || '',
   })
+  requirements.dependents = profile.dependents.map(({ name, dateOfBirth }) => ({ name, dateOfBirth }))
   Object.assign(requirements.contactInformation, {
     mobileNumber: values.mobileNumber || '',
     homePhoneNumber: values.homePhoneNumber || '',
@@ -646,7 +669,7 @@ export default function BuildProfilePage() {
         const coBorrowerApplicable = profile.values.hasCoBorrower === 'true'
         const guarantorApplicable = profile.values.hasGuarantor === 'true'
         const applicableChecks = [
-          ...(spouseApplicable ? SPOUSE_FIELDS.map((field) => Boolean(profile.values[field.key]?.trim())) : []),
+          ...(spouseApplicable ? SPOUSE_EMPLOYMENT_FIELDS.map((field) => Boolean(profile.values[field.key]?.trim())) : []),
           ...(coBorrowerApplicable
             ? profile.coBorrowers.length > 0
               ? profile.coBorrowers.flatMap((item) => CO_BORROWER_FIELDS.map((field) => Boolean(item[field.key as keyof CoBorrower]?.trim())))
@@ -687,7 +710,16 @@ export default function BuildProfilePage() {
       }
       else {
         const fields = STEP_FIELDS[id]
-        result[id] = Math.round((fields.filter((field) => isCompletedFieldValue(profile.values[field.key], field.type)).length / fields.length) * 100)
+        if (id === 2) {
+          const spouseApplicable = profile.values.civilStatus === 'Married'
+          const checks = [
+            ...(spouseApplicable ? SPOUSE_FIELDS.map((field) => Boolean(profile.values[field.key]?.trim())) : []),
+            ...profile.dependents.flatMap((dependent) => [Boolean(dependent.name.trim()), Boolean(dependent.dateOfBirth.trim())]),
+          ]
+          result[id] = checks.length === 0
+            ? profile.values.civilStatus && profile.values.dependents !== undefined ? 100 : 0
+            : Math.round((checks.filter(Boolean).length / checks.length) * 100)
+        } else result[id] = Math.round((fields.filter((field) => isCompletedFieldValue(profile.values[field.key], field.type)).length / fields.length) * 100)
       }
     })
     return result
@@ -702,6 +734,9 @@ export default function BuildProfilePage() {
       [key]: value,
       ...(key === 'dateOfBirth' ? { age: calculateAge(value) } : {}),
     },
+    ...(key === 'dependents' ? {
+      dependents: Array.from({ length: Math.max(0, Number(value) || 0) }, (_, index) => current.dependents[index] ?? createDependent()),
+    } : {}),
   }))
   const goToStep = (step: ProfileStep) => setProfile((current) => ({ ...current, step }))
 
@@ -756,6 +791,11 @@ export default function BuildProfilePage() {
   const updateAdditionalCollateral = (id: string, field: keyof AdditionalCollateral, value: string) => setProfile((current) => ({
     ...current,
     additionalCollaterals: current.additionalCollaterals.map((item) => item.id === id ? { ...item, [field]: value } : item),
+  }))
+
+  const updateDependent = (id: string, field: 'name' | 'dateOfBirth', value: string) => setProfile((current) => ({
+    ...current,
+    dependents: current.dependents.map((dependent) => dependent.id === id ? { ...dependent, [field]: value } : dependent),
   }))
 
   const renderRelatedPartyField = (
@@ -861,6 +901,35 @@ export default function BuildProfilePage() {
   </label>
 
   const renderCurrentStep = () => {
+    if (profile.step === 2) {
+      const spouseApplicable = profile.values.civilStatus === 'Married'
+      return <div className="build-profile-step-content build-profile-step-two">
+        <h3>Step 2: Spouse and Dependents</h3>
+        {spouseApplicable ? <section className="build-profile-detail-section">
+          <h4>Spouse Information</h4>
+          <div className="build-profile-form-grid">
+            {SPOUSE_FIELDS.map((field) => renderRelatedPartyField(field, profile.values[field.key] ?? '', (value) => updateValue(field.key, value), ''))}
+          </div>
+        </section> : <p className="build-profile-applicability-note">Spouse information is required only when Civil Status is Married.</p>}
+
+        <section className="build-profile-detail-section">
+          <div className="build-profile-section-heading"><h4>Dependents</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, values: { ...current.values, dependents: String(current.dependents.length + 1) }, dependents: [...current.dependents, createDependent()] }))}>Add Dependent</button></div>
+          {profile.dependents.length === 0 ? <p className="build-profile-applicability-note">No dependents added.</p> : <div className="build-profile-related-party-list">
+            {profile.dependents.map((dependent, index) => <article key={dependent.id}>
+              <div className="build-profile-section-heading"><h5>Dependent #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => {
+                const dependents = current.dependents.filter((item) => item.id !== dependent.id)
+                return { ...current, values: { ...current.values, dependents: String(dependents.length) }, dependents }
+              })}>Remove</button></div>
+              <div className="build-profile-form-grid">
+                <label>Dependent {index + 1} Full Name<input aria-invalid={!dependent.name.trim()} value={dependent.name} onChange={(event) => updateDependent(dependent.id, 'name', event.target.value)} /></label>
+                <label>Dependent {index + 1} Date of Birth<input aria-invalid={!dependent.dateOfBirth.trim()} type="date" value={dependent.dateOfBirth} onChange={(event) => updateDependent(dependent.id, 'dateOfBirth', event.target.value)} /></label>
+              </div>
+            </article>)}
+          </div>}
+        </section>
+      </div>
+    }
+
     if (profile.step === 3) {
       const totalHouseholdIncome = Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0)
       const totalExistingDebt = Number(profile.values.debtObligations || 0)
@@ -924,7 +993,7 @@ export default function BuildProfilePage() {
       }))
 
       return <div className="build-profile-step-content build-profile-step-four">
-        <h3>Step 4: Spouse, Co-Borrower, and Guarantor Information (as applicable)</h3>
+        <h3>Step 4: Spouse Employment, Co-Borrower, and Guarantor Information (as applicable)</h3>
         <p className="psychometric-section-note">Provide details only for the people applicable to your profile.</p>
 
         <section className="build-profile-detail-section">
@@ -957,9 +1026,9 @@ export default function BuildProfilePage() {
         </section>
 
         {spouseApplicable ? <section className="build-profile-detail-section">
-          <h4>Spouse Information</h4>
+          <h4>Spouse Employment Information</h4>
           <div className="build-profile-form-grid">
-            {SPOUSE_FIELDS.map((field) => renderRelatedPartyField(field, profile.values[field.key] ?? '', (value) => updateValue(field.key, value), ''))}
+            {SPOUSE_EMPLOYMENT_FIELDS.map((field) => renderRelatedPartyField(field, profile.values[field.key] ?? '', (value) => updateValue(field.key, value), ''))}
           </div>
         </section> : <p className="build-profile-applicability-note">Spouse information is not required because Civil Status is not Married.</p>}
 
@@ -1013,7 +1082,6 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-six">
         <h3>Step 6: Goal Setting</h3>
-        <p className="psychometric-section-note">Complete all product information required in Lending Scorecard Step 1.</p>
         <section className="build-profile-detail-section">
           <h4>Product Information</h4>
           <div className="build-profile-form-grid">
@@ -1022,18 +1090,24 @@ export default function BuildProfilePage() {
               {field.type === 'select' ? <select aria-invalid={!profile.values[field.key]?.trim()} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
                 <option value="">Select...</option>
                 {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select> : <input aria-invalid={field.type === 'number' ? Number(profile.values[field.key] || 0) <= 0 : !profile.values[field.key]?.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)} />}
+              </select> : field.key === 'requestedAmount' ? <NumericFormat
+                aria-invalid={Number(profile.values.requestedAmount || 0) <= 0}
+                value={profile.values.requestedAmount ?? ''}
+                valueIsNumericString
+                thousandSeparator="," decimalScale={2} fixedDecimalScale
+                inputMode="decimal"
+                onValueChange={({ value }) => updateValue(field.key, value)}
+              /> : <input aria-invalid={field.type === 'number' ? Number(profile.values[field.key] || 0) <= 0 : !profile.values[field.key]?.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)} />}
             </label>)}
           </div>
           <div className="build-profile-totals-grid">
-            <div><span>Est. Monthly Amortization</span><strong>{formatCurrency(String(monthlyAmortization))}</strong></div>
+            <div><span>Est. Monthly Amortization</span><strong>{formatNumber(monthlyAmortization)}</strong></div>
             <div><span>Loan-to-Value Ratio (LTV)</span><strong>{appraisedValue > 0 ? `${loanToValue.toFixed(1)}%` : 'Pending collateral value'}</strong></div>
           </div>
         </section>
 
         <section className="build-profile-detail-section">
-          <h4>Step 1 Review Capture</h4>
-          <p>Take a picture of a valid ID for inclusion in the profile review documents.</p>
+          <p>Take a picture of a valid ID for inclusion and fasten profile review.</p>
           <label className="build-profile-upload-zone">
             <input type="file" accept="image/*" capture="environment" onChange={(event) => {
               const file = event.target.files?.[0]
