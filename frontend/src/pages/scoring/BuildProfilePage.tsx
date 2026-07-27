@@ -867,9 +867,15 @@ export default function BuildProfilePage() {
       const creditLimit = Number(profile.values.creditLimit || 0)
       const outstandingBalance = Math.max(0, Number(profile.values.outstandingBalance || 0))
       const utilization = creditLimit > 0 ? (outstandingBalance / creditLimit) * 100 : null
+      const utilizationBand = utilization === null ? ''
+        : utilization < 30 ? 'Below 30%'
+          : utilization <= 50 ? '30–50%'
+            : utilization <= 70 ? '51–70%'
+              : utilization <= 90 ? '71–90%'
+                : 'Above 90%'
       return <fieldset key={field.key} aria-invalid={utilization === null} className="build-profile-banking-radio-field build-profile-field-wide">
         <legend>{field.label}</legend>
-        <output>{utilization === null ? 'Enter Total Credit Limit to calculate utilization.' : `${utilization.toFixed(2)}%`}</output>
+        <output>{utilization === null ? 'Enter Total Credit Limit to calculate utilization.' : `${utilization.toFixed(2)}% (${utilizationBand})`}</output>
       </fieldset>
     }
 

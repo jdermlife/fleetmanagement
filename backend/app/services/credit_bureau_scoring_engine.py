@@ -43,9 +43,12 @@ SCORE_MAPS: dict[str, dict[str, int]] = {
     "creditBureauCollectionCallsLast12Months": {
         "None": 5,
         "1–2": 4,
+        "0–2": 5,
         "3–4": 3,
         "5–6": 2,
+        "7–8": 0,
         "More than 6": 0,
+        "More than 8": 0,
     },
     "creditBureauCreditHistoryLength": {
         "More than 10 years": 5,
