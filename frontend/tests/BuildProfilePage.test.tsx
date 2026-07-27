@@ -1,4 +1,4 @@
-import { cleanup, render, screen, within } from '@testing-library/react'
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -117,12 +117,25 @@ describe('BuildProfilePage', () => {
     expect(email.getAttribute('aria-invalid')).toBe('false')
   })
 
-  it('provides the Lending Scorecard actions beside the workflow steps', async () => {
+  it('automatically publishes input changes for the other workflow forms', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
+    await user.type(screen.getByLabelText('Full Name'), 'Jordan Santos')
+    await waitFor(() => {
+      const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+      expect(savedProfile.values.fullName).toBe('Jordan Santos')
+      expect(savedProfile.updatedAt).toBeTruthy()
+    })
+  })
+
+  it('provides the Lending Scorecard actions beside the workflow steps', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+    const profileId = screen.getByText(/^PRO-[A-Z0-9]{6}$/).textContent
+
     await user.click(screen.getByRole('button', { name: 'Create New Record' }))
-    expect(mockNavigate).toHaveBeenLastCalledWith('/lending-scorecard', {
+    expect(mockNavigate).toHaveBeenLastCalledWith(`/lending-scorecard?profileId=${profileId}`, {
       state: { scorecardAction: 'create-new' },
     })
 

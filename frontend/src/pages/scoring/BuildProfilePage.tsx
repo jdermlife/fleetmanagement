@@ -172,6 +172,10 @@ function loadProfile(): ProfileData {
   }
 }
 
+function persistProfileSnapshot(profile: ProfileData): void {
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...profile, updatedAt: new Date().toISOString() }))
+}
+
 function formatCurrency(value: string): string {
   const amount = Number(value)
   if (!Number.isFinite(amount) || amount <= 0) return 'Not set'
@@ -571,7 +575,10 @@ export default function BuildProfilePage() {
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
 
   useEffect(() => {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...profile, updatedAt: new Date().toISOString() }))
+    const timeout = window.setTimeout(() => {
+      persistProfileSnapshot(profile)
+    }, 150)
+    return () => window.clearTimeout(timeout)
   }, [profile])
 
   useEffect(() => {
@@ -700,7 +707,7 @@ export default function BuildProfilePage() {
 
   const saveProfile = async () => {
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
+      persistProfileSnapshot(profile)
       if (sourceApplication) {
         const payload = loanPayloadFromProfile(profile, sourceApplication)
         await updateLoanApplication(sourceApplication.application_no, payload)
@@ -726,7 +733,7 @@ export default function BuildProfilePage() {
     const updatedProfile = { ...profile, values: { ...profile.values, [key]: 'true' } }
     setProfile(updatedProfile)
     try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProfile))
+      persistProfileSnapshot(updatedProfile)
       const payload = loanPayloadFromProfile(updatedProfile, sourceApplication)
       await updateLoanApplication(sourceApplication.application_no, payload)
       await recomputeStoredLoanApplicationScores(sourceApplication.application_no)
@@ -1511,7 +1518,13 @@ export default function BuildProfilePage() {
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <button type="button" aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} onClick={() => void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')}>Open Wealth Building Score</button>
+            <button type="button" aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} onClick={() => {
+              if (sourceApplication) void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')
+              else {
+                persistProfileSnapshot(profile)
+                navigate(`/net-worth-positioning?profileId=${encodeURIComponent(profile.profileId)}`)
+              }
+            }}>Open Wealth Building Score</button>
           </article>
         </div>
       </div>
@@ -1578,7 +1591,10 @@ export default function BuildProfilePage() {
                 <h2>Retrieve Existing Profile</h2>
               </div>
               <div className="build-profile-workflow-actions" aria-label="Lending Scorecard actions">
-                <button type="button" className="build-profile-workflow-action build-profile-workflow-action-primary" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'create-new' } })}>Create New Record</button>
+                <button type="button" className="build-profile-workflow-action build-profile-workflow-action-primary" onClick={() => {
+                  persistProfileSnapshot(profile)
+                  navigate(`/lending-scorecard?profileId=${encodeURIComponent(profile.profileId)}`, { state: { scorecardAction: 'create-new' } })
+                }}>Create New Record</button>
                 <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=All&origin=build-profile')}>Review Record</button>
                 <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'open-filscore' } })}>Open FILSCORE Page</button>
                 <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>

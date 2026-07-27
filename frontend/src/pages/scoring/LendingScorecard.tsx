@@ -48,6 +48,7 @@ import {
 import { toFilscore } from './filscoreScale';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
 import CreditHealthJourney from './CreditHealthJourney';
+import { readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
@@ -267,6 +268,53 @@ const createNewApplicationInstance = (): LoanApplication => ({
   releaseNotes: '',
   advisorChecklist: [],
 });
+
+const replicateBuildProfileToLendingApplication = (
+  application: LoanApplication,
+  profile: ReplicatedBuildProfile | null,
+): LoanApplication => {
+  if (!profile) return application;
+  const values = profile.values;
+  const numberValue = (key: string) => Number(values[key]) || 0;
+  const booleanValue = (key: string, fallback = false) => values[key] === undefined ? fallback : values[key] === 'true';
+  const productType = (values.productType || application.loan.productType) as ProductType;
+  const bankingRelationships = { ...application.bankingRelationships };
+  const enhancedDueDiligence = { ...application.enhancedDueDiligence };
+
+  Object.keys(bankingRelationships).forEach((key) => {
+    if (values[key] === undefined) return;
+    const typedKey = key as keyof BankingRelationships;
+    Object.assign(bankingRelationships, { [typedKey]: typeof bankingRelationships[typedKey] === 'number' ? numberValue(key) : values[key] });
+  });
+  Object.keys(enhancedDueDiligence).forEach((key) => {
+    if (values[key] === undefined) return;
+    const typedKey = key as keyof EnhancedDueDiligence;
+    const currentValue = enhancedDueDiligence[typedKey];
+    Object.assign(enhancedDueDiligence, { [typedKey]: typeof currentValue === 'boolean' ? booleanValue(key) : typeof currentValue === 'number' ? numberValue(key) : values[key] });
+  });
+
+  return {
+    ...application,
+    productType,
+    buildProfileSnapshot: profile as unknown as Record<string, unknown>,
+    borrower: { fullName: values.fullName || '', email: values.email || '', phone: values.mobileNumber || '', govId: values.governmentId || values.otherGovernmentIdNumber || '', address: values.address || '' },
+    coBorrowers: profile.coBorrowers.map((item, index) => ({ id: item.id || `CO-${index + 1}`, name: item.name || '', relationship: item.relationship || '', monthlyIncome: Number(item.monthlyIncome) || 0, debtObligations: Number(item.debtObligations) || 0, creditStanding: item.creditStanding || '' })),
+    employment: { history: values.employmentHistory || '', monthlyIncome: numberValue('monthlyIncome'), otherIncome: numberValue('otherIncome'), debtObligations: numberValue('debtObligations') },
+    loan: { amount: numberValue('requestedAmount'), termMonths: numberValue('loanTerm'), interestRate: numberValue('interestRate'), purpose: values.loanPurpose || '', productType },
+    applicantPersonal: { ...application.applicantPersonal, dateOfBirth: values.dateOfBirth || '', placeOfBirth: values.placeOfBirth || '', age: numberValue('age'), gender: values.gender || '', citizenship: values.citizenship || '', numberOfDependents: numberValue('dependents'), maritalStatus: values.civilStatus || '' },
+    contactInformation: { ...application.contactInformation, mobileNumber: values.mobileNumber || '', mobileYearsUsed: values.mobileYearsUsed || '', homePhoneNumber: values.homePhoneNumber || '', emailAddress: values.email || '', emailYearsUsed: values.emailYearsUsed || '' },
+    governmentIds: { tin: values.tin || '', sssGsisNumber: values.sssGsis || '', otherGovernmentId: values.otherGovernmentId || '', idNumber: values.otherGovernmentIdNumber || values.governmentId || '', issueDate: values.idIssueDate || '', expiryDate: values.idExpiryDate || '' },
+    addressInformation: { presentAddress: values.address || '', permanentAddress: values.permanentAddress || '', mailingAddress: values.mailingAddress || '', lengthOfStay: values.lengthOfStay || '' },
+    otherInformation: { ...application.otherInformation, homeOwnership: values.homeOwnership || '', educationalAttainment: values.education || '', numberOfVehiclesOwned: numberValue('numberOfVehiclesOwned'), deviceVerified: booleanValue('deviceVerified', application.otherInformation.deviceVerified), hasCoBorrower: profile.coBorrowers.length > 0 },
+    employmentInformation: { ...application.employmentInformation, employmentStatus: values.employmentStatus || '', employmentLocation: values.employmentLocation || '', employerBusinessName: values.employerName || values.employmentHistory || '', employerBusinessYears: numberValue('employerBusinessYears'), officeAddress: values.officeAddress || '', occupation: values.occupation || '', position: values.position || '', natureOfWorkBusiness: values.natureOfWorkBusiness || '', dateHired: values.dateHired || '', officePhoneNumber: values.officePhoneNumber || '', previousEmployer: values.previousEmployer || '', totalYearsWorking: values.totalYearsWorking || '', grossMonthlyIncome: numberValue('monthlyIncome'), monthlyLivingExpenses: numberValue('monthlyExpenses'), otherSourcesOfIncome: numberValue('otherIncome'), investmentIncome: numberValue('investmentIncome'), businessIncome: numberValue('businessIncome'), pensionIncome: numberValue('pensionIncome') },
+    spouseInformation: { ...application.spouseInformation, fullName: values.spouseFullName || '', dateOfBirth: values.spouseDateOfBirth || '', placeOfBirth: values.spousePlaceOfBirth || '', citizenship: values.spouseCitizenship || '', mobileNumber: values.spouseMobileNumber || '', presentAddress: values.spousePresentAddress || '', employerBusinessName: values.spouseEmployerBusinessName || '', officeAddress: values.spouseOfficeAddress || '', occupation: values.spouseOccupation || '', position: values.spousePosition || '', natureOfWork: values.spouseNatureOfWork || '', yearsWithEmployer: values.spouseYearsWithEmployer || '', previousEmployer: values.spousePreviousEmployer || '', totalYearsWorking: values.spouseTotalYearsWorking || '', grossMonthlyIncome: numberValue('spouseGrossMonthlyIncome'), monthlyExpenses: numberValue('spouseMonthlyExpenses'), otherIncomeSources: values.spouseOtherIncomeSources || '' },
+    bankingRelationships,
+    enhancedDueDiligence,
+    collateral: { ...application.collateral, securityClassification: values.securityClassification || '', assetType: values.assetType || '', maker: values.maker || '', brand: values.brand || '', model: values.model || '', year: values.year || '', vehicleConditionCategory: values.vehicleConditionCategory || '', vehicleTypeCategory: values.vehicleTypeCategory || '', motorcycleIntendedUse: values.motorcycleIntendedUse || '', useAsCollateral: booleanValue('useAsCollateral', application.collateral.useAsCollateral), appraisedValue: numberValue('appraisedValue'), insuranceProviderCompany: values.insuranceProviderCompany || '', policyNumber: values.policyNumber || '', orNumber: values.orNumber || '', crNumber: values.crNumber || '' },
+    collateralInformation: { propertyAddress: values.propertyAddress || '', registeredOwner: values.registeredOwner || '', lotNumber: values.lotNumber || '', blockNumber: values.blockNumber || '', tctCctNumber: values.tctCctNumber || '', propertyMarketabilityCategory: values.propertyMarketabilityCategory || '', houseUnitModelCategory: values.houseUnitModelCategory || '', collateralOccupancyType: values.collateralOccupancyType || '', propertyAppraisedValue: numberValue('propertyAppraisedValue') },
+    additionalCollaterals: profile.additionalCollaterals.map((item, index) => ({ id: item.id || `COL-${index + 1}`, collateralType: item.collateralType || '', propertyType: item.propertyType || '', maker: item.maker || '', brand: item.brand || '', model: item.model || '', year: item.year || '', appraisedValue: Number(item.appraisedValue) || 0, insuranceProviderCompany: item.insuranceProviderCompany || '', policyNumber: item.policyNumber || '', orNumber: item.orNumber || '', crNumber: item.crNumber || '', tctCctNumber: item.tctCctNumber || '', notes: item.notes || '' })),
+  };
+};
 
 const buildLoanRequirements = (
   application: LoanApplication,
@@ -1934,13 +1982,15 @@ export default function LendingScorecard() {
   const [searchParams] = useSearchParams();
   const { user } = useAuthorization();
   const requestedApplicationNo = searchParams.get('applicationNo');
+  const requestedProfileId = searchParams.get('profileId')?.trim() || '';
+  const replicationId = requestedApplicationNo || requestedProfileId;
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
   const [selectedWorkflowAction, setSelectedWorkflowAction] = useState<WorkflowStatus>('Credit Review');
   const isFilscoreRoute = location.pathname === '/lending-scorecard/filscore';
   const [step, setStep] = useState(() => (isFilscoreRoute ? 8 : 1));
-  const [formData, setFormData] = useState<LoanApplication>(createNewApplicationInstance());
+  const [formData, setFormData] = useState<LoanApplication>(() => replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
   const [isParsing, setIsParsing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [hasPersistedRecord, setHasPersistedRecord] = useState(false);
@@ -1983,16 +2033,16 @@ export default function LendingScorecard() {
     step,
   ]);
   const hydrateAutosaveDraft = useCallback((draft: LendingAutosaveDraft) => {
-    setFormData(draft.formData);
+    setFormData(replicateBuildProfileToLendingApplication(draft.formData, readReplicatedBuildProfile(replicationId || undefined)));
     setStep(draft.step);
     setFormattedNumberDrafts(draft.formattedNumberDrafts);
     setDocumentReview(draft.documentReview);
     setReviewDocumentId(draft.reviewDocumentId);
     setSelectedWorkflowAction(draft.selectedWorkflowAction);
-  }, []);
+  }, [replicationId]);
   const lendingAutosave = useAutosaveDraft({
     scope: 'loan-application',
-    entityKey: requestedApplicationNo || 'new',
+    entityKey: replicationId || 'new',
     value: autosaveValue,
     defaults: autosaveDefaults,
     onHydrate: hydrateAutosaveDraft,
@@ -3352,14 +3402,15 @@ export default function LendingScorecard() {
   // --- Global Nav Actions ---
   const handleCreateNew = async () => {
     await lendingAutosave.clear();
-    setFormData(createNewApplicationInstance());
+    setFormData(replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
     setFormattedNumberDrafts({});
     setDocumentReview(null);
     setReviewDocumentId(null);
     setBackendQuantSummary(null);
     setHasPersistedRecord(false);
     setStep(1);
-    navigate('/lending-scorecard', { replace: true });
+    const profile = readReplicatedBuildProfile(replicationId || undefined);
+    navigate(profile ? `/lending-scorecard?profileId=${encodeURIComponent(profile.profileId)}` : '/lending-scorecard', { replace: true });
     setTransientMessage('New application draft generated.');
   };
 
