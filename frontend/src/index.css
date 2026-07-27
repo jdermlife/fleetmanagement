@@ -3768,6 +3768,13 @@ th { color: var(--dark-gold); }
   background: #ffffff;
 }
 
+.build-profile-page :is(input, select, textarea)[aria-invalid="true"],
+.build-profile-page fieldset[aria-invalid="true"],
+.build-profile-score-links button[aria-invalid="true"] {
+  border-color: #dc2626;
+  box-shadow: 0 0 0 1px rgba(220, 38, 38, 0.2);
+}
+
 .build-profile-field-wide {
   grid-column: 1 / -1;
 }

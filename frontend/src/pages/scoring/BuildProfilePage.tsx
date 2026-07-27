@@ -54,6 +54,7 @@ import {
   type AdditionalCollateral,
   type CollateralField,
 } from './buildProfileStep7'
+import { BUILD_PROFILE_STORAGE_KEY } from './buildProfileReplication'
 
 type ProfileStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 
@@ -77,7 +78,7 @@ type FieldDefinition = {
   wide?: boolean
 }
 
-const STORAGE_KEY = 'fms:build-profile'
+const STORAGE_KEY = BUILD_PROFILE_STORAGE_KEY
 const profileApplicationRequests = new Map<string, Promise<LoanApplicationRecord>>()
 
 const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: string }> = [
@@ -185,6 +186,12 @@ function calculateAge(dateOfBirth: string): string {
   let age = today.getFullYear() - year
   if (today.getMonth() + 1 < month || (today.getMonth() + 1 === month && today.getDate() < day)) age -= 1
   return age >= 0 ? String(age) : ''
+}
+
+function isCompletedFieldValue(value: string | undefined, type?: FieldDefinition['type']): boolean {
+  if (!value?.trim()) return false
+  if (type === 'email') return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
+  return true
 }
 
 function getWorkflowStepCompletionClass(completion: number): string {
@@ -564,6 +571,10 @@ export default function BuildProfilePage() {
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
 
   useEffect(() => {
+    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...profile, updatedAt: new Date().toISOString() }))
+  }, [profile])
+
+  useEffect(() => {
     if (!requestedApplicationNo) return
 
     let cancelled = false
@@ -669,7 +680,7 @@ export default function BuildProfilePage() {
       }
       else {
         const fields = STEP_FIELDS[id]
-        result[id] = Math.round((fields.filter((field) => profile.values[field.key]?.trim()).length / fields.length) * 100)
+        result[id] = Math.round((fields.filter((field) => isCompletedFieldValue(profile.values[field.key], field.type)).length / fields.length) * 100)
       }
     })
     return result
@@ -748,12 +759,12 @@ export default function BuildProfilePage() {
   ) => <label key={field.key}>
     {labelPrefix}{field.label}
     {field.type === 'select' ? (
-      <select value={value} onChange={(event) => onChange(event.target.value)}>
+      <select aria-invalid={!value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">Select...</option>
         {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     ) : (
-      <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />
     )}
   </label>
 
@@ -761,12 +772,12 @@ export default function BuildProfilePage() {
     <label key={field.key} className={field.wide ? 'build-profile-field-wide' : undefined}>
       {field.label}
       {field.type === 'select' ? (
-        <select value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select aria-invalid={!isCompletedFieldValue(profile.values[field.key], field.type)} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select {field.label.toLowerCase()}</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : (
-        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} readOnly={field.readOnly} aria-readonly={field.readOnly || undefined} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} readOnly={field.readOnly} aria-readonly={field.readOnly || undefined} aria-invalid={!isCompletedFieldValue(profile.values[field.key], field.type)} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   )
@@ -778,7 +789,7 @@ export default function BuildProfilePage() {
 
     if (field.type === 'checkbox') {
       return <label key={field.key} className="build-profile-checkbox-field">
-        <input type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
+        <input aria-invalid={profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
         <span>{field.label}</span>
       </label>
     }
@@ -786,14 +797,14 @@ export default function BuildProfilePage() {
     return <label key={field.key}>
       {field.label}
       {field.type === 'select' ? (
-        <select value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select aria-invalid={!value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select...</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       ) : (
-        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input aria-invalid={field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }
@@ -803,7 +814,7 @@ export default function BuildProfilePage() {
     const datalistId = `build-profile-${field.key}-options`
 
     if (field.type === 'radio') {
-      return <fieldset key={field.key} className="build-profile-banking-radio-field build-profile-field-wide">
+      return <fieldset key={field.key} aria-invalid={!value.trim()} className="build-profile-banking-radio-field build-profile-field-wide">
         <legend>{field.label}</legend>
         <div className="build-profile-banking-radio-options">
           {field.options?.map((option) => <label key={option}>
@@ -817,29 +828,29 @@ export default function BuildProfilePage() {
     return <label key={field.key}>
       {field.label}
       {field.type === 'select' ? (
-        <select value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select aria-invalid={!value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select...</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea rows={field.rows ?? 3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <textarea aria-invalid={!value.trim()} rows={field.rows ?? 3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       ) : field.type === 'datalist' ? (
         <>
-          <input list={datalistId} value={value} placeholder="Enter card issuer" onChange={(event) => updateValue(field.key, event.target.value)} />
+          <input aria-invalid={!value.trim()} list={datalistId} value={value} placeholder="Enter card issuer" onChange={(event) => updateValue(field.key, event.target.value)} />
           <datalist id={datalistId}>{field.options?.map((option) => <option key={option} value={option} />)}</datalist>
         </>
       ) : (
-        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }
 
   const renderCollateralField = (field: CollateralField, value: string, onChange: (value: string) => void, prefix = '') => <label key={field.key} className={field.type === 'textarea' ? 'build-profile-field-wide' : undefined}>
     {prefix}{field.label}
-    {field.type === 'select' ? <select value={value} onChange={(event) => onChange(event.target.value)}>
+    {field.type === 'select' ? <select aria-invalid={!value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
       <option value="">Select...</option>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
-    </select> : field.type === 'textarea' ? <textarea rows={3} value={value} onChange={(event) => onChange(event.target.value)} />
-      : <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />}
+    </select> : field.type === 'textarea' ? <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => onChange(event.target.value)} />
+      : <input aria-invalid={field.type === 'number' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />}
   </label>
 
   const renderCurrentStep = () => {
@@ -877,7 +888,7 @@ export default function BuildProfilePage() {
               <div className="build-profile-form-grid">
                 {section.questions.map((question, index) => <label key={question.field}>
                   {index + 1}. {question.prompt}
-                  <select value={profile.values[`creditValues.${question.field}`] ?? ''} onChange={(event) => updateValue(`creditValues.${question.field}`, event.target.value)}>
+                  <select aria-invalid={!profile.values[`creditValues.${question.field}`]?.trim()} value={profile.values[`creditValues.${question.field}`] ?? ''} onChange={(event) => updateValue(`creditValues.${question.field}`, event.target.value)}>
                     <option value="">Select...</option>
                     {question.options.map((option) => <option key={option} value={option}>{option}</option>)}
                   </select>
@@ -1001,10 +1012,10 @@ export default function BuildProfilePage() {
           <div className="build-profile-form-grid">
             {GOAL_SETTING_FIELDS.map((field) => <label key={field.key} className={field.key === 'loanPurpose' ? 'build-profile-field-wide' : undefined}>
               {field.label}
-              {field.type === 'select' ? <select value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
+              {field.type === 'select' ? <select aria-invalid={!profile.values[field.key]?.trim()} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
                 <option value="">Select...</option>
                 {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
-              </select> : <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)} />}
+              </select> : <input aria-invalid={field.type === 'number' ? Number(profile.values[field.key] || 0) <= 0 : !profile.values[field.key]?.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)} />}
             </label>)}
           </div>
           <div className="build-profile-totals-grid">
@@ -1036,6 +1047,9 @@ export default function BuildProfilePage() {
       const productType = profile.values.productType
       const vehicleFields = productType === 'Auto Loan' ? AUTO_LOAN_FIELDS : productType === 'Motorcycle Loan' ? MOTORCYCLE_LOAN_FIELDS : []
       const unsecuredProduct = ['Credit Card', 'Personal Loan', 'Margin Loan'].includes(productType)
+      const securityValid = productType === 'Auto Loan' ? profile.values.securityClassification === 'Secured'
+        : unsecuredProduct ? profile.values.securityClassification === 'Unsecured'
+          : Boolean(profile.values.securityClassification?.trim())
 
       return <div className="build-profile-step-content build-profile-step-seven">
         <h3>Step 7: Collateral Assets (based on Goal and Product Requested).</h3>
@@ -1043,7 +1057,7 @@ export default function BuildProfilePage() {
         {!productType ? <p className="build-profile-applicability-note">Select a product in Step 6 to display its collateral requirements.</p> : null}
 
         <section className="build-profile-detail-section">
-          <fieldset className="build-profile-banking-radio-field build-profile-field-wide">
+          <fieldset aria-invalid={!securityValid} className="build-profile-banking-radio-field build-profile-field-wide">
             <legend>Security Classification</legend>
             <div className="build-profile-banking-radio-options">
               {['Secured', 'Unsecured', 'Lease'].map((classification) => <label key={classification}>
@@ -1128,7 +1142,7 @@ export default function BuildProfilePage() {
           <h4>Personal Net Worth Statement</h4>
           <div className="build-profile-form-grid">
             <label>Financial Goal
-              <select value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>
+              <select aria-invalid={!profile.values.financialGoal?.trim()} value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>
                 <option value="">Select Financial Goal</option>
                 {NET_WORTH_FINANCIAL_GOAL_OPTIONS.map((goal) => <option key={goal} value={goal}>{goal}</option>)}
               </select>
@@ -1140,7 +1154,7 @@ export default function BuildProfilePage() {
               <input type="number" min="1" value={profile.values.targetMonths ?? '12'} onChange={(event) => updateValue('targetMonths', event.target.value)} />
             </label>
             <label>As Of
-              <input type="date" value={profile.values.asOfDate ?? ''} onChange={(event) => updateValue('asOfDate', event.target.value)} />
+              <input aria-invalid={!profile.values.asOfDate?.trim()} type="date" value={profile.values.asOfDate ?? ''} onChange={(event) => updateValue('asOfDate', event.target.value)} />
             </label>
             <label>Currency
               <select value={currency} aria-label="Statement currency" onChange={(event) => updateValue('wealthCurrency', event.target.value)}>
@@ -1186,7 +1200,7 @@ export default function BuildProfilePage() {
               {entries.length === 0 ? <p className="psychometric-section-note">No matching sub-accounts in this section for current filters.</p> : <div className="build-profile-wealth-entry-grid">
                 {entries.map((entry) => <label key={entry.id}>
                   <span>{entry.label}</span><small>{entry.category}</small>
-                  {entry.autoGenerated ? <output>{aiValues[entry.id] ?? 'Auto-calculated'}</output> : <input type="number" min="0" step="0.01" value={profile.values[entry.id] ?? ''} placeholder="0" aria-label={`${entry.label} setup amount`} onChange={(event) => updateValue(entry.id, event.target.value)} />}
+                  {entry.autoGenerated ? <output>{aiValues[entry.id] ?? 'Auto-calculated'}</output> : <input aria-invalid={!profile.values[entry.id]?.trim()} type="number" min="0" step="0.01" value={profile.values[entry.id] ?? ''} placeholder="0" aria-label={`${entry.label} setup amount`} onChange={(event) => updateValue(entry.id, event.target.value)} />}
                 </label>)}
               </div>}
             </details>
@@ -1415,9 +1429,9 @@ export default function BuildProfilePage() {
                   const noteKey = `wealthVarianceNote.${entry.id}`
                   return <tr key={entry.id}>
                     <td data-label="Target (Saved)"><strong>{entry.label}</strong><div>{STEP1_SECTION_SHORT_LABELS[entry.section]}</div><div>{entry.category}</div><div>{formatVarianceCurrency(entry.targetAmount)}</div></td>
-                    <td data-label="Actual (User Input)"><input type="number" min="0" step="0.01" value={entry.rawActual} placeholder="Enter actual value" aria-label={`${entry.label} actual value`} onChange={(event) => updateValue(`wealthActual.${entry.id}`, event.target.value)} /></td>
+                    <td data-label="Actual (User Input)"><input aria-invalid={!entry.hasActual} type="number" min="0" step="0.01" value={entry.rawActual} placeholder="Enter actual value" aria-label={`${entry.label} actual value`} onChange={(event) => updateValue(`wealthActual.${entry.id}`, event.target.value)} /></td>
                     <td data-label="Variance">{entry.hasActual ? formatSignedVariance(entry.variance) : 'Pending input'}</td>
-                    <td data-label="Variance Explanation"><small className="build-profile-variance-copy">{entry.hasActual ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual value from user.'}</small>{entry.hasActual ? <input type="text" value={profile.values[noteKey] ?? ''} placeholder="Optional explanation" aria-label={`${entry.label} variance explanation`} onChange={(event) => updateValue(noteKey, event.target.value)} /> : null}</td>
+                    <td data-label="Variance Explanation"><small className="build-profile-variance-copy">{entry.hasActual ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual value from user.'}</small>{entry.hasActual ? <input aria-invalid={!profile.values[noteKey]?.trim()} type="text" value={profile.values[noteKey] ?? ''} placeholder="Enter explanation to complete profile" aria-label={`${entry.label} variance explanation`} onChange={(event) => updateValue(noteKey, event.target.value)} /> : null}</td>
                   </tr>
                 })}
                 {filteredRows.length === 0 ? <tr><td colSpan={4}>No matching saved target rows found. Adjust the Actual vs Target filters.</td></tr> : null}
@@ -1454,7 +1468,7 @@ export default function BuildProfilePage() {
                 <td data-label="Question"><strong>{question.prompt}</strong></td>
                 {question.options.map((option, index) => {
                   const scoreValue = String(index + 1)
-                  return <td key={option} data-label={`Option ${scoreValue}`}><label><input type="radio" name={question.key} checked={profile.suitabilityAnswers[question.key] === scoreValue} aria-label={`${question.prompt} option ${scoreValue}`} onChange={() => setProfile((current) => ({ ...current, suitabilityAnswers: { ...current.suitabilityAnswers, [question.key]: scoreValue } }))} /><small>{option}</small></label></td>
+                  return <td key={option} data-label={`Option ${scoreValue}`}><label><input aria-invalid={!profile.suitabilityAnswers[question.key]} type="radio" name={question.key} checked={profile.suitabilityAnswers[question.key] === scoreValue} aria-label={`${question.prompt} option ${scoreValue}`} onChange={() => setProfile((current) => ({ ...current, suitabilityAnswers: { ...current.suitabilityAnswers, [question.key]: scoreValue } }))} /><small>{option}</small></label></td>
                 })}
               </tr>)}
             </tbody>
@@ -1491,13 +1505,13 @@ export default function BuildProfilePage() {
             <span>FILSCORE Assessment</span>
             <h4>Credit Health Score</h4>
             <p>Review credit readiness across credit, values, social, and verification indicators.</p>
-            <button type="button" onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>Open Credit Health Score</button>
+            <button type="button" aria-invalid={profile.values.creditHealthScoreOpened !== 'true'} onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>Open Credit Health Score</button>
           </article>
           <article>
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <button type="button" onClick={() => void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')}>Open Wealth Building Score</button>
+            <button type="button" aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} onClick={() => void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')}>Open Wealth Building Score</button>
           </article>
         </div>
       </div>

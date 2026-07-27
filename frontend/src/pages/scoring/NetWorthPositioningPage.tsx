@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
+import { useSearchParams } from 'react-router-dom';
 import {
   fetchAutosaveDraft,
   isAutosaveConflictError,
@@ -12,6 +13,7 @@ import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 import {
   computeNetWorthBuildingScore,
 } from './netWorthBuildingEngine';
+import { readReplicatedBuildProfile, toNetWorthDraft } from './buildProfileReplication';
 import { computeWealthFoundationScore } from './wealthFoundationEngine';
 import NetWorthJourney from './NetWorthJourney';
 
@@ -589,6 +591,9 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 
 export default function NetWorthPositioningPage() {
   const DARK_GOLD_COLOR = '#B8860B';
+  const [searchParams] = useSearchParams();
+  const replicationId = searchParams.get('applicationNo')?.trim() || searchParams.get('profileId')?.trim() || '';
+  const draftEntityKey = replicationId || 'primary';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
     () => buildNetWorthPositioningSnapshot(applications),
@@ -724,22 +729,44 @@ export default function NetWorthPositioningPage() {
     setHasCertifiedConsent(draft.hasCertifiedConsent ?? false);
   }, []);
 
+  const hydrateReplicatedBuildProfile = useCallback(() => {
+    const profile = readReplicatedBuildProfile(replicationId || undefined);
+    if (!profile) return false;
+
+    const replicated = toNetWorthDraft(profile, NET_WORTH_STATEMENT_ENTRIES);
+    setAsOfDate(replicated.asOfDate);
+    setCurrency(replicated.currency);
+    setSelectedFinancialGoal(replicated.selectedFinancialGoal);
+    setTargetAmount(replicated.targetAmount);
+    setTargetMonths(replicated.targetMonths);
+    setAmounts(replicated.amounts);
+    setMonthlyExpenseAllocationDraft(replicated.monthlyExpenseAllocationDraft);
+    setSavedSetup(replicated.savedSetup as SavedLine[]);
+    setSuitabilityAnswers(replicated.suitabilityAnswers);
+    setActualEntries(replicated.actualEntries);
+    setVarianceNotes(replicated.varianceNotes);
+    return true;
+  }, [replicationId]);
+
   useEffect(() => {
     let disposed = false;
 
     const loadDraft = async () => {
       try {
-        const remoteDraft = await fetchAutosaveDraft<NetWorthPositioningDraft>('net-worth-positioning', 'primary');
-        if (disposed || !remoteDraft) {
-          return;
+        const remoteDraft = await fetchAutosaveDraft<NetWorthPositioningDraft>('net-worth-positioning', draftEntityKey);
+        if (disposed) return;
+        if (remoteDraft) {
+          setDraftRevision(remoteDraft.revision);
+          handleAutosaveHydrate({
+            ...DEFAULT_NET_WORTH_POSITIONING_DRAFT,
+            ...remoteDraft.payload,
+          });
         }
-
-        setDraftRevision(remoteDraft.revision);
-        handleAutosaveHydrate({
-          ...DEFAULT_NET_WORTH_POSITIONING_DRAFT,
-          ...remoteDraft.payload,
-        });
-        setSetupStatusMessage(`Draft loaded (${new Date(remoteDraft.updatedAt).toLocaleString()}).`);
+        if (hydrateReplicatedBuildProfile()) {
+          setSetupStatusMessage('Build Profile inputs synchronized.');
+        } else if (remoteDraft) {
+          setSetupStatusMessage(`Draft loaded (${new Date(remoteDraft.updatedAt).toLocaleString()}).`);
+        }
       } catch {
         if (!disposed) {
           setSetupStatusMessage('Unable to load saved draft right now.');
@@ -752,12 +779,12 @@ export default function NetWorthPositioningPage() {
     return () => {
       disposed = true;
     };
-  }, [handleAutosaveHydrate]);
+  }, [draftEntityKey, handleAutosaveHydrate, hydrateReplicatedBuildProfile]);
 
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true);
     try {
-      const savedDraft = await saveAutosaveDraftRemote('net-worth-positioning', 'primary', {
+      const savedDraft = await saveAutosaveDraftRemote('net-worth-positioning', draftEntityKey, {
         payload: autosaveValue,
         expectedRevision: draftRevision,
       });
@@ -774,7 +801,7 @@ export default function NetWorthPositioningPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  }, [autosaveValue, draftRevision]);
+  }, [autosaveValue, draftEntityKey, draftRevision]);
 
   const selectedCurrencyLabel = useMemo(
     () => CURRENCY_OPTIONS.find((option) => option.code === currency)?.label ?? currency,

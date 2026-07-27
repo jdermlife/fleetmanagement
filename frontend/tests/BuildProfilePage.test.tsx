@@ -98,6 +98,25 @@ describe('BuildProfilePage', () => {
     expect(stepTwo.classList.contains('build-profile-workflow-step-complete')).toBe(true)
   })
 
+  it('marks inputs that prevent profile completion with an invalid state', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    const fullName = screen.getByLabelText('Full Name')
+    const email = screen.getByLabelText('Email Address')
+    expect(fullName.getAttribute('aria-invalid')).toBe('true')
+    expect(email.getAttribute('aria-invalid')).toBe('true')
+
+    await user.type(fullName, 'Jordan Santos')
+    await user.type(email, 'not-an-email')
+    expect(fullName.getAttribute('aria-invalid')).toBe('false')
+    expect(email.getAttribute('aria-invalid')).toBe('true')
+
+    await user.clear(email)
+    await user.type(email, 'jordan@example.com')
+    expect(email.getAttribute('aria-invalid')).toBe('false')
+  })
+
   it('provides the Lending Scorecard actions beside the workflow steps', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
