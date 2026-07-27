@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import {
@@ -184,6 +185,7 @@ function getWorkflowStepCompletionClass(completion: number): string {
 }
 
 export default function BuildProfilePage() {
+  const navigate = useNavigate()
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [saveMessage, setSaveMessage] = useState('')
   const [wealthSectionFilter, setWealthSectionFilter] = useState<'all' | StatementSection>('all')
@@ -1132,20 +1134,29 @@ export default function BuildProfilePage() {
             <div><span className="psychometric-panel-kicker">Workflow Steps</span><h2>Build your Profile</h2><small>Step {profile.step} of 12: {currentStep.label}</small></div>
             <span className="build-profile-workflow-chevron" aria-hidden="true" />
           </summary>
-          <div className="build-profile-workflow-steps">
-            {WORKFLOW_STEPS.map((workflowStep) => {
-              const completion = stepCompletion[workflowStep.id]
-              return <button
-                key={workflowStep.id}
-                type="button"
-                onClick={() => goToStep(workflowStep.id)}
-                className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
-                aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
-                title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
-              >
-                {workflowStep.id}
-              </button>
-            })}
+          <div className="build-profile-workflow-body">
+            <div className="build-profile-workflow-actions" aria-label="Lending Scorecard actions">
+              <button type="button" className="build-profile-workflow-action build-profile-workflow-action-primary" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'create-new' } })}>Create New Record</button>
+              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=All')}>Review Record</button>
+              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'open-filscore' } })}>Open FILSCORE Page</button>
+              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>
+              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Released')}>Released Accounts</button>
+            </div>
+            <div className="build-profile-workflow-steps">
+              {WORKFLOW_STEPS.map((workflowStep) => {
+                const completion = stepCompletion[workflowStep.id]
+                return <button
+                  key={workflowStep.id}
+                  type="button"
+                  onClick={() => goToStep(workflowStep.id)}
+                  className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
+                  aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
+                  title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
+                >
+                  {workflowStep.id}
+                </button>
+              })}
+            </div>
           </div>
         </details>
       </aside>

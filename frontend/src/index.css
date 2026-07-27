@@ -3626,12 +3626,56 @@ th { color: var(--dark-gold); }
   border-bottom: 1px solid #dbe4f0;
 }
 
+.build-profile-workflow-body {
+  display: grid;
+  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+  padding: 12px;
+}
+
+.build-profile-workflow-actions {
+  display: grid;
+  gap: 8px;
+}
+
+.build-profile-workflow-action {
+  width: 100%;
+  min-height: 42px;
+  padding: 8px 10px;
+  border: 1px solid #334155;
+  border-radius: 6px;
+  background: #334155;
+  color: #ffffff;
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.2;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.build-profile-workflow-action:hover,
+.build-profile-workflow-action:focus-visible {
+  background: #1f2937;
+}
+
+.build-profile-workflow-action-primary {
+  border-color: #065f46;
+  background: #065f46;
+}
+
+.build-profile-workflow-action-primary:hover,
+.build-profile-workflow-action-primary:focus-visible {
+  background: #064e3b;
+}
+
 .build-profile-workflow-steps {
   display: grid;
   grid-template-columns: repeat(6, 40px);
   justify-content: start;
   gap: 10px;
-  padding: 12px;
+  padding: 2px 0;
 }
 
 .build-profile-workflow-step {
@@ -4323,6 +4367,18 @@ th { color: var(--dark-gold); }
   .build-profile-form-actions button {
     min-width: 0;
     width: 100%;
+  }
+
+  .build-profile-workflow-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-workflow-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .build-profile-workflow-action:last-child {
+    grid-column: 1 / -1;
   }
 
   .build-profile-workflow-steps {

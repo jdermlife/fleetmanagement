@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
@@ -1923,6 +1923,7 @@ const extractTopAdvisorActions = (advice: string): string[] => {
 export default function LendingScorecard() {
   const location = useLocation();
   const navigate = useNavigate();
+  const forwardedActionHandledRef = useRef(false);
   const [searchParams] = useSearchParams();
   const { user } = useAuthorization();
   const requestedApplicationNo = searchParams.get('applicationNo');
@@ -3350,6 +3351,27 @@ export default function LendingScorecard() {
     navigate('/lending-scorecard', { replace: true });
     setTransientMessage('New application draft generated.');
   };
+
+  const forwardedScorecardAction = (location.state as { scorecardAction?: unknown } | null)?.scorecardAction;
+
+  useEffect(() => {
+    if (
+      forwardedActionHandledRef.current
+      || (forwardedScorecardAction !== 'create-new' && forwardedScorecardAction !== 'open-filscore')
+    ) {
+      return;
+    }
+
+    forwardedActionHandledRef.current = true;
+    navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
+
+    if (forwardedScorecardAction === 'create-new') {
+      void handleCreateNew();
+      return;
+    }
+
+    void handleStepChange(8);
+  }, [forwardedScorecardAction, handleCreateNew, handleStepChange, location.pathname, location.search, navigate]);
 
   const enhancedDueDiligenceComplete = useMemo(
     () => hasRequiredEnhancedDueDiligence(formData.enhancedDueDiligence),

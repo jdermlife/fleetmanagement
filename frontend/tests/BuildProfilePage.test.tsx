@@ -2,10 +2,23 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { mockNavigate } = vi.hoisted(() => ({
+  mockNavigate: vi.fn(),
+}))
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
+
 import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
 
 describe('BuildProfilePage', () => {
   beforeEach(() => {
+    mockNavigate.mockReset()
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       clear: () => values.clear(),
@@ -67,6 +80,30 @@ describe('BuildProfilePage', () => {
 
     await user.type(screen.getByLabelText('Number of Dependents'), '1')
     expect(stepTwo.classList.contains('build-profile-workflow-step-complete')).toBe(true)
+  })
+
+  it('provides the Lending Scorecard actions beside the workflow steps', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: 'Create New Record' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith('/lending-scorecard', {
+      state: { scorecardAction: 'create-new' },
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Review Record' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=All')
+
+    await user.click(screen.getByRole('button', { name: 'Open FILSCORE Page' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith('/lending-scorecard', {
+      state: { scorecardAction: 'open-filscore' },
+    })
+
+    await user.click(screen.getByRole('button', { name: 'Approval Queue' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=Credit%20Review')
+
+    await user.click(screen.getByRole('button', { name: 'Released Accounts' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=Released')
   })
 
   it('selects the Financial Goal immediately after Profile ID', async () => {
