@@ -17,6 +17,7 @@ export type WorkflowStatus =
 export type ProductType = 'Home Loan' | 'Auto Loan' | 'Motorcycle Loan' | 'Credit Card' | 'Personal Loan' | 'Margin Loan'
 
 export interface LoanApplicationRequirements {
+  buildProfile?: Record<string, unknown>
   productInformation: {
     productType: ProductType
     homePurposeOfLoan: string

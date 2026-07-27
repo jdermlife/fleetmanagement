@@ -121,6 +121,13 @@ export default function LoanRepository() {
   const canExportLoans = hasRole("admin") || hasPermission("export:loans");
 
   const requestedStatus = searchParams.get("status");
+  const reviewOrigin = searchParams.get("origin");
+  const recordEditorPath = (applicationNo: string) => {
+    const encodedApplicationNo = encodeURIComponent(applicationNo);
+    return reviewOrigin === "build-profile"
+      ? `/build-profile?applicationNo=${encodedApplicationNo}`
+      : `/lending-scorecard?applicationNo=${encodedApplicationNo}`;
+  };
 
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
   const [page, setPage] = useState(1);
@@ -602,11 +609,7 @@ export default function LoanRepository() {
                     <div className="loan-repository-record-identity">
                       <button
                         onClick={() =>
-                          navigate(
-                            `/lending-scorecard?applicationNo=${encodeURIComponent(
-                              row.application_no,
-                            )}`,
-                          )
+                          navigate(recordEditorPath(row.application_no))
                         }
                         className="loan-repository-record-link"
                       >
@@ -680,11 +683,7 @@ export default function LoanRepository() {
 
                     <button
                       onClick={() =>
-                        navigate(
-                          `/lending-scorecard?applicationNo=${encodeURIComponent(
-                            row.application_no,
-                          )}`,
-                        )
+                        navigate(recordEditorPath(row.application_no))
                       }
                       disabled={!canEditLoans}
                       className="loan-repository-action loan-repository-action-update"
@@ -774,11 +773,7 @@ export default function LoanRepository() {
                       <td className="px-4 py-4">
                         <button
                           onClick={() =>
-                            navigate(
-                              `/lending-scorecard?applicationNo=${encodeURIComponent(
-                                row.application_no,
-                              )}`,
-                            )
+                            navigate(recordEditorPath(row.application_no))
                           }
                           className="font-semibold text-blue-700 underline decoration-blue-300 underline-offset-2 hover:text-blue-900"
                         >
@@ -835,11 +830,7 @@ export default function LoanRepository() {
 
                         <button
                           onClick={() =>
-                            navigate(
-                              `/lending-scorecard?applicationNo=${encodeURIComponent(
-                                row.application_no,
-                              )}`,
-                            )
+                            navigate(recordEditorPath(row.application_no))
                           }
                           disabled={!canEditLoans}
                           className="rounded-lg bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-700"

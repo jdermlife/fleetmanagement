@@ -8,7 +8,7 @@ import {
   calculateInformationProvidedPercent,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
 } from './applicationCompleteness'
-import { calculateCompositeInternalScore, getFilscoreBand, toFilscore } from './filscoreScale'
+import { getFilscoreBand, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
   applicationNo: string
@@ -69,12 +69,7 @@ const buildCertificationSnapshot = (
     productType: normalizeProductType(record.product_type),
     issuedAt: new Date().toISOString(),
     informationProvidedPercent: calculateInformationProvidedPercent(record),
-    overallScore: calculateCompositeInternalScore({
-      creditScore: record.overall_scores?.credit_score ?? null,
-      creditValueScore: record.overall_scores?.psychometric_score ?? null,
-      socialScore: record.overall_scores?.social_score ?? null,
-      nonStarterScore: record.overall_scores?.fraud_score ?? null,
-    }),
+    overallScore: record.overall_scores?.final_score ?? null,
     label: finalRating ? `${finalGrade} - ${finalRating}` : finalGrade,
     decision: finalDecision,
     creditScore: record.overall_scores?.credit_score ?? null,
@@ -142,16 +137,16 @@ export default function LoanCertificationPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
+  const applicationNo = searchParams.get('applicationNo')
   const [certification, setCertification] = useState<CertificationSnapshot | null>(
-    (location.state as LocationState | null)?.certificationData ?? null,
+    applicationNo ? null : (location.state as LocationState | null)?.certificationData ?? null,
   )
   const [isLoading, setIsLoading] = useState(false)
   const [loadError, setLoadError] = useState('')
   const [isToolbarHidden, setIsToolbarHidden] = useState(false)
-  const applicationNo = searchParams.get('applicationNo')
 
   useEffect(() => {
-    if (certification || !applicationNo) {
+    if (!applicationNo) {
       return
     }
 
@@ -172,7 +167,7 @@ export default function LoanCertificationPage() {
     }
 
     void loadCertification()
-  }, [applicationNo, certification])
+  }, [applicationNo])
 
   useEffect(() => {
     if (typeof window === 'undefined') {

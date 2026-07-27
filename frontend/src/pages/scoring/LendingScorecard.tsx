@@ -45,7 +45,7 @@ import {
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
   type InformationStepNumber,
 } from './applicationCompleteness';
-import { calculateCompositeInternalScore, toFilscore } from './filscoreScale';
+import { toFilscore } from './filscoreScale';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
 import CreditHealthJourney from './CreditHealthJourney';
 
@@ -1924,6 +1924,10 @@ export default function LendingScorecard() {
   const location = useLocation();
   const navigate = useNavigate();
   const forwardedActionHandledRef = useRef(false);
+  const forwardedActionHandlersRef = useRef<{
+    createNew: () => Promise<void>;
+    openFilscore: () => Promise<void>;
+  } | null>(null);
   const [searchParams] = useSearchParams();
   const { user } = useAuthorization();
   const requestedApplicationNo = searchParams.get('applicationNo');
@@ -3353,6 +3357,10 @@ export default function LendingScorecard() {
   };
 
   const forwardedScorecardAction = (location.state as { scorecardAction?: unknown } | null)?.scorecardAction;
+  forwardedActionHandlersRef.current = {
+    createNew: handleCreateNew,
+    openFilscore: () => handleStepChange(8),
+  };
 
   useEffect(() => {
     if (
@@ -3366,12 +3374,12 @@ export default function LendingScorecard() {
     navigate(`${location.pathname}${location.search}`, { replace: true, state: null });
 
     if (forwardedScorecardAction === 'create-new') {
-      void handleCreateNew();
+      void forwardedActionHandlersRef.current?.createNew();
       return;
     }
 
-    void handleStepChange(8);
-  }, [forwardedScorecardAction, handleCreateNew, handleStepChange, location.pathname, location.search, navigate]);
+    void forwardedActionHandlersRef.current?.openFilscore();
+  }, [forwardedScorecardAction, location.pathname, location.search, navigate]);
 
   const enhancedDueDiligenceComplete = useMemo(
     () => hasRequiredEnhancedDueDiligence(formData.enhancedDueDiligence),
@@ -4115,14 +4123,7 @@ export default function LendingScorecard() {
     { label: 'Release', value: 'Released' },
   ];
   const displayedQuantSummary = backendQuantSummary;
-  const compositeInternalScore = displayedQuantSummary
-    ? calculateCompositeInternalScore({
-        creditScore: displayedQuantSummary.credit_score,
-        creditValueScore: displayedQuantSummary.psychometric_score,
-        socialScore: displayedQuantSummary.social_score,
-        nonStarterScore: displayedQuantSummary.fraud_score,
-      })
-    : null;
+  const compositeInternalScore = displayedQuantSummary?.overall_score ?? null;
   const borrowerDisplayName =
     formData.borrower.fullName.trim() ||
     [
@@ -4135,9 +4136,14 @@ export default function LendingScorecard() {
       .trim() ||
     'Unnamed Applicant / Borrower';
 
-  const handleOpenCertification = () => {
+  const handleOpenCertification = async () => {
     if (hasSufficientInformationForRating && !displayedQuantSummary) {
       setSaveMessage('Generate FILScore first before requesting certification.');
+      return;
+    }
+
+    const didPersist = await persistLoanApplication(formData.status);
+    if (!didPersist) {
       return;
     }
 
@@ -5243,7 +5249,7 @@ export default function LendingScorecard() {
                 <span className="mx-2" />
                 <button
                   type="button"
-                  onClick={handleOpenCertification}
+                  onClick={() => void handleOpenCertification()}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Request Certification

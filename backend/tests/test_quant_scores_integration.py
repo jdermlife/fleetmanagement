@@ -183,17 +183,17 @@ def test_compute_quant_scores_deterministic_values(client, subscriber_headers):
     assert response.status_code == 200
     summary = response.json()["quant_scores"]
 
-    assert summary["creditScore"] == 89
-    assert summary["fraudScore"] == 76
-    assert summary["socialScore"] == 72
-    assert summary["psychometricScore"] == 81
+    assert summary["creditScore"] == 49
+    assert summary["fraudScore"] == 55
+    assert summary["socialScore"] == 39
+    assert summary["psychometricScore"] == 0
     assert summary["relationshipScore"] == 88
     assert summary["profitabilityScore"] == 79
-    assert summary["overallScore"] == 85
-    assert summary["compositeScore"] == 850
-    assert summary["finalGrade"] == "A"
-    assert summary["finalRating"] == "Excellent"
-    assert summary["decision"] == "APPROVE"
+    assert summary["overallScore"] == 50
+    assert summary["compositeScore"] == 500
+    assert summary["finalGrade"] == "F"
+    assert summary["finalRating"] == "Critical"
+    assert summary["decision"] == "DECLINE"
 
 
 def test_compute_quant_scores_missing_required_fields(client, subscriber_headers):

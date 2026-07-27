@@ -2,8 +2,12 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockNavigate } = vi.hoisted(() => ({
+const { mockComputeQuantScores, mockFetchLoanApplication, mockNavigate, mockSearchParams, mockUpdateLoanApplication } = vi.hoisted(() => ({
+  mockComputeQuantScores: vi.fn(),
+  mockFetchLoanApplication: vi.fn(),
   mockNavigate: vi.fn(),
+  mockSearchParams: { value: '' },
+  mockUpdateLoanApplication: vi.fn(),
 }))
 
 vi.mock('react-router-dom', async () => {
@@ -11,14 +15,25 @@ vi.mock('react-router-dom', async () => {
   return {
     ...actual,
     useNavigate: () => mockNavigate,
+    useSearchParams: () => [new URLSearchParams(mockSearchParams.value), vi.fn()],
   }
 })
+
+vi.mock('../src/api/loan', () => ({
+  computeQuantScores: mockComputeQuantScores,
+  fetchLoanApplication: mockFetchLoanApplication,
+  updateLoanApplication: mockUpdateLoanApplication,
+}))
 
 import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
 
 describe('BuildProfilePage', () => {
   beforeEach(() => {
+    mockComputeQuantScores.mockReset()
+    mockFetchLoanApplication.mockReset()
     mockNavigate.mockReset()
+    mockSearchParams.value = ''
+    mockUpdateLoanApplication.mockReset()
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       clear: () => values.clear(),
@@ -41,6 +56,7 @@ describe('BuildProfilePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Create Profile' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Build your Profile' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Retrieve Existing Profile' })).toBeTruthy()
     expect(screen.getByText(/^PRO-[A-Z0-9]{6}$/)).toBeTruthy()
     expect(screen.getByLabelText('4% profile completion')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(12)
@@ -51,8 +67,8 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
-    const accordion = screen.getByText('Build your Profile').closest('details')
-    const summary = screen.getByText('Build your Profile').closest('summary')
+    const summary = screen.getByText('Workflow Steps').closest('summary')
+    const accordion = summary?.closest('details')
 
     expect(accordion?.hasAttribute('open')).toBe(true)
     expect(summary).toBeTruthy()
@@ -92,7 +108,7 @@ describe('BuildProfilePage', () => {
     })
 
     await user.click(screen.getByRole('button', { name: 'Review Record' }))
-    expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=All')
+    expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=All&origin=build-profile')
 
     await user.click(screen.getByRole('button', { name: 'Open FILSCORE Page' }))
     expect(mockNavigate).toHaveBeenLastCalledWith('/lending-scorecard', {
@@ -104,6 +120,72 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Released Accounts' }))
     expect(mockNavigate).toHaveBeenLastCalledWith('/loan-repository?status=Released')
+  })
+
+  it('loads a repository selection primarily into Build Profile', async () => {
+    mockSearchParams.value = 'applicationNo=APP-REVIEW-1'
+    mockFetchLoanApplication.mockResolvedValue({
+      application_no: 'APP-REVIEW-1',
+      borrower_name: 'Jordan Santos',
+      email: 'jordan@example.com',
+      phone: '09171234567',
+      gov_id: 'GOV-123',
+      address: 'Makati City',
+      monthly_income: 75000,
+      other_income: 5000,
+      debt_obligations: 12000,
+      product_type: 'Auto Loan',
+      loan_amount: 800000,
+      term_months: 48,
+      interest_rate: 7.5,
+      purpose: 'Family vehicle',
+      appraised_value: 1000000,
+      requirements: {
+        applicantPersonal: { dateOfBirth: '1990-01-02', age: 36, citizenship: 'Filipino', maritalStatus: 'Single', placeOfBirth: 'Manila', gender: 'Male', numberOfDependents: 1 },
+        contactInformation: { emailAddress: 'jordan@example.com', mobileNumber: '09171234567', homePhoneNumber: '', mobileYearsUsed: '5', emailYearsUsed: '8' },
+        governmentIds: { tin: 'TIN-1', sssGsisNumber: 'SSS-1', otherGovernmentId: 'Passport', idNumber: 'GOV-123', issueDate: '', expiryDate: '' },
+        addressInformation: { presentAddress: 'Makati City', permanentAddress: 'Quezon City', mailingAddress: 'Makati City', lengthOfStay: '5 years' },
+        otherInformation: { homeOwnership: 'Renting', educationalAttainment: 'College Degree', numberOfVehiclesOwned: 1, deviceVerified: true },
+        employmentInformation: { employerBusinessName: 'Example Corp', grossMonthlyIncome: 75000, otherSourcesOfIncome: 5000, employmentStatus: 'Regular', employmentLocation: 'Locally Employed', employerBusinessYears: 10, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', monthlyLivingExpenses: 20000, investmentIncome: 0, businessIncome: 0, pensionIncome: 0 },
+        bankingRelationships: {},
+        enhancedDueDiligence: {},
+        spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
+        coBorrowers: [],
+        collateralAssetDetails: { securityClassification: 'Secured', assetType: 'Passenger Cars', maker: 'Toyota', brand: 'Toyota', model: 'Vios', year: '2025', vehicleConditionCategory: 'Brand New', vehicleTypeCategory: 'Passenger vehicle for personal use', motorcycleIntendedUse: '', useAsCollateral: true, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', additionalCollaterals: [] },
+        collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyMarketabilityCategory: '', houseUnitModelCategory: '', collateralOccupancyType: '', propertyAppraisedValue: 0 },
+        fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
+        documentAnalysis: { ocrAnalysisStatus: '' },
+        psychometricAssessment: {},
+      },
+    })
+
+    render(<BuildProfilePage />)
+
+    expect(await screen.findByText('Profile APP-REVIEW-1 loaded.')).toBeTruthy()
+    expect(screen.getByText('APP-REVIEW-1')).toBeTruthy()
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
+    expect((screen.getByLabelText('Email Address') as HTMLInputElement).value).toBe('jordan@example.com')
+    expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
+
+    mockUpdateLoanApplication.mockResolvedValue({ message: 'updated' })
+    mockComputeQuantScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
+    await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
+
+    await vi.waitFor(() => {
+      expect(mockUpdateLoanApplication).toHaveBeenCalledWith(
+        'APP-REVIEW-1',
+        expect.objectContaining({
+          application_no: 'APP-REVIEW-1',
+          borrower_name: 'Jordan Santos',
+          requirements: expect.objectContaining({
+            buildProfile: expect.objectContaining({ profileId: 'APP-REVIEW-1' }),
+          }),
+        }),
+      )
+      expect(mockComputeQuantScores).toHaveBeenCalledTimes(1)
+      expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?applicationNo=APP-REVIEW-1')
+    })
   })
 
   it('selects the Financial Goal immediately after Profile ID', async () => {
@@ -143,8 +225,8 @@ describe('BuildProfilePage', () => {
     expect(screen.getAllByRole('radio')).toHaveLength(32)
 
     await user.click(screen.getByRole('button', { name: /FILSCORE Score Links/ }))
-    expect(screen.getByRole('link', { name: 'Open Credit Health Score' }).getAttribute('href')).toBe('/lending-scorecard')
-    expect(screen.getByRole('link', { name: 'Open Wealth Building Score' }).getAttribute('href')).toBe('/net-worth-positioning')
+    expect(screen.getByRole('button', { name: 'Open Credit Health Score' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Open Wealth Building Score' })).toBeTruthy()
   })
 
   it('tracks step completion and persists profile values', async () => {
@@ -174,7 +256,7 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
-    expect(screen.getByRole('status').textContent).toBe('Profile saved successfully.')
+    expect(screen.getByRole('status').textContent).toBe('Profile saved in this browser. Select or create a loan record before FILSCORE computation.')
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)

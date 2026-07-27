@@ -1,5 +1,13 @@
-import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
+
+import {
+  computeQuantScores,
+  fetchLoanApplication,
+  updateLoanApplication,
+  type LoanApplicationPayload,
+  type LoanApplicationRecord,
+} from '../../api/loan'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import {
@@ -70,6 +78,7 @@ type FieldDefinition = {
 }
 
 const STORAGE_KEY = 'fms:build-profile'
+const profileApplicationRequests = new Map<string, Promise<LoanApplicationRecord>>()
 
 const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: string }> = [
   { id: 1, label: 'Tell Us About Yourself', description: 'Start with your essential personal and contact details.' },
@@ -184,9 +193,354 @@ function getWorkflowStepCompletionClass(completion: number): string {
   return 'build-profile-workflow-step-incomplete'
 }
 
+function loadProfileApplication(applicationNo: string): Promise<LoanApplicationRecord> {
+  const pendingRequest = profileApplicationRequests.get(applicationNo)
+  if (pendingRequest) return pendingRequest
+
+  const request = fetchLoanApplication(applicationNo).finally(() => {
+    profileApplicationRequests.delete(applicationNo)
+  })
+  profileApplicationRequests.set(applicationNo, request)
+  return request
+}
+
+function profileFromLoanApplication(application: LoanApplicationRecord, current: ProfileData): ProfileData {
+  const requirements = application.requirements
+  const applicant = requirements.applicantPersonal
+  const contact = requirements.contactInformation
+  const governmentIds = requirements.governmentIds
+  const addresses = requirements.addressInformation
+  const otherInformation = requirements.otherInformation
+  const employment = requirements.employmentInformation
+  const banking = requirements.bankingRelationships
+  const dueDiligence = requirements.enhancedDueDiligence
+  const spouse = requirements.spouseInformation
+  const collateral = requirements.collateralAssetDetails
+  const property = requirements.collateralInformation
+  const isSameProfile = current.profileId === application.application_no
+  const values = isSameProfile ? { ...current.values } : {}
+
+  Object.assign(values, {
+    fullName: application.borrower_name,
+    email: application.email || contact.emailAddress,
+    mobileNumber: application.phone || contact.mobileNumber,
+    dateOfBirth: applicant.dateOfBirth,
+    age: String(applicant.age || ''),
+    citizenship: applicant.citizenship,
+    civilStatus: applicant.maritalStatus,
+    homePhoneNumber: contact.homePhoneNumber,
+    tin: governmentIds.tin,
+    sssGsis: governmentIds.sssGsisNumber,
+    otherGovernmentId: governmentIds.otherGovernmentId,
+    otherGovernmentIdNumber: governmentIds.idNumber || application.gov_id,
+    idIssueDate: governmentIds.issueDate,
+    idExpiryDate: governmentIds.expiryDate,
+    address: application.address || addresses.presentAddress,
+    permanentAddress: addresses.permanentAddress,
+    mailingAddress: addresses.mailingAddress,
+    lengthOfStay: addresses.lengthOfStay,
+    homeOwnership: otherInformation.homeOwnership,
+    education: otherInformation.educationalAttainment,
+    numberOfVehiclesOwned: String(otherInformation.numberOfVehiclesOwned ?? ''),
+    governmentId: application.gov_id || governmentIds.idNumber,
+    placeOfBirth: applicant.placeOfBirth,
+    gender: applicant.gender,
+    dependents: String(applicant.numberOfDependents ?? ''),
+    employmentHistory: employment.employerBusinessName,
+    monthlyIncome: String(application.monthly_income || employment.grossMonthlyIncome || ''),
+    otherIncome: String(application.other_income || employment.otherSourcesOfIncome || ''),
+    debtObligations: String(application.debt_obligations || ''),
+    employmentStatus: employment.employmentStatus,
+    employerName: employment.employerBusinessName,
+    officeAddress: employment.officeAddress,
+    occupation: employment.occupation,
+    position: employment.position,
+    natureOfWorkBusiness: employment.natureOfWorkBusiness,
+    dateHired: employment.dateHired,
+    officePhoneNumber: employment.officePhoneNumber,
+    previousEmployer: employment.previousEmployer,
+    totalYearsWorking: employment.totalYearsWorking,
+    monthlyExpenses: String(employment.monthlyLivingExpenses || ''),
+    otherSourcesOfIncome: String(employment.otherSourcesOfIncome || ''),
+    investmentIncome: String(employment.investmentIncome || ''),
+    businessIncome: String(employment.businessIncome || ''),
+    pensionIncome: String(employment.pensionIncome || ''),
+    employmentLocation: employment.employmentLocation,
+    employerBusinessYears: String(employment.employerBusinessYears || ''),
+    mobileYearsUsed: contact.mobileYearsUsed,
+    emailYearsUsed: contact.emailYearsUsed,
+    deviceVerified: String(otherInformation.deviceVerified),
+    spouseFullName: spouse.fullName,
+    spouseDateOfBirth: spouse.dateOfBirth,
+    spousePlaceOfBirth: spouse.placeOfBirth,
+    spouseCitizenship: spouse.citizenship,
+    spouseMobileNumber: spouse.mobileNumber,
+    spousePresentAddress: spouse.presentAddress,
+    spouseEmployerBusinessName: spouse.employerBusinessName,
+    spouseOfficeAddress: spouse.officeAddress,
+    spouseOccupation: spouse.occupation,
+    spousePosition: spouse.position,
+    spouseNatureOfWork: spouse.natureOfWork,
+    spousePreviousEmployer: spouse.previousEmployer,
+    spouseYearsWithEmployer: spouse.yearsWithEmployer,
+    spouseTotalYearsWorking: spouse.totalYearsWorking,
+    spouseGrossMonthlyIncome: String(spouse.grossMonthlyIncome || ''),
+    spouseMonthlyExpenses: String(spouse.monthlyExpenses || ''),
+    spouseOtherIncomeSources: spouse.otherIncomeSources,
+    hasCoBorrower: String((requirements.coBorrowers?.length ?? 0) > 0),
+    ...Object.fromEntries(Object.entries(banking).map(([key, value]) => [key, String(value ?? '')])),
+    ...Object.fromEntries(Object.entries(dueDiligence).map(([key, value]) => [key, String(value ?? '')])),
+    loanPurpose: application.purpose,
+    productType: application.product_type,
+    requestedAmount: String(application.loan_amount || ''),
+    loanTerm: String(application.term_months || ''),
+    interestRate: String(application.interest_rate || ''),
+    securityClassification: collateral.securityClassification,
+    assetType: collateral.assetType,
+    maker: collateral.maker,
+    brand: collateral.brand,
+    model: collateral.model,
+    year: collateral.year,
+    vehicleConditionCategory: collateral.vehicleConditionCategory,
+    vehicleTypeCategory: collateral.vehicleTypeCategory,
+    motorcycleIntendedUse: collateral.motorcycleIntendedUse,
+    useAsCollateral: String(collateral.useAsCollateral),
+    appraisedValue: String(application.appraised_value || ''),
+    insuranceProviderCompany: collateral.insuranceProviderCompany,
+    policyNumber: collateral.policyNumber,
+    orNumber: collateral.orNumber,
+    crNumber: collateral.crNumber,
+    propertyAddress: property.propertyAddress,
+    registeredOwner: property.registeredOwner,
+    lotNumber: property.lotNumber,
+    blockNumber: property.blockNumber,
+    tctCctNumber: property.tctCctNumber,
+    propertyMarketabilityCategory: property.propertyMarketabilityCategory,
+    houseUnitModelCategory: property.houseUnitModelCategory,
+    collateralOccupancyType: property.collateralOccupancyType,
+    propertyAppraisedValue: String(property.propertyAppraisedValue || ''),
+  })
+
+  return {
+    ...createEmptyProfile(),
+    ...(isSameProfile ? current : {}),
+    profileId: application.application_no,
+    step: isSameProfile ? current.step : 1,
+    values,
+    coBorrowers: (requirements.coBorrowers ?? []).map((item, index) => ({
+      id: `CB-${application.application_no}-${index + 1}`,
+      name: item.name,
+      relationship: item.relationship,
+      monthlyIncome: String(item.monthlyIncome || ''),
+      debtObligations: String(item.debtObligations || ''),
+      creditStanding: item.creditStanding,
+    })),
+    additionalCollaterals: collateral.additionalCollaterals.map((item, index) => ({
+      id: `COL-${application.application_no}-${index + 1}`,
+      ...item,
+      appraisedValue: String(item.appraisedValue || ''),
+    })),
+  }
+}
+
+function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRecord): LoanApplicationPayload {
+  const values = profile.values
+  const requirements = structuredClone(source.requirements)
+  const numberValue = (key: string, fallback = 0) => {
+    const parsed = Number(values[key])
+    return Number.isFinite(parsed) ? parsed : fallback
+  }
+  const booleanValue = (key: string, fallback = false) => values[key] === undefined
+    ? fallback
+    : values[key] === 'true'
+
+  Object.assign(requirements.applicantPersonal, {
+    dateOfBirth: values.dateOfBirth || '',
+    placeOfBirth: values.placeOfBirth || '',
+    age: numberValue('age'),
+    gender: values.gender || '',
+    citizenship: values.citizenship || '',
+    numberOfDependents: numberValue('dependents'),
+    maritalStatus: values.civilStatus || '',
+  })
+  Object.assign(requirements.contactInformation, {
+    mobileNumber: values.mobileNumber || '',
+    homePhoneNumber: values.homePhoneNumber || '',
+    emailAddress: values.email || '',
+    mobileYearsUsed: values.mobileYearsUsed || '',
+    emailYearsUsed: values.emailYearsUsed || '',
+  })
+  Object.assign(requirements.governmentIds, {
+    tin: values.tin || '',
+    sssGsisNumber: values.sssGsis || '',
+    otherGovernmentId: values.otherGovernmentId || '',
+    idNumber: values.otherGovernmentIdNumber || values.governmentId || '',
+    issueDate: values.idIssueDate || '',
+    expiryDate: values.idExpiryDate || '',
+  })
+  Object.assign(requirements.addressInformation, {
+    presentAddress: values.address || '',
+    permanentAddress: values.permanentAddress || '',
+    mailingAddress: values.mailingAddress || '',
+    lengthOfStay: values.lengthOfStay || '',
+  })
+  Object.assign(requirements.otherInformation, {
+    homeOwnership: values.homeOwnership || '',
+    educationalAttainment: values.education || '',
+    numberOfVehiclesOwned: numberValue('numberOfVehiclesOwned'),
+    deviceVerified: booleanValue('deviceVerified', requirements.otherInformation.deviceVerified),
+    hasCoBorrower: profile.coBorrowers.length > 0,
+  })
+  Object.assign(requirements.employmentInformation, {
+    employmentStatus: values.employmentStatus || '',
+    employmentLocation: values.employmentLocation || '',
+    employerBusinessName: values.employerName || values.employmentHistory || '',
+    employerBusinessYears: numberValue('employerBusinessYears'),
+    officeAddress: values.officeAddress || '',
+    occupation: values.occupation || '',
+    position: values.position || '',
+    natureOfWorkBusiness: values.natureOfWorkBusiness || '',
+    dateHired: values.dateHired || '',
+    officePhoneNumber: values.officePhoneNumber || '',
+    previousEmployer: values.previousEmployer || '',
+    totalYearsWorking: values.totalYearsWorking || '',
+    grossMonthlyIncome: numberValue('monthlyIncome'),
+    monthlyLivingExpenses: numberValue('monthlyExpenses'),
+    otherSourcesOfIncome: numberValue('otherIncome'),
+    investmentIncome: numberValue('investmentIncome'),
+    businessIncome: numberValue('businessIncome'),
+    pensionIncome: numberValue('pensionIncome'),
+  })
+  Object.assign(requirements.spouseInformation, {
+    fullName: values.spouseFullName || '',
+    dateOfBirth: values.spouseDateOfBirth || '',
+    placeOfBirth: values.spousePlaceOfBirth || '',
+    citizenship: values.spouseCitizenship || '',
+    mobileNumber: values.spouseMobileNumber || '',
+    presentAddress: values.spousePresentAddress || '',
+    employerBusinessName: values.spouseEmployerBusinessName || '',
+    officeAddress: values.spouseOfficeAddress || '',
+    occupation: values.spouseOccupation || '',
+    position: values.spousePosition || '',
+    natureOfWork: values.spouseNatureOfWork || '',
+    yearsWithEmployer: values.spouseYearsWithEmployer || '',
+    previousEmployer: values.spousePreviousEmployer || '',
+    totalYearsWorking: values.spouseTotalYearsWorking || '',
+    grossMonthlyIncome: numberValue('spouseGrossMonthlyIncome'),
+    monthlyExpenses: numberValue('spouseMonthlyExpenses'),
+    otherIncomeSources: values.spouseOtherIncomeSources || '',
+  })
+  requirements.coBorrowers = profile.coBorrowers.map((item) => ({
+    name: item.name,
+    relationship: item.relationship,
+    monthlyIncome: Number(item.monthlyIncome) || 0,
+    debtObligations: Number(item.debtObligations) || 0,
+    creditStanding: item.creditStanding,
+  }))
+
+  for (const key of Object.keys(requirements.bankingRelationships)) {
+    const currentValue = requirements.bankingRelationships[key as keyof typeof requirements.bankingRelationships]
+    const value = values[key]
+    if (value === undefined) continue
+    Object.assign(requirements.bankingRelationships, {
+      [key]: typeof currentValue === 'number' ? numberValue(key) : value,
+    })
+  }
+  for (const key of Object.keys(requirements.enhancedDueDiligence)) {
+    const currentValue = requirements.enhancedDueDiligence[key as keyof typeof requirements.enhancedDueDiligence]
+    const value = values[key]
+    if (value === undefined) continue
+    Object.assign(requirements.enhancedDueDiligence, {
+      [key]: typeof currentValue === 'boolean'
+        ? booleanValue(key)
+        : typeof currentValue === 'number' ? numberValue(key) : value,
+    })
+  }
+  Object.assign(requirements.fraudVerification, {
+    faceMatchScore: numberValue('faceMatchScore', requirements.fraudVerification.faceMatchScore),
+    livenessDetection: values.livenessDetection || requirements.fraudVerification.livenessDetection,
+    incomeDocumentsStatus: values.incomeDocumentsStatus || requirements.fraudVerification.incomeDocumentsStatus,
+    employmentVerificationStatus: values.employmentVerificationStatus || requirements.fraudVerification.employmentVerificationStatus,
+    bankStatementVerificationStatus: values.bankStatementVerificationStatus || requirements.fraudVerification.bankStatementVerificationStatus,
+  })
+  requirements.documentAnalysis.ocrAnalysisStatus = values.ocrAnalysisStatus || requirements.documentAnalysis.ocrAnalysisStatus
+  Object.assign(requirements.collateralAssetDetails, {
+    securityClassification: values.securityClassification || '',
+    assetType: values.assetType || '',
+    maker: values.maker || '',
+    brand: values.brand || '',
+    model: values.model || '',
+    year: values.year || '',
+    vehicleConditionCategory: values.vehicleConditionCategory || '',
+    vehicleTypeCategory: values.vehicleTypeCategory || '',
+    motorcycleIntendedUse: values.motorcycleIntendedUse || '',
+    useAsCollateral: booleanValue('useAsCollateral', requirements.collateralAssetDetails.useAsCollateral),
+    insuranceProviderCompany: values.insuranceProviderCompany || '',
+    policyNumber: values.policyNumber || '',
+    orNumber: values.orNumber || '',
+    crNumber: values.crNumber || '',
+    additionalCollaterals: profile.additionalCollaterals.map((item) => ({
+      collateralType: item.collateralType,
+      propertyType: item.propertyType,
+      maker: item.maker,
+      brand: item.brand,
+      model: item.model,
+      year: item.year,
+      appraisedValue: Number(item.appraisedValue) || 0,
+      insuranceProviderCompany: item.insuranceProviderCompany,
+      policyNumber: item.policyNumber,
+      orNumber: item.orNumber,
+      crNumber: item.crNumber,
+      tctCctNumber: item.tctCctNumber,
+      notes: item.notes,
+    })),
+  })
+  Object.assign(requirements.collateralInformation, {
+    propertyAddress: values.propertyAddress || '',
+    registeredOwner: values.registeredOwner || '',
+    lotNumber: values.lotNumber || '',
+    blockNumber: values.blockNumber || '',
+    tctCctNumber: values.tctCctNumber || '',
+    propertyMarketabilityCategory: values.propertyMarketabilityCategory || '',
+    houseUnitModelCategory: values.houseUnitModelCategory || '',
+    collateralOccupancyType: values.collateralOccupancyType || '',
+    propertyAppraisedValue: numberValue('propertyAppraisedValue'),
+  })
+  requirements.psychometricAssessment = Object.fromEntries(CREDIT_VALUES_QUESTIONS.map((question) => {
+    const selected = values[`creditValues.${question.field}`] || ''
+    const optionIndex = question.options.indexOf(selected)
+    return [question.field.padStart(3, '0'), optionIndex >= 0 ? String(4 - optionIndex) : '']
+  }))
+  requirements.buildProfile = JSON.parse(JSON.stringify(profile)) as Record<string, unknown>
+
+  return {
+    ...source,
+    application_no: source.application_no,
+    product_type: (values.productType || source.product_type) as LoanApplicationPayload['product_type'],
+    borrower_name: values.fullName || source.borrower_name,
+    email: values.email || '',
+    phone: values.mobileNumber || '',
+    gov_id: values.governmentId || values.otherGovernmentIdNumber || '',
+    address: values.address || '',
+    monthly_income: numberValue('monthlyIncome'),
+    other_income: numberValue('otherIncome'),
+    debt_obligations: numberValue('debtObligations'),
+    loan_amount: numberValue('requestedAmount'),
+    term_months: numberValue('loanTerm'),
+    interest_rate: numberValue('interestRate'),
+    purpose: values.loanPurpose || '',
+    vehicle_info: [values.maker, values.brand, values.model, values.year].filter(Boolean).join(' '),
+    appraised_value: numberValue('appraisedValue', numberValue('propertyAppraisedValue')),
+    requirements,
+  }
+}
+
 export default function BuildProfilePage() {
   const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
+  const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || ''
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
+  const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [wealthSectionFilter, setWealthSectionFilter] = useState<'all' | StatementSection>('all')
   const [wealthCategoryFilter, setWealthCategoryFilter] = useState('all')
@@ -199,6 +553,27 @@ export default function BuildProfilePage() {
   const [varianceCategoryFilter, setVarianceCategoryFilter] = useState('all')
   const [varianceLineSearch, setVarianceLineSearch] = useState('')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
+
+  useEffect(() => {
+    if (!requestedApplicationNo) return
+
+    let cancelled = false
+    setSaveMessage(`Loading profile ${requestedApplicationNo}...`)
+    void loadProfileApplication(requestedApplicationNo)
+      .then((application) => {
+        if (cancelled) return
+        setProfile((current) => profileFromLoanApplication(application, current))
+        setSourceApplication(application)
+        setSaveMessage(`Profile ${requestedApplicationNo} loaded.`)
+      })
+      .catch(() => {
+        if (!cancelled) setSaveMessage(`Unable to load profile ${requestedApplicationNo}.`)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [requestedApplicationNo])
 
   const stepCompletion = useMemo(() => {
     const result = {} as Record<ProfileStep, number>
@@ -303,22 +678,41 @@ export default function BuildProfilePage() {
   }))
   const goToStep = (step: ProfileStep) => setProfile((current) => ({ ...current, step }))
 
-  const saveProfile = () => {
+  const saveProfile = async () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(profile))
-      setSaveMessage('Profile saved successfully.')
+      if (sourceApplication) {
+        const payload = loanPayloadFromProfile(profile, sourceApplication)
+        await updateLoanApplication(sourceApplication.application_no, payload)
+        setSourceApplication({ ...sourceApplication, ...payload })
+        setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
+      } else {
+        setSaveMessage('Profile saved in this browser. Select or create a loan record before FILSCORE computation.')
+      }
     } catch {
-      setSaveMessage('Unable to save this profile in your browser.')
+      setSaveMessage('Unable to save and synchronize this profile.')
     }
   }
 
-  const openScorePage = (key: 'creditHealthScoreOpened' | 'wealthBuildingScoreOpened') => {
+  const openScorePage = async (
+    key: 'creditHealthScoreOpened' | 'wealthBuildingScoreOpened',
+    destination: '/lending-scorecard/filscore' | '/net-worth-positioning',
+  ) => {
+    if (!sourceApplication) {
+      setSaveMessage('Select or create a loan record before opening FILSCORE computation.')
+      return
+    }
+
     const updatedProfile = { ...profile, values: { ...profile.values, [key]: 'true' } }
     setProfile(updatedProfile)
     try {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProfile))
+      const payload = loanPayloadFromProfile(updatedProfile, sourceApplication)
+      await updateLoanApplication(sourceApplication.application_no, payload)
+      await computeQuantScores(payload)
+      navigate(`${destination}?applicationNo=${encodeURIComponent(sourceApplication.application_no)}`)
     } catch {
-      // Navigation remains available when browser storage is unavailable.
+      setSaveMessage('Unable to synchronize profile data and compute FILSCORE right now.')
     }
   }
 
@@ -1088,13 +1482,13 @@ export default function BuildProfilePage() {
             <span>FILSCORE Assessment</span>
             <h4>Credit Health Score</h4>
             <p>Review credit readiness across credit, values, social, and verification indicators.</p>
-            <a href="/lending-scorecard" onClick={() => openScorePage('creditHealthScoreOpened')}>Open Credit Health Score</a>
+            <button type="button" onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>Open Credit Health Score</button>
           </article>
           <article>
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <a href="/net-worth-positioning" onClick={() => openScorePage('wealthBuildingScoreOpened')}>Open Wealth Building Score</a>
+            <button type="button" onClick={() => void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')}>Open Wealth Building Score</button>
           </article>
         </div>
       </div>
@@ -1131,31 +1525,42 @@ export default function BuildProfilePage() {
       <aside className="psychometric-panel lending-psychometric-step-panel build-profile-workflow-panel">
         <details className="build-profile-workflow-accordion" open>
           <summary>
-            <div><span className="psychometric-panel-kicker">Workflow Steps</span><h2>Build your Profile</h2><small>Step {profile.step} of 12: {currentStep.label}</small></div>
+            <span className="psychometric-panel-kicker">Workflow Steps</span>
             <span className="build-profile-workflow-chevron" aria-hidden="true" />
           </summary>
           <div className="build-profile-workflow-body">
-            <div className="build-profile-workflow-actions" aria-label="Lending Scorecard actions">
-              <button type="button" className="build-profile-workflow-action build-profile-workflow-action-primary" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'create-new' } })}>Create New Record</button>
-              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=All')}>Review Record</button>
-              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'open-filscore' } })}>Open FILSCORE Page</button>
-              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>
-              <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Released')}>Released Accounts</button>
+            <div className="build-profile-workflow-column build-profile-workflow-build">
+              <div className="build-profile-workflow-column-heading">
+                <h2>Build your Profile</h2>
+                <small>Step {profile.step} of 12: {currentStep.label}</small>
+              </div>
+              <div className="build-profile-workflow-steps">
+                {WORKFLOW_STEPS.map((workflowStep) => {
+                  const completion = stepCompletion[workflowStep.id]
+                  return <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => goToStep(workflowStep.id)}
+                    className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
+                    aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
+                    title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
+                  >
+                    {workflowStep.id}
+                  </button>
+                })}
+              </div>
             </div>
-            <div className="build-profile-workflow-steps">
-              {WORKFLOW_STEPS.map((workflowStep) => {
-                const completion = stepCompletion[workflowStep.id]
-                return <button
-                  key={workflowStep.id}
-                  type="button"
-                  onClick={() => goToStep(workflowStep.id)}
-                  className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
-                  aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
-                  title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
-                >
-                  {workflowStep.id}
-                </button>
-              })}
+            <div className="build-profile-workflow-column build-profile-workflow-retrieve">
+              <div className="build-profile-workflow-column-heading">
+                <h2>Retrieve Existing Profile</h2>
+              </div>
+              <div className="build-profile-workflow-actions" aria-label="Lending Scorecard actions">
+                <button type="button" className="build-profile-workflow-action build-profile-workflow-action-primary" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'create-new' } })}>Create New Record</button>
+                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=All&origin=build-profile')}>Review Record</button>
+                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'open-filscore' } })}>Open FILSCORE Page</button>
+                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>
+                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Released')}>Released Accounts</button>
+              </div>
             </div>
           </div>
         </details>
@@ -1166,7 +1571,7 @@ export default function BuildProfilePage() {
         {renderCurrentStep()}
         <div className="build-profile-form-actions">
           <button type="button" className="loan-footer-button" disabled={profile.step === 1} onClick={() => goToStep((profile.step - 1) as ProfileStep)}>Previous</button>
-          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={saveProfile}>Save Profile</button>
+          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => void saveProfile()}>Save Profile</button>
           <button type="button" className="loan-footer-button" disabled={profile.step === 12} onClick={() => goToStep((profile.step + 1) as ProfileStep)}>Next</button>
         </div>
         {saveMessage ? <p className="status-message" role="status">{saveMessage}</p> : null}

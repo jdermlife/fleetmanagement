@@ -39,6 +39,17 @@ def _normalized_text(value: Any) -> str:
     return str(value).strip().lower()
 
 
+def _new_assessment_score(value: Any) -> int:
+    normalized = _normalized_text(value)
+    if normalized in PSYCHOMETRIC_RESPONSE_SCORES:
+        return PSYCHOMETRIC_RESPONSE_SCORES[normalized]
+    try:
+        numeric_score = int(normalized)
+    except (TypeError, ValueError):
+        return 0
+    return numeric_score if 0 <= numeric_score <= 4 else 0
+
+
 def _score_new_assessment(questionnaire: dict[str, Any]) -> dict[str, float | dict[str, Any]] | None:
     answered = sum(1 for value in questionnaire.values() if _normalized_text(value))
     if answered == 0:
@@ -47,7 +58,7 @@ def _score_new_assessment(questionnaire: dict[str, Any]) -> dict[str, float | di
     section_scores: list[float] = []
     for _, fields in PSYCHOMETRIC_SECTIONS:
         raw_score = sum(
-            PSYCHOMETRIC_RESPONSE_SCORES.get(_normalized_text(questionnaire.get(field)), 0)
+            _new_assessment_score(questionnaire.get(field))
             for field in fields
         )
         section_scores.append(round((raw_score / 20.0) * 100.0, 2))
@@ -122,12 +133,12 @@ def compute_psychometric_score(payload: Any) -> dict[str, float | dict[str, Any]
             return computed
 
     return {
-        "discipline_score": 80.0,
-        "planning_score": 81.0,
-        "responsibility_score": 82.0,
-        "honesty_score": 83.0,
-        "resilience_score": 79.0,
-        "overall_psychometric_score": 81.0,
+        "discipline_score": 0.0,
+        "planning_score": 0.0,
+        "responsibility_score": 0.0,
+        "honesty_score": 0.0,
+        "resilience_score": 0.0,
+        "overall_psychometric_score": 0.0,
         "questionnaire_answers": questionnaire if isinstance(questionnaire, dict) else {},
     }
 

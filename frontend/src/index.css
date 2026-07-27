@@ -3588,24 +3588,13 @@ th { color: var(--dark-gold); }
   align-items: center;
   justify-content: space-between;
   gap: 16px;
-  padding: 20px;
+  padding: 14px 20px;
   cursor: pointer;
   list-style: none;
 }
 
 .build-profile-workflow-accordion > summary::-webkit-details-marker {
   display: none;
-}
-
-.build-profile-workflow-accordion > summary h2 {
-  margin: 3px 0 0;
-}
-
-.build-profile-workflow-accordion > summary small {
-  display: block;
-  margin-top: 5px;
-  color: #64748b;
-  line-height: 1.35;
 }
 
 .build-profile-workflow-chevron {
@@ -3628,14 +3617,41 @@ th { color: var(--dark-gold); }
 
 .build-profile-workflow-body {
   display: grid;
-  grid-template-columns: minmax(150px, 190px) minmax(0, 1fr);
-  gap: 16px;
-  align-items: start;
-  padding: 12px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  padding: 0;
+}
+
+.build-profile-workflow-column {
+  min-width: 0;
+  padding: 16px 20px 20px;
+}
+
+.build-profile-workflow-retrieve {
+  border-left: 1px solid #dbe4f0;
+}
+
+.build-profile-workflow-column-heading {
+  min-height: 48px;
+  margin-bottom: 12px;
+}
+
+.build-profile-workflow-column-heading h2 {
+  margin: 0;
+  color: #172554;
+  font-size: 1.1rem;
+}
+
+.build-profile-workflow-column-heading small {
+  display: block;
+  margin-top: 5px;
+  color: #64748b;
+  line-height: 1.35;
 }
 
 .build-profile-workflow-actions {
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
 }
 
@@ -3675,7 +3691,7 @@ th { color: var(--dark-gold); }
   grid-template-columns: repeat(6, 40px);
   justify-content: start;
   gap: 10px;
-  padding: 2px 0;
+  padding: 0;
 }
 
 .build-profile-workflow-step {
@@ -3909,21 +3925,25 @@ th { color: var(--dark-gold); }
   line-height: 1.55;
 }
 
-.build-profile-score-links a {
+.build-profile-score-links a,
+.build-profile-score-links button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 42px;
   margin-top: 8px;
   padding: 9px 14px;
+  border: 0;
   border-radius: 6px;
   background: #1d4ed8;
   color: #ffffff;
   font-weight: 800;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.build-profile-score-links a:hover {
+.build-profile-score-links a:hover,
+.build-profile-score-links button:hover {
   background: #1e40af;
 }
 
@@ -4371,6 +4391,15 @@ th { color: var(--dark-gold); }
 
   .build-profile-workflow-body {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-workflow-column {
+    padding: 14px;
+  }
+
+  .build-profile-workflow-retrieve {
+    border-top: 1px solid #dbe4f0;
+    border-left: 0;
   }
 
   .build-profile-workflow-actions {
