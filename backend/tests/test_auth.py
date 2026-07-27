@@ -215,7 +215,10 @@ def test_login_deactivates_expired_unpaid_account(app_client):
     )
 
     assert response.status_code == 403
-    assert response.json()["detail"] == "Account expired due to non-payment. Complete payment to reactivate access."
+    assert response.json()["detail"] == (
+        "Free trial and 24-hour payment grace period expired due to non-payment. "
+        "Complete payment to reactivate access."
+    )
     assert user.is_active is False
     assert user.account_status == "SUSPENDED"
 
@@ -393,7 +396,7 @@ def test_delete_account_endpoint_disables_authenticated_user(app_client):
         headers={"Authorization": f"Bearer {token}"},
     )
 
-    assert response.status_code == 200
+    assert response.status_code == 200, response.text
     assert "disabled" in response.json()["message"].lower()
     assert user.is_active is False
     assert user.is_deleted is True

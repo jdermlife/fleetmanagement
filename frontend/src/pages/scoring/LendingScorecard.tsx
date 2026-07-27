@@ -83,6 +83,7 @@ interface LoanApplication {
   id: string;
   status: WorkflowStatus;
   productType: ProductType;
+  buildProfileSnapshot: Record<string, unknown>;
   borrower: BorrowerInfo;
   coBorrowers: CoBorrower[];
   employment: Employment;
@@ -233,6 +234,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   id: 'APP-' + Math.random().toString(36).substr(2, 6).toUpperCase(),
   status: 'Draft',
   productType: 'Auto Loan',
+  buildProfileSnapshot: {},
   borrower: { fullName: '', email: '', phone: '', govId: '', address: '' },
   coBorrowers: [],
   employment: { history: '', monthlyIncome: 0, otherIncome: 0, debtObligations: 0 },
@@ -274,6 +276,7 @@ const buildLoanRequirements = (
   const derivedInsuranceSummary = buildCollateralInsuranceSummary(application.collateral);
 
   return {
+    buildProfile: application.buildProfileSnapshot,
     productInformation: {
       productType: application.loan.productType,
       homePurposeOfLoan: application.loan.purpose,
@@ -2506,6 +2509,10 @@ export default function LendingScorecard() {
       id: record.application_no,
       status: record.status,
       productType: record.product_type ?? blankApplication.productType,
+      buildProfileSnapshot:
+        savedRequirements.buildProfile && typeof savedRequirements.buildProfile === 'object'
+          ? savedRequirements.buildProfile
+          : blankApplication.buildProfileSnapshot,
       borrower: {
         ...blankApplication.borrower,
         fullName: record.borrower_name,

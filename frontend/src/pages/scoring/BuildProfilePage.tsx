@@ -2,8 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
-  computeQuantScores,
   fetchLoanApplication,
+  recomputeStoredLoanApplicationScores,
   updateLoanApplication,
   type LoanApplicationPayload,
   type LoanApplicationRecord,
@@ -206,6 +206,12 @@ function loadProfileApplication(applicationNo: string): Promise<LoanApplicationR
 
 function profileFromLoanApplication(application: LoanApplicationRecord, current: ProfileData): ProfileData {
   const requirements = application.requirements
+  const savedBuildProfile = requirements.buildProfile
+  const persistedProfile = savedBuildProfile
+    && typeof savedBuildProfile === 'object'
+    && !Array.isArray(savedBuildProfile)
+    ? savedBuildProfile as Partial<ProfileData>
+    : null
   const applicant = requirements.applicantPersonal
   const contact = requirements.contactInformation
   const governmentIds = requirements.governmentIds
@@ -218,7 +224,12 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   const collateral = requirements.collateralAssetDetails
   const property = requirements.collateralInformation
   const isSameProfile = current.profileId === application.application_no
-  const values = isSameProfile ? { ...current.values } : {}
+  const profileBase: ProfileData = {
+    ...createEmptyProfile(),
+    ...(persistedProfile ?? (isSameProfile ? current : {})),
+    profileId: application.application_no,
+  }
+  const values = { ...profileBase.values }
 
   Object.assign(values, {
     fullName: application.borrower_name,
@@ -322,10 +333,8 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   })
 
   return {
-    ...createEmptyProfile(),
-    ...(isSameProfile ? current : {}),
+    ...profileBase,
     profileId: application.application_no,
-    step: isSameProfile ? current.step : 1,
     values,
     coBorrowers: (requirements.coBorrowers ?? []).map((item, index) => ({
       id: `CB-${application.application_no}-${index + 1}`,
@@ -709,7 +718,7 @@ export default function BuildProfilePage() {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(updatedProfile))
       const payload = loanPayloadFromProfile(updatedProfile, sourceApplication)
       await updateLoanApplication(sourceApplication.application_no, payload)
-      await computeQuantScores(payload)
+      await recomputeStoredLoanApplicationScores(sourceApplication.application_no)
       navigate(`${destination}?applicationNo=${encodeURIComponent(sourceApplication.application_no)}`)
     } catch {
       setSaveMessage('Unable to synchronize profile data and compute FILSCORE right now.')

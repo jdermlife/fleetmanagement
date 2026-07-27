@@ -799,6 +799,15 @@ export async function computeQuantScores(
   return response.data
 }
 
+export async function recomputeStoredLoanApplicationScores(
+  applicationNo: string,
+): Promise<QuantScoresResponse> {
+  const response = await api.post<QuantScoresResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/compute-quant-scores`,
+  )
+  return response.data
+}
+
 export async function fetchLoanCreationEntitlement(): Promise<LoanCreationEntitlementResponse> {
   const response = await api.get<LoanCreationEntitlementResponse>(
     '/api/subscriptions/entitlement/loan-record-create',

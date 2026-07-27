@@ -28,7 +28,11 @@ from app.fastapi_auth import (
 from app.models.permissions import Permission
 from app.models.roles import Role, role_permissions, user_roles
 from app.models.users import AuthSession, MfaBackupCode, User
-from app.services.account_access_service import configure_new_account_access, deactivate_if_access_expired
+from app.services.account_access_service import (
+    configure_new_account_access,
+    deactivate_if_access_expired,
+    get_account_access_state,
+)
 from app.services.mfa_service import (
     build_otpauth_uri,
     generate_backup_codes,
@@ -266,6 +270,8 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
     if is_admin_username_override(user.username):
         role_names = sorted(set(role_names) | {"admin"})
 
+    access_state = get_account_access_state(user)
+
     return {
         "id": user.id,
         "username": user.username,
@@ -282,6 +288,7 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "api_access": user.api_access,
         "email_verified": user.email_verified,
         "account_access_expires_at": user.account_access_expires_at,
+        **access_state,
         "lender_data_sharing_consent": user.lender_data_sharing_consent,
         "lender_data_sharing_consent_recorded_at": user.lender_data_sharing_consent_recorded_at,
         "last_login_ip": user.last_login_ip,
@@ -389,7 +396,7 @@ def _enforce_login_access_policy(user: User, db: Session) -> None:
         ):
             raise HTTPException(
                 status_code=403,
-                detail="Account expired due to non-payment. Complete payment to reactivate access.",
+                detail="Free trial and 24-hour payment grace period expired due to non-payment. Complete payment to reactivate access.",
             )
         raise HTTPException(status_code=403, detail="Account is disabled")
 
@@ -867,7 +874,11 @@ def refresh_tokens(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Refresh session is invalid or revoked")
 
     user = db.query(User).filter(User.id == int(token_payload["sub"])).first()
-    if user is None or not user.is_active:
+    if user is None:
+        raise HTTPException(status_code=401, detail="User is not active")
+
+    _enforce_login_access_policy(user, db)
+    if not user.is_active:
         raise HTTPException(status_code=401, detail="User is not active")
 
     session.revoked_at = datetime.now(timezone.utc)

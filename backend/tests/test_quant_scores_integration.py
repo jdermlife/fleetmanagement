@@ -15,9 +15,11 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from sqlalchemy.orm import Session
+from types import SimpleNamespace
 from uuid import uuid4
 
 from app.database import SessionLocal
+from app.routes import loan_routes
 from app.routes.loan_routes import router as loan_router
 from app.models.loan_application import LoanApplication
 from security.auth import create_token
@@ -210,6 +212,71 @@ def test_compute_quant_scores_missing_required_fields(client, subscriber_headers
 
     # Should return 422 (validation error) 
     assert response.status_code == 422
+
+
+def test_recompute_stored_quant_scores_uses_persisted_record(monkeypatch):
+    application_no = "APP-STORED-1"
+    payload = get_test_payload()
+    payload["application_no"] = application_no
+    payload["requirements"]["buildProfile"] = {
+        "profileId": application_no,
+        "values": {"financialGoal": "Build Emergency Fund"},
+    }
+    record = SimpleNamespace(
+        application_no=application_no,
+        scorecard_total=0,
+        ai_probability=0.0,
+        updated_by=None,
+    )
+
+    class FakeSession:
+        committed = False
+        refreshed = False
+
+        def commit(self):
+            self.committed = True
+
+        def refresh(self, refreshed_record):
+            assert refreshed_record is record
+            self.refreshed = True
+
+        def rollback(self):
+            raise AssertionError("Recompute should not roll back")
+
+        def close(self):
+            pass
+
+    session = FakeSession()
+    persisted = {}
+    monkeypatch.setattr(loan_routes, "SessionLocal", lambda: session)
+    monkeypatch.setattr(
+        loan_routes,
+        "get_loan_application_or_404",
+        lambda _db, requested_no: record if requested_no == application_no else None,
+    )
+    monkeypatch.setattr(loan_routes, "enforce_loan_application_access", lambda *_args: None)
+    monkeypatch.setattr(loan_routes, "serialize_loan_application", lambda _record: payload)
+    monkeypatch.setattr(
+        loan_routes,
+        "persist_score_details",
+        lambda _db, _record, scored_data: persisted.update(
+            requirements=scored_data.requirements,
+            overall_scores=scored_data.overall_scores,
+        ),
+    )
+    monkeypatch.setattr(loan_routes, "invalidate_dashboard_statistics_cache", lambda: None)
+
+    result = loan_routes.recompute_stored_quant_scores(
+        application_no,
+        SimpleNamespace(id=42, username="tester", role="Subscriber"),
+    )
+
+    assert session.committed is True
+    assert session.refreshed is True
+    assert record.updated_by == 42
+    assert persisted["requirements"]["buildProfile"]["profileId"] == application_no
+    assert persisted["overall_scores"]["final_score"] == result["quant_scores"]["overallScore"]
+    assert result["application_no"] == application_no
 
 
 if __name__ == "__main__":

@@ -62,6 +62,7 @@ from app.services.autosave_audit import (
     autosave_response_audit_metadata,
     is_autosave_draft_path,
 )
+from app.services.account_access_service import queue_due_trial_reminders
 from app.services.notification_service import dispatch_queued_notifications
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.auth import TokenError, decode_token
@@ -89,6 +90,7 @@ async def _notification_dispatcher_loop() -> None:
     while True:
         db = SessionLocal()
         try:
+            queue_due_trial_reminders(db)
             dispatch_queued_notifications(db, limit=notification_dispatch_batch_size)
         except Exception as exc:
             backend_logger.error("Notification dispatcher loop failed", error=str(exc))

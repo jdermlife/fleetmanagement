@@ -761,6 +761,43 @@ def compute_quant_scores(
         db.close()
 
 
+@router.post(
+    "/loan-applications/{application_no}/compute-quant-scores",
+)
+def recompute_stored_quant_scores(
+    application_no: str,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        stored_data = LoanApplicationCreate.model_validate(
+            serialize_loan_application(record)
+        )
+        scored_data, quant_scores = build_scored_loan_application(stored_data)
+
+        record.scorecard_total = scored_data.scorecard_total
+        record.ai_probability = scored_data.ai_probability
+        record.updated_by = user.id
+        persist_score_details(db, record, scored_data)
+
+        db.commit()
+        db.refresh(record)
+        invalidate_dashboard_statistics_cache()
+        return {
+            "message": "QuantScores recomputed from stored application data",
+            "application_no": record.application_no,
+            "quant_scores": quant_scores,
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
 @router.get(
     "/loan-applications",
 )

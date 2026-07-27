@@ -1,7 +1,11 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link, useLocation, useNavigate, useSearchParams } from 'react-router-dom'
 
-import { fetchLoanApplication, type LoanApplicationRecord } from '../../api/loan'
+import {
+  fetchLoanApplication,
+  recomputeStoredLoanApplicationScores,
+  type LoanApplicationRecord,
+} from '../../api/loan'
 import { getErrorMessage } from '../../api'
 import { APP_NAME, brandLogoDataUri } from '../../brand'
 import {
@@ -155,6 +159,7 @@ export default function LoanCertificationPage() {
       setLoadError('')
 
       try {
+        await recomputeStoredLoanApplicationScores(applicationNo)
         const record = await fetchLoanApplication(applicationNo)
         setCertification(buildCertificationSnapshot(record))
       } catch (error) {

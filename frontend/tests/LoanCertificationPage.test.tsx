@@ -2,12 +2,14 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-const { mockFetchLoanApplication } = vi.hoisted(() => ({
+const { mockFetchLoanApplication, mockRecomputeStoredScores } = vi.hoisted(() => ({
   mockFetchLoanApplication: vi.fn(),
+  mockRecomputeStoredScores: vi.fn(),
 }))
 
 vi.mock('../src/api/loan', () => ({
   fetchLoanApplication: mockFetchLoanApplication,
+  recomputeStoredLoanApplicationScores: mockRecomputeStoredScores,
 }))
 
 vi.mock('../src/pages/scoring/applicationCompleteness', () => ({
@@ -20,6 +22,8 @@ import LoanCertificationPage from '../src/pages/scoring/LoanCertificationPage'
 describe('LoanCertificationPage', () => {
   beforeEach(() => {
     mockFetchLoanApplication.mockReset()
+    mockRecomputeStoredScores.mockReset()
+    mockRecomputeStoredScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
   })
 
   afterEach(() => {
@@ -75,6 +79,7 @@ describe('LoanCertificationPage', () => {
     )
 
     expect(await screen.findAllByText('Jordan Santos')).toHaveLength(2)
+    expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-BUILD-12')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-BUILD-12')
 
     const compositeCard = screen.getByText('Composite Score').closest('div')

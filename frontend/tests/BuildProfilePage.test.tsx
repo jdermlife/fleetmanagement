@@ -2,10 +2,10 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockComputeQuantScores, mockFetchLoanApplication, mockNavigate, mockSearchParams, mockUpdateLoanApplication } = vi.hoisted(() => ({
-  mockComputeQuantScores: vi.fn(),
+const { mockFetchLoanApplication, mockNavigate, mockRecomputeStoredScores, mockSearchParams, mockUpdateLoanApplication } = vi.hoisted(() => ({
   mockFetchLoanApplication: vi.fn(),
   mockNavigate: vi.fn(),
+  mockRecomputeStoredScores: vi.fn(),
   mockSearchParams: { value: '' },
   mockUpdateLoanApplication: vi.fn(),
 }))
@@ -20,8 +20,8 @@ vi.mock('react-router-dom', async () => {
 })
 
 vi.mock('../src/api/loan', () => ({
-  computeQuantScores: mockComputeQuantScores,
   fetchLoanApplication: mockFetchLoanApplication,
+  recomputeStoredLoanApplicationScores: mockRecomputeStoredScores,
   updateLoanApplication: mockUpdateLoanApplication,
 }))
 
@@ -29,9 +29,9 @@ import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
 
 describe('BuildProfilePage', () => {
   beforeEach(() => {
-    mockComputeQuantScores.mockReset()
     mockFetchLoanApplication.mockReset()
     mockNavigate.mockReset()
+    mockRecomputeStoredScores.mockReset()
     mockSearchParams.value = ''
     mockUpdateLoanApplication.mockReset()
     const values = new Map<string, string>()
@@ -141,6 +141,16 @@ describe('BuildProfilePage', () => {
       purpose: 'Family vehicle',
       appraised_value: 1000000,
       requirements: {
+        buildProfile: {
+          profileId: 'APP-REVIEW-1',
+          step: 1,
+          values: { financialGoal: 'Build Emergency Fund' },
+          documents: ['income-proof.jpg'],
+          suitabilityAnswers: { 'suitability-q1': 'To protect principal and preserve income.' },
+          coBorrowers: [],
+          guarantors: [{ id: 'GUARANTOR-1', name: 'Saved Guarantor' }],
+          additionalCollaterals: [],
+        },
         applicantPersonal: { dateOfBirth: '1990-01-02', age: 36, citizenship: 'Filipino', maritalStatus: 'Single', placeOfBirth: 'Manila', gender: 'Male', numberOfDependents: 1 },
         contactInformation: { emailAddress: 'jordan@example.com', mobileNumber: '09171234567', homePhoneNumber: '', mobileYearsUsed: '5', emailYearsUsed: '8' },
         governmentIds: { tin: 'TIN-1', sssGsisNumber: 'SSS-1', otherGovernmentId: 'Passport', idNumber: 'GOV-123', issueDate: '', expiryDate: '' },
@@ -165,10 +175,11 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('APP-REVIEW-1')).toBeTruthy()
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
     expect((screen.getByLabelText('Email Address') as HTMLInputElement).value).toBe('jordan@example.com')
+    expect((screen.getByRole('combobox', { name: 'Profile Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
 
     mockUpdateLoanApplication.mockResolvedValue({ message: 'updated' })
-    mockComputeQuantScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
+    mockRecomputeStoredScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
     await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
 
@@ -183,7 +194,7 @@ describe('BuildProfilePage', () => {
           }),
         }),
       )
-      expect(mockComputeQuantScores).toHaveBeenCalledTimes(1)
+      expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-REVIEW-1')
       expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?applicationNo=APP-REVIEW-1')
     })
   })

@@ -4,6 +4,9 @@ from dataclasses import dataclass
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from app.database import get_db
+from app.models.users import User
+from app.services.account_access_service import deactivate_if_access_expired
 from security.auth import TokenError, decode_token
 
 
@@ -59,11 +62,26 @@ def get_current_user(
 
 def require_authenticated_user(
     user: CurrentUser | None = Depends(get_current_user),
+    db=Depends(get_db),
 ) -> CurrentUser:
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Authentication required",
+        )
+
+    db_user = db.query(User).filter(User.id == user.id).first()
+    if db_user is None or db_user.is_deleted:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="User account is unavailable",
+        )
+    if deactivate_if_access_expired(db_user):
+        db.commit()
+    if not db_user.is_active:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Free trial and 24-hour payment grace period expired due to non-payment. Complete payment to reactivate access.",
         )
 
     return user
