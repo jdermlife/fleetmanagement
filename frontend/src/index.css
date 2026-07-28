@@ -1488,6 +1488,84 @@ textarea {
   padding: 4px 0;
 }
 
+.networth-report-page {
+  gap: 14px;
+}
+
+.networth-report-hero {
+  margin-bottom: 0;
+}
+
+.networth-report-summary {
+  margin: 0;
+}
+
+.networth-report-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 2.2fr) minmax(260px, 0.9fr);
+  gap: 14px;
+  align-items: start;
+}
+
+.networth-report-main,
+.networth-report-side {
+  display: grid;
+  gap: 14px;
+  min-width: 0;
+}
+
+.networth-report-side .psychometric-panel {
+  padding: 16px;
+}
+
+.networth-report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.networth-position-value {
+  font-size: clamp(1rem, 2vw, 1.45rem);
+}
+
+.networth-certification-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.networth-report-analysis {
+  margin-top: 0;
+}
+
+@media (max-width: 900px) {
+  .networth-report-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .networth-report-side {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .networth-certification-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .networth-report-side,
+  .networth-certification-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .networth-report-actions > button {
+    width: 100%;
+  }
+}
+
 .lending-report-panel > .lending-psychometric-panel-header {
   display: none;
 }

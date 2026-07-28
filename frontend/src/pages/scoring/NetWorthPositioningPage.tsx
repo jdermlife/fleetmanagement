@@ -1619,8 +1619,239 @@ export default function NetWorthPositioningPage() {
     return recommendations.slice(0, 4);
   }, [formatCurrency, formatSignedCurrency, varianceRows, totals.projectedNetWorth]);
 
+  const showLegacyWorkflow = false;
+  const reportInformationPercent = Math.round(
+    ([
+      Boolean(asOfDate),
+      Boolean(selectedFinancialGoal),
+      setupAssetsTotal > 0,
+      setupLiabilitiesTotal > 0,
+      hasWealthDataForCertification,
+    ].filter(Boolean).length / 5) * 100,
+  );
+  const netWorthChartMaximum = Math.max(
+    Math.abs(totals.setupNetWorth),
+    Math.abs(totals.projectedNetWorth),
+    1,
+  );
+  const setupNetWorthBarWidth = (Math.abs(totals.setupNetWorth) / netWorthChartMaximum) * 100;
+  const projectedNetWorthBarWidth = (Math.abs(totals.projectedNetWorth) / netWorthChartMaximum) * 100;
+
   return (
-    <div className="psychometric-page networth-dashboard-page">
+    <div className="psychometric-page networth-dashboard-page networth-report-page">
+      <section className="psychometric-hero networth-dashboard-hero networth-report-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
+          <h1>Wealth Building Score</h1>
+          <p>Period: <strong>{asOfDate || snapshot.dateLabel}</strong></p>
+        </div>
+        <div className="psychometric-hero-metric networth-dashboard-scorecard">
+          <span>Net Worth Building Score</span>
+          <strong>{netWorthBuildingScore.score}</strong>
+          <small>{netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}</small>
+        </div>
+      </section>
+
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid networth-report-summary" aria-label="Net worth summary">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Progress</span>
+          <strong>{reportInformationPercent}%</strong>
+          <small>FILSCORE-Wealth</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Setup Assets</span>
+          <strong>{formatCurrency(setupAssetsTotal)}</strong>
+          <small>Current setup for asset lines</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Setup Liabilities</span>
+          <strong>{formatCurrency(setupLiabilitiesTotal)}</strong>
+          <small>Current setup for liability lines</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Setup Net Worth</span>
+          <strong>{formatSignedCurrency(setupNetWorth)}</strong>
+          <small>{netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}</small>
+        </article>
+      </section>
+
+      <section className="networth-report-layout">
+        <div className="networth-report-main">
+          <section className="loan-certification-shell lending-inline-certification" aria-label="FILSCORE wealth building certification">
+            <div className="loan-certification-frame">
+              <div className="loan-certification-inner">
+                <div className="loan-certification-brand">
+                  <img className="loan-certification-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
+                  <div className="loan-certification-brand-copy">
+                    <p className="loan-certification-kicker">Certification of Wealth Assessment</p>
+                    <h2 className="loan-certification-title">{APP_NAME}</h2>
+                  </div>
+                </div>
+                <p className="loan-certification-reference">Reference No. <strong>{snapshot.sourceApplicationNo || 'Draft'}</strong></p>
+                <p className="loan-certification-reference">FILSCORE Wealth Building Score Certification</p>
+                <div className="loan-certification-name">{certifierName.trim() || 'FILSCORE Wealth Client'}</div>
+                <p className="loan-certification-copy">
+                  This certifies that the above client completed the FILSCORE wealth assessment and the summarized results below were generated for financial evaluation and planning.
+                </p>
+
+                <div className="loan-certification-summary-grid">
+                  <div className="loan-certification-summary-card networth-composite-score">
+                    <span className="loan-certification-summary-label">Composite Score</span>
+                    <strong className="loan-certification-summary-value">{netWorthBuildingScore.score}</strong>
+                  </div>
+                  <div className="loan-certification-summary-card">
+                    <span className="loan-certification-summary-label">Label</span>
+                    <strong className="loan-certification-summary-value">{netWorthBuildingScore.grade}</strong>
+                  </div>
+                  <div className="loan-certification-summary-card">
+                    <span className="loan-certification-summary-label">Position</span>
+                    <strong className="loan-certification-summary-value networth-position-value">{positionStatement.title}</strong>
+                  </div>
+                </div>
+
+                <div className="loan-certification-metrics-grid networth-certification-metrics">
+                  <div className="loan-certification-metric-card">
+                    <span className="loan-certification-metric-label">Net Worth Positioning Score</span>
+                    <strong className="loan-certification-metric-value">{netWorthBuildingScore.score}</strong>
+                    <span className="loan-certification-metric-band">{netWorthBuildingScore.rating}</span>
+                  </div>
+                  <div className="loan-certification-metric-card">
+                    <span className="loan-certification-metric-label">Wealth Behaviour Score</span>
+                    <strong className="loan-certification-metric-value">{wealthBehaviourScore}</strong>
+                    <span className="loan-certification-metric-band">{wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour')}</span>
+                  </div>
+                  <div className="loan-certification-metric-card">
+                    <span className="loan-certification-metric-label">Wealth Foundation Score</span>
+                    <strong className="loan-certification-metric-value">{wealthFoundationScore.score}</strong>
+                    <span className="loan-certification-metric-band">{wealthFoundationScore.rating}</span>
+                  </div>
+                  <div className="loan-certification-metric-card">
+                    <span className="loan-certification-metric-label">Wealth Authenticity Score</span>
+                    <strong className="loan-certification-metric-value">{wealthAuthenticityScore}</strong>
+                    <span className="loan-certification-metric-band">{wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity')}</span>
+                  </div>
+                </div>
+
+                <div className="loan-certification-footer">
+                  <div className="loan-certification-meta">
+                    <p><strong>Certificate ID:</strong> {snapshot.sourceApplicationNo || 'Draft'}</p>
+                    <p><strong>Source:</strong> {snapshot.sourceLabel}</p>
+                    <p><strong>Status:</strong> {wealthCertificationGenerated ? 'Generated' : 'Ready for certification'}</p>
+                    <p><strong>Issued:</strong> {wealthCertificationIssuedAt ? new Date(wealthCertificationIssuedAt).toLocaleString() : 'Pending'}</p>
+                  </div>
+                  <div className="loan-certification-qr">
+                    <img src={brandLogoDataUri} alt={`${APP_NAME} verification mark`} />
+                    <span>FILSCORE Verified</span>
+                  </div>
+                </div>
+                <div className="loan-certification-information-provided">Information Provided: <strong>{reportInformationPercent}%</strong></div>
+                <p className="loan-certification-ai-disclaimer">AI-assisted insights may contain mistakes and should be independently reviewed.</p>
+              </div>
+            </div>
+          </section>
+
+          {!hasWealthDataForCertification ? (
+            <div className="loan-rating-readiness-notice" role="alert">
+              <strong>FILSCORE-Wealth Data Not Available</strong>
+              <span>Complete your Net Worth profile to enable certification and report export.</span>
+            </div>
+          ) : null}
+
+          <div className="networth-report-actions" aria-label="Certification actions">
+            <button type="button" className="psychometric-reset-button" onClick={handleProduceWealthCertification} disabled={!hasWealthDataForCertification}>Produce Certification</button>
+            <button type="button" className="budget-dashboard-category-reset" onClick={handleDownloadWealthCertification} disabled={!wealthCertificationGenerated}>Download Certificate</button>
+            <button type="button" className="psychometric-reset-button" onClick={handlePrintWealthCertification} disabled={!wealthCertificationGenerated}>Print / Save PDF</button>
+            <button type="button" className="budget-dashboard-category-reset" onClick={reload} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh Data'}</button>
+          </div>
+
+          <section className="budget-workflow-ai-grid networth-report-analysis">
+            <article className="psychometric-panel">
+              <span className="psychometric-panel-kicker">Position vs Goal</span>
+              <h2 style={{ color: goalForecast.statusColor }}>{goalForecast.status}</h2>
+              <ul className="psychometric-breakdown-list">
+                <li><span>Goal Target</span><strong>{formatCurrency(goalForecast.effectiveTargetAmount)}</strong></li>
+                <li><span>Time Frame</span><strong>{goalForecast.sanitizedMonths > 0 ? `${goalForecast.sanitizedMonths} months` : 'Not set'}</strong></li>
+                <li><span>Current Net Worth Position</span><strong>{formatSignedCurrency(goalForecast.baselineNetWorth)}</strong></li>
+                <li><span>Projected Position at Deadline</span><strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong></li>
+                <li><span>Possibility to Reach Goal</span><strong>{goalForecast.possibilityPercent}%</strong></li>
+              </ul>
+            </article>
+            <article className="psychometric-panel">
+              <span className="psychometric-panel-kicker">Statement of Position</span>
+              <h2 style={{ color: positionStatement.color }}>{positionStatement.title}</h2>
+              <ul className="psychometric-breakdown-list">
+                <li><span>Total Assets (Projected)</span><strong>{formatCurrency(totals.projectedAssets)}</strong></li>
+                <li><span>Total Liabilities (Projected)</span><strong>{formatCurrency(totals.projectedLiabilities)}</strong></li>
+                <li><span>Net Worth Variance</span><strong>{formatSignedCurrency(positionStatement.netWorthVariance)}</strong></li>
+                <li><span>Goal Coverage Probability</span><strong>{positionStatement.projectedCoverage}%</strong></li>
+              </ul>
+              <p className="psychometric-section-note">{positionStatement.conclusion}</p>
+            </article>
+            <article className="psychometric-panel">
+              <span className="psychometric-panel-kicker">AI Analysis</span>
+              <h2>Net Worth Variance Coaching</h2>
+              <ul className="psychometric-breakdown-list">
+                <li><span>Position Status</span><strong>{goalForecast.status}</strong></li>
+                <li><span>Projected Net Worth</span><strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong></li>
+                <li><span>Top Variance Lines</span><strong>{topVarianceRows.length}</strong></li>
+              </ul>
+            </article>
+            <article className="psychometric-panel">
+              <span className="psychometric-panel-kicker">Recommendations</span>
+              <h2>Actionable Next Steps</h2>
+              <ul className="psychometric-breakdown-list">{aiRecommendations.map((item) => <li key={item}><span>{item}</span></li>)}</ul>
+            </article>
+          </section>
+        </div>
+
+        <aside className="networth-report-side">
+          <article className="psychometric-panel">
+            <span className="psychometric-panel-kicker">Position Scorecards</span>
+            <h2>Wealth Assessment</h2>
+            <p className="psychometric-section-note">The certification summarizes all FILSCORE wealth scoring dimensions.</p>
+          </article>
+          <article className="psychometric-panel">
+            <span className="psychometric-panel-kicker">Setup Snapshot</span>
+            <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Current Profile'}</h2>
+            <ul className="psychometric-breakdown-list">
+              <li><span>As Of</span><strong>{asOfDate || 'Not set'}</strong></li>
+              <li><span>Currency</span><strong>{selectedCurrencyLabel}</strong></li>
+              <li><span>Financial Goal</span><strong>{selectedFinancialGoal || 'Not selected'}</strong></li>
+              <li><span>Setup Net Worth</span><strong>{formatSignedCurrency(setupNetWorth)}</strong></li>
+            </ul>
+          </article>
+          <article className="psychometric-panel">
+            <span className="psychometric-panel-kicker">Position Health</span>
+            <h2>{netWorthBuildingScore.grade}</h2>
+            <ul className="psychometric-breakdown-list">
+              <li><span>Health Score</span><strong>{netWorthBuildingScore.score}</strong></li>
+              <li><span>Range Score</span><strong>{netWorthBuildingScore.rangeScore}</strong></li>
+              <li><span>Rating</span><strong>{netWorthBuildingScore.rating}</strong></li>
+              <li><span>Goal Position</span><strong>{positionStatement.title}</strong></li>
+            </ul>
+          </article>
+          <article className="psychometric-panel">
+            <span className="psychometric-panel-kicker">Net Worth Visuals</span>
+            <h2>Setup vs Projected</h2>
+            <div className="budget-workflow-ai-card">
+              <div className="budget-workflow-graph-row"><span>Setup</span><div className="budget-workflow-graph-track"><div className="budget-workflow-graph-bar budget-workflow-graph-bar-setup" style={{ width: `${setupNetWorthBarWidth}%` }} /></div><strong>{formatSignedCurrency(totals.setupNetWorth)}</strong></div>
+              <div className="budget-workflow-graph-row"><span>Projected</span><div className="budget-workflow-graph-track"><div className="budget-workflow-graph-bar budget-workflow-graph-bar-actual" style={{ width: `${projectedNetWorthBarWidth}%` }} /></div><strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong></div>
+            </div>
+          </article>
+          <article className="psychometric-panel">
+            <span className="psychometric-panel-kicker">Activity</span>
+            <h2>Activity Timeline</h2>
+            <ul className="psychometric-breakdown-list">
+              <li><span>Application Source</span><strong>{snapshot.sourceLabel}</strong></li>
+              <li><span>Application Number</span><strong>{snapshot.sourceApplicationNo}</strong></li>
+              <li><span>Last Updated</span><strong>{lastUpdated ? lastUpdated.toLocaleString() : 'Not yet saved'}</strong></li>
+              <li><span>Certification</span><strong>{wealthCertificationGenerated ? 'Generated' : 'Pending'}</strong></li>
+            </ul>
+          </article>
+        </aside>
+      </section>
+
+      {showLegacyWorkflow ? <>
       <NetWorthJourney />
 
       <section className="psychometric-hero networth-dashboard-hero">
@@ -3162,6 +3393,7 @@ export default function NetWorthPositioningPage() {
           </section>
         </aside>
       </section>
+      </> : null}
 
     </div>
   );
