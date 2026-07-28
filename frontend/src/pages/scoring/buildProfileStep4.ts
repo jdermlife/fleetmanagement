@@ -15,12 +15,12 @@ export const SPOUSE_FIELDS: RelatedPartyField[] = [
 ]
 
 export const SPOUSE_EMPLOYMENT_FIELDS: RelatedPartyField[] = [
-  { key: 'spouseEmployerBusinessName', label: 'Spouse Employer / Business Name' },
+  { key: 'spouseEmployerBusinessName', label: 'Spouse Current Employer / Business Name' },
   { key: 'spouseOfficeAddress', label: 'Spouse Office Address' },
   { key: 'spouseOccupation', label: 'Spouse Occupation' },
   { key: 'spousePosition', label: 'Spouse Position' },
   { key: 'spouseNatureOfWork', label: 'Spouse Nature of Work' },
-  { key: 'spousePreviousEmployer', label: 'Spouse Current Employer' },
+  { key: 'spousePreviousEmployer', label: 'Spouse Previous Employer' },
   { key: 'spouseYearsWithEmployer', label: 'Spouse Years with Employer' },
   { key: 'spouseTotalYearsWorking', label: 'Spouse Total Years Working' },
   { key: 'spouseGrossMonthlyIncome', label: 'Spouse Gross Monthly Income', type: 'number' },
