@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { Fragment, useEffect, useMemo, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -11,6 +11,7 @@ import {
 } from '../../api/loan'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
+import { computeAiAdvisories } from './aiAdvisoryEngine'
 import {
   CURRENCY_OPTIONS,
   FINANCIAL_GOAL_OPTIONS as NET_WORTH_FINANCIAL_GOAL_OPTIONS,
@@ -1221,6 +1222,12 @@ export default function BuildProfilePage() {
         'ai-financial-independence-index': `${wealthScore.componentScores.financialIndependence.toFixed(0)}/100`,
         'ai-overall-financial-wellness': `${wealthScore.score} | ${wealthScore.grade} - ${wealthScore.rating}`,
       }
+      const aiAdvisories = computeAiAdvisories({
+        score: wealthScore,
+        amounts: wealthAmounts,
+        labels: Object.fromEntries(NET_WORTH_STATEMENT_ENTRIES.map((entry) => [entry.id, entry.label])),
+        currency,
+      })
       const categories = [...new Set(NET_WORTH_STATEMENT_ENTRIES
         .filter((entry) => wealthSectionFilter === 'all' || entry.section === wealthSectionFilter)
         .map((entry) => entry.category))].sort()
@@ -1229,6 +1236,40 @@ export default function BuildProfilePage() {
         (wealthSectionFilter === 'all' || entry.section === wealthSectionFilter)
         && (wealthCategoryFilter === 'all' || entry.category === wealthCategoryFilter)
         && (!normalizedSearch || entry.label.toLowerCase().includes(normalizedSearch)))
+      const netWorthRows = NET_WORTH_STATEMENT_ENTRIES
+        .filter((entry) => entry.section === 'assets' || entry.section === 'liabilities')
+        .map((entry) => ({ ...entry, amount: Math.max(0, Number(profile.values[entry.id] || 0)) }))
+      const currentAssetCategories = new Set(['1. Cash & Bank Accounts', '9. Receivables'])
+      const currentLiabilityCategories = new Set(['Credit Obligations', 'Medical Obligations', 'Taxes & Other Payables'])
+      const currentAssets = netWorthRows.filter((entry) => entry.section === 'assets' && currentAssetCategories.has(entry.category))
+      const longTermAssets = netWorthRows.filter((entry) => entry.section === 'assets' && !currentAssetCategories.has(entry.category))
+      const currentLiabilities = netWorthRows.filter((entry) => entry.section === 'liabilities' && currentLiabilityCategories.has(entry.category))
+      const longTermLiabilities = netWorthRows.filter((entry) => entry.section === 'liabilities' && !currentLiabilityCategories.has(entry.category))
+      const statementRows = (rows: typeof netWorthRows) => rows.filter((entry) => entry.amount > 0)
+      const statementGroupTotal = (rows: typeof netWorthRows) => rows.reduce((sum, entry) => sum + entry.amount, 0)
+      const renderStatementGroup = (title: string, rows: typeof netWorthRows) => <section className="build-profile-net-worth-group">
+        <h6>{title}</h6>
+        {statementRows(rows).length > 0 ? statementRows(rows).map((entry) => <div key={entry.id} className="build-profile-net-worth-line">
+          <span>{entry.label}</span><strong>{formatWealthCurrency(entry.amount)}</strong>
+        </div>) : <div className="build-profile-net-worth-line build-profile-net-worth-empty"><span>No amounts entered</span><strong>{formatWealthCurrency(0)}</strong></div>}
+        <div className="build-profile-net-worth-line build-profile-net-worth-subtotal"><span>Total {title}</span><strong>{formatWealthCurrency(statementGroupTotal(rows))}</strong></div>
+      </section>
+      const incomeExpenseRows = NET_WORTH_STATEMENT_ENTRIES
+        .filter((entry) => entry.section === 'monthly-income' || entry.section === 'monthly-expenses' || entry.section === 'financial-goals' || entry.section === 'insurance-coverage')
+        .map((entry) => ({ ...entry, amount: Math.max(0, Number(profile.values[entry.id] || 0)) }))
+      const incomeRows = incomeExpenseRows.filter((entry) => entry.section === 'monthly-income')
+      const expenseRows = incomeExpenseRows.filter((entry) => entry.section === 'monthly-expenses')
+      const goalRows = incomeExpenseRows.filter((entry) => entry.section === 'financial-goals')
+      const protectionRows = incomeExpenseRows.filter((entry) => entry.section === 'insurance-coverage')
+      const renderIncomeExpenseColumn = (title: string, rows: typeof incomeExpenseRows) => <section className={`build-profile-income-expense-column build-profile-income-expense-${title.toLowerCase()}`}>
+        <h5>{title}</h5>
+        <div className="build-profile-income-expense-lines">
+          {statementRows(rows).length > 0 ? statementRows(rows).map((entry) => <div key={entry.id} className="build-profile-net-worth-line">
+            <span>{entry.label}</span><strong>{formatWealthCurrency(entry.amount)}</strong>
+          </div>) : <div className="build-profile-net-worth-line build-profile-net-worth-empty"><span>No amounts entered</span><strong>{formatWealthCurrency(0)}</strong></div>}
+        </div>
+        <div className="build-profile-net-worth-line build-profile-income-expense-total"><span>Total {title}</span><strong>{formatWealthCurrency(statementGroupTotal(rows))}</strong></div>
+      </section>
 
       return <div className="build-profile-step-content build-profile-step-eight">
         <h3>Step 8: Wealth Position Base Setting</h3>
@@ -1303,15 +1344,54 @@ export default function BuildProfilePage() {
         <div className="build-profile-wealth-sections">
           {STEP1_SECTION_ORDER.map((section) => {
             const entries = filteredEntries.filter((entry) => entry.section === section)
-            return <details key={section} className="build-profile-detail-section" open={wealthSectionFilter === section || (wealthSectionFilter === 'all' && section === 'assets')}>
-              <summary>{STEP1_SECTION_SHORT_LABELS[section]} <span>({entries.length})</span></summary>
-              {entries.length === 0 ? <p className="psychometric-section-note">No matching sub-accounts in this section for current filters.</p> : <div className="build-profile-wealth-entry-grid">
-                {entries.map((entry) => <label key={entry.id}>
-                  <span>{entry.label}</span><small>{entry.category}</small>
-                  {entry.autoGenerated ? <output>{aiValues[entry.id] ?? 'Auto-calculated'}</output> : <input aria-invalid={!profile.values[entry.id]?.trim()} type="number" min="0" step="0.01" value={profile.values[entry.id] ?? ''} placeholder="0" aria-label={`${entry.label} setup amount`} onChange={(event) => updateValue(entry.id, event.target.value)} />}
-                </label>)}
-              </div>}
-            </details>
+            return <Fragment key={section}>
+              <details className="build-profile-detail-section" open={wealthSectionFilter === section || (wealthSectionFilter === 'all' && section === 'assets')}>
+                <summary>{STEP1_SECTION_SHORT_LABELS[section]} <span>({entries.length})</span></summary>
+                {entries.length === 0 ? <p className="psychometric-section-note">No matching sub-accounts in this section for current filters.</p> : <div className="build-profile-wealth-entry-grid">
+                  {entries.map((entry) => <label key={entry.id} className={entry.autoGenerated ? 'build-profile-ai-advisory-card' : undefined} tabIndex={entry.autoGenerated ? 0 : undefined}>
+                    <span>{entry.label}</span><small>{entry.category}</small>
+                    {entry.autoGenerated ? <><output>{aiValues[entry.id] ?? 'Auto-calculated'}</output><aside className="build-profile-ai-advisory" role="note" aria-label={`${entry.label} AI advisory`}>
+                      <strong>AI Analysis</strong>
+                      <ul>{aiAdvisories[entry.id]?.analysis.map((item) => <li key={item}>{item}</li>)}</ul>
+                      <strong>AI Recommendation</strong>
+                      <p>{aiAdvisories[entry.id]?.recommendation}</p>
+                    </aside></> : <input aria-invalid={!profile.values[entry.id]?.trim()} type="number" min="0" step="0.01" value={profile.values[entry.id] ?? ''} placeholder="0" aria-label={`${entry.label} setup amount`} onChange={(event) => updateValue(entry.id, event.target.value)} />}
+                  </label>)}
+                </div>}
+              </details>
+              {section === 'liabilities' ? <details className="build-profile-detail-section build-profile-net-worth-statement">
+                <summary>Net Worth</summary>
+                <div className="build-profile-net-worth-meta"><span>Personal Net Worth Statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
+                <div className="build-profile-net-worth-columns">
+                  <section className="build-profile-net-worth-column build-profile-net-worth-assets">
+                    <h5>Assets</h5>
+                    {renderStatementGroup('Current Assets', currentAssets)}
+                    {renderStatementGroup('Long Term Assets', longTermAssets)}
+                    <div className="build-profile-net-worth-line build-profile-net-worth-total"><span>Total Assets</span><strong>{formatWealthCurrency(wealthScore.metrics.totalAssets)}</strong></div>
+                  </section>
+                  <section className="build-profile-net-worth-column build-profile-net-worth-liabilities">
+                    <h5>Liabilities</h5>
+                    {renderStatementGroup('Current Liabilities', currentLiabilities)}
+                    {renderStatementGroup('Long Term Liabilities', longTermLiabilities)}
+                    <div className="build-profile-net-worth-line build-profile-net-worth-total"><span>Total Liabilities</span><strong>{formatWealthCurrency(wealthScore.metrics.totalLiabilities)}</strong></div>
+                  </section>
+                </div>
+                <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{formatSignedCurrency(wealthScore.metrics.netWorth)}</strong></div>
+              </details> : null}
+              {section === 'insurance-coverage' ? <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
+                <summary>Personal Income and Expenses</summary>
+                <div className="build-profile-net-worth-meta"><span>Personal Income and Expense Statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
+                <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
+                  {renderIncomeExpenseColumn('Income', incomeRows)}
+                  {renderIncomeExpenseColumn('Expenses', expenseRows)}
+                </div>
+                <div className="build-profile-income-expense-results">
+                  <div className="build-profile-income-expense-result build-profile-income-expense-net"><span>Net Income</span><strong>{formatSignedCurrency(wealthScore.metrics.monthlyCashFlow)}</strong></div>
+                  <div className="build-profile-income-expense-result build-profile-income-expense-goals"><span>Goals</span><strong>{formatWealthCurrency(statementGroupTotal(goalRows))}</strong></div>
+                  <div className="build-profile-income-expense-result build-profile-income-expense-protection"><span>Protection (Insurance)</span><strong>{formatWealthCurrency(statementGroupTotal(protectionRows))}</strong></div>
+                </div>
+              </details> : null}
+            </Fragment>
           })}
         </div>
       </div>

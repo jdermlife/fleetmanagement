@@ -4159,6 +4159,195 @@ th { color: var(--dark-gold); }
   font-weight: 600;
 }
 
+.build-profile-net-worth-statement {
+  overflow: hidden;
+  padding: 0;
+  border-color: #cbd5e1;
+  border-radius: 0;
+  background: #ffffff;
+}
+
+.build-profile-net-worth-statement > summary {
+  padding: 14px 18px;
+  background: #f1f5f9;
+  color: #0f172a;
+}
+
+.build-profile-net-worth-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px 8px;
+  color: #334155;
+  font-size: 0.82rem;
+}
+
+.build-profile-net-worth-meta span {
+  font-weight: 800;
+}
+
+.build-profile-net-worth-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 24px;
+  padding: 8px 16px 16px;
+}
+
+.build-profile-net-worth-column {
+  min-width: 0;
+  border: 1px solid #dbe4f0;
+}
+
+.build-profile-net-worth-column > h5 {
+  margin: 0;
+  padding: 8px 12px;
+  background: #f97316;
+  color: #ffffff;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.build-profile-net-worth-liabilities > h5 {
+  background: #0ea5e9;
+}
+
+.build-profile-net-worth-group h6 {
+  margin: 0;
+  padding: 6px 8px;
+  background: #ffedd5;
+  color: #334155;
+  font-size: 0.78rem;
+}
+
+.build-profile-net-worth-liabilities .build-profile-net-worth-group h6 {
+  background: #e0f2fe;
+}
+
+.build-profile-net-worth-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+.build-profile-net-worth-line strong {
+  color: #0f172a;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.build-profile-net-worth-empty {
+  color: #94a3b8;
+  font-style: italic;
+}
+
+.build-profile-net-worth-subtotal,
+.build-profile-net-worth-total {
+  background: #fff7ed;
+  color: #0f172a;
+  font-weight: 800;
+}
+
+.build-profile-net-worth-liabilities .build-profile-net-worth-subtotal,
+.build-profile-net-worth-liabilities .build-profile-net-worth-total {
+  background: #f0f9ff;
+}
+
+.build-profile-net-worth-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  padding: 12px 16px;
+  border-top: 2px solid #94a3b8;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.88rem;
+  font-weight: 900;
+}
+
+.build-profile-income-expense-column {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #dbe4f0;
+  border-radius: 7px;
+  background: #ffffff;
+}
+
+.build-profile-income-expense-column > h5 {
+  margin: 0;
+  padding: 9px 12px;
+  background: #ef5b3f;
+  color: #ffffff;
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.build-profile-income-expense-expenses > h5 {
+  background: #75b934;
+}
+
+.build-profile-income-expense-lines {
+  padding: 6px 0;
+  background: #fce8e4;
+}
+
+.build-profile-income-expense-expenses .build-profile-income-expense-lines {
+  background: #eaf5de;
+}
+
+.build-profile-income-expense-total {
+  border-bottom: 0;
+  background: #f29687;
+  color: #ffffff;
+  font-weight: 900;
+}
+
+.build-profile-income-expense-total strong,
+.build-profile-income-expense-result strong {
+  color: inherit;
+}
+
+.build-profile-income-expense-expenses .build-profile-income-expense-total {
+  background: #a8cf78;
+}
+
+.build-profile-income-expense-results {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  padding: 0 16px 16px;
+}
+
+.build-profile-income-expense-result {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 11px 14px;
+  border-radius: 5px;
+  color: #ffffff;
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.build-profile-income-expense-net {
+  background: #2384af;
+}
+
+.build-profile-income-expense-goals {
+  background: #d97706;
+}
+
+.build-profile-income-expense-protection {
+  background: #0f766e;
+}
+
 .build-profile-wealth-entry-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -4196,6 +4385,79 @@ th { color: var(--dark-gold); }
   overflow-wrap: anywhere;
   color: #1e3a8a;
   font-weight: 800;
+}
+
+.build-profile-ai-advisory-card {
+  position: relative;
+  cursor: help;
+  outline: none;
+}
+
+.build-profile-ai-advisory-card:focus-visible {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
+}
+
+.build-profile-ai-advisory {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 8px);
+  left: 0;
+  display: grid;
+  visibility: hidden;
+  width: min(440px, calc(100vw - 64px));
+  max-height: 430px;
+  gap: 7px;
+  overflow-y: auto;
+  padding: 14px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.2);
+  color: #334155;
+  font-size: 0.78rem;
+  font-weight: 500;
+  line-height: 1.45;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-4px);
+  transition: opacity 140ms ease, transform 140ms ease, visibility 140ms ease;
+}
+
+.build-profile-ai-advisory-card:nth-child(3n) .build-profile-ai-advisory {
+  right: 0;
+  left: auto;
+}
+
+.build-profile-ai-advisory-card:hover .build-profile-ai-advisory,
+.build-profile-ai-advisory-card:focus .build-profile-ai-advisory,
+.build-profile-ai-advisory-card:focus-within .build-profile-ai-advisory {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.build-profile-ai-advisory strong {
+  color: #172554;
+  font-size: 0.8rem;
+}
+
+.build-profile-ai-advisory ul,
+.build-profile-ai-advisory p {
+  margin: 0;
+}
+
+.build-profile-ai-advisory ul {
+  display: grid;
+  gap: 4px;
+  padding-left: 18px;
+}
+
+.build-profile-ai-advisory p {
+  padding: 9px;
+  border-left: 3px solid #2563eb;
+  background: #eff6ff;
 }
 
 .build-profile-target-summary {
@@ -4490,6 +4752,34 @@ th { color: var(--dark-gold); }
 
   .build-profile-wealth-entry-grid {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-ai-advisory,
+  .build-profile-ai-advisory-card:nth-child(3n) .build-profile-ai-advisory {
+    right: auto;
+    left: 0;
+    width: min(420px, calc(100vw - 76px));
+  }
+
+  .build-profile-net-worth-meta,
+  .build-profile-net-worth-result {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .build-profile-net-worth-meta {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .build-profile-net-worth-columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    padding: 8px 12px 12px;
+  }
+
+  .build-profile-income-expense-results {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0 12px 12px;
   }
 
   .build-profile-target-summary {
