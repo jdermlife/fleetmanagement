@@ -1740,7 +1740,7 @@ export default function BuildProfilePage() {
             </div>
           </details>
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-ai-analysis-dropdown">
-            <summary>AI Analysis</summary>
+            <summary>FILSCORE AI Analysis</summary>
             <div className="build-profile-ai-analysis-content">
               <p className="psychometric-section-note">
                 {completedActuals === targetRows.length
