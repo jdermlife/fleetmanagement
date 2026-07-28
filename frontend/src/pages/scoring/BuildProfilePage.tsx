@@ -1232,12 +1232,12 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-eight">
         <h3>Step 8: Wealth Position Base Setting</h3>
-        <p className="psychometric-section-note">FILSCORE Personal Net Worth Statement. Set the As Of Date, choose your financial goal, enter your target amount and target period, then encode all applicable statement lines.</p>
+        <p className="psychometric-section-note">Net Worth Statement. Set the 'as of' or cut-off date, choose long term financial goal, amount and target period, then encode all applicable existing assets.</p>
 
         <section className="build-profile-detail-section">
           <h4>Personal Net Worth Statement</h4>
           <div className="build-profile-form-grid">
-            <label>Financial Goal
+            <label>Long Term Financial Goal
               <select aria-invalid={!profile.values.financialGoal?.trim()} value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>
                 <option value="">Select Financial Goal</option>
                 {NET_WORTH_FINANCIAL_GOAL_OPTIONS.map((goal) => <option key={goal} value={goal}>{goal}</option>)}
