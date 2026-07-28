@@ -299,7 +299,7 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
-    expect(screen.getByRole('status').textContent).toBe('Profile saved in this browser. Select or create a loan record before FILSCORE computation.')
+    expect(screen.getByRole('status').textContent).toBe('Profile saved in this browser. Select or create a profile before FILSCORE computation.')
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)
@@ -356,6 +356,32 @@ describe('BuildProfilePage', () => {
     expect(screen.getAllByLabelText(/^\d+\. /)).toHaveLength(50)
   })
 
+  it('excludes optional Step 3 fraud and social dates while requiring the profile attestation', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
+
+    const optionalFields = [
+      'Facebook Profile Date Opened',
+      'Instagram Profile Date Opened',
+      'X / Twitter Profile Date Opened',
+      'TikTok Profile Date Opened',
+      'LinkedIn Profile Date Opened',
+      'Identity Theft Indicator',
+    ]
+    optionalFields.forEach((label) => expect(screen.getByLabelText(label).getAttribute('aria-invalid')).toBe('false'))
+    for (const label of optionalFields.slice(0, 5)) await user.type(screen.getByLabelText(label), '2020-01-01')
+    await user.click(screen.getByLabelText('Identity Theft Indicator'))
+    expect(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values, 0% information provided/ })).toBeTruthy()
+
+    const attestation = screen.getByLabelText(/I confirm that my profile has no record of fraudulent events or acts/)
+    expect(attestation.getAttribute('aria-invalid')).toBe('true')
+    expect(attestation.closest('label')?.classList.contains('build-profile-checkbox-field-required')).toBe(true)
+    await user.click(attestation)
+    expect(attestation.getAttribute('aria-invalid')).toBe('false')
+  })
+
   it('provides spouse and repeatable dependent requirements in Step 2', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
@@ -390,6 +416,10 @@ describe('BuildProfilePage', () => {
 
     expect(screen.getByRole('heading', { name: 'Step 4: Spouse Employment, Co-Borrower, and Guarantor Information (as applicable)' })).toBeTruthy()
     expect(screen.getByLabelText('Spouse Gross Monthly Income')).toBeTruthy()
+    const spouseEmploymentHeading = screen.getByRole('heading', { name: 'Spouse Employment Information' })
+    const applicabilityHeading = screen.getByRole('heading', { name: 'Applicability' })
+    expect(spouseEmploymentHeading.compareDocumentPosition(applicabilityHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.queryByLabelText('Civil Status')).toBeNull()
 
     expect(screen.getByRole('button', { name: '+ Add a Co-Borrower' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: '+ Add a Co-Borrower' }))

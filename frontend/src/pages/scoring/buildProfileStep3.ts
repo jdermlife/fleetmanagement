@@ -5,6 +5,7 @@ export type Step3Field = {
   options?: string[]
   readOnly?: boolean
   mustBeChecked?: boolean
+  countsTowardCompletion?: boolean
 }
 
 export type Step3Section = {
@@ -95,15 +96,15 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'additionalVehicleDeclarations', label: 'Additional Vehicle Declarations', type: 'textarea' },
       { key: 'communityInvolvementInformation', label: 'Community Involvement Information', type: 'textarea' },
       { key: 'facebookProfile', label: 'Facebook Profile Links' },
-      { key: 'facebookProfileDateOpened', label: 'Facebook Profile Date Opened', type: 'date' },
+      { key: 'facebookProfileDateOpened', label: 'Facebook Profile Date Opened', type: 'date', countsTowardCompletion: false },
       { key: 'instagramProfile', label: 'Instagram Profile Links' },
-      { key: 'instagramProfileDateOpened', label: 'Instagram Profile Date Opened', type: 'date' },
+      { key: 'instagramProfileDateOpened', label: 'Instagram Profile Date Opened', type: 'date', countsTowardCompletion: false },
       { key: 'xProfile', label: 'X / Twitter Profile Links' },
-      { key: 'xProfileDateOpened', label: 'X / Twitter Profile Date Opened', type: 'date' },
+      { key: 'xProfileDateOpened', label: 'X / Twitter Profile Date Opened', type: 'date', countsTowardCompletion: false },
       { key: 'tikTokProfile', label: 'TikTok Profile Links' },
-      { key: 'tikTokProfileDateOpened', label: 'TikTok Profile Date Opened', type: 'date' },
+      { key: 'tikTokProfileDateOpened', label: 'TikTok Profile Date Opened', type: 'date', countsTowardCompletion: false },
       { key: 'linkedInProfile', label: 'LinkedIn Profile Links' },
-      { key: 'linkedInProfileDateOpened', label: 'LinkedIn Profile Date Opened', type: 'date' },
+      { key: 'linkedInProfileDateOpened', label: 'LinkedIn Profile Date Opened', type: 'date', countsTowardCompletion: false },
       { key: 'otherSocialMediaLinks', label: 'Other Social Media Links', type: 'textarea' },
       { key: 'businessWebsite', label: 'Business Website (If Self-Employed / Optional)' },
     ],
@@ -157,7 +158,7 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'fakeNationalId', label: 'Fake National ID', type: 'checkbox' },
       { key: 'forgedPayslip', label: 'Forged Payslip', type: 'checkbox' },
       { key: 'forgedBankStatement', label: 'Forged Bank Statement', type: 'checkbox' },
-      { key: 'identityTheftIndicator', label: 'Identity Theft Indicator', type: 'checkbox' },
+      { key: 'identityTheftIndicator', label: 'Identity Theft Indicator', type: 'checkbox', countsTowardCompletion: false },
       { key: 'sanctionsPepMatch', label: 'Sanctions / PEP Match', type: 'checkbox' },
       {
         key: 'fraudAndDocumentAuthenticityAttestation',

@@ -657,13 +657,14 @@ export default function BuildProfilePage() {
         result[id] = openedLinks * 50
       }
       else if (id === 3) {
-        const completedFields = STEP_3_FIELDS.filter((field) => {
+        const completionFields = STEP_3_FIELDS.filter((field) => field.countsTowardCompletion !== false)
+        const completedFields = completionFields.filter((field) => {
           if (field.key === 'grossMonthlyIncome') return Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0) > 0
           if (field.mustBeChecked) return profile.values[field.key] === 'true'
           return profile.values[field.key] !== undefined && profile.values[field.key] !== ''
         }).length
         const answeredQuestions = CREDIT_VALUES_QUESTIONS.filter((question) => profile.values[`creditValues.${question.field}`]?.trim()).length
-        result[id] = Math.round(((completedFields + answeredQuestions) / (STEP_3_FIELDS.length + CREDIT_VALUES_QUESTIONS.length)) * 100)
+        result[id] = Math.round(((completedFields + answeredQuestions) / (completionFields.length + CREDIT_VALUES_QUESTIONS.length)) * 100)
       }
       else if (id === 4) {
         const spouseApplicable = profile.values.civilStatus === 'Married'
@@ -752,7 +753,7 @@ export default function BuildProfilePage() {
         setSourceApplication({ ...sourceApplication, ...payload })
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
-        setSaveMessage('Profile saved in this browser. Select or create a loan record before FILSCORE computation.')
+        setSaveMessage('Profile saved in this browser. Select or create a profile before FILSCORE computation.')
       }
     } catch {
       setSaveMessage('Unable to save and synchronize this profile.')
@@ -764,7 +765,7 @@ export default function BuildProfilePage() {
     destination: '/lending-scorecard/filscore' | '/net-worth-positioning',
   ) => {
     if (!sourceApplication) {
-      setSaveMessage('Select or create a loan record before opening FILSCORE computation.')
+      setSaveMessage('Select or create a profile before opening FILSCORE computation.')
       return
     }
 
@@ -838,8 +839,9 @@ export default function BuildProfilePage() {
       : profile.values[field.key] ?? ''
 
     if (field.type === 'checkbox') {
-      return <label key={field.key} className="build-profile-checkbox-field">
-        <input aria-invalid={field.mustBeChecked ? value !== 'true' : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
+      const className = `build-profile-checkbox-field${field.mustBeChecked ? ' build-profile-checkbox-field-required' : ''}`
+      return <label key={field.key} className={className}>
+        <input aria-invalid={field.mustBeChecked ? value !== 'true' : field.countsTowardCompletion === false ? false : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
         <span>{field.label}</span>
       </label>
     }
@@ -854,7 +856,7 @@ export default function BuildProfilePage() {
       ) : field.type === 'textarea' ? (
         <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       ) : (
-        <input aria-invalid={field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input aria-invalid={field.countsTowardCompletion === false ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }
@@ -1014,12 +1016,16 @@ export default function BuildProfilePage() {
         <h3>Step 4: Spouse Employment, Co-Borrower, and Guarantor Information (as applicable)</h3>
         <p className="psychometric-section-note">Provide details only for the people applicable to your profile.</p>
 
+        {spouseApplicable ? <section className="build-profile-detail-section">
+          <h4>Spouse Employment Information</h4>
+          <div className="build-profile-form-grid">
+            {SPOUSE_EMPLOYMENT_FIELDS.map((field) => renderRelatedPartyField(field, profile.values[field.key] ?? '', (value) => updateValue(field.key, value), ''))}
+          </div>
+        </section> : <p className="build-profile-applicability-note">Spouse information is not required because Civil Status is not Married.</p>}
+
         <section className="build-profile-detail-section">
           <h4>Applicability</h4>
           <div className="build-profile-form-grid">
-            <label>Civil Status
-              <input value={profile.values.civilStatus || 'Not selected in Step 1'} readOnly />
-            </label>
             <label>Co-Borrower
               <select value={coBorrowerApplicable ? 'true' : 'false'} onChange={(event) => {
                 const enabled = event.target.value === 'true'
@@ -1042,13 +1048,6 @@ export default function BuildProfilePage() {
             </label>
           </div>
         </section>
-
-        {spouseApplicable ? <section className="build-profile-detail-section">
-          <h4>Spouse Employment Information</h4>
-          <div className="build-profile-form-grid">
-            {SPOUSE_EMPLOYMENT_FIELDS.map((field) => renderRelatedPartyField(field, profile.values[field.key] ?? '', (value) => updateValue(field.key, value), ''))}
-          </div>
-        </section> : <p className="build-profile-applicability-note">Spouse information is not required because Civil Status is not Married.</p>}
 
         <section className="build-profile-detail-section">
           <div className="build-profile-section-heading">
