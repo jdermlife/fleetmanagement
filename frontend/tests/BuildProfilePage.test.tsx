@@ -240,7 +240,7 @@ describe('BuildProfilePage', () => {
     expect((goalDropdown as HTMLSelectElement).value).toBe('Build Emergency Fund')
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
-    expect((screen.getByRole('combobox', { name: 'Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
+    expect((screen.getByRole('combobox', { name: 'Long Term Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
   })
 
   it('navigates through source-derived lending and net worth steps', async () => {
@@ -291,7 +291,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('6% profile completion')).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Financial Goal' }), 'Build Emergency Fund')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('Target Amount'), '250000')
     await user.clear(screen.getByLabelText('Months to Achieve'))
     await user.type(screen.getByLabelText('Months to Achieve'), '18')
@@ -596,12 +596,22 @@ describe('BuildProfilePage', () => {
 
   it('copies Net Worth Positioning Step 1 into Wealth Position Base Setting', async () => {
     const user = userEvent.setup()
+    const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     render(<BuildProfilePage />)
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
 
     expect(screen.getByRole('heading', { name: 'Step 8: Wealth Position Base Setting' })).toBeTruthy()
-    const financialGoal = screen.getByRole('combobox', { name: 'Financial Goal' })
+    expect(screen.getByText('Before and after the Net Worth Statement, please assess your income standing versus in-country and global wealth index.')).toBeTruthy()
+    const widComparatorLink = screen.getByRole('link', { name: 'Open WID Income Comparator in popout' })
+    expect(widComparatorLink.getAttribute('href')).toBe('https://wid.world/income-comparator/')
+    await user.click(widComparatorLink)
+    expect(openSpy).toHaveBeenCalledWith(
+      'https://wid.world/income-comparator/',
+      'wid-income-comparator',
+      'popup=yes,width=1200,height=850,resizable=yes,scrollbars=yes',
+    )
+    const financialGoal = screen.getByRole('combobox', { name: 'Long Term Financial Goal' })
     expect(financialGoal).toBeTruthy()
     expect(within(financialGoal).getByRole('option', { name: 'Reach First ₱10 Million' })).toBeTruthy()
     expect(screen.getByLabelText('Target Amount')).toBeTruthy()
@@ -634,7 +644,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Cryptocurrency setup amount')).toBeTruthy()
     expect(screen.getByText('1', { selector: '.build-profile-filter-result strong' })).toBeTruthy()
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Financial Goal' }), 'Build Emergency Fund')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('As Of'), '2026-03-20')
     expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
@@ -652,7 +662,7 @@ describe('BuildProfilePage', () => {
     render(<BuildProfilePage />)
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Financial Goal' }), 'Build Emergency Fund')
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')

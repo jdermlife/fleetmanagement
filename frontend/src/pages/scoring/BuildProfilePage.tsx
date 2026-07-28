@@ -1234,6 +1234,18 @@ export default function BuildProfilePage() {
         <h3>Step 8: Wealth Position Base Setting</h3>
         <p className="psychometric-section-note">Net Worth Statement. Set the 'as of' or cut-off date, choose long term financial goal, amount and target period, then encode all applicable existing assets.</p>
 
+        <section className="build-profile-wealth-comparator-callout" aria-labelledby="wealth-comparator-statement">
+          <p id="wealth-comparator-statement">Before and after the Net Worth Statement, please assess your income standing versus in-country and global wealth index.</p>
+          <a href="https://wid.world/income-comparator/" onClick={(event) => {
+            event.preventDefault()
+            window.open(
+              event.currentTarget.href,
+              'wid-income-comparator',
+              'popup=yes,width=1200,height=850,resizable=yes,scrollbars=yes',
+            )
+          }}>Open WID Income Comparator in popout</a>
+        </section>
+
         <section className="build-profile-detail-section">
           <h4>Personal Net Worth Statement</h4>
           <div className="build-profile-form-grid">
@@ -1705,5 +1717,6 @@ export default function BuildProfilePage() {
         {saveMessage ? <p className="status-message" role="status">{saveMessage}</p> : null}
       </article>
     </section>
+
   </div>
 }
