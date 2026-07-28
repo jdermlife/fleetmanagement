@@ -1604,6 +1604,70 @@ export default function BuildProfilePage() {
         (varianceSectionFilter === 'all' || entry.section === varianceSectionFilter)
         && (varianceCategoryFilter === 'all' || entry.category === varianceCategoryFilter)
         && (!normalizedSearch || entry.label.toLowerCase().includes(normalizedSearch)))
+      const netWorthRows = targetRows.filter((entry) => entry.section === 'assets' || entry.section === 'liabilities')
+      const currentAssetCategories = new Set(['1. Cash & Bank Accounts', '9. Receivables'])
+      const currentLiabilityCategories = new Set(['Credit Obligations', 'Medical Obligations', 'Taxes & Other Payables'])
+      const targetValue = (entry: typeof netWorthRows[number]) => entry.targetAmount
+      const actualValue = (entry: typeof netWorthRows[number]) => entry.hasActual ? entry.actualAmount : entry.targetAmount
+      const statementTotal = (rows: typeof netWorthRows, valueFor: (entry: typeof netWorthRows[number]) => number) => rows.reduce((sum, entry) => sum + valueFor(entry), 0)
+      const statementRows = {
+        currentAssets: netWorthRows.filter((entry) => entry.section === 'assets' && currentAssetCategories.has(entry.category)),
+        longTermAssets: netWorthRows.filter((entry) => entry.section === 'assets' && !currentAssetCategories.has(entry.category)),
+        currentLiabilities: netWorthRows.filter((entry) => entry.section === 'liabilities' && currentLiabilityCategories.has(entry.category)),
+        longTermLiabilities: netWorthRows.filter((entry) => entry.section === 'liabilities' && !currentLiabilityCategories.has(entry.category)),
+      }
+      const renderComparisonGroup = (
+        title: string,
+        rows: typeof netWorthRows,
+        mode: 'target' | 'actual' | 'variance',
+      ) => {
+        const valueFor = mode === 'target' ? targetValue : mode === 'actual' ? actualValue : (entry: typeof netWorthRows[number]) => entry.hasActual ? entry.variance : 0
+        return <section className="build-profile-net-worth-group">
+          <h6>{title}</h6>
+          {rows.length > 0 ? rows.map((entry) => {
+            const noteKey = `wealthVarianceNote.${entry.id}`
+            const displayValue = mode === 'actual' && !entry.hasActual
+              ? 'Pending'
+              : mode === 'variance'
+                ? entry.hasActual ? formatSignedVariance(entry.variance) : 'Pending'
+                : formatVarianceCurrency(valueFor(entry))
+            return <div key={entry.id} className={`build-profile-net-worth-line${mode === 'variance' ? ' build-profile-comparison-variance-line' : ''}`}>
+              <span>{entry.label}{mode === 'variance' ? <small>{entry.hasActual ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual value.'}</small> : null}</span>
+              <strong>{displayValue}</strong>
+            </div>
+          }) : <div className="build-profile-net-worth-line build-profile-net-worth-empty"><span>No saved amounts</span><strong>{formatVarianceCurrency(0)}</strong></div>}
+          <div className="build-profile-net-worth-line build-profile-net-worth-subtotal"><span>Total {title}</span><strong>{mode === 'variance' ? formatSignedVariance(statementTotal(rows, valueFor)) : formatVarianceCurrency(statementTotal(rows, valueFor))}</strong></div>
+        </section>
+      }
+      const targetAssets = statementTotal(netWorthRows.filter((entry) => entry.section === 'assets'), targetValue)
+      const targetLiabilities = statementTotal(netWorthRows.filter((entry) => entry.section === 'liabilities'), targetValue)
+      const actualAssets = statementTotal(netWorthRows.filter((entry) => entry.section === 'assets'), actualValue)
+      const actualLiabilities = statementTotal(netWorthRows.filter((entry) => entry.section === 'liabilities'), actualValue)
+      const renderComparisonStatement = (mode: 'target' | 'actual' | 'variance') => {
+        const isVariance = mode === 'variance'
+        const assetsTotal = mode === 'target' ? targetAssets : mode === 'actual' ? actualAssets : actualAssets - targetAssets
+        const liabilitiesTotal = mode === 'target' ? targetLiabilities : mode === 'actual' ? actualLiabilities : actualLiabilities - targetLiabilities
+        const netWorth = assetsTotal - liabilitiesTotal
+        return <article className={`build-profile-comparison-statement build-profile-comparison-${mode}`}>
+          <header><span>{mode === 'target' ? 'Target' : mode === 'actual' ? 'Actual' : 'Variance'}</span><strong>{mode === 'target' ? 'Date Setup' : mode === 'actual' ? 'Date Updated' : 'Explanations'}</strong></header>
+          <div className="build-profile-comparison-date">
+            {mode === 'target' ? <span>{profile.values.asOfDate || 'Not set'}</span> : mode === 'actual' ? <input aria-label="Actual statement date updated" type="date" value={profile.values.wealthActualAsOfDate ?? ''} onChange={(event) => updateValue('wealthActualAsOfDate', event.target.value)} /> : <span>Actual less target</span>}
+          </div>
+          <section className="build-profile-net-worth-column build-profile-net-worth-assets">
+            <h5>Assets</h5>
+            {renderComparisonGroup('Current Assets', statementRows.currentAssets, mode)}
+            {renderComparisonGroup('Long Term Assets', statementRows.longTermAssets, mode)}
+            <div className="build-profile-net-worth-line build-profile-net-worth-total"><span>Total Assets</span><strong>{isVariance ? formatSignedVariance(assetsTotal) : formatVarianceCurrency(assetsTotal)}</strong></div>
+          </section>
+          <section className="build-profile-net-worth-column build-profile-net-worth-liabilities">
+            <h5>Liabilities</h5>
+            {renderComparisonGroup('Current Liabilities', statementRows.currentLiabilities, mode)}
+            {renderComparisonGroup('Long Term Liabilities', statementRows.longTermLiabilities, mode)}
+            <div className="build-profile-net-worth-line build-profile-net-worth-total"><span>Total Liabilities</span><strong>{isVariance ? formatSignedVariance(liabilitiesTotal) : formatVarianceCurrency(liabilitiesTotal)}</strong></div>
+          </section>
+          <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{isVariance ? formatSignedVariance(netWorth) : formatVarianceCurrency(netWorth)}</strong></div>
+        </article>
+      }
 
       return <div className="build-profile-step-content build-profile-step-ten">
         <h3>Step 10: Actual vs Target</h3>
@@ -1649,15 +1713,14 @@ export default function BuildProfilePage() {
         </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Setup and Continue to Step 10 first.</p>}
 
           </div>
-          <section className="build-profile-detail-section">
-            <h4>Variance Filters</h4>
-            <div className="build-profile-form-grid">
-              <label>Statement Section<select aria-label="Actual vs Target filter by statement section" value={varianceSectionFilter} onChange={(event) => { setVarianceSectionFilter(event.target.value as 'all' | StatementSection); setVarianceCategoryFilter('all') }}><option value="all">All Sections</option>{STEP1_SECTION_ORDER.map((section) => <option key={section} value={section}>{STEP1_SECTION_SHORT_LABELS[section]}</option>)}</select></label>
-              <label>Account Group<select aria-label="Actual vs Target filter by account group" value={varianceCategoryFilter} onChange={(event) => setVarianceCategoryFilter(event.target.value)}><option value="all">All Account Groups</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
-              <label>Line Item<input type="search" aria-label="Actual vs Target filter by line item" placeholder="Search line item" value={varianceLineSearch} onChange={(event) => setVarianceLineSearch(event.target.value)} /></label>
-              <div className="build-profile-filter-result"><span>Matching Rows</span><strong>{filteredRows.length}</strong><button type="button" className="loan-footer-button" onClick={() => { setVarianceSectionFilter('all'); setVarianceCategoryFilter('all'); setVarianceLineSearch('') }}>Clear Variance Filters</button></div>
+          <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown">
+            <summary>Personal Net Worth Target vs Actual</summary>
+            <div className="build-profile-comparison-grid">
+              {renderComparisonStatement('target')}
+              {renderComparisonStatement('actual')}
+              {renderComparisonStatement('variance')}
             </div>
-          </section>
+          </details>
           <div className="build-profile-target-actions"><button type="button" className="loan-footer-button" onClick={() => goToStep(9)}>Back to Step 9</button><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => goToStep(11)}>Continue to Step 11</button></div>
         </> : null}
       </div>
