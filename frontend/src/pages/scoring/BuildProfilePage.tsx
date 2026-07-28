@@ -882,15 +882,13 @@ export default function BuildProfilePage() {
     }
 
     if (field.type === 'radio') {
-      return <fieldset key={field.key} aria-invalid={!value.trim()} className="build-profile-banking-radio-field build-profile-field-wide">
-        <legend>{field.label}</legend>
-        <div className="build-profile-banking-radio-options">
-          {field.options?.map((option) => <label key={option}>
-            <input type="radio" name={field.key} value={option} checked={value === option} onChange={(event) => updateValue(field.key, event.target.value)} />
-            <span>{option}</span>
-          </label>)}
-        </div>
-      </fieldset>
+      return <label key={field.key}>
+        {field.label}
+        <select aria-invalid={!value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
+          <option value="">Select...</option>
+          {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
+        </select>
+      </label>
     }
 
     return <label key={field.key}>
@@ -1080,8 +1078,8 @@ export default function BuildProfilePage() {
     if (profile.step === 5) {
       return <div className="build-profile-step-content build-profile-step-five">
         <h3>Step 5: Banking Relationships</h3>
-        <p className="psychometric-section-note">Complete the same banking relationship and due-diligence information used by the Lending Scorecard.</p>
-        {BANKING_RELATIONSHIP_SECTIONS.map((section) => <section key={section.title} className="build-profile-detail-section">
+        <p className="psychometric-section-note">Assess your banking relationships.</p>
+        {BANKING_RELATIONSHIP_SECTIONS.map((section) => <section key={section.title} className={`build-profile-detail-section${section.title === 'Historical Assessment Information' ? ' build-profile-credit-values' : ''}`}>
           <h4>{section.title}</h4>
           {section.description ? <p>{section.description}</p> : null}
           <div className="build-profile-form-grid">{section.fields.map(renderBankingField)}</div>

@@ -42,7 +42,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
     ],
   },
   {
-    title: 'Credit Bureau Records',
+    title: 'Historical Assessment Information',
     description: 'Complete each credit bureau item. Credit utilization is calculated automatically.',
     fields: [
       {
