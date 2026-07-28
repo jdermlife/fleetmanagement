@@ -1297,7 +1297,14 @@ export default function BuildProfilePage() {
               </select>
             </label>
             <label>Target Amount
-              <input type="number" min="0" step="0.01" value={profile.values.targetAmount ?? ''} onChange={(event) => updateValue('targetAmount', event.target.value)} />
+              <NumericFormat
+                value={profile.values.targetAmount ?? ''}
+                valueIsNumericString
+                thousandSeparator="," decimalScale={2} fixedDecimalScale
+                inputMode="decimal"
+                allowNegative={false}
+                onValueChange={({ value }) => updateValue('targetAmount', value)}
+              />
             </label>
             <label>Months to Achieve
               <input type="number" min="1" value={profile.values.targetMonths ?? '12'} onChange={(event) => updateValue('targetMonths', event.target.value)} />
@@ -1355,7 +1362,17 @@ export default function BuildProfilePage() {
                       <ul>{aiAdvisories[entry.id]?.analysis.map((item) => <li key={item}>{item}</li>)}</ul>
                       <strong>AI Recommendation</strong>
                       <p>{aiAdvisories[entry.id]?.recommendation}</p>
-                    </aside></> : <input aria-invalid={!profile.values[entry.id]?.trim()} type="number" min="0" step="0.01" value={profile.values[entry.id] ?? ''} placeholder="0" aria-label={`${entry.label} setup amount`} onChange={(event) => updateValue(entry.id, event.target.value)} />}
+                    </aside></> : <NumericFormat
+                      aria-invalid={!profile.values[entry.id]?.trim()}
+                      value={profile.values[entry.id] ?? ''}
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal"
+                      allowNegative={false}
+                      placeholder="0.00"
+                      aria-label={`${entry.label} setup amount`}
+                      onValueChange={({ value }) => updateValue(entry.id, value)}
+                    />}
                   </label>)}
                 </div>}
               </details>
@@ -1628,11 +1645,19 @@ export default function BuildProfilePage() {
                     {targetRows.length > 0 ? <p className="psychometric-section-note">
           {completedActuals === targetRows.length
             ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.'
-            : `Actual entry completion: ${completedActuals}/${targetRows.length} (${actualPercent}%). Missing actual values use target values in the projection.`}
+            : `Actual entry completion: ${completedActuals}/${targetRows.length} (${actualPercent}%). Missing actual values vs target values in the projection. Use Variance Filters to select target. Save inputs as needed.`}
         </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Setup and Continue to Step 10 first.</p>}
 
           </div>
-
+          <section className="build-profile-detail-section">
+            <h4>Variance Filters</h4>
+            <div className="build-profile-form-grid">
+              <label>Statement Section<select aria-label="Actual vs Target filter by statement section" value={varianceSectionFilter} onChange={(event) => { setVarianceSectionFilter(event.target.value as 'all' | StatementSection); setVarianceCategoryFilter('all') }}><option value="all">All Sections</option>{STEP1_SECTION_ORDER.map((section) => <option key={section} value={section}>{STEP1_SECTION_SHORT_LABELS[section]}</option>)}</select></label>
+              <label>Account Group<select aria-label="Actual vs Target filter by account group" value={varianceCategoryFilter} onChange={(event) => setVarianceCategoryFilter(event.target.value)}><option value="all">All Account Groups</option>{categories.map((category) => <option key={category} value={category}>{category}</option>)}</select></label>
+              <label>Line Item<input type="search" aria-label="Actual vs Target filter by line item" placeholder="Search line item" value={varianceLineSearch} onChange={(event) => setVarianceLineSearch(event.target.value)} /></label>
+              <div className="build-profile-filter-result"><span>Matching Rows</span><strong>{filteredRows.length}</strong><button type="button" className="loan-footer-button" onClick={() => { setVarianceSectionFilter('all'); setVarianceCategoryFilter('all'); setVarianceLineSearch('') }}>Clear Variance Filters</button></div>
+            </div>
+          </section>
           <div className="build-profile-target-actions"><button type="button" className="loan-footer-button" onClick={() => goToStep(9)}>Back to Step 9</button><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => goToStep(11)}>Continue to Step 11</button></div>
         </> : null}
       </div>
