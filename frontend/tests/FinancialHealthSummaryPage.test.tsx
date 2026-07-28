@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
@@ -16,6 +16,17 @@ describe('FinancialHealthSummaryPage', () => {
   beforeEach(() => {
     fetchAutosaveDraft.mockReset()
     fetchAutosaveDraft.mockResolvedValue(null)
+  })
+
+  it('starts the Financial Health Journey with Create Profile before Credit Health', () => {
+    render(<FinancialHealthSummaryPage />)
+
+    const checklist = screen.getByRole('list', { name: 'Financial Health journey checklist' })
+    const journeyItems = within(checklist).getAllByRole('listitem')
+
+    expect(within(journeyItems[0]).getByRole('heading', { name: '☐ Create Profile' })).toBeTruthy()
+    expect(within(journeyItems[0]).getByRole('button', { name: 'Create Profile' })).toBeTruthy()
+    expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 
   it('shows the score, band, indicators, and transparent formula', () => {

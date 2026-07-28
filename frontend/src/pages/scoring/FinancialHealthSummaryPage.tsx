@@ -23,6 +23,7 @@ import {
   explainWealthFoundationResult,
   type WealthFoundationScoreResult,
 } from './wealthFoundationEngine'
+import { BUILD_PROFILE_STORAGE_KEY } from './buildProfileReplication'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -48,7 +49,7 @@ type LendingLeafSegment = {
   fill: string
 }
 
-type JourneyStepId = 'creditHealth' | 'wealthBuilder' | 'budgetTargets' | 'billsLoans' | 'billManager'
+type JourneyStepId = 'createProfile' | 'creditHealth' | 'wealthBuilder' | 'budgetTargets' | 'billsLoans' | 'billManager'
 
 type JourneyStep = {
   id: JourneyStepId
@@ -59,6 +60,14 @@ type JourneyStep = {
 }
 
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
+  {
+    id: 'createProfile',
+    label: 'Create Profile',
+    launchLabel: 'Create Profile',
+    route: '/build-profile',
+    description:
+      'Create your financial profile first so each health score and recommendation can use your information.',
+  },
   {
     id: 'creditHealth',
     label: 'Credit Health',
@@ -413,6 +422,7 @@ export default function FinancialHealthSummaryPage() {
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
+    createProfile: false,
     creditHealth: false,
     wealthBuilder: false,
     budgetTargets: false,
@@ -462,10 +472,12 @@ export default function FinancialHealthSummaryPage() {
           const budgetPayload = budgetDraft?.payload
           const creditPayload = creditHealthDraft?.payload
           const wealthPayload = netWorthDraft?.payload
+          const buildProfileDraft = safeStorageGet(BUILD_PROFILE_STORAGE_KEY)
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
 
           setJourneyStepCompletion({
+            createProfile: hasMeaningfulValue(buildProfileDraft),
             creditHealth: hasMeaningfulValue(creditPayload) || hasMeaningfulValue(lendingPayload),
             wealthBuilder: hasMeaningfulValue(wealthPayload),
             budgetTargets: hasMeaningfulValue(budgetPayload),
@@ -694,6 +706,7 @@ export default function FinancialHealthSummaryPage() {
               <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true">→</span>
               <span className="financial-health-journey-arrow financial-health-journey-arrow-4" aria-hidden="true">→</span>
               <span className="financial-health-journey-arrow financial-health-journey-arrow-5" aria-hidden="true">→</span>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-6" aria-hidden="true">→</span>
             </div>
 
             <div className="financial-health-journey-progress" aria-live="polite">

@@ -106,9 +106,8 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 
 const menuLinks: MenuLink[] = [
-  
+  { id: 'build-profile', label: 'Create Profile' },
   { id: 'financial-health-summary', label: 'Financial Health Dashboard' },
-  { id: 'build-profile', label: 'Build Profile' },
   { id: 'lending-scorecard', label: 'Credit Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
@@ -220,7 +219,6 @@ const governanceMenus = [
 ]
 
 const adminMenus = [
-  'build-profile',
   'calculation',
   'credit-health-multi-product',
   'admin-users',
@@ -231,7 +229,6 @@ const adminMenus = [
 ]
 
 const subscriberHiddenMenus = [
-  'build-profile',
   'snapshot',
   'lease-scorecard',
   'insurance-management',
@@ -251,6 +248,7 @@ const subscriberHiddenMenus = [
 ]
 
 const subscriberAlwaysVisibleMenus = [
+  'build-profile',
   'financial-health-summary',
   'lending-scorecard',
   'budget-expense-tracker',
@@ -261,6 +259,7 @@ const subscriberAlwaysVisibleMenus = [
 ]
 
 const borrowerVisibleMenus = [
+  'build-profile',
   'financial-health-summary',
   'lending-scorecard',
   'budget-expense-tracker',
@@ -872,7 +871,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/build-profile"
               element={
-                <ProtectedRoute roles={['admin']}>
+                <ProtectedRoute>
                   <BuildProfilePage />
                 </ProtectedRoute>
               }

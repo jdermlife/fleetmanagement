@@ -1450,224 +1450,44 @@ export default function NetWorthPositioningPage() {
   ];
 
   const buildWealthCertificationHtml = useCallback((issuedLabel: string, certificationState: string) => `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${APP_NAME} Wealth Certification</title>
-  <style>
-    @page { size: A4 portrait; margin: 10mm; }
-    body {
-      margin: 0;
-      padding: 12px;
-      background: #f5f7fb;
-      color: #0f2547;
-      font-family: Arial, Helvetica, sans-serif;
-    }
-    .certificate {
-      max-width: 760px;
-      margin: 0 auto;
-      background: #fff;
-      border: 7px solid #0038a8;
-      border-radius: 18px;
-      box-shadow: 0 16px 40px rgba(15, 37, 71, 0.14);
-      overflow: hidden;
-    }
-    .frame {
-      padding: 22px 26px 26px;
-      border: 2px solid #f4d36a;
-      border-radius: 12px;
-      margin: 8px;
-    }
-    .brand {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      justify-content: center;
-      margin-bottom: 18px;
-    }
-    .brand img {
-      width: 56px;
-      height: 56px;
-      object-fit: contain;
-    }
-    .kicker {
-      text-align: center;
-      color: #0f766e;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      margin: 0;
-    }
-    h1 {
-      margin: 4px 0 0;
-      text-align: center;
-      font-size: 28px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: #0038a8;
-    }
-    h2 {
-      margin: 6px 0 0;
-      text-align: center;
-      color: #7a5a00;
-      font-size: 12px;
-      text-transform: uppercase;
-      letter-spacing: 0.14em;
-    }
-    .reference,
-    .meta,
-    .message {
-      text-align: center;
-      margin: 10px 0 0;
-      line-height: 1.5;
-    }
-    .name {
-      margin: 18px 0 8px;
-      text-align: center;
-      font-size: 24px;
-      font-weight: 700;
-    }
-    .summary {
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 12px;
-      margin-top: 18px;
-    }
-    .card {
-      background: #f8fafc;
-      border: 1px solid #d8e0ea;
-      border-radius: 14px;
-      padding: 14px;
-      text-align: center;
-    }
-    .card span {
-      display: block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      color: #4c5f78;
-    }
-    .card strong {
-      display: block;
-      margin-top: 8px;
-      font-size: 24px;
-      color: #0f2547;
-    }
-    .card small {
-      display: block;
-      margin-top: 4px;
-      color: #546275;
-      line-height: 1.35;
-    }
-    .notes {
-      margin-top: 16px;
-      padding-top: 14px;
-      border-top: 1px solid #d8e0ea;
-      color: #4c5f78;
-      font-size: 12px;
-      line-height: 1.55;
-    }
-    .footer {
-      margin-top: 20px;
-      display: grid;
-      grid-template-columns: repeat(2, minmax(0, 1fr));
-      gap: 16px;
-      font-size: 12px;
-      color: #334155;
-    }
-    .signature {
-      padding-top: 14px;
-      border-top: 1px solid #d8e0ea;
-    }
-    .signature strong {
-      display: block;
-      margin-top: 4px;
-      color: #0f2547;
-    }
-    @media print {
-      body { background: #fff; padding: 0; }
-      .certificate { box-shadow: none; }
-    }
-  </style>
-</head>
-<body>
-  <section class="certificate">
-    <div class="frame">
-      <div class="brand">
-        <img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo" />
-        <div>
-          <p class="kicker">Certification of Wealth Assessment</p>
-          <h1>${escapeHtml(APP_NAME)}</h1>
-          <h2>FILSCORE-Wealth Certification</h2>
-        </div>
-      </div>
-
-      <p class="reference">Application / Reference No. <strong>${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</strong></p>
-      <p class="meta">Issued ${escapeHtml(issuedLabel)} | Status: <strong>${escapeHtml(certificationState)}</strong></p>
-      <div class="name">${escapeHtml(certifierName.trim() || 'Unnamed Certifier')}</div>
-      <p class="message">
-        This certificate summarizes the FILSCORE-Wealth result generated from the current net worth,
-        suitability, and certification inputs on file.
-      </p>
-
-      <div class="summary">
-        <div class="card">
-          <span>Net Worth Building</span>
-          <strong>${netWorthBuildingScore.score}</strong>
-          <small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small>
-        </div>
-        <div class="card">
-          <span>Wealth Authenticity</span>
-          <strong>${wealthAuthenticityScore}</strong>
-          <small>${escapeHtml(wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity'))}</small>
-        </div>
-        <div class="card">
-          <span>Wealth Foundation</span>
-          <strong>${wealthFoundationScore.score}</strong>
-          <small>${escapeHtml(wealthFoundationScore.rating)}</small>
-        </div>
-        <div class="card">
-          <span>Wealth Behaviour</span>
-          <strong>${wealthBehaviourScore}</strong>
-          <small>${escapeHtml(wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour'))}</small>
-        </div>
-      </div>
-
-      <div class="notes">
-        Accuracy Declaration: ${hasCertifiedAccuracy ? 'Confirmed' : 'Not confirmed'}<br />
-        Consistency Assumption: ${hasCertifiedConsistencyAssumption ? 'Confirmed' : 'Not confirmed'}<br />
-        Consent: ${hasCertifiedConsent ? 'Confirmed' : 'Not confirmed'}<br />
-        Certification Date: ${escapeHtml(certificationDate)}
-      </div>
-
-      <div class="footer">
-        <div class="signature">
-          Certifier Name
-          <strong>${escapeHtml(certifierName.trim() || 'Not provided')}</strong>
-        </div>
-        <div class="signature">
-          Role
-          <strong>${escapeHtml(certifierRole.trim() || 'Borrower')}</strong>
-        </div>
-      </div>
-    </div>
-  </section>
-</body>
-
-</html>`, [
+<html lang="en"><head><meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>${escapeHtml(APP_NAME)} Wealth Building Report</title>
+<style>
+@page{size:A4 portrait;margin:7mm}*{box-sizing:border-box}body{margin:0;padding:14px;background:#f4f7f9;color:#17324d;font-family:Verdana,Arial,sans-serif}.report{max-width:1040px;margin:auto;display:grid;gap:12px}.hero{display:flex;justify-content:space-between;align-items:center;gap:18px;padding:18px 22px;border-radius:12px;background:linear-gradient(110deg,#39234f,#173e55 70%,#08766d);color:#fff}.hero p,.hero h1{margin:0}.hero p{margin-top:5px;font-size:11px}.hero-score{min-width:230px;padding:12px;border:1px solid rgba(255,255,255,.25);border-radius:10px;text-align:right}.hero-score span{display:block;font-size:10px}.hero-score strong{font-size:36px}.summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.tile,.panel{border:1px solid #d9d8c7;border-radius:10px;background:linear-gradient(135deg,#fff,#fffbe5 65%,#effaf6);padding:12px;box-shadow:0 3px 10px rgba(26,46,67,.06)}.tile span,.eyebrow{display:block;color:#477268;font-size:8px;font-weight:700;letter-spacing:.08em;text-transform:uppercase}.tile strong{display:block;margin-top:6px;font-size:18px}.tile small{display:block;margin-top:5px;font-size:8px}.layout{display:grid;grid-template-columns:minmax(0,2.25fr) minmax(220px,1fr);gap:12px;align-items:start}.certificate{border:9px solid #073da4;border-radius:9px;background:#fff;box-shadow:0 10px 28px rgba(15,37,71,.15)}.certificate-inner{margin:7px;padding:14px 16px;border:2px solid #f1d268;background:linear-gradient(160deg,#fffdf0,#fff 55%,#effaf8)}.brand{text-align:center}.brand img{width:40px;height:40px;object-fit:contain}.brand h2{margin:2px 0;color:#0641ac;letter-spacing:.16em}.brand p,.reference,.message{text-align:center;margin:3px 0;font-size:8px}.name{text-align:center;margin:8px 0 4px;font-size:17px;font-weight:700}.composite{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-top:10px}.score-card{padding:9px;border:1px solid #d8d8bf;border-radius:10px;background:linear-gradient(135deg,#fffdeb,#f0faf5)}.score-card span{display:block;color:#477268;font-size:7px;font-weight:700;text-transform:uppercase}.score-card strong{display:block;margin-top:5px;color:#073da4;font-size:17px}.score-card.primary{grid-column:span 1}.metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:7px}.metric{padding:9px;border:1px solid #d8d8bf;border-radius:9px;background:linear-gradient(135deg,#f2fff9,#fff8dc)}.metric span{font-size:7px;color:#477268}.metric strong{display:block;margin-top:7px;font-size:15px}.metric small{display:block;margin-top:3px;font-size:6px}.certificate-footer{display:flex;justify-content:space-between;align-items:end;margin-top:9px;padding-top:7px;border-top:1px solid #d9dfdf;font-size:7px}.certificate-footer img{width:66px;height:66px}.side{display:grid;gap:10px}.panel h3{margin:3px 0 8px;font-size:13px}.rows{display:grid;gap:6px}.row{display:flex;justify-content:space-between;gap:10px;padding-bottom:5px;border-bottom:1px solid #ebe7ce;font-size:8px}.row strong{text-align:right}.bar{height:5px;border-radius:4px;background:#e9edf0;overflow:hidden}.bar i{display:block;height:100%;background:#e8b600}.lower{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}.panel p{font-size:9px;line-height:1.5}.panel ul{margin:6px 0 0;padding-left:16px;font-size:9px;line-height:1.55}.status-bad{color:#b91c1c}.status-good{color:#047857}.meta{font-size:7px;line-height:1.5}.footnote{text-align:center;font-size:8px;color:#667085}.full{grid-column:1/-1}
+@media(max-width:760px){body{padding:8px}.hero{align-items:flex-start;flex-direction:column}.hero-score{width:100%;min-width:0;text-align:left}.summary,.layout,.lower{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.composite{grid-template-columns:1fr}.score-card.primary{grid-column:auto}}
+@media print{body{padding:0;background:#fff}.report{gap:7px}.hero,.tile,.panel,.certificate{break-inside:avoid;box-shadow:none}}
+</style></head><body><main class="report">
+<section class="hero"><div><span class="eyebrow">Net Worth and Goal Tracking</span><h1>Wealth Building Score</h1><p>Period: ${escapeHtml(asOfDate || snapshot.dateLabel)}</p></div><div class="hero-score"><span>Net Worth Building Score</span><strong>${netWorthBuildingScore.score}</strong><small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small></div></section>
+<section class="summary"><div class="tile"><span>Progress</span><strong>${completionPercent}%</strong><small>FILSCORE-Wealth</small></div><div class="tile"><span>Setup Assets</span><strong>${escapeHtml(formatCurrency(setupAssetsTotal))}</strong><small>Current setup for asset lines</small></div><div class="tile"><span>Setup Liabilities</span><strong>${escapeHtml(formatCurrency(setupLiabilitiesTotal))}</strong><small>Current setup for liability lines</small></div><div class="tile"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong><small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small></div></section>
+<section class="layout"><article class="certificate"><div class="certificate-inner"><div class="brand"><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo"/><p class="eyebrow">Certification of Wealth Assessment</p><h2>${escapeHtml(APP_NAME)}</h2></div><p class="reference">Reference No. ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</p><div class="name">${escapeHtml(certifierName.trim() || 'Unnamed Certifier')}</div><p class="message">This certifies that the above applicant completed the FILSCORE wealth assessment workflow and the summarized results below were generated for financial evaluation.</p>
+<div class="composite"><div class="score-card primary"><span>Composite Score</span><strong>${netWorthBuildingScore.score}</strong></div><div class="score-card"><span>Label</span><strong>${escapeHtml(netWorthBuildingScore.grade)}</strong></div><div class="score-card"><span>Position</span><strong>${escapeHtml(positionStatement.title)}</strong></div></div>
+<div class="metrics"><div class="metric"><span>Net Worth Positioning Score</span><strong>${netWorthBuildingScore.score}</strong><small>${escapeHtml(netWorthBuildingScore.rating)}</small></div><div class="metric"><span>Wealth Behaviour Score</span><strong>${wealthBehaviourScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthBehaviourScore,'Wealth Behaviour'))}</small></div><div class="metric"><span>Wealth Foundation Score</span><strong>${wealthFoundationScore.score}</strong><small>${escapeHtml(wealthFoundationScore.rating)}</small></div><div class="metric"><span>Wealth Authenticity Score</span><strong>${wealthAuthenticityScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthAuthenticityScore,'Wealth Authenticity'))}</small></div></div>
+<div class="certificate-footer"><div class="meta"><strong>Certificate ID:</strong> ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}<br/><strong>Issued:</strong> ${escapeHtml(issuedLabel)}<br/><strong>Status:</strong> ${escapeHtml(certificationState)}<br/><strong>Role:</strong> ${escapeHtml(certifierRole.trim() || 'Borrower')}<br/><strong>Certification Date:</strong> ${escapeHtml(certificationDate)}</div><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} verification mark"/></div></div></article>
+<aside class="side"><article class="panel"><span class="eyebrow">Wealth Assessment</span><h3>Position Scorecards</h3><p>The certificate summarizes the four wealth scores used in this assessment.</p></article><article class="panel"><span class="eyebrow">Setup Snapshot</span><h3>${savedSetup.length>0?'Saved Setup':'Draft Setup'}</h3><div class="rows"><div class="row"><span>As Of</span><strong>${escapeHtml(asOfDate||'Not set')}</strong></div><div class="row"><span>Currency</span><strong>${escapeHtml(selectedCurrencyLabel)}</strong></div><div class="row"><span>Financial Goal</span><strong>${escapeHtml(selectedFinancialGoal||'Not selected')}</strong></div><div class="row"><span>Setup Entries</span><strong>${savedSetup.length}</strong></div><div class="row"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong></div></div></article><article class="panel"><span class="eyebrow">Position Health</span><h3>${escapeHtml(netWorthBuildingScore.grade)}</h3><div class="rows"><div class="row"><span>Wealth Score</span><strong>${netWorthBuildingScore.score}</strong></div><div class="row"><span>Range</span><strong>${escapeHtml(netWorthBuildingScore.rating)}</strong></div><div class="row"><span>Position</span><strong>${escapeHtml(positionStatement.title)}</strong></div></div></article><article class="panel"><span class="eyebrow">Net Worth Visuals</span><h3>Setup vs Projected Net Worth</h3><div class="rows"><div><div class="row"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.setupNetWorth))}</strong></div><div class="bar"><i style="width:70%"></i></div></div><div><div class="row"><span>Projected Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.projectedNetWorth))}</strong></div><div class="bar"><i style="width:90%"></i></div></div><div class="row"><span>Net Worth Variance</span><strong>${escapeHtml(formatSignedCurrency(positionStatement.netWorthVariance))}</strong></div></div></article><article class="panel"><span class="eyebrow">Activity</span><h3>Activity Timeline</h3><div class="rows"><div class="row"><span>Application Source</span><strong>${escapeHtml(snapshot.sourceLabel)}</strong></div><div class="row"><span>Application Number</span><strong>${escapeHtml(snapshot.sourceApplicationNo||'Draft')}</strong></div><div class="row"><span>Last Updated</span><strong>${escapeHtml(issuedLabel)}</strong></div><div class="row"><span>Current Step</span><strong>Step 5: Results</strong></div></div></article></aside></section>
+<section class="lower"><article class="panel"><span class="eyebrow">Position vs Goal</span><h3 class="${goalForecast.isAchievable?'status-good':'status-bad'}">${escapeHtml(goalForecast.status)}</h3><div class="rows"><div class="row"><span>Goal Target</span><strong>${escapeHtml(formatCurrency(goalForecast.effectiveTargetAmount))}</strong></div><div class="row"><span>Time Frame</span><strong>${goalForecast.sanitizedMonths} months</strong></div><div class="row"><span>Current Net Worth Position</span><strong>${escapeHtml(formatSignedCurrency(goalForecast.baselineNetWorth))}</strong></div><div class="row"><span>Projected Position at Deadline</span><strong>${escapeHtml(formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline))}</strong></div><div class="row"><span>Possibility to Reach Goal</span><strong>${goalForecast.possibilityPercent}%</strong></div></div></article><article class="panel"><span class="eyebrow">Statement of Position</span><h3 style="color:${positionStatement.color}">${escapeHtml(positionStatement.title)}</h3><div class="rows"><div class="row"><span>Total Assets (Projected)</span><strong>${escapeHtml(formatCurrency(totals.projectedAssets))}</strong></div><div class="row"><span>Total Liabilities (Projected)</span><strong>${escapeHtml(formatCurrency(totals.projectedLiabilities))}</strong></div><div class="row"><span>Current Net Worth Position</span><strong>${escapeHtml(formatSignedCurrency(goalForecast.baselineNetWorth))}</strong></div><div class="row"><span>Net Worth Variance</span><strong>${escapeHtml(formatSignedCurrency(positionStatement.netWorthVariance))}</strong></div></div><p>${escapeHtml(positionStatement.conclusion)}</p></article><article class="panel"><span class="eyebrow">AI Analysis</span><h3>Net Worth Variance Coaching</h3><p>AI-assisted analysis highlights your current variance trend and financial pressure points.</p><div class="rows"><div class="row"><span>Position Status</span><strong>${escapeHtml(goalForecast.status)}</strong></div><div class="row"><span>Projected Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.projectedNetWorth))}</strong></div><div class="row"><span>Variance Coverage</span><strong>${positionStatement.projectedCoverage}%</strong></div></div></article><article class="panel"><span class="eyebrow">Recommendations</span><h3>Actionable Next Steps</h3><ul><li>Review the largest asset and liability variances each cycle.</li><li>Align monthly savings with the required gain of ${escapeHtml(formatCurrency(goalForecast.requiredMonthlyGain))}.</li><li>Keep setup and actual values current and certified.</li><li>Reassess the target timeline when projected coverage falls below 100%.</li></ul></article></section>
+<p class="footnote">Information Provided: ${completionPercent}% &nbsp; | &nbsp; AI-assisted recommendations may contain mistakes.</p></main></body></html>`, [
+    asOfDate,
     certificationDate,
     certifierName,
     certifierRole,
-    hasCertifiedAccuracy,
-    hasCertifiedConsent,
-    hasCertifiedConsistencyAssumption,
+    completionPercent,
+    formatCurrency,
+    formatSignedCurrency,
+    goalForecast,
     netWorthBuildingScore.grade,
     netWorthBuildingScore.rating,
     netWorthBuildingScore.score,
+    positionStatement,
+    savedSetup.length,
+    selectedCurrencyLabel,
+    selectedFinancialGoal,
+    setupAssetsTotal,
+    setupLiabilitiesTotal,
+    setupNetWorth,
+    snapshot.dateLabel,
+    snapshot.sourceLabel,
     snapshot.sourceApplicationNo,
+    totals,
     wealthAuthenticityScore,
     wealthBehaviourScore,
     wealthCertificationBand,
@@ -1699,25 +1519,11 @@ export default function NetWorthPositioningPage() {
     window.setTimeout(() => URL.revokeObjectURL(downloadUrl), 0);
     setSetupStatusMessage('Wealth certification downloaded.');
   }, [
-    certifierName,
-    certifierRole,
-    certificationDate,
-    hasCertifiedAccuracy,
-    hasCertifiedConsent,
-    hasCertifiedConsistencyAssumption,
+    buildWealthCertificationHtml,
     isCertificationComplete,
-    netWorthBuildingScore.grade,
-    netWorthBuildingScore.rating,
-    netWorthBuildingScore.score,
     snapshot.sourceApplicationNo,
-    wealthAuthenticityScore,
-    wealthBehaviourScore,
-    wealthCertificationBand,
     wealthCertificationGenerated,
     wealthCertificationIssuedAt,
-    wealthFoundationScore.rating,
-    wealthFoundationScore.score,
-    buildWealthCertificationHtml,
   ]);
 
   const handlePrintWealthCertification = useCallback(() => {
@@ -1752,7 +1558,6 @@ export default function NetWorthPositioningPage() {
   }, [
     buildWealthCertificationHtml,
     isCertificationComplete,
-    snapshot.sourceApplicationNo,
     wealthCertificationGenerated,
     wealthCertificationIssuedAt,
   ]);

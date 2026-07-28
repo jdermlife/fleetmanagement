@@ -40,14 +40,14 @@ import {
 import { useAuthorization } from '../../hooks/useAuthorization';
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
+import { APP_NAME, brandLogoDataUri } from '../../brand';
 import {
   calculateApplicationInformationCompletion,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
   type InformationStepNumber,
 } from './applicationCompleteness';
-import { toFilscore } from './filscoreScale';
+import { getFilscoreBand, toFilscore } from './filscoreScale';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
-import CreditHealthJourney from './CreditHealthJourney';
 import { readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
@@ -1997,7 +1997,7 @@ export default function LendingScorecard() {
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
   const [selectedWorkflowAction, setSelectedWorkflowAction] = useState<WorkflowStatus>('Credit Review');
   const isFilscoreRoute = location.pathname === '/lending-scorecard/filscore';
-  const [step, setStep] = useState(() => (isFilscoreRoute ? 8 : 1));
+  const [step, setStep] = useState(8);
   const [formData, setFormData] = useState<LoanApplication>(() => replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
   const [isParsing, setIsParsing] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -2077,7 +2077,7 @@ export default function LendingScorecard() {
   const releasedAccountsPath = isBorrowerSubscriber
     ? '/loan-certification'
     : '/loan-repository?status=Released';
-  const maxVisibleStep = isBorrowerSubscriber ? 8 : 10;
+  const maxVisibleStep = 10;
 
   const getApplicationQuery = () => {
     const applicationNo = formData.id || requestedApplicationNo;
@@ -2905,7 +2905,7 @@ export default function LendingScorecard() {
     informationProvidedPercent >= CREDIT_RATING_MINIMUM_INFORMATION_PERCENT;
 
   const handleStepChange = async (nextStep: number) => {
-    const boundedNextStep = Math.max(1, Math.min(nextStep, maxVisibleStep));
+    const boundedNextStep = Math.max(8, Math.min(nextStep, maxVisibleStep));
 
     if (nextStep !== 8) {
       if (isFilscoreRoute) {
@@ -2956,10 +2956,10 @@ export default function LendingScorecard() {
   };
 
   useEffect(() => {
-    if (isBorrowerSubscriber && step > maxVisibleStep) {
-      setStep(maxVisibleStep);
+    if (step < 8 || step > maxVisibleStep) {
+      setStep(Math.max(8, Math.min(step, maxVisibleStep)));
     }
-  }, [isBorrowerSubscriber, maxVisibleStep, step]);
+  }, [maxVisibleStep, step]);
 
   useEffect(() => {
     if (isFilscoreRoute && step !== 8) {
@@ -4361,14 +4361,30 @@ export default function LendingScorecard() {
     'Approval',
     'Release & Booking',
   ];
-  const stepLabels = isBorrowerSubscriber ? allStepLabels.slice(0, maxVisibleStep) : allStepLabels;
-  const currentStepLabel = stepLabels[Math.max(0, step - 1)] ?? 'Lending Workflow';
-  const completionPercent = Math.round((step / stepLabels.length) * 100);
+  const visibleStepLabels = allStepLabels.slice(7);
+  const currentStepLabel = allStepLabels[Math.max(0, step - 1)] ?? 'FILSCORE Report';
+  const completionPercent = informationProvidedPercent;
+  const reportHasRating = hasSufficientInformationForRating && displayedQuantSummary !== null;
+  const reportScore = (value: number | null | undefined) => {
+    if (!reportHasRating) {
+      return 'Pending';
+    }
+
+    return toFilscore(value)?.toString() ?? 'Pending';
+  };
+  const reportBand = (value: number | null | undefined) => {
+    if (!reportHasRating) {
+      return 'Rating Not Produced';
+    }
+
+    const band = getFilscoreBand(toFilscore(value));
+    return band ? `${band.grade} : ${band.internalGrade}` : 'Rating Pending';
+  };
+  const reportQrValue = `${window.location.origin}/loan-certification?applicationNo=${encodeURIComponent(formData.id)}`;
+  const reportQrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reportQrValue)}`;
 
   return (
-    <div className="psychometric-page lending-psychometric-page">
-      <CreditHealthJourney />
-
+    <div className="psychometric-page lending-psychometric-page lending-report-page">
       <section className="psychometric-hero lending-psychometric-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
@@ -4397,6 +4413,22 @@ export default function LendingScorecard() {
 
       </section>
 
+      <nav className="lending-report-tabs" aria-label="Credit Health workflow">
+        {visibleStepLabels.map((label, index) => {
+          const stepNumber = index + 8;
+          return (
+            <button
+              key={label}
+              type="button"
+              className={`lending-report-tab${step === stepNumber ? ' lending-report-tab-active' : ''}`}
+              onClick={() => void handleStepChange(stepNumber)}
+            >
+              {stepNumber === 8 ? 'FILSCORE Report' : label}
+            </button>
+          );
+        })}
+      </nav>
+
       <section className="psychometric-summary-grid lending-psychometric-summary-grid">
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Application ID</span>
@@ -4422,7 +4454,7 @@ export default function LendingScorecard() {
 
       <section className="psychometric-layout lending-psychometric-layout">
         <div className="psychometric-main">
-          <article className="psychometric-panel lending-psychometric-form-panel">
+          <article className={`psychometric-panel lending-psychometric-form-panel${step === 8 ? ' lending-report-panel' : ''}`}>
             <div className="psychometric-panel-header lending-psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow Form</span>
@@ -4452,6 +4484,83 @@ export default function LendingScorecard() {
             <div className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
               Loading application record...
             </div>
+          )}
+
+          {step === 8 && (
+            <section className="loan-certification-shell lending-inline-certification" aria-label="FILSCORE credit health report">
+              <div className="loan-certification-frame">
+                <div className="loan-certification-inner">
+                  <div className="loan-certification-brand">
+                    <img className="loan-certification-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
+                    <div className="loan-certification-brand-copy">
+                      <p className="loan-certification-kicker">Certification of Credit Readiness Assessment</p>
+                      <h1 className="loan-certification-title">{APP_NAME}</h1>
+                    </div>
+                  </div>
+                  <p className="loan-certification-reference">Reference No. <strong>{formData.id}</strong></p>
+                  <p className="loan-certification-reference">Product Being Applied For: <strong>{formData.loan.productType || 'Not Specified'}</strong></p>
+                  <div className="loan-certification-name">{borrowerDisplayName}</div>
+                  <p className="loan-certification-copy">
+                    This certifies that the above application completed the {APP_NAME} assessment workflow and the summarized results below were generated for credit evaluation and certification use.
+                  </p>
+
+                  {!reportHasRating ? (
+                    <div className="loan-certification-rating-unavailable" role="alert">
+                      <strong>Rating Not Produced</strong>
+                      <span>Information provided is {informationProvidedPercent}%. At least {CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required to produce a rating.</span>
+                    </div>
+                  ) : null}
+
+                  <div className="loan-certification-summary-grid">
+                    <div className="loan-certification-summary-card">
+                      <span className="loan-certification-summary-label">Composite Score</span>
+                      <strong className="loan-certification-summary-value">{reportScore(compositeInternalScore)}</strong>
+                    </div>
+                    <div className="loan-certification-summary-card">
+                      <span className="loan-certification-summary-label">Label</span>
+                      <strong className="loan-certification-summary-value">
+                        {reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : 'Pending'}
+                      </strong>
+                    </div>
+                    <div className="loan-certification-summary-card">
+                      <span className="loan-certification-summary-label">Decision</span>
+                      <strong className="loan-certification-summary-value">{reportHasRating ? displayedQuantSummary.decision : 'Pending'}</strong>
+                    </div>
+                  </div>
+
+                  <div className="loan-certification-metrics-grid">
+                    {[
+                      { label: `Credit Score - ${formData.loan.productType}`, value: reportScore(displayedQuantSummary?.credit_score), band: reportBand(displayedQuantSummary?.credit_score) },
+                      { label: 'Credit Bureau Score', value: reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : 'Pending', band: '100-Point Bureau Model' },
+                      { label: 'Non-Starter Score', value: reportScore(displayedQuantSummary?.fraud_score), band: reportBand(displayedQuantSummary?.fraud_score) },
+                      { label: 'Social Score', value: reportScore(displayedQuantSummary?.social_score), band: reportBand(displayedQuantSummary?.social_score) },
+                      { label: 'Credit Values Score', value: reportScore(displayedQuantSummary?.psychometric_score), band: reportBand(displayedQuantSummary?.psychometric_score) },
+                    ].map((item) => (
+                      <div key={item.label} className="loan-certification-metric-card">
+                        <span className="loan-certification-metric-label">{item.label}</span>
+                        <span className="loan-certification-metric-band">{item.band}</span>
+                        <strong className="loan-certification-metric-value">{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="loan-certification-footer">
+                    <div className="loan-certification-meta">
+                      <p><strong>Certificate ID:</strong> {formData.id}</p>
+                      <p><strong>Reference Number:</strong> {formData.id}</p>
+                      <p><strong>Applicant / Borrower:</strong> {borrowerDisplayName}</p>
+                      <p><strong>Product Being Applied For:</strong> {formData.loan.productType || 'Not Specified'}</p>
+                    </div>
+                    <div className="loan-certification-qr">
+                      <img src={reportQrImageUrl} alt="Certification QR Code" />
+                      <span>Verification QR</span>
+                    </div>
+                  </div>
+                  <div className="loan-certification-information-provided">Information Provided: <strong>{informationProvidedPercent}%</strong></div>
+                  <p className="loan-certification-ai-disclaimer">AI-assisted recommendations may contain mistakes.</p>
+                </div>
+              </div>
+            </section>
           )}
 
           {step === 1 && (
@@ -5309,7 +5418,7 @@ export default function LendingScorecard() {
           )}
 
           {step === 8 && (
-            <div className="space-y-6">
+            <div className="space-y-6 lending-legacy-filscore">
               <div className="flex flex-wrap justify-end gap-3">
                 <button
                   type="button"
@@ -5531,7 +5640,7 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {!isBorrowerSubscriber && step === 9 && (
+          {step === 9 && (
             <div className="space-y-4">
               <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
@@ -5579,7 +5688,7 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {!isBorrowerSubscriber && step === 10 && (
+          {step === 10 && (
             <div className="space-y-4">
               <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
               <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
@@ -5900,8 +6009,8 @@ export default function LendingScorecard() {
             </div>
 
             <div className="lending-psychometric-step-list">
-              {stepLabels.map((label, i) => {
-                const stepNumber = i + 1;
+              {visibleStepLabels.map((label, i) => {
+                const stepNumber = i + 8;
                 const stepInformation = stepNumber <= 7
                   ? informationCompletion.steps[stepNumber as InformationStepNumber]
                   : null;
