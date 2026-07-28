@@ -1625,6 +1625,12 @@ export default function BuildProfilePage() {
                 {filteredRows.length === 0 ? <tr><td colSpan={4}>No matching saved target rows found. Adjust the Actual vs Target filters.</td></tr> : null}
               </tbody>
             </table>
+                    {targetRows.length > 0 ? <p className="psychometric-section-note">
+          {completedActuals === targetRows.length
+            ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.'
+            : `Actual entry completion: ${completedActuals}/${targetRows.length} (${actualPercent}%). Missing actual values use target values in the projection.`}
+        </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Setup and Continue to Step 10 first.</p>}
+
           </div>
 
           <div className="build-profile-target-actions"><button type="button" className="loan-footer-button" onClick={() => goToStep(9)}>Back to Step 9</button><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => goToStep(11)}>Continue to Step 11</button></div>
