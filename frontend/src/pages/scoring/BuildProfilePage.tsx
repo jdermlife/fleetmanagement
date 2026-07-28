@@ -1643,6 +1643,24 @@ export default function BuildProfilePage() {
       const targetLiabilities = statementTotal(netWorthRows.filter((entry) => entry.section === 'liabilities'), targetValue)
       const actualAssets = statementTotal(netWorthRows.filter((entry) => entry.section === 'assets'), actualValue)
       const actualLiabilities = statementTotal(netWorthRows.filter((entry) => entry.section === 'liabilities'), actualValue)
+      const actualAmounts = Object.fromEntries(targetRows
+        .filter((entry) => entry.hasActual)
+        .map((entry) => [entry.id, entry.rawActual]))
+      const actualScore = computeNetWorthBuildingScore({
+        amounts: actualAmounts,
+        selectedFinancialGoal: profile.values.financialGoal,
+        targetAmount: profile.values.targetAmount,
+        targetMonths: profile.values.targetMonths,
+      })
+      const actualAdvisories = computeAiAdvisories({
+        score: actualScore,
+        amounts: actualAmounts,
+        labels: Object.fromEntries(targetRows.map((entry) => [entry.id, entry.label])),
+        currency,
+      })
+      const actualNetWorthAdvisory = actualAdvisories['ai-net-worth']
+      const actualLeverageAdvisory = actualAdvisories['ai-dta']
+      const hasActualCashFlowInputs = targetRows.some((entry) => entry.hasActual && (entry.section === 'monthly-income' || entry.section === 'monthly-expenses'))
       const renderComparisonStatement = (mode: 'target' | 'actual' | 'variance') => {
         const isVariance = mode === 'variance'
         const assetsTotal = mode === 'target' ? targetAssets : mode === 'actual' ? actualAssets : actualAssets - targetAssets
@@ -1719,6 +1737,37 @@ export default function BuildProfilePage() {
               {renderComparisonStatement('target')}
               {renderComparisonStatement('actual')}
               {renderComparisonStatement('variance')}
+            </div>
+          </details>
+          <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-ai-analysis-dropdown">
+            <summary>AI Analysis</summary>
+            <div className="build-profile-ai-analysis-content">
+              <p className="psychometric-section-note">
+                {completedActuals === targetRows.length
+                  ? 'Analysis uses 100% of the entered actual statement values.'
+                  : `Preliminary analysis uses only ${completedActuals} of ${targetRows.length} entered actual values (${actualPercent}%). Missing actual values are excluded and are not replaced by target values.`}
+              </p>
+              <div className="build-profile-ai-analysis-metrics">
+                <div><span>Actual Assets</span><strong>{formatVarianceCurrency(actualScore.metrics.totalAssets)}</strong></div>
+                <div><span>Actual Liabilities</span><strong>{formatVarianceCurrency(actualScore.metrics.totalLiabilities)}</strong></div>
+                <div><span>Actual Net Worth</span><strong>{formatSignedVariance(actualScore.metrics.netWorth)}</strong></div>
+                <div><span>Actual Monthly Cash Flow</span><strong>{hasActualCashFlowInputs ? formatSignedVariance(actualScore.metrics.monthlyCashFlow) : 'Not available'}</strong></div>
+                <div><span>Actual-Input Score</span><strong>{actualScore.score}</strong><small>{actualScore.grade} - {actualScore.rating}</small></div>
+              </div>
+              <div className="build-profile-ai-analysis-sections">
+                <section>
+                  <h5>Analysis</h5>
+                  <ul>{[...actualNetWorthAdvisory.analysis.slice(0, 5), ...actualLeverageAdvisory.analysis].map((item) => <li key={item}>{item}</li>)}</ul>
+                </section>
+                <section>
+                  <h5>Recommendations</h5>
+                  <ul>
+                    <li>{actualNetWorthAdvisory.recommendation}</li>
+                    <li>{actualLeverageAdvisory.recommendation}</li>
+                    {!hasActualCashFlowInputs ? <li>Enter actual monthly income and expense values to enable cash-flow, savings-rate, and emergency-reserve analysis.</li> : null}
+                  </ul>
+                </section>
+              </div>
             </div>
           </details>
           <div className="build-profile-target-actions"><button type="button" className="loan-footer-button" onClick={() => goToStep(9)}>Back to Step 9</button><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => goToStep(11)}>Continue to Step 11</button></div>

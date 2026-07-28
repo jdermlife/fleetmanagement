@@ -4355,9 +4355,95 @@ th { color: var(--dark-gold); }
   align-self: start;
 }
 
+.build-profile-ai-analysis-dropdown {
+  margin-top: 16px;
+}
+
+.build-profile-ai-analysis-dropdown > summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.build-profile-ai-analysis-content {
+  display: grid;
+  gap: 16px;
+  padding: 18px;
+  background: #f8fafc;
+}
+
+.build-profile-ai-analysis-content > .psychometric-section-note {
+  margin: 0;
+  padding: 10px 12px;
+  border-left: 4px solid #0f766e;
+  background: #ecfdf5;
+  color: #134e4a;
+}
+
+.build-profile-ai-analysis-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.build-profile-ai-analysis-metrics > div {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #dbe4f0;
+  background: #ffffff;
+}
+
+.build-profile-ai-analysis-metrics span,
+.build-profile-ai-analysis-metrics small {
+  display: block;
+  color: #64748b;
+  font-size: 0.7rem;
+}
+
+.build-profile-ai-analysis-metrics strong {
+  display: block;
+  margin-top: 5px;
+  overflow-wrap: anywhere;
+  color: #0f172a;
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.build-profile-ai-analysis-sections {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.build-profile-ai-analysis-sections section {
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid #dbe4f0;
+  background: #ffffff;
+}
+
+.build-profile-ai-analysis-sections h5 {
+  margin: 0 0 9px;
+  color: #0f172a;
+  font-size: 0.88rem;
+}
+
+.build-profile-ai-analysis-sections ul {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  padding-left: 18px;
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 960px) {
   .build-profile-comparison-grid {
     grid-template-columns: 1fr;
+  }
+
+  .build-profile-ai-analysis-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -4365,6 +4451,15 @@ th { color: var(--dark-gold); }
   .build-profile-comparison-grid {
     gap: 12px;
     padding: 12px;
+  }
+
+  .build-profile-ai-analysis-content {
+    padding: 12px;
+  }
+
+  .build-profile-ai-analysis-metrics,
+  .build-profile-ai-analysis-sections {
+    grid-template-columns: 1fr;
   }
 }
 
