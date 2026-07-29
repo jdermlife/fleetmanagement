@@ -808,6 +808,23 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })).toBeTruthy()
+    const summaryTitles = [
+      '1. Target vs Actual Total Assets',
+      '2. Target vs Actual Liabilities',
+      '3. Target vs Actual Net Worth',
+      '4. Target vs Actual Net Income/Loss',
+      '5. Target vs Actual Goals and Protection',
+    ]
+    summaryTitles.forEach((title) => expect(screen.getByRole('heading', { name: title })).toBeTruthy())
+    const assetSummary = screen.getByRole('heading', { name: '1. Target vs Actual Total Assets' }).closest('article')!
+    expect(within(assetSummary).getByText('₱50,000.00')).toBeTruthy()
+    expect(within(assetSummary).getByText('₱45,000.00')).toBeTruthy()
+    expect(within(assetSummary).getByText('-₱5,000.00')).toBeTruthy()
+    await user.click(within(assetSummary).getByText('Detailed Analysis and Recommendation', { selector: 'summary' }))
+    expect(within(assetSummary).getByText('Analysis')).toBeTruthy()
+    expect(within(assetSummary).getByText('Recommendation')).toBeTruthy()
+    expect(within(assetSummary).getByText(/below the Step 8 target/)).toBeTruthy()
     const financialComparison = screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }).closest('details')!
     await user.click(screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }))
     const targetStatement = financialComparison.querySelector('.build-profile-comparison-target')!

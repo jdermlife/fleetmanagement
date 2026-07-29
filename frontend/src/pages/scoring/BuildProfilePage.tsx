@@ -1708,6 +1708,74 @@ export default function BuildProfilePage() {
       const financialTotal = (section: StatementSection, mode: 'target' | 'actual' | 'variance') => financialRows
         .filter((entry) => entry.section === section)
         .reduce((sum, entry) => sum + financialValue(entry, mode), 0)
+      const summaryTotal = (section: StatementSection, mode: 'target' | 'actual') => targetRows
+        .filter((entry) => entry.section === section)
+        .reduce((sum, entry) => sum + (mode === 'target' ? entry.targetAmount : entry.hasActual ? entry.actualAmount : 0), 0)
+      const targetAssetTotal = summaryTotal('assets', 'target')
+      const actualAssetTotal = summaryTotal('assets', 'actual')
+      const targetLiabilityTotal = summaryTotal('liabilities', 'target')
+      const actualLiabilityTotal = summaryTotal('liabilities', 'actual')
+      const targetNetWorth = targetAssetTotal - targetLiabilityTotal
+      const actualNetWorth = actualAssetTotal - actualLiabilityTotal
+      const targetNetIncome = financialTotal('monthly-income', 'target') - financialTotal('monthly-expenses', 'target')
+      const actualNetIncome = financialTotal('monthly-income', 'actual') - financialTotal('monthly-expenses', 'actual')
+      const targetGoalsProtection = financialTotal('financial-goals', 'target') + financialTotal('insurance-coverage', 'target')
+      const actualGoalsProtection = financialTotal('financial-goals', 'actual') + financialTotal('insurance-coverage', 'actual')
+      const comparisonSummaries = [
+        {
+          title: '1. Target vs Actual Total Assets',
+          target: targetAssetTotal,
+          actual: actualAssetTotal,
+          analysis: actualAssetTotal >= targetAssetTotal
+            ? `Actual assets are ${formatVarianceCurrency(actualAssetTotal - targetAssetTotal)} at or above the Step 8 target.`
+            : `Actual assets are ${formatVarianceCurrency(targetAssetTotal - actualAssetTotal)} below the Step 8 target.`,
+          recommendation: actualAssetTotal >= targetAssetTotal
+            ? 'Preserve the gain, maintain adequate liquidity, and review asset concentration before adding new exposure.'
+            : 'Prioritize regular asset contributions, protect liquid reserves, and address the largest target shortfalls first.',
+        },
+        {
+          title: '2. Target vs Actual Liabilities',
+          target: targetLiabilityTotal,
+          actual: actualLiabilityTotal,
+          analysis: actualLiabilityTotal <= targetLiabilityTotal
+            ? `Actual liabilities are ${formatVarianceCurrency(targetLiabilityTotal - actualLiabilityTotal)} at or below the Step 8 target.`
+            : `Actual liabilities exceed the Step 8 target by ${formatVarianceCurrency(actualLiabilityTotal - targetLiabilityTotal)}.`,
+          recommendation: actualLiabilityTotal <= targetLiabilityTotal
+            ? 'Continue scheduled repayments and direct available surplus toward the highest-cost remaining obligations.'
+            : 'Avoid additional borrowing, review interest costs, and accelerate repayment of the liabilities with the greatest cash-flow impact.',
+        },
+        {
+          title: '3. Target vs Actual Net Worth',
+          target: targetNetWorth,
+          actual: actualNetWorth,
+          analysis: actualNetWorth >= targetNetWorth
+            ? `Actual net worth is ${formatVarianceCurrency(actualNetWorth - targetNetWorth)} above the Step 8 target.`
+            : `Actual net worth is ${formatVarianceCurrency(targetNetWorth - actualNetWorth)} below the Step 8 target.`,
+          recommendation: actualNetWorth >= targetNetWorth
+            ? 'Maintain positive asset growth and liability control while rebalancing toward diversified, productive assets.'
+            : 'Improve net worth through a combined plan of asset accumulation, debt reduction, and protection against unplanned withdrawals.',
+        },
+        {
+          title: '4. Target vs Actual Net Income/Loss',
+          target: targetNetIncome,
+          actual: actualNetIncome,
+          analysis: actualNetIncome >= targetNetIncome
+            ? `Actual monthly net income is ${formatVarianceCurrency(actualNetIncome - targetNetIncome)} above the Step 8 target.`
+            : `Actual monthly net income is ${formatVarianceCurrency(targetNetIncome - actualNetIncome)} below the Step 8 target.`,
+          recommendation: actualNetIncome > 0
+            ? 'Allocate the monthly surplus across emergency reserves, priority debt, goals, and long-term investments.'
+            : 'Reduce nonessential recurring expenses and strengthen dependable income before adding financial commitments.',
+        },
+        {
+          title: '5. Target vs Actual Goals and Protection',
+          target: targetGoalsProtection,
+          actual: actualGoalsProtection,
+          analysis: `Goals are ${formatVarianceCurrency(financialTotal('financial-goals', 'actual'))} actual versus ${formatVarianceCurrency(financialTotal('financial-goals', 'target'))} target. Protection is ${formatVarianceCurrency(financialTotal('insurance-coverage', 'actual'))} actual versus ${formatVarianceCurrency(financialTotal('insurance-coverage', 'target'))} target.`,
+          recommendation: actualGoalsProtection >= targetGoalsProtection
+            ? 'Confirm that goal funding and insurance coverage remain affordable, correctly allocated, and aligned with current priorities.'
+            : 'Close essential protection gaps first, then automate affordable contributions toward the highest-priority goals.',
+        },
+      ]
       const renderFinancialComparisonGroup = (title: string, section: StatementSection, tone: string, mode: 'target' | 'actual' | 'variance') => {
         const rows = financialRows.filter((entry) => entry.section === section)
         return <section className={`build-profile-net-worth-column build-profile-income-expense-column build-profile-income-expense-${tone}`}>
@@ -1794,6 +1862,25 @@ export default function BuildProfilePage() {
         </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Actuals and Continue to Step 10 first.</p>}
 
         {targetRows.length > 0 ? <>
+          <section className="build-profile-detail-section build-profile-comparison-summary" aria-labelledby="comparison-summary-title">
+            <h4 id="comparison-summary-title">Target vs Actual Summary and Recommendations</h4>
+            <div className="build-profile-comparison-summary-grid">
+              {comparisonSummaries.map((summary) => <article key={summary.title} className="build-profile-comparison-summary-card">
+                <h5>{summary.title}</h5>
+                <dl>
+                  <div><dt>Step 8 Target</dt><dd>{formatVarianceCurrency(summary.target)}</dd></div>
+                  <div><dt>Step 9 Actual</dt><dd>{formatVarianceCurrency(summary.actual)}</dd></div>
+                  <div><dt>Variance</dt><dd>{formatSignedVariance(summary.actual - summary.target)}</dd></div>
+                </dl>
+                <details>
+                  <summary>Detailed Analysis and Recommendation</summary>
+                  <div><strong>Analysis</strong><p>{summary.analysis}</p></div>
+                  <div><strong>Recommendation</strong><p>{summary.recommendation}</p></div>
+                </details>
+              </article>)}
+            </div>
+          </section>
+
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown build-profile-comparison-input-dropdown">
             <summary>Net Worth Target vs Actual Inputs</summary>
             <p className="psychometric-section-note">Enter target and actual asset or liability amounts. Variance and net worth totals update automatically.</p>
