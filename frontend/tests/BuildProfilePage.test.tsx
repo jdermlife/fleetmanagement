@@ -808,7 +808,13 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })).toBeTruthy()
+    const aiAnalysisDropdown = screen.getByText('FILSCORE AI Analysis', { selector: 'summary' }).closest('details')!
+    const comparisonSummaryHeading = screen.getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })
+    expect(aiAnalysisDropdown.hasAttribute('open')).toBe(false)
+    expect(aiAnalysisDropdown.contains(comparisonSummaryHeading)).toBe(true)
+    await user.click(screen.getByText('FILSCORE AI Analysis', { selector: 'summary' }))
+    expect(aiAnalysisDropdown.hasAttribute('open')).toBe(true)
+    expect(within(aiAnalysisDropdown).getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })).toBeTruthy()
     const summaryTitles = [
       '1. Target vs Actual Total Assets',
       '2. Target vs Actual Liabilities',
@@ -816,8 +822,8 @@ describe('BuildProfilePage', () => {
       '4. Target vs Actual Net Income/Loss',
       '5. Target vs Actual Goals and Protection',
     ]
-    summaryTitles.forEach((title) => expect(screen.getByRole('heading', { name: title })).toBeTruthy())
-    const assetSummary = screen.getByRole('heading', { name: '1. Target vs Actual Total Assets' }).closest('article')!
+    summaryTitles.forEach((title) => expect(within(aiAnalysisDropdown).getByRole('heading', { name: title })).toBeTruthy())
+    const assetSummary = within(aiAnalysisDropdown).getByRole('heading', { name: '1. Target vs Actual Total Assets' }).closest('article')!
     expect(within(assetSummary).getByText('₱50,000.00')).toBeTruthy()
     expect(within(assetSummary).getByText('₱45,000.00')).toBeTruthy()
     expect(within(assetSummary).getByText('-₱5,000.00')).toBeTruthy()

@@ -1862,25 +1862,6 @@ export default function BuildProfilePage() {
         </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Actuals and Continue to Step 10 first.</p>}
 
         {targetRows.length > 0 ? <>
-          <section className="build-profile-detail-section build-profile-comparison-summary" aria-labelledby="comparison-summary-title">
-            <h4 id="comparison-summary-title">Target vs Actual Summary and Recommendations</h4>
-            <div className="build-profile-comparison-summary-grid">
-              {comparisonSummaries.map((summary) => <article key={summary.title} className="build-profile-comparison-summary-card">
-                <h5>{summary.title}</h5>
-                <dl>
-                  <div><dt>Step 8 Target</dt><dd>{formatVarianceCurrency(summary.target)}</dd></div>
-                  <div><dt>Step 9 Actual</dt><dd>{formatVarianceCurrency(summary.actual)}</dd></div>
-                  <div><dt>Variance</dt><dd>{formatSignedVariance(summary.actual - summary.target)}</dd></div>
-                </dl>
-                <details>
-                  <summary>Detailed Analysis and Recommendation</summary>
-                  <div><strong>Analysis</strong><p>{summary.analysis}</p></div>
-                  <div><strong>Recommendation</strong><p>{summary.recommendation}</p></div>
-                </details>
-              </article>)}
-            </div>
-          </section>
-
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown build-profile-comparison-input-dropdown">
             <summary>Net Worth Target vs Actual Inputs</summary>
             <p className="psychometric-section-note">Enter target and actual asset or liability amounts. Variance and net worth totals update automatically.</p>
@@ -1960,6 +1941,24 @@ export default function BuildProfilePage() {
                   </ul>
                 </section>
               </div>
+              <section className="build-profile-comparison-summary" aria-labelledby="comparison-summary-title">
+                <h4 id="comparison-summary-title">Target vs Actual Summary and Recommendations</h4>
+                <div className="build-profile-comparison-summary-grid">
+                  {comparisonSummaries.map((summary) => <article key={summary.title} className="build-profile-comparison-summary-card">
+                    <h5>{summary.title}</h5>
+                    <dl>
+                      <div><dt>Step 8 Target</dt><dd>{formatVarianceCurrency(summary.target)}</dd></div>
+                      <div><dt>Step 9 Actual</dt><dd>{formatVarianceCurrency(summary.actual)}</dd></div>
+                      <div><dt>Variance</dt><dd>{formatSignedVariance(summary.actual - summary.target)}</dd></div>
+                    </dl>
+                    <details>
+                      <summary>Detailed Analysis and Recommendation</summary>
+                      <div><strong>Analysis</strong><p>{summary.analysis}</p></div>
+                      <div><strong>Recommendation</strong><p>{summary.recommendation}</p></div>
+                    </details>
+                  </article>)}
+                </div>
+              </section>
             </div>
           </details>
           <div className="build-profile-target-actions"><button type="button" className="loan-footer-button" onClick={() => goToStep(9)}>Back to Step 9</button><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => goToStep(11)}>Continue to Step 11</button></div>
