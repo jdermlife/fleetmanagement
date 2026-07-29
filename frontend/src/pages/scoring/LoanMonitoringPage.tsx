@@ -827,9 +827,6 @@ export default function LoanMonitoringPage() {
                       <option value="Home Loan">Home Loan</option>
                       <option value="Auto Loan">Auto Loan</option>
                       <option value="Personal Loan">Personal Loan</option>
-                      <option value="Business Loan">Business Loan</option>
-                      <option value="Credit Line">Credit Line</option>
-                      <option value="Bridge Loan">Bridge Loan</option>
                       <option value="Other">Other</option>
                     </select>
                   </label>
