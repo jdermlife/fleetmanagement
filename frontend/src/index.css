@@ -4326,6 +4326,18 @@ th { color: var(--dark-gold); }
   color: #0f172a;
 }
 
+.build-profile-detailed-net-worth > summary {
+  background: #d6a514;
+  color: #241a00;
+  font-weight: 900;
+}
+
+.build-profile-income-expense-statement > summary {
+  background: #f3d77a;
+  color: #332600;
+  font-weight: 800;
+}
+
 .build-profile-net-worth-meta {
   display: flex;
   justify-content: space-between;
@@ -4753,7 +4765,8 @@ th { color: var(--dark-gold); }
   margin-top: 16px;
 }
 
-.build-profile-wealth-entry-grid label {
+.build-profile-wealth-entry-grid > label,
+.build-profile-wealth-entry-grid > article {
   display: grid;
   align-content: start;
   gap: 6px;
@@ -4777,6 +4790,14 @@ th { color: var(--dark-gold); }
 .build-profile-wealth-entry-grid input {
   min-width: 0;
   min-height: 42px;
+}
+
+.build-profile-wealth-entry-grid .build-profile-account-remark {
+  min-height: 32px;
+  height: 32px;
+  padding-block: 5px;
+  font-size: 0.78rem;
+  font-weight: 500;
 }
 
 .build-profile-wealth-entry-grid output {
