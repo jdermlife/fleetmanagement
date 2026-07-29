@@ -762,16 +762,22 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
+    await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-income')
+    await user.type(screen.getByLabelText('Salary setup amount'), '60000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')
     await user.type(screen.getByLabelText('Housing setup amount'), '30000')
     await user.type(screen.getByLabelText('Groceries setup amount'), '20000')
+    await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'financial-goals')
+    await user.type(screen.getByLabelText('Home Purchase setup amount'), '10000')
+    await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'insurance-coverage')
+    await user.type(screen.getByLabelText('Life Insurance setup amount'), '5000')
 
     await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
 
     expect(screen.getByRole('heading', { name: 'Step 9: Actuals' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Targeted Goal Summary' })).toBeTruthy()
     expect(screen.getByText('Build Emergency Fund', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
-    expect(screen.getByText('3', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
+    expect(screen.getByText('6', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     const actualNetWorthDropdown = screen.getByText('Actual Net Worth', { selector: 'strong' }).closest('details')!
     const actualIncomeDropdown = screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
@@ -787,7 +793,11 @@ describe('BuildProfilePage', () => {
     await user.type(within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount'), '45000')
     expect(within(actualNetWorthDropdown.querySelector('.build-profile-net-worth-result')!).getByText('₱45,000.00')).toBeTruthy()
     await user.click(screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }))
+    await user.type(within(actualIncomeDropdown).getByLabelText('Salary actual statement amount'), '65000')
     await user.type(within(actualIncomeDropdown).getByLabelText('Housing actual statement amount'), '25000')
+    await user.type(within(actualIncomeDropdown).getByLabelText('Groceries actual statement amount'), '18000')
+    await user.type(within(actualIncomeDropdown).getByLabelText('Home Purchase actual statement amount'), '12000')
+    await user.type(within(actualIncomeDropdown).getByLabelText('Life Insurance actual statement amount'), '6000')
 
     await user.click(screen.getByText('Statement Filters - Details', { selector: 'summary' }))
     await user.selectOptions(screen.getByLabelText('Actual filter by statement section'), 'liabilities')
@@ -798,6 +808,20 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
+    const financialComparison = screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }).closest('details')!
+    await user.click(screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }))
+    const targetStatement = financialComparison.querySelector('.build-profile-comparison-target')!
+    const actualStatement = financialComparison.querySelector('.build-profile-comparison-actual')!
+    const varianceStatement = financialComparison.querySelector('.build-profile-comparison-variance')!
+    expect(within(targetStatement).getByText('Step 8 Setup')).toBeTruthy()
+    expect(within(actualStatement).getByText('Step 9 Setup')).toBeTruthy()
+    expect(within(varianceStatement).getByText('Step 9 less Step 8')).toBeTruthy()
+    expect(within(within(targetStatement).getByText('Salary').parentElement!).getByText('₱60,000.00')).toBeTruthy()
+    expect(within(within(actualStatement).getByText('Salary').parentElement!).getByText('₱65,000.00')).toBeTruthy()
+    expect(within(within(varianceStatement).getByText('Salary').parentElement!).getByText('+₱5,000.00')).toBeTruthy()
+    expect(within(within(targetStatement).getByText('Net Income').parentElement!).getByText('₱10,000.00')).toBeTruthy()
+    expect(within(within(actualStatement).getByText('Net Income').parentElement!).getByText('₱22,000.00')).toBeTruthy()
+    expect(within(within(varianceStatement).getByText('Net Income').parentElement!).getByText('+₱12,000.00')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Previous' }))
     expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))

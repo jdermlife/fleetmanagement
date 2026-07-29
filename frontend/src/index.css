@@ -4522,6 +4522,11 @@ th { color: var(--dark-gold); }
   font-size: 0.72rem;
 }
 
+.build-profile-financial-comparison-statement .build-profile-income-expense-results {
+  grid-template-columns: minmax(0, 1fr);
+  padding: 12px;
+}
+
 .build-profile-comparison-variance-line span {
   min-width: 0;
 }
