@@ -3538,6 +3538,88 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: rgba(148, 163, 184, 0.12);
 }
 
+.bill-reminder-payment-groups {
+  display: grid;
+  gap: 20px;
+}
+
+.bill-reminder-payment-group {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #dbe5e1;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.bill-reminder-payment-group-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: 2px solid #0f766e;
+}
+
+.bill-reminder-payment-group-heading span,
+.bill-reminder-payment-summary span {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.bill-reminder-payment-group-heading h4 {
+  margin: 3px 0 0;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.bill-reminder-biller-data-table {
+  min-width: 960px;
+}
+
+.bill-reminder-payment-table {
+  min-width: 620px;
+}
+
+.bill-reminder-payment-table input {
+  width: 100%;
+  min-width: 0;
+}
+
+.bill-reminder-payment-table tfoot td {
+  font-weight: 700;
+}
+
+.bill-reminder-payment-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bill-reminder-payment-summary > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
+}
+
+.bill-reminder-payment-summary strong {
+  overflow-wrap: anywhere;
+}
+
+.bill-reminder-payment-explanations {
+  display: grid;
+  gap: 6px;
+}
+
+.bill-reminder-payment-explanations input {
+  width: 100%;
+}
+
 .budget-workflow-ai-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -6779,6 +6861,19 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 768px) {
+  .bill-reminder-payment-group {
+    padding: 12px;
+  }
+
+  .bill-reminder-payment-group-heading {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .bill-reminder-payment-summary {
+    grid-template-columns: 1fr;
+  }
+
   .networth-dashboard-page .budget-workflow-inline-actions {
     display: grid;
     grid-template-columns: 1fr;

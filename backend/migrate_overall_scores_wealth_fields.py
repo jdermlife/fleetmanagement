@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from app.database import engine
-from sqlalchemy import text
+from sqlalchemy import inspect
 
 
 WEALTH_COLUMNS = {
@@ -16,41 +16,38 @@ WEALTH_COLUMNS = {
 }
 
 
-def _has_column(connection, table_name: str, column_name: str) -> bool:
-    if connection.dialect.name == "sqlite":
-        rows = connection.exec_driver_sql(f"PRAGMA table_info({table_name})")
-        return any(row[1] == column_name for row in rows)
+def ensure_wealth_score_columns(bind=engine) -> None:
+    with bind.begin() as connection:
+        if not inspect(connection).has_table("overall_scores"):
+            return
 
-    return connection.execute(
-        text(
-            """
-            SELECT 1
-            FROM information_schema.columns
-            WHERE table_schema = 'public'
-              AND table_name = :table_name
-              AND column_name = :column_name
-            LIMIT 1
-            """
-        ),
-        {"table_name": table_name, "column_name": column_name},
-    ).first() is not None
+        if connection.dialect.name == "postgresql":
+            for column_name, column_type in WEALTH_COLUMNS.items():
+                connection.exec_driver_sql(
+                    f"ALTER TABLE overall_scores ADD COLUMN IF NOT EXISTS {column_name} {column_type}"
+                )
+            return
 
-
-def run() -> None:
-    with engine.begin() as connection:
-        for column_name, postgres_type in WEALTH_COLUMNS.items():
-            if _has_column(connection, "overall_scores", column_name):
+        existing_columns = {
+            column["name"] for column in inspect(connection).get_columns("overall_scores")
+        }
+        for column_name, default_type in WEALTH_COLUMNS.items():
+            if column_name in existing_columns:
                 continue
 
-            column_type = postgres_type
-            if connection.dialect.name == "sqlite":
-                column_type = "TEXT" if column_name in {
-                    "wealth_component_scores",
-                    "wealth_calculated_at",
-                } else postgres_type
+            column_type = default_type
+            if connection.dialect.name == "sqlite" and column_name in {
+                "wealth_component_scores",
+                "wealth_calculated_at",
+            }:
+                column_type = "TEXT"
             connection.exec_driver_sql(
                 f"ALTER TABLE overall_scores ADD COLUMN {column_name} {column_type}"
             )
+
+
+def run() -> None:
+    ensure_wealth_score_columns()
 
 
 if __name__ == "__main__":

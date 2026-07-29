@@ -19,6 +19,12 @@ type BillerSetup = {
   budgetedAmount: number;
 };
 
+type BillerPayment = {
+  id: string;
+  datePaid: string;
+  amountPaid: string;
+};
+
 interface BillReminderDraft {
   step: WorkflowStep;
   periodStart: string;
@@ -33,7 +39,8 @@ interface BillReminderDraft {
   frequency: BillerFrequency;
   budgetedAmount: string;
   savedSetup: BillerSetup[];
-  actualEntries: Record<string, string>;
+  paymentEntries: Record<string, BillerPayment[]>;
+  actualEntries?: Record<string, string>;
   varianceNotes: Record<string, string>;
   step3RecordSavedAt: string;
   isBaselineAllocationFixed: boolean;
@@ -53,7 +60,7 @@ const DEFAULT_BILL_REMINDER_DRAFT: BillReminderDraft = {
   frequency: 'Monthly',
   budgetedAmount: '',
   savedSetup: [],
-  actualEntries: {},
+  paymentEntries: {},
   varianceNotes: {},
   step3RecordSavedAt: '',
   isBaselineAllocationFixed: false,
@@ -76,6 +83,14 @@ function formatSignedCurrency(amount: number) {
     return `-${absoluteAmount}`;
   }
   return absoluteAmount;
+}
+
+function createPaymentRow(billerId: string, index = 0): BillerPayment {
+  return {
+    id: `${billerId}-payment-${Date.now()}-${index}`,
+    datePaid: '',
+    amountPaid: '',
+  };
 }
 
 function toSafeNumber(rawValue: string | number | undefined) {
@@ -232,7 +247,7 @@ export default function BillReminderPage() {
   const [budgetedAmount, setBudgetedAmount] = useState('');
 
   const [savedSetup, setSavedSetup] = useState<BillerSetup[]>([]);
-  const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
+  const [paymentEntries, setPaymentEntries] = useState<Record<string, BillerPayment[]>>({});
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [step3RecordSavedAt, setStep3RecordSavedAt] = useState('');
   const [isBaselineAllocationFixed, setIsBaselineAllocationFixed] = useState(false);
@@ -252,12 +267,11 @@ export default function BillReminderPage() {
     frequency,
     budgetedAmount,
     savedSetup,
-    actualEntries,
+    paymentEntries,
     varianceNotes,
     step3RecordSavedAt,
     isBaselineAllocationFixed,
   }), [
-    actualEntries,
     budgetedAmount,
     company,
     draftBillers,
@@ -268,6 +282,7 @@ export default function BillReminderPage() {
     frequency,
     periodEnd,
     periodStart,
+    paymentEntries,
     savedSetup,
     step,
     step3RecordSavedAt,
@@ -290,7 +305,19 @@ export default function BillReminderPage() {
     setFrequency(draft.frequency);
     setBudgetedAmount(draft.budgetedAmount);
     setSavedSetup(draft.savedSetup);
-    setActualEntries(draft.actualEntries);
+    setPaymentEntries(
+      Object.keys(draft.paymentEntries ?? {}).length > 0
+        ? draft.paymentEntries
+        : draft.savedSetup.reduce<Record<string, BillerPayment[]>>((entries, biller) => {
+            const legacyAmount = draft.actualEntries?.[biller.id] ?? '';
+            entries[biller.id] = [{
+              id: `${biller.id}-legacy-payment`,
+              datePaid: '',
+              amountPaid: legacyAmount,
+            }];
+            return entries;
+          }, {}),
+    );
     setVarianceNotes(draft.varianceNotes);
     setStep3RecordSavedAt(draft.step3RecordSavedAt ?? '');
     setIsBaselineAllocationFixed(draft.isBaselineAllocationFixed ?? false);
@@ -360,7 +387,9 @@ export default function BillReminderPage() {
 
     const setupCount = savedSetup.length;
     const actualCompleted = setupCount > 0
-      ? savedSetup.filter((biller) => !isBlank(actualEntries[biller.id])).length / setupCount
+      ? savedSetup.filter((biller) => (paymentEntries[biller.id] ?? []).some(
+        (payment) => !isBlank(payment.datePaid) && !isBlank(payment.amountPaid),
+      )).length / setupCount
       : 0;
     const notesCompleted = setupCount > 0
       ? savedSetup.filter((biller) => !isBlank(varianceNotes[biller.id])).length / setupCount
@@ -376,11 +405,11 @@ export default function BillReminderPage() {
       3: step3Percent,
     };
   }, [
-    actualEntries,
     billerAllocationDraft,
     draftBillers,
     periodEnd,
     periodStart,
+    paymentEntries,
     savedSetup,
     isBaselineAllocationFixed,
     step3RecordSavedAt,
@@ -606,7 +635,9 @@ export default function BillReminderPage() {
         ...biller,
       })),
     );
-    setActualEntries({});
+    setPaymentEntries(Object.fromEntries(
+      draftBillers.map((biller) => [biller.id, [createPaymentRow(biller.id)]]),
+    ));
     setVarianceNotes({});
     setStep3RecordSavedAt('');
     setIsBaselineAllocationFixed(true);
@@ -637,7 +668,9 @@ export default function BillReminderPage() {
         ...biller,
       })),
     );
-    setActualEntries({});
+    setPaymentEntries(Object.fromEntries(
+      draftBillers.map((biller) => [biller.id, [createPaymentRow(biller.id)]]),
+    ));
     setVarianceNotes({});
     setStep3RecordSavedAt('');
     setIsBaselineAllocationFixed(true);
@@ -649,10 +682,55 @@ export default function BillReminderPage() {
     setSetupStatusMessage('Baseline allocation unlocked. You may now revise Step 2 setup and allocation.');
   };
 
+  const handleAddPaymentRow = (billerId: string) => {
+    setPaymentEntries((previous) => {
+      const currentRows = previous[billerId] ?? [];
+      return {
+        ...previous,
+        [billerId]: [...currentRows, createPaymentRow(billerId, currentRows.length)],
+      };
+    });
+  };
+
+  const handleUpdatePaymentRow = (
+    billerId: string,
+    paymentId: string,
+    field: 'datePaid' | 'amountPaid',
+    value: string,
+  ) => {
+    setPaymentEntries((previous) => ({
+      ...previous,
+      [billerId]: (previous[billerId] ?? []).map((payment) => (
+        payment.id === paymentId ? { ...payment, [field]: value } : payment
+      )),
+    }));
+  };
+
+  const handleRemovePaymentRow = (billerId: string, paymentId: string) => {
+    setPaymentEntries((previous) => {
+      const remainingRows = (previous[billerId] ?? []).filter(
+        (payment) => payment.id !== paymentId,
+      );
+      return {
+        ...previous,
+        [billerId]: remainingRows.length > 0 ? remainingRows : [createPaymentRow(billerId)],
+      };
+    });
+  };
+
   const handleSaveVarianceRecord = () => {
     const hasComputedVariance = varianceRows.some((row) => row.hasActual);
     if (!hasComputedVariance) {
       setSetupStatusMessage('Please enter at least one actual amount in Step 3 before saving the record.');
+      return;
+    }
+
+    const hasIncompletePayment = Object.values(paymentEntries)
+      .flat()
+      .some((payment) => (!isBlank(payment.datePaid) && isBlank(payment.amountPaid))
+        || (isBlank(payment.datePaid) && !isBlank(payment.amountPaid)));
+    if (hasIncompletePayment) {
+      setSetupStatusMessage('Please complete both Date Paid and Amount Paid for every payment row before saving.');
       return;
     }
 
@@ -662,19 +740,26 @@ export default function BillReminderPage() {
 
   const varianceRows = useMemo(() => {
     return savedSetup.map((biller) => {
-      const rawActual = actualEntries[biller.id] ?? '';
-      const hasActual = !isBlank(rawActual);
-      const actualAmount = hasActual ? toSafeNumber(rawActual) : 0;
+      const payments = paymentEntries[biller.id] ?? [];
+      const completedPayments = payments.filter(
+        (payment) => !isBlank(payment.datePaid) && !isBlank(payment.amountPaid),
+      );
+      const hasActual = completedPayments.length > 0;
+      const actualAmount = completedPayments.reduce(
+        (sum, payment) => sum + toSafeNumber(payment.amountPaid),
+        0,
+      );
       const variance = hasActual ? actualAmount - biller.budgetedAmount : 0;
 
       return {
         ...biller,
+        payments,
         hasActual,
         actualAmount,
         variance,
       };
     });
-  }, [savedSetup, actualEntries]);
+  }, [savedSetup, paymentEntries]);
 
   const setupVsActualTotals = useMemo(() => {
     const setupTotal = varianceRows.reduce((sum, row) => sum + row.budgetedAmount, 0);
@@ -1159,10 +1244,9 @@ export default function BillReminderPage() {
 
             {step === 3 ? (
               <div className="budget-workflow-step-block">
-                <h3 className="workflow-duplicate-step-title">Step 3: Actual vs Setup Variance</h3>
+                <h3 className="workflow-duplicate-step-title">Step 3: Actual Payments per Biller</h3>
                 <p className="psychometric-section-note">
-                  First column shows saved setup. Second column is blank for user actuals. Third column shows variance.
-                  Fourth column shows AI variance explanation and fifth column provides user variance explanation in small letters.
+                  Each saved biller is shown with its Step 2 baseline data. Enter every actual payment date and amount paid in the rows below the biller, then add more rows as needed.
                 </p>
 
                 {savedSetup.length === 0 ? (
@@ -1170,83 +1254,130 @@ export default function BillReminderPage() {
                     No saved setup yet. Complete Step 2 and click save setup first.
                   </p>
                 ) : (
-                  <div className="psychometric-scale-table-wrap">
-                    <table className="psychometric-scale-table">
-                      <thead>
-                        <tr>
-                          <th>Setup (Saved)</th>
-                          <th>Actual (User Input)</th>
-                          <th>Variance (B/W)</th>
-                          <th>Variance Explanation by AI</th>
-                          <th>Variance Explanation</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {varianceRows.map((row) => (
-                          <tr key={row.id}>
-                            <td data-label="Setup (Saved)">
-                              <strong>{row.company}</strong>
-                              <div>{row.utilityType}</div>
-                              <div>{formatEstimatedDueDayLabel(row.estimatedDueDay)}</div>
-                              <div>{row.emailReminder10DaysBefore ? 'Email reminder: Enabled (10 days before)' : 'Email reminder: Disabled'}</div>
-                              <div>{row.frequency}</div>
-                              <div>{row.dateCovered || 'No date covered'}</div>
-                              <div>{formatCurrency(row.budgetedAmount)}</div>
-                            </td>
-                            <td data-label="Actual (User Input)">
-                              <NumericFormat
-                                value={actualEntries[row.id] ?? ''}
-                                valueIsNumericString
-                                thousandSeparator="," decimalScale={2} fixedDecimalScale
-                                inputMode="decimal" allowNegative={false}
-                                onValueChange={({ value }) => {
-                                  setActualEntries((previous) => ({
-                                    ...previous,
-                                    [row.id]: value,
-                                  }));
-                                }}
-                                placeholder="Enter actual payment"
-                                aria-label={`${row.company} actual payment`}
-                              />
-                            </td>
-                            <td
-                              data-label="Variance (B/W)"
-                              className={`bill-reminder-variance-cell ${row.hasActual ? (row.variance < 0 ? 'bill-reminder-variance-lower' : (row.variance > 0 ? 'bill-reminder-variance-higher' : 'bill-reminder-variance-neutral')) : 'bill-reminder-variance-pending'}`}
-                            >
-                              {row.hasActual ? formatSignedCurrency(row.variance) : 'Pending input'}
-                            </td>
-                            <td data-label="Variance Explanation by AI">
-                              <small className="budget-workflow-variance-copy">
-                                {row.hasActual
-                                  ? buildAiVarianceReason(row.utilityType, row.variance)
-                                  : 'Awaiting user actual amount to generate AI explanation.'}
-                              </small>
-                            </td>
-                            <td data-label="Variance Explanation">
-                              <small className="budget-workflow-variance-copy">
-                                {row.hasActual
-                                  ? (varianceNotes[row.id]?.trim() || buildVarianceExplanation(row.variance))
-                                  : 'Awaiting user actual amount.'}
-                              </small>
-                              {row.hasActual ? (
-                                <input
-                                  type="text"
-                                  value={varianceNotes[row.id] ?? ''}
-                                  onChange={(event) => {
-                                    setVarianceNotes((previous) => ({
-                                      ...previous,
-                                      [row.id]: event.target.value,
-                                    }));
-                                  }}
-                                  placeholder="Optional explanation"
-                                  aria-label={`${row.company} variance explanation`}
-                                />
-                              ) : null}
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                  <div className="bill-reminder-payment-groups">
+                    {varianceRows.map((row) => (
+                      <section className="bill-reminder-payment-group" key={row.id} aria-labelledby={`biller-payment-${row.id}`}>
+                        <div className="bill-reminder-payment-group-heading">
+                          <div>
+                            <span>Biller</span>
+                            <h4 id={`biller-payment-${row.id}`}>{row.company}</h4>
+                          </div>
+                          <strong>{formatCurrency(row.budgetedAmount)} budget</strong>
+                        </div>
+
+                        <div className="psychometric-scale-table-wrap">
+                          <table className="psychometric-scale-table bill-reminder-biller-data-table">
+                            <thead>
+                              <tr>
+                                <th>Company</th>
+                                <th>Utility / Amortization</th>
+                                <th>Estimated Due Date</th>
+                                <th>Email Reminder</th>
+                                <th>Frequency</th>
+                                <th>Date Covered</th>
+                                <th>Allocation %</th>
+                                <th>Budgeted Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr>
+                                <td data-label="Company">{row.company}</td>
+                                <td data-label="Utility / Amortization">{row.utilityType}</td>
+                                <td data-label="Estimated Due Date">{formatEstimatedDueDayLabel(row.estimatedDueDay)}</td>
+                                <td data-label="Email Reminder">{row.emailReminder10DaysBefore ? 'Enabled (10 days before)' : 'Disabled'}</td>
+                                <td data-label="Frequency">{row.frequency}</td>
+                                <td data-label="Date Covered">{row.dateCovered || 'Not set'}</td>
+                                <td data-label="Allocation %">{toSafeNumber(billerAllocationDraft[row.id] ?? '').toFixed(2)}%</td>
+                                <td data-label="Budgeted Amount">{formatCurrency(row.budgetedAmount)}</td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+
+                        <div className="psychometric-scale-table-wrap">
+                          <table className="psychometric-scale-table bill-reminder-payment-table">
+                            <thead>
+                              <tr>
+                                <th>Payment No.</th>
+                                <th>Actual Payment Date</th>
+                                <th>Amount Paid</th>
+                                <th>Action</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {row.payments.map((payment, paymentIndex) => (
+                                <tr key={payment.id}>
+                                  <td data-label="Payment No.">{paymentIndex + 1}</td>
+                                  <td data-label="Actual Payment Date">
+                                    <input
+                                      type="date"
+                                      value={payment.datePaid}
+                                      onChange={(event) => handleUpdatePaymentRow(row.id, payment.id, 'datePaid', event.target.value)}
+                                      aria-label={`${row.company} payment ${paymentIndex + 1} date paid`}
+                                    />
+                                  </td>
+                                  <td data-label="Amount Paid">
+                                    <NumericFormat
+                                      value={payment.amountPaid}
+                                      valueIsNumericString
+                                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                                      inputMode="decimal" allowNegative={false}
+                                      onValueChange={({ value }) => handleUpdatePaymentRow(row.id, payment.id, 'amountPaid', value)}
+                                      placeholder="Enter amount paid"
+                                      aria-label={`${row.company} payment ${paymentIndex + 1} amount paid`}
+                                    />
+                                  </td>
+                                  <td data-label="Action">
+                                    <button type="button" className="budget-dashboard-category-reset" onClick={() => handleRemovePaymentRow(row.id, payment.id)}>
+                                      Remove
+                                    </button>
+                                  </td>
+                                </tr>
+                              ))}
+                            </tbody>
+                            <tfoot>
+                              <tr>
+                                <td colSpan={2}>Total Amount Paid</td>
+                                <td>{row.hasActual ? formatCurrency(row.actualAmount) : 'Pending input'}</td>
+                                <td>
+                                  <button type="button" className="psychometric-reset-button" onClick={() => handleAddPaymentRow(row.id)}>
+                                    Add Payment Row
+                                  </button>
+                                </td>
+                              </tr>
+                            </tfoot>
+                          </table>
+                        </div>
+
+                        <div className="bill-reminder-payment-summary">
+                          <div><span>Budgeted</span><strong>{formatCurrency(row.budgetedAmount)}</strong></div>
+                          <div><span>Actual Paid</span><strong>{row.hasActual ? formatCurrency(row.actualAmount) : 'Pending'}</strong></div>
+                          <div className={`bill-reminder-variance-cell ${row.hasActual ? (row.variance < 0 ? 'bill-reminder-variance-lower' : (row.variance > 0 ? 'bill-reminder-variance-higher' : 'bill-reminder-variance-neutral')) : 'bill-reminder-variance-pending'}`}>
+                            <span>Variance</span><strong>{row.hasActual ? formatSignedCurrency(row.variance) : 'Pending'}</strong>
+                          </div>
+                        </div>
+
+                        <div className="bill-reminder-payment-explanations">
+                          <small className="budget-workflow-variance-copy">
+                            {row.hasActual ? buildAiVarianceReason(row.utilityType, row.variance) : 'Enter a payment date and amount to generate the AI variance explanation.'}
+                          </small>
+                          <small className="budget-workflow-variance-copy">
+                            {row.hasActual
+                              ? (varianceNotes[row.id]?.trim() || buildVarianceExplanation(row.variance))
+                              : 'User variance explanation will be available after entering a payment.'}
+                          </small>
+                          {row.hasActual ? (
+                            <input
+                              type="text"
+                              value={varianceNotes[row.id] ?? ''}
+                              onChange={(event) => setVarianceNotes((previous) => ({ ...previous, [row.id]: event.target.value }))}
+                              placeholder="Optional variance explanation"
+                              aria-label={`${row.company} variance explanation`}
+                            />
+                          ) : null}
+                        </div>
+                      </section>
+                    ))}
                   </div>
                 )}
 

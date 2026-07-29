@@ -55,7 +55,7 @@ Note: Python 3.13+ is not currently supported for the FastAPI smoke-test stack i
 
 For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first.
 Before deploying the hardened PayPal flow, run `python migrate_paypal_payment_integrity.py` from `backend`.
-Before enabling application-specific FILSCORE Wealth persistence, run `python migrate_overall_scores_wealth_fields.py` from `backend`.
+The backend performs an idempotent startup preflight for application-specific FILSCORE Wealth columns. The same check can be run manually with `python migrate_overall_scores_wealth_fields.py` from `backend` before deployment.
 
 ### Frontend
 
