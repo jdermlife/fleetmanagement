@@ -4392,6 +4392,24 @@ th { color: var(--dark-gold); }
   text-align: right;
 }
 
+.build-profile-detailed-net-worth-line {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(120px, 38%);
+  align-items: center;
+  gap: 12px;
+  padding: 5px 8px;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+  font-size: 0.75rem;
+}
+
+.build-profile-detailed-net-worth-line input {
+  min-width: 0;
+  padding: 5px 7px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
 .build-profile-net-worth-empty {
   color: #94a3b8;
   font-style: italic;
@@ -4644,8 +4662,32 @@ th { color: var(--dark-gold); }
   background: #fce8e4;
 }
 
+.build-profile-income-expense-group h6 {
+  margin: 0;
+  padding: 7px 8px;
+  background: rgb(255 255 255 / 65%);
+  color: #334155;
+  font-size: 0.72rem;
+}
+
 .build-profile-income-expense-expenses .build-profile-income-expense-lines {
   background: #eaf5de;
+}
+
+.build-profile-income-expense-goals .build-profile-income-expense-lines {
+  background: #fff7d6;
+}
+
+.build-profile-income-expense-protection .build-profile-income-expense-lines {
+  background: #e8f4ff;
+}
+
+.build-profile-income-expense-goals > h5 {
+  background: #d39b18;
+}
+
+.build-profile-income-expense-protection > h5 {
+  background: #287ca8;
 }
 
 .build-profile-income-expense-total {
@@ -4662,6 +4704,14 @@ th { color: var(--dark-gold); }
 
 .build-profile-income-expense-expenses .build-profile-income-expense-total {
   background: #a8cf78;
+}
+
+.build-profile-income-expense-goals .build-profile-income-expense-total {
+  background: #e5b949;
+}
+
+.build-profile-income-expense-protection .build-profile-income-expense-total {
+  background: #69a9c9;
 }
 
 .build-profile-income-expense-results {
