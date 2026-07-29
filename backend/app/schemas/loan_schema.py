@@ -129,6 +129,55 @@ class WealthScoreUpdatePayload(BaseModel):
     ] = "NOT_GENERATED"
 
 
+class NetWorthRecordPayload(BaseModel):
+    snapshot_date: date
+    total_assets: float = 0
+    total_liabilities: float = 0
+    net_worth: float = 0
+    monthly_income: float = 0
+    monthly_expenses: float = 0
+    savings_rate: float = 0
+
+
+class BudgetRecordPayload(BaseModel):
+    budget_month: date
+    category: str = Field(min_length=1, max_length=100)
+    budget_amount: float = 0
+    actual_amount: float = 0
+    variance: float = 0
+
+
+class BudgetRecordsPayload(BaseModel):
+    records: list[BudgetRecordPayload] = Field(default_factory=list)
+
+
+class MonitoringRecordPayload(BaseModel):
+    monitoring_date: date
+    outstanding_balance: float = 0
+    principal_paid: float = 0
+    interest_paid: float = 0
+    monthly_payment: float = 0
+    days_past_due: int = 0
+    loan_status: str = Field(default="CURRENT", max_length=30)
+    dsr: float = 0
+    ltv: float = 0
+    risk_level: str = Field(default="", max_length=30)
+
+
+class BillReminderRecordPayload(BaseModel):
+    bill_type: str = Field(default="", max_length=100)
+    biller_name: str = ""
+    amount_due: float = 0
+    due_date: date | None = None
+    payment_date: date | None = None
+    payment_status: str = Field(default="PENDING", max_length=30)
+    reminder_sent: bool = False
+
+
+class BillReminderRecordsPayload(BaseModel):
+    records: list[BillReminderRecordPayload] = Field(default_factory=list)
+
+
 class DecisionAuditTrailPayload(BaseModel):
     previous_status: str | None = None
     new_status: str | None = None

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
+import { saveLoanApplicationBillReminders } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
@@ -618,7 +619,7 @@ export default function BillReminderPage() {
     setSetupStatusMessage('Biller budgeted amounts were recalculated using the revised allocation percentages.');
   };
 
-  const handleSaveSetup = () => {
+  const handleSaveSetup = async () => {
     if (!periodStart || !periodEnd) {
       setSetupStatusMessage('Please complete period covered before saving this setup.');
       setStep(1);
@@ -649,6 +650,22 @@ export default function BillReminderPage() {
     setIsBaselineAllocationFixed(true);
     setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
+    if (selectedApplicationNo) {
+      try {
+        await saveLoanApplicationBillReminders(selectedApplicationNo, draftBillers.map((biller) => ({
+          bill_type: biller.utilityType.slice(0, 100),
+          biller_name: biller.company,
+          amount_due: biller.budgetedAmount,
+          due_date: biller.dateCovered || null,
+          payment_date: null,
+          payment_status: 'PENDING',
+          reminder_sent: false,
+        })));
+        setSetupStatusMessage('Setup saved to the selected Profile ID bill reminder records. Continue with Step 3.');
+      } catch {
+        setSetupStatusMessage('Setup remains in autosave, but the selected Profile ID bill reminder records could not be updated. Please retry.');
+      }
+    }
   };
 
   const handleFixBaselineAllocation = () => {
@@ -724,7 +741,7 @@ export default function BillReminderPage() {
     });
   };
 
-  const handleSaveVarianceRecord = () => {
+  const handleSaveVarianceRecord = async () => {
     const hasComputedVariance = varianceRows.some((row) => row.hasActual);
     if (!hasComputedVariance) {
       setSetupStatusMessage('Please enter at least one actual amount in Step 3 before saving the record.');
@@ -740,8 +757,40 @@ export default function BillReminderPage() {
       return;
     }
 
-    setStep3RecordSavedAt(new Date().toISOString());
-    setSetupStatusMessage('Step 3 record saved successfully.');
+    if (!selectedApplicationNo) {
+      setStep3RecordSavedAt(new Date().toISOString());
+      setSetupStatusMessage('Step 3 saved in the draft. Select an APP Profile ID to save bill reminder database records.');
+      return;
+    }
+    try {
+      await saveLoanApplicationBillReminders(selectedApplicationNo, savedSetup.map((biller) => {
+        const completedPayments = (paymentEntries[biller.id] ?? [])
+          .filter((payment) => !isBlank(payment.datePaid) && !isBlank(payment.amountPaid));
+        const amountPaid = completedPayments.reduce(
+          (sum, payment) => sum + toSafeNumber(payment.amountPaid),
+          0,
+        );
+        const paymentDates = completedPayments
+          .map((payment) => payment.datePaid)
+          .sort();
+        const latestPaymentDate = paymentDates[paymentDates.length - 1] || null;
+        return {
+          bill_type: biller.utilityType.slice(0, 100),
+          biller_name: biller.company,
+          amount_due: biller.budgetedAmount,
+          due_date: biller.dateCovered || null,
+          payment_date: latestPaymentDate,
+          payment_status: amountPaid >= biller.budgetedAmount
+            ? 'PAID'
+            : amountPaid > 0 ? 'PARTIAL' : 'PENDING',
+          reminder_sent: false,
+        };
+      }));
+      setStep3RecordSavedAt(new Date().toISOString());
+      setSetupStatusMessage('Step 3 saved to the selected Profile ID bill reminder records.');
+    } catch {
+      setSetupStatusMessage('Step 3 remains in autosave, but the selected Profile ID bill reminder records could not be updated. Please retry.');
+    }
   };
 
   const varianceRows = useMemo(() => {

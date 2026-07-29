@@ -858,13 +858,18 @@ export default function BuildProfilePage() {
   const saveProfile = async () => {
     try {
       persistProfileSnapshot(profile)
-      if (sourceApplication) {
-        const payload = loanPayloadFromProfile(profile, sourceApplication)
-        await updateLoanApplication(sourceApplication.application_no, payload)
-        setSourceApplication({ ...sourceApplication, ...payload })
+      const applicationNo = profile.selectedApplicationNo?.trim()
+        || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
+      if (applicationNo) {
+        const baseline = sourceApplication?.application_no === applicationNo
+          ? sourceApplication
+          : await loadProfileApplication(applicationNo)
+        const payload = loanPayloadFromProfile(profile, baseline)
+        await updateLoanApplication(applicationNo, payload)
+        setSourceApplication({ ...baseline, ...payload })
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
-        setSaveMessage('Profile saved in this browser. Select or create a profile before FILSCORE computation.')
+        setSaveMessage('Profile saved in this browser. Create or select an APP record to save it in PostgreSQL.')
       }
     } catch {
       setSaveMessage('Unable to save and synchronize this profile.')

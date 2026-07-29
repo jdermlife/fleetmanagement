@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
+import { saveLoanApplicationBudget } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
@@ -456,7 +457,7 @@ export default function BudgetExpenseTrackerPage() {
     setSetupStatusMessage('Expense setup amounts were recalculated using the revised allocation percentages.');
   };
 
-  const handleSaveSetup = () => {
+  const handleSaveSetup = async () => {
     if (!periodStart || !periodEnd) {
       setSetupStatusMessage('Please complete the period covered before saving the budget setup.');
       setStep(1);
@@ -521,10 +522,42 @@ export default function BudgetExpenseTrackerPage() {
     setActionsToBeTaken('');
     setSetupStatusMessage('Setup saved. Continue with Step 3 to enter actual values and monitor variance.');
     setStep(3);
+    if (selectedApplicationNo) {
+      try {
+        await saveLoanApplicationBudget(selectedApplicationNo, setupLines.map((item) => ({
+          budget_month: periodStart,
+          category: item.label.slice(0, 100),
+          budget_amount: item.setupAmount,
+          actual_amount: 0,
+          variance: 0,
+        })));
+        setSetupStatusMessage('Setup saved to the selected Profile ID budget record. Continue with Step 3.');
+      } catch {
+        setSetupStatusMessage('Setup remains in autosave, but the selected Profile ID budget record could not be updated. Please retry.');
+      }
+    }
   };
 
-  const handleSaveOrFinishStepThree = () => {
-    setSetupStatusMessage('Step 3 saved. Actions to be taken recorded.');
+  const handleSaveOrFinishStepThree = async () => {
+    if (!selectedApplicationNo || !periodStart) {
+      setSetupStatusMessage('Step 3 saved in the draft. Select an APP Profile ID to save the database budget record.');
+      return;
+    }
+    try {
+      await saveLoanApplicationBudget(selectedApplicationNo, savedSetup.map((item) => {
+        const actualAmount = toSafeNumber(actualEntries[item.id] ?? '');
+        return {
+          budget_month: periodStart,
+          category: item.label.slice(0, 100),
+          budget_amount: item.setupAmount,
+          actual_amount: actualAmount,
+          variance: actualAmount - item.setupAmount,
+        };
+      }));
+      setSetupStatusMessage('Step 3 and actions saved to the selected Profile ID budget record.');
+    } catch {
+      setSetupStatusMessage('Step 3 remains in autosave, but the selected Profile ID budget record could not be updated. Please retry.');
+    }
   };
 
   const varianceRows = useMemo(() => {

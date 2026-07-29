@@ -28,7 +28,14 @@ from app.models.loan_application import (
     RelationshipScore,
     SocialScore,
 )
-from app.schemas.loan_schema import LoanApplicationCreate, WealthScoreUpdatePayload
+from app.schemas.loan_schema import (
+    BillReminderRecordsPayload,
+    BudgetRecordsPayload,
+    LoanApplicationCreate,
+    MonitoringRecordPayload,
+    NetWorthRecordPayload,
+    WealthScoreUpdatePayload,
+)
 from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 from app.services.loan_repository_io import (
@@ -842,6 +849,163 @@ def update_stored_wealth_score(
                 **payload.model_dump(),
                 "wealth_calculated_at": calculated_at,
             },
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.put("/loan-applications/{application_no}/net-worth")
+def save_net_worth_record(
+    application_no: str,
+    payload: NetWorthRecordPayload,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        values = {**payload.model_dump(), "loan_application_id": record.id}
+        db.execute(
+            text(
+                "DELETE FROM loan_application_networth "
+                "WHERE loan_application_id = :loan_application_id "
+                "AND snapshot_date = :snapshot_date"
+            ),
+            values,
+        )
+        db.execute(
+            text(
+                "INSERT INTO loan_application_networth "
+                "(loan_application_id, snapshot_date, total_assets, total_liabilities, "
+                "net_worth, monthly_income, monthly_expenses, savings_rate) VALUES "
+                "(:loan_application_id, :snapshot_date, :total_assets, :total_liabilities, "
+                ":net_worth, :monthly_income, :monthly_expenses, :savings_rate)"
+            ),
+            values,
+        )
+        record.updated_by = user.id
+        db.commit()
+        return {"message": "Net worth inputs saved", "application_no": application_no}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.put("/loan-applications/{application_no}/budget")
+def save_budget_records(
+    application_no: str,
+    payload: BudgetRecordsPayload,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        db.execute(
+            text("DELETE FROM loan_application_budget WHERE loan_application_id = :loan_application_id"),
+            {"loan_application_id": record.id},
+        )
+        insert_statement = text(
+            "INSERT INTO loan_application_budget "
+            "(loan_application_id, budget_month, category, budget_amount, actual_amount, variance) "
+            "VALUES (:loan_application_id, :budget_month, :category, :budget_amount, "
+            ":actual_amount, :variance)"
+        )
+        for budget_record in payload.records:
+            db.execute(
+                insert_statement,
+                {**budget_record.model_dump(), "loan_application_id": record.id},
+            )
+        record.updated_by = user.id
+        db.commit()
+        return {
+            "message": "Budget inputs saved",
+            "application_no": application_no,
+            "saved": len(payload.records),
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.put("/loan-applications/{application_no}/monitoring")
+def save_monitoring_record(
+    application_no: str,
+    payload: MonitoringRecordPayload,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        values = {**payload.model_dump(), "loan_application_id": record.id}
+        db.execute(
+            text(
+                "DELETE FROM loan_application_monitoring "
+                "WHERE loan_application_id = :loan_application_id "
+                "AND monitoring_date = :monitoring_date"
+            ),
+            values,
+        )
+        db.execute(
+            text(
+                "INSERT INTO loan_application_monitoring "
+                "(loan_application_id, monitoring_date, outstanding_balance, principal_paid, "
+                "interest_paid, monthly_payment, days_past_due, loan_status, dsr, ltv, risk_level) "
+                "VALUES (:loan_application_id, :monitoring_date, :outstanding_balance, "
+                ":principal_paid, :interest_paid, :monthly_payment, :days_past_due, "
+                ":loan_status, :dsr, :ltv, :risk_level)"
+            ),
+            values,
+        )
+        record.updated_by = user.id
+        db.commit()
+        return {"message": "Loan monitoring inputs saved", "application_no": application_no}
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.put("/loan-applications/{application_no}/bill-reminders")
+def save_bill_reminder_records(
+    application_no: str,
+    payload: BillReminderRecordsPayload,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        db.execute(
+            text("DELETE FROM loan_application_bill_reminders WHERE loan_application_id = :loan_application_id"),
+            {"loan_application_id": record.id},
+        )
+        insert_statement = text(
+            "INSERT INTO loan_application_bill_reminders "
+            "(loan_application_id, bill_type, biller_name, amount_due, due_date, payment_date, "
+            "payment_status, reminder_sent) VALUES (:loan_application_id, :bill_type, "
+            ":biller_name, :amount_due, :due_date, :payment_date, :payment_status, :reminder_sent)"
+        )
+        for reminder in payload.records:
+            db.execute(
+                insert_statement,
+                {**reminder.model_dump(), "loan_application_id": record.id},
+            )
+        record.updated_by = user.id
+        db.commit()
+        return {
+            "message": "Bill reminder inputs saved",
+            "application_no": application_no,
+            "saved": len(payload.records),
         }
     except Exception:
         db.rollback()

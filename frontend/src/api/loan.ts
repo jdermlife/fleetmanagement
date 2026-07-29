@@ -785,6 +785,97 @@ export async function fetchLoanApplication(
   return response.data
 }
 
+type WorkflowSaveResponse = {
+  application_no: string
+  message: string
+  saved?: number
+}
+
+export type NetWorthRecordPayload = {
+  snapshot_date: string
+  total_assets: number
+  total_liabilities: number
+  net_worth: number
+  monthly_income: number
+  monthly_expenses: number
+  savings_rate: number
+}
+
+export type BudgetRecordPayload = {
+  budget_month: string
+  category: string
+  budget_amount: number
+  actual_amount: number
+  variance: number
+}
+
+export type MonitoringRecordPayload = {
+  monitoring_date: string
+  outstanding_balance: number
+  principal_paid: number
+  interest_paid: number
+  monthly_payment: number
+  days_past_due: number
+  loan_status: string
+  dsr: number
+  ltv: number
+  risk_level: string
+}
+
+export type BillReminderRecordPayload = {
+  bill_type: string
+  biller_name: string
+  amount_due: number
+  due_date: string | null
+  payment_date: string | null
+  payment_status: string
+  reminder_sent: boolean
+}
+
+export async function saveLoanApplicationNetWorth(
+  applicationNo: string,
+  payload: NetWorthRecordPayload,
+): Promise<WorkflowSaveResponse> {
+  const response = await api.put<WorkflowSaveResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/net-worth`,
+    payload,
+  )
+  return response.data
+}
+
+export async function saveLoanApplicationBudget(
+  applicationNo: string,
+  records: BudgetRecordPayload[],
+): Promise<WorkflowSaveResponse> {
+  const response = await api.put<WorkflowSaveResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/budget`,
+    { records },
+  )
+  return response.data
+}
+
+export async function saveLoanApplicationMonitoring(
+  applicationNo: string,
+  payload: MonitoringRecordPayload,
+): Promise<WorkflowSaveResponse> {
+  const response = await api.put<WorkflowSaveResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/monitoring`,
+    payload,
+  )
+  return response.data
+}
+
+export async function saveLoanApplicationBillReminders(
+  applicationNo: string,
+  records: BillReminderRecordPayload[],
+): Promise<WorkflowSaveResponse> {
+  const response = await api.put<WorkflowSaveResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/bill-reminders`,
+    { records },
+  )
+  return response.data
+}
+
 export async function createLoanApplication(
   payload: LoanApplicationPayload,
 ): Promise<LoanMutationResponse> {

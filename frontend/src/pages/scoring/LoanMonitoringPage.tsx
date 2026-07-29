@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NumericFormat } from 'react-number-format';
 
+import { useAutosaveDraft } from '../../autosave';
+import { saveLoanApplicationMonitoring } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
@@ -25,6 +27,21 @@ interface AdditionalLoanSchedule {
   termMonths: number;
   monthlyPayment: number;
   rows: AdditionalLoanStatementRow[];
+}
+
+interface LoanMonitoringDraft {
+  step: WorkflowStep;
+  selectedApplicationNo: string;
+  newLoanAmount: string;
+  newLoanInterestRate: string;
+  newLoanTerm: string;
+  outstandingBalanceInput: string;
+  loanType: string;
+  entityIssuer: string;
+  collateralIfAny: string;
+  extraMonthlyPayment: string;
+  borrowingDsrLimit: string;
+  additionalSchedules: AdditionalLoanSchedule[];
 }
 
 interface LoanMonitoringWorkflowConfig {
@@ -304,7 +321,7 @@ function buildAiAdvisor(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>
 }
 
 export default function LoanMonitoringPage() {
-  const { selectedApplicationNo: selectedProfileApplicationNo } = useSelectedAnalysisEntity();
+  const { selectedApplicationNo: selectedProfileApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity();
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics({
     applicationNo: selectedProfileApplicationNo,
   });
@@ -327,7 +344,47 @@ export default function LoanMonitoringPage() {
   const [borrowingDsrLimit, setBorrowingDsrLimit] = useState('35');
   const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
   const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
+  const [monitoringSaveMessage, setMonitoringSaveMessage] = useState('');
   const [step, setStep] = useState<WorkflowStep>(1);
+
+  const monitoringDraft = useMemo<LoanMonitoringDraft>(() => ({
+    step,
+    selectedApplicationNo,
+    newLoanAmount,
+    newLoanInterestRate,
+    newLoanTerm,
+    outstandingBalanceInput,
+    loanType,
+    entityIssuer,
+    collateralIfAny,
+    extraMonthlyPayment,
+    borrowingDsrLimit,
+    additionalSchedules,
+  }), [additionalSchedules, borrowingDsrLimit, collateralIfAny, entityIssuer, extraMonthlyPayment, loanType, newLoanAmount, newLoanInterestRate, newLoanTerm, outstandingBalanceInput, selectedApplicationNo, step]);
+
+  const hydrateMonitoringDraft = useCallback((draft: LoanMonitoringDraft) => {
+    setStep(draft.step ?? 1);
+    setSelectedApplicationNo(draft.selectedApplicationNo || selectedProfileApplicationNo);
+    setNewLoanAmount(draft.newLoanAmount ?? '');
+    setNewLoanInterestRate(draft.newLoanInterestRate ?? '');
+    setNewLoanTerm(draft.newLoanTerm ?? '');
+    setOutstandingBalanceInput(draft.outstandingBalanceInput ?? '');
+    setLoanType(draft.loanType ?? '');
+    setEntityIssuer(draft.entityIssuer ?? '');
+    setCollateralIfAny(draft.collateralIfAny ?? '');
+    setExtraMonthlyPayment(draft.extraMonthlyPayment ?? '5000');
+    setBorrowingDsrLimit(draft.borrowingDsrLimit ?? '35');
+    setAdditionalSchedules(draft.additionalSchedules ?? []);
+  }, [selectedProfileApplicationNo]);
+
+  useAutosaveDraft({
+    scope: 'loan-monitoring',
+    entityKey: entityKey || 'identity-pending',
+    value: monitoringDraft,
+    defaults: monitoringDraft,
+    onHydrate: hydrateMonitoringDraft,
+    enabled: isIdentityReady,
+  });
 
   useEffect(() => {
     if (!monitoredApplications.length) {
@@ -453,6 +510,38 @@ export default function LoanMonitoringPage() {
 
     return { monthlyIncome, existingMonthlyDebt, dsrLimit, availablePayment, estimatedCapacity };
   }, [selectedRecord, borrowingDsrLimit, newLoanInterestRate, newLoanTerm]);
+
+  const handleSaveMonitoringRecord = async () => {
+    const applicationNo = selectedProfileApplicationNo || selectedApplicationNo;
+    if (!applicationNo || !selectedRecord) {
+      setMonitoringSaveMessage('Select an APP Profile ID and monitored loan before saving.');
+      return;
+    }
+
+    const statementRows = snapshot.statementRows;
+    const principalPaid = statementRows.reduce((sum, row) => sum + Math.max(0, row.principal), 0);
+    const interestPaid = statementRows.reduce((sum, row) => sum + Math.max(0, row.interest), 0);
+    const monthlyPayment = statementRows[0]
+      ? statementRows[0].principal + statementRows[0].interest
+      : debtSavingsAnalysis.minimumPayment;
+    try {
+      await saveLoanApplicationMonitoring(applicationNo, {
+        monitoring_date: new Date().toISOString().slice(0, 10),
+        outstanding_balance: Math.max(0, Number(outstandingBalanceInput) || debtSavingsAnalysis.balance),
+        principal_paid: principalPaid,
+        interest_paid: interestPaid,
+        monthly_payment: monthlyPayment,
+        days_past_due: Math.max(0, snapshot.pastDueCount),
+        loan_status: snapshot.sourceRecordStatus.slice(0, 30) || 'CURRENT',
+        dsr: Number(selectedRecord.dsr) || 0,
+        ltv: Number(selectedRecord.ltv) || 0,
+        risk_level: snapshot.performanceBand.slice(0, 30),
+      });
+      setMonitoringSaveMessage('Loan monitoring inputs saved to the selected Profile ID record.');
+    } catch {
+      setMonitoringSaveMessage('Inputs remain in autosave, but the selected Profile ID monitoring record could not be updated. Please retry.');
+    }
+  };
   const consolidationAnalysis = useMemo(() => {
     const portfolioLoans = monitoredApplications.map((record) => ({
       balance: record.application_no === selectedApplicationNo
@@ -1138,7 +1227,11 @@ export default function LoanMonitoringPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
                     Back to Step 3
                   </button>
+                  <button type="button" className="psychometric-reset-button" onClick={() => void handleSaveMonitoringRecord()}>
+                    Save Monitoring Record
+                  </button>
                 </div>
+                {monitoringSaveMessage ? <p className="psychometric-section-note" role="status">{monitoringSaveMessage}</p> : null}
               </div>
             ) : null}
           </article>
