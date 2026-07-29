@@ -90,6 +90,26 @@ type FieldDefinition = {
 
 const STORAGE_KEY = BUILD_PROFILE_STORAGE_KEY
 const profileApplicationRequests = new Map<string, Promise<LoanApplicationRecord>>()
+const BUILD_PROFILE_AMOUNT_KEYS = new Set([
+  'monthlyIncome',
+  'otherIncome',
+  'debtObligations',
+  'grossMonthlyIncome',
+  'monthlyExpenses',
+  'otherSourcesOfIncome',
+  'investmentIncome',
+  'businessIncome',
+  'pensionIncome',
+  'spouseGrossMonthlyIncome',
+  'spouseMonthlyExpenses',
+  'creditLimit',
+  'outstandingBalance',
+  'currentBalance',
+  'loanCurrentBalance',
+  'loanMonthlyAmortization',
+  'averageSavingsBalance',
+  'averageDailyBalance',
+])
 
 const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: string }> = [
   { id: 1, label: 'Tell Us About Yourself', description: 'Start with your essential personal and contact details.' },
@@ -586,6 +606,7 @@ export default function BuildProfilePage() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
+  const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
   const [wealthSectionFilter, setWealthSectionFilter] = useState<'all' | StatementSection>('all')
   const [wealthCategoryFilter, setWealthCategoryFilter] = useState('all')
   const [wealthLineSearch, setWealthLineSearch] = useState('')
@@ -648,8 +669,7 @@ export default function BuildProfilePage() {
         if (targetEntries.length === 0) result[id] = 0
         else {
           const actualRatio = targetEntries.filter((entry) => profile.values[`wealthActual.${entry.id}`]?.trim()).length / targetEntries.length
-          const notesRatio = targetEntries.filter((entry) => profile.values[`wealthVarianceNote.${entry.id}`]?.trim()).length / targetEntries.length
-          result[id] = Math.round(((actualRatio * 0.8) + (notesRatio * 0.2)) * 100)
+          result[id] = Math.round(actualRatio * 100)
         }
       }
       else if (id === 11) result[id] = Math.round((SUITABILITY_QUESTIONS.filter((question) => profile.suitabilityAnswers[question.key]).length / SUITABILITY_QUESTIONS.length) * 100)
@@ -772,6 +792,7 @@ export default function BuildProfilePage() {
 
     const updatedProfile = { ...profile, values: { ...profile.values, [key]: 'true' } }
     setProfile(updatedProfile)
+    setPendingScorePage(key)
     try {
       persistProfileSnapshot(updatedProfile)
       const payload = loanPayloadFromProfile(updatedProfile, sourceApplication)
@@ -780,6 +801,8 @@ export default function BuildProfilePage() {
       navigate(`${destination}?applicationNo=${encodeURIComponent(sourceApplication.application_no)}`)
     } catch {
       setSaveMessage('Unable to synchronize profile data and compute FILSCORE right now.')
+    } finally {
+      setPendingScorePage(null)
     }
   }
 
@@ -815,8 +838,10 @@ export default function BuildProfilePage() {
         <option value="">Select...</option>
         {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
+    ) : field.type === 'number' ? (
+      <NumericFormat aria-invalid={!value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
     ) : (
-      <input aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input aria-invalid={!value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />
     )}
   </label>
 
@@ -856,6 +881,8 @@ export default function BuildProfilePage() {
         </select>
       ) : field.type === 'textarea' ? (
         <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+      ) : field.type === 'number' && BUILD_PROFILE_AMOUNT_KEYS.has(field.key) ? (
+        <NumericFormat aria-invalid={field.countsTowardCompletion === false ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} readOnly={field.readOnly} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
       ) : (
         <input aria-invalid={field.countsTowardCompletion === false ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
@@ -906,6 +933,8 @@ export default function BuildProfilePage() {
           <input aria-invalid={!value.trim()} list={datalistId} value={value} placeholder="Enter card issuer" onChange={(event) => updateValue(field.key, event.target.value)} />
           <datalist id={datalistId}>{field.options?.map((option) => <option key={option} value={option} />)}</datalist>
         </>
+      ) : field.type === 'number' && BUILD_PROFILE_AMOUNT_KEYS.has(field.key) ? (
+        <NumericFormat aria-invalid={!value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
       ) : (
         <input aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
@@ -917,7 +946,8 @@ export default function BuildProfilePage() {
     {field.type === 'select' ? <select aria-invalid={!value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
       <option value="">Select...</option>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
     </select> : field.type === 'textarea' ? <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => onChange(event.target.value)} />
-      : <input aria-invalid={field.type === 'number' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => onChange(event.target.value)} />}
+      : field.type === 'number' ? <NumericFormat aria-invalid={Number(value) <= 0} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
+        : <input aria-invalid={!value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />}
   </label>
 
   const renderCurrentStep = () => {
@@ -1716,9 +1746,9 @@ export default function BuildProfilePage() {
                   const noteKey = `wealthVarianceNote.${entry.id}`
                   return <tr key={entry.id}>
                     <td data-label="Target (Saved)"><strong>{entry.label}</strong><div>{STEP1_SECTION_SHORT_LABELS[entry.section]}</div><div>{entry.category}</div><div>{formatVarianceCurrency(entry.targetAmount)}</div></td>
-                    <td data-label="Actual (User Input)"><input aria-invalid={!entry.hasActual} type="number" min="0" step="0.01" value={entry.rawActual} placeholder="Enter actual value" aria-label={`${entry.label} actual value`} onChange={(event) => updateValue(`wealthActual.${entry.id}`, event.target.value)} /></td>
+                    <td data-label="Actual (User Input)"><NumericFormat aria-invalid={!entry.hasActual} value={entry.rawActual} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="Enter actual value" aria-label={`${entry.label} actual value`} onValueChange={({ value }) => updateValue(`wealthActual.${entry.id}`, value)} /></td>
                     <td data-label="Variance">{entry.hasActual ? formatSignedVariance(entry.variance) : 'Pending input'}</td>
-                    <td data-label="Variance Explanation"><small className="build-profile-variance-copy">{entry.hasActual ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual value from user.'}</small>{entry.hasActual ? <input aria-invalid={!profile.values[noteKey]?.trim()} type="text" value={profile.values[noteKey] ?? ''} placeholder="Enter explanation to complete profile" aria-label={`${entry.label} variance explanation`} onChange={(event) => updateValue(noteKey, event.target.value)} /> : null}</td>
+                    <td data-label="Variance Explanation"><small className="build-profile-variance-copy">{entry.hasActual ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual value from user.'}</small>{entry.hasActual ? <input type="text" value={profile.values[noteKey] ?? ''} placeholder="Optional explanation" aria-label={`${entry.label} variance explanation`} onChange={(event) => updateValue(noteKey, event.target.value)} /> : null}</td>
                   </tr>
                 })}
                 {filteredRows.length === 0 ? <tr><td colSpan={4}>No matching saved target rows found. Adjust the Actual vs Target filters.</td></tr> : null}
@@ -1836,19 +1866,23 @@ export default function BuildProfilePage() {
             <span>FILSCORE Assessment</span>
             <h4>Credit Health Score</h4>
             <p>Review credit readiness across credit, values, social, and verification indicators.</p>
-            <button type="button" aria-invalid={profile.values.creditHealthScoreOpened !== 'true'} onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>Open Credit Health Score</button>
+            <button type="button" aria-busy={pendingScorePage === 'creditHealthScoreOpened'} aria-invalid={profile.values.creditHealthScoreOpened !== 'true'} disabled={pendingScorePage !== null} onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>
+              {pendingScorePage === 'creditHealthScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Computing Credit Health Score...</> : 'Open Credit Health Score'}
+            </button>
           </article>
           <article>
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <button type="button" aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} onClick={() => {
+            <button type="button" aria-busy={pendingScorePage === 'wealthBuildingScoreOpened'} aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} disabled={pendingScorePage !== null} onClick={() => {
               if (sourceApplication) void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')
               else {
                 persistProfileSnapshot(profile)
                 navigate(`/net-worth-positioning?profileId=${encodeURIComponent(profile.profileId)}`)
               }
-            }}>Open Wealth Building Score</button>
+            }}>
+              {pendingScorePage === 'wealthBuildingScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Computing Wealth Building Score...</> : 'Open Wealth Building Score'}
+            </button>
           </article>
         </div>
       </div>

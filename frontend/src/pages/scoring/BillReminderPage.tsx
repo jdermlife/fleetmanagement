@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react';
+import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -924,12 +925,12 @@ export default function BillReminderPage() {
 
                   <label>
                     Budgeted Amount
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={budgetedAmount}
-                      onChange={(event) => setBudgetedAmount(event.target.value)}
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => setBudgetedAmount(value)}
                       placeholder="0"
                       required
                     />
@@ -1193,15 +1194,15 @@ export default function BillReminderPage() {
                               <div>{formatCurrency(row.budgetedAmount)}</div>
                             </td>
                             <td data-label="Actual (User Input)">
-                              <input
-                                type="number"
-                                min={0}
-                                step="0.01"
+                              <NumericFormat
                                 value={actualEntries[row.id] ?? ''}
-                                onChange={(event) => {
+                                valueIsNumericString
+                                thousandSeparator="," decimalScale={2} fixedDecimalScale
+                                inputMode="decimal" allowNegative={false}
+                                onValueChange={({ value }) => {
                                   setActualEntries((previous) => ({
                                     ...previous,
-                                    [row.id]: event.target.value,
+                                    [row.id]: value,
                                   }));
                                 }}
                                 placeholder="Enter actual payment"

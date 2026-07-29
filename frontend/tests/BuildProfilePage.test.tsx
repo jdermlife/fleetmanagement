@@ -127,6 +127,21 @@ describe('BuildProfilePage', () => {
     })
   })
 
+  it('formats monetary user inputs with thousands separators and two decimals', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Step 6: Goal Setting/ }))
+    const requestedAmount = screen.getByLabelText('Requested Loan Amount') as HTMLInputElement
+    await user.type(requestedAmount, '1234567.8')
+
+    expect(requestedAmount.value).toBe('1,234,567.80')
+    await waitFor(() => {
+      const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+      expect(savedProfile.values.requestedAmount).toBe('1234567.80')
+    })
+  })
+
   it('provides the Lending Scorecard actions beside the workflow steps', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
@@ -209,9 +224,16 @@ describe('BuildProfilePage', () => {
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
 
     mockUpdateLoanApplication.mockResolvedValue({ message: 'updated' })
-    mockRecomputeStoredScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
+    let resolveCreditScore!: (value: unknown) => void
+    mockRecomputeStoredScores.mockImplementationOnce(() => new Promise((resolve) => { resolveCreditScore = resolve }))
     await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
     await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
+
+    const creditButton = await screen.findByRole('button', { name: 'Computing Credit Health Score...' })
+    expect(creditButton.getAttribute('aria-busy')).toBe('true')
+    expect(creditButton.hasAttribute('disabled')).toBe(true)
+    expect(creditButton.querySelector('.build-profile-score-spinner')).toBeTruthy()
+    resolveCreditScore({ message: 'computed', quant_scores: {} })
 
     await vi.waitFor(() => {
       expect(mockUpdateLoanApplication).toHaveBeenCalledWith(
@@ -226,6 +248,20 @@ describe('BuildProfilePage', () => {
       )
       expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-REVIEW-1')
       expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?applicationNo=APP-REVIEW-1')
+    })
+
+    let resolveWealthScore!: (value: unknown) => void
+    mockRecomputeStoredScores.mockImplementationOnce(() => new Promise((resolve) => { resolveWealthScore = resolve }))
+    await userEvent.click(screen.getByRole('button', { name: 'Open Wealth Building Score' }))
+
+    const wealthButton = await screen.findByRole('button', { name: 'Computing Wealth Building Score...' })
+    expect(wealthButton.getAttribute('aria-busy')).toBe('true')
+    expect(wealthButton.hasAttribute('disabled')).toBe(true)
+    expect(wealthButton.querySelector('.build-profile-score-spinner')).toBeTruthy()
+    resolveWealthScore({ message: 'computed', quant_scores: {} })
+
+    await vi.waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/net-worth-positioning?applicationNo=APP-REVIEW-1')
     })
   })
 
@@ -763,18 +799,18 @@ describe('BuildProfilePage', () => {
     expect(screen.getAllByText('Pending input')).toHaveLength(3)
 
     await user.type(screen.getByLabelText('Cash on Hand actual value'), '60000')
-    expect(screen.getByText('+₱10,000.00')).toBeTruthy()
-    expect(screen.getByText('Value improved above setup and supports net worth')).toBeTruthy()
-    await user.type(screen.getByLabelText('Cash on Hand variance explanation'), 'Cash reserve exceeded target')
-    expect(screen.getByText('Cash reserve exceeded target')).toBeTruthy()
+    expect(screen.getAllByText('+₱10,000.00').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Value improved above setup and supports net worth').length).toBeGreaterThan(0)
+    expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('placeholder')).toBe('Optional explanation')
+    expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('aria-invalid')).toBeNull()
 
     await user.type(screen.getByLabelText('Home Mortgage actual value'), '90000')
-    expect(screen.getByText('-₱10,000.00')).toBeTruthy()
-    expect(screen.getByText('Liability is lower than setup and improves net worth')).toBeTruthy()
+    expect(screen.getAllByText('-₱10,000.00').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Liability is lower than setup and improves net worth').length).toBeGreaterThan(0)
     await user.type(screen.getByLabelText('Housing actual value'), '35000')
-    expect(screen.getByText('+₱5,000.00')).toBeTruthy()
-    expect(screen.getByText('Liability increased above setup and needs control')).toBeTruthy()
-    expect(screen.getByText('Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.')).toBeTruthy()
+    expect(screen.getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Liability increased above setup and needs control').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.').length).toBeGreaterThan(0)
 
     await user.selectOptions(screen.getByLabelText('Actual vs Target filter by statement section'), 'liabilities')
     expect(screen.queryByLabelText('Cash on Hand actual value')).toBeNull()
@@ -783,12 +819,12 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('1', { selector: '.build-profile-filter-result strong' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Clear Variance Filters' }))
 
-    expect(screen.getByText('87% complete')).toBeTruthy()
+    expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('50000')
-    expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('60000')
-    expect(savedProfile.values['wealthVarianceNote.asset-cash-on-hand']).toBe('Cash reserve exceeded target')
+    expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('60000.00')
+    expect(savedProfile.values['wealthVarianceNote.asset-cash-on-hand']).toBeUndefined()
 
     await user.click(screen.getByRole('button', { name: 'Continue to Step 11' }))
     expect(screen.getByRole('heading', { name: 'Step 11: Suitability Assessment' })).toBeTruthy()

@@ -4070,6 +4070,7 @@ th { color: var(--dark-gold); }
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 8px;
   min-height: 42px;
   margin-top: 8px;
   padding: 9px 14px;
@@ -4083,8 +4084,27 @@ th { color: var(--dark-gold); }
 }
 
 .build-profile-score-links a:hover,
-.build-profile-score-links button:hover {
+.build-profile-score-links button:hover:not(:disabled) {
   background: #1e40af;
+}
+
+.build-profile-score-links button:disabled {
+  cursor: wait;
+  opacity: 0.78;
+}
+
+.build-profile-score-links .build-profile-score-spinner {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 16px;
+  border: 2px solid rgba(255, 255, 255, 0.45);
+  border-top-color: #ffffff;
+  border-radius: 50%;
+  animation: build-profile-score-spin 0.75s linear infinite;
+}
+
+@keyframes build-profile-score-spin {
+  to { transform: rotate(360deg); }
 }
 
 .build-profile-question-list {

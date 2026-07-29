@@ -4507,7 +4507,7 @@ export default function LendingScorecard() {
                   {!reportHasRating ? (
                     <div className="loan-certification-rating-unavailable" role="alert">
                       <strong>Rating Not Produced</strong>
-                      <span>Information provided is {informationProvidedPercent}%. At least {CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required to produce a rating.</span>
+                      <span>Please update Profile.Information provided is {informationProvidedPercent}%. At least {CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required to produce a rating.</span>
                     </div>
                   ) : null}
 

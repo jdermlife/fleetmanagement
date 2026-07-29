@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -822,60 +823,60 @@ export default function BudgetExpenseTrackerPage() {
                 <div className="budget-workflow-income-grid">
                   <label>
                     Income from Salary
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={incomeDraft.salary}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setIncomeDraft((previous) => ({
                           ...previous,
-                          salary: event.target.value,
+                          salary: value,
                         }));
                       }}
                     />
                   </label>
                   <label>
                     Income from Business
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={incomeDraft.business}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setIncomeDraft((previous) => ({
                           ...previous,
-                          business: event.target.value,
+                          business: value,
                         }));
                       }}
                     />
                   </label>
                   <label>
                     Income from Investment
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={incomeDraft.investment}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setIncomeDraft((previous) => ({
                           ...previous,
-                          investment: event.target.value,
+                          investment: value,
                         }));
                       }}
                     />
                   </label>
                   <label>
                     Income from Pension
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={incomeDraft.pension}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setIncomeDraft((previous) => ({
                           ...previous,
-                          pension: event.target.value,
+                          pension: value,
                         }));
                       }}
                     />
@@ -886,15 +887,15 @@ export default function BudgetExpenseTrackerPage() {
                 <div className="budget-workflow-grid-two">
                   <label>
                     House Amortization
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={expenseDraft[HOUSE_AMORTIZATION_KEY] ?? ''}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setExpenseDraft((previous) => ({
                           ...previous,
-                          [HOUSE_AMORTIZATION_KEY]: event.target.value,
+                          [HOUSE_AMORTIZATION_KEY]: value,
                         }));
                       }}
                       className="budget-dashboard-category-input"
@@ -904,15 +905,15 @@ export default function BudgetExpenseTrackerPage() {
                   </label>
                   <label>
                     Loan Amortization
-                    <input
-                      type="number"
-                      min={0}
-                      step="0.01"
+                    <NumericFormat
                       value={expenseDraft[LOAN_AMORTIZATION_KEY] ?? ''}
-                      onChange={(event) => {
+                      valueIsNumericString
+                      thousandSeparator="," decimalScale={2} fixedDecimalScale
+                      inputMode="decimal" allowNegative={false}
+                      onValueChange={({ value }) => {
                         setExpenseDraft((previous) => ({
                           ...previous,
-                          [LOAN_AMORTIZATION_KEY]: event.target.value,
+                          [LOAN_AMORTIZATION_KEY]: value,
                         }));
                       }}
                       className="budget-dashboard-category-input"
@@ -967,15 +968,15 @@ export default function BudgetExpenseTrackerPage() {
                       </label>
                       <label className="budget-dashboard-category-input-wrap">
                         <span className="budget-dashboard-category-input-label">Setup Amount</span>
-                        <input
-                          type="number"
-                          min={0}
-                          step="0.01"
+                        <NumericFormat
                           value={expenseDraft[item.id] ?? ''}
-                          onChange={(event) => {
+                          valueIsNumericString
+                          thousandSeparator="," decimalScale={2} fixedDecimalScale
+                          inputMode="decimal" allowNegative={false}
+                          onValueChange={({ value }) => {
                             setExpenseDraft((previous) => ({
                               ...previous,
-                              [item.id]: event.target.value,
+                              [item.id]: value,
                             }));
                           }}
                           className="budget-dashboard-category-input"
@@ -1036,15 +1037,15 @@ export default function BudgetExpenseTrackerPage() {
                               <div>{formatCurrency(item.setupAmount)}</div>
                             </td>
                             <td data-label="Actual (User Input)">
-                              <input
-                                type="number"
-                                min={0}
-                                step="0.01"
+                              <NumericFormat
                                 value={actualEntries[item.id] ?? ''}
-                                onChange={(event) => {
+                                valueIsNumericString
+                                thousandSeparator="," decimalScale={2} fixedDecimalScale
+                                inputMode="decimal" allowNegative={false}
+                                onValueChange={({ value }) => {
                                   setActualEntries((previous) => ({
                                     ...previous,
-                                    [item.id]: event.target.value,
+                                    [item.id]: value,
                                   }));
                                 }}
                                 placeholder="Enter actual amount"
