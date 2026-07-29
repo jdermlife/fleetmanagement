@@ -862,7 +862,7 @@ export default function FinancialHealthSummaryPage() {
         </button>
       </section>
 
-      <section className="financial-health-summary-grid" aria-label="Financial Health highlights">
+      <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
         <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" />
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Foundation & reliability</span>

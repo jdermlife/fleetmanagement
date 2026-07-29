@@ -7881,6 +7881,19 @@ th { color: var(--dark-gold); }
   gap: 16px;
 }
 
+.financial-health-primary-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.financial-health-primary-summary .financial-health-summary-tile {
+  padding: 14px 12px;
+}
+
+.financial-health-primary-summary .financial-health-summary-tile strong {
+  font-size: clamp(1rem, 1.65vw, 1.55rem);
+}
+
 .financial-health-compute-bar {
   display: flex;
   align-items: center;
@@ -8633,6 +8646,10 @@ th { color: var(--dark-gold); }
   .financial-health-summary-grid,
   .financial-health-side-stack {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .financial-health-primary-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .financial-health-engine-grid {

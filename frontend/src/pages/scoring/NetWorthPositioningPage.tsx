@@ -1701,7 +1701,7 @@ export default function NetWorthPositioningPage() {
         </div>
       </section>
 
-      <section className="psychometric-summary-grid budget-dashboard-summary-grid networth-report-summary" aria-label="Net worth summary">
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary networth-report-summary" aria-label="Net worth summary">
         <SelectedProfileIdCard />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
