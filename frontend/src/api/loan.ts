@@ -493,6 +493,31 @@ export interface OverallScoreRecord {
   final_grade?: string | null
   final_rating?: string | null
   final_decision?: string | null
+  wealth_building_score?: number | null
+  wealth_grade?: string | null
+  wealth_rating?: string | null
+  wealth_component_scores?: Record<string, number> | null
+  wealth_calculated_at?: string | null
+  wealth_certification_status?: WealthCertificationStatus | null
+}
+
+export type WealthCertificationStatus =
+  | 'NOT_GENERATED'
+  | 'GENERATED_PENDING'
+  | 'GENERATED_COMPLETE'
+
+export interface WealthScoreUpdatePayload {
+  wealth_building_score: number
+  wealth_grade: string
+  wealth_rating: string
+  wealth_component_scores: Record<string, number>
+  wealth_certification_status: WealthCertificationStatus
+}
+
+export interface WealthScoreUpdateResponse extends LoanMutationResponse {
+  wealth_score: WealthScoreUpdatePayload & {
+    wealth_calculated_at: string
+  }
 }
 
 export interface DecisionAuditTrailRecord {
@@ -810,6 +835,17 @@ export async function recomputeStoredLoanApplicationScores(
 ): Promise<QuantScoresResponse> {
   const response = await api.post<QuantScoresResponse>(
     `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/compute-quant-scores`,
+  )
+  return response.data
+}
+
+export async function updateLoanApplicationWealthScore(
+  applicationNo: string,
+  payload: WealthScoreUpdatePayload,
+): Promise<WealthScoreUpdateResponse> {
+  const response = await api.patch<WealthScoreUpdateResponse>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/wealth-score`,
+    payload,
   )
   return response.data
 }

@@ -318,10 +318,6 @@ export default function LoanMonitoringPage() {
   const [loanType, setLoanType] = useState('');
   const [entityIssuer, setEntityIssuer] = useState('');
   const [collateralIfAny, setCollateralIfAny] = useState('');
-  const [collateralDeclaredValue, setCollateralDeclaredValue] = useState('');
-  const [isCollateralValuationOpen, setIsCollateralValuationOpen] = useState(false);
-  const [marketInterestRate, setMarketInterestRate] = useState('');
-  const [isLoanRateComparisonOpen, setIsLoanRateComparisonOpen] = useState(false);
   const [extraMonthlyPayment, setExtraMonthlyPayment] = useState('5000');
   const [borrowingDsrLimit, setBorrowingDsrLimit] = useState('35');
   const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
@@ -351,85 +347,6 @@ export default function LoanMonitoringPage() {
     () => monitoredApplications.find((record) => record.application_no === selectedApplicationNo) ?? null,
     [monitoredApplications, selectedApplicationNo],
   );
-  const collateralMarketComparison = useMemo(() => {
-    const declaredValue = Math.max(0, Number(collateralDeclaredValue) || 0);
-    const recordedAppraisal = Math.max(0, Number(selectedRecord?.appraised_value) || 0);
-    const selectedLoanAmount = Math.max(0, Number(selectedRecord?.loan_amount) || Number(newLoanAmount) || 0);
-    const recordedLtv = Math.max(0, Number(selectedRecord?.ltv) || 0);
-    const normalizedLtv = recordedLtv > 1 ? recordedLtv / 100 : recordedLtv;
-    const ltvDerivedValue = normalizedLtv > 0 ? selectedLoanAmount / normalizedLtv : 0;
-    const policyBenchmark = selectedLoanAmount > 0 ? selectedLoanAmount / 0.8 : 0;
-    const benchmark = recordedAppraisal || ltvDerivedValue || policyBenchmark;
-    const lowerBound = benchmark * 0.9;
-    const upperBound = benchmark * 1.1;
-    const variance = declaredValue - benchmark;
-    const status = declaredValue < lowerBound
-      ? 'Below indicative market range'
-      : declaredValue > upperBound
-        ? 'Above indicative market range'
-        : 'Within indicative market range';
-    const source = recordedAppraisal > 0
-      ? 'Selected application appraisal'
-      : ltvDerivedValue > 0
-        ? 'Selected application loan-to-value data'
-        : '80% loan-to-value policy benchmark';
-
-    return { benchmark, declaredValue, lowerBound, upperBound, variance, status, source };
-  }, [collateralDeclaredValue, selectedRecord, newLoanAmount]);
-  const loanRateComparison = useMemo(() => {
-    const loanAmount = Math.max(0, Number(newLoanAmount) || 0);
-    const termMonths = Math.max(0, Number(newLoanTerm) || 0);
-    const currentRate = Math.max(0, Number(newLoanInterestRate) || 0);
-    const comparisonRate = Math.max(0, Number(marketInterestRate) || 0);
-    const currentCost = calculateLoanCost(loanAmount, currentRate, termMonths);
-    const comparisonCost = calculateLoanCost(loanAmount, comparisonRate, termMonths);
-    const rateDifference = currentRate - comparisonRate;
-    const monthlyDifference = currentCost.monthlyPayment - comparisonCost.monthlyPayment;
-    const totalInterestDifference = currentCost.totalInterest - comparisonCost.totalInterest;
-    const status = rateDifference <= 0
-      ? 'Current rate is competitive with the comparison rate'
-      : rateDifference <= 1
-        ? 'Current rate is close to the comparison rate'
-        : 'Current rate is above the comparison rate';
-    const summary = rateDifference <= 0
-      ? `The current rate is ${Math.abs(rateDifference).toFixed(2)} percentage points at or below the comparison rate. Retaining the loan may be reasonable unless fees or other terms favor refinancing.`
-      : `The current rate is ${rateDifference.toFixed(2)} percentage points above the comparison rate. At the comparison rate, the estimated monthly payment is lower by ${formatMetricValue(Math.max(0, monthlyDifference), 'currency')} and estimated total interest is lower by ${formatMetricValue(Math.max(0, totalInterestDifference), 'currency')}.`;
-    const webQuery = [
-      entityIssuer.trim(),
-      loanType || selectedRecord?.product_type || 'loan',
-      'current interest rates Philippines',
-      new Date().getFullYear(),
-    ].filter(Boolean).join(' ');
-
-    return {
-      loanAmount,
-      termMonths,
-      currentRate,
-      comparisonRate,
-      currentCost,
-      comparisonCost,
-      rateDifference,
-      status,
-      summary,
-      webSearchUrl: `https://www.google.com/search?q=${encodeURIComponent(webQuery)}`,
-    };
-  }, [newLoanAmount, newLoanTerm, newLoanInterestRate, marketInterestRate, entityIssuer, loanType, selectedRecord]);
-
-  useEffect(() => {
-    if (!isCollateralValuationOpen && !isLoanRateComparisonOpen) {
-      return undefined;
-    }
-
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setIsCollateralValuationOpen(false);
-        setIsLoanRateComparisonOpen(false);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isCollateralValuationOpen, isLoanRateComparisonOpen]);
 
   useEffect(() => {
     if (!selectedRecord) {
@@ -553,8 +470,10 @@ export default function LoanMonitoringPage() {
     const rates = loans.map((item) => item.rate);
     const rateSpread = rates.length > 0 ? Math.max(...rates) - Math.min(...rates) : 0;
     const longestTerm = loans.length > 0 ? Math.max(...loans.map((item) => item.term)) : 1;
-    const enteredMarketRate = Math.max(0, Number(marketInterestRate) || 0);
-    const comparisonRate = enteredMarketRate > 0 ? enteredMarketRate : Math.max(0, weightedAverageRate - 1);
+    const positiveRates = rates.filter((rate) => rate > 0);
+    const comparisonRate = positiveRates.length > 0
+      ? Math.min(...positiveRates)
+      : Math.max(0, weightedAverageRate - 1);
     const consolidatedMonthlyPayment = calculateLoanCost(totalBalance, comparisonRate, longestTerm).monthlyPayment;
     const guidance = loans.length < 2
       ? 'At least two active loans are needed for a meaningful consolidation comparison. Add or select the other obligations first.'
@@ -573,7 +492,7 @@ export default function LoanMonitoringPage() {
       consolidatedMonthlyPayment,
       guidance,
     };
-  }, [monitoredApplications, additionalSchedules, selectedApplicationNo, outstandingBalanceInput, marketInterestRate]);
+  }, [monitoredApplications, additionalSchedules, selectedApplicationNo, outstandingBalanceInput]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -935,68 +854,6 @@ export default function LoanMonitoringPage() {
                     />
                   </label>
                 </div>
-
-                <section className="loan-collateral-valuation-box loan-rate-comparison-box" aria-labelledby="loan-rate-comparison-heading">
-                  <div>
-                    <h4 id="loan-rate-comparison-heading">Loan Interest Rate Check</h4>
-                    <p>
-                      Check current web offers for the same loan type, enter a comparable annual rate, then review the estimated payment and total-interest difference.
-                    </p>
-                  </div>
-                  <label>
-                    <span>Web Comparison Rate (%)</span>
-                    <NumericFormat
-                      value={marketInterestRate}
-                      valueIsNumericString
-                      decimalScale={2}
-                      fixedDecimalScale
-                      inputMode="decimal"
-                      allowNegative={false}
-                      onValueChange={({ value }) => setMarketInterestRate(value)}
-                      className="budget-dashboard-category-input"
-                      placeholder="Enter current market rate"
-                      aria-label="Web comparison interest rate"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="psychometric-reset-button"
-                    disabled={loanRateComparison.loanAmount <= 0 || loanRateComparison.termMonths <= 0 || loanRateComparison.currentRate <= 0 || loanRateComparison.comparisonRate <= 0}
-                    onClick={() => setIsLoanRateComparisonOpen(true)}
-                  >
-                    Compare Loan Rate vs Market
-                  </button>
-                </section>
-
-                <section className="loan-collateral-valuation-box" aria-labelledby="loan-collateral-valuation-heading">
-                  <div>
-                    <h4 id="loan-collateral-valuation-heading">Collateral Value Check</h4>
-                    <p>
-                      Enter a specific collateral description above, then provide its current appraised or estimated value to compare it with the selected loan's market benchmark.
-                    </p>
-                  </div>
-                  <label>
-                    <span>Current Collateral Value</span>
-                    <NumericFormat
-                      value={collateralDeclaredValue}
-                      valueIsNumericString
-                      thousandSeparator="," decimalScale={2} fixedDecimalScale
-                      inputMode="decimal" allowNegative={false}
-                      onValueChange={({ value }) => setCollateralDeclaredValue(value)}
-                      className="budget-dashboard-category-input"
-                      placeholder="Enter appraised value"
-                      aria-label="Current collateral value"
-                    />
-                  </label>
-                  <button
-                    type="button"
-                    className="psychometric-reset-button"
-                    disabled={!collateralIfAny.trim() || collateralMarketComparison.declaredValue <= 0 || collateralMarketComparison.benchmark <= 0}
-                    onClick={() => setIsCollateralValuationOpen(true)}
-                  >
-                    Compare Value vs Market
-                  </button>
-                </section>
 
                 <div className="budget-dashboard-category-summary">
                   <label className="budget-dashboard-category-summary-card">
@@ -1420,22 +1277,6 @@ export default function LoanMonitoringPage() {
                 </div>
               </article>
               <article className="budget-dashboard-indicator budget-dashboard-status-watch loan-monitoring-hover-tool" tabIndex={0}>
-                <span>Collateral Valuation Trigger</span>
-                <p>Highlight loans that require updated collateral valuation and risk reassessment.</p>
-                <div className="loan-monitoring-tool-popout" role="region" aria-label="Collateral Market Valuation">
-                  <h3>Collateral Market Valuation</h3>
-                  <dl>
-                    <div><dt>Collateral</dt><dd>{collateralIfAny || 'Enter details in Loan Setup'}</dd></div>
-                    <div><dt>Entered value</dt><dd>{formatMetricValue(collateralMarketComparison.declaredValue, 'currency')}</dd></div>
-                    <div><dt>Market benchmark</dt><dd>{formatMetricValue(collateralMarketComparison.benchmark, 'currency')}</dd></div>
-                    <div><dt>Status</dt><dd>{collateralMarketComparison.declaredValue > 0 ? collateralMarketComparison.status : 'Awaiting value'}</dd></div>
-                  </dl>
-                  <button type="button" className="psychometric-reset-button" disabled={!collateralIfAny.trim() || collateralMarketComparison.declaredValue <= 0 || collateralMarketComparison.benchmark <= 0} onClick={() => setIsCollateralValuationOpen(true)}>
-                    Open Detailed Valuation
-                  </button>
-                </div>
-              </article>
-              <article className="budget-dashboard-indicator budget-dashboard-status-watch loan-monitoring-hover-tool" tabIndex={0}>
                 <span>Loan Restructuring Advisor</span>
                 <p>Assess refinance, consolidation, and restructuring options to reduce repayment pressure.</p>
                 <div className="loan-monitoring-tool-popout" role="region" aria-label="Loan Consolidation Guidance">
@@ -1457,109 +1298,6 @@ export default function LoanMonitoringPage() {
         </aside>
       </section>
 
-      {isCollateralValuationOpen ? (
-        <div
-          className="loan-collateral-valuation-overlay"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsCollateralValuationOpen(false);
-            }
-          }}
-        >
-          <section
-            className="loan-collateral-valuation-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="loan-collateral-market-title"
-            aria-describedby="loan-collateral-market-description"
-          >
-            <div className="loan-collateral-valuation-header">
-              <div>
-                <span>Indicative Valuation</span>
-                <h2 id="loan-collateral-market-title">Value vs Market</h2>
-              </div>
-              <button type="button" onClick={() => setIsCollateralValuationOpen(false)} aria-label="Close collateral valuation">
-                Close
-              </button>
-            </div>
-            <p id="loan-collateral-market-description" className="loan-collateral-valuation-description">
-              <strong>{collateralIfAny}</strong>
-            </p>
-            <div className="loan-collateral-valuation-results">
-              <div><span>Your entered value</span><strong>{formatMetricValue(collateralMarketComparison.declaredValue, 'currency')}</strong></div>
-              <div><span>Indicative market value</span><strong>{formatMetricValue(collateralMarketComparison.benchmark, 'currency')}</strong></div>
-              <div><span>Indicative market range</span><strong>{`${formatMetricValue(collateralMarketComparison.lowerBound, 'currency')} - ${formatMetricValue(collateralMarketComparison.upperBound, 'currency')}`}</strong></div>
-              <div><span>Difference from benchmark</span><strong>{formatMetricValue(collateralMarketComparison.variance, 'currency')}</strong></div>
-            </div>
-            <p className="loan-collateral-valuation-status">{collateralMarketComparison.status}</p>
-            <small>
-              Benchmark source: {collateralMarketComparison.source}. This is an indicative comparison for monitoring only and is not a certified property appraisal.
-            </small>
-          </section>
-        </div>
-      ) : null}
-
-      {isLoanRateComparisonOpen ? (
-        <div
-          className="loan-collateral-valuation-overlay"
-          role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setIsLoanRateComparisonOpen(false);
-            }
-          }}
-        >
-          <section
-            className="loan-collateral-valuation-dialog loan-rate-comparison-dialog"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="loan-rate-market-title"
-            aria-describedby="loan-rate-market-description"
-          >
-            <div className="loan-collateral-valuation-header">
-              <div>
-                <span>Web-Assisted Comparison</span>
-                <h2 id="loan-rate-market-title">Loan Rate Comparison Summary</h2>
-              </div>
-              <button type="button" onClick={() => setIsLoanRateComparisonOpen(false)} aria-label="Close loan rate comparison">
-                Close
-              </button>
-            </div>
-            <p id="loan-rate-market-description" className="loan-collateral-valuation-description">
-              <strong>{loanType || selectedRecord?.product_type || 'Loan'}</strong>
-              {entityIssuer.trim() ? ` from ${entityIssuer.trim()}` : ''}
-              {` | ${formatMetricValue(loanRateComparison.loanAmount, 'currency')} over ${loanRateComparison.termMonths} months`}
-            </p>
-            <div className="loan-collateral-valuation-results">
-              <div><span>Current annual rate</span><strong>{loanRateComparison.currentRate.toFixed(2)}%</strong></div>
-              <div><span>Web comparison rate</span><strong>{loanRateComparison.comparisonRate.toFixed(2)}%</strong></div>
-              <div><span>Current monthly payment</span><strong>{formatMetricValue(loanRateComparison.currentCost.monthlyPayment, 'currency')}</strong></div>
-              <div><span>Comparison monthly payment</span><strong>{formatMetricValue(loanRateComparison.comparisonCost.monthlyPayment, 'currency')}</strong></div>
-              <div><span>Current total interest</span><strong>{formatMetricValue(loanRateComparison.currentCost.totalInterest, 'currency')}</strong></div>
-              <div><span>Comparison total interest</span><strong>{formatMetricValue(loanRateComparison.comparisonCost.totalInterest, 'currency')}</strong></div>
-            </div>
-            <p className="loan-collateral-valuation-status">{loanRateComparison.status}</p>
-            <p className="loan-rate-comparison-summary">{loanRateComparison.summary}</p>
-            <div className="loan-rate-comparison-actions">
-              <button
-                type="button"
-                className="psychometric-reset-button"
-                onClick={() => window.open(
-                  loanRateComparison.webSearchUrl,
-                  'loan-rate-market-search',
-                  'popup=yes,width=920,height=720,resizable=yes,scrollbars=yes',
-                )}
-              >
-                Search Current Web Rates
-              </button>
-            </div>
-            <small>
-              Compare annual percentage rates and equivalent fees from official lender pages. Web results are external and the estimates above exclude fees, insurance, and prepayment charges.
-            </small>
-          </section>
-        </div>
-      ) : null}
     </div>
   );
 }

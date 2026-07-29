@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, Field
 
@@ -109,6 +109,24 @@ class OverallScorePayload(BaseModel):
     final_grade: str | None = None
     final_rating: str | None = None
     final_decision: str | None = None
+    wealth_building_score: float | None = None
+    wealth_grade: str | None = None
+    wealth_rating: str | None = None
+    wealth_component_scores: dict[str, float] | None = None
+    wealth_calculated_at: datetime | None = None
+    wealth_certification_status: str | None = None
+
+
+class WealthScoreUpdatePayload(BaseModel):
+    wealth_building_score: float = Field(ge=200, le=900)
+    wealth_grade: str = Field(min_length=1, max_length=10)
+    wealth_rating: str = Field(min_length=1, max_length=50)
+    wealth_component_scores: dict[str, float]
+    wealth_certification_status: Literal[
+        "NOT_GENERATED",
+        "GENERATED_PENDING",
+        "GENERATED_COMPLETE",
+    ] = "NOT_GENERATED"
 
 
 class DecisionAuditTrailPayload(BaseModel):

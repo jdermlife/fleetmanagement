@@ -9,6 +9,10 @@ import {
 } from '../../autosave/draftApi';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import {
+  updateLoanApplicationWealthScore,
+  type WealthCertificationStatus,
+} from '../../api/loan';
 import { buildNetWorthPositioningSnapshot } from './liveTrackerMetrics';
 import {
   computeNetWorthBuildingScore,
@@ -592,7 +596,8 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 export default function NetWorthPositioningPage() {
   const DARK_GOLD_COLOR = '#B8860B';
   const [searchParams] = useSearchParams();
-  const replicationId = searchParams.get('applicationNo')?.trim() || searchParams.get('profileId')?.trim() || '';
+  const applicationNo = searchParams.get('applicationNo')?.trim() || '';
+  const replicationId = applicationNo || searchParams.get('profileId')?.trim() || '';
   const draftEntityKey = replicationId || 'primary';
   const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
   const snapshot = useMemo(
@@ -634,6 +639,7 @@ export default function NetWorthPositioningPage() {
   const [hasCertifiedConsent, setHasCertifiedConsent] = useState(false);
   const [wealthCertificationGenerated, setWealthCertificationGenerated] = useState(false);
   const [wealthCertificationIssuedAt, setWealthCertificationIssuedAt] = useState('');
+  const [isPersistingWealthScore, setIsPersistingWealthScore] = useState(false);
 
   const netWorthBuildingScore = useMemo(
     () => computeNetWorthBuildingScore({
@@ -781,6 +787,20 @@ export default function NetWorthPositioningPage() {
     };
   }, [draftEntityKey, handleAutosaveHydrate, hydrateReplicatedBuildProfile]);
 
+  const persistWealthScore = useCallback(async (
+    certificationStatus: WealthCertificationStatus,
+  ) => {
+    if (!applicationNo) return;
+
+    await updateLoanApplicationWealthScore(applicationNo, {
+      wealth_building_score: netWorthBuildingScore.score,
+      wealth_grade: netWorthBuildingScore.grade,
+      wealth_rating: netWorthBuildingScore.rating,
+      wealth_component_scores: netWorthBuildingScore.componentScores,
+      wealth_certification_status: certificationStatus,
+    });
+  }, [applicationNo, netWorthBuildingScore]);
+
   const handleSaveDraft = useCallback(async () => {
     setIsSavingDraft(true);
     try {
@@ -790,7 +810,12 @@ export default function NetWorthPositioningPage() {
       });
 
       setDraftRevision(savedDraft.revision);
-      setSetupStatusMessage(`Draft saved (${new Date(savedDraft.updatedAt).toLocaleString()}).`);
+      await persistWealthScore('NOT_GENERATED');
+      setSetupStatusMessage(
+        applicationNo
+          ? `Draft and FILSCORE-Wealth result saved (${new Date(savedDraft.updatedAt).toLocaleString()}).`
+          : `Draft saved (${new Date(savedDraft.updatedAt).toLocaleString()}).`,
+      );
     } catch (error) {
       if (isAutosaveConflictError(error) && error.currentDraft) {
         setDraftRevision(error.currentDraft.revision);
@@ -801,7 +826,7 @@ export default function NetWorthPositioningPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  }, [autosaveValue, draftEntityKey, draftRevision]);
+  }, [applicationNo, autosaveValue, draftEntityKey, draftRevision, persistWealthScore]);
 
   const selectedCurrencyLabel = useMemo(
     () => CURRENCY_OPTIONS.find((option) => option.code === currency)?.label ?? currency,
@@ -1372,16 +1397,30 @@ export default function NetWorthPositioningPage() {
 
   const hasWealthDataForCertification = savedSetup.length > 0;
 
-  const handleProduceWealthCertification = useCallback(() => {
+  const handleProduceWealthCertification = useCallback(async () => {
     if (!hasWealthDataForCertification) {
       setSetupStatusMessage('FILSCORE-Wealth data are not yet available to produce a report or certification. Save setup and complete prior workflow entries first.');
       return;
     }
 
-    setWealthCertificationGenerated(true);
-    setWealthCertificationIssuedAt(new Date().toISOString());
-    setSetupStatusMessage('FILSCORE-Wealth certification generated.');
-  }, [hasWealthDataForCertification]);
+    setIsPersistingWealthScore(true);
+    try {
+      await persistWealthScore(
+        isCertificationComplete ? 'GENERATED_COMPLETE' : 'GENERATED_PENDING',
+      );
+      setWealthCertificationGenerated(true);
+      setWealthCertificationIssuedAt(new Date().toISOString());
+      setSetupStatusMessage(
+        applicationNo
+          ? 'FILSCORE-Wealth certification generated and stored for this application.'
+          : 'FILSCORE-Wealth certification generated.',
+      );
+    } catch {
+      setSetupStatusMessage('Unable to store the FILSCORE-Wealth result. Please try again.');
+    } finally {
+      setIsPersistingWealthScore(false);
+    }
+  }, [applicationNo, hasWealthDataForCertification, isCertificationComplete, persistWealthScore]);
 
   const wealthAuthenticityScore = useMemo(() => {
     const setupCompleteness = setupRows.filter((row) => !row.autoGenerated && row.amount > 0).length;
@@ -1758,7 +1797,7 @@ export default function NetWorthPositioningPage() {
           ) : null}
 
           <div className="networth-report-actions" aria-label="Certification actions">
-            <button type="button" className="psychometric-reset-button" onClick={handleProduceWealthCertification} disabled={!hasWealthDataForCertification}>Produce Certification</button>
+            <button type="button" className="psychometric-reset-button" onClick={handleProduceWealthCertification} disabled={!hasWealthDataForCertification || isPersistingWealthScore}>{isPersistingWealthScore ? 'Storing Wealth Score...' : 'Produce Certification'}</button>
             <button type="button" className="budget-dashboard-category-reset" onClick={handleDownloadWealthCertification} disabled={!wealthCertificationGenerated}>Download Certificate</button>
             <button type="button" className="psychometric-reset-button" onClick={handlePrintWealthCertification} disabled={!wealthCertificationGenerated}>Print / Save PDF</button>
             <button type="button" className="budget-dashboard-category-reset" onClick={reload} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh Data'}</button>

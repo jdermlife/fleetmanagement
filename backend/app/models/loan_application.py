@@ -384,6 +384,12 @@ class OverallScore(Base):
     final_grade = Column(String(10))
     final_rating = Column(String(50))
     final_decision = Column(String(50))
+    wealth_building_score = Column(Numeric(10, 2))
+    wealth_grade = Column(String(10))
+    wealth_rating = Column(String(50))
+    wealth_component_scores = Column(JSONB)
+    wealth_calculated_at = Column(DateTime(timezone=True))
+    wealth_certification_status = Column(String(30))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     loan_application = relationship("LoanApplication", back_populates="overall_scores")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import csv
 import os
+from datetime import datetime, timezone
 from io import BytesIO, StringIO
 from typing import Any
 
@@ -27,7 +28,7 @@ from app.models.loan_application import (
     RelationshipScore,
     SocialScore,
 )
-from app.schemas.loan_schema import LoanApplicationCreate
+from app.schemas.loan_schema import LoanApplicationCreate, WealthScoreUpdatePayload
 from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 from app.services.loan_repository_io import (
@@ -395,6 +396,12 @@ def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
                 "final_grade",
                 "final_rating",
                 "final_decision",
+                "wealth_building_score",
+                "wealth_grade",
+                "wealth_rating",
+                "wealth_component_scores",
+                "wealth_calculated_at",
+                "wealth_certification_status",
             ],
         ),
         "decision_audit_trail": [
@@ -790,6 +797,51 @@ def recompute_stored_quant_scores(
             "message": "QuantScores recomputed from stored application data",
             "application_no": record.application_no,
             "quant_scores": quant_scores,
+        }
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.patch(
+    "/loan-applications/{application_no}/wealth-score",
+)
+def update_stored_wealth_score(
+    application_no: str,
+    payload: WealthScoreUpdatePayload,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        calculated_at = datetime.now(timezone.utc)
+        wealth_payload = {
+            **payload.model_dump(),
+            "wealth_calculated_at": calculated_at,
+        }
+        upsert_related_record(
+            db,
+            record,
+            "overall_scores",
+            OverallScore,
+            wealth_payload,
+        )
+        record.updated_by = user.id
+
+        db.commit()
+        db.refresh(record)
+        invalidate_dashboard_statistics_cache()
+        return {
+            "message": "FILSCORE Wealth score updated",
+            "application_no": record.application_no,
+            "wealth_score": {
+                **payload.model_dump(),
+                "wealth_calculated_at": calculated_at,
+            },
         }
     except Exception:
         db.rollback()
