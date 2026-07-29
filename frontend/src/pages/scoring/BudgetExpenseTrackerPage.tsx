@@ -1020,7 +1020,13 @@ export default function BudgetExpenseTrackerPage() {
                   </p>
                 ) : (
                   <div className="psychometric-scale-table-wrap">
-                    <table className="psychometric-scale-table">
+                    <table className="psychometric-scale-table budget-workflow-variance-table">
+                      <colgroup>
+                        <col />
+                        <col />
+                        <col />
+                        <col />
+                      </colgroup>
                       <thead>
                         <tr>
                           <th>Budget Setup</th>
