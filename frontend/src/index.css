@@ -3677,6 +3677,14 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 220, 0.82));
 }
 
+.budget-ai-recommendations-modal {
+  width: min(100%, 920px);
+}
+
+.budget-ai-recommendations-done {
+  justify-self: end;
+}
+
 .budget-workflow-graph-row,
 .budget-workflow-variance-row {
   display: grid;

@@ -139,6 +139,7 @@ export default function BudgetExpenseTrackerPage() {
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [actionsToBeTaken, setActionsToBeTaken] = useState('');
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
+  const [isAiRecommendationsOpen, setIsAiRecommendationsOpen] = useState(false);
   const sourceSnapshotAppliedRef = useRef(false);
 
   const autosaveValue = useMemo<BudgetExpenseTrackerDraft>(() => ({
@@ -186,6 +187,21 @@ export default function BudgetExpenseTrackerPage() {
     onHydrate: handleAutosaveHydrate,
     enabled: isIdentityReady,
   });
+
+  useEffect(() => {
+    if (!isAiRecommendationsOpen) {
+      return;
+    }
+
+    const closeOnEscape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsAiRecommendationsOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [isAiRecommendationsOpen]);
 
   useEffect(() => {
     if (!isHydrated || loading || sourceSnapshotAppliedRef.current) {
@@ -541,6 +557,7 @@ export default function BudgetExpenseTrackerPage() {
   const handleSaveOrFinishStepThree = async () => {
     if (!selectedApplicationNo || !periodStart) {
       setSetupStatusMessage('Step 3 saved in the draft. Select an APP Profile ID to save the database budget record.');
+      setIsAiRecommendationsOpen(true);
       return;
     }
     try {
@@ -555,6 +572,7 @@ export default function BudgetExpenseTrackerPage() {
         };
       }));
       setSetupStatusMessage('Step 3 and actions saved to the selected Profile ID budget record.');
+      setIsAiRecommendationsOpen(true);
     } catch {
       setSetupStatusMessage('Step 3 remains in autosave, but the selected Profile ID budget record could not be updated. Please retry.');
     }
@@ -719,6 +737,86 @@ export default function BudgetExpenseTrackerPage() {
 
   return (
     <div className="psychometric-page budget-dashboard-page">
+      {isAiRecommendationsOpen ? (
+        <section
+          className="financial-health-journey-overlay"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="budget-ai-recommendations-title"
+        >
+          <article className="financial-health-journey-modal budget-ai-recommendations-modal">
+            <button
+              type="button"
+              className="financial-health-journey-minimize"
+              onClick={() => setIsAiRecommendationsOpen(false)}
+              aria-label="Close FILSCORE AI Recommendations"
+            >
+              Close
+            </button>
+
+            <p className="financial-health-journey-kicker">FILSCORE AI Recommendations</p>
+            <h2 id="budget-ai-recommendations-title">Your Budget Variance Review</h2>
+            <p>
+              Step 3 is saved. Review how target-versus-actual income and expense performance affects
+              cashflow, credit health, and wealth-building capacity.
+            </p>
+
+            <div className="budget-workflow-ai-grid">
+              <article className="budget-workflow-ai-card">
+                <h3>Recommended Actions</h3>
+                <ul className="psychometric-breakdown-list">
+                  {aiRecommendations.map((recommendation) => (
+                    <li key={`popout-${recommendation}`}>
+                      <span>{recommendation}</span>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+
+              <article className="budget-workflow-ai-card">
+                <h3>Target vs Actual Summary</h3>
+                <ul className="psychometric-breakdown-list">
+                  <li>
+                    <span>Target Net Cashflow</span>
+                    <strong>{formatSignedCurrency(setupVsActualSummary.setupNet)}</strong>
+                  </li>
+                  <li>
+                    <span>Actual Net Cashflow</span>
+                    <strong>{formatSignedCurrency(setupVsActualSummary.actualNet)}</strong>
+                  </li>
+                  <li>
+                    <span>Net Cashflow Variance</span>
+                    <strong>{formatSignedCurrency(scoreVarianceImpact.netVariance)}</strong>
+                  </li>
+                  <li>
+                    <span>Overall Direction</span>
+                    <strong>{scoreVarianceImpact.status}</strong>
+                  </li>
+                </ul>
+              </article>
+
+              <article className="budget-workflow-ai-card">
+                <h3>Credit Health Score Impact</h3>
+                <p className="psychometric-section-note">{scoreVarianceImpact.creditHealthImpact}</p>
+              </article>
+
+              <article className="budget-workflow-ai-card">
+                <h3>Wealth Building Score Impact</h3>
+                <p className="psychometric-section-note">{scoreVarianceImpact.wealthBuildingImpact}</p>
+              </article>
+            </div>
+
+            <button
+              type="button"
+              className="psychometric-reset-button budget-ai-recommendations-done"
+              onClick={() => setIsAiRecommendationsOpen(false)}
+            >
+              Done Reviewing Recommendations
+            </button>
+          </article>
+        </section>
+      ) : null}
+
       <section className="psychometric-hero budget-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Budget Workflow Controls</span>
