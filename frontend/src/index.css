@@ -4842,6 +4842,24 @@ th { color: var(--dark-gold); }
   line-height: 1.4;
 }
 
+.build-profile-comparison-input-dropdown {
+  margin-top: 16px;
+}
+
+.build-profile-comparison-input-line {
+  align-items: center;
+}
+
+.build-profile-comparison-input-line input {
+  min-width: 0;
+  width: 120px;
+  text-align: right;
+}
+
+.build-profile-comparison-input-statement > header strong {
+  white-space: nowrap;
+}
+
 .build-profile-target-actions {
   display: flex;
   flex-wrap: wrap;

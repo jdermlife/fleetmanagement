@@ -798,6 +798,28 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Cash on Hand actual value')).toBeTruthy()
     expect(screen.getAllByText('Pending input')).toHaveLength(3)
 
+    const inputSummary = screen.getByText('Net Worth Target vs Actual Inputs', { selector: 'summary' })
+    const inputDropdown = inputSummary.closest('details')!
+    const varianceFilters = screen.getByRole('heading', { name: 'Variance Filters' })
+    expect(inputDropdown.compareDocumentPosition(varianceFilters) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    await user.click(inputSummary)
+    expect(inputDropdown.hasAttribute('open')).toBe(true)
+
+    const cashTargetInput = within(inputDropdown).getByLabelText('Cash on Hand target input') as HTMLInputElement
+    const cashActualInput = within(inputDropdown).getByLabelText('Cash on Hand actual input') as HTMLInputElement
+    expect(cashTargetInput.value).toBe('50,000.00')
+    expect(cashActualInput.value).toBe('')
+    await user.clear(cashTargetInput)
+    await user.type(cashTargetInput, '55000')
+    await user.type(cashActualInput, '60000')
+    expect(within(inputDropdown).getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
+    expect((screen.getByLabelText('Cash on Hand actual value') as HTMLInputElement).value).toBe('60,000.00')
+
+    await user.clear(cashTargetInput)
+    await user.type(cashTargetInput, '50000')
+    await user.clear(cashActualInput)
+    expect((screen.getByLabelText('Cash on Hand actual value') as HTMLInputElement).value).toBe('')
+
     await user.type(screen.getByLabelText('Cash on Hand actual value'), '60000')
     expect(screen.getAllByText('+₱10,000.00').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Value improved above setup and supports net worth').length).toBeGreaterThan(0)
@@ -822,7 +844,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
-    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('50000')
+    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('50000.00')
     expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('60000.00')
     expect(savedProfile.values['wealthVarianceNote.asset-cash-on-hand']).toBeUndefined()
 
