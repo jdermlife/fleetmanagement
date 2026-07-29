@@ -1,7 +1,11 @@
+import { resolveAutosaveOwner } from '../../autosave/draftStorage'
+
 export const BUILD_PROFILE_STORAGE_KEY = 'fms:build-profile'
 
 export type ReplicatedBuildProfile = {
   profileId: string
+  selectedApplicationNo?: string
+  ownerKey?: string
   updatedAt?: string
   values: Record<string, string>
   documents: string[]
@@ -39,6 +43,7 @@ export function readReplicatedBuildProfile(expectedId?: string): ReplicatedBuild
   try {
     const parsed = JSON.parse(window.localStorage.getItem(BUILD_PROFILE_STORAGE_KEY) || 'null') as ReplicatedBuildProfile | null
     if (!parsed?.profileId || !parsed.values || (expectedId && parsed.profileId !== expectedId)) return null
+    if (parsed.ownerKey && parsed.ownerKey !== getCurrentBuildProfileOwner()) return null
     return parsed
   } catch {
     return null
@@ -68,4 +73,24 @@ export function toNetWorthDraft(
     actualEntries: Object.fromEntries(editableEntries.map((entry) => [entry.id, profile.values[`wealthActual.${entry.id}`] ?? ''])),
     varianceNotes: Object.fromEntries(editableEntries.map((entry) => [entry.id, profile.values[`wealthVarianceNote.${entry.id}`] ?? ''])),
   }
+}
+
+export function getSelectedBuildProfileApplicationNo(
+  profile = readReplicatedBuildProfile(),
+): string {
+  if (!profile) return ''
+
+  const selectedApplicationNo = profile.selectedApplicationNo?.trim()
+  if (selectedApplicationNo) return selectedApplicationNo
+
+  const legacyProfileId = profile.profileId.trim()
+  return legacyProfileId.startsWith('PRO-') ? '' : legacyProfileId
+}
+
+export function getCurrentBuildProfileOwner(): string {
+  const storage = typeof window === 'undefined' ? null : window.localStorage as Partial<Storage>
+  const token = storage && typeof storage.getItem === 'function'
+    ? storage.getItem('auth_token')
+    : null
+  return resolveAutosaveOwner(token)
 }

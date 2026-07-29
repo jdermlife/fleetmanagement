@@ -8,7 +8,9 @@ import {
   saveAutosaveDraftRemote,
 } from '../../autosave/draftApi';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import {
   updateLoanApplicationWealthScore,
   type WealthCertificationStatus,
@@ -166,8 +168,9 @@ export const FINANCIAL_GOAL_OPTIONS = [
 ] as const;
 
 export const CURRENCY_OPTIONS = [
-  { code: 'PHP', label: 'PHP (₱)' },
   { code: 'USD', label: 'USD ($)' },
+  { code: 'PHP', label: 'PHP (₱)' },
+  { code: 'GBP', label: 'GBP (£)' },
   { code: 'EUR', label: 'EUR (€)' },
   { code: 'JPY', label: 'JPY (¥)' },
   { code: 'SGD', label: 'SGD (S$)' },
@@ -596,10 +599,16 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 export default function NetWorthPositioningPage() {
   const DARK_GOLD_COLOR = '#B8860B';
   const [searchParams] = useSearchParams();
-  const applicationNo = searchParams.get('applicationNo')?.trim() || '';
+  const {
+    selectedApplicationNo: applicationNo,
+    entityKey,
+    isIdentityReady,
+  } = useSelectedAnalysisEntity();
   const replicationId = applicationNo || searchParams.get('profileId')?.trim() || '';
-  const draftEntityKey = replicationId || 'primary';
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const draftEntityKey = entityKey || 'identity-pending';
+  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics({
+    applicationNo,
+  });
   const snapshot = useMemo(
     () => buildNetWorthPositioningSnapshot(applications),
     [applications],
@@ -758,6 +767,7 @@ export default function NetWorthPositioningPage() {
     let disposed = false;
 
     const loadDraft = async () => {
+      if (!isIdentityReady) return;
       try {
         const remoteDraft = await fetchAutosaveDraft<NetWorthPositioningDraft>('net-worth-positioning', draftEntityKey);
         if (disposed) return;
@@ -785,7 +795,7 @@ export default function NetWorthPositioningPage() {
     return () => {
       disposed = true;
     };
-  }, [draftEntityKey, handleAutosaveHydrate, hydrateReplicatedBuildProfile]);
+  }, [draftEntityKey, handleAutosaveHydrate, hydrateReplicatedBuildProfile, isIdentityReady]);
 
   const persistWealthScore = useCallback(async (
     certificationStatus: WealthCertificationStatus,
@@ -1692,6 +1702,7 @@ export default function NetWorthPositioningPage() {
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid networth-report-summary" aria-label="Net worth summary">
+        <SelectedProfileIdCard />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{reportInformationPercent}%</strong>

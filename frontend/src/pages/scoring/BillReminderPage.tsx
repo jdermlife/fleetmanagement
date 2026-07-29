@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useState, type FormEvent } from 'react
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3;
@@ -225,7 +227,10 @@ function SaveCheckIcon() {
 }
 
 export default function BillReminderPage() {
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity();
+  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics({
+    applicationNo: selectedApplicationNo,
+  });
   const snapshot = useMemo(
     () => buildBillReminderSnapshot(applications),
     [applications],
@@ -325,10 +330,11 @@ export default function BillReminderPage() {
 
   useAutosaveDraft({
     scope: 'bill-reminder',
-    entityKey: 'primary',
+    entityKey: entityKey || 'identity-pending',
     value: autosaveValue,
     defaults: DEFAULT_BILL_REMINDER_DRAFT,
     onHydrate: handleAutosaveHydrate,
+    enabled: isIdentityReady,
   });
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
@@ -863,6 +869,7 @@ export default function BillReminderPage() {
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+        <SelectedProfileIdCard />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{completionPercent}%</strong>

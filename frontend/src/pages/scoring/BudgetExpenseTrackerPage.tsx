@@ -2,7 +2,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3;
@@ -112,7 +114,10 @@ function buildVarianceExplanation(itemType: 'income' | 'expense', variance: numb
 }
 
 export default function BudgetExpenseTrackerPage() {
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity();
+  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics({
+    applicationNo: selectedApplicationNo,
+  });
   const snapshot = useMemo(
     () => buildBudgetExpenseTrackerSnapshot(applications),
     [applications],
@@ -174,10 +179,11 @@ export default function BudgetExpenseTrackerPage() {
 
   const { isHydrated } = useAutosaveDraft({
     scope: 'budget-expense-tracker',
-    entityKey: 'primary',
+    entityKey: entityKey || 'identity-pending',
     value: autosaveValue,
     defaults: DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT,
     onHydrate: handleAutosaveHydrate,
+    enabled: isIdentityReady,
   });
 
   useEffect(() => {
@@ -664,6 +670,7 @@ export default function BudgetExpenseTrackerPage() {
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+        <SelectedProfileIdCard />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{completionPercent}%</strong>

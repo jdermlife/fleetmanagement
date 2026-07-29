@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import {
   BUILD_PROFILE_STORAGE_KEY,
   readReplicatedBuildProfile,
+  getSelectedBuildProfileApplicationNo,
   toNetWorthDraft,
   type ReplicatedBuildProfile,
 } from '../src/pages/scoring/buildProfileReplication'
@@ -41,6 +42,34 @@ describe('build profile replication', () => {
     window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify(profile))
     expect(readReplicatedBuildProfile('PRO-1')?.profileId).toBe('PRO-1')
     expect(readReplicatedBuildProfile('PRO-2')).toBeNull()
+  })
+
+  it('keeps an explicit selected application separate from generated profile IDs', () => {
+    window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+      ...profile,
+      profileId: 'PRO-LOCAL',
+      selectedApplicationNo: 'APP-SELECTED',
+    }))
+    expect(getSelectedBuildProfileApplicationNo()).toBe('APP-SELECTED')
+
+    window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+      ...profile,
+      profileId: 'PRO-LOCAL',
+    }))
+    expect(getSelectedBuildProfileApplicationNo()).toBe('')
+  })
+
+  it('does not expose another user’s selected application on a shared browser', () => {
+    const tokenFor = (subject: string) => `header.${btoa(JSON.stringify({ sub: subject }))}.signature`
+    window.localStorage.setItem('auth_token', tokenFor('user-2'))
+    window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+      ...profile,
+      ownerKey: 'user-1',
+      selectedApplicationNo: 'APP-USER-1',
+    }))
+
+    expect(readReplicatedBuildProfile()).toBeNull()
+    expect(getSelectedBuildProfileApplicationNo()).toBe('')
   })
 
   it('maps Build Profile wealth inputs into the Net Worth draft model', () => {

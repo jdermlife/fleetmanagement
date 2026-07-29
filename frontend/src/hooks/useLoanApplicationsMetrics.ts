@@ -1,11 +1,23 @@
 import { useCallback, useEffect, useState } from 'react';
 
 import { getErrorMessage } from '../api';
-import { fetchAllLoanApplications, type LoanApplicationRecord } from '../api/loan';
+import {
+  fetchAllLoanApplications,
+  fetchLoanApplication,
+  type LoanApplicationRecord,
+} from '../api/loan';
 
 const DEFAULT_MAX_RECORDS = 300;
 
-export function useLoanApplicationsMetrics(maxRecords = DEFAULT_MAX_RECORDS) {
+type LoanApplicationsMetricsOptions = {
+  applicationNo?: string
+  maxRecords?: number
+}
+
+export function useLoanApplicationsMetrics({
+  applicationNo = '',
+  maxRecords = DEFAULT_MAX_RECORDS,
+}: LoanApplicationsMetricsOptions = {}) {
   const [applications, setApplications] = useState<LoanApplicationRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -16,7 +28,9 @@ export function useLoanApplicationsMetrics(maxRecords = DEFAULT_MAX_RECORDS) {
     setError('');
 
     try {
-      const records = await fetchAllLoanApplications({ maxRecords });
+      const records = applicationNo
+        ? [await fetchLoanApplication(applicationNo)]
+        : await fetchAllLoanApplications({ maxRecords });
       setApplications(records);
       setLastUpdated(new Date());
     } catch (loadError) {
@@ -24,7 +38,7 @@ export function useLoanApplicationsMetrics(maxRecords = DEFAULT_MAX_RECORDS) {
     } finally {
       setLoading(false);
     }
-  }, [maxRecords]);
+  }, [applicationNo, maxRecords]);
 
   useEffect(() => {
     void load();

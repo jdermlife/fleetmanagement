@@ -2,6 +2,8 @@ import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { fetchAutosaveDraft } from '../../autosave/draftApi'
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 
 import {
   buildFinancialHealthGroupRings,
@@ -23,7 +25,7 @@ import {
   explainWealthFoundationResult,
   type WealthFoundationScoreResult,
 } from './wealthFoundationEngine'
-import { BUILD_PROFILE_STORAGE_KEY } from './buildProfileReplication'
+import { readReplicatedBuildProfile } from './buildProfileReplication'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -415,6 +417,7 @@ function deriveLendingLeafScores(payload: unknown): LendingLeafScores | null {
 }
 
 export default function FinancialHealthSummaryPage() {
+  const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
@@ -443,6 +446,11 @@ export default function FinancialHealthSummaryPage() {
     let disposed = false
 
     const loadNetWorthDraft = async () => {
+      if (!isIdentityReady) return
+
+      const analysisEntityKey = entityKey || 'identity-pending'
+      const lendingEntityKey = selectedApplicationNo || 'new'
+      const creditEntityKey = selectedApplicationNo || 'primary'
       try {
         const [
           netWorthDraft,
@@ -451,11 +459,11 @@ export default function FinancialHealthSummaryPage() {
           billReminderDraft,
           creditHealthDraft,
         ] = await Promise.all([
-          fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', 'primary'),
-          fetchAutosaveDraft<unknown>('loan-application', 'new'),
-          fetchAutosaveDraft<unknown>('budget-expense-tracker', 'primary'),
-          fetchAutosaveDraft<unknown>('bill-reminder', 'primary'),
-          fetchAutosaveDraft<unknown>('credit-scoring', 'primary'),
+          fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
+          fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
+          fetchAutosaveDraft<unknown>('budget-expense-tracker', analysisEntityKey),
+          fetchAutosaveDraft<unknown>('bill-reminder', analysisEntityKey),
+          fetchAutosaveDraft<unknown>('credit-scoring', creditEntityKey),
         ])
 
         if (disposed || !netWorthDraft?.payload) {
@@ -472,7 +480,7 @@ export default function FinancialHealthSummaryPage() {
           const budgetPayload = budgetDraft?.payload
           const creditPayload = creditHealthDraft?.payload
           const wealthPayload = netWorthDraft?.payload
-          const buildProfileDraft = safeStorageGet(BUILD_PROFILE_STORAGE_KEY)
+          const buildProfileDraft = readReplicatedBuildProfile()
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
 
@@ -507,7 +515,7 @@ export default function FinancialHealthSummaryPage() {
     return () => {
       disposed = true
     }
-  }, [])
+  }, [entityKey, isIdentityReady, selectedApplicationNo])
 
   const wealthFoundationInsight = useMemo(
     () => (wealthFoundationScore ? explainWealthFoundationResult(wealthFoundationScore) : null),
@@ -572,7 +580,10 @@ export default function FinancialHealthSummaryPage() {
 
   const launchJourneyStep = (step: JourneyStep) => {
     if (typeof window !== 'undefined') {
-      window.location.assign(step.route)
+      const selectedQuery = selectedApplicationNo
+        ? `?applicationNo=${encodeURIComponent(selectedApplicationNo)}`
+        : ''
+      window.location.assign(`${step.route}${selectedQuery}`)
     }
   }
 
@@ -852,6 +863,7 @@ export default function FinancialHealthSummaryPage() {
       </section>
 
       <section className="financial-health-summary-grid" aria-label="Financial Health highlights">
+        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" />
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Foundation & reliability</span>
           <strong>{groupRings[0].displayValue}</strong>

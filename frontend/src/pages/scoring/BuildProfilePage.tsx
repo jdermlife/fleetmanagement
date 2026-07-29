@@ -57,12 +57,14 @@ import {
   type AdditionalCollateral,
   type CollateralField,
 } from './buildProfileStep7'
-import { BUILD_PROFILE_STORAGE_KEY } from './buildProfileReplication'
+import { BUILD_PROFILE_STORAGE_KEY, getCurrentBuildProfileOwner } from './buildProfileReplication'
 
 type ProfileStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 
 type ProfileData = {
   profileId: string
+  selectedApplicationNo?: string
+  ownerKey?: string
   step: ProfileStep
   values: Record<string, string>
   documents: string[]
@@ -193,6 +195,7 @@ function loadProfile(): ProfileData {
     const saved = window.localStorage.getItem(STORAGE_KEY)
     if (!saved) return createEmptyProfile()
     const parsed = JSON.parse(saved)
+    if (parsed.ownerKey && parsed.ownerKey !== getCurrentBuildProfileOwner()) return createEmptyProfile()
     if (parsed.values) {
       const values = { ...parsed.values }
       if (values.dateOfBirth) values.age = calculateAge(values.dateOfBirth)
@@ -207,7 +210,11 @@ function loadProfile(): ProfileData {
 }
 
 function persistProfileSnapshot(profile: ProfileData): void {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ ...profile, updatedAt: new Date().toISOString() }))
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify({
+    ...profile,
+    ownerKey: getCurrentBuildProfileOwner(),
+    updatedAt: new Date().toISOString(),
+  }))
 }
 
 function formatCurrency(value: string): string {
@@ -388,6 +395,7 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   return {
     ...profileBase,
     profileId: application.application_no,
+    selectedApplicationNo: application.application_no,
     values,
     coBorrowers: (requirements.coBorrowers ?? []).map((item, index) => ({
       id: `CB-${application.application_no}-${index + 1}`,

@@ -27,7 +27,7 @@ function resolveStorage(storage?: Storage): Storage | null {
   return typeof window === 'undefined' ? null : window.localStorage
 }
 
-function decodeTokenOwner(token: string | null | undefined): string {
+export function resolveAutosaveOwner(token: string | null | undefined): string {
   if (!token) {
     return 'anonymous'
   }
@@ -53,7 +53,7 @@ function decodeTokenOwner(token: string | null | undefined): string {
 
 export function buildAutosaveStorageKey(scope: string, token?: string | null): string {
   const normalizedScope = encodeURIComponent(scope.trim() || 'default')
-  return `${AUTOSAVE_STORAGE_PREFIX}:${decodeTokenOwner(token)}:${normalizedScope}`
+  return `${AUTOSAVE_STORAGE_PREFIX}:${resolveAutosaveOwner(token)}:${normalizedScope}`
 }
 
 export function clearAutosaveDraftsForToken(
@@ -65,7 +65,7 @@ export function clearAutosaveDraftsForToken(
     return
   }
 
-  const ownerPrefix = `${AUTOSAVE_STORAGE_PREFIX}:${decodeTokenOwner(token)}:`
+  const ownerPrefix = `${AUTOSAVE_STORAGE_PREFIX}:${resolveAutosaveOwner(token)}:`
   const matchingKeys: string[] = []
   try {
     for (let index = 0; index < targetStorage.length; index += 1) {

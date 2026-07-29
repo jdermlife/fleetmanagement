@@ -2,7 +2,9 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { NumericFormat } from 'react-number-format';
 
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
@@ -302,7 +304,10 @@ function buildAiAdvisor(snapshot: ReturnType<typeof buildLoanMonitoringSnapshot>
 }
 
 export default function LoanMonitoringPage() {
-  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics();
+  const { selectedApplicationNo: selectedProfileApplicationNo } = useSelectedAnalysisEntity();
+  const { applications, error, lastUpdated, loading, reload } = useLoanApplicationsMetrics({
+    applicationNo: selectedProfileApplicationNo,
+  });
   const monitoredApplications = useMemo(
     () =>
       applications.filter(
@@ -310,7 +315,7 @@ export default function LoanMonitoringPage() {
       ),
     [applications],
   );
-  const [selectedApplicationNo, setSelectedApplicationNo] = useState('');
+  const [selectedApplicationNo, setSelectedApplicationNo] = useState(selectedProfileApplicationNo);
   const [newLoanAmount, setNewLoanAmount] = useState('');
   const [newLoanInterestRate, setNewLoanInterestRate] = useState('');
   const [newLoanTerm, setNewLoanTerm] = useState('');
@@ -330,10 +335,13 @@ export default function LoanMonitoringPage() {
       return;
     }
 
-    if (!selectedApplicationNo || !monitoredApplications.some((record) => record.application_no === selectedApplicationNo)) {
+    const requiredApplicationNo = selectedProfileApplicationNo || selectedApplicationNo;
+    if (!requiredApplicationNo || !monitoredApplications.some((record) => record.application_no === requiredApplicationNo)) {
       setSelectedApplicationNo(monitoredApplications[0]?.application_no ?? '');
+    } else if (selectedApplicationNo !== requiredApplicationNo) {
+      setSelectedApplicationNo(requiredApplicationNo);
     }
-  }, [monitoredApplications, selectedApplicationNo]);
+  }, [monitoredApplications, selectedApplicationNo, selectedProfileApplicationNo]);
 
   const snapshot = useMemo(
     () => buildLoanMonitoringSnapshot(applications, selectedApplicationNo),
@@ -718,6 +726,7 @@ export default function LoanMonitoringPage() {
       </section>
 
       <section className="psychometric-summary-grid loan-monitoring-summary-grid">
+        <SelectedProfileIdCard />
         <article className="psychometric-summary-card">
           <span>Monitored Loans</span>
           <strong>{snapshot.monitoredLoansCount}</strong>
@@ -827,7 +836,7 @@ export default function LoanMonitoringPage() {
                       <option value="Home Loan">Home Loan</option>
                       <option value="Auto Loan">Auto Loan</option>
                       <option value="Personal Loan">Personal Loan</option>
-                      <option value="Other">Other</option>
+                      $<option value="Other">Other</option>
                     </select>
                   </label>
                   <label className="budget-dashboard-category-summary-card">
