@@ -615,6 +615,55 @@ export default function BudgetExpenseTrackerPage() {
     return topVarianceRows.reduce((largest, item) => Math.max(largest, item.magnitude), 0);
   }, [topVarianceRows]);
 
+  const scoreVarianceImpact = useMemo(() => {
+    const hasActuals = varianceRows.some((item) => item.hasActual);
+    const incomeVariance = setupVsActualSummary.actualIncomeTotal - setupVsActualSummary.setupIncomeTotal;
+    const expenseVariance = setupVsActualSummary.actualExpenseTotal - setupVsActualSummary.setupExpenseTotal;
+    const netVariance = setupVsActualSummary.actualNet - setupVsActualSummary.setupNet;
+
+    if (!hasActuals) {
+      return {
+        status: 'Awaiting actuals',
+        incomeVariance,
+        expenseVariance,
+        netVariance,
+        creditHealthImpact: 'Enter actual income and expenses to assess repayment-capacity impact.',
+        wealthBuildingImpact: 'Enter actual income and expenses to assess savings and wealth impact.',
+      };
+    }
+
+    if (netVariance > 0) {
+      return {
+        status: 'Favorable impact',
+        incomeVariance,
+        expenseVariance,
+        netVariance,
+        creditHealthImpact: 'Stronger-than-target net cashflow supports repayment capacity and credit health.',
+        wealthBuildingImpact: 'Additional net cashflow increases the amount available for savings and wealth building.',
+      };
+    }
+
+    if (netVariance < 0) {
+      return {
+        status: 'Adverse impact',
+        incomeVariance,
+        expenseVariance,
+        netVariance,
+        creditHealthImpact: 'Weaker-than-target net cashflow can reduce repayment capacity and pressure credit health.',
+        wealthBuildingImpact: 'The net shortfall reduces funds available for saving, investing, and wealth building.',
+      };
+    }
+
+    return {
+      status: 'Neutral impact',
+      incomeVariance,
+      expenseVariance,
+      netVariance,
+      creditHealthImpact: 'Net cashflow is on target, with no directional repayment-capacity impact indicated.',
+      wealthBuildingImpact: 'Net cashflow is on target, so the planned savings and wealth capacity is maintained.',
+    };
+  }, [setupVsActualSummary, varianceRows]);
+
   const aiRecommendations = useMemo(() => {
     const fixedObligationsTotal = toSafeNumber(expenseDraft[HOUSE_AMORTIZATION_KEY] ?? '')
       + toSafeNumber(expenseDraft[LOAN_AMORTIZATION_KEY] ?? '');
@@ -1161,7 +1210,7 @@ export default function BudgetExpenseTrackerPage() {
             <article className="psychometric-panel">
               <div className="psychometric-panel-header">
                 <div>
-                  <span className="psychometric-panel-kicker">AI Recommendations</span>
+                  <span className="psychometric-panel-kicker">FILSCORE AI Recommendations</span>
                   <h2>Variance coaching and trend visuals</h2>
                 </div>
               </div>
@@ -1272,6 +1321,39 @@ export default function BudgetExpenseTrackerPage() {
                       ))}
                     </div>
                   )}
+                </article>
+
+                <article className="budget-workflow-ai-card">
+                  <h3>Impact of Income and Expense Variance</h3>
+                  <p className="psychometric-section-note">
+                    Target versus actual impact on Credit Health Score and Wealth Building Score.
+                  </p>
+                  <ul className="psychometric-breakdown-list">
+                    <li>
+                      <span>Income Variance</span>
+                      <strong>{formatSignedCurrency(scoreVarianceImpact.incomeVariance)}</strong>
+                    </li>
+                    <li>
+                      <span>Expense Variance</span>
+                      <strong>{formatSignedCurrency(scoreVarianceImpact.expenseVariance)}</strong>
+                    </li>
+                    <li>
+                      <span>Net Cashflow Variance</span>
+                      <strong>{formatSignedCurrency(scoreVarianceImpact.netVariance)}</strong>
+                    </li>
+                    <li>
+                      <span>Overall Direction</span>
+                      <strong>{scoreVarianceImpact.status}</strong>
+                    </li>
+                  </ul>
+                  <div>
+                    <strong>Credit Health Score</strong>
+                    <p className="psychometric-section-note">{scoreVarianceImpact.creditHealthImpact}</p>
+                  </div>
+                  <div>
+                    <strong>Wealth Building Score</strong>
+                    <p className="psychometric-section-note">{scoreVarianceImpact.wealthBuildingImpact}</p>
+                  </div>
                 </article>
               </div>
             </article>

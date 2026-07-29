@@ -9,6 +9,7 @@ const RENDER_API_FALLBACKS = [
 ]
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
+const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 
 const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
   .split(',')
@@ -111,6 +112,59 @@ let refreshTokenRequest: Promise<string> | null = null
 function clearCachedAuthState() {
   currentUserCache = null
   currentUserRequest = null
+
+  if (typeof window !== 'undefined') {
+    window.sessionStorage.removeItem(CURRENT_USER_SESSION_STORAGE_KEY)
+  }
+}
+
+function storeCurrentUser(user: AuthUser): AuthUser {
+  currentUserCache = user
+
+  if (typeof window !== 'undefined' && authToken) {
+    window.sessionStorage.setItem(CURRENT_USER_SESSION_STORAGE_KEY, JSON.stringify({
+      accessToken: authToken,
+      user,
+    }))
+  }
+
+  return user
+}
+
+function restoreCurrentUserFromSession(accessToken: string): void {
+  if (typeof window === 'undefined') {
+    return
+  }
+
+  try {
+    const storedValue = window.sessionStorage.getItem(CURRENT_USER_SESSION_STORAGE_KEY)
+    if (!storedValue) {
+      return
+    }
+
+    const stored = JSON.parse(storedValue) as {
+      accessToken?: unknown
+      user?: Record<string, unknown>
+    }
+    if (stored.accessToken !== accessToken || !stored.user) {
+      clearCachedAuthState()
+      return
+    }
+
+    currentUserCache = normalizeAuthUser(stored.user)
+  } catch {
+    clearCachedAuthState()
+  }
+}
+
+function isBrowserReload(): boolean {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  return window.performance
+    .getEntriesByType('navigation')
+    .some((entry) => (entry as PerformanceNavigationTiming).type === 'reload')
 }
 
 function syncStoredSession(nextAccessToken: string | null, nextRefreshToken: string | null) {
@@ -163,6 +217,11 @@ if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function'
   const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   if (storedAuthToken || storedRefreshToken) {
     syncStoredSession(storedAuthToken, storedRefreshToken)
+    if (storedAuthToken && !isBrowserReload()) {
+      restoreCurrentUserFromSession(storedAuthToken)
+    } else {
+      clearCachedAuthState()
+    }
   }
 }
 
@@ -447,12 +506,12 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   }
 
   const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
-  currentUserCache = normalizeAuthUser(user)
+  const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
   return {
     token: accessToken,
     refreshToken,
-    user: currentUserCache,
+    user: currentUser,
   }
 }
 
@@ -471,13 +530,13 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
   }
 
   const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
-  currentUserCache = normalizeAuthUser(user)
+  const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
 
   return {
     token: accessToken,
     refreshToken,
-    user: currentUserCache,
+    user: currentUser,
   }
 }
 
@@ -497,13 +556,13 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
   }
 
   const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
-  currentUserCache = normalizeAuthUser(user)
+  const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
 
   return {
     token: accessToken,
     refreshToken,
-    user: currentUserCache,
+    user: currentUser,
   }
 }
 
@@ -581,8 +640,7 @@ export async function fetchCurrentUser(): Promise<LoginResponse['user']> {
       user: Record<string, unknown>
     }>('/api/auth/me')
     .then((response) => {
-      currentUserCache = normalizeAuthUser(response.data.user)
-      return currentUserCache
+      return storeCurrentUser(normalizeAuthUser(response.data.user))
     })
     .finally(() => {
       currentUserRequest = null
@@ -602,7 +660,7 @@ export async function updateAccountPreferences(payload: {
   })
 
   const normalizedUser = normalizeAuthUser(response.data.user)
-  currentUserCache = normalizedUser
+  storeCurrentUser(normalizedUser)
 
   return {
     message: response.data.message,
