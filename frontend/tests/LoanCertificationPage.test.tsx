@@ -24,10 +24,21 @@ describe('LoanCertificationPage', () => {
     mockFetchLoanApplication.mockReset()
     mockRecomputeStoredScores.mockReset()
     mockRecomputeStoredScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
+    const values = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      clear: () => values.clear(),
+      getItem: (key: string) => values.get(key) ?? null,
+      key: (index: number) => Array.from(values.keys())[index] ?? null,
+      get length() { return values.size },
+      removeItem: (key: string) => values.delete(key),
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
+    window.localStorage.clear()
   })
 
   afterEach(() => {
     cleanup()
+    vi.unstubAllGlobals()
   })
 
   it('uses the persisted final score instead of stale navigation state', async () => {
@@ -93,5 +104,53 @@ describe('LoanCertificationPage', () => {
     const bureauCard = screen.getByText('Credit Bureau Score').closest('div')
     expect(bureauCard).toBeTruthy()
     expect(within(bureauCard!).getByText('91 / 100')).toBeTruthy()
+  })
+
+  it('loads the borrower and score from the selected Profile ID when the URL has no application number', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'APP-SELECTED-9',
+      selectedApplicationNo: 'APP-SELECTED-9',
+      values: {},
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+    }))
+    mockFetchLoanApplication.mockResolvedValue({
+      application_no: 'APP-SELECTED-9',
+      borrower_name: 'Maria Reyes',
+      product_type: 'Personal Loan',
+      status: 'APPROVED',
+      credit_bureau_reports: {
+        bureau_name: 'FILSCORE Credit Bureau Scorecard',
+        bureau_score: 88,
+      },
+      overall_scores: {
+        final_score: 90,
+        final_grade: 'A',
+        final_rating: 'Excellent',
+        final_decision: 'APPROVE',
+        credit_score: 89,
+        fraud_score: 87,
+        social_score: 86,
+        psychometric_score: 91,
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/loan-certification']}>
+        <Routes>
+          <Route path="/loan-certification" element={<LoanCertificationPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findAllByText('Maria Reyes')).toHaveLength(2)
+    expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-SELECTED-9')
+    expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-SELECTED-9')
+    const compositeCard = screen.getByText('Composite Score').closest('div')
+    expect(compositeCard).toBeTruthy()
+    expect(within(compositeCard!).getByText('830')).toBeTruthy()
   })
 })

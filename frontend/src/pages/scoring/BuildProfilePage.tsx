@@ -1,10 +1,9 @@
-import { Fragment, useEffect, useMemo, useState } from 'react'
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { NumericFormat } from 'react-number-format'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
   fetchLoanApplication,
-  recomputeStoredLoanApplicationScores,
   updateLoanApplication,
   type LoanApplicationPayload,
   type LoanApplicationRecord,
@@ -215,6 +214,24 @@ function persistProfileSnapshot(profile: ProfileData): void {
     ownerKey: getCurrentBuildProfileOwner(),
     updatedAt: new Date().toISOString(),
   }))
+}
+
+function scorePreparationFingerprint(profile: ProfileData): string {
+  const scoreValues = { ...profile.values }
+  delete scoreValues.creditHealthScoreOpened
+  delete scoreValues.wealthBuildingScoreOpened
+
+  return JSON.stringify({
+    profileId: profile.profileId,
+    selectedApplicationNo: profile.selectedApplicationNo,
+    values: scoreValues,
+    documents: profile.documents,
+    suitabilityAnswers: profile.suitabilityAnswers,
+    coBorrowers: profile.coBorrowers,
+    guarantors: profile.guarantors,
+    additionalCollaterals: profile.additionalCollaterals,
+    dependents: profile.dependents,
+  })
 }
 
 function formatCurrency(value: string): string {
@@ -615,6 +632,9 @@ export default function BuildProfilePage() {
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
+  const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
+  const preparedScoreKeyRef = useRef('')
+  const scorePreparationPromiseRef = useRef<{ key: string; promise: Promise<LoanApplicationRecord> } | null>(null)
   const [wealthSectionFilter, setWealthSectionFilter] = useState<'all' | StatementSection>('all')
   const [wealthCategoryFilter, setWealthCategoryFilter] = useState('all')
   const [wealthLineSearch, setWealthLineSearch] = useState('')
@@ -625,6 +645,13 @@ export default function BuildProfilePage() {
   const [varianceCategoryFilter, setVarianceCategoryFilter] = useState('all')
   const [varianceLineSearch, setVarianceLineSearch] = useState('')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
+  const scoreApplicationNo = profile.selectedApplicationNo?.trim()
+    || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
+  const scorePreparationKey = scoreApplicationNo
+    ? `${scoreApplicationNo}:${scorePreparationFingerprint(profile)}`
+    : ''
+  const currentScorePreparationKeyRef = useRef(scorePreparationKey)
+  currentScorePreparationKeyRef.current = scorePreparationKey
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -772,6 +799,62 @@ export default function BuildProfilePage() {
   }))
   const goToStep = (step: ProfileStep) => setProfile((current) => ({ ...current, step }))
 
+  const prepareStep12Scores = useCallback((profileSnapshot: ProfileData = profile) => {
+    const applicationNo = profileSnapshot.selectedApplicationNo?.trim()
+      || (!profileSnapshot.profileId.startsWith('PRO-') ? profileSnapshot.profileId.trim() : '')
+    if (!applicationNo) {
+      setScorePreparationStatus('error')
+      setSaveMessage('Select a repository record before preparing FILSCORE results.')
+      return Promise.reject(new Error('A repository application is required.'))
+    }
+
+    const preparationKey = `${applicationNo}:${scorePreparationFingerprint(profileSnapshot)}`
+    if (preparedScoreKeyRef.current === preparationKey && sourceApplication?.application_no === applicationNo) {
+      setScorePreparationStatus('ready')
+      return Promise.resolve(sourceApplication)
+    }
+
+    const pendingPreparation = scorePreparationPromiseRef.current
+    if (pendingPreparation?.key === preparationKey) return pendingPreparation.promise
+
+    setScorePreparationStatus('preparing')
+    setSaveMessage(`Loading and preparing profile ${applicationNo} for FILSCORE...`)
+    const promise = (async () => {
+      const baseline = sourceApplication?.application_no === applicationNo
+        ? sourceApplication
+        : await loadProfileApplication(applicationNo)
+      const payload = loanPayloadFromProfile(profileSnapshot, baseline)
+      persistProfileSnapshot(profileSnapshot)
+      await updateLoanApplication(applicationNo, payload)
+      const synchronizedApplication = { ...baseline, ...payload }
+      preparedScoreKeyRef.current = preparationKey
+      setSourceApplication(synchronizedApplication)
+      if (currentScorePreparationKeyRef.current === preparationKey) {
+        setScorePreparationStatus('ready')
+        setSaveMessage(`Profile ${applicationNo} loaded. Credit Health and Wealth Building inputs are ready.`)
+      }
+      return synchronizedApplication
+    })().catch((error) => {
+      if (currentScorePreparationKeyRef.current === preparationKey) {
+        setScorePreparationStatus('error')
+        setSaveMessage(`Unable to prepare profile ${applicationNo}. Select a score button to retry.`)
+      }
+      throw error
+    }).finally(() => {
+      if (scorePreparationPromiseRef.current?.key === preparationKey) {
+        scorePreparationPromiseRef.current = null
+      }
+    })
+
+    scorePreparationPromiseRef.current = { key: preparationKey, promise }
+    return promise
+  }, [profile, sourceApplication])
+
+  useEffect(() => {
+    if (profile.step !== 12) return
+    void prepareStep12Scores().catch(() => undefined)
+  }, [prepareStep12Scores, profile.step, scorePreparationKey])
+
   const saveProfile = async () => {
     try {
       persistProfileSnapshot(profile)
@@ -792,20 +875,13 @@ export default function BuildProfilePage() {
     key: 'creditHealthScoreOpened' | 'wealthBuildingScoreOpened',
     destination: '/lending-scorecard/filscore' | '/net-worth-positioning',
   ) => {
-    if (!sourceApplication) {
-      setSaveMessage('Select or create a profile before opening FILSCORE computation.')
-      return
-    }
-
     const updatedProfile = { ...profile, values: { ...profile.values, [key]: 'true' } }
     setProfile(updatedProfile)
     setPendingScorePage(key)
     try {
+      const preparedApplication = await prepareStep12Scores(profile)
       persistProfileSnapshot(updatedProfile)
-      const payload = loanPayloadFromProfile(updatedProfile, sourceApplication)
-      await updateLoanApplication(sourceApplication.application_no, payload)
-      await recomputeStoredLoanApplicationScores(sourceApplication.application_no)
-      navigate(`${destination}?applicationNo=${encodeURIComponent(sourceApplication.application_no)}`)
+      navigate(`${destination}?applicationNo=${encodeURIComponent(preparedApplication.application_no)}`)
     } catch {
       setSaveMessage('Unable to synchronize profile data and compute FILSCORE right now.')
     } finally {
@@ -2029,28 +2105,37 @@ export default function BuildProfilePage() {
     if (profile.step === 12) {
       return <div className="build-profile-step-content">
         <h3>Step 12: FILSCORE Credit Health and Wealth Building Score Links</h3>
-        <p className="psychometric-section-note">Use your completed profile to continue to both FILSCORE assessment areas.</p>
+        <p className="psychometric-section-note">Use your completed profile to continue to both FILSCORE assessment areas. The Profile ID record is loaded and prepared automatically.</p>
+        <p className="psychometric-section-note">
+          {scorePreparationStatus === 'preparing'
+            ? `Preparing ${scoreApplicationNo || 'selected profile'}...`
+            : scorePreparationStatus === 'ready'
+              ? `${scoreApplicationNo} is ready for both score pages.`
+              : scorePreparationStatus === 'error'
+                ? 'Automatic preparation was not completed. Select a score button to retry.'
+                : 'Waiting to prepare the selected profile.'}
+        </p>
         <div className="build-profile-score-links">
           <article>
             <span>FILSCORE Assessment</span>
             <h4>Credit Health Score</h4>
             <p>Review credit readiness across credit, values, social, and verification indicators.</p>
-            <button type="button" aria-busy={pendingScorePage === 'creditHealthScoreOpened'} aria-invalid={profile.values.creditHealthScoreOpened !== 'true'} disabled={pendingScorePage !== null} onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>
-              {pendingScorePage === 'creditHealthScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Computing Credit Health Score...</> : 'Open Credit Health Score'}
+            <button type="button" aria-busy={pendingScorePage === 'creditHealthScoreOpened' || scorePreparationStatus === 'preparing'} aria-invalid={profile.values.creditHealthScoreOpened !== 'true'} disabled={pendingScorePage !== null || scorePreparationStatus === 'preparing'} onClick={() => void openScorePage('creditHealthScoreOpened', '/lending-scorecard/filscore')}>
+              {pendingScorePage === 'creditHealthScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Opening Credit Health Score...</> : 'Open Credit Health Score'}
             </button>
           </article>
           <article>
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <button type="button" aria-busy={pendingScorePage === 'wealthBuildingScoreOpened'} aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} disabled={pendingScorePage !== null} onClick={() => {
+            <button type="button" aria-busy={pendingScorePage === 'wealthBuildingScoreOpened' || scorePreparationStatus === 'preparing'} aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} disabled={pendingScorePage !== null || scorePreparationStatus === 'preparing'} onClick={() => {
               if (sourceApplication) void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')
               else {
                 persistProfileSnapshot(profile)
                 navigate(`/net-worth-positioning?profileId=${encodeURIComponent(profile.profileId)}`)
               }
             }}>
-              {pendingScorePage === 'wealthBuildingScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Computing Wealth Building Score...</> : 'Open Wealth Building Score'}
+              {pendingScorePage === 'wealthBuildingScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Opening Wealth Building Score...</> : 'Open Wealth Building Score'}
             </button>
           </article>
         </div>

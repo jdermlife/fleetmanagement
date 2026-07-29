@@ -669,7 +669,7 @@ export default function BudgetExpenseTrackerPage() {
         </div>
       </section>
 
-      <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">
         <SelectedProfileIdCard />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>

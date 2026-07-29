@@ -725,7 +725,7 @@ export default function LoanMonitoringPage() {
         <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
       </section>
 
-      <section className="psychometric-summary-grid loan-monitoring-summary-grid">
+      <section className="psychometric-summary-grid dashboard-five-card-summary loan-monitoring-summary-grid">
         <SelectedProfileIdCard />
         <article className="psychometric-summary-card">
           <span>Monitored Loans</span>

@@ -1498,6 +1498,17 @@ textarea {
 
 .networth-report-summary {
   margin: 0;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.networth-report-summary .psychometric-summary-card {
+  min-width: 0;
+  padding: 14px 12px;
+}
+
+.networth-report-summary .psychometric-summary-card strong {
+  font-size: clamp(1rem, 1.65vw, 1.55rem);
 }
 
 .networth-report-layout {
@@ -1542,6 +1553,10 @@ textarea {
 }
 
 @media (max-width: 900px) {
+  .networth-report-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .networth-report-layout {
     grid-template-columns: 1fr;
   }
@@ -1556,6 +1571,7 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .networth-report-summary,
   .networth-report-side,
   .networth-certification-metrics {
     grid-template-columns: 1fr;
@@ -3105,6 +3121,32 @@ button.loan-repository-action-release { background: #4f46e5; }
 .budget-dashboard-summary-grid strong {
   font-size: clamp(1.25rem, 2.5vw, 2rem);
   overflow-wrap: anywhere;
+}
+
+.dashboard-five-card-summary {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.dashboard-five-card-summary .psychometric-summary-card {
+  min-width: 0;
+  padding: 14px 12px;
+}
+
+.dashboard-five-card-summary .psychometric-summary-card strong {
+  font-size: clamp(1rem, 1.65vw, 1.55rem);
+}
+
+@media (max-width: 900px) {
+  .dashboard-five-card-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .dashboard-five-card-summary {
+    grid-template-columns: 1fr;
+  }
 }
 
 .budget-dashboard-layout {

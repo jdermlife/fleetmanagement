@@ -223,17 +223,16 @@ describe('BuildProfilePage', () => {
     expect((screen.getByRole('combobox', { name: 'Profile Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
 
-    mockUpdateLoanApplication.mockResolvedValue({ message: 'updated' })
-    let resolveCreditScore!: (value: unknown) => void
-    mockRecomputeStoredScores.mockImplementationOnce(() => new Promise((resolve) => { resolveCreditScore = resolve }))
+    let resolvePreparation!: (value: unknown) => void
+    mockUpdateLoanApplication.mockImplementationOnce(() => new Promise((resolve) => { resolvePreparation = resolve }))
     await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
-    await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
 
-    const creditButton = await screen.findByRole('button', { name: 'Computing Credit Health Score...' })
-    expect(creditButton.getAttribute('aria-busy')).toBe('true')
+    expect(await screen.findByText('Preparing APP-REVIEW-1...')).toBeTruthy()
+    const creditButton = screen.getByRole('button', { name: 'Open Credit Health Score' })
+    const wealthButton = screen.getByRole('button', { name: 'Open Wealth Building Score' })
     expect(creditButton.hasAttribute('disabled')).toBe(true)
-    expect(creditButton.querySelector('.build-profile-score-spinner')).toBeTruthy()
-    resolveCreditScore({ message: 'computed', quant_scores: {} })
+    expect(wealthButton.hasAttribute('disabled')).toBe(true)
+    resolvePreparation({ message: 'updated', application_no: 'APP-REVIEW-1' })
 
     await vi.waitFor(() => {
       expect(mockUpdateLoanApplication).toHaveBeenCalledWith(
@@ -246,23 +245,21 @@ describe('BuildProfilePage', () => {
           }),
         }),
       )
-      expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-REVIEW-1')
+      expect(screen.getByText('APP-REVIEW-1 is ready for both score pages.')).toBeTruthy()
+    })
+    expect(mockUpdateLoanApplication).toHaveBeenCalledTimes(1)
+    expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
+    await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?applicationNo=APP-REVIEW-1')
     })
-
-    let resolveWealthScore!: (value: unknown) => void
-    mockRecomputeStoredScores.mockImplementationOnce(() => new Promise((resolve) => { resolveWealthScore = resolve }))
     await userEvent.click(screen.getByRole('button', { name: 'Open Wealth Building Score' }))
-
-    const wealthButton = await screen.findByRole('button', { name: 'Computing Wealth Building Score...' })
-    expect(wealthButton.getAttribute('aria-busy')).toBe('true')
-    expect(wealthButton.hasAttribute('disabled')).toBe(true)
-    expect(wealthButton.querySelector('.build-profile-score-spinner')).toBeTruthy()
-    resolveWealthScore({ message: 'computed', quant_scores: {} })
-
     await vi.waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/net-worth-positioning?applicationNo=APP-REVIEW-1')
     })
+    expect(mockUpdateLoanApplication).toHaveBeenCalledTimes(1)
+    expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
   })
 
   it('selects the Financial Goal immediately after Profile ID', async () => {

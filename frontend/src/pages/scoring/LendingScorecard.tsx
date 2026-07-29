@@ -38,6 +38,7 @@ import {
   isWorkflowAutoRejectProbability,
 } from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
@@ -1989,7 +1990,8 @@ export default function LendingScorecard() {
   } | null>(null);
   const [searchParams] = useSearchParams();
   const { user } = useAuthorization();
-  const requestedApplicationNo = searchParams.get('applicationNo');
+  const { selectedApplicationNo } = useSelectedAnalysisEntity();
+  const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || selectedApplicationNo;
   const requestedProfileId = searchParams.get('profileId')?.trim() || '';
   const replicationId = requestedApplicationNo || requestedProfileId;
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
@@ -4481,7 +4483,7 @@ export default function LendingScorecard() {
           )}
 
           {isLoadingApplication && (
-            <div className="mb-4 rounded-md bg-blue-50 p-3 text-sm text-blue-800">
+            <div className="mb-4 rounded-md bg-blue-50 p-3 text-lg text-blue-800">
               Loading application record...
             </div>
           )}

@@ -8,6 +8,7 @@ import {
 } from '../../api/loan'
 import { getErrorMessage } from '../../api'
 import { APP_NAME, brandLogoDataUri } from '../../brand'
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import {
   calculateInformationProvidedPercent,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
@@ -146,7 +147,8 @@ export default function LoanCertificationPage() {
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
-  const applicationNo = searchParams.get('applicationNo')
+  const { selectedApplicationNo } = useSelectedAnalysisEntity()
+  const applicationNo = searchParams.get('applicationNo')?.trim() || selectedApplicationNo
   const [certification, setCertification] = useState<CertificationSnapshot | null>(
     applicationNo ? null : (location.state as LocationState | null)?.certificationData ?? null,
   )
