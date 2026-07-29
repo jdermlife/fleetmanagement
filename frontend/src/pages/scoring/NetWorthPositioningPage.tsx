@@ -650,6 +650,15 @@ export default function NetWorthPositioningPage() {
   const [wealthCertificationGenerated, setWealthCertificationGenerated] = useState(false);
   const [wealthCertificationIssuedAt, setWealthCertificationIssuedAt] = useState('');
   const [isPersistingWealthScore, setIsPersistingWealthScore] = useState(false);
+  const wealthClientName = useMemo(() => {
+    const selectedApplication = applications.find(
+      (application) => application.application_no === applicationNo,
+    ) ?? applications[0];
+
+    return selectedApplication?.borrower_name?.trim()
+      || certifierName.trim()
+      || 'FILSCORE Wealth Client';
+  }, [applicationNo, applications, certifierName]);
 
   const netWorthBuildingScore = useMemo(
     () => computeNetWorthBuildingScore({
@@ -1529,7 +1538,7 @@ export default function NetWorthPositioningPage() {
 </style></head><body><main class="report">
 <section class="hero"><div><span class="eyebrow">Net Worth and Goal Tracking</span><h1>Wealth Building Score</h1><p>Period: ${escapeHtml(asOfDate || snapshot.dateLabel)}</p></div><div class="hero-score"><span>Net Worth Building Score</span><strong>${netWorthBuildingScore.score}</strong><small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small></div></section>
 <section class="summary"><div class="tile"><span>Progress</span><strong>${completionPercent}%</strong><small>FILSCORE-Wealth</small></div><div class="tile"><span>Setup Assets</span><strong>${escapeHtml(formatCurrency(setupAssetsTotal))}</strong><small>Current setup for asset lines</small></div><div class="tile"><span>Setup Liabilities</span><strong>${escapeHtml(formatCurrency(setupLiabilitiesTotal))}</strong><small>Current setup for liability lines</small></div><div class="tile"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong><small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small></div></section>
-<section class="layout"><article class="certificate"><div class="certificate-inner"><div class="brand"><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo"/><p class="eyebrow">Certification of Wealth Assessment</p><h2>${escapeHtml(APP_NAME)}</h2></div><p class="reference">Reference No. ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</p><div class="name">${escapeHtml(certifierName.trim() || 'Unnamed Certifier')}</div><p class="message">This certifies that the above applicant completed the FILSCORE wealth assessment workflow and the summarized results below were generated for financial evaluation.</p>
+<section class="layout"><article class="certificate"><div class="certificate-inner"><div class="brand"><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo"/><p class="eyebrow">Certification of Wealth Assessment</p><h2>${escapeHtml(APP_NAME)}</h2></div><p class="reference">Reference No. ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</p><div class="name">${escapeHtml(wealthClientName)}</div><p class="message">This certifies that the above applicant completed the FILSCORE wealth assessment workflow and the summarized results below were generated for financial evaluation.</p>
 <div class="composite"><div class="score-card primary"><span>Composite Score</span><strong>${netWorthBuildingScore.score}</strong></div><div class="score-card"><span>Label</span><strong>${escapeHtml(netWorthBuildingScore.grade)}</strong></div><div class="score-card"><span>Position</span><strong>${escapeHtml(positionStatement.title)}</strong></div></div>
 <div class="metrics"><div class="metric"><span>Net Worth Positioning Score</span><strong>${netWorthBuildingScore.score}</strong><small>${escapeHtml(netWorthBuildingScore.rating)}</small></div><div class="metric"><span>Wealth Behaviour Score</span><strong>${wealthBehaviourScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthBehaviourScore,'Wealth Behaviour'))}</small></div><div class="metric"><span>Wealth Foundation Score</span><strong>${wealthFoundationScore.score}</strong><small>${escapeHtml(wealthFoundationScore.rating)}</small></div><div class="metric"><span>Wealth Authenticity Score</span><strong>${wealthAuthenticityScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthAuthenticityScore,'Wealth Authenticity'))}</small></div></div>
 <div class="certificate-footer"><div class="meta"><strong>Certificate ID:</strong> ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}<br/><strong>Issued:</strong> ${escapeHtml(issuedLabel)}<br/><strong>Status:</strong> ${escapeHtml(certificationState)}<br/><strong>Role:</strong> ${escapeHtml(certifierRole.trim() || 'Borrower')}<br/><strong>Certification Date:</strong> ${escapeHtml(certificationDate)}</div><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} verification mark"/></div></div></article>
@@ -1538,7 +1547,6 @@ export default function NetWorthPositioningPage() {
 <p class="footnote">Information Provided: ${completionPercent}% &nbsp; | &nbsp; AI-assisted recommendations may contain mistakes.</p></main></body></html>`, [
     asOfDate,
     certificationDate,
-    certifierName,
     certifierRole,
     completionPercent,
     formatCurrency,
@@ -1563,6 +1571,7 @@ export default function NetWorthPositioningPage() {
     wealthCertificationBand,
     wealthFoundationScore.rating,
     wealthFoundationScore.score,
+    wealthClientName,
   ]);
 
   const handleDownloadWealthCertification = useCallback(() => {
@@ -1760,7 +1769,7 @@ export default function NetWorthPositioningPage() {
                 </div>
                 <p className="loan-certification-reference">Reference No. <strong>{snapshot.sourceApplicationNo || 'Draft'}</strong></p>
                 <p className="loan-certification-reference">FILSCORE Wealth Building Score Certification</p>
-                <div className="loan-certification-name">{certifierName.trim() || 'FILSCORE Wealth Client'}</div>
+                <div className="loan-certification-name">{wealthClientName}</div>
                 <p className="loan-certification-copy">
                   This certifies that the above client completed the FILSCORE wealth assessment and the summarized results below were generated for financial evaluation and planning.
                 </p>
