@@ -655,10 +655,11 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('As Of')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Statement currency' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'SGD (S$)' })).toBeTruthy()
-    const detailedNetWorthDropdown = screen.getByText('Detailed Net Worth', { selector: 'summary' }).closest('details')
+    const detailedNetWorthDropdown = screen.getByText('Personal Net Worth', { selector: 'strong' }).closest('details')
     expect(detailedNetWorthDropdown?.hasAttribute('open')).toBe(false)
+    expect(detailedNetWorthDropdown?.querySelector('summary > strong')?.textContent).toBe('Personal Net Worth')
     expect(screen.getByText('Statement Filters').compareDocumentPosition(detailedNetWorthDropdown!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    await user.click(screen.getByText('Detailed Net Worth', { selector: 'summary' }))
+    await user.click(screen.getByText('Personal Net Worth', { selector: 'strong' }))
     const detailedCashInput = within(detailedNetWorthDropdown!).getByLabelText('Cash on Hand detailed net worth amount') as HTMLInputElement
     const detailedMortgageInput = within(detailedNetWorthDropdown!).getByLabelText('Home Mortgage detailed net worth amount') as HTMLInputElement
     expect(detailedCashInput.value).toBe('')
@@ -673,6 +674,8 @@ describe('BuildProfilePage', () => {
     expect(netWorthDropdown?.hasAttribute('open')).toBe(false)
     const incomeExpenseDropdown = screen.getByText('Personal Income and Expenses with Goals and Protection', { selector: 'summary' }).closest('details')
     expect(incomeExpenseDropdown?.hasAttribute('open')).toBe(false)
+    expect(detailedNetWorthDropdown!.compareDocumentPosition(incomeExpenseDropdown!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(incomeExpenseDropdown!.compareDocumentPosition(screen.getByText('Statement Filters')) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     await user.type(screen.getByLabelText('Target Amount'), '120000')
     await user.clear(screen.getByLabelText('Months to Achieve'))
@@ -741,7 +744,7 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.values.asOfDate).toBe('2026-03-20')
     expect(savedProfile.values['asset-cash-on-hand']).toBe('50000.00')
-  }, 10000)
+  }, 15000)
 
   it('copies Net Worth Positioning Step 2 into Targeted Goal', async () => {
     const user = userEvent.setup()

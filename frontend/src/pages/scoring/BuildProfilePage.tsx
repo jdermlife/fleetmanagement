@@ -1369,7 +1369,7 @@ export default function BuildProfilePage() {
         </section>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth">
-          <summary>Detailed Net Worth</summary>
+          <summary><strong>Personal Net Worth</strong></summary>
           <div className="build-profile-net-worth-meta"><span>Enter all applicable assets and liabilities</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns">
             {(['assets', 'liabilities'] as const).map((section) => {
@@ -1398,6 +1398,22 @@ export default function BuildProfilePage() {
             })}
           </div>
           <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{formatSignedCurrency(wealthScore.metrics.netWorth)}</strong></div>
+        </details>
+
+        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
+          <summary>Personal Income and Expenses with Goals and Protection</summary>
+          <div className="build-profile-net-worth-meta"><span>Detailed Personal Income, Expenses, Goals and Protection Statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
+          <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
+            {renderIncomeExpenseColumn('Income', incomeRows, 'income')}
+            {renderIncomeExpenseColumn('Expenses', expenseRows, 'expenses')}
+            {renderIncomeExpenseColumn('Goals', goalRows, 'goals')}
+            {renderIncomeExpenseColumn('Protection (Insurance)', protectionRows, 'protection')}
+          </div>
+          <div className="build-profile-income-expense-results">
+            <div className="build-profile-income-expense-result build-profile-income-expense-net"><span>Net Income</span><strong>{formatSignedCurrency(wealthScore.metrics.monthlyCashFlow)}</strong></div>
+            <div className="build-profile-income-expense-result build-profile-income-expense-goals"><span>Goals</span><strong>{formatWealthCurrency(statementGroupTotal(goalRows))}</strong></div>
+            <div className="build-profile-income-expense-result build-profile-income-expense-protection"><span>Protection (Insurance)</span><strong>{formatWealthCurrency(statementGroupTotal(protectionRows))}</strong></div>
+          </div>
         </details>
 
         <section className="build-profile-detail-section">
@@ -1470,21 +1486,6 @@ export default function BuildProfilePage() {
                   </section>
                 </div>
                 <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{formatSignedCurrency(wealthScore.metrics.netWorth)}</strong></div>
-              </details> : null}
-              {section === 'insurance-coverage' ? <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
-                <summary>Personal Income and Expenses with Goals and Protection</summary>
-                <div className="build-profile-net-worth-meta"><span>Detailed Personal Income, Expenses, Goals and Protection Statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
-                <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
-                  {renderIncomeExpenseColumn('Income', incomeRows, 'income')}
-                  {renderIncomeExpenseColumn('Expenses', expenseRows, 'expenses')}
-                  {renderIncomeExpenseColumn('Goals', goalRows, 'goals')}
-                  {renderIncomeExpenseColumn('Protection (Insurance)', protectionRows, 'protection')}
-                </div>
-                <div className="build-profile-income-expense-results">
-                  <div className="build-profile-income-expense-result build-profile-income-expense-net"><span>Net Income</span><strong>{formatSignedCurrency(wealthScore.metrics.monthlyCashFlow)}</strong></div>
-                  <div className="build-profile-income-expense-result build-profile-income-expense-goals"><span>Goals</span><strong>{formatWealthCurrency(statementGroupTotal(goalRows))}</strong></div>
-                  <div className="build-profile-income-expense-result build-profile-income-expense-protection"><span>Protection (Insurance)</span><strong>{formatWealthCurrency(statementGroupTotal(protectionRows))}</strong></div>
-                </div>
               </details> : null}
             </Fragment>
           })}
