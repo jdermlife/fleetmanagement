@@ -124,6 +124,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
 
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
 const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
+const DEFAULT_FINANCIAL_HEALTH_SUMMARY = computeFinancialHealthSummary()
 
 function safeStorageGet(key: string): string | null {
   if (typeof window === 'undefined') {
@@ -433,7 +434,7 @@ export default function FinancialHealthSummaryPage() {
   const [budgetHealthScore, setBudgetHealthScore] = useState<BudgetHealthScoreResult | null>(null)
   const [loanHealthScore, setLoanHealthScore] = useState<LoanMonitoringScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
-  const [publishedSummary, setPublishedSummary] = useState(() => computeFinancialHealthSummary())
+  const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
@@ -606,6 +607,23 @@ export default function FinancialHealthSummaryPage() {
 
   const score = publishedSummary.score
   const band = getFinancialHealthBand(score)
+  const financialHealthChange = score - DEFAULT_FINANCIAL_HEALTH_SUMMARY.score
+  const estimatedTopPercent = Math.max(1, Math.min(99, 100 - Math.round(index)))
+  const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
+  const momentumLabel = !budgetHealthScore
+    ? 'Pending'
+    : stableMonths >= 10
+      ? 'Improving'
+      : stableMonths >= 6
+        ? 'Stable'
+        : 'Declining'
+  const resilienceMonths = wealthFoundationScore?.metrics.emergencyFundMonths
+    ?? netWorthBuildingScore?.metrics.emergencyFundMonths
+    ?? null
+  const riskIndicators = financialHealthIndicators.filter((indicator) => indicator.score < 80)
+  const opportunityIndicators = [...riskIndicators]
+    .sort((left, right) => left.score - right.score)
+    .slice(0, 3)
   const strongestIndicator = financialHealthIndicators.reduce((strongest, indicator) =>
     indicator.score > strongest.score ? indicator : strongest,
   )
@@ -879,8 +897,44 @@ export default function FinancialHealthSummaryPage() {
         </button>
       </section>
 
-      <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
+      <section className="financial-health-profile-line" aria-label="Selected financial health profile">
         <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" />
+      </section>
+
+      <section className="financial-health-insight-grid" aria-label="Financial Health change, benchmarking, momentum, resilience, risks, and opportunities">
+        <article className="financial-health-insight-card">
+          <span>1. Financial Health Change</span>
+          <strong>{financialHealthChange >= 0 ? '+' : ''}{financialHealthChange}</strong>
+          <small>Points versus the default published health view</small>
+        </article>
+        <article className="financial-health-insight-card">
+          <span>2. Benchmarking</span>
+          <strong>Top {estimatedTopPercent}%</strong>
+          <small>Score-based estimate; professional and age peer data are not yet available</small>
+        </article>
+        <article className="financial-health-insight-card">
+          <span>3. Financial Momentum</span>
+          <strong>{momentumLabel}</strong>
+          <small>{budgetHealthScore ? `${stableMonths}/12 stable tracked months` : 'Complete Budget tracking for a 12-month trend'}</small>
+        </article>
+        <article className="financial-health-insight-card">
+          <span>4. Financial Resilience</span>
+          <strong>{resilienceMonths === null ? 'Pending' : `${resilienceMonths.toFixed(1)} months`}</strong>
+          <small>{resilienceMonths === null ? 'Complete Wealth inputs to measure shock capacity' : resilienceMonths >= 6 ? 'Strong shock absorption capacity' : resilienceMonths >= 3 ? 'Moderate shock absorption capacity' : 'Limited shock absorption capacity'}</small>
+        </article>
+        <article className="financial-health-insight-card financial-health-insight-card-alert">
+          <span>5. Risk Alerts</span>
+          <strong>{riskIndicators.length}</strong>
+          <small>{riskIndicators.length > 0 ? riskIndicators.map((indicator) => indicator.label).join(', ') : 'No indicators below the 80-point target'}</small>
+        </article>
+        <article className="financial-health-insight-card financial-health-insight-card-opportunity">
+          <span>6. Opportunities</span>
+          <strong>{opportunityIndicators.length}</strong>
+          <small>{opportunityIndicators.length > 0 ? opportunityIndicators.map((indicator) => `${indicator.label} +${80 - indicator.score}`).join(', ') : 'Maintain all indicators in the excellent zone'}</small>
+        </article>
+      </section>
+
+      <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Foundation & reliability</span>
           <strong>{groupRings[0].displayValue}</strong>

@@ -1488,6 +1488,108 @@ textarea {
   padding: 4px 0;
 }
 
+.lending-decision-insights {
+  width: min(100%, 1120px);
+  margin: 16px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.lending-decision-card {
+  min-width: 0;
+  min-height: 190px;
+  padding: 18px;
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  border: 1px solid #d7e0e8;
+  border-top: 4px solid #0f766e;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #334155;
+}
+
+.lending-decision-card-wide {
+  grid-column: 1 / -1;
+}
+
+.lending-decision-card-alert {
+  border-top-color: #b91c1c;
+}
+
+.lending-decision-card-opportunity {
+  border-top-color: #b8860b;
+}
+
+.lending-decision-card > span {
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.lending-decision-card > strong {
+  color: #0f172a;
+  font-size: 1.5rem;
+  overflow-wrap: anywhere;
+}
+
+.lending-decision-card > small {
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.lending-decision-card ul,
+.lending-decision-card ol {
+  margin: 0;
+  padding-left: 20px;
+  display: grid;
+  gap: 6px;
+  line-height: 1.4;
+}
+
+.lending-driver-columns {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.lending-score-timeline-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+}
+
+.lending-score-timeline {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 0.78rem;
+}
+
+.lending-score-timeline th,
+.lending-score-timeline td {
+  padding: 8px 10px;
+  border: 1px solid #dbe4ea;
+  text-align: center;
+}
+
+.lending-score-timeline th {
+  background: #eef5f4;
+  color: #134e4a;
+}
+
+@media (max-width: 760px) {
+  .lending-decision-insights,
+  .lending-driver-columns {
+    grid-template-columns: 1fr;
+  }
+
+  .lending-decision-card-wide {
+    grid-column: auto;
+  }
+}
+
 .networth-report-page {
   gap: 14px;
 }
@@ -1576,6 +1678,61 @@ textarea {
   margin-top: 0;
 }
 
+.networth-decision-sections {
+  display: grid;
+  gap: 14px;
+}
+
+.networth-decision-section {
+  display: grid;
+  gap: 14px;
+}
+
+.networth-decision-section > h2 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.networth-decision-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.networth-decision-grid > article {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  padding: 14px;
+  border-left: 3px solid #0f766e;
+  background: #f8fafc;
+}
+
+.networth-decision-grid span {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.networth-decision-grid strong {
+  color: #0f172a;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.networth-decision-grid small {
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.networth-action-table th:nth-child(n + 2),
+.networth-action-table td:nth-child(n + 2) {
+  width: 22%;
+  text-align: right;
+}
+
 @media (max-width: 900px) {
   .networth-report-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1587,6 +1744,10 @@ textarea {
 
   .networth-certification-metrics {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .networth-decision-grid {
+    grid-template-columns: 1fr;
   }
 }
 
@@ -8680,8 +8841,63 @@ th { color: var(--dark-gold); }
   gap: 16px;
 }
 
+.financial-health-profile-line {
+  display: grid;
+}
+
+.financial-health-profile-line .financial-health-summary-tile {
+  min-height: 0;
+  padding: 14px 16px;
+}
+
+.financial-health-insight-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.financial-health-insight-card {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+  min-height: 132px;
+  padding: 16px;
+  border: 1px solid #dbe4ea;
+  border-top: 3px solid #0f766e;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.financial-health-insight-card > span {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.financial-health-insight-card > strong {
+  color: #0f172a;
+  font-size: 1.45rem;
+  overflow-wrap: anywhere;
+}
+
+.financial-health-insight-card > small {
+  color: #64748b;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.financial-health-insight-card-alert {
+  border-top-color: #b91c1c;
+}
+
+.financial-health-insight-card-opportunity {
+  border-top-color: #b8860b;
+}
+
 .financial-health-primary-summary {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 10px;
 }
 
@@ -9443,7 +9659,8 @@ th { color: var(--dark-gold); }
 
 @media (max-width: 760px) {
   .financial-health-summary-grid,
-  .financial-health-side-stack {
+  .financial-health-side-stack,
+  .financial-health-insight-grid {
     grid-template-columns: 1fr 1fr;
   }
 
@@ -9514,7 +9731,8 @@ th { color: var(--dark-gold); }
 
   .financial-health-vitals-grid,
   .financial-health-summary-grid,
-  .financial-health-side-stack {
+  .financial-health-side-stack,
+  .financial-health-insight-grid {
     grid-template-columns: 1fr;
   }
 

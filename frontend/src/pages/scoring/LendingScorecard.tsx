@@ -48,6 +48,7 @@ import {
   type InformationStepNumber,
 } from './applicationCompleteness';
 import { getFilscoreBand, toFilscore } from './filscoreScale';
+import { buildLendingScoreTimeline, calculateAffordableLoan } from './lendingDecisionInsights';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
 import { readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
 
@@ -4382,6 +4383,57 @@ export default function LendingScorecard() {
     const band = getFilscoreBand(toFilscore(value));
     return band ? `${band.grade} : ${band.internalGrade}` : 'Rating Pending';
   };
+  const certifiedScoreComponents = [
+    { label: 'Credit', score: reportHasRating ? toFilscore(displayedQuantSummary?.credit_score) : null },
+    { label: 'Credit Bureau', score: reportHasRating ? toFilscore(displayedQuantSummary.credit_bureau_score) : null },
+    { label: 'Non-Starter', score: reportHasRating ? toFilscore(displayedQuantSummary?.fraud_score) : null },
+    { label: 'Social', score: reportHasRating ? toFilscore(displayedQuantSummary?.social_score) : null },
+    { label: 'Credit Values', score: reportHasRating ? toFilscore(displayedQuantSummary?.psychometric_score) : null },
+  ];
+  const rankedScoreComponents = certifiedScoreComponents
+    .filter((item): item is { label: string; score: number } => item.score !== null)
+    .sort((left, right) => right.score - left.score);
+  const positiveScoreDrivers = rankedScoreComponents.slice(0, 3);
+  const negativeScoreDrivers = [...rankedScoreComponents].reverse().slice(0, 2);
+  const scoreTimeline = buildLendingScoreTimeline(certifiedScoreComponents);
+  const affordability = calculateAffordableLoan({
+    totalMonthlyIncome: calculations.totalIncome,
+    existingMonthlyDebt: calculations.totalExistingDebt,
+    requestedMonthlyPayment: calculations.monthlyPayment,
+    annualInterestRate: formData.loan.interestRate,
+    termMonths: formData.loan.termMonths,
+    collateralValue: calculations.totalCollateralValue,
+    dsrLimitPercent: CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax,
+    ltvLimitPercent: CREDIT_POLICY_THRESHOLDS.ltv.safeMax,
+  });
+  const significantConcerns = [
+    calculations.dsr >= CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax
+      ? `DSR is ${calculations.dsr.toFixed(1)}%, above the ${CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax}% policy limit.`
+      : null,
+    calculations.ltv >= CREDIT_POLICY_THRESHOLDS.ltv.safeMax
+      ? `LTV is ${calculations.ltv.toFixed(1)}%, above the ${CREDIT_POLICY_THRESHOLDS.ltv.safeMax}% safe level.`
+      : null,
+    creditRiskInsights.riskScore >= 50
+      ? `Risk score is ${creditRiskInsights.riskScore.toFixed(1)} out of 100.`
+      : null,
+    creditRiskInsights.docsCoverage < 1
+      ? `Only ${Math.round(creditRiskInsights.docsCoverage * 100)}% of submitted documents are parsed.`
+      : null,
+    informationProvidedPercent < CREDIT_RATING_MINIMUM_INFORMATION_PERCENT
+      ? `Profile completeness is ${informationProvidedPercent}%; ${CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required for a rating.`
+      : null,
+  ].filter((concern): concern is string => concern !== null);
+  const lendingRecommendations = [
+    calculations.dsr >= CREDIT_POLICY_THRESHOLDS.dsr.strongMax
+      ? `Reduce monthly obligations until DSR is below ${CREDIT_POLICY_THRESHOLDS.dsr.strongMax}%.`
+      : 'Keep total monthly debt within the strong DSR range.',
+    calculations.ltv >= CREDIT_POLICY_THRESHOLDS.ltv.safeMax
+      ? `Increase the down payment to bring LTV below ${CREDIT_POLICY_THRESHOLDS.ltv.safeMax}%.`
+      : 'Preserve the current collateral coverage and down payment.',
+    creditRiskInsights.docsCoverage < 1
+      ? 'Submit and parse all required income, bank, identity, and collateral documents.'
+      : 'Keep payment and banking evidence current through final review.',
+  ];
   const reportQrValue = `${window.location.origin}/loan-certification?applicationNo=${encodeURIComponent(formData.id)}`;
   const reportQrImageUrl = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(reportQrValue)}`;
 
@@ -4489,6 +4541,7 @@ export default function LendingScorecard() {
           )}
 
           {step === 8 && (
+            <>
             <section className="loan-certification-shell lending-inline-certification" aria-label="FILSCORE credit health report">
               <div className="loan-certification-frame">
                 <div className="loan-certification-inner">
@@ -4563,6 +4616,61 @@ export default function LendingScorecard() {
                 </div>
               </div>
             </section>
+            <section className="lending-decision-insights" aria-label="Lending score explanation and next steps">
+              <article className="lending-decision-card lending-decision-card-wide">
+                <span>1. Why This Is the Credit Score</span>
+                <strong>{reportScore(compositeInternalScore)}</strong>
+                <div className="lending-driver-columns">
+                  <div>
+                    <b>Positive drivers</b>
+                    <ul>{positiveScoreDrivers.length > 0 ? positiveScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>Complete certification to identify strengths.</li>}</ul>
+                  </div>
+                  <div>
+                    <b>Negative drivers</b>
+                    <ul>{negativeScoreDrivers.length > 0 ? negativeScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>Complete certification to identify constraints.</li>}</ul>
+                  </div>
+                </div>
+                <small>The highest and lowest certified components explain the composite score.</small>
+              </article>
+
+              <article className="lending-decision-card lending-decision-card-wide">
+                <span>2. Monthly Score Timeline</span>
+                <strong>6-month projection</strong>
+                <div className="lending-score-timeline-wrap">
+                  <table className="lending-score-timeline">
+                    <thead><tr><th>Month</th>{certifiedScoreComponents.map((item) => <th key={item.label}>{item.label}</th>)}</tr></thead>
+                    <tbody>{scoreTimeline.map((row) => <tr key={row.month}><td>{row.month === 0 ? 'Current' : row.month}</td>{row.scores.map((item) => <td key={item.label}>{item.score ?? 'Pending'}</td>)}</tr>)}</tbody>
+                  </table>
+                </div>
+                <small>Illustrative path toward 800 if the recommendations are completed; this is not historical score data.</small>
+              </article>
+
+              <article className="lending-decision-card lending-decision-card-alert">
+                <span>3. Significant Concerns</span>
+                <strong>{significantConcerns.length}</strong>
+                <ul>{significantConcerns.length > 0 ? significantConcerns.slice(0, 4).map((concern) => <li key={concern}>{concern}</li>) : <li>No significant model concerns detected from current inputs.</li>}</ul>
+              </article>
+
+              <article className="lending-decision-card">
+                <span>4. Lending Probability</span>
+                <strong>{aiRecommendation.probability}%</strong>
+                <small>{aiRecommendation.riskLevel} risk. Based on DSR, LTV, and the automated scorecard; this is decision support, not a guarantee.</small>
+              </article>
+
+              <article className="lending-decision-card">
+                <span>5. Affordable Loan and Payment</span>
+                <strong>{formatCurrency(affordability.maximumAffordableLoan)}</strong>
+                <b>Recommended payment: {formatCurrency(affordability.recommendedMonthlyPayment)} / month</b>
+                <small>Estimated under the {CREDIT_POLICY_THRESHOLDS.dsr.acceptableMax}% DSR and {CREDIT_POLICY_THRESHOLDS.ltv.safeMax}% LTV limits. Current constraint: {affordability.limitingFactor}.</small>
+              </article>
+
+              <article className="lending-decision-card lending-decision-card-opportunity">
+                <span>6. Recommendations to Improve</span>
+                <strong>Top {lendingRecommendations.length}</strong>
+                <ol>{lendingRecommendations.map((recommendation) => <li key={recommendation}>{recommendation}</li>)}</ol>
+              </article>
+            </section>
+            </>
           )}
 
           {step === 1 && (

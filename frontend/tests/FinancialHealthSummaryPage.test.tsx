@@ -47,6 +47,15 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
     expect(screen.queryByText('(91 x 15 + 88 x 14 + 94 x 14) / 43 = 91.0')).toBeNull()
     expect(screen.getAllByRole('progressbar')).toHaveLength(16)
+
+    const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
+    expect(within(insights).getByText('1. Financial Health Change')).toBeTruthy()
+    expect(within(insights).getByText('+0')).toBeTruthy()
+    expect(within(insights).getByText('Top 16%')).toBeTruthy()
+    expect(within(insights).getByText('3. Financial Momentum')).toBeTruthy()
+    expect(within(insights).getByText('4. Financial Resilience')).toBeTruthy()
+    expect(within(insights).getByText('5. Risk Alerts')).toBeTruthy()
+    expect(within(insights).getByText('6. Opportunities')).toBeTruthy()
   })
 
   it('publishes saved workflow figures only after the compute button is clicked', async () => {
@@ -158,5 +167,11 @@ describe('FinancialHealthSummaryPage', () => {
     expect(await screen.findByText('B+ - Very Good')).toBeTruthy()
     expect(await screen.findByText('98.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(await screen.findByText('10-tier band from 200 to 900')).toBeTruthy()
+
+    const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
+    expect(within(insights).getByText('+120')).toBeTruthy()
+    expect(within(insights).getByText('Improving')).toBeTruthy()
+    expect(within(insights).getByText('12/12 stable tracked months')).toBeTruthy()
+    expect(within(insights).getByText('17.6 months')).toBeTruthy()
   })
 })

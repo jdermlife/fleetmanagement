@@ -1708,12 +1708,20 @@ export default function NetWorthPositioningPage() {
 
   const aiRecommendations = useMemo(() => {
     if (!varianceRows.length) {
-      return ['Save setup first so recommendations can be generated.'];
+      return [{
+        action: 'Save setup values so recommendations can be generated.',
+        scoreImpact: 'Pending data',
+        wealthImpact: 'Pending data',
+      }];
     }
 
     const hasAnyActual = varianceRows.some((row) => row.hasActual);
     if (!hasAnyActual) {
-      return ['Enter actual values in Step 4 to unlock AI recommendations for net worth variance.'];
+      return [{
+        action: 'Enter actual values to identify the highest-impact wealth actions.',
+        scoreImpact: 'Pending actuals',
+        wealthImpact: 'Pending actuals',
+      }];
     }
 
     const prioritized = varianceRows
@@ -1732,20 +1740,29 @@ export default function NetWorthPositioningPage() {
       .filter((row) => row.riskMagnitude > 0);
 
     const recommendations = prioritized.map((row) => {
-      if (row.section === 'liabilities') {
-        return `${row.label} is above setup by ${formatCurrency(row.variance)}. Prioritize payoff sequencing to protect net worth.`;
-      }
-      return `${row.label} is below setup by ${formatCurrency(Math.abs(row.variance))}. Rebuild this value area to stabilize net worth.`;
+      const wealthImpact = row.riskMagnitude;
+      const impactBase = Math.max(Math.abs(actualNetWorth), setupAssetsTotal, 1);
+      const scoreImpact = Math.max(1, Math.min(8, Math.round((wealthImpact / impactBase) * 20)));
+
+      return {
+        action: row.section === 'liabilities'
+          ? `Reduce ${row.label} toward its setup level.`
+          : `Rebuild ${row.label} toward its setup level.`,
+        scoreImpact: `Up to +${scoreImpact} points`,
+        wealthImpact: `Up to ${formatCurrency(wealthImpact)}`,
+      };
     });
 
     if (recommendations.length === 0) {
-      recommendations.push('Actual values are aligned with setup. Keep updating variance explanations to maintain tracking quality.');
+      recommendations.push({
+        action: 'Maintain current asset growth and liability control.',
+        scoreImpact: 'Protect current score',
+        wealthImpact: `Protect ${formatSignedCurrency(actualNetWorth)}`,
+      });
     }
 
-    recommendations.push(`Net worth projection is ${formatSignedCurrency(totals.projectedNetWorth)} using current entries.`);
-
-    return recommendations.slice(0, 4);
-  }, [formatCurrency, formatSignedCurrency, varianceRows, totals.projectedNetWorth]);
+    return recommendations.slice(0, 3);
+  }, [actualNetWorth, formatCurrency, formatSignedCurrency, setupAssetsTotal, varianceRows]);
 
   const showLegacyWorkflow = false;
   const reportInformationPercent = Math.round(
@@ -1757,13 +1774,6 @@ export default function NetWorthPositioningPage() {
       hasWealthDataForCertification,
     ].filter(Boolean).length / 5) * 100,
   );
-  const netWorthChartMaximum = Math.max(
-    Math.abs(totals.setupNetWorth),
-    Math.abs(totals.projectedNetWorth),
-    1,
-  );
-  const setupNetWorthBarWidth = (Math.abs(totals.setupNetWorth) / netWorthChartMaximum) * 100;
-  const projectedNetWorthBarWidth = (Math.abs(totals.projectedNetWorth) / netWorthChartMaximum) * 100;
   const yearsToTargetNetWorth = targetAmount > 0
     ? estimateYearsToTargetNetWorth(actualNetWorth, targetAmount, netWorthBuildingScore.metrics.monthlyIncome)
     : null;
@@ -1898,96 +1908,56 @@ export default function NetWorthPositioningPage() {
 
           <div className="networth-report-actions" aria-label="Certification actions">
             <button type="button" className="psychometric-reset-button" onClick={handleProduceWealthCertification} disabled={!hasWealthDataForCertification || isPersistingWealthScore}>{isPersistingWealthScore ? 'Storing Wealth Score...' : 'Produce Certification'}</button>
-            <button type="button" className="budget-dashboard-category-reset" onClick={handleDownloadWealthCertification} disabled={!wealthCertificationGenerated}>Download Certificate</button>
-            <button type="button" className="psychometric-reset-button" onClick={handlePrintWealthCertification} disabled={!wealthCertificationGenerated}>Print / Save PDF</button>
+            <button type="button" hidden aria-hidden="true" tabIndex={-1} onClick={handleDownloadWealthCertification}>Download Certificate</button>
+            <button type="button" hidden aria-hidden="true" tabIndex={-1} onClick={handlePrintWealthCertification}>Print / Save PDF</button>
             <button type="button" className="budget-dashboard-category-reset" onClick={reload} disabled={loading}>{loading ? 'Refreshing...' : 'Refresh Data'}</button>
           </div>
 
-          <section className="budget-workflow-ai-grid networth-report-analysis">
-            <article className="psychometric-panel">
-              <span className="psychometric-panel-kicker">Position vs Goal</span>
-              <h2 style={{ color: goalForecast.statusColor }}>{goalForecast.status}</h2>
-              <ul className="psychometric-breakdown-list">
-                <li><span>Goal Target</span><strong>{formatCurrency(goalForecast.effectiveTargetAmount)}</strong></li>
-                <li><span>Time Frame</span><strong>{goalForecast.sanitizedMonths > 0 ? `${goalForecast.sanitizedMonths} months` : 'Not set'}</strong></li>
-                <li><span>Actual Net Worth Position</span><strong>{formatSignedCurrency(actualNetWorth)}</strong></li>
-                <li><span>Projected Position at Deadline</span><strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong></li>
-                <li><span>Possibility to Reach Goal</span><strong>{goalForecast.possibilityPercent}%</strong></li>
-              </ul>
-            </article>
-            <article className="psychometric-panel">
-              <span className="psychometric-panel-kicker">Statement of Position</span>
-              <h2 style={{ color: positionStatement.color }}>{positionStatement.title}</h2>
-              <ul className="psychometric-breakdown-list">
-                <li><span>Total Assets (Projected)</span><strong>{formatCurrency(totals.projectedAssets)}</strong></li>
-                <li><span>Total Liabilities (Projected)</span><strong>{formatCurrency(totals.projectedLiabilities)}</strong></li>
-                <li><span>Net Worth Variance</span><strong>{formatSignedCurrency(positionStatement.netWorthVariance)}</strong></li>
-                <li><span>Goal Coverage Probability</span><strong>{positionStatement.projectedCoverage}%</strong></li>
-              </ul>
-              <p className="psychometric-section-note">{positionStatement.conclusion}</p>
-            </article>
-            <article className="psychometric-panel">
-              <span className="psychometric-panel-kicker">AI Analysis</span>
-              <h2>Net Worth Variance Coaching</h2>
-              <ul className="psychometric-breakdown-list">
-                <li><span>Position Status</span><strong>{goalForecast.status}</strong></li>
-                <li><span>Projected Net Worth</span><strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong></li>
-                <li><span>Top Variance Lines</span><strong>{topVarianceRows.length}</strong></li>
-              </ul>
-            </article>
-            <article className="psychometric-panel">
-              <span className="psychometric-panel-kicker">Recommendations</span>
-              <h2>Actionable Next Steps</h2>
-              <ul className="psychometric-breakdown-list">{aiRecommendations.map((item) => <li key={item}><span>{item}</span></li>)}</ul>
-            </article>
+          <section className="networth-decision-sections" aria-label="Net worth decision report">
+            <section className="psychometric-panel networth-decision-section">
+              <span className="psychometric-panel-kicker">1. Where I Am Today</span>
+              <h2>Current Score, Net Worth and Financial Position</h2>
+              <div className="networth-decision-grid">
+                <article><span>Composite Wealth Score</span><strong>{wealthCompositeScore.score}</strong><small>{wealthCompositeScore.grade} - {wealthCompositeScore.rating}</small></article>
+                <article><span>Actual Net Worth</span><strong>{formatSignedCurrency(actualNetWorth)}</strong><small>Actual assets less actual liabilities</small></article>
+                <article><span>Financial Position</span><strong style={{ color: positionStatement.color }}>{positionStatement.title}</strong><small>{positionStatement.conclusion}</small></article>
+              </div>
+            </section>
+
+            <section className="psychometric-panel networth-decision-section">
+              <span className="psychometric-panel-kicker">2. Why Am I Here</span>
+              <h2>Key Drivers, Strengths, Weaknesses and Trends</h2>
+              <div className="networth-decision-grid">
+                <article><span>Key Driver</span><strong>{topVarianceRows[0]?.label ?? 'Actual inputs needed'}</strong><small>{topVarianceRows[0] ? formatSignedCurrency(topVarianceRows[0].variance) : 'Enter actual values to identify the main driver'}</small></article>
+                <article><span>Strength</span><strong>{totals.projectedAssets >= totals.setupAssets ? 'Asset position' : 'Liability control'}</strong><small>{totals.projectedAssets >= totals.setupAssets ? 'Assets are at or above setup' : 'Review liabilities against setup'}</small></article>
+                <article><span>Weakness / Trend</span><strong>{positionStatement.netWorthVariance >= 0 ? 'Positive trend' : 'Net worth pressure'}</strong><small>{formatSignedCurrency(positionStatement.netWorthVariance)} versus setup</small></article>
+              </div>
+            </section>
+
+            <section className="psychometric-panel networth-decision-section">
+              <span className="psychometric-panel-kicker">3. Where I Am Going</span>
+              <h2>Forecast, Projections, Goal Attainment and Risk Outlook</h2>
+              <div className="networth-decision-grid">
+                <article><span>Projected Net Worth</span><strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong><small>At the declared target deadline</small></article>
+                <article><span>Goal Attainment</span><strong>{goalForecast.possibilityPercent}%</strong><small>{yearsToTargetLabel} based on declared income</small></article>
+                <article><span>Risk Outlook</span><strong style={{ color: goalForecast.statusColor }}>{goalForecast.status}</strong><small>Target: {formatCurrency(goalForecast.effectiveTargetAmount)}</small></article>
+              </div>
+            </section>
+
+            <section className="psychometric-panel networth-decision-section">
+              <span className="psychometric-panel-kicker">4. What Should I Do Next?</span>
+              <h2>Actions With Estimated Score and Wealth Impact</h2>
+              <div className="psychometric-scale-table-wrap">
+                <table className="psychometric-scale-table networth-action-table">
+                  <thead><tr><th>Priority Action</th><th>Estimated Score Impact</th><th>Estimated Wealth Impact</th></tr></thead>
+                  <tbody>{aiRecommendations.map((item) => <tr key={item.action}><td>{item.action}</td><td>{item.scoreImpact}</td><td>{item.wealthImpact}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p className="psychometric-section-note">Estimates assume the identified adverse variance is corrected toward its setup value; actual results may differ.</p>
+            </section>
           </section>
         </div>
 
-        <aside className="networth-report-side">
-          <article className="psychometric-panel">
-            <span className="psychometric-panel-kicker">Position Scorecards</span>
-            <h2>Wealth Assessment</h2>
-            <p className="psychometric-section-note">The certification summarizes all FILSCORE wealth scoring dimensions.</p>
-          </article>
-          <article className="psychometric-panel">
-            <span className="psychometric-panel-kicker">Setup Snapshot</span>
-            <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Current Profile'}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li><span>As Of</span><strong>{asOfDate || 'Not set'}</strong></li>
-              <li><span>Currency</span><strong>{selectedCurrencyLabel}</strong></li>
-              <li><span>Financial Goal</span><strong>{selectedFinancialGoal || 'Not selected'}</strong></li>
-              <li><span>Setup Net Worth</span><strong>{formatSignedCurrency(setupNetWorth)}</strong></li>
-            </ul>
-          </article>
-          <article className="psychometric-panel">
-            <span className="psychometric-panel-kicker">Position Health</span>
-            <h2>{netWorthBuildingScore.grade}</h2>
-            <ul className="psychometric-breakdown-list">
-              <li><span>Health Score</span><strong>{netWorthBuildingScore.score}</strong></li>
-              <li><span>Range Score</span><strong>{netWorthBuildingScore.rangeScore}</strong></li>
-              <li><span>Rating</span><strong>{netWorthBuildingScore.rating}</strong></li>
-              <li><span>Goal Position</span><strong>{positionStatement.title}</strong></li>
-            </ul>
-          </article>
-          <article className="psychometric-panel">
-            <span className="psychometric-panel-kicker">Net Worth Visuals</span>
-            <h2>Setup vs Projected</h2>
-            <div className="budget-workflow-ai-card">
-              <div className="budget-workflow-graph-row"><span>Setup</span><div className="budget-workflow-graph-track"><div className="budget-workflow-graph-bar budget-workflow-graph-bar-setup" style={{ width: `${setupNetWorthBarWidth}%` }} /></div><strong>{formatSignedCurrency(totals.setupNetWorth)}</strong></div>
-              <div className="budget-workflow-graph-row"><span>Projected</span><div className="budget-workflow-graph-track"><div className="budget-workflow-graph-bar budget-workflow-graph-bar-actual" style={{ width: `${projectedNetWorthBarWidth}%` }} /></div><strong>{formatSignedCurrency(totals.projectedNetWorth)}</strong></div>
-            </div>
-          </article>
-          <article className="psychometric-panel">
-            <span className="psychometric-panel-kicker">Activity</span>
-            <h2>Activity Timeline</h2>
-            <ul className="psychometric-breakdown-list">
-              <li><span>Application Source</span><strong>{snapshot.sourceLabel}</strong></li>
-              <li><span>Application Number</span><strong>{snapshot.sourceApplicationNo}</strong></li>
-              <li><span>Last Updated</span><strong>{lastUpdated ? lastUpdated.toLocaleString() : 'Not yet saved'}</strong></li>
-              <li><span>Certification</span><strong>{wealthCertificationGenerated ? 'Generated' : 'Pending'}</strong></li>
-            </ul>
-          </article>
-        </aside>
       </section>
 
       {showLegacyWorkflow ? <>
@@ -3132,22 +3102,6 @@ export default function NetWorthPositioningPage() {
                   >
                     Produce Certification
                   </button>
-                  <button
-                    type="button"
-                    className="budget-dashboard-category-reset"
-                    onClick={handleDownloadWealthCertification}
-                    disabled={!wealthCertificationGenerated}
-                  >
-                    Download Certificate
-                  </button>
-                  <button
-                    type="button"
-                    className="psychometric-reset-button"
-                    onClick={handlePrintWealthCertification}
-                    disabled={!wealthCertificationGenerated}
-                  >
-                    Print / Save PDF
-                  </button>
                 </div>
 
               </div>
@@ -3290,8 +3244,9 @@ export default function NetWorthPositioningPage() {
                 <h2>Actionable Next Steps</h2>
                 <ul className="psychometric-breakdown-list">
                   {aiRecommendations.map((item) => (
-                    <li key={item}>
-                      <span>{item}</span>
+                    <li key={item.action}>
+                      <span>{item.action}</span>
+                      <strong>{item.scoreImpact} | {item.wealthImpact}</strong>
                     </li>
                   ))}
                 </ul>
