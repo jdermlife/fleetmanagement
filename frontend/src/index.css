@@ -2986,19 +2986,105 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 @media (max-width: 520px) {
-  .workflow-horizontal-panel {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: clip;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) *,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) *::before,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) *::after {
+    box-sizing: border-box;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-dashboard-layout,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-dashboard-main,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-dashboard-side,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-panel,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-summary-grid,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-dashboard-category-summary,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-ai-grid,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-dashboard-indicator-row {
+    min-width: 0;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .workflow-horizontal-panel {
     padding: 10px;
   }
 
-  .workflow-horizontal-step-list {
-    grid-auto-columns: minmax(150px, 72vw);
-    scroll-snap-type: x proximity;
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .workflow-horizontal-step-list {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+    grid-template-columns: minmax(0, 1fr);
+    overflow-x: visible;
+    scroll-snap-type: none;
   }
 
-  .workflow-horizontal-step-list .lending-psychometric-step-button,
-  .workflow-horizontal-step-list .budget-workflow-step-button {
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .workflow-horizontal-step-list .lending-psychometric-step-button,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .workflow-horizontal-step-list .budget-workflow-step-button {
+    width: 100%;
     min-height: 58px;
-    scroll-snap-align: start;
+    scroll-snap-align: none;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-panel-header,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-inline-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-panel-header > *,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-inline-actions > * {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-inline-actions button,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-panel-header button {
+    width: 100%;
+    white-space: normal;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) input,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) select,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) textarea {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .psychometric-scale-table,
+  .bill-reminder-biller-data-table,
+  .bill-reminder-payment-table,
+  .loan-monitoring-additional-loans table,
+  .budget-workflow-variance-table {
+    min-width: 0 !important;
+    width: 100%;
+    table-layout: auto;
+  }
+
+  .loan-monitoring-additional-loans input,
+  .loan-monitoring-additional-loans td:first-child input,
+  .loan-monitoring-additional-loans td:nth-child(2) input,
+  .loan-monitoring-additional-loans td:nth-child(8) input {
+    width: 100%;
+  }
+
+  .bill-reminder-score-impact-metrics,
+  .loan-monitoring-step3-tools .loan-monitoring-tool-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-graph-row,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) .budget-workflow-variance-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) img,
+  :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page) svg {
+    max-width: 100%;
   }
 }
 
