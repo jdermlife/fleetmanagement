@@ -6,6 +6,7 @@ import { saveLoanApplicationBillReminders } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { computeBillPaymentHealthScore } from './billPaymentHealthEngine';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3;
@@ -845,23 +846,24 @@ export default function BillReminderPage() {
     [topVarianceRows],
   );
 
-  const billsPaymentHealthScore = useMemo(() => {
-    if (!draftCards.length) {
-      return 0;
-    }
+  const billPaymentHealth = useMemo(() => {
+    const selectedRecord = applications[0];
+    const profileIncome = selectedRecord
+      ? Math.max(
+          toSafeNumber(selectedRecord.monthly_income) + toSafeNumber(selectedRecord.other_income),
+          toSafeNumber(selectedRecord.requirements?.employmentInformation?.grossMonthlyIncome),
+        )
+      : 0;
+    const scoreBillers = savedSetup.length > 0 ? savedSetup : draftBillers;
 
-    const total = draftCards.reduce((sum, biller) => {
-      if (biller.status.id === 'maintain') {
-        return sum + 100;
-      }
-      if (biller.status.id === 'watch') {
-        return sum + 65;
-      }
-      return sum + 25;
-    }, 0);
-
-    return total / draftCards.length;
-  }, [draftCards]);
+    return computeBillPaymentHealthScore({
+      monthlyIncome: profileIncome,
+      billers: scoreBillers.map((biller) => ({
+        ...biller,
+        payments: paymentEntries[biller.id] ?? [],
+      })),
+    });
+  }, [applications, draftBillers, paymentEntries, savedSetup]);
 
   const aiRecommendations = useMemo(() => {
     if (!varianceRows.length) {
@@ -967,8 +969,8 @@ export default function BillReminderPage() {
 
         <div className="psychometric-hero-metric bill-reminder-dashboard-scorecard">
           <span>Bills Payment Health Score</span>
-          <strong>{billsPaymentHealthScore.toFixed(1)}</strong>
-          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
+          <strong>{billPaymentHealth.score.toFixed(1)}</strong>
+          <small>{`${billPaymentHealth.grade} - ${billPaymentHealth.interpretation}`}</small>
         </div>
       </section>
 
@@ -1567,13 +1569,50 @@ export default function BillReminderPage() {
               </div>
 
               <div className="budget-workflow-ai-grid">
+                <article className="budget-workflow-ai-card">
+                  <h3>Bill Payment Health Score Breakdown</h3>
+                  <ul className="psychometric-breakdown-list">
+                    <li><span>Payment Timeliness</span><strong>{billPaymentHealth.components.paymentTimeliness.toFixed(1)}/25</strong></li>
+                    <li><span>Payment Completion</span><strong>{billPaymentHealth.components.paymentCompletion.toFixed(1)}/20</strong></li>
+                    <li><span>Budget Adherence</span><strong>{billPaymentHealth.components.budgetAdherence.toFixed(1)}/15</strong></li>
+                    <li><span>Bill Affordability</span><strong>{billPaymentHealth.components.billAffordability.toFixed(1)}/15</strong></li>
+                    <li><span>Reminder Discipline</span><strong>{billPaymentHealth.components.reminderDiscipline.toFixed(1)}/10</strong></li>
+                    <li><span>Payment Consistency</span><strong>{billPaymentHealth.components.paymentConsistency.toFixed(1)}/10</strong></li>
+                    <li>
+                      <span>AI Financial Behavior</span>
+                      <strong>{billPaymentHealth.components.aiFinancialBehavior >= 0 ? '+' : ''}{billPaymentHealth.components.aiFinancialBehavior.toFixed(1)}/5</strong>
+                    </li>
+                    <li><span>Total</span><strong>{billPaymentHealth.score.toFixed(1)}/100</strong></li>
+                  </ul>
+                  <p>
+                    {billPaymentHealth.metrics.scoredPaymentCount} payment record(s) assessed;
+                    {' '}{billPaymentHealth.metrics.latePaymentCount} recorded late payment(s).
+                  </p>
+                  <div>
+                    <strong>Strengths</strong>
+                    <ul className="psychometric-breakdown-list">
+                      {billPaymentHealth.strengths.length > 0
+                        ? billPaymentHealth.strengths.map((strength) => <li key={strength}><span>{strength}</span></li>)
+                        : <li><span>Complete bill and payment records to identify demonstrated strengths.</span></li>}
+                    </ul>
+                  </div>
+                  <div>
+                    <strong>Opportunities</strong>
+                    <ul className="psychometric-breakdown-list">
+                      {billPaymentHealth.opportunities.map((opportunity) => (
+                        <li key={opportunity}><span>{opportunity}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+
                 <article className="budget-workflow-ai-card bill-reminder-score-impact-card">
                   <h3>Bill Payment Impact on Credit Health and Wealth Building</h3>
                   <div className="bill-reminder-score-impact-metrics">
                     <div><span>Credit Health impact</span><strong>{billPaymentScoreImpact.creditImpact}</strong></div>
                     <div><span>Wealth Building impact</span><strong>{billPaymentScoreImpact.wealthImpact}</strong></div>
                     <div><span>Fully paid bills</span><strong>{billPaymentScoreImpact.completionRate.toFixed(0)}%</strong></div>
-                    <div><span>Bills Payment Health Score</span><strong>{billsPaymentHealthScore.toFixed(1)}</strong></div>
+                    <div><span>Bills Payment Health Score</span><strong>{billPaymentHealth.score.toFixed(1)}</strong></div>
                   </div>
                   <p>{billPaymentScoreImpact.creditInsight}</p>
                   <p>{billPaymentScoreImpact.wealthInsight}</p>
