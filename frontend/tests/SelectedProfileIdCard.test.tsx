@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { render, screen } from '@testing-library/react'
 
-import { resolveSelectedProfileId } from '../src/components/profile/SelectedProfileIdCard'
+import SelectedProfileIdCard, { resolveSelectedProfileId } from '../src/components/profile/SelectedProfileIdCard'
 import { resolveSelectedApplicationNo } from '../src/hooks/useSelectedAnalysisEntity'
+import { estimateYearsToTargetNetWorth } from '../src/pages/scoring/NetWorthPositioningPage'
 
 describe('selected profile identity', () => {
   beforeEach(() => {
+    window.history.replaceState({}, '', '/')
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
@@ -32,6 +35,16 @@ describe('selected profile identity', () => {
     expect(resolveSelectedProfileId(new URLSearchParams())).toBe('PRO-LOCAL')
   })
 
+  it('renders a compact record ID with the selected name when requested', () => {
+    window.history.replaceState({}, '', '/?applicationNo=APP-123')
+
+    render(<SelectedProfileIdCard compactId label="Record ID" name="Jane Doe" />)
+
+    expect(screen.getByText('Record ID')).toBeTruthy()
+    expect(screen.getByText('APP-123').classList.contains('selected-profile-id-compact')).toBe(true)
+    expect(screen.getByText('Jane Doe')).toBeTruthy()
+  })
+
   it('uses only an actual application selection for report analysis', () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-LOCAL',
@@ -41,5 +54,16 @@ describe('selected profile identity', () => {
 
     expect(resolveSelectedApplicationNo(new URLSearchParams())).toBe('APP-ANALYSIS')
     expect(resolveSelectedApplicationNo(new URLSearchParams('applicationNo=APP-QUERY'))).toBe('APP-QUERY')
+  })
+})
+
+describe('net worth target estimate', () => {
+  it('converts the remaining target gap into years of declared income', () => {
+    expect(estimateYearsToTargetNetWorth(400_000, 1_000_000, 50_000)).toBe(1)
+  })
+
+  it('handles achieved targets and missing declared income', () => {
+    expect(estimateYearsToTargetNetWorth(1_100_000, 1_000_000, 50_000)).toBe(0)
+    expect(estimateYearsToTargetNetWorth(400_000, 1_000_000, 0)).toBeNull()
   })
 })

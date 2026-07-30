@@ -61,6 +61,13 @@ function formatCurrency(amount: number) {
   }).format(amount);
 }
 
+function budgetHealthComponentClass(score: number, maximum: number) {
+  const ratio = maximum > 0 ? score / maximum : 0;
+  if (ratio <= 1 / 3) return 'budget-health-component-low';
+  if (ratio <= 2 / 3) return 'budget-health-component-medium';
+  return 'budget-health-component-high';
+}
+
 function formatSignedCurrency(amount: number) {
   const absoluteAmount = formatCurrency(Math.abs(amount));
   if (amount > 0) {
@@ -927,37 +934,42 @@ export default function BudgetExpenseTrackerPage() {
       <section className="psychometric-panel" aria-labelledby="budget-health-breakdown-title">
         <div className="psychometric-panel-header">
           <div>
-            <span className="psychometric-panel-kicker">100-point score</span>
+            <span className="psychometric-panel-kicker">Budget Health component</span>
             <h2 id="budget-health-breakdown-title">Budget Health Score Breakdown</h2>
           </div>
+          <div className="budget-health-component-legend" aria-label="Budget Health component color thresholds">
+            <span><i className="budget-health-legend-swatch budget-health-legend-low" />1/3 or below</span>
+            <span><i className="budget-health-legend-swatch budget-health-legend-medium" />Up to 2/3</span>
+            <span><i className="budget-health-legend-swatch budget-health-legend-high" />Beyond 2/3</span>
+          </div>
         </div>
-        <div className="psychometric-summary-grid budget-dashboard-summary-grid">
-          <article className="psychometric-summary-card psychometric-summary-card-highlight">
+        <div className="psychometric-summary-grid budget-health-component-grid">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.planning, 20)}`}>
             <span>Budget Planning</span>
             <strong>{budgetHealthScore.planning} / 20</strong>
             <small>Period, budget, income, expenses, and allocation setup</small>
           </article>
-          <article className="psychometric-summary-card">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.adherence, 30)}`}>
             <span>Budget Adherence</span>
             <strong>{budgetHealthScore.adherence} / 30</strong>
             <small>{budgetHealthScore.metrics.variancePercent === null ? 'Enter actual expenses' : `${budgetHealthScore.metrics.variancePercent.toFixed(2)}% variance`}</small>
           </article>
-          <article className="psychometric-summary-card">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.savingsDiscipline, 20)}`}>
             <span>Savings Discipline</span>
             <strong>{budgetHealthScore.savingsDiscipline} / 20</strong>
             <small>{budgetHealthScore.metrics.savingsRatePercent === null ? 'Enter income and expenses' : `${budgetHealthScore.metrics.savingsRatePercent.toFixed(2)}% savings rate`}</small>
           </article>
-          <article className="psychometric-summary-card">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.expenseAllocation, 15)}`}>
             <span>Expense Allocation</span>
             <strong>{budgetHealthScore.expenseAllocation.toFixed(1)} / 15</strong>
             <small>{budgetHealthScore.metrics.allocationTotalPercent.toFixed(2)}% allocated</small>
           </article>
-          <article className="psychometric-summary-card">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.cashFlowStability, 15)}`}>
             <span>Cash Flow Stability</span>
             <strong>{budgetHealthScore.cashFlowStability} / 15</strong>
             <small>{budgetHealthScore.metrics.stableMonths} stable month{budgetHealthScore.metrics.stableMonths === 1 ? '' : 's'} recorded</small>
           </article>
-          <article className="psychometric-summary-card">
+          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.aiAdjustment, 8)}`}>
             <span>AI Adjustments</span>
             <strong>{budgetHealthScore.aiAdjustment > 0 ? '+' : ''}{budgetHealthScore.aiAdjustment}</strong>
             <small>Evidence-based behavior modifiers, capped at 100</small>

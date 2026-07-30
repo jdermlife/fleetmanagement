@@ -1690,7 +1690,7 @@ export default function BillReminderPage() {
                   </div>
                 </article>
 
-                <article className="budget-workflow-ai-card bill-reminder-score-impact-card">
+                <article className="budget-workflow-ai-card bill-reminder-score-impact-card bill-reminder-equal-ai-card">
                   <h3>Bill Payment Impact on Credit Health and Wealth Building</h3>
                   <div className="bill-reminder-score-impact-metrics">
                     <div><span>Credit Health impact</span><strong>{billPaymentScoreImpact.creditImpact}</strong></div>
@@ -1710,7 +1710,7 @@ export default function BillReminderPage() {
                   </div>
                 </article>
 
-                <article className="budget-workflow-ai-card">
+                <article className="budget-workflow-ai-card bill-reminder-equal-ai-card">
                   <h3>AI Recommendations</h3>
                   <ul className="psychometric-breakdown-list">
                     {aiRecommendations.map((item) => (
@@ -1721,7 +1721,7 @@ export default function BillReminderPage() {
                   </ul>
                 </article>
 
-                <article className="budget-workflow-ai-card bill-reminder-setup-actual-card">
+                <article className="budget-workflow-ai-card bill-reminder-setup-actual-card bill-reminder-equal-ai-card">
                   <h3>Setup vs Actual Graph</h3>
                   <div className="budget-workflow-graph-row">
                     <span>Saved Setup Total</span>
@@ -1778,7 +1778,7 @@ export default function BillReminderPage() {
                   </div>
                 </article>
 
-                <article className="budget-workflow-ai-card">
+                <article className="budget-workflow-ai-card bill-reminder-top-variance-card bill-reminder-equal-ai-card">
                   <h3>Top Variance Graph</h3>
                   {topVarianceRows.length === 0 ? (
                     <p className="psychometric-section-note">Enter actual values to visualize top variance billers.</p>
@@ -1802,7 +1802,7 @@ export default function BillReminderPage() {
                   )}
                 </article>
 
-                <article className="budget-workflow-ai-card bill-reminder-health-impact-table-card">
+                <article className="budget-workflow-ai-card bill-reminder-health-impact-table-card bill-reminder-equal-ai-card">
                   <h3>Health Score Impact</h3>
                   <div className="psychometric-scale-table-wrap">
                     <table className="psychometric-scale-table bill-reminder-health-impact-table">
