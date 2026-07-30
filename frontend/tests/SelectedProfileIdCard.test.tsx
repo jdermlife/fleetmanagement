@@ -3,7 +3,10 @@ import { render, screen } from '@testing-library/react'
 
 import SelectedProfileIdCard, { resolveSelectedProfileId } from '../src/components/profile/SelectedProfileIdCard'
 import { resolveSelectedApplicationNo } from '../src/hooks/useSelectedAnalysisEntity'
-import { estimateYearsToTargetNetWorth } from '../src/pages/scoring/NetWorthPositioningPage'
+import {
+  estimateYearsToTargetNetWorth,
+  resolveActualNetWorthPosition,
+} from '../src/pages/scoring/NetWorthPositioningPage'
 
 describe('selected profile identity', () => {
   beforeEach(() => {
@@ -65,5 +68,18 @@ describe('net worth target estimate', () => {
   it('handles achieved targets and missing declared income', () => {
     expect(estimateYearsToTargetNetWorth(1_100_000, 1_000_000, 50_000)).toBe(0)
     expect(estimateYearsToTargetNetWorth(400_000, 1_000_000, 0)).toBeNull()
+  })
+
+  it('uses only Build Profile Step 9 actual assets and liabilities', () => {
+    expect(resolveActualNetWorthPosition({
+      'asset-cash-on-hand': '800000',
+      'liability-personal-loan': '250000',
+      'income-salary': '50000',
+      'asset-savings-account': '',
+    }, 100000)).toBe(550000)
+  })
+
+  it('uses the setup position when Step 9 has no balance-sheet actuals', () => {
+    expect(resolveActualNetWorthPosition({ 'income-salary': '50000' }, 100000)).toBe(100000)
   })
 })
