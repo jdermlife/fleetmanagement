@@ -50,7 +50,7 @@ describe('FinancialHealthSummaryPage', () => {
   })
 
   it('publishes saved workflow figures only after the compute button is clicked', async () => {
-    fetchAutosaveDraft.mockResolvedValue({
+    const netWorthDraft = {
       payload: {
         amounts: {
           'asset-cash-on-hand': 250000,
@@ -77,24 +77,62 @@ describe('FinancialHealthSummaryPage', () => {
         targetAmount: 1000000,
         targetMonths: 12,
       },
-    })
+    }
+    const budgetDraft = {
+      payload: {
+        periodStart: '2026-01-01',
+        periodEnd: '2026-12-31',
+        incomeDraft: { salary: '100000' },
+        expenseDraft: { housing: '30000', food: '15000', savings: '30000' },
+        expenseAllocationDraft: {
+          housing: '30',
+          'food-dining': '15',
+          transport: '10',
+          insurance: '5',
+          'savings-core': '30',
+          entertainment: '10',
+        },
+        savedSetup: [
+          { id: 'income-salary', setupAmount: 100000, type: 'income' },
+          { id: 'expense-housing', setupAmount: 30000, type: 'expense' },
+          { id: 'expense-food', setupAmount: 15000, type: 'expense' },
+          { id: 'expense-savings', setupAmount: 30000, type: 'expense' },
+        ],
+        actualEntries: {
+          'income-salary': '100000',
+          'expense-housing': '30000',
+          'expense-food': '15000',
+          'expense-savings': '30000',
+        },
+        cashFlowHistory: Array.from({ length: 12 }, () => ({
+          income: 100000,
+          expenses: 75000,
+          budgetVariancePercent: 2,
+          budgetCompleted: true,
+        })),
+      },
+    }
+    fetchAutosaveDraft.mockImplementation((scope: string) => Promise.resolve(
+      scope === 'budget-expense-tracker' ? budgetDraft : netWorthDraft,
+    ))
 
     render(<FinancialHealthSummaryPage />)
 
-    expect(await screen.findByRole('heading', { name: 'Net Worth Building Score' })).toBeTruthy()
+    expect(await screen.findByText('Wealth Building Score', { selector: '.financial-health-summary-tile span' })).toBeTruthy()
     expect(await screen.findByText('Saved inputs are ready for review.')).toBeTruthy()
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Compute Latest Financial Health' }))
 
-    expect(await screen.findByText('964', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
+    expect(await screen.findByText('962', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getByText('96.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
-    expect(screen.getByText('98.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByText('98.2', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('92.7', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
     expect(await screen.findByText('A+ - Exceptional Wealth Builder')).toBeTruthy()
     expect(await screen.findByText('830-900')).toBeTruthy()
+    expect(await screen.findByText('98.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(await screen.findByText('10-tier band from 200 to 900')).toBeTruthy()
   })
 })

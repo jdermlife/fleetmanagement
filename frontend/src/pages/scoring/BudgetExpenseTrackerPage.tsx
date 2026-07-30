@@ -6,6 +6,7 @@ import { saveLoanApplicationBudget } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { computeBudgetHealthScore } from './budgetHealthEngine';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3;
@@ -406,6 +407,24 @@ export default function BudgetExpenseTrackerPage() {
       isBalanced: Math.abs(varianceToTarget) < 0.01,
     };
   }, [expenseAllocationDraft, snapshot.categoryItems]);
+
+  const budgetHealthScore = useMemo(() => computeBudgetHealthScore({
+    periodStart,
+    periodEnd,
+    incomeDraft,
+    expenseDraft,
+    expenseAllocationDraft,
+    savedSetup,
+    actualEntries,
+  }), [
+    actualEntries,
+    expenseAllocationDraft,
+    expenseDraft,
+    incomeDraft,
+    periodEnd,
+    periodStart,
+    savedSetup,
+  ]);
 
   const handleNormalizeExpenseAllocation = () => {
     const currentTotal = snapshot.categoryItems.reduce((total, item) => {
@@ -873,7 +892,7 @@ export default function BudgetExpenseTrackerPage() {
 
         <div className="psychometric-hero-metric budget-dashboard-scorecard">
           <span>Budget Health Score</span>
-          <strong>{snapshot.healthScore.toFixed(1)}</strong>
+          <strong>{budgetHealthScore.score.toFixed(1)}</strong>
           <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
         </div>
       </section>
@@ -903,6 +922,47 @@ export default function BudgetExpenseTrackerPage() {
           <strong>{formatSignedCurrency(budgetSetupTotals.net)}</strong>
           <small>{snapshot.performanceBand}</small>
         </article>
+      </section>
+
+      <section className="psychometric-panel" aria-labelledby="budget-health-breakdown-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">100-point score</span>
+            <h2 id="budget-health-breakdown-title">Budget Health Score Breakdown</h2>
+          </div>
+        </div>
+        <div className="psychometric-summary-grid budget-dashboard-summary-grid">
+          <article className="psychometric-summary-card psychometric-summary-card-highlight">
+            <span>Budget Planning</span>
+            <strong>{budgetHealthScore.planning} / 20</strong>
+            <small>Period, budget, income, expenses, and allocation setup</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Budget Adherence</span>
+            <strong>{budgetHealthScore.adherence} / 30</strong>
+            <small>{budgetHealthScore.metrics.variancePercent === null ? 'Enter actual expenses' : `${budgetHealthScore.metrics.variancePercent.toFixed(2)}% variance`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Savings Discipline</span>
+            <strong>{budgetHealthScore.savingsDiscipline} / 20</strong>
+            <small>{budgetHealthScore.metrics.savingsRatePercent === null ? 'Enter income and expenses' : `${budgetHealthScore.metrics.savingsRatePercent.toFixed(2)}% savings rate`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Expense Allocation</span>
+            <strong>{budgetHealthScore.expenseAllocation.toFixed(1)} / 15</strong>
+            <small>{budgetHealthScore.metrics.allocationTotalPercent.toFixed(2)}% allocated</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Cash Flow Stability</span>
+            <strong>{budgetHealthScore.cashFlowStability} / 15</strong>
+            <small>{budgetHealthScore.metrics.stableMonths} stable month{budgetHealthScore.metrics.stableMonths === 1 ? '' : 's'} recorded</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>AI Adjustments</span>
+            <strong>{budgetHealthScore.aiAdjustment > 0 ? '+' : ''}{budgetHealthScore.aiAdjustment}</strong>
+            <small>Evidence-based behavior modifiers, capped at 100</small>
+          </article>
+        </div>
       </section>
 
       <section className="budget-dashboard-layout">
