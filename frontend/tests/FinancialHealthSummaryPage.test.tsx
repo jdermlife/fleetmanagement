@@ -46,6 +46,10 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('77.3', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
     expect(screen.queryByText('(91 x 15 + 88 x 14 + 94 x 14) / 43 = 91.0')).toBeNull()
+    expect(screen.queryByText('Key Indicators')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Stability and Capability' })).toBeNull()
+    expect(screen.queryByText('Wealth Foundation Engine')).toBeNull()
+    expect(screen.queryByRole('heading', { name: 'Wealth Foundation Score' })).toBeNull()
     expect(screen.getAllByRole('progressbar')).toHaveLength(16)
 
     const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
@@ -149,7 +153,6 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    expect(await screen.findByText('Wealth Building Score', { selector: '.financial-health-summary-tile span' })).toBeTruthy()
     expect(await screen.findByText('Saved inputs are ready for review.')).toBeTruthy()
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
@@ -161,12 +164,8 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('98.2', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('92.7', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
-    expect(await screen.findByText('A+ - Exceptional Wealth Builder')).toBeTruthy()
-    expect(await screen.findByText('830-900')).toBeTruthy()
-    expect(await screen.findByText('88.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
-    expect(await screen.findByText('B+ - Very Good')).toBeTruthy()
-    expect(await screen.findByText('98.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
-    expect(await screen.findByText('10-tier band from 200 to 900')).toBeTruthy()
+    expect(screen.queryByText('Wealth Building Score')).toBeNull()
+    expect(screen.queryByText('Wealth Foundation Engine')).toBeNull()
 
     const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
     expect(within(insights).getByText('+120')).toBeTruthy()

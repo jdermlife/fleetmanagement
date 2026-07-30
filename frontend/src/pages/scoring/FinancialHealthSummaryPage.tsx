@@ -22,7 +22,6 @@ import {
 } from './netWorthBuildingEngine'
 import {
   computeWealthFoundationScore,
-  explainWealthFoundationResult,
   type WealthFoundationScoreResult,
 } from './wealthFoundationEngine'
 import { readReplicatedBuildProfile } from './buildProfileReplication'
@@ -31,7 +30,6 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
-import type { LoanMonitoringScoreResult } from './loanMonitoringScoreEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -43,10 +41,6 @@ type LendingLeafScores = {
   psychometricScore: number | null
   socialScore: number | null
   nonStarterScore: number | null
-}
-
-type LoanMonitoringPublishedDraft = {
-  publishedScore?: LoanMonitoringScoreResult
 }
 
 type LendingLeafSegment = {
@@ -432,7 +426,6 @@ export default function FinancialHealthSummaryPage() {
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
   const [budgetHealthScore, setBudgetHealthScore] = useState<BudgetHealthScoreResult | null>(null)
-  const [loanHealthScore, setLoanHealthScore] = useState<LoanMonitoringScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
@@ -471,14 +464,12 @@ export default function FinancialHealthSummaryPage() {
           budgetDraft,
           billReminderDraft,
           creditHealthDraft,
-          loanMonitoringDraft,
         ] = await Promise.all([
           fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
           fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
           fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', analysisEntityKey),
           fetchAutosaveDraft<unknown>('bill-reminder', analysisEntityKey),
           fetchAutosaveDraft<unknown>('credit-scoring', creditEntityKey),
-          fetchAutosaveDraft<LoanMonitoringPublishedDraft>('loan-monitoring', analysisEntityKey),
         ])
 
         if (disposed || !netWorthDraft?.payload) {
@@ -499,7 +490,6 @@ export default function FinancialHealthSummaryPage() {
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
           setBudgetHealthScore(budgetPayload ? computeBudgetHealthScore(budgetPayload) : null)
-          setLoanHealthScore(loanMonitoringDraft?.payload?.publishedScore ?? null)
 
           setJourneyStepCompletion({
             createProfile: hasMeaningfulValue(buildProfileDraft),
@@ -515,7 +505,6 @@ export default function FinancialHealthSummaryPage() {
           setNetWorthBuildingScore(null)
           setWealthFoundationScore(null)
           setBudgetHealthScore(null)
-          setLoanHealthScore(null)
           setLendingLeafScores(null)
           setJourneyStepCompletion((current) => ({
             ...current,
@@ -536,10 +525,6 @@ export default function FinancialHealthSummaryPage() {
     }
   }, [entityKey, isIdentityReady, selectedApplicationNo])
 
-  const wealthFoundationInsight = useMemo(
-    () => (wealthFoundationScore ? explainWealthFoundationResult(wealthFoundationScore) : null),
-    [wealthFoundationScore],
-  )
   const completedJourneyCount = useMemo(
     () => Object.values(journeyStepCompletion).filter(Boolean).length,
     [journeyStepCompletion],
@@ -957,41 +942,6 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
-      <section className="psychometric-panel" aria-labelledby="net-worth-building-summary-title">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Key Indicators</span>
-            <h2 id="net-worth-building-summary-title">Stability and Capability</h2>
-            <p className="financial-health-panel-intro">
-               The anchors of robust financial health.
-            </p>
-          </div>
-        </div>
-
-        <section className="financial-health-summary-grid" aria-label="Net Worth Building highlights">
-          <article className="financial-health-summary-tile financial-health-summary-tile-primary">
-            <span>Wealth Building Score</span>
-            <strong>{netWorthBuildingScore ? netWorthBuildingScore.score : 'Pending'}</strong>
-            <small>{netWorthBuildingScore ? `${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}` : 'Loads from the saved Net Worth workflow'}</small>
-          </article>
-          <article className="financial-health-summary-tile">
-            <span>Credit Health Composite Score</span>
-            <strong>{netWorthBuildingScore ? netWorthBuildingScore.rangeScore : 'Pending'}</strong>
-            <small>10-tier band from 200 to 900</small>
-          </article>
-          <article className="financial-health-summary-tile">
-            <span>Loan Health Score</span>
-            <strong>{loanHealthScore ? loanHealthScore.score.toFixed(1) : 'Pending'}</strong>
-            <small>{loanHealthScore ? `${loanHealthScore.grade} - ${loanHealthScore.interpretation}` : 'Loads from the saved Loan Monitoring workflow'}</small>
-          </article>
-          <article className="financial-health-summary-tile">
-            <span>Budget and Expense Tracker Score</span>
-            <strong>{budgetHealthScore ? budgetHealthScore.score.toFixed(1) : 'Pending'}</strong>
-            <small>{budgetHealthScore ? `Budget Health Score out of 100 (${budgetHealthScore.aiAdjustment >= 0 ? '+' : ''}${budgetHealthScore.aiAdjustment} adjustment)` : 'Loads from the saved Budget and Expense Tracker'}</small>
-          </article>
-        </section>
-      </section>
-
       <section className="psychometric-panel financial-health-vitals-panel" aria-labelledby="health-vitals-title">
         <div className="psychometric-panel-header">
           <div>
@@ -1229,67 +1179,6 @@ export default function FinancialHealthSummaryPage() {
         </aside>
       </section>
 
-      <section className="financial-health-detail-layout" aria-labelledby="wealth-foundation-summary-title">
-        <article className="psychometric-panel financial-health-chart-panel financial-health-wealth-panel">
-          <div className="psychometric-panel-header">
-            <div>
-              <span className="psychometric-panel-kicker">Wealth Foundation Engine</span>
-              <h2 id="wealth-foundation-summary-title">Wealth Foundation Score</h2>
-              <p className="financial-health-panel-intro">
-                Scaled from a 0 to 35 model into a 0 to 1000 summary score with a positioning band.
-              </p>
-            </div>
-          </div>
-
-          <div className="financial-health-summary-grid financial-health-wealth-summary-grid" aria-label="Wealth Foundation highlights">
-            <article className="financial-health-summary-tile financial-health-summary-tile-primary">
-              <span>Score</span>
-              <strong>{wealthFoundationScore ? wealthFoundationScore.score : 'Pending'}</strong>
-              <small>{wealthFoundationScore ? `${wealthFoundationScore.rawScore.toFixed(0)} / 35 raw` : 'Loads from the saved Net Worth workflow'}</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Position</span>
-              <strong>{wealthFoundationScore ? wealthFoundationScore.positioningBand : 'Pending'}</strong>
-              <small>{wealthFoundationScore ? wealthFoundationScore.rangeScore : '0 to 35 tier range'}</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Emergency Fund</span>
-              <strong>
-                {wealthFoundationScore ? `${wealthFoundationScore.metrics.emergencyFundMonths.toFixed(1)} months` : 'Pending'}
-              </strong>
-              <small>Coverage from available liquid reserves</small>
-            </article>
-            <article className="financial-health-summary-tile">
-              <span>Cash Flow</span>
-              <strong>
-                {wealthFoundationScore ? wealthFoundationScore.metrics.positiveCashflowScore.toLocaleString() : 'Pending'}
-              </strong>
-              <small>Monthly income minus monthly expenses</small>
-            </article>
-          </div>
-        </article>
-
-        <aside className="financial-health-side-stack">
-          <article className="psychometric-panel financial-health-formula-panel">
-            <span className="psychometric-panel-kicker">Improve next</span>
-            <h2>Recommendations to strengthen the foundation</h2>
-            <ul className="financial-health-band-list">
-              {wealthFoundationInsight?.recommendations.map((item) => (
-                <li key={item}>
-                  <i className="financial-health-band-building" aria-hidden="true" />
-                  <span>{item}</span>
-                </li>
-              ))}
-              {!wealthFoundationInsight ? (
-                <li>
-                  <i className="financial-health-band-building" aria-hidden="true" />
-                  <span>Awaiting saved workflow inputs before recommendations can be generated.</span>
-                </li>
-              ) : null}
-            </ul>
-          </article>
-        </aside>
-      </section>
     </div>
   )
 }
