@@ -31,6 +31,7 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
+import type { LoanMonitoringScoreResult } from './loanMonitoringScoreEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -42,6 +43,10 @@ type LendingLeafScores = {
   psychometricScore: number | null
   socialScore: number | null
   nonStarterScore: number | null
+}
+
+type LoanMonitoringPublishedDraft = {
+  publishedScore?: LoanMonitoringScoreResult
 }
 
 type LendingLeafSegment = {
@@ -426,6 +431,7 @@ export default function FinancialHealthSummaryPage() {
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
   const [budgetHealthScore, setBudgetHealthScore] = useState<BudgetHealthScoreResult | null>(null)
+  const [loanHealthScore, setLoanHealthScore] = useState<LoanMonitoringScoreResult | null>(null)
   const [lendingLeafScores, setLendingLeafScores] = useState<LendingLeafScores | null>(null)
   const [publishedSummary, setPublishedSummary] = useState(() => computeFinancialHealthSummary())
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
@@ -464,12 +470,14 @@ export default function FinancialHealthSummaryPage() {
           budgetDraft,
           billReminderDraft,
           creditHealthDraft,
+          loanMonitoringDraft,
         ] = await Promise.all([
           fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
           fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
           fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', analysisEntityKey),
           fetchAutosaveDraft<unknown>('bill-reminder', analysisEntityKey),
           fetchAutosaveDraft<unknown>('credit-scoring', creditEntityKey),
+          fetchAutosaveDraft<LoanMonitoringPublishedDraft>('loan-monitoring', analysisEntityKey),
         ])
 
         if (disposed || !netWorthDraft?.payload) {
@@ -490,6 +498,7 @@ export default function FinancialHealthSummaryPage() {
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
           setBudgetHealthScore(budgetPayload ? computeBudgetHealthScore(budgetPayload) : null)
+          setLoanHealthScore(loanMonitoringDraft?.payload?.publishedScore ?? null)
 
           setJourneyStepCompletion({
             createProfile: hasMeaningfulValue(buildProfileDraft),
@@ -505,6 +514,7 @@ export default function FinancialHealthSummaryPage() {
           setNetWorthBuildingScore(null)
           setWealthFoundationScore(null)
           setBudgetHealthScore(null)
+          setLoanHealthScore(null)
           setLendingLeafScores(null)
           setJourneyStepCompletion((current) => ({
             ...current,
@@ -917,8 +927,8 @@ export default function FinancialHealthSummaryPage() {
           </article>
           <article className="financial-health-summary-tile">
             <span>Loan Health Score</span>
-            <strong>{netWorthBuildingScore ? netWorthBuildingScore.metrics.netWorth.toLocaleString() : 'Pending'}</strong>
-            <small>Computed from saved workflow inputs</small>
+            <strong>{loanHealthScore ? loanHealthScore.score.toFixed(1) : 'Pending'}</strong>
+            <small>{loanHealthScore ? `${loanHealthScore.grade} - ${loanHealthScore.interpretation}` : 'Loads from the saved Loan Monitoring workflow'}</small>
           </article>
           <article className="financial-health-summary-tile">
             <span>Budget and Expense Tracker Score</span>

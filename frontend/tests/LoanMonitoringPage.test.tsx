@@ -104,6 +104,7 @@ describe('LoanMonitoringPage', () => {
       </MemoryRouter>,
     )
 
+    fireEvent.click(screen.getByRole('button', { name: /^3 Summary Dashboard/ }))
     const debtSavings = screen.getByRole('region', { name: 'Debt Savings Calculator' })
     const borrowingCapacity = screen.getByRole('region', { name: 'Borrowing Capacity Simulator' })
     const consolidation = screen.getByRole('region', { name: 'Loan Consolidation Guidance' })
@@ -160,12 +161,12 @@ describe('LoanMonitoringPage', () => {
       expect((screen.getByPlaceholderText('Enter outstanding balance') as HTMLInputElement).value).toBe('700,000.00')
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Add Another Loan and Installment Schedule' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Add Another Loan Not Declared in Building Profile' }))
     fireEvent.change(screen.getByRole('textbox', { name: 'Additional loan 1 loan type' }), { target: { value: 'Personal Loan' } })
     fireEvent.change(screen.getByRole('textbox', { name: 'Additional loan 1 entity issuer' }), { target: { value: 'Second Bank' } })
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Additional loan 1 original amount' }), { target: { value: '120000' } })
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Additional loan 1 interest rate' }), { target: { value: '8' } })
-    fireEvent.change(screen.getByRole('spinbutton', { name: 'Additional loan 1 term months' }), { target: { value: '24' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Additional loan 1 original amount' }), { target: { value: '120000' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Additional loan 1 interest rate' }), { target: { value: '8' } })
+    fireEvent.change(screen.getByRole('textbox', { name: 'Additional loan 1 term months' }), { target: { value: '24' } })
     fireEvent.click(screen.getByRole('button', { name: 'Save Additional Loans to Profile' }))
 
     await waitFor(() => expect(mockUpdateLoanApplication).toHaveBeenCalledTimes(1))

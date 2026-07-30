@@ -2,11 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
+import { fetchAutosaveDraft } from '../../autosave/draftApi';
 import { saveLoanApplicationMonitoring, updateLoanApplication } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { computeBudgetHealthScore, type BudgetHealthDraftInput, type BudgetHealthScoreResult } from './budgetHealthEngine';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
+import { computeLoanMonitoringScore, type LoanMonitoringScoreResult } from './loanMonitoringScoreEngine';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
 
@@ -52,6 +55,7 @@ interface LoanMonitoringDraft {
   extraMonthlyPayment: string;
   borrowingDsrLimit: string;
   additionalSchedules: AdditionalLoanSchedule[];
+  publishedScore?: LoanMonitoringScoreResult;
 }
 
 interface LoanMonitoringWorkflowConfig {
@@ -415,6 +419,7 @@ export default function LoanMonitoringPage() {
   const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
   const [monitoringSaveMessage, setMonitoringSaveMessage] = useState('');
   const [isSavingAdditionalLoans, setIsSavingAdditionalLoans] = useState(false);
+  const [budgetHealthScore, setBudgetHealthScore] = useState<BudgetHealthScoreResult | null>(null);
   const [step, setStep] = useState<WorkflowStep>(1);
 
   const monitoringDraft = useMemo<LoanMonitoringDraft>(() => ({
@@ -449,15 +454,6 @@ export default function LoanMonitoringPage() {
       .filter((loan): loan is AdditionalLoanSchedule => loan !== null));
   }, [selectedProfileApplicationNo]);
 
-  useAutosaveDraft({
-    scope: 'loan-monitoring',
-    entityKey: entityKey || 'identity-pending',
-    value: monitoringDraft,
-    defaults: monitoringDraft,
-    onHydrate: hydrateMonitoringDraft,
-    enabled: isIdentityReady,
-  });
-
   useEffect(() => {
     if (!monitoredApplications.length) {
       setSelectedApplicationNo('');
@@ -476,14 +472,31 @@ export default function LoanMonitoringPage() {
     () => buildLoanMonitoringSnapshot(applications, selectedApplicationNo),
     [applications, selectedApplicationNo],
   );
-  const advisor = useMemo(
-    () => buildAiAdvisor(snapshot),
-    [snapshot],
-  );
   const selectedRecord = useMemo(
     () => monitoredApplications.find((record) => record.application_no === selectedApplicationNo) ?? null,
     [monitoredApplications, selectedApplicationNo],
   );
+
+  useEffect(() => {
+    let disposed = false;
+
+    const loadBudgetBehavior = async () => {
+      if (!isIdentityReady) return;
+      try {
+        const draft = await fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', entityKey || 'identity-pending');
+        if (!disposed) {
+          setBudgetHealthScore(draft?.payload ? computeBudgetHealthScore(draft.payload) : null);
+        }
+      } catch {
+        if (!disposed) setBudgetHealthScore(null);
+      }
+    };
+
+    void loadBudgetBehavior();
+    return () => {
+      disposed = true;
+    };
+  }, [entityKey, isIdentityReady]);
 
   useEffect(() => {
     if (!selectedRecord) {
@@ -647,7 +660,7 @@ export default function LoanMonitoringPage() {
           loan_status: snapshot.sourceRecordStatus.slice(0, 30) || 'CURRENT',
           dsr: Number(selectedRecord.dsr) || 0,
           ltv: Number(selectedRecord.ltv) || 0,
-          risk_level: snapshot.performanceBand.slice(0, 30),
+          risk_level: `${loanMonitoringScore.grade} ${loanMonitoringScore.interpretation}`.slice(0, 30),
         }),
         persistAdditionalLoans(),
       ]);
@@ -704,14 +717,112 @@ export default function LoanMonitoringPage() {
       guidance,
     };
   }, [monitoredApplications, additionalSchedules, selectedApplicationNo, outstandingBalanceInput]);
+  const loanMonitoringScore = useMemo(() => {
+    const beginningBalance = Math.max(0, Number(selectedRecord?.loan_amount) || Number(newLoanAmount) || 0);
+    const currentBalance = Math.max(0, Number(outstandingBalanceInput) || snapshot.endBalance || beginningBalance);
+    const bankingRelationships = selectedRecord?.requirements?.bankingRelationships;
+    const creditLimit = Math.max(0, Number(bankingRelationships?.creditLimit) || 0);
+    const creditCapacity = creditLimit > 0 ? creditLimit : currentBalance + Math.max(0, snapshot.availableCredit);
+    const utilizationPercent = creditCapacity > 0 ? (currentBalance / creditCapacity) * 100 : null;
+    const dsrValue = getControlActual(snapshot, 'dsr-control');
+    const dsrPercent = selectedRecord && dsrValue > 0 ? dsrValue : null;
+    const primaryLtv = getControlActual(snapshot, 'ltv-control');
+    const collateralizedBalances = [
+      ...(primaryLtv > 0 ? [{ balance: currentBalance, ltv: primaryLtv }] : []),
+      ...additionalSchedules
+        .filter((loan) => loan.loanToValueRatio > 0)
+        .map((loan) => ({
+          balance: Math.max(0, loan.outstandingBalance || loan.loanAmount),
+          ltv: loan.loanToValueRatio,
+        })),
+    ];
+    const collateralizedTotal = collateralizedBalances.reduce((total, loan) => total + loan.balance, 0);
+    const ltvPercent = collateralizedTotal > 0
+      ? collateralizedBalances.reduce((total, loan) => total + loan.ltv * loan.balance, 0) / collateralizedTotal
+      : null;
+    const paymentHistory = String(bankingRelationships?.creditPaymentHistory ?? '').toLowerCase();
+    const delinquentAccounts = Math.max(0, Number(selectedRecord?.credit_bureau_reports?.delinquent_accounts) || 0);
+    const daysPastDue = !selectedRecord
+      ? null
+      : delinquentAccounts > 0 || /late|missed|delinquent|past due/.test(paymentHistory)
+        ? 30
+        : /current|on time|good|excellent|never late/.test(paymentHistory) || snapshot.pastDueCount === 0
+          ? 0
+          : Math.min(90, snapshot.pastDueCount * 30);
+    const portfolioLoans = [
+      ...monitoredApplications.map((record) => ({
+        rate: Math.max(0, Number(record.interest_rate) || 0),
+        type: record.product_type || 'Unspecified',
+        lender: record.requirements?.bankingRelationships?.loanLender || 'Primary lender',
+      })),
+      ...additionalSchedules.map((loan) => ({
+        rate: Math.max(0, loan.interestRate),
+        type: loan.loanType || 'Unspecified',
+        lender: loan.entityIssuer || 'Unspecified lender',
+      })),
+    ];
+    const refinancingImprovesCashFlow = consolidationAnalysis.loanCount > 1
+      && consolidationAnalysis.consolidatedMonthlyPayment < consolidationAnalysis.currentMonthlyPayment * 0.99;
+
+    return computeLoanMonitoringScore({
+      daysPastDue,
+      beginningBalance,
+      currentBalance,
+      dsrPercent,
+      utilizationPercent,
+      ltvPercent,
+      activeLoanCount: portfolioLoans.length,
+      highInterestLoanCount: portfolioLoans.filter((loan) => loan.rate > 12).length,
+      distinctLoanTypeCount: new Set(portfolioLoans.map((loan) => loan.type)).size,
+      distinctLenderCount: new Set(portfolioLoans.map((loan) => loan.lender)).size,
+      refinancingImprovesCashFlow,
+      consolidationOpportunity: portfolioLoans.length <= 1 || consolidationAnalysis.comparisonRate < consolidationAnalysis.weightedAverageRate,
+      principalPrepayment: debtSavingsAnalysis.extraPayment > 0,
+      decliningPaymentBehavior: (dsrPercent ?? 0) > 50,
+      increasingPastDues: (daysPastDue ?? 0) > 30,
+      savingsBehaviorScore: budgetHealthScore ? (budgetHealthScore.savingsDiscipline / 20) * 100 : null,
+      budgetAdherenceScore: budgetHealthScore ? (budgetHealthScore.adherence / 30) * 100 : null,
+    });
+  }, [
+    additionalSchedules,
+    budgetHealthScore,
+    consolidationAnalysis,
+    debtSavingsAnalysis.extraPayment,
+    monitoredApplications,
+    newLoanAmount,
+    outstandingBalanceInput,
+    selectedRecord,
+    snapshot,
+  ]);
+  const advisorSnapshot = useMemo(
+    () => ({ ...snapshot, healthScore: loanMonitoringScore.score }),
+    [loanMonitoringScore.score, snapshot],
+  );
+  const advisor = useMemo(
+    () => buildAiAdvisor(advisorSnapshot),
+    [advisorSnapshot],
+  );
+  const monitoringAutosaveValue = useMemo<LoanMonitoringDraft>(() => ({
+    ...monitoringDraft,
+    publishedScore: loanMonitoringScore,
+  }), [loanMonitoringScore, monitoringDraft]);
+
+  useAutosaveDraft({
+    scope: 'loan-monitoring',
+    entityKey: entityKey || 'identity-pending',
+    value: monitoringAutosaveValue,
+    defaults: monitoringDraft,
+    onHydrate: hydrateMonitoringDraft,
+    enabled: isIdentityReady,
+  });
   const loanScoreImpactAnalysis = useMemo(() => {
     const monthlyIncome = Math.max(0, Number(selectedRecord?.monthly_income) || 0)
       + Math.max(0, Number(selectedRecord?.other_income) || 0);
     const monthlyPayments = consolidationAnalysis.currentMonthlyPayment;
     const paymentBurden = monthlyIncome > 0 ? (monthlyPayments / monthlyIncome) * 100 : 0;
-    const creditImpact = snapshot.pastDueCount === 0 && snapshot.healthScore >= 75
+    const creditImpact = snapshot.pastDueCount === 0 && loanMonitoringScore.score >= 75
       ? 'Positive'
-      : snapshot.pastDueCount <= 1 && snapshot.healthScore >= 60
+      : snapshot.pastDueCount <= 1 && loanMonitoringScore.score >= 60
         ? 'Monitor'
         : 'Needs attention';
     const wealthImpact = monthlyIncome <= 0
@@ -733,13 +844,13 @@ export default function LoanMonitoringPage() {
       tone,
       paymentBurden,
       creditAnalysis: snapshot.pastDueCount === 0
-        ? `No projected past-due installments are reducing the current loan health score of ${snapshot.healthScore.toFixed(1)}.`
+        ? `No projected past-due installments are reducing the current loan health score of ${loanMonitoringScore.score.toFixed(1)}.`
         : `${snapshot.pastDueCount} projected past-due installment(s) may weaken repayment history and Credit Health until brought current.`,
       wealthAnalysis: monthlyIncome > 0
         ? `Estimated loan payments use ${paymentBurden.toFixed(1)}% of monthly income. The extra-payment plan could save ${formatMetricValue(debtSavingsAnalysis.interestSaved, 'currency')} in interest and release cashflow sooner.`
         : 'Add monthly income data to measure payment burden and its effect on wealth-building capacity.',
     };
-  }, [consolidationAnalysis.currentMonthlyPayment, debtSavingsAnalysis.interestSaved, selectedRecord, snapshot.healthScore, snapshot.pastDueCount]);
+  }, [consolidationAnalysis.currentMonthlyPayment, debtSavingsAnalysis.interestSaved, loanMonitoringScore.score, selectedRecord, snapshot.pastDueCount]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -880,7 +991,7 @@ export default function LoanMonitoringPage() {
     const hasIndicators = snapshot.indicators.length > 0;
     const hasAdvisorSignals = [advisor.interestAdvice.text, advisor.dsrStatus.text, advisor.refinancingQuality.text]
       .every((item) => item.trim().length > 0);
-    const hasHealthScore = Number.isFinite(snapshot.healthScore);
+    const hasHealthScore = Number.isFinite(loanMonitoringScore.score);
     const step4Rules = [
       workflowConfig.step4.hasControlItems ? hasControlItems : null,
       workflowConfig.step4.hasIndicators ? hasIndicators : null,
@@ -905,6 +1016,7 @@ export default function LoanMonitoringPage() {
     summaryDashboardRows,
     additionalSchedules.length,
     advisor,
+    loanMonitoringScore.score,
     workflowConfig,
   ]);
   const workflowProgressPercent = Math.round((step / workflowSteps.length) * 100);
@@ -945,7 +1057,21 @@ export default function LoanMonitoringPage() {
     const buildProfile = existingBuildProfile && typeof existingBuildProfile === 'object' && !Array.isArray(existingBuildProfile)
       ? existingBuildProfile
       : {};
-    const additionalLoans = additionalSchedules.map(({ monthlyPayment: _monthlyPayment, rows: _rows, ...loan }) => loan);
+    const additionalLoans = additionalSchedules.map((loan) => ({
+      id: loan.id,
+      loanType: loan.loanType,
+      entityIssuer: loan.entityIssuer,
+      loanAmount: loan.loanAmount,
+      dateStarted: loan.dateStarted,
+      interestRate: loan.interestRate,
+      termMonths: loan.termMonths,
+      outstandingBalance: loan.outstandingBalance,
+      collateralAsset: loan.collateralAsset,
+      collateralRecordedValue: loan.collateralRecordedValue,
+      collateralCurrentValue: loan.collateralCurrentValue,
+      markToMarketValuation: loan.markToMarketValuation,
+      loanToValueRatio: loan.loanToValueRatio,
+    }));
     await updateLoanApplication(selectedRecord.application_no, {
       ...selectedRecord,
       requirements: {
@@ -991,8 +1117,8 @@ export default function LoanMonitoringPage() {
 
         <div className="psychometric-hero-metric loan-monitoring-dashboard-scorecard">
           <span>Loan Health Score</span>
-          <strong>{snapshot.healthScore.toFixed(1)}</strong>
-          <small>{snapshot.performanceBand}</small>
+          <strong>{loanMonitoringScore.score.toFixed(1)}</strong>
+          <small>{loanMonitoringScore.grade} - {loanMonitoringScore.interpretation}</small>
         </div>
       </section>
 
@@ -1021,6 +1147,53 @@ export default function LoanMonitoringPage() {
           <small>{currentStepLabel}</small>
         </article>
 
+      </section>
+
+      <section className="psychometric-panel" aria-labelledby="loan-monitoring-score-breakdown-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">100-point score</span>
+            <h2 id="loan-monitoring-score-breakdown-title">Loan Monitoring Score Breakdown</h2>
+          </div>
+          <strong>{loanMonitoringScore.score.toFixed(1)} / 100</strong>
+        </div>
+        <div className="psychometric-summary-grid">
+          <article className="psychometric-summary-card psychometric-summary-card-highlight">
+            <span>Payment Performance</span>
+            <strong>{loanMonitoringScore.components.paymentPerformance} / 30</strong>
+            <small>Timeliness and past-due behavior</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Balance Reduction</span>
+            <strong>{loanMonitoringScore.components.balanceManagement} / 15</strong>
+            <small>{loanMonitoringScore.metrics.balanceReductionPercent === null ? 'Balance data needed' : `${loanMonitoringScore.metrics.balanceReductionPercent.toFixed(2)}% reduction`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Debt Service Capacity</span>
+            <strong>{loanMonitoringScore.components.debtServiceCapacity} / 20</strong>
+            <small>{loanMonitoringScore.metrics.dsrPercent === null ? 'DSR data needed' : `${loanMonitoringScore.metrics.dsrPercent.toFixed(2)}% DSR`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Loan Utilization</span>
+            <strong>{loanMonitoringScore.components.loanUtilization} / 10</strong>
+            <small>{loanMonitoringScore.metrics.utilizationPercent === null ? 'Credit capacity needed' : `${loanMonitoringScore.metrics.utilizationPercent.toFixed(2)}% utilized`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Collateral Quality</span>
+            <strong>{loanMonitoringScore.components.collateralQuality} / 10</strong>
+            <small>{loanMonitoringScore.metrics.ltvPercent === null ? 'Collateral value needed' : `${loanMonitoringScore.metrics.ltvPercent.toFixed(2)}% weighted LTV`}</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>Portfolio Health</span>
+            <strong>{loanMonitoringScore.components.portfolioHealth} / 10</strong>
+            <small>Loan count, rates, refinancing, consolidation, and diversification</small>
+          </article>
+          <article className="psychometric-summary-card">
+            <span>AI Behavioral Adjustment</span>
+            <strong>{loanMonitoringScore.components.aiAdjustment > 0 ? '+' : ''}{loanMonitoringScore.components.aiAdjustment} / 5</strong>
+            <small>Prepayment, refinancing, deterioration, and past-due signals</small>
+          </article>
+        </div>
       </section>
 
       <section className="budget-dashboard-layout">
@@ -1588,6 +1761,24 @@ export default function LoanMonitoringPage() {
                   ))}
                 </div>
 
+                <section className="psychometric-panel" aria-labelledby="debt-behavioral-health-title">
+                  <div className="psychometric-panel-header">
+                    <div>
+                      <span className="psychometric-panel-kicker">Debt behavior</span>
+                      <h2 id="debt-behavioral-health-title">Debt Behavioral Health</h2>
+                    </div>
+                  </div>
+                  <div className="budget-dashboard-indicator-row">
+                    {loanMonitoringScore.behavioralHealth.map((measure) => (
+                      <article key={measure.id} className="budget-dashboard-indicator">
+                        <span>{measure.label}</span>
+                        <strong>{measure.score === null ? 'Pending' : `${measure.score.toFixed(1)} / 100`}</strong>
+                        <p>{measure.basis}</p>
+                      </article>
+                    ))}
+                  </div>
+                </section>
+
                 <div className="budget-workflow-inline-actions">
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
                     Back to Step 3
@@ -1629,6 +1820,63 @@ export default function LoanMonitoringPage() {
                   <p>{advisor.refinancingQuality.text}</p>
                 </article>
               </div>
+
+              <div className="budget-dashboard-indicator-row">
+                <article className="budget-dashboard-indicator budget-dashboard-status-maintain">
+                  <span>Strengths</span>
+                  <strong>What supports the score</strong>
+                  <p>{loanMonitoringScore.strengths.join('; ')}.</p>
+                </article>
+                <article className="budget-dashboard-indicator budget-dashboard-status-watch">
+                  <span>Areas for Improvement</span>
+                  <strong>Priority actions</strong>
+                  <p>{loanMonitoringScore.improvements.join('; ')}.</p>
+                </article>
+              </div>
+
+              <section className="psychometric-panel" aria-labelledby="loan-predictive-ai-title">
+                <div className="psychometric-panel-header">
+                  <div>
+                    <span className="psychometric-panel-kicker">Predictive AI</span>
+                    <h2 id="loan-predictive-ai-title">Estimated Future Loan Outcomes</h2>
+                  </div>
+                </div>
+                <p className="psychometric-section-note">
+                  Deterministic estimates from current monitoring inputs. These are planning indicators, not lending decisions or guarantees.
+                </p>
+                <div className="budget-dashboard-indicator-row">
+                  <article className="budget-dashboard-indicator">
+                    <span>Probability of Default</span>
+                    <strong>{loanMonitoringScore.predictions.probabilityOfDefault.toFixed(1)}%</strong>
+                    <p>Estimated from payment, DSR, utilization, collateral, portfolio, and behavioral pressure.</p>
+                  </article>
+                  <article className="budget-dashboard-indicator">
+                    <span>Probability of Restructuring</span>
+                    <strong>{loanMonitoringScore.predictions.probabilityOfRestructuring.toFixed(1)}%</strong>
+                    <p>Estimated from debt-service stress, payment condition, balance progress, and portfolio complexity.</p>
+                  </article>
+                  <article className="budget-dashboard-indicator">
+                    <span>Probability of Early Payoff</span>
+                    <strong>{loanMonitoringScore.predictions.probabilityOfEarlyPayoff.toFixed(1)}%</strong>
+                    <p>Estimated from balance reduction, payment condition, capacity, and prepayment planning.</p>
+                  </article>
+                  <article className="budget-dashboard-indicator">
+                    <span>Wealth-building Impact</span>
+                    <strong>{loanMonitoringScore.predictions.wealthBuildingImpact.toFixed(1)} / 100</strong>
+                    <p>Expected support for savings and wealth capacity after debt obligations.</p>
+                  </article>
+                  <article className="budget-dashboard-indicator">
+                    <span>Financial Resilience Under Stress</span>
+                    <strong>{loanMonitoringScore.predictions.financialResilienceUnderStress.toFixed(1)} / 100</strong>
+                    <p>Capacity to absorb pressure using payment, DSR, collateral, portfolio, and budget signals.</p>
+                  </article>
+                  <article className="budget-dashboard-indicator">
+                    <span>Expected Loan Trajectory</span>
+                    <strong>{loanMonitoringScore.predictions.expectedLoanTrajectory}</strong>
+                    <p>Directional outlook based on the current score components.</p>
+                  </article>
+                </div>
+              </section>
             </article>
           ) : null}
         </div>

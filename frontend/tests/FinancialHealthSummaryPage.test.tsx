@@ -112,8 +112,30 @@ describe('FinancialHealthSummaryPage', () => {
         })),
       },
     }
+    const loanMonitoringDraft = {
+      payload: {
+        publishedScore: {
+          score: 88,
+          grade: 'B+',
+          interpretation: 'Very Good',
+          components: {
+            paymentPerformance: 28,
+            balanceManagement: 12,
+            debtServiceCapacity: 17,
+            loanUtilization: 8,
+            collateralQuality: 10,
+            portfolioHealth: 9,
+            aiAdjustment: 4,
+          },
+        },
+      },
+    }
     fetchAutosaveDraft.mockImplementation((scope: string) => Promise.resolve(
-      scope === 'budget-expense-tracker' ? budgetDraft : netWorthDraft,
+      scope === 'budget-expense-tracker'
+        ? budgetDraft
+        : scope === 'loan-monitoring'
+          ? loanMonitoringDraft
+          : netWorthDraft,
     ))
 
     render(<FinancialHealthSummaryPage />)
@@ -132,6 +154,8 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
     expect(await screen.findByText('A+ - Exceptional Wealth Builder')).toBeTruthy()
     expect(await screen.findByText('830-900')).toBeTruthy()
+    expect(await screen.findByText('88.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(await screen.findByText('B+ - Very Good')).toBeTruthy()
     expect(await screen.findByText('98.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(await screen.findByText('10-tier band from 200 to 900')).toBeTruthy()
   })
