@@ -776,9 +776,13 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('Build Emergency Fund', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     expect(screen.getByText('6', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     const actualNetWorthDropdown = screen.getByText('Actual Net Worth', { selector: 'strong' }).closest('details')!
+    const financialInvestmentDropdown = screen.getByText('Details of Financial Invesment', { selector: 'summary' }).closest('details')!
     const actualIncomeDropdown = screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
     expect(actualNetWorthDropdown.hasAttribute('open')).toBe(false)
+    expect(financialInvestmentDropdown.hasAttribute('open')).toBe(false)
+    expect(actualNetWorthDropdown.compareDocumentPosition(financialInvestmentDropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(financialInvestmentDropdown.compareDocumentPosition(actualIncomeDropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(actualIncomeDropdown.hasAttribute('open')).toBe(false)
     expect(actualFiltersDropdown.hasAttribute('open')).toBe(false)
     expect(screen.queryByRole('heading', { name: 'Monthly Expense Allocation' })).toBeNull()
@@ -789,6 +793,17 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByText('Actual Net Worth', { selector: 'strong' }))
     await user.type(within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount'), '45000')
     expect(within(actualNetWorthDropdown.querySelector('.build-profile-net-worth-result')!).getByText('₱45,000.00')).toBeTruthy()
+    await user.click(screen.getByText('Details of Financial Invesment', { selector: 'summary' }))
+    await user.click(within(financialInvestmentDropdown).getByRole('button', { name: 'Add Financial Investment' }))
+    await user.selectOptions(within(financialInvestmentDropdown).getByRole('combobox', { name: 'Investment 1 type' }), 'Equity (Stock)')
+    expect(within(financialInvestmentDropdown).getByRole('option', { name: 'Bond' })).toBeTruthy()
+    expect(within(financialInvestmentDropdown).getByRole('option', { name: 'Mutual Fund' })).toBeTruthy()
+    expect(within(financialInvestmentDropdown).getByRole('option', { name: 'Alternative' })).toBeTruthy()
+    expect(within(financialInvestmentDropdown).getByRole('option', { name: 'Others' })).toBeTruthy()
+    await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 issuer or asset' }), 'Example Corporation')
+    await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 original investment' }), '100000')
+    await user.type(within(financialInvestmentDropdown).getByLabelText('Investment 1 date acquired'), '2026-01-15')
+    await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 risk rating' }), 'Moderate')
     await user.click(screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }))
     await user.type(within(actualIncomeDropdown).getByLabelText('Salary actual statement amount'), '65000')
     await user.type(within(actualIncomeDropdown).getByLabelText('Housing actual statement amount'), '25000')
@@ -805,6 +820,17 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Save Profile' }))
+    const savedInvestmentProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') || '{}')
+    expect(savedInvestmentProfile.financialInvestments).toEqual([
+      expect.objectContaining({
+        investmentType: 'Equity (Stock)',
+        issuerAsset: 'Example Corporation',
+        originalInvestment: '100000.00',
+        dateAcquired: '2026-01-15',
+        riskRating: 'Moderate',
+      }),
+    ])
     const aiAnalysisDropdown = screen.getByText('FILSCORE AI Analysis', { selector: 'summary' }).closest('details')!
     const comparisonSummaryHeading = screen.getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })
     expect(aiAnalysisDropdown.hasAttribute('open')).toBe(false)

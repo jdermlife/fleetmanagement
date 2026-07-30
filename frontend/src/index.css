@@ -3681,8 +3681,100 @@ button.loan-repository-action-release { background: #4f46e5; }
   width: min(100%, 920px);
 }
 
+.budget-ai-recommendations-skeleton {
+  display: grid;
+  gap: 14px;
+}
+
+.budget-ai-skeleton-card {
+  display: grid;
+  gap: 14px;
+  min-height: 150px;
+  padding: 18px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.budget-ai-skeleton-line {
+  width: 100%;
+  height: 14px;
+  border-radius: 4px;
+  background: linear-gradient(90deg, #e2e8f0 25%, #f8fafc 50%, #e2e8f0 75%);
+  background-size: 200% 100%;
+  animation: budget-ai-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+.budget-ai-skeleton-kicker {
+  width: 28%;
+  height: 10px;
+}
+
+.budget-ai-skeleton-title {
+  width: 55%;
+  height: 28px;
+}
+
+.budget-ai-skeleton-copy {
+  width: 82%;
+}
+
+.budget-ai-skeleton-heading {
+  width: 48%;
+  height: 18px;
+}
+
+.budget-ai-skeleton-line-short {
+  width: 68%;
+}
+
+@keyframes budget-ai-skeleton-pulse {
+  from {
+    background-position: 200% 0;
+  }
+
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .budget-ai-skeleton-line {
+    animation: none;
+  }
+}
+
 .budget-ai-recommendations-done {
   justify-self: end;
+}
+
+.loan-monitoring-additional-loans table {
+  min-width: 2100px;
+}
+
+.loan-monitoring-additional-loans input {
+  width: 145px;
+  min-width: 0;
+}
+
+.loan-monitoring-additional-loans td:first-child input,
+.loan-monitoring-additional-loans td:nth-child(2) input,
+.loan-monitoring-additional-loans td:nth-child(8) input {
+  width: 180px;
+}
+
+.build-profile-financial-investments-table table {
+  min-width: 1900px;
+}
+
+.build-profile-financial-investments-table input,
+.build-profile-financial-investments-table select {
+  width: 145px;
+  min-width: 0;
+}
+
+.build-profile-financial-investments-table td:nth-child(2) input {
+  width: 190px;
 }
 
 .budget-workflow-graph-row,

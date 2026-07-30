@@ -13,6 +13,7 @@ export type ReplicatedBuildProfile = {
   coBorrowers: Array<Record<string, string>>
   guarantors: Array<Record<string, string>>
   additionalCollaterals: Array<Record<string, string>>
+  financialInvestments?: Array<Record<string, string>>
   dependents?: Array<{ id: string; name: string; dateOfBirth: string }>
 }
 

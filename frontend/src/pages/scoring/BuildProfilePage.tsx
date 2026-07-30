@@ -71,7 +71,24 @@ type ProfileData = {
   coBorrowers: CoBorrower[]
   guarantors: Guarantor[]
   additionalCollaterals: AdditionalCollateral[]
+  additionalLoans: Array<Record<string, string | number>>
+  financialInvestments: FinancialInvestment[]
   dependents: Dependent[]
+}
+
+type FinancialInvestment = {
+  id: string
+  investmentType: string
+  issuerAsset: string
+  originalInvestment: string
+  dateAcquired: string
+  currentMarketValue: string
+  unitsShares: string
+  costBasis: string
+  markToMarketValue: string
+  unrealizedGainLoss: string
+  yieldDividendPercent: string
+  riskRating: string
 }
 
 type Dependent = {
@@ -181,7 +198,24 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], additionalLoans: [], financialInvestments: [], dependents: [] }
+}
+
+function createFinancialInvestment(): FinancialInvestment {
+  return {
+    id: `INV-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    investmentType: '',
+    issuerAsset: '',
+    originalInvestment: '',
+    dateAcquired: '',
+    currentMarketValue: '',
+    unitsShares: '',
+    costBasis: '',
+    markToMarketValue: '',
+    unrealizedGainLoss: '',
+    yieldDividendPercent: '',
+    riskRating: '',
+  }
 }
 
 function createDependent(): Dependent {
@@ -230,6 +264,7 @@ function scorePreparationFingerprint(profile: ProfileData): string {
     coBorrowers: profile.coBorrowers,
     guarantors: profile.guarantors,
     additionalCollaterals: profile.additionalCollaterals,
+    financialInvestments: profile.financialInvestments,
     dependents: profile.dependents,
   })
 }
@@ -907,6 +942,11 @@ export default function BuildProfilePage() {
   const updateAdditionalCollateral = (id: string, field: keyof AdditionalCollateral, value: string) => setProfile((current) => ({
     ...current,
     additionalCollaterals: current.additionalCollaterals.map((item) => item.id === id ? { ...item, [field]: value } : item),
+  }))
+
+  const updateFinancialInvestment = (id: string, field: keyof FinancialInvestment, value: string) => setProfile((current) => ({
+    ...current,
+    financialInvestments: current.financialInvestments.map((item) => item.id === id ? { ...item, [field]: value } : item),
   }))
 
   const updateDependent = (id: string, field: 'name' | 'dateOfBirth', value: string) => setProfile((current) => ({
@@ -1672,6 +1712,62 @@ export default function BuildProfilePage() {
             })}
           </div>
           <div className="build-profile-net-worth-result"><span>Actual Net Worth</span><strong>{formatTargetCurrency(actualScore.metrics.netWorth)}</strong></div>
+        </details>
+
+        <details className="build-profile-detail-section build-profile-financial-investments">
+          <summary>Details of Financial Invesment</summary>
+          <p className="psychometric-section-note">
+            Record financial investments held in this profile. Investment types include Equity (Stock), Bond, Mutual Fund, Alternative, and Others.
+          </p>
+          <div className="psychometric-scale-table-wrap build-profile-financial-investments-table">
+            <table className="psychometric-scale-table">
+              <thead>
+                <tr>
+                  <th>Investment Type</th>
+                  <th>Issuer / Asset</th>
+                  <th>Original Investment</th>
+                  <th>Date Acquired</th>
+                  <th>Current Market Value</th>
+                  <th>Units / Shares</th>
+                  <th>Cost Basis</th>
+                  <th>Mark-to-Market Value</th>
+                  <th>Unrealized Gain/Loss</th>
+                  <th>Yield / Dividend %</th>
+                  <th>Risk Rating</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {profile.financialInvestments.map((investment, index) => (
+                  <tr key={investment.id}>
+                    <td>
+                      <select aria-label={`Investment ${index + 1} type`} value={investment.investmentType} onChange={(event) => updateFinancialInvestment(investment.id, 'investmentType', event.target.value)}>
+                        <option value="">Select type</option>
+                        {['Equity (Stock)', 'Bond', 'Mutual Fund', 'Alternative', 'Others'].map((option) => <option key={option} value={option}>{option}</option>)}
+                      </select>
+                    </td>
+                    <td><input aria-label={`Investment ${index + 1} issuer or asset`} value={investment.issuerAsset} onChange={(event) => updateFinancialInvestment(investment.id, 'issuerAsset', event.target.value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} original investment`} value={investment.originalInvestment} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'originalInvestment', value)} /></td>
+                    <td><input aria-label={`Investment ${index + 1} date acquired`} type="date" value={investment.dateAcquired} onChange={(event) => updateFinancialInvestment(investment.id, 'dateAcquired', event.target.value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} current market value`} value={investment.currentMarketValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'currentMarketValue', value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} units or shares`} value={investment.unitsShares} valueIsNumericString thousandSeparator="," decimalScale={4} inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'unitsShares', value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} cost basis`} value={investment.costBasis} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'costBasis', value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} mark to market value`} value={investment.markToMarketValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'markToMarketValue', value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} unrealized gain or loss`} value={investment.unrealizedGainLoss} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'unrealizedGainLoss', value)} /></td>
+                    <td><NumericFormat aria-label={`Investment ${index + 1} yield or dividend percent`} value={investment.yieldDividendPercent} valueIsNumericString decimalScale={2} inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestment(investment.id, 'yieldDividendPercent', value)} /></td>
+                    <td><input aria-label={`Investment ${index + 1} risk rating`} value={investment.riskRating} onChange={(event) => updateFinancialInvestment(investment.id, 'riskRating', event.target.value)} /></td>
+                    <td><button type="button" className="budget-dashboard-category-reset" onClick={() => setProfile((current) => ({ ...current, financialInvestments: current.financialInvestments.filter((item) => item.id !== investment.id) }))}>Remove</button></td>
+                  </tr>
+                ))}
+                {profile.financialInvestments.length === 0 ? <tr><td colSpan={12}>No financial investments added yet.</td></tr> : null}
+              </tbody>
+            </table>
+          </div>
+          <div className="budget-workflow-inline-actions">
+            <button type="button" className="psychometric-reset-button" onClick={() => setProfile((current) => ({ ...current, financialInvestments: [...current.financialInvestments, createFinancialInvestment()] }))}>
+              Add Financial Investment
+            </button>
+          </div>
         </details>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement build-profile-actual-income-expense">

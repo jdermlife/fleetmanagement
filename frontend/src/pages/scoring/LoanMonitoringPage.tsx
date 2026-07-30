@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
-import { saveLoanApplicationMonitoring } from '../../api/loan';
+import { saveLoanApplicationMonitoring, updateLoanApplication } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
@@ -22,12 +22,23 @@ interface AdditionalLoanStatementRow {
 
 interface AdditionalLoanSchedule {
   id: string;
+  loanType: string;
+  entityIssuer: string;
   loanAmount: number;
+  dateStarted: string;
   interestRate: number;
   termMonths: number;
+  outstandingBalance: number;
+  collateralAsset: string;
+  collateralRecordedValue: number;
+  collateralCurrentValue: number;
+  markToMarketValuation: number;
+  loanToValueRatio: number;
   monthlyPayment: number;
   rows: AdditionalLoanStatementRow[];
 }
+
+type AdditionalLoanInputField = Exclude<keyof AdditionalLoanSchedule, 'id' | 'monthlyPayment' | 'rows'>;
 
 interface LoanMonitoringDraft {
   step: WorkflowStep;
@@ -125,10 +136,10 @@ function toMonthYearLabel(date: Date): string {
   });
 }
 
-function buildAdditionalLoanSchedule(loanAmount: number, annualRate: number, termMonths: number): AdditionalLoanSchedule {
-  const normalizedAmount = Math.max(0, loanAmount);
-  const normalizedRate = Math.max(0, annualRate);
-  const normalizedTerm = Math.max(1, Math.round(termMonths));
+function buildAdditionalLoanSchedule(loan: Omit<AdditionalLoanSchedule, 'monthlyPayment' | 'rows'>): AdditionalLoanSchedule {
+  const normalizedAmount = Math.max(0, loan.loanAmount);
+  const normalizedRate = Math.max(0, loan.interestRate);
+  const normalizedTerm = Math.max(1, Math.round(loan.termMonths));
   const monthlyRate = normalizedRate / 100 / 12;
 
   let monthlyPayment = 0;
@@ -142,7 +153,8 @@ function buildAdditionalLoanSchedule(loanAmount: number, annualRate: number, ter
     }
   }
 
-  const startDate = new Date();
+  const parsedStartDate = loan.dateStarted ? new Date(`${loan.dateStarted}T00:00:00`) : new Date();
+  const startDate = Number.isNaN(parsedStartDate.getTime()) ? new Date() : parsedStartDate;
   let runningBalance = normalizedAmount;
 
   const rows = Array.from({ length: normalizedTerm }, (_, index) => {
@@ -163,13 +175,62 @@ function buildAdditionalLoanSchedule(loanAmount: number, annualRate: number, ter
   });
 
   return {
-    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    ...loan,
     loanAmount: normalizedAmount,
     interestRate: normalizedRate,
     termMonths: normalizedTerm,
     monthlyPayment,
     rows,
   };
+}
+
+function createAdditionalLoan(): AdditionalLoanSchedule {
+  return {
+    id: `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    loanType: '',
+    entityIssuer: '',
+    loanAmount: 0,
+    dateStarted: '',
+    interestRate: 0,
+    termMonths: 0,
+    outstandingBalance: 0,
+    collateralAsset: '',
+    collateralRecordedValue: 0,
+    collateralCurrentValue: 0,
+    markToMarketValuation: 0,
+    loanToValueRatio: 0,
+    monthlyPayment: 0,
+    rows: [],
+  };
+}
+
+function normalizeAdditionalLoan(value: unknown): AdditionalLoanSchedule | null {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return null;
+  }
+
+  const loan = value as Partial<AdditionalLoanSchedule>;
+  const normalized = {
+    ...createAdditionalLoan(),
+    id: typeof loan.id === 'string' ? loan.id : createAdditionalLoan().id,
+    loanType: typeof loan.loanType === 'string' ? loan.loanType : '',
+    entityIssuer: typeof loan.entityIssuer === 'string' ? loan.entityIssuer : '',
+    loanAmount: Number(loan.loanAmount) || 0,
+    dateStarted: typeof loan.dateStarted === 'string' ? loan.dateStarted : '',
+    interestRate: Number(loan.interestRate) || 0,
+    termMonths: Number(loan.termMonths) || 0,
+    outstandingBalance: Number(loan.outstandingBalance) || 0,
+    collateralAsset: typeof loan.collateralAsset === 'string' ? loan.collateralAsset : '',
+    collateralRecordedValue: Number(loan.collateralRecordedValue) || 0,
+    collateralCurrentValue: Number(loan.collateralCurrentValue) || 0,
+    markToMarketValuation: Number(loan.markToMarketValuation) || 0,
+    loanToValueRatio: Number(loan.loanToValueRatio) || 0,
+  };
+
+  if (normalized.loanAmount <= 0 || normalized.termMonths <= 0) {
+    return { ...normalized, monthlyPayment: 0, rows: [] };
+  }
+  return buildAdditionalLoanSchedule(normalized);
 }
 
 function calculateLoanCost(loanAmount: number, annualRate: number, termMonths: number) {
@@ -345,6 +406,7 @@ export default function LoanMonitoringPage() {
   const [additionalSchedules, setAdditionalSchedules] = useState<AdditionalLoanSchedule[]>([]);
   const [additionalScheduleMessage, setAdditionalScheduleMessage] = useState('');
   const [monitoringSaveMessage, setMonitoringSaveMessage] = useState('');
+  const [isSavingAdditionalLoans, setIsSavingAdditionalLoans] = useState(false);
   const [step, setStep] = useState<WorkflowStep>(1);
 
   const monitoringDraft = useMemo<LoanMonitoringDraft>(() => ({
@@ -374,7 +436,9 @@ export default function LoanMonitoringPage() {
     setCollateralIfAny(draft.collateralIfAny ?? '');
     setExtraMonthlyPayment(draft.extraMonthlyPayment ?? '5000');
     setBorrowingDsrLimit(draft.borrowingDsrLimit ?? '35');
-    setAdditionalSchedules(draft.additionalSchedules ?? []);
+    setAdditionalSchedules((draft.additionalSchedules ?? [])
+      .map(normalizeAdditionalLoan)
+      .filter((loan): loan is AdditionalLoanSchedule => loan !== null));
   }, [selectedProfileApplicationNo]);
 
   useAutosaveDraft({
@@ -418,6 +482,30 @@ export default function LoanMonitoringPage() {
       return;
     }
 
+    const buildProfile = selectedRecord.requirements?.buildProfile;
+    const profile = buildProfile && typeof buildProfile === 'object' && !Array.isArray(buildProfile)
+      ? buildProfile as Record<string, unknown>
+      : {};
+    const profileValues = profile.values && typeof profile.values === 'object' && !Array.isArray(profile.values)
+      ? profile.values as Record<string, unknown>
+      : {};
+
+    if (!loanType.trim()) {
+      setLoanType(String(profileValues.loanType || profileValues.productType || selectedRecord.product_type || ''));
+    }
+
+    if (!entityIssuer.trim()) {
+      setEntityIssuer(String(profileValues.loanLender || ''));
+    }
+
+    if (!collateralIfAny.trim()) {
+      const collateral = profileValues.propertyAddress
+        || profileValues.assetType
+        || selectedRecord.vehicle_info
+        || '';
+      setCollateralIfAny(String(collateral));
+    }
+
     if (!newLoanAmount.trim()) {
       const seededLoanAmount = Number(selectedRecord.loan_amount);
       if (Number.isFinite(seededLoanAmount) && seededLoanAmount > 0) {
@@ -439,13 +527,28 @@ export default function LoanMonitoringPage() {
       }
     }
 
-    if (!outstandingBalanceInput.trim() && snapshot.statementRows.length > 0) {
-      const seededOutstanding = snapshot.statementRows[snapshot.statementRows.length - 1]?.endBalance ?? 0;
+    if (!outstandingBalanceInput.trim()) {
+      const profileOutstanding = Number(profileValues.loanCurrentBalance);
+      const statementOutstanding = snapshot.statementRows[snapshot.statementRows.length - 1]?.endBalance;
+      const seededOutstanding = Number.isFinite(profileOutstanding) && profileOutstanding >= 0
+        ? profileOutstanding
+        : Number.isFinite(statementOutstanding)
+          ? statementOutstanding ?? 0
+          : Number(selectedRecord.loan_amount);
       if (Number.isFinite(seededOutstanding) && seededOutstanding >= 0) {
         setOutstandingBalanceInput(seededOutstanding.toFixed(2));
       }
     }
-  }, [selectedRecord, snapshot.statementRows, newLoanAmount, newLoanInterestRate, newLoanTerm, outstandingBalanceInput]);
+
+    if (additionalSchedules.length === 0 && Array.isArray(profile.additionalLoans)) {
+      const savedLoans = profile.additionalLoans
+        .map(normalizeAdditionalLoan)
+        .filter((loan): loan is AdditionalLoanSchedule => loan !== null);
+      if (savedLoans.length > 0) {
+        setAdditionalSchedules(savedLoans);
+      }
+    }
+  }, [additionalSchedules.length, collateralIfAny, entityIssuer, loanType, newLoanAmount, newLoanInterestRate, newLoanTerm, outstandingBalanceInput, selectedRecord, snapshot.statementRows]);
   const summaryDashboardRows = useMemo(() => {
     const selectedOriginalAmount = Number(selectedRecord?.loan_amount ?? 0);
     const selectedRate = Number(selectedRecord?.interest_rate ?? 0);
@@ -467,13 +570,13 @@ export default function LoanMonitoringPage() {
 
     const additionalRows = additionalSchedules.map((schedule, index) => ({
       id: `${schedule.id}-${index}`,
-      loanType: loanType || 'Additional Loan',
-      issuerLender: entityIssuer || 'Not set',
+      loanType: schedule.loanType || 'Additional Loan',
+      issuerLender: schedule.entityIssuer || 'Not set',
       originalLoanAmount: schedule.loanAmount,
       interestRate: schedule.interestRate,
       term: schedule.termMonths,
-      outstandingBalance: schedule.rows[schedule.rows.length - 1]?.endBalance ?? schedule.loanAmount,
-      collateral: collateralIfAny || 'None',
+      outstandingBalance: schedule.outstandingBalance || schedule.loanAmount,
+      collateral: schedule.collateralAsset || 'None',
     }));
 
     return [primaryRow, ...additionalRows].filter((item) => item.originalLoanAmount > 0);
@@ -525,18 +628,21 @@ export default function LoanMonitoringPage() {
       ? statementRows[0].principal + statementRows[0].interest
       : debtSavingsAnalysis.minimumPayment;
     try {
-      await saveLoanApplicationMonitoring(applicationNo, {
-        monitoring_date: new Date().toISOString().slice(0, 10),
-        outstanding_balance: Math.max(0, Number(outstandingBalanceInput) || debtSavingsAnalysis.balance),
-        principal_paid: principalPaid,
-        interest_paid: interestPaid,
-        monthly_payment: monthlyPayment,
-        days_past_due: Math.max(0, snapshot.pastDueCount),
-        loan_status: snapshot.sourceRecordStatus.slice(0, 30) || 'CURRENT',
-        dsr: Number(selectedRecord.dsr) || 0,
-        ltv: Number(selectedRecord.ltv) || 0,
-        risk_level: snapshot.performanceBand.slice(0, 30),
-      });
+      await Promise.all([
+        saveLoanApplicationMonitoring(applicationNo, {
+          monitoring_date: new Date().toISOString().slice(0, 10),
+          outstanding_balance: Math.max(0, Number(outstandingBalanceInput) || debtSavingsAnalysis.balance),
+          principal_paid: principalPaid,
+          interest_paid: interestPaid,
+          monthly_payment: monthlyPayment,
+          days_past_due: Math.max(0, snapshot.pastDueCount),
+          loan_status: snapshot.sourceRecordStatus.slice(0, 30) || 'CURRENT',
+          dsr: Number(selectedRecord.dsr) || 0,
+          ltv: Number(selectedRecord.ltv) || 0,
+          risk_level: snapshot.performanceBand.slice(0, 30),
+        }),
+        persistAdditionalLoans(),
+      ]);
       setMonitoringSaveMessage('Loan monitoring inputs saved to the selected Profile ID record.');
     } catch {
       setMonitoringSaveMessage('Inputs remain in autosave, but the selected Profile ID monitoring record could not be updated. Please retry.');
@@ -761,31 +867,68 @@ export default function LoanMonitoringPage() {
   const stepperButtonClass = 'loan-stepper-button';
 
   const handleRunAdditionalInstallmentSchedule = () => {
-    const parsedLoanAmount = Number(newLoanAmount);
-    const parsedInterestRate = Number(newLoanInterestRate);
-    const parsedTerm = Number(newLoanTerm);
+    setAdditionalSchedules((previous) => [...previous, createAdditionalLoan()]);
+    setAdditionalScheduleMessage('Additional loan row added. Complete the row, then save it to the profile.');
+  };
 
-    if (!Number.isFinite(parsedLoanAmount) || parsedLoanAmount <= 0) {
-      setAdditionalScheduleMessage('Please enter a valid Amount of Loan greater than zero.');
+  const updateAdditionalLoan = (id: string, field: AdditionalLoanInputField, value: string) => {
+    setAdditionalSchedules((previous) => previous.map((schedule) => {
+      if (schedule.id !== id) {
+        return schedule;
+      }
+      const numericFields: AdditionalLoanInputField[] = [
+        'loanAmount',
+        'interestRate',
+        'termMonths',
+        'outstandingBalance',
+        'collateralRecordedValue',
+        'collateralCurrentValue',
+        'markToMarketValuation',
+        'loanToValueRatio',
+      ];
+      const next = {
+        ...schedule,
+        [field]: numericFields.includes(field) ? Number(value) || 0 : value,
+      };
+      return normalizeAdditionalLoan(next) ?? schedule;
+    }));
+  };
+
+  const persistAdditionalLoans = async () => {
+    if (!selectedRecord) {
+      throw new Error('No selected profile');
+    }
+    const existingBuildProfile = selectedRecord.requirements.buildProfile;
+    const buildProfile = existingBuildProfile && typeof existingBuildProfile === 'object' && !Array.isArray(existingBuildProfile)
+      ? existingBuildProfile
+      : {};
+    const additionalLoans = additionalSchedules.map(({ monthlyPayment: _monthlyPayment, rows: _rows, ...loan }) => loan);
+    await updateLoanApplication(selectedRecord.application_no, {
+      ...selectedRecord,
+      requirements: {
+        ...selectedRecord.requirements,
+        buildProfile: {
+          ...buildProfile,
+          additionalLoans,
+        },
+      },
+    });
+  };
+
+  const handleSaveAdditionalLoans = async () => {
+    if (!selectedRecord) {
+      setAdditionalScheduleMessage('Select an APP Profile ID before saving additional loans.');
       return;
     }
-
-    if (!Number.isFinite(parsedInterestRate) || parsedInterestRate < 0) {
-      setAdditionalScheduleMessage('Please enter a valid Interest Rate (zero or higher).');
-      return;
+    setIsSavingAdditionalLoans(true);
+    try {
+      await persistAdditionalLoans();
+      setAdditionalScheduleMessage('Additional loans and installment setup saved to the selected user profile.');
+    } catch {
+      setAdditionalScheduleMessage('Additional loans remain in autosave, but the user profile could not be updated. Please retry.');
+    } finally {
+      setIsSavingAdditionalLoans(false);
     }
-
-    if (!Number.isFinite(parsedTerm) || parsedTerm <= 0) {
-      setAdditionalScheduleMessage('Please enter a valid Term in months greater than zero.');
-      return;
-    }
-
-    const schedule = buildAdditionalLoanSchedule(parsedLoanAmount, parsedInterestRate, parsedTerm);
-    setAdditionalSchedules((previous) => [schedule, ...previous]);
-    setAdditionalScheduleMessage('Additional loan installment schedule generated.');
-    setNewLoanAmount('');
-    setNewLoanInterestRate('');
-    setNewLoanTerm('');
   };
 
   return (
@@ -1012,6 +1155,58 @@ export default function LoanMonitoringPage() {
                     Add Another Loan and Installment Schedule
                   </button>
                 </div>
+
+                {additionalSchedules.length > 0 ? (
+                  <div className="psychometric-scale-table-wrap loan-monitoring-additional-loans">
+                    <table className="psychometric-scale-table">
+                      <thead>
+                        <tr>
+                          <th>Loan Type</th>
+                          <th>Entity Issuer</th>
+                          <th>Original Amount</th>
+                          <th>Date Started</th>
+                          <th>Interest Rate %</th>
+                          <th>Term (Months)</th>
+                          <th>Outstanding Balance</th>
+                          <th>Collateral Asset</th>
+                          <th>Collateral Recorded Value</th>
+                          <th>Collateral Current Value</th>
+                          <th>Mark to Market Valuation</th>
+                          <th>Loan to Value Ratio</th>
+                          <th>Action</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {additionalSchedules.map((schedule, index) => (
+                          <tr key={schedule.id}>
+                            <td><input aria-label={`Additional loan ${index + 1} loan type`} value={schedule.loanType} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanType', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} entity issuer`} value={schedule.entityIssuer} onChange={(event) => updateAdditionalLoan(schedule.id, 'entityIssuer', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} original amount`} type="number" min="0" value={schedule.loanAmount || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanAmount', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} date started`} type="date" value={schedule.dateStarted} onChange={(event) => updateAdditionalLoan(schedule.id, 'dateStarted', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} interest rate`} type="number" min="0" step="0.01" value={schedule.interestRate || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'interestRate', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} term months`} type="number" min="1" value={schedule.termMonths || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'termMonths', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} outstanding balance`} type="number" min="0" value={schedule.outstandingBalance || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'outstandingBalance', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} collateral asset`} value={schedule.collateralAsset} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralAsset', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} collateral recorded value`} type="number" min="0" value={schedule.collateralRecordedValue || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralRecordedValue', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} collateral current value`} type="number" min="0" value={schedule.collateralCurrentValue || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralCurrentValue', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} mark to market valuation`} type="number" min="0" value={schedule.markToMarketValuation || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'markToMarketValuation', event.target.value)} /></td>
+                            <td><input aria-label={`Additional loan ${index + 1} loan to value ratio`} type="number" min="0" step="0.01" value={schedule.loanToValueRatio || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanToValueRatio', event.target.value)} /></td>
+                            <td>
+                              <button type="button" className="budget-dashboard-category-reset" onClick={() => setAdditionalSchedules((previous) => previous.filter((item) => item.id !== schedule.id))}>
+                                Remove
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <div className="budget-workflow-inline-actions">
+                      <button type="button" className="psychometric-reset-button" onClick={handleSaveAdditionalLoans} disabled={isSavingAdditionalLoans}>
+                        {isSavingAdditionalLoans ? 'Saving...' : 'Save Additional Loans to Profile'}
+                      </button>
+                    </div>
+                  </div>
+                ) : null}
 
                 {additionalScheduleMessage ? (
                   <p className="psychometric-section-note" role="status">
