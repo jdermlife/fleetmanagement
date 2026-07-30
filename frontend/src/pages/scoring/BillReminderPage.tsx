@@ -1710,8 +1710,8 @@ export default function BillReminderPage() {
                   </div>
                 </article>
 
-                <article className="budget-workflow-ai-card bill-reminder-equal-ai-card">
-                  <h3>AI Recommendations</h3>
+                <article className="budget-workflow-ai-card bill-reminder-equal-ai-card bill-reminder-combined-recommendation-card">
+                  <h3>AI Recommendations and Health Score Impact</h3>
                   <ul className="psychometric-breakdown-list">
                     {aiRecommendations.map((item) => (
                       <li key={item}>
@@ -1719,6 +1719,29 @@ export default function BillReminderPage() {
                       </li>
                     ))}
                   </ul>
+                  <h4>Health Score Impact</h4>
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table bill-reminder-health-impact-table">
+                      <thead>
+                        <tr>
+                          <th>Score Area</th>
+                          <th>Impact</th>
+                          <th>Current Contribution</th>
+                          <th>Basis</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {healthScoreImpactRows.map((row) => (
+                          <tr key={row.outcome}>
+                            <td data-label="Score Area">{row.outcome}</td>
+                            <td data-label="Impact"><strong>{row.impact}</strong></td>
+                            <td data-label="Current Contribution">{row.contribution}</td>
+                            <td data-label="Basis">{row.basis}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </article>
 
                 <article className="budget-workflow-ai-card bill-reminder-setup-actual-card bill-reminder-equal-ai-card">
@@ -1802,31 +1825,6 @@ export default function BillReminderPage() {
                   )}
                 </article>
 
-                <article className="budget-workflow-ai-card bill-reminder-health-impact-table-card bill-reminder-equal-ai-card">
-                  <h3>Health Score Impact</h3>
-                  <div className="psychometric-scale-table-wrap">
-                    <table className="psychometric-scale-table bill-reminder-health-impact-table">
-                      <thead>
-                        <tr>
-                          <th>Score Area</th>
-                          <th>Impact</th>
-                          <th>Current Contribution</th>
-                          <th>Basis</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {healthScoreImpactRows.map((row) => (
-                          <tr key={row.outcome}>
-                            <td data-label="Score Area">{row.outcome}</td>
-                            <td data-label="Impact"><strong>{row.impact}</strong></td>
-                            <td data-label="Current Contribution">{row.contribution}</td>
-                            <td data-label="Basis">{row.basis}</td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
-                </article>
               </div>
             </article>
           ) : null}

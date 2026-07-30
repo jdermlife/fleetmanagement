@@ -4336,6 +4336,16 @@ button.loan-repository-action-release { background: #4f46e5; }
   padding-bottom: 7px;
 }
 
+.bill-reminder-combined-recommendation-card {
+  overflow: auto;
+}
+
+.bill-reminder-combined-recommendation-card h4 {
+  margin: 2px 0 0;
+  color: #334155;
+  font-size: 0.82rem;
+}
+
 .bill-reminder-health-overview-grid {
   display: grid;
   grid-template-columns: minmax(280px, 1.2fr) repeat(2, minmax(220px, 1fr));
