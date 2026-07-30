@@ -2918,19 +2918,88 @@ button.loan-repository-action-release { background: #4f46e5; }
 
 .workflow-horizontal-panel {
   width: 100%;
+  padding: 14px;
+}
+
+.workflow-horizontal-panel .psychometric-panel-header {
+  margin-bottom: 8px;
+}
+
+.workflow-horizontal-panel .psychometric-panel-header h2 {
+  font-size: 1rem;
 }
 
 .workflow-horizontal-step-list {
   grid-auto-flow: column;
   grid-auto-columns: minmax(0, 1fr);
+  gap: 8px;
   overflow-x: auto;
   padding-bottom: 2px;
 }
 
 .workflow-horizontal-step-list .lending-psychometric-step-button,
 .workflow-horizontal-step-list .budget-workflow-step-button {
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 7px;
   min-width: 0;
+  min-height: 62px;
   height: 100%;
+  padding: 8px;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-index,
+.workflow-horizontal-step-list .budget-workflow-step-index {
+  width: 26px;
+  height: 26px;
+  font-size: 0.66rem;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-copy,
+.workflow-horizontal-step-list .budget-workflow-step-copy {
+  gap: 2px;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-copy strong,
+.workflow-horizontal-step-list .budget-workflow-step-copy strong {
+  font-size: 0.74rem;
+  line-height: 1.15;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-copy span,
+.workflow-horizontal-step-list .budget-workflow-step-copy span {
+  font-size: 0.62rem;
+  line-height: 1.15;
+  letter-spacing: 0;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-copy small,
+.workflow-horizontal-step-list .budget-workflow-step-copy small {
+  font-size: 0.66rem;
+  line-height: 1.2;
+}
+
+.workflow-horizontal-step-list .lending-step-information-track {
+  height: 4px;
+  margin-top: 1px;
+}
+
+@media (max-width: 520px) {
+  .workflow-horizontal-panel {
+    padding: 10px;
+  }
+
+  .workflow-horizontal-step-list {
+    grid-auto-columns: minmax(150px, 72vw);
+    scroll-snap-type: x proximity;
+  }
+
+  .workflow-horizontal-step-list .lending-psychometric-step-button,
+  .workflow-horizontal-step-list .budget-workflow-step-button {
+    min-height: 58px;
+    scroll-snap-align: start;
+  }
 }
 
 .lending-psychometric-step-button {

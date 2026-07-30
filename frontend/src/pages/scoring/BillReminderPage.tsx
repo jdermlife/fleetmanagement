@@ -1014,7 +1014,7 @@ export default function BillReminderPage() {
                 const isActive = step === workflowStep.id;
                 const isCompleted = step > workflowStep.id;
                 const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
+                const statusLabel = `${stepPercent}% Info Inputs`;
 
                 return (
                   <button
@@ -1036,7 +1036,6 @@ export default function BillReminderPage() {
                           style={{ width: `${stepPercent}%` }}
                         />
                       </div>
-                      <small>{workflowStep.description}</small>
                     </div>
                   </button>
                 );

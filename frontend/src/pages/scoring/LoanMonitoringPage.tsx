@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
@@ -1003,15 +1002,6 @@ export default function LoanMonitoringPage() {
 
       <section className="psychometric-summary-grid dashboard-five-card-summary loan-monitoring-summary-grid">
         <SelectedProfileIdCard />
-        <article className="psychometric-summary-card">
-          <span>Monitored Loans</span>
-          <strong>{snapshot.monitoredLoansCount}</strong>
-          <small>
-            <Link to="/lending-scorecard" className="auth-link-button">
-              Add a loan to monitor
-            </Link>
-          </small>
-        </article>
 
         <article className="psychometric-summary-card">
           <span>Available Credit</span>
@@ -1051,7 +1041,7 @@ export default function LoanMonitoringPage() {
                 const isActive = step === workflowStep.id;
                 const isCompleted = step > workflowStep.id;
                 const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
+                const statusLabel = `${stepPercent}% Info Inputs`;
                 const statusTone =
                   stepPercent >= workflowConfig.thresholds.completeMin
                     ? 'complete'
@@ -1097,7 +1087,6 @@ export default function LoanMonitoringPage() {
                           style={{ width: `${stepPercent}%`, backgroundColor: stepTrack }}
                         />
                       </div>
-                      <small>{workflowStep.description}</small>
                     </div>
                   </button>
                 );

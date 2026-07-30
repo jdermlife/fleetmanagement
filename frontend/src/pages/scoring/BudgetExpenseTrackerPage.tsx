@@ -919,7 +919,7 @@ export default function BudgetExpenseTrackerPage() {
                 const isActive = step === workflowStep.id;
                 const isCompleted = step > workflowStep.id;
                 const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
+                const statusLabel = `${stepPercent}% Info Inputs`;
 
                 return (
                   <button
@@ -941,7 +941,6 @@ export default function BudgetExpenseTrackerPage() {
                           style={{ width: `${stepPercent}%` }}
                         />
                       </div>
-                      <small>{workflowStep.description}</small>
                     </div>
                   </button>
                 );
