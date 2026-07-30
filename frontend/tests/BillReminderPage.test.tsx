@@ -119,4 +119,18 @@ describe('BillReminderPage Step 3 payments', () => {
     const legacyAmount = await screen.findByLabelText('Metro Electric payment 1 amount paid') as HTMLInputElement
     expect(legacyAmount.value).toBe('650.00')
   })
+
+  it('shows health insights, score impact, and monthly payment outlook', async () => {
+    render(<BillReminderPage />)
+
+    expect(await screen.findByRole('heading', { name: 'Bill Payment Health Score Breakdown' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Strengths' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Opportunities' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Health Score Impact' })).toBeTruthy()
+    expect(screen.getByText('Credit Health Overall Score')).toBeTruthy()
+    expect(screen.getByText('Wealth Building Capacity Score')).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Current, History and Forecast' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Last 3 Months' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Forecast Next 3 Months' })).toBeTruthy()
+  })
 })

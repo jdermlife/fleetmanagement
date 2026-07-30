@@ -89,6 +89,26 @@ function formatSignedCurrency(amount: number) {
   return absoluteAmount;
 }
 
+function monthKey(date: Date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function monthLabel(date: Date) {
+  return date.toLocaleDateString(undefined, { month: 'short', year: 'numeric' });
+}
+
+function addMonths(date: Date, offset: number) {
+  return new Date(date.getFullYear(), date.getMonth() + offset, 1);
+}
+
+function monthlyEquivalent(amount: number, frequency: BillerFrequency) {
+  if (frequency === 'Weekly') return amount * 52 / 12;
+  if (frequency === 'Quarterly') return amount / 3;
+  if (frequency === 'Semi-Annual') return amount / 6;
+  if (frequency === 'Annual') return amount / 12;
+  return amount;
+}
+
 function createPaymentRow(billerId: string, index = 0): BillerPayment {
   return {
     id: `${billerId}-payment-${Date.now()}-${index}`,
@@ -952,6 +972,65 @@ export default function BillReminderPage() {
     };
   }, [pastDueCount, setupVsActualTotals.netVariance, varianceRows]);
 
+  const healthScoreImpactRows = useMemo(() => {
+    const creditContribution = billPaymentHealth.score * 0.14;
+    const retainedCapacity = Math.max(0, -setupVsActualTotals.netVariance);
+    const reducedCapacity = Math.max(0, setupVsActualTotals.netVariance);
+
+    return [
+      {
+        outcome: 'Credit Health Overall Score',
+        impact: billPaymentScoreImpact.creditImpact,
+        contribution: `${creditContribution.toFixed(1)} / 14 points`,
+        basis: 'Payment Health carries a 14% weight in the overall Financial Health model.',
+      },
+      {
+        outcome: 'Wealth Building Capacity Score',
+        impact: billPaymentScoreImpact.wealthImpact,
+        contribution: retainedCapacity > 0
+          ? `${formatCurrency(retainedCapacity)} capacity retained`
+          : reducedCapacity > 0
+            ? `${formatCurrency(reducedCapacity)} capacity reduced`
+            : `${billPaymentHealth.score.toFixed(1)} / 100 payment signal`,
+        basis: 'Full, timely, on-budget payments preserve cash available for saving and investing.',
+      },
+    ];
+  }, [billPaymentHealth.score, billPaymentScoreImpact, setupVsActualTotals.netVariance]);
+
+  const paymentOutlook = useMemo(() => {
+    const currentMonth = new Date();
+    const scoreBillers = savedSetup.length > 0 ? savedSetup : draftBillers;
+    const recordedByMonth = Object.values(paymentEntries)
+      .flat()
+      .reduce<Record<string, number>>((totals, payment) => {
+        if (isBlank(payment.datePaid) || isBlank(payment.amountPaid)) return totals;
+        const paidDate = new Date(`${payment.datePaid.slice(0, 10)}T00:00:00`);
+        if (Number.isNaN(paidDate.getTime())) return totals;
+        const key = monthKey(paidDate);
+        totals[key] = (totals[key] ?? 0) + toSafeNumber(payment.amountPaid);
+        return totals;
+      }, {});
+    const forecastMonthly = scoreBillers.reduce(
+      (total, biller) => total + monthlyEquivalent(biller.budgetedAmount, biller.frequency),
+      0,
+    );
+    const history = [-3, -2, -1].map((offset) => {
+      const date = addMonths(currentMonth, offset);
+      return { label: monthLabel(date), amount: recordedByMonth[monthKey(date)] ?? 0 };
+    });
+    const current = {
+      label: monthLabel(currentMonth),
+      actual: recordedByMonth[monthKey(currentMonth)] ?? 0,
+      planned: forecastMonthly,
+    };
+    const forecast = [1, 2, 3].map((offset) => {
+      const date = addMonths(currentMonth, offset);
+      return { label: monthLabel(date), amount: forecastMonthly };
+    });
+
+    return { current, history, forecast };
+  }, [draftBillers, paymentEntries, savedSetup]);
+
   return (
     <div className="psychometric-page bill-reminder-dashboard-page">
       <section className="psychometric-hero bill-reminder-dashboard-hero">
@@ -1569,40 +1648,45 @@ export default function BillReminderPage() {
               </div>
 
               <div className="budget-workflow-ai-grid">
-                <article className="budget-workflow-ai-card">
+                <article className="budget-workflow-ai-card bill-reminder-health-overview-card">
                   <h3>Bill Payment Health Score Breakdown</h3>
-                  <ul className="psychometric-breakdown-list">
-                    <li><span>Payment Timeliness</span><strong>{billPaymentHealth.components.paymentTimeliness.toFixed(1)}/25</strong></li>
-                    <li><span>Payment Completion</span><strong>{billPaymentHealth.components.paymentCompletion.toFixed(1)}/20</strong></li>
-                    <li><span>Budget Adherence</span><strong>{billPaymentHealth.components.budgetAdherence.toFixed(1)}/15</strong></li>
-                    <li><span>Bill Affordability</span><strong>{billPaymentHealth.components.billAffordability.toFixed(1)}/15</strong></li>
-                    <li><span>Reminder Discipline</span><strong>{billPaymentHealth.components.reminderDiscipline.toFixed(1)}/10</strong></li>
-                    <li><span>Payment Consistency</span><strong>{billPaymentHealth.components.paymentConsistency.toFixed(1)}/10</strong></li>
-                    <li>
-                      <span>AI Financial Behavior</span>
-                      <strong>{billPaymentHealth.components.aiFinancialBehavior >= 0 ? '+' : ''}{billPaymentHealth.components.aiFinancialBehavior.toFixed(1)}/5</strong>
-                    </li>
-                    <li><span>Total</span><strong>{billPaymentHealth.score.toFixed(1)}/100</strong></li>
-                  </ul>
-                  <p>
-                    {billPaymentHealth.metrics.scoredPaymentCount} payment record(s) assessed;
-                    {' '}{billPaymentHealth.metrics.latePaymentCount} recorded late payment(s).
-                  </p>
-                  <div>
-                    <strong>Strengths</strong>
-                    <ul className="psychometric-breakdown-list">
-                      {billPaymentHealth.strengths.length > 0
-                        ? billPaymentHealth.strengths.map((strength) => <li key={strength}><span>{strength}</span></li>)
-                        : <li><span>Complete bill and payment records to identify demonstrated strengths.</span></li>}
-                    </ul>
-                  </div>
-                  <div>
-                    <strong>Opportunities</strong>
-                    <ul className="psychometric-breakdown-list">
-                      {billPaymentHealth.opportunities.map((opportunity) => (
-                        <li key={opportunity}><span>{opportunity}</span></li>
-                      ))}
-                    </ul>
+                  <div className="bill-reminder-health-overview-grid">
+                    <section className="bill-reminder-health-column" aria-label="Bill Payment Health component scores">
+                      <h4>Component Scores</h4>
+                      <ul className="psychometric-breakdown-list">
+                        <li><span>Payment Timeliness</span><strong>{billPaymentHealth.components.paymentTimeliness.toFixed(1)}/25</strong></li>
+                        <li><span>Payment Completion</span><strong>{billPaymentHealth.components.paymentCompletion.toFixed(1)}/20</strong></li>
+                        <li><span>Budget Adherence</span><strong>{billPaymentHealth.components.budgetAdherence.toFixed(1)}/15</strong></li>
+                        <li><span>Bill Affordability</span><strong>{billPaymentHealth.components.billAffordability.toFixed(1)}/15</strong></li>
+                        <li><span>Reminder Discipline</span><strong>{billPaymentHealth.components.reminderDiscipline.toFixed(1)}/10</strong></li>
+                        <li><span>Payment Consistency</span><strong>{billPaymentHealth.components.paymentConsistency.toFixed(1)}/10</strong></li>
+                        <li>
+                          <span>AI Financial Behavior</span>
+                          <strong>{billPaymentHealth.components.aiFinancialBehavior >= 0 ? '+' : ''}{billPaymentHealth.components.aiFinancialBehavior.toFixed(1)}/5</strong>
+                        </li>
+                        <li><span>Total</span><strong>{billPaymentHealth.score.toFixed(1)}/100</strong></li>
+                      </ul>
+                      <p>
+                        {billPaymentHealth.metrics.scoredPaymentCount} payment record(s) assessed;
+                        {' '}{billPaymentHealth.metrics.latePaymentCount} recorded late payment(s).
+                      </p>
+                    </section>
+                    <section className="bill-reminder-health-column bill-reminder-strengths-column">
+                      <h4>Strengths</h4>
+                      <ul className="psychometric-breakdown-list">
+                        {billPaymentHealth.strengths.length > 0
+                          ? billPaymentHealth.strengths.map((strength) => <li key={strength}><span>{strength}</span></li>)
+                          : <li><span>Complete bill and payment records to identify demonstrated strengths.</span></li>}
+                      </ul>
+                    </section>
+                    <section className="bill-reminder-health-column bill-reminder-opportunities-column">
+                      <h4>Opportunities</h4>
+                      <ul className="psychometric-breakdown-list">
+                        {billPaymentHealth.opportunities.map((opportunity) => (
+                          <li key={opportunity}><span>{opportunity}</span></li>
+                        ))}
+                      </ul>
+                    </section>
                   </div>
                 </article>
 
@@ -1637,7 +1721,7 @@ export default function BillReminderPage() {
                   </ul>
                 </article>
 
-                <article className="budget-workflow-ai-card">
+                <article className="budget-workflow-ai-card bill-reminder-setup-actual-card">
                   <h3>Setup vs Actual Graph</h3>
                   <div className="budget-workflow-graph-row">
                     <span>Saved Setup Total</span>
@@ -1717,6 +1801,32 @@ export default function BillReminderPage() {
                     </div>
                   )}
                 </article>
+
+                <article className="budget-workflow-ai-card bill-reminder-health-impact-table-card">
+                  <h3>Health Score Impact</h3>
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table bill-reminder-health-impact-table">
+                      <thead>
+                        <tr>
+                          <th>Score Area</th>
+                          <th>Impact</th>
+                          <th>Current Contribution</th>
+                          <th>Basis</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {healthScoreImpactRows.map((row) => (
+                          <tr key={row.outcome}>
+                            <td data-label="Score Area">{row.outcome}</td>
+                            <td data-label="Impact"><strong>{row.impact}</strong></td>
+                            <td data-label="Current Contribution">{row.contribution}</td>
+                            <td data-label="Basis">{row.basis}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </article>
               </div>
             </article>
           ) : null}
@@ -1759,6 +1869,33 @@ export default function BillReminderPage() {
                 <strong>{snapshot.readyToPayCount}</strong>
               </li>
             </ul>
+          </article>
+
+          <article className="psychometric-panel bill-reminder-payment-outlook-panel">
+            <span className="psychometric-panel-kicker">Payment Outlook</span>
+            <h2>Current, History and Forecast</h2>
+            <div className="bill-reminder-payment-outlook-current">
+              <span>Present / Current Month</span>
+              <strong>{formatCurrency(paymentOutlook.current.actual)}</strong>
+              <small>{paymentOutlook.current.label}: paid / {formatCurrency(paymentOutlook.current.planned)} planned</small>
+            </div>
+            <section className="bill-reminder-payment-outlook-section">
+              <h3>Last 3 Months</h3>
+              <ul className="psychometric-breakdown-list">
+                {paymentOutlook.history.map((month) => (
+                  <li key={month.label}><span>{month.label}</span><strong>{formatCurrency(month.amount)}</strong></li>
+                ))}
+              </ul>
+            </section>
+            <section className="bill-reminder-payment-outlook-section">
+              <h3>Forecast Next 3 Months</h3>
+              <ul className="psychometric-breakdown-list">
+                {paymentOutlook.forecast.map((month) => (
+                  <li key={month.label}><span>{month.label}</span><strong>{formatCurrency(month.amount)}</strong></li>
+                ))}
+              </ul>
+              <small>Forecast uses frequency-adjusted recurring bill setup.</small>
+            </section>
           </article>
         </aside>
       </section>
