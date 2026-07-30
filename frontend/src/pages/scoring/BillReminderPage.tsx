@@ -894,6 +894,61 @@ export default function BillReminderPage() {
 
     return suggestions.slice(0, 4);
   }, [varianceRows, pastDueCount, setupVsActualTotals.netVariance]);
+  const billPaymentScoreImpact = useMemo(() => {
+    const completedBills = varianceRows.filter(
+      (row) => row.hasActual && row.actualAmount >= row.budgetedAmount,
+    ).length;
+    const completionRate = varianceRows.length > 0
+      ? (completedBills / varianceRows.length) * 100
+      : 0;
+    const amountOverBudget = Math.max(0, setupVsActualTotals.netVariance);
+    const amountRetained = Math.max(0, -setupVsActualTotals.netVariance);
+    const creditImpact = pastDueCount > 0
+      ? 'Needs attention'
+      : completionRate >= 100
+        ? 'Positive'
+        : completionRate >= 70
+          ? 'Stable'
+          : 'Monitor';
+    const wealthImpact = amountOverBudget > 0
+      ? 'Reduced capacity'
+      : amountRetained > 0
+        ? 'Supports growth'
+        : completionRate > 0
+          ? 'On plan'
+          : 'Pending data';
+    const recommendations: string[] = [];
+
+    if (pastDueCount > 0) {
+      recommendations.push(`Bring ${pastDueCount} past-due bill${pastDueCount === 1 ? '' : 's'} current first to reduce late-fee and repayment-history risk.`);
+    }
+    if (completedBills < varianceRows.length) {
+      recommendations.push(`Complete or schedule the remaining ${varianceRows.length - completedBills} bill payment${varianceRows.length - completedBills === 1 ? '' : 's'} before their due dates.`);
+    }
+    if (amountOverBudget > 0) {
+      recommendations.push(`Fund the ${formatCurrency(amountOverBudget)} over-budget amount without new revolving debt, then revise the affected bill allocations.`);
+    } else if (amountRetained > 0) {
+      recommendations.push(`Redirect the ${formatCurrency(amountRetained)} retained versus budget toward emergency savings or principal reduction.`);
+    }
+    if (recommendations.length === 0) {
+      recommendations.push('Maintain automatic reminders and on-time full payments, and review bill allocations each cycle.');
+    }
+
+    return {
+      completionRate,
+      creditImpact,
+      wealthImpact,
+      recommendations,
+      creditInsight: pastDueCount > 0
+        ? 'Past-due bills can increase fees and may weaken Credit Health when reported or allowed to become collections.'
+        : 'No current past-due exposure is indicated. Consistent on-time full payments support stable Credit Health.',
+      wealthInsight: amountOverBudget > 0
+        ? `Actual payments are ${formatCurrency(amountOverBudget)} above setup, reducing cash available for savings, investing, and debt reduction.`
+        : amountRetained > 0
+          ? `Payments are ${formatCurrency(amountRetained)} below setup, leaving potential capacity for savings, investing, or debt reduction.`
+          : 'Payments currently match setup; preserving this discipline supports predictable wealth-building cashflow.',
+    };
+  }, [pastDueCount, setupVsActualTotals.netVariance, varianceRows]);
 
   return (
     <div className="psychometric-page bill-reminder-dashboard-page">
@@ -946,6 +1001,49 @@ export default function BillReminderPage() {
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
+          <article className="psychometric-panel workflow-horizontal-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+
+            <div className="lending-psychometric-step-list workflow-horizontal-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                    aria-current={isActive ? 'step' : undefined}
+                  >
+                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="lending-psychometric-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{statusLabel}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%` }}
+                        />
+                      </div>
+                      <small>{workflowStep.description}</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
@@ -1470,6 +1568,26 @@ export default function BillReminderPage() {
               </div>
 
               <div className="budget-workflow-ai-grid">
+                <article className="budget-workflow-ai-card bill-reminder-score-impact-card">
+                  <h3>Bill Payment Impact on Credit Health and Wealth Building</h3>
+                  <div className="bill-reminder-score-impact-metrics">
+                    <div><span>Credit Health impact</span><strong>{billPaymentScoreImpact.creditImpact}</strong></div>
+                    <div><span>Wealth Building impact</span><strong>{billPaymentScoreImpact.wealthImpact}</strong></div>
+                    <div><span>Fully paid bills</span><strong>{billPaymentScoreImpact.completionRate.toFixed(0)}%</strong></div>
+                    <div><span>Bills Payment Health Score</span><strong>{billsPaymentHealthScore.toFixed(1)}</strong></div>
+                  </div>
+                  <p>{billPaymentScoreImpact.creditInsight}</p>
+                  <p>{billPaymentScoreImpact.wealthInsight}</p>
+                  <div>
+                    <strong>Recommendations</strong>
+                    <ul className="psychometric-breakdown-list">
+                      {billPaymentScoreImpact.recommendations.map((recommendation) => (
+                        <li key={recommendation}><span>{recommendation}</span></li>
+                      ))}
+                    </ul>
+                  </div>
+                </article>
+
                 <article className="budget-workflow-ai-card">
                   <h3>AI Recommendations</h3>
                   <ul className="psychometric-breakdown-list">
@@ -1567,48 +1685,6 @@ export default function BillReminderPage() {
         </div>
 
         <aside className="budget-dashboard-side">
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Workflow Steps</span>
-                <h2>Navigate Workflow Steps</h2>
-              </div>
-            </div>
-
-            <div className="lending-psychometric-step-list">
-              {workflowSteps.map((workflowStep) => {
-                const isActive = step === workflowStep.id;
-                const isCompleted = step > workflowStep.id;
-                const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
-
-                return (
-                  <button
-                    key={workflowStep.id}
-                    type="button"
-                    onClick={() => setStep(workflowStep.id)}
-                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
-                  >
-                    <div className={`lending-psychometric-step-index ${isActive || isCompleted ? 'bg-blue-600 text-white' : 'bg-gray-300 text-gray-600'}`}>
-                      {workflowStep.id}
-                    </div>
-                    <div className="lending-psychometric-step-copy">
-                      <strong>{workflowStep.label}</strong>
-                      <span>{statusLabel}</span>
-                      <div className="lending-step-information-track" aria-hidden="true">
-                        <div
-                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
-                          style={{ width: `${stepPercent}%` }}
-                        />
-                      </div>
-                      <small>{workflowStep.description}</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </article>
-
           <article className="psychometric-panel psychometric-sticky-panel">
             <span className="psychometric-panel-kicker">Setup Snapshot</span>
             <h2>{savedSetup.length > 0 ? 'Setup Saved' : 'Setup Draft'}</h2>

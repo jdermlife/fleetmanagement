@@ -2916,6 +2916,23 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 12px;
 }
 
+.workflow-horizontal-panel {
+  width: 100%;
+}
+
+.workflow-horizontal-step-list {
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  overflow-x: auto;
+  padding-bottom: 2px;
+}
+
+.workflow-horizontal-step-list .lending-psychometric-step-button,
+.workflow-horizontal-step-list .budget-workflow-step-button {
+  min-width: 0;
+  height: 100%;
+}
+
 .lending-psychometric-step-button {
   display: grid;
   grid-template-columns: 40px minmax(0, 1fr);
@@ -3209,6 +3226,42 @@ button.loan-repository-action-release { background: #4f46e5; }
 .loan-monitoring-tool-grid {
   display: grid;
   gap: 10px;
+}
+
+.loan-monitoring-step3-tools .loan-monitoring-tool-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.loan-monitoring-step3-tools .loan-monitoring-tool-popout {
+  top: calc(100% + 8px);
+  right: auto;
+  left: 0;
+}
+
+.loan-monitoring-score-impact dl {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.loan-monitoring-score-impact dl > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.loan-monitoring-score-impact dt {
+  color: #64748b;
+}
+
+.loan-monitoring-score-impact dd {
+  margin: 0;
+  font-weight: 800;
+  text-align: right;
+}
+
+.loan-monitoring-score-impact p {
+  margin: 6px 0 0;
 }
 
 .loan-monitoring-hover-tool {
@@ -3677,6 +3730,39 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 248, 220, 0.82));
 }
 
+.bill-reminder-score-impact-card {
+  grid-column: 1 / -1;
+}
+
+.bill-reminder-score-impact-card h4 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.bill-reminder-score-impact-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.bill-reminder-score-impact-metrics > div {
+  display: grid;
+  gap: 5px;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.bill-reminder-score-impact-metrics span {
+  color: #64748b;
+  font-size: 0.78rem;
+}
+
+.bill-reminder-score-impact-metrics strong {
+  color: #0f172a;
+}
+
 .budget-ai-recommendations-modal {
   width: min(100%, 920px);
 }
@@ -3761,6 +3847,20 @@ button.loan-repository-action-release { background: #4f46e5; }
 .loan-monitoring-additional-loans td:nth-child(2) input,
 .loan-monitoring-additional-loans td:nth-child(8) input {
   width: 180px;
+}
+
+.loan-monitoring-additional-loans .loan-monitoring-mark-to-market-heading,
+.loan-monitoring-additional-loans .loan-monitoring-mark-to-market-cell,
+.loan-monitoring-additional-loans .loan-monitoring-mark-to-market-cell input {
+  background: #e5e7eb;
+}
+
+.loan-monitoring-mark-to-market-heading small {
+  display: block;
+  margin-top: 4px;
+  color: #475569;
+  font-size: 0.7rem;
+  font-weight: 600;
 }
 
 .build-profile-financial-investments-table table {
@@ -4514,6 +4614,28 @@ th { color: var(--dark-gold); }
   border-color: rgba(148, 163, 184, 0.55);
   border-radius: 6px;
   background: #ffffff;
+}
+
+.loan-monitoring-statement {
+  margin-top: 12px;
+}
+
+.loan-monitoring-statement > summary {
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #f1f5f9;
+  color: #0f172a;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.loan-monitoring-statement[open] > summary {
+  margin-bottom: 10px;
+}
+
+.loan-monitoring-statement > .psychometric-section-note {
+  margin: 0 0 10px;
 }
 
 .build-profile-checkbox-field {
@@ -6538,6 +6660,10 @@ th { color: var(--dark-gold); }
     grid-template-columns: 1fr;
   }
 
+  .bill-reminder-score-impact-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .budget-workflow-graph-row,
   .budget-workflow-variance-row {
     grid-template-columns: 1fr;
@@ -7689,6 +7815,10 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 760px) {
+  .loan-monitoring-step3-tools .loan-monitoring-tool-grid {
+    grid-template-columns: 1fr;
+  }
+
   .loan-monitoring-tool-popout {
     position: static;
     width: 100%;

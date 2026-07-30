@@ -907,6 +907,48 @@ export default function BudgetExpenseTrackerPage() {
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
+          <article className="psychometric-panel workflow-horizontal-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+            <div className="budget-workflow-step-list workflow-horizontal-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`loan-stepper-button budget-workflow-step-button ${isActive ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}
+                    aria-current={isActive ? 'step' : undefined}
+                  >
+                    <div className={`budget-workflow-step-index ${isActive || isCompleted ? 'budget-workflow-step-index-active' : ''}`}>
+                      {workflowStep.id}
+                    </div>
+                    <div className="budget-workflow-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{statusLabel}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%` }}
+                        />
+                      </div>
+                      <small>{workflowStep.description}</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
@@ -1494,47 +1536,6 @@ export default function BudgetExpenseTrackerPage() {
         </div>
 
         <aside className="budget-dashboard-side">
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Workflow Steps</span>
-                <h2>Navigate Workflow Steps</h2>
-              </div>
-            </div>
-            <div className="budget-workflow-step-list">
-              {workflowSteps.map((workflowStep) => {
-                const isActive = step === workflowStep.id;
-                const isCompleted = step > workflowStep.id;
-                const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
-
-                return (
-                  <button
-                    key={workflowStep.id}
-                    type="button"
-                    onClick={() => setStep(workflowStep.id)}
-                    className={`loan-stepper-button budget-workflow-step-button ${isActive ? 'loan-stepper-button-active' : 'loan-stepper-button-idle'}`}
-                  >
-                    <div className={`budget-workflow-step-index ${isActive || isCompleted ? 'budget-workflow-step-index-active' : ''}`}>
-                      {workflowStep.id}
-                    </div>
-                    <div className="budget-workflow-step-copy">
-                      <strong>{workflowStep.label}</strong>
-                      <span>{statusLabel}</span>
-                      <div className="lending-step-information-track" aria-hidden="true">
-                        <div
-                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
-                          style={{ width: `${stepPercent}%` }}
-                        />
-                      </div>
-                      <small>{workflowStep.description}</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </article>
-
           <article className="psychometric-panel psychometric-sticky-panel">
             <span className="psychometric-panel-kicker">Setup Snapshot</span>
             <h2>{savedSetup.length > 0 ? 'Saved Setup' : 'Draft Setup'}</h2>

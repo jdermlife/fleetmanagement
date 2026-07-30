@@ -38,7 +38,7 @@ interface AdditionalLoanSchedule {
   rows: AdditionalLoanStatementRow[];
 }
 
-type AdditionalLoanInputField = Exclude<keyof AdditionalLoanSchedule, 'id' | 'monthlyPayment' | 'rows'>;
+type AdditionalLoanInputField = Exclude<keyof AdditionalLoanSchedule, 'id' | 'loanToValueRatio' | 'monthlyPayment' | 'rows'>;
 
 interface LoanMonitoringDraft {
   step: WorkflowStep;
@@ -210,21 +210,30 @@ function normalizeAdditionalLoan(value: unknown): AdditionalLoanSchedule | null 
   }
 
   const loan = value as Partial<AdditionalLoanSchedule>;
+  const normalizedLoanAmount = Number(loan.loanAmount) || 0;
+  const normalizedOutstandingBalance = Number(loan.outstandingBalance) || 0;
+  const normalizedCollateralRecordedValue = Number(loan.collateralRecordedValue) || 0;
+  const normalizedCollateralCurrentValue = Number(loan.collateralCurrentValue) || 0;
+  const normalizedMarkToMarketValuation = Number(loan.markToMarketValuation) || 0;
+  const collateralValue = normalizedMarkToMarketValuation
+    || normalizedCollateralCurrentValue
+    || normalizedCollateralRecordedValue;
+  const loanBalance = normalizedOutstandingBalance || normalizedLoanAmount;
   const normalized = {
     ...createAdditionalLoan(),
     id: typeof loan.id === 'string' ? loan.id : createAdditionalLoan().id,
     loanType: typeof loan.loanType === 'string' ? loan.loanType : '',
     entityIssuer: typeof loan.entityIssuer === 'string' ? loan.entityIssuer : '',
-    loanAmount: Number(loan.loanAmount) || 0,
+    loanAmount: normalizedLoanAmount,
     dateStarted: typeof loan.dateStarted === 'string' ? loan.dateStarted : '',
     interestRate: Number(loan.interestRate) || 0,
     termMonths: Number(loan.termMonths) || 0,
-    outstandingBalance: Number(loan.outstandingBalance) || 0,
+    outstandingBalance: normalizedOutstandingBalance,
     collateralAsset: typeof loan.collateralAsset === 'string' ? loan.collateralAsset : '',
-    collateralRecordedValue: Number(loan.collateralRecordedValue) || 0,
-    collateralCurrentValue: Number(loan.collateralCurrentValue) || 0,
-    markToMarketValuation: Number(loan.markToMarketValuation) || 0,
-    loanToValueRatio: Number(loan.loanToValueRatio) || 0,
+    collateralRecordedValue: normalizedCollateralRecordedValue,
+    collateralCurrentValue: normalizedCollateralCurrentValue,
+    markToMarketValuation: normalizedMarkToMarketValuation,
+    loanToValueRatio: collateralValue > 0 ? (loanBalance / collateralValue) * 100 : 0,
   };
 
   if (normalized.loanAmount <= 0 || normalized.termMonths <= 0) {
@@ -696,6 +705,42 @@ export default function LoanMonitoringPage() {
       guidance,
     };
   }, [monitoredApplications, additionalSchedules, selectedApplicationNo, outstandingBalanceInput]);
+  const loanScoreImpactAnalysis = useMemo(() => {
+    const monthlyIncome = Math.max(0, Number(selectedRecord?.monthly_income) || 0)
+      + Math.max(0, Number(selectedRecord?.other_income) || 0);
+    const monthlyPayments = consolidationAnalysis.currentMonthlyPayment;
+    const paymentBurden = monthlyIncome > 0 ? (monthlyPayments / monthlyIncome) * 100 : 0;
+    const creditImpact = snapshot.pastDueCount === 0 && snapshot.healthScore >= 75
+      ? 'Positive'
+      : snapshot.pastDueCount <= 1 && snapshot.healthScore >= 60
+        ? 'Monitor'
+        : 'Needs attention';
+    const wealthImpact = monthlyIncome <= 0
+      ? 'Income needed'
+      : paymentBurden <= 20
+        ? 'Supports growth'
+        : paymentBurden <= 35
+          ? 'Moderate pressure'
+          : 'High pressure';
+    const tone = creditImpact === 'Positive' && wealthImpact === 'Supports growth'
+      ? 'maintain'
+      : creditImpact === 'Needs attention' || wealthImpact === 'High pressure'
+        ? 'attention'
+        : 'watch';
+
+    return {
+      creditImpact,
+      wealthImpact,
+      tone,
+      paymentBurden,
+      creditAnalysis: snapshot.pastDueCount === 0
+        ? `No projected past-due installments are reducing the current loan health score of ${snapshot.healthScore.toFixed(1)}.`
+        : `${snapshot.pastDueCount} projected past-due installment(s) may weaken repayment history and Credit Health until brought current.`,
+      wealthAnalysis: monthlyIncome > 0
+        ? `Estimated loan payments use ${paymentBurden.toFixed(1)}% of monthly income. The extra-payment plan could save ${formatMetricValue(debtSavingsAnalysis.interestSaved, 'currency')} in interest and release cashflow sooner.`
+        : 'Add monthly income data to measure payment burden and its effect on wealth-building capacity.',
+    };
+  }, [consolidationAnalysis.currentMonthlyPayment, debtSavingsAnalysis.interestSaved, selectedRecord, snapshot.healthScore, snapshot.pastDueCount]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -884,7 +929,6 @@ export default function LoanMonitoringPage() {
         'collateralRecordedValue',
         'collateralCurrentValue',
         'markToMarketValuation',
-        'loanToValueRatio',
       ];
       const next = {
         ...schedule,
@@ -991,6 +1035,76 @@ export default function LoanMonitoringPage() {
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
+          <article className="psychometric-panel workflow-horizontal-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Workflow Steps</span>
+                <h2>Navigate Workflow Steps</h2>
+              </div>
+            </div>
+            <p className="psychometric-section-note">
+              {`Thresholds: In Progress >= ${workflowConfig.thresholds.inProgressMin}% | Complete = ${workflowConfig.thresholds.completeMin}%`}
+            </p>
+
+            <div className="lending-psychometric-step-list workflow-horizontal-step-list">
+              {workflowSteps.map((workflowStep) => {
+                const isActive = step === workflowStep.id;
+                const isCompleted = step > workflowStep.id;
+                const stepPercent = stepCompletionById[workflowStep.id];
+                const statusLabel = `${stepPercent}% information provided`;
+                const statusTone =
+                  stepPercent >= workflowConfig.thresholds.completeMin
+                    ? 'complete'
+                    : stepPercent >= workflowConfig.thresholds.inProgressMin
+                      ? 'in-progress'
+                      : 'low';
+                const stepAccent =
+                  statusTone === 'complete'
+                    ? '#047857'
+                    : statusTone === 'in-progress'
+                      ? '#0369a1'
+                      : '#b45309';
+                const stepTrack =
+                  statusTone === 'complete'
+                    ? '#10b981'
+                    : statusTone === 'in-progress'
+                      ? '#0ea5e9'
+                      : '#f59e0b';
+
+                return (
+                  <button
+                    key={workflowStep.id}
+                    type="button"
+                    onClick={() => setStep(workflowStep.id)}
+                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
+                    aria-current={isActive ? 'step' : undefined}
+                  >
+                    <div
+                      className="lending-psychometric-step-index"
+                      style={{
+                        backgroundColor: isActive || isCompleted ? stepAccent : '#cbd5e1',
+                        color: isActive || isCompleted ? '#ffffff' : '#475569',
+                      }}
+                    >
+                      {workflowStep.id}
+                    </div>
+                    <div className="lending-psychometric-step-copy">
+                      <strong>{workflowStep.label}</strong>
+                      <span>{statusLabel.toUpperCase()}</span>
+                      <div className="lending-step-information-track" aria-hidden="true">
+                        <div
+                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
+                          style={{ width: `${stepPercent}%`, backgroundColor: stepTrack }}
+                        />
+                      </div>
+                      <small>{workflowStep.description}</small>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </article>
+
           <article className="psychometric-panel">
             <div className="psychometric-panel-header">
               <div>
@@ -1152,7 +1266,7 @@ export default function LoanMonitoringPage() {
                     className="psychometric-reset-button"
                     onClick={handleRunAdditionalInstallmentSchedule}
                   >
-                    Add Another Loan and Installment Schedule
+                    Add Another Loan Not Declared in Building Profile
                   </button>
                 </div>
 
@@ -1171,7 +1285,10 @@ export default function LoanMonitoringPage() {
                           <th>Collateral Asset</th>
                           <th>Collateral Recorded Value</th>
                           <th>Collateral Current Value</th>
-                          <th>Mark to Market Valuation</th>
+                          <th className="loan-monitoring-mark-to-market-heading">
+                            Mark to Market Valuation
+                            <small>Allow mark to market</small>
+                          </th>
                           <th>Loan to Value Ratio</th>
                           <th>Action</th>
                         </tr>
@@ -1181,16 +1298,16 @@ export default function LoanMonitoringPage() {
                           <tr key={schedule.id}>
                             <td><input aria-label={`Additional loan ${index + 1} loan type`} value={schedule.loanType} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanType', event.target.value)} /></td>
                             <td><input aria-label={`Additional loan ${index + 1} entity issuer`} value={schedule.entityIssuer} onChange={(event) => updateAdditionalLoan(schedule.id, 'entityIssuer', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} original amount`} type="number" min="0" value={schedule.loanAmount || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanAmount', event.target.value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} original amount`} value={schedule.loanAmount || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'loanAmount', value)} /></td>
                             <td><input aria-label={`Additional loan ${index + 1} date started`} type="date" value={schedule.dateStarted} onChange={(event) => updateAdditionalLoan(schedule.id, 'dateStarted', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} interest rate`} type="number" min="0" step="0.01" value={schedule.interestRate || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'interestRate', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} term months`} type="number" min="1" value={schedule.termMonths || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'termMonths', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} outstanding balance`} type="number" min="0" value={schedule.outstandingBalance || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'outstandingBalance', event.target.value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} interest rate`} value={schedule.interestRate || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'interestRate', value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} term months`} value={schedule.termMonths || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'termMonths', value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} outstanding balance`} value={schedule.outstandingBalance || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'outstandingBalance', value)} /></td>
                             <td><input aria-label={`Additional loan ${index + 1} collateral asset`} value={schedule.collateralAsset} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralAsset', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} collateral recorded value`} type="number" min="0" value={schedule.collateralRecordedValue || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralRecordedValue', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} collateral current value`} type="number" min="0" value={schedule.collateralCurrentValue || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'collateralCurrentValue', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} mark to market valuation`} type="number" min="0" value={schedule.markToMarketValuation || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'markToMarketValuation', event.target.value)} /></td>
-                            <td><input aria-label={`Additional loan ${index + 1} loan to value ratio`} type="number" min="0" step="0.01" value={schedule.loanToValueRatio || ''} onChange={(event) => updateAdditionalLoan(schedule.id, 'loanToValueRatio', event.target.value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} collateral recorded value`} value={schedule.collateralRecordedValue || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'collateralRecordedValue', value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} collateral current value`} value={schedule.collateralCurrentValue || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'collateralCurrentValue', value)} /></td>
+                            <td className="loan-monitoring-mark-to-market-cell"><NumericFormat aria-label={`Additional loan ${index + 1} mark to market valuation`} value={schedule.markToMarketValuation || ''} thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateAdditionalLoan(schedule.id, 'markToMarketValuation', value)} /></td>
+                            <td><NumericFormat aria-label={`Additional loan ${index + 1} loan to value ratio`} value={schedule.loanToValueRatio} thousandSeparator="," decimalScale={2} fixedDecimalScale suffix="%" readOnly /></td>
                             <td>
                               <button type="button" className="budget-dashboard-category-reset" onClick={() => setAdditionalSchedules((previous) => previous.filter((item) => item.id !== schedule.id))}>
                                 Remove
@@ -1229,8 +1346,10 @@ export default function LoanMonitoringPage() {
                   Review running balance and installment schedule values for selected and additional loans.
                 </p>
 
-                <div className="psychometric-scale-table-wrap">
-                  <table className="psychometric-scale-table">
+                <details className="loan-monitoring-statement" open>
+                  <summary>Loan statement 1</summary>
+                  <div className="psychometric-scale-table-wrap">
+                    <table className="psychometric-scale-table">
                     <thead>
                       <tr>
                         <th>Month/Year</th>
@@ -1255,39 +1374,42 @@ export default function LoanMonitoringPage() {
                           <td colSpan={5}>No loan statement available yet. Use Loan Setup to create or complete an application.</td>
                         </tr>
                       ) : null}
-                    </tbody>
-                  </table>
-                </div>
-
-                {additionalSchedules.map((schedule, scheduleIndex) => (
-                  <div key={schedule.id} className="psychometric-scale-table-wrap">
-                    <h3>{`Additional Loan Statement ${scheduleIndex + 1}`}</h3>
-                    <p className="psychometric-section-note">
-                      Amount: {formatMetricValue(schedule.loanAmount, 'currency')} | Interest Rate: {schedule.interestRate.toFixed(2)}% | Term: {schedule.termMonths} months | Monthly Installment: {formatMetricValue(schedule.monthlyPayment, 'currency')}
-                    </p>
-                    <table className="psychometric-scale-table">
-                      <thead>
-                        <tr>
-                          <th>Month/Year</th>
-                          <th>Total Running Balance from Previous Month</th>
-                          <th>Principal</th>
-                          <th>Interest</th>
-                          <th>End Balance</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {schedule.rows.map((row) => (
-                          <tr key={row.id}>
-                            <td data-label="Month/Year">{row.monthLabel}</td>
-                            <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
-                            <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
-                            <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
-                            <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
-                          </tr>
-                        ))}
                       </tbody>
                     </table>
                   </div>
+                </details>
+
+                {additionalSchedules.map((schedule, scheduleIndex) => (
+                  <details key={schedule.id} className="loan-monitoring-statement">
+                    <summary>{`Loan statement ${scheduleIndex + 2}`}</summary>
+                    <p className="psychometric-section-note">
+                      Amount: {formatMetricValue(schedule.loanAmount, 'currency')} | Interest Rate: {schedule.interestRate.toFixed(2)}% | Term: {schedule.termMonths} months | Monthly Installment: {formatMetricValue(schedule.monthlyPayment, 'currency')}
+                    </p>
+                    <div className="psychometric-scale-table-wrap">
+                      <table className="psychometric-scale-table">
+                        <thead>
+                          <tr>
+                            <th>Month/Year</th>
+                            <th>Total Running Balance from Previous Month</th>
+                            <th>Principal</th>
+                            <th>Interest</th>
+                            <th>End Balance</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {schedule.rows.map((row) => (
+                            <tr key={row.id}>
+                              <td data-label="Month/Year">{row.monthLabel}</td>
+                              <td data-label="Previous Balance">{formatMetricValue(row.previousBalance, 'currency')}</td>
+                              <td data-label="Principal">{formatMetricValue(row.principal, 'currency')}</td>
+                              <td data-label="Interest">{formatMetricValue(row.interest, 'currency')}</td>
+                              <td data-label="End Balance">{formatMetricValue(row.endBalance, 'currency')}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </details>
                 ))}
 
                 <div className="budget-workflow-inline-actions">
@@ -1342,15 +1464,74 @@ export default function LoanMonitoringPage() {
                   </table>
                 </div>
 
-                <div className="budget-dashboard-indicator-row" style={{ marginTop: '12px' }}>
-                  <article className="budget-dashboard-indicator budget-dashboard-status-watch" style={{ flex: '1 1 100%' }}>
-                    <span>Analysis / Computation</span>
-                    <strong>Debt Optimization Summary</strong>
-                    <p>
-                      Debt Consolidation, Debt Repayment, Refinancing Opportunities, Credit Utilization Optimizer, Debt-to-Income Optimization, Loan Restructuring Advisor, Borrowing Capacity Simulator, Debt Free-Date Analysis, and Interest Leakage.
-                    </p>
-                  </article>
-                </div>
+                <section className="loan-monitoring-step3-tools" aria-label="Loan analysis tools">
+                  <div className="loan-monitoring-tool-grid">
+                    <article className="budget-dashboard-indicator budget-dashboard-status-maintain loan-monitoring-hover-tool" tabIndex={0}>
+                      <span>Debt Savings Calculator</span>
+                      <p>Estimate potential savings from prepayments, lower rates, or term adjustments.</p>
+                      <div className="loan-monitoring-tool-popout" role="region" aria-label="Debt Savings Calculator">
+                        <h3>Debt Savings Calculator</h3>
+                        <label>Extra Monthly Payment
+                          <NumericFormat value={extraMonthlyPayment} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale allowNegative={false} onValueChange={({ value }) => setExtraMonthlyPayment(value)} />
+                        </label>
+                        <dl>
+                          <div><dt>Current balance</dt><dd>{formatMetricValue(debtSavingsAnalysis.balance, 'currency')}</dd></div>
+                          <div><dt>Regular payment</dt><dd>{formatMetricValue(debtSavingsAnalysis.minimumPayment, 'currency')}</dd></div>
+                          <div><dt>Estimated payoff</dt><dd>{debtSavingsAnalysis.payoffMonths > 0 ? `${debtSavingsAnalysis.payoffMonths} months` : 'Complete loan terms'}</dd></div>
+                          <div><dt>Months saved</dt><dd>{debtSavingsAnalysis.monthsSaved}</dd></div>
+                          <div><dt>Interest saved</dt><dd>{formatMetricValue(debtSavingsAnalysis.interestSaved, 'currency')}</dd></div>
+                        </dl>
+                      </div>
+                    </article>
+                    <article className="budget-dashboard-indicator budget-dashboard-status-maintain loan-monitoring-hover-tool" tabIndex={0}>
+                      <span>Borrowing Capacity Simulator</span>
+                      <p>Simulate borrowing headroom based on current debt service and cashflow.</p>
+                      <div className="loan-monitoring-tool-popout" role="region" aria-label="Borrowing Capacity Simulator">
+                        <h3>Borrowing Capacity Simulator</h3>
+                        <label>Maximum DSR (%)
+                          <NumericFormat value={borrowingDsrLimit} valueIsNumericString decimalScale={0} allowNegative={false} onValueChange={({ value }) => setBorrowingDsrLimit(value)} />
+                        </label>
+                        <dl>
+                          <div><dt>Monthly income</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.monthlyIncome, 'currency')}</dd></div>
+                          <div><dt>Existing monthly debt</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.existingMonthlyDebt, 'currency')}</dd></div>
+                          <div><dt>Available payment</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.availablePayment, 'currency')}</dd></div>
+                          <div><dt>Estimated capacity</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.estimatedCapacity, 'currency')}</dd></div>
+                        </dl>
+                        <small>Estimate uses the current Loan Setup rate and term. Final capacity remains subject to lender policy.</small>
+                      </div>
+                    </article>
+                    <article className="budget-dashboard-indicator budget-dashboard-status-watch loan-monitoring-hover-tool" tabIndex={0}>
+                      <span>Loan Restructuring Advisor</span>
+                      <p>Assess refinance, consolidation, and restructuring options to reduce repayment pressure.</p>
+                      <div className="loan-monitoring-tool-popout" role="region" aria-label="Loan Consolidation Guidance">
+                        <h3>Loan Consolidation Guidance</h3>
+                        <dl>
+                          <div><dt>Loans analyzed</dt><dd>{consolidationAnalysis.loanCount}</dd></div>
+                          <div><dt>Total balance</dt><dd>{formatMetricValue(consolidationAnalysis.totalBalance, 'currency')}</dd></div>
+                          <div><dt>Weighted rate</dt><dd>{consolidationAnalysis.weightedAverageRate.toFixed(2)}%</dd></div>
+                          <div><dt>Comparison rate</dt><dd>{consolidationAnalysis.comparisonRate.toFixed(2)}%</dd></div>
+                          <div><dt>Current payments</dt><dd>{formatMetricValue(consolidationAnalysis.currentMonthlyPayment, 'currency')}</dd></div>
+                          <div><dt>Consolidated estimate</dt><dd>{formatMetricValue(consolidationAnalysis.consolidatedMonthlyPayment, 'currency')}</dd></div>
+                        </dl>
+                        <p>{consolidationAnalysis.guidance}</p>
+                        <small>Review prepayment penalties, new origination fees, collateral changes, and total interest over the revised term before consolidating.</small>
+                      </div>
+                    </article>
+                    <article className={`budget-dashboard-indicator budget-dashboard-status-${loanScoreImpactAnalysis.tone} loan-monitoring-score-impact`}>
+                      <span>Loan Payment and Status Impact</span>
+                      <strong>Credit Health and Wealth Building</strong>
+                      <dl>
+                        <div><dt>Credit Health Score impact</dt><dd>{loanScoreImpactAnalysis.creditImpact}</dd></div>
+                        <div><dt>Wealth Building Score impact</dt><dd>{loanScoreImpactAnalysis.wealthImpact}</dd></div>
+                        <div><dt>Payment burden</dt><dd>{loanScoreImpactAnalysis.paymentBurden.toFixed(1)}%</dd></div>
+                      </dl>
+                      <p>{loanScoreImpactAnalysis.creditAnalysis}</p>
+                      <p>{loanScoreImpactAnalysis.wealthAnalysis}</p>
+                    </article>
+                  </div>
+                </section>
+
+
 
                 <div className="budget-workflow-inline-actions">
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
@@ -1463,133 +1644,6 @@ export default function LoanMonitoringPage() {
           ) : null}
         </div>
 
-        <aside className="budget-dashboard-side">
-          <article className="psychometric-panel psychometric-sticky-panel">
-            <div className="psychometric-panel-header">
-              <div>
-                <span className="psychometric-panel-kicker">Workflow Steps</span>
-                <h2>Navigate Workflow Steps</h2>
-              </div>
-            </div>
-            <p className="psychometric-section-note">
-              {`Thresholds: In Progress >= ${workflowConfig.thresholds.inProgressMin}% | Complete = ${workflowConfig.thresholds.completeMin}%`}
-            </p>
-
-            <div className="lending-psychometric-step-list">
-              {workflowSteps.map((workflowStep) => {
-                const isActive = step === workflowStep.id;
-                const isCompleted = step > workflowStep.id;
-                const stepPercent = stepCompletionById[workflowStep.id];
-                const statusLabel = `${stepPercent}% information provided`;
-                const statusTone =
-                  stepPercent >= workflowConfig.thresholds.completeMin
-                    ? 'complete'
-                    : stepPercent >= workflowConfig.thresholds.inProgressMin
-                      ? 'in-progress'
-                      : 'low';
-                const stepAccent =
-                  statusTone === 'complete'
-                    ? '#047857'
-                    : statusTone === 'in-progress'
-                      ? '#0369a1'
-                      : '#b45309';
-                const stepTrack =
-                  statusTone === 'complete'
-                    ? '#10b981'
-                    : statusTone === 'in-progress'
-                      ? '#0ea5e9'
-                      : '#f59e0b';
-
-                return (
-                  <button
-                    key={workflowStep.id}
-                    type="button"
-                    onClick={() => setStep(workflowStep.id)}
-                    className={`${stepperButtonClass} lending-psychometric-step-button ${isActive ? 'loan-stepper-button-active border-blue-500 bg-blue-50 text-blue-700 shadow-sm' : 'loan-stepper-button-idle border-gray-200 bg-white hover:border-blue-400 hover:text-blue-600'}`}
-                    aria-current={isActive ? 'step' : undefined}
-                  >
-                    <div
-                      className="lending-psychometric-step-index"
-                      style={{
-                        backgroundColor: isActive || isCompleted ? stepAccent : '#cbd5e1',
-                        color: isActive || isCompleted ? '#ffffff' : '#475569',
-                      }}
-                    >
-                      {workflowStep.id}
-                    </div>
-                    <div className="lending-psychometric-step-copy">
-                      <strong>{workflowStep.label}</strong>
-                      <span>{statusLabel.toUpperCase()}</span>
-                      <div className="lending-step-information-track" aria-hidden="true">
-                        <div
-                          className={`lending-step-information-bar${stepPercent < 30 ? ' lending-step-information-bar-low' : ''}`}
-                          style={{ width: `${stepPercent}%`, backgroundColor: stepTrack }}
-                        />
-                      </div>
-                      <small>{workflowStep.description}</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </article>
-
-          <article className="psychometric-panel psychometric-sticky-panel loan-monitoring-tools-panel">
-            <div className="loan-monitoring-tool-grid">
-              <article className="budget-dashboard-indicator budget-dashboard-status-maintain loan-monitoring-hover-tool" tabIndex={0}>
-                <span>Debt Savings Calculator</span>
-                <p>Estimate potential savings from prepayments, lower rates, or term adjustments.</p>
-                <div className="loan-monitoring-tool-popout" role="region" aria-label="Debt Savings Calculator">
-                  <h3>Debt Savings Calculator</h3>
-                  <label>Extra Monthly Payment
-                    <NumericFormat value={extraMonthlyPayment} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale allowNegative={false} onValueChange={({ value }) => setExtraMonthlyPayment(value)} />
-                  </label>
-                  <dl>
-                    <div><dt>Current balance</dt><dd>{formatMetricValue(debtSavingsAnalysis.balance, 'currency')}</dd></div>
-                    <div><dt>Regular payment</dt><dd>{formatMetricValue(debtSavingsAnalysis.minimumPayment, 'currency')}</dd></div>
-                    <div><dt>Estimated payoff</dt><dd>{debtSavingsAnalysis.payoffMonths > 0 ? `${debtSavingsAnalysis.payoffMonths} months` : 'Complete loan terms'}</dd></div>
-                    <div><dt>Months saved</dt><dd>{debtSavingsAnalysis.monthsSaved}</dd></div>
-                    <div><dt>Interest saved</dt><dd>{formatMetricValue(debtSavingsAnalysis.interestSaved, 'currency')}</dd></div>
-                  </dl>
-                </div>
-              </article>
-              <article className="budget-dashboard-indicator budget-dashboard-status-maintain loan-monitoring-hover-tool" tabIndex={0}>
-                <span>Borrowing Capacity Simulator</span>
-                <p>Simulate borrowing headroom based on current debt service and cashflow.</p>
-                <div className="loan-monitoring-tool-popout" role="region" aria-label="Borrowing Capacity Simulator">
-                  <h3>Borrowing Capacity Simulator</h3>
-                  <label>Maximum DSR (%)
-                    <NumericFormat value={borrowingDsrLimit} valueIsNumericString decimalScale={0} allowNegative={false} onValueChange={({ value }) => setBorrowingDsrLimit(value)} />
-                  </label>
-                  <dl>
-                    <div><dt>Monthly income</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.monthlyIncome, 'currency')}</dd></div>
-                    <div><dt>Existing monthly debt</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.existingMonthlyDebt, 'currency')}</dd></div>
-                    <div><dt>Available payment</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.availablePayment, 'currency')}</dd></div>
-                    <div><dt>Estimated capacity</dt><dd>{formatMetricValue(borrowingCapacityAnalysis.estimatedCapacity, 'currency')}</dd></div>
-                  </dl>
-                  <small>Estimate uses the current Loan Setup rate and term. Final capacity remains subject to lender policy.</small>
-                </div>
-              </article>
-              <article className="budget-dashboard-indicator budget-dashboard-status-watch loan-monitoring-hover-tool" tabIndex={0}>
-                <span>Loan Restructuring Advisor</span>
-                <p>Assess refinance, consolidation, and restructuring options to reduce repayment pressure.</p>
-                <div className="loan-monitoring-tool-popout" role="region" aria-label="Loan Consolidation Guidance">
-                  <h3>Loan Consolidation Guidance</h3>
-                  <dl>
-                    <div><dt>Loans analyzed</dt><dd>{consolidationAnalysis.loanCount}</dd></div>
-                    <div><dt>Total balance</dt><dd>{formatMetricValue(consolidationAnalysis.totalBalance, 'currency')}</dd></div>
-                    <div><dt>Weighted rate</dt><dd>{consolidationAnalysis.weightedAverageRate.toFixed(2)}%</dd></div>
-                    <div><dt>Comparison rate</dt><dd>{consolidationAnalysis.comparisonRate.toFixed(2)}%</dd></div>
-                    <div><dt>Current payments</dt><dd>{formatMetricValue(consolidationAnalysis.currentMonthlyPayment, 'currency')}</dd></div>
-                    <div><dt>Consolidated estimate</dt><dd>{formatMetricValue(consolidationAnalysis.consolidatedMonthlyPayment, 'currency')}</dd></div>
-                  </dl>
-                  <p>{consolidationAnalysis.guidance}</p>
-                  <small>Review prepayment penalties, new origination fees, collateral changes, and total interest over the revised term before consolidating.</small>
-                </div>
-              </article>
-            </div>
-          </article>
-        </aside>
       </section>
 
     </div>
