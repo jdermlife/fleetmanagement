@@ -99,8 +99,8 @@ export const financialHealthMetricSources: readonly FinancialHealthMetricSource[
   },
   {
     label: 'Benchmarking',
-    source: 'Current weighted index; this is a score-based estimate, not external peer data',
-    formula: 'estimated top percent = clamp(100 - round(index), 1, 99)',
+    source: 'Step 9 actual net worth and annualized income matched to validated WID country, year, currency, metric, and adult-basis metadata',
+    formula: 'personal percentile = linear interpolation between adjacent WID amount thresholds; no rank is produced when thresholds are absent',
   },
   {
     label: 'Financial Momentum',

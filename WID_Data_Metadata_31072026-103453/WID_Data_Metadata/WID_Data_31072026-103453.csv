@@ -1,0 +1,226 @@
+Downloaded from wid.world on 31-07-2026 at 10:34:53
+Country ;Variable ;Percentile ;Year ;Value ;Data quality 
+Indonesia ;"sptinc_p90p100_z_ID
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.4686;1.0
+Indonesia ;"sptinc_p0p50_z_ID
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1245;1.0
+Indonesia ;"sptinc_p99p100_z_ID
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.1785;1.0
+Indonesia ;"ghweal_pall_992_i_ID
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+Indonesia ;"shweal_p0p50_992_i_ID
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+Indonesia ;"shweal_p50p90_992_i_ID
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+Indonesia ;"shweal_p90p100_992_i_ID
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+Indonesia ;"shweal_p99p100_992_i_ID
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+Malaysia ;"sptinc_p90p100_z_MY
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.3653;1.0
+Malaysia ;"sptinc_p0p50_z_MY
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1921;1.0
+Malaysia ;"sptinc_p99p100_z_MY
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.13;1.0
+Malaysia ;"ghweal_pall_992_i_MY
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+Malaysia ;"shweal_p0p50_992_i_MY
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+Malaysia ;"shweal_p50p90_992_i_MY
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+Malaysia ;"shweal_p90p100_992_i_MY
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+Malaysia ;"shweal_p99p100_992_i_MY
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+Philippines ;"sptinc_p90p100_z_PH
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.454;1.0
+Philippines ;"sptinc_p0p50_z_PH
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1435;1.0
+Philippines ;"sptinc_p99p100_z_PH
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.1662;1.0
+Philippines ;"ghweal_pall_992_i_PH
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+Philippines ;"shweal_p0p50_992_i_PH
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+Philippines ;"shweal_p50p90_992_i_PH
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+Philippines ;"shweal_p90p100_992_i_PH
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+Philippines ;"shweal_p99p100_992_i_PH
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+Singapore ;"sptinc_p90p100_z_SG
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.4628;1.0
+Singapore ;"sptinc_p0p50_z_SG
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1665;1.0
+Singapore ;"sptinc_p99p100_z_SG
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.1421;1.0
+Singapore ;"ghweal_pall_992_i_SG
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+Singapore ;"shweal_p0p50_992_i_SG
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+Singapore ;"shweal_p50p90_992_i_SG
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+Singapore ;"shweal_p90p100_992_i_SG
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+Singapore ;"shweal_p99p100_992_i_SG
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+Thailand ;"sptinc_p90p100_z_TH
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.5235000000000001;1.0
+Thailand ;"sptinc_p0p50_z_TH
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1065;1.0
+Thailand ;"sptinc_p99p100_z_TH
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.1983;1.0
+Thailand ;"ghweal_pall_992_i_TH
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+Thailand ;"shweal_p0p50_992_i_TH
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+Thailand ;"shweal_p50p90_992_i_TH
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+Thailand ;"shweal_p90p100_992_i_TH
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+Thailand ;"shweal_p99p100_992_i_TH
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+USA ;"sptinc_p90p100_z_US
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.4676;5.0
+USA ;"sptinc_p0p50_z_US
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.1344;5.0
+USA ;"sptinc_p99p100_z_US
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.2073;5.0
+USA ;"ghweal_pall_992_i_US
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+USA ;"shweal_p0p50_992_i_US
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+USA ;"shweal_p50p90_992_i_US
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+USA ;"shweal_p90p100_992_i_US
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+USA ;"shweal_p99p100_992_i_US
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;
+United Kingdom ;"sptinc_p90p100_z_GB
+Pre-tax national income 
+Top 10% | share
+";p90p100;2024;0.3622;1.0
+United Kingdom ;"sptinc_p0p50_z_GB
+Pre-tax national income 
+Bottom 50% | share | adults | equal split
+";p0p50;2024;0.2043;1.0
+United Kingdom ;"sptinc_p99p100_z_GB
+Pre-tax national income 
+Top 1% | share
+";p99p100;2024;0.1308;1.0
+United Kingdom ;"ghweal_pall_992_i_GB
+Net personal wealth
+Total population | Gini coefficient | adults | individual
+";pall;2024;;
+United Kingdom ;"shweal_p0p50_992_i_GB
+Net personal wealth
+Bottom 50% | share | adults | individual
+";p0p50;2024;;
+United Kingdom ;"shweal_p50p90_992_i_GB
+Net personal wealth
+Middle 40% | share | adults | individual
+";p50p90;2024;;
+United Kingdom ;"shweal_p90p100_992_i_GB
+Net personal wealth
+Top 10% | share | adults | individual
+";p90p100;2024;;
+United Kingdom ;"shweal_p99p100_992_i_GB
+Net personal wealth
+Top 1% | share | adults | individual
+";p99p100;2024;;

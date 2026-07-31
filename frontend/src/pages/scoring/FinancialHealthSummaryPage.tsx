@@ -35,6 +35,7 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
+import { computeWidBenchmark, countryCodeFromCitizenship } from './widBenchmarkEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -68,6 +69,11 @@ type JourneyStep = {
   launchLabel: string
   route: string
   description: string
+}
+
+type BenchmarkContext = {
+  countryCode: string
+  currency: string
 }
 
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
@@ -436,6 +442,7 @@ export default function FinancialHealthSummaryPage() {
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
+  const [benchmarkContext, setBenchmarkContext] = useState<BenchmarkContext>({ countryCode: 'PH', currency: 'PHP' })
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
     createProfile: false,
     creditHealth: false,
@@ -493,6 +500,25 @@ export default function FinancialHealthSummaryPage() {
           const creditPayload = creditHealthDraft?.payload
           const wealthPayload = netWorthDraft?.payload
           const buildProfileDraft = readReplicatedBuildProfile()
+
+          const buildProfileActualEntries = Object.fromEntries(Object.entries(buildProfileDraft?.values ?? {})
+            .filter(([key, value]) => key.startsWith('wealthActual.') && value.trim() !== '')
+            .map(([key, value]) => [key.slice('wealthActual.'.length), value]))
+          const benchmarkWealthPayload = wealthPayload ?? (Object.keys(buildProfileActualEntries).length > 0
+            ? { amounts: {}, actualEntries: buildProfileActualEntries }
+            : null)
+
+          if (!netWorthDraft?.payload && benchmarkWealthPayload) {
+            setNetWorthBuildingScore(computeNetWorthBuildingScore(benchmarkWealthPayload))
+            setWealthFoundationScore(computeWealthFoundationScore(benchmarkWealthPayload))
+          }
+          setBenchmarkContext({
+            countryCode: countryCodeFromCitizenship(buildProfileDraft?.values.citizenship),
+            currency: buildProfileDraft?.values.wealthCurrency
+              || (wealthPayload as (NetWorthBuildingDraftInput & { currency?: string; currencyCode?: string }) | undefined)?.currency
+              || (wealthPayload as (NetWorthBuildingDraftInput & { currencyCode?: string }) | undefined)?.currencyCode
+              || 'PHP',
+          })
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
           setBudgetHealthScore(budgetPayload ? computeBudgetHealthScore(budgetPayload) : null)
@@ -599,7 +625,12 @@ export default function FinancialHealthSummaryPage() {
   const score = publishedSummary.score
   const band = getFinancialHealthBand(score)
   const financialHealthChange = score - DEFAULT_FINANCIAL_HEALTH_SUMMARY.score
-  const estimatedTopPercent = Math.max(1, Math.min(99, 100 - Math.round(index)))
+  const widBenchmark = computeWidBenchmark({
+    netWorth: netWorthBuildingScore?.metrics.netWorth ?? 0,
+    annualIncome: (netWorthBuildingScore?.metrics.monthlyIncome ?? 0) * 12,
+    countryCode: benchmarkContext.countryCode,
+    currency: benchmarkContext.currency,
+  })
   const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
   const momentumLabel = !budgetHealthScore
     ? 'Pending'
@@ -901,8 +932,9 @@ export default function FinancialHealthSummaryPage() {
         </article>
         <article className="financial-health-insight-card">
           <span>2. Benchmarking</span>
-          <strong>Top {estimatedTopPercent}%</strong>
-          <small>Score-based estimate; professional and age peer data are not yet available</small>
+          <strong>{widBenchmark.band}</strong>
+          <small>{widBenchmark.explanation}</small>
+          <small>{widBenchmark.countryName ?? widBenchmark.countryCode} · WID {widBenchmark.referenceYear ?? 'reference pending'} · Net worth {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.netWorth)} · Annual income {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.annualIncome)}</small>
         </article>
         <article className="financial-health-insight-card">
           <span>3. Financial Momentum</span>
