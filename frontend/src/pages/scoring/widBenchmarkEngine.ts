@@ -50,6 +50,17 @@ export type WidBenchmarkResult = {
   top10IncomeShare: number | null
 }
 
+export type WidIncomeBenchmarkRow = {
+  rank: number
+  countryCode: string
+  countryName: string
+  year: number
+  bottom50Share: number
+  top10Share: number
+  top1Share: number
+  dataQuality: number
+}
+
 export const WID_2024_COUNTRY_REFERENCES: Record<string, WidCountryReference> = {
   ID: {
     countryCode: 'ID', countryName: 'Indonesia', year: 2024, currency: 'IDR',
@@ -147,6 +158,22 @@ function incomeConcentrationRanking(reference?: WidCountryReference) {
     rank: reference ? rankedCountries.findIndex((candidate) => candidate.countryCode === reference.countryCode) + 1 : 0,
     countryCount: rankedCountries.length,
   }
+}
+
+export function getWidIncomeBenchmarkTable(): WidIncomeBenchmarkRow[] {
+  return Object.values(WID_2024_COUNTRY_REFERENCES)
+    .filter((reference) => reference.year === 2024 && Number.isFinite(reference.incomeShares.top10))
+    .sort((left, right) => right.incomeShares.top10 - left.incomeShares.top10)
+    .map((reference, index) => ({
+      rank: index + 1,
+      countryCode: reference.countryCode,
+      countryName: reference.countryName,
+      year: reference.year,
+      bottom50Share: reference.incomeShares.bottom50,
+      top10Share: reference.incomeShares.top10,
+      top1Share: reference.incomeShares.top1,
+      dataQuality: reference.incomeShares.dataQuality,
+    }))
 }
 
 export function computeWidBenchmark(input: WidBenchmarkInput): WidBenchmarkResult {

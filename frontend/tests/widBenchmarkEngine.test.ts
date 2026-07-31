@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { computeWidBenchmark, countryCodeFromCitizenship } from '../src/pages/scoring/widBenchmarkEngine'
+import { computeWidBenchmark, countryCodeFromCitizenship, getWidIncomeBenchmarkTable } from '../src/pages/scoring/widBenchmarkEngine'
 
 describe('WID benchmark engine', () => {
   it('does not fabricate a rank when the supplied WID wealth values are blank', () => {
@@ -51,5 +51,18 @@ describe('WID benchmark engine', () => {
   it('maps supported profile citizenship values to WID country codes', () => {
     expect(countryCodeFromCitizenship('Filipino')).toBe('PH')
     expect(countryCodeFromCitizenship('Singaporean')).toBe('SG')
+  })
+
+  it('creates the supplied-country benchmark table in descending top-10% share order', () => {
+    const table = getWidIncomeBenchmarkTable()
+
+    expect(table).toHaveLength(7)
+    expect(table.map((row) => row.countryCode)).toEqual(['TH', 'ID', 'US', 'SG', 'PH', 'MY', 'GB'])
+    expect(table.find((row) => row.countryCode === 'PH')).toMatchObject({
+      rank: 5,
+      bottom50Share: 0.1435,
+      top10Share: 0.454,
+      top1Share: 0.1662,
+    })
   })
 })
