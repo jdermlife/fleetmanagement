@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
-import { computeWidBenchmark, countryCodeFromCitizenship, getWidIncomeBenchmarkTable } from '../src/pages/scoring/widBenchmarkEngine'
+import {
+  computePhilippineIncomeBenchmark,
+  computeWidBenchmark,
+  countryCodeFromCitizenship,
+  getWidIncomeBenchmarkTable,
+} from '../src/pages/scoring/widBenchmarkEngine'
 
 describe('WID benchmark engine', () => {
   it('does not fabricate a rank when the supplied WID wealth values are blank', () => {
@@ -63,6 +68,24 @@ describe('WID benchmark engine', () => {
       bottom50Share: 0.1435,
       top10Share: 0.454,
       top1Share: 0.1662,
+    })
+  })
+
+  it('classifies Philippine household income and applies configured approximate ranks', () => {
+    expect(computePhilippineIncomeBenchmark(25_000 * 12)).toMatchObject({
+      classification: 'Low Income (Non-Poor)',
+      nationalRank: 'Bottom 50%',
+      globalRank: 'Bottom 60%',
+    })
+    expect(computePhilippineIncomeBenchmark(120_000 * 12)).toMatchObject({
+      classification: 'Upper Middle Income',
+      nationalRank: 'Top 10%',
+      globalRank: 'Top 20%',
+    })
+    expect(computePhilippineIncomeBenchmark(500_000 * 12)).toMatchObject({
+      classification: 'Rich',
+      nationalRank: 'Top 1%',
+      globalRank: 'Top 2%',
     })
   })
 })

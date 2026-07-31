@@ -61,6 +61,41 @@ export type WidIncomeBenchmarkRow = {
   dataQuality: number
 }
 
+export type PhilippineHouseholdIncomeBracket = {
+  classification: string
+  monthlyMinimum: number
+  monthlyMaximum: number | null
+  interpretation: string
+}
+
+export type PhilippineIncomeBenchmark = {
+  monthlyIncome: number
+  annualIncome: number
+  classification: string
+  interpretation: string
+  nationalRank: string
+  globalRank: string
+  rankingBasis: 'configured-estimate'
+}
+
+export const PHILIPPINE_HOUSEHOLD_INCOME_BRACKETS: PhilippineHouseholdIncomeBracket[] = [
+  { classification: 'Poor', monthlyMinimum: 0, monthlyMaximum: 12_999, interpretation: 'Below poverty threshold' },
+  { classification: 'Low Income (Non-Poor)', monthlyMinimum: 13_000, monthlyMaximum: 26_000, interpretation: 'Low-income household' },
+  { classification: 'Lower Middle Income', monthlyMinimum: 26_001, monthlyMaximum: 52_000, interpretation: 'Emerging middle class' },
+  { classification: 'Middle Middle Income', monthlyMinimum: 52_001, monthlyMaximum: 104_000, interpretation: 'Middle class' },
+  { classification: 'Upper Middle Income', monthlyMinimum: 104_001, monthlyMaximum: 182_000, interpretation: 'Upper middle class' },
+  { classification: 'High Income (Not Rich)', monthlyMinimum: 182_001, monthlyMaximum: 219_000, interpretation: 'Affluent' },
+  { classification: 'Rich', monthlyMinimum: 219_001, monthlyMaximum: null, interpretation: 'High-income household' },
+]
+
+const PHILIPPINE_APPROXIMATE_RANK_TIERS = [
+  { monthlyMinimum: 500_000, nationalRank: 'Top 1%', globalRank: 'Top 2%' },
+  { monthlyMinimum: 250_000, nationalRank: 'Top 5%', globalRank: 'Top 10%' },
+  { monthlyMinimum: 120_000, nationalRank: 'Top 10%', globalRank: 'Top 20%' },
+  { monthlyMinimum: 60_000, nationalRank: 'Top 25%', globalRank: 'Top 35%' },
+  { monthlyMinimum: 0, nationalRank: 'Bottom 50%', globalRank: 'Bottom 60%' },
+]
+
 export const WID_2024_COUNTRY_REFERENCES: Record<string, WidCountryReference> = {
   ID: {
     countryCode: 'ID', countryName: 'Indonesia', year: 2024, currency: 'IDR',
@@ -174,6 +209,27 @@ export function getWidIncomeBenchmarkTable(): WidIncomeBenchmarkRow[] {
       top1Share: reference.incomeShares.top1,
       dataQuality: reference.incomeShares.dataQuality,
     }))
+}
+
+export function computePhilippineIncomeBenchmark(annualIncome: number): PhilippineIncomeBenchmark {
+  const normalizedAnnualIncome = Number.isFinite(annualIncome) ? Math.max(0, annualIncome) : 0
+  const monthlyIncome = normalizedAnnualIncome / 12
+  const bracket = PHILIPPINE_HOUSEHOLD_INCOME_BRACKETS.find((candidate) =>
+    monthlyIncome >= candidate.monthlyMinimum
+      && (candidate.monthlyMaximum === null || monthlyIncome <= candidate.monthlyMaximum))
+    ?? PHILIPPINE_HOUSEHOLD_INCOME_BRACKETS[0]
+  const rankTier = PHILIPPINE_APPROXIMATE_RANK_TIERS.find((candidate) => monthlyIncome >= candidate.monthlyMinimum)
+    ?? PHILIPPINE_APPROXIMATE_RANK_TIERS[PHILIPPINE_APPROXIMATE_RANK_TIERS.length - 1]
+
+  return {
+    monthlyIncome,
+    annualIncome: normalizedAnnualIncome,
+    classification: bracket.classification,
+    interpretation: bracket.interpretation,
+    nationalRank: rankTier.nationalRank,
+    globalRank: rankTier.globalRank,
+    rankingBasis: 'configured-estimate',
+  }
 }
 
 export function computeWidBenchmark(input: WidBenchmarkInput): WidBenchmarkResult {
