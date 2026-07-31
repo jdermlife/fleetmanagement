@@ -135,6 +135,12 @@ python backend/setup_db.py
 # Add the authenticated autosave sidecar table on existing databases
 python backend/migrate_autosave_drafts.py
 
+# Add profile history storage and seed 24-month retention for all categories
+python backend/migrate_profile_history.py
+
+# PostgreSQL-native alternative
+psql $DATABASE_URL -f database/migration_add_profile_history.sql
+
 # Verify tables created
 psql $DATABASE_URL -c "\dt"
 ```

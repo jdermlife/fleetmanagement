@@ -16,6 +16,7 @@ from app.fastapi_rate_limit import RATE_LIMIT_ENABLED, RateLimitMiddleware
 from app.models.loan_application import LoanApplication  # noqa: F401
 from app.models.audit_log import AuditLog  # noqa: F401
 from app.models.autosave_draft import AutosaveDraft  # noqa: F401
+from app.models.profile_history import HistoryConfiguration, ProfileHistory  # noqa: F401
 from app.models.ai_governance import AIRequest, AIResponse, AIFeedback  # noqa: F401
 from app.models.vehicles import Vehicle  # noqa: F401
 from app.models.fuel_logs import FuelLog  # noqa: F401
@@ -55,12 +56,18 @@ from app.routes.security import router as security_router, admin_router as secur
 from app.routes.apple_auth import router as apple_auth_router
 from app.routes.fleet_operations import router as fleet_operations_router
 from app.routes.autosave_drafts import router as autosave_drafts_router
+from app.routes.profile_history import router as profile_history_router
 from app.observability import setup_observability
 from app.services.audit_log_service import create_immutable_audit_constraints, write_audit_log
 from app.services.autosave_audit import (
     autosave_request_audit_metadata,
     autosave_response_audit_metadata,
     is_autosave_draft_path,
+)
+from app.services.profile_history_audit import (
+    is_profile_history_path,
+    profile_history_request_audit_metadata,
+    profile_history_response_audit_metadata,
 )
 from app.services.account_access_service import queue_due_trial_reminders
 from app.services.notification_service import dispatch_queued_notifications
@@ -75,6 +82,7 @@ from app.routes.paymongo import router as paymongo_router
 from app.routes.paypal import router as paypal_router
 from app.routes.subscriptions import router as subscriptions_router
 from migrate_overall_scores_wealth_fields import ensure_wealth_score_columns
+from migrate_profile_history import run_migration as migrate_profile_history
 
 environment = os.getenv("ENVIRONMENT", "development").lower()
 is_production = environment == "production"
@@ -85,6 +93,9 @@ notification_dispatcher_enabled = os.getenv("NOTIFICATION_DISPATCHER_ENABLED", "
 notification_dispatch_interval_seconds = int(os.getenv("NOTIFICATION_DISPATCH_INTERVAL_SECONDS", "30"))
 notification_dispatch_batch_size = int(os.getenv("NOTIFICATION_DISPATCH_BATCH_SIZE", "100"))
 notification_dispatcher_task: asyncio.Task | None = None
+history_retention_enabled = os.getenv("HISTORY_RETENTION_ENABLED", "true").lower() == "true"
+history_retention_interval_seconds = int(os.getenv("HISTORY_RETENTION_INTERVAL_SECONDS", "86400"))
+history_retention_task: asyncio.Task | None = None
 
 
 async def _notification_dispatcher_loop() -> None:
@@ -99,6 +110,22 @@ async def _notification_dispatcher_loop() -> None:
             db.close()
 
         await asyncio.sleep(notification_dispatch_interval_seconds)
+
+
+async def _history_retention_loop() -> None:
+    from app.services.profile_history_service import cleanup_expired_profile_history
+
+    while True:
+        db = SessionLocal()
+        try:
+            cleanup_expired_profile_history(db)
+        except Exception as exc:
+            db.rollback()
+            backend_logger.error("Profile history retention cleanup failed", error=str(exc))
+        finally:
+            db.close()
+
+        await asyncio.sleep(history_retention_interval_seconds)
 
 
 def _ensure_loan_application_schema() -> None:
@@ -205,18 +232,28 @@ def _ensure_workflow_history_table() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    global notification_dispatcher_task
+    global history_retention_task, notification_dispatcher_task
 
     ensure_wealth_score_columns()
     _ensure_loan_application_schema()
     _ensure_workflow_history_table()
+    migrate_profile_history()
 
     if notification_dispatcher_enabled and notification_dispatcher_task is None:
         notification_dispatcher_task = asyncio.create_task(_notification_dispatcher_loop())
+    if history_retention_enabled and history_retention_task is None:
+        history_retention_task = asyncio.create_task(_history_retention_loop())
 
     try:
         yield
     finally:
+        if history_retention_task:
+            history_retention_task.cancel()
+            try:
+                await history_retention_task
+            except asyncio.CancelledError:
+                pass
+            history_retention_task = None
         if notification_dispatcher_task:
             notification_dispatcher_task.cancel()
             try:
@@ -381,6 +418,8 @@ async def immutable_audit_log_middleware(request: Request, call_next):
         raw_body = await request.body()
         if is_autosave_draft_path(path):
             old_value = autosave_request_audit_metadata(path, raw_body)
+        elif is_profile_history_path(path):
+            old_value = profile_history_request_audit_metadata(path, raw_body)
         elif raw_body:
             try:
                 old_value = json.loads(raw_body.decode("utf-8"))
@@ -418,6 +457,11 @@ async def immutable_audit_log_middleware(request: Request, call_next):
 
     if is_autosave_draft_path(path):
         response_payload = autosave_response_audit_metadata(
+            response_payload,
+            response.status_code,
+        )
+    elif is_profile_history_path(path):
+        response_payload = profile_history_response_audit_metadata(
             response_payload,
             response.status_code,
         )
@@ -462,6 +506,7 @@ app.include_router(apple_auth_router)
 app.include_router(security_router, prefix="/api")
 app.include_router(security_admin_router, prefix="/api")
 app.include_router(autosave_drafts_router, prefix="/api")
+app.include_router(profile_history_router, prefix="/api")
 
 
 app.include_router(
