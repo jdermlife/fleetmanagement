@@ -8,6 +8,12 @@ export type WidCountryReference = {
   countryName: string
   year: number
   currency: string
+  incomeShares: {
+    bottom50: number
+    top10: number
+    top1: number
+    dataQuality: number
+  }
   wealthVariableCode: string
   populationBasis: string
   wealthShares: {
@@ -39,18 +45,58 @@ export type WidBenchmarkResult = {
   referenceYear: number | null
   source: string
   explanation: string
+  incomeConcentrationRank: number | null
+  incomeConcentrationCountryCount: number
+  top10IncomeShare: number | null
 }
 
 export const WID_2024_COUNTRY_REFERENCES: Record<string, WidCountryReference> = {
+  ID: {
+    countryCode: 'ID', countryName: 'Indonesia', year: 2024, currency: 'IDR',
+    incomeShares: { bottom50: 0.1245, top10: 0.4686, top1: 0.1785, dataQuality: 1 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
+  },
+  MY: {
+    countryCode: 'MY', countryName: 'Malaysia', year: 2024, currency: 'MYR',
+    incomeShares: { bottom50: 0.1921, top10: 0.3653, top1: 0.13, dataQuality: 1 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
+  },
   PH: {
     countryCode: 'PH',
     countryName: 'Philippines',
     year: 2024,
     currency: 'PHP',
+    incomeShares: { bottom50: 0.1435, top10: 0.454, top1: 0.1662, dataQuality: 1 },
     wealthVariableCode: 'shweal992i',
     populationBasis: 'Adults over age 20, individual basis',
     wealthShares: { bottom50: null, middle40: null, top10: null, top1: null },
     wealthThresholds: [],
+  },
+  SG: {
+    countryCode: 'SG', countryName: 'Singapore', year: 2024, currency: 'SGD',
+    incomeShares: { bottom50: 0.1665, top10: 0.4628, top1: 0.1421, dataQuality: 1 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
+  },
+  TH: {
+    countryCode: 'TH', countryName: 'Thailand', year: 2024, currency: 'THB',
+    incomeShares: { bottom50: 0.1065, top10: 0.5235, top1: 0.1983, dataQuality: 1 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
+  },
+  US: {
+    countryCode: 'US', countryName: 'USA', year: 2024, currency: 'USD',
+    incomeShares: { bottom50: 0.1344, top10: 0.4676, top1: 0.2073, dataQuality: 5 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
+  },
+  GB: {
+    countryCode: 'GB', countryName: 'United Kingdom', year: 2024, currency: 'GBP',
+    incomeShares: { bottom50: 0.2043, top10: 0.3622, top1: 0.1308, dataQuality: 1 },
+    wealthVariableCode: 'shweal992i', populationBasis: 'Adults over age 20, individual basis',
+    wealthShares: { bottom50: null, middle40: null, top10: null, top1: null }, wealthThresholds: [],
   },
 }
 
@@ -92,8 +138,20 @@ function percentileBand(percentile: number) {
   return 'Bottom 50%'
 }
 
+function incomeConcentrationRanking(reference?: WidCountryReference) {
+  const rankedCountries = Object.values(WID_2024_COUNTRY_REFERENCES)
+    .filter((candidate) => candidate.year === 2024 && Number.isFinite(candidate.incomeShares.top10))
+    .sort((left, right) => right.incomeShares.top10 - left.incomeShares.top10)
+
+  return {
+    rank: reference ? rankedCountries.findIndex((candidate) => candidate.countryCode === reference.countryCode) + 1 : 0,
+    countryCount: rankedCountries.length,
+  }
+}
+
 export function computeWidBenchmark(input: WidBenchmarkInput): WidBenchmarkResult {
   const reference = input.reference ?? WID_2024_COUNTRY_REFERENCES[input.countryCode]
+  const incomeRanking = incomeConcentrationRanking(reference)
   const base = {
     netWorth: Number.isFinite(input.netWorth) ? input.netWorth : 0,
     annualIncome: Number.isFinite(input.annualIncome) ? input.annualIncome : 0,
@@ -101,6 +159,9 @@ export function computeWidBenchmark(input: WidBenchmarkInput): WidBenchmarkResul
     countryName: reference?.countryName ?? null,
     referenceYear: reference?.year ?? null,
     source: 'World Inequality Database export downloaded 31 July 2026',
+    incomeConcentrationRank: incomeRanking.rank || null,
+    incomeConcentrationCountryCount: incomeRanking.countryCount,
+    top10IncomeShare: reference?.incomeShares.top10 ?? null,
   }
 
   if (!reference) {

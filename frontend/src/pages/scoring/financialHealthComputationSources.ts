@@ -99,8 +99,8 @@ export const financialHealthMetricSources: readonly FinancialHealthMetricSource[
   },
   {
     label: 'Benchmarking',
-    source: 'Step 9 actual net worth and annualized income matched to validated WID country, year, currency, metric, and adult-basis metadata',
-    formula: 'personal percentile = linear interpolation between adjacent WID amount thresholds; no rank is produced when thresholds are absent',
+    source: 'Step 9 actual net worth and annualized income plus supplied 2024 WID income-share and wealth metadata for seven countries',
+    formula: 'country income concentration rank = descending order of top-10% pre-tax national income share; personal wealth percentile requires WID amount thresholds and remains unavailable when those values are blank',
   },
   {
     label: 'Financial Momentum',

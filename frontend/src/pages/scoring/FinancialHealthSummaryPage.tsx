@@ -932,8 +932,13 @@ export default function FinancialHealthSummaryPage() {
         </article>
         <article className="financial-health-insight-card">
           <span>2. Benchmarking</span>
-          <strong>{widBenchmark.band}</strong>
-          <small>{widBenchmark.explanation}</small>
+          <strong>{widBenchmark.incomeConcentrationRank
+            ? `Income concentration rank ${widBenchmark.incomeConcentrationRank} of ${widBenchmark.incomeConcentrationCountryCount}`
+            : widBenchmark.band}</strong>
+          <small>{widBenchmark.top10IncomeShare === null
+            ? widBenchmark.explanation
+            : `The top 10% receive ${(widBenchmark.top10IncomeShare * 100).toFixed(1)}% of pre-tax national income. Rank 1 means the highest concentration among the supplied countries, not the best financial health.`}</small>
+          <small>Personal wealth rank: {widBenchmark.band}. {widBenchmark.explanation}</small>
           <small>{widBenchmark.countryName ?? widBenchmark.countryCode} · WID {widBenchmark.referenceYear ?? 'reference pending'} · Net worth {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.netWorth)} · Annual income {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.annualIncome)}</small>
         </article>
         <article className="financial-health-insight-card">
