@@ -1153,7 +1153,7 @@ export default function FinancialHealthSummaryPage() {
           <div className="psychometric-panel-header">
             <div>
               <span className="psychometric-panel-kicker">Leaf graph</span>
-              <h2 id="lending-leaf-title">Lending score leaf graph</h2>
+              <h2 id="lending-leaf-title">Credit Health</h2>
               <p className="financial-health-panel-intro">
                 The leaf darkens toward green as each score improves. Credit Score owns the left half.
                 The right half is split across Behaviour or Psychometric, Social, and Non-Starter scores.
@@ -1274,7 +1274,7 @@ export default function FinancialHealthSummaryPage() {
 
         <aside className="financial-health-side-stack">
           <article className="psychometric-panel financial-health-formula-panel">
-            <span className="psychometric-panel-kicker">Recommended formula</span>
+            <span className="psychometric-panel-kicker">Health Score Formula</span>
             <h2>Transparent weighted index</h2>
             <p>
               Give more influence to recurring liquidity, payment behavior, and goal progress while
@@ -1323,7 +1323,7 @@ export default function FinancialHealthSummaryPage() {
 
           <article className="psychometric-panel financial-health-graph-guide">
             <span className="psychometric-panel-kicker">Health Monitoring Style</span>
-            <h2>Ring Health–inspired system</h2>
+            <h2>Financial Health Ring system</h2>
             <ul>
               <li><strong>Activity rings</strong> for the overall glance.</li>
               <li><strong>Vital cards</strong> for the eight current readings.</li>
