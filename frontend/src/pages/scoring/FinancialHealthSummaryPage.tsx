@@ -14,6 +14,10 @@ import {
   computeFinancialHealthSummary,
   type FinancialHealthSummaryInputs,
 } from './financialHealthSummaryEngine'
+import {
+  financialHealthIndicatorSources,
+  financialHealthMetricSources,
+} from './financialHealthComputationSources'
 import { toFilscore } from './filscoreScale'
 import {
   computeNetWorthBuildingScore,
@@ -732,6 +736,7 @@ export default function FinancialHealthSummaryPage() {
                   </article>
                 )
               })}
+              <div className="financial-health-journey-hub">Financial Health</div>
               <span className="financial-health-journey-arrow financial-health-journey-arrow-1" aria-hidden="true">→</span>
               <span className="financial-health-journey-arrow financial-health-journey-arrow-2" aria-hidden="true">→</span>
               <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true">→</span>
@@ -989,6 +994,69 @@ export default function FinancialHealthSummaryPage() {
               </div>
             </article>
           ))}
+        </div>
+      </section>
+
+      <section className="psychometric-panel financial-health-source-panel" aria-labelledby="financial-health-source-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Calculation transparency</span>
+            <h2 id="financial-health-source-title">Computation Sources</h2>
+            <p className="financial-health-panel-intro">
+              Each displayed metric and indicator is traced to its saved workflow data and calculation rule.
+              {summaryComputedAt
+                ? ' The current values were published from the latest available saved inputs.'
+                : ' Default model values remain displayed until Compute Latest Financial Health is selected.'}
+            </p>
+          </div>
+        </div>
+
+        <h3 className="financial-health-source-subtitle">Summary metrics</h3>
+        <div className="financial-health-source-grid">
+          {financialHealthMetricSources.map((metric) => (
+            <article key={metric.label}>
+              <strong>{metric.label}</strong>
+              <span>{metric.source}</span>
+              <code>{metric.formula}</code>
+            </article>
+          ))}
+        </div>
+
+        <h3 className="financial-health-source-subtitle">Health indicators</h3>
+        <div className="calculation-reference-table-wrap">
+          <table className="calculation-reference-table financial-health-source-table">
+            <thead>
+              <tr>
+                <th scope="col">Indicator</th>
+                <th scope="col">Current</th>
+                <th scope="col">Weight</th>
+                <th scope="col">Source and basis</th>
+                <th scope="col">Formula and scoring</th>
+              </tr>
+            </thead>
+            <tbody>
+              {financialHealthIndicatorSources.map((reference) => {
+                const indicator = financialHealthIndicators.find((candidate) => candidate.id === reference.id)
+                if (!indicator) return null
+
+                return (
+                  <tr key={reference.id}>
+                    <th scope="row">{indicator.label}</th>
+                    <td><strong>{indicator.score}</strong></td>
+                    <td><strong>{indicator.weight}%</strong></td>
+                    <td>
+                      <strong>{reference.source}</strong>
+                      <span>{reference.basis}</span>
+                    </td>
+                    <td>
+                      <code>{reference.formula}</code>
+                      <span>{reference.scoring}</span>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
         </div>
       </section>
 

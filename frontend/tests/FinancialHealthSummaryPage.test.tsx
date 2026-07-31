@@ -24,6 +24,7 @@ describe('FinancialHealthSummaryPage', () => {
     const checklist = screen.getByRole('list', { name: 'Financial Health journey checklist' })
     const journeyItems = within(checklist).getAllByRole('listitem')
 
+    expect(within(checklist).getByText('Financial Health', { selector: '.financial-health-journey-hub' })).toBeTruthy()
     expect(within(journeyItems[0]).getByRole('heading', { name: '☐ Create Profile' })).toBeTruthy()
     expect(within(journeyItems[0]).getByRole('button', { name: 'Create Profile' })).toBeTruthy()
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
@@ -41,6 +42,11 @@ describe('FinancialHealthSummaryPage', () => {
 
     expect(screen.getByRole('progressbar', { name: 'Credit Health: 91 out of 100' })).toBeTruthy()
     expect(screen.getByRole('progressbar', { name: 'Goal Health: 82 out of 100' })).toBeTruthy()
+    const computationSources = screen.getByRole('region', { name: 'Computation Sources' })
+    expect(within(computationSources).getByText('Overall Financial Health')).toBeTruthy()
+    expect(within(computationSources).getByText('Budget & Expense Tracker draft')).toBeTruthy()
+    expect(within(computationSources).getByText('Index = sum(indicator score x weight) / 100; score = round(index x 10)')).toBeTruthy()
+    expect(within(computationSources).getAllByRole('row')).toHaveLength(9)
     expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('80.5', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('77.3', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
