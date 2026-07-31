@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 
 import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
+import { useAuthorization } from '../../hooks/useAuthorization'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 
 import {
@@ -426,6 +427,7 @@ function deriveLendingLeafScores(payload: unknown): LendingLeafScores | null {
 }
 
 export default function FinancialHealthSummaryPage() {
+  const { isAdmin } = useAuthorization()
   const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
@@ -997,6 +999,7 @@ export default function FinancialHealthSummaryPage() {
         </div>
       </section>
 
+      {isAdmin ? (
       <section className="psychometric-panel financial-health-source-panel" aria-labelledby="financial-health-source-title">
         <div className="psychometric-panel-header">
           <div>
@@ -1059,6 +1062,7 @@ export default function FinancialHealthSummaryPage() {
           </table>
         </div>
       </section>
+      ) : null}
 
       <section className="financial-health-detail-layout">
         <div className="financial-health-main-stack">

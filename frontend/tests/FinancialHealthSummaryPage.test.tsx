@@ -4,9 +4,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
   fetchAutosaveDraft: vi.fn(),
 }))
+const { authorization } = vi.hoisted(() => ({
+  authorization: { isAdmin: true },
+}))
 
 vi.mock('../src/autosave/draftApi', () => ({
   fetchAutosaveDraft,
+}))
+vi.mock('../src/hooks/useAuthorization', () => ({
+  useAuthorization: () => authorization,
 }))
 
 import FinancialHealthSummaryPage from '../src/pages/scoring/FinancialHealthSummaryPage'
@@ -14,6 +20,7 @@ import FinancialHealthSummaryPage from '../src/pages/scoring/FinancialHealthSumm
 describe('FinancialHealthSummaryPage', () => {
   afterEach(() => cleanup())
   beforeEach(() => {
+    authorization.isAdmin = true
     fetchAutosaveDraft.mockReset()
     fetchAutosaveDraft.mockResolvedValue(null)
   })
@@ -66,6 +73,15 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText('4. Financial Resilience')).toBeTruthy()
     expect(within(insights).getByText('5. Risk Alerts')).toBeTruthy()
     expect(within(insights).getByText('6. Opportunities')).toBeTruthy()
+  })
+
+  it('hides Calculation Transparency from non-admin users', () => {
+    authorization.isAdmin = false
+
+    render(<FinancialHealthSummaryPage />)
+
+    expect(screen.queryByRole('region', { name: 'Computation Sources' })).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Financial Health' })).toBeTruthy()
   })
 
   it('publishes saved workflow figures only after the compute button is clicked', async () => {
