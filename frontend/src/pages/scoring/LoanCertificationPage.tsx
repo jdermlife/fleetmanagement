@@ -61,8 +61,6 @@ const buildVerificationUrl = (applicationNo: string) => {
 const buildQrImageUrl = (value: string) =>
   `https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(value)}`
 
-const CERTIFICATE_AML_SCORE = 'NA'
-
 const buildCertificationSnapshot = (
   record: LoanApplicationRecord,
 ): CertificationSnapshot => {
@@ -426,20 +424,8 @@ export default function LoanCertificationPage() {
       line-height: 1;
       font-weight: 700;
     }
-    .metric-aml {
-      min-height: 64px;
-      border: 2px solid #0f2547;
-      border-radius: 0;
-      background: #ffff99;
-      padding: 7px 12px;
-      display: flex;
-      align-items: center;
-    }
-    .metric-aml-value {
-      color: #000000;
-      font-size: 16px;
-      line-height: 1.15;
-      font-weight: 500;
+    .metric-credit-values {
+      grid-column: 2;
     }
     .footer {
       margin-top: 8px;
@@ -554,8 +540,7 @@ export default function LoanCertificationPage() {
         <div class="metric"><div class="metric-label">Credit Bureau Score</div><div class="metric-band">100-Point Bureau Model</div><div class="metric-value">${formatCreditBureauScore(certification.creditBureauScore, hasRating)}</div></div>
         <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${bandDisplay(certification.fraudScore)}</div><div class="metric-value">${scoreDisplay(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${bandDisplay(certification.socialScore)}</div><div class="metric-value">${scoreDisplay(certification.socialScore)}</div></div>
-        <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${bandDisplay(certification.creditValueScore)}</div><div class="metric-value">${scoreDisplay(certification.creditValueScore)}</div></div>
-        <div class="metric-aml"><div class="metric-aml-value">AML Score: ${CERTIFICATE_AML_SCORE}</div></div>
+        <div class="metric metric-credit-values"><div class="metric-label">Credit Value Score</div><div class="metric-band">${bandDisplay(certification.creditValueScore)}</div><div class="metric-value">${scoreDisplay(certification.creditValueScore)}</div></div>
       </div>
       <div class="footer">
         <div class="meta">
@@ -746,25 +731,14 @@ export default function LoanCertificationPage() {
                   value: scoreDisplay(certification.creditValueScore),
                   band: bandDisplay(certification.creditValueScore),
                 },
-                {
-                  label: 'AML Score',
-                  value: CERTIFICATE_AML_SCORE,
-                  band: '',
-                },
               ].map((item) => (
                 <div
                   key={item.label}
-                  className={`loan-certification-metric-card${item.label === 'AML Score' ? ' loan-certification-metric-card-aml' : ''}`}
+                  className={`loan-certification-metric-card${item.label === 'Credit Values Score' ? ' loan-certification-metric-card-credit-values' : ''}`}
                 >
-                  {item.label === 'AML Score' ? (
-                    <strong className="loan-certification-aml-score">AML Score: {item.value}</strong>
-                  ) : (
-                    <>
-                      <span className="loan-certification-metric-label">{item.label}</span>
-                      <span className="loan-certification-metric-band">{item.band}</span>
-                      <strong className="loan-certification-metric-value">{item.value}</strong>
-                    </>
-                  )}
+                  <span className="loan-certification-metric-label">{item.label}</span>
+                  <span className="loan-certification-metric-band">{item.band}</span>
+                  <strong className="loan-certification-metric-value">{item.value}</strong>
                 </div>
               ))}
             </div>

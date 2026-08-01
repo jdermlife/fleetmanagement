@@ -284,6 +284,7 @@ export default function CreditHealthMultiProductPage() {
             borderRadius: '8px',
             padding: '16px',
             textAlign: 'left',
+            gridColumn: 2,
           }}
         >
           <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
@@ -358,20 +359,6 @@ export default function CreditHealthMultiProductPage() {
           )}
           <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.psychometricScore.score || 'N/A'}
-          </div>
-        </div>
-
-        <div
-          style={{
-            backgroundColor: '#ffff99',
-            border: '2px solid #0f2547',
-            padding: '16px',
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          <div style={{ fontSize: '24px', fontWeight: '500', color: '#000000' }}>
-            AML Score: NA
           </div>
         </div>
       </div>
