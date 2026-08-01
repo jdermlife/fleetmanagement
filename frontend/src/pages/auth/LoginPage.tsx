@@ -1,11 +1,12 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
+import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
 
@@ -177,6 +178,21 @@ export default function LoginPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showEmailLogin, setShowEmailLogin] = useState(false)
+  const [showFees, setShowFees] = useState(false)
+  const feesDialogRef = useRef<HTMLDialogElement>(null)
+
+  useEffect(() => {
+    const dialog = feesDialogRef.current
+    if (!dialog) {
+      return
+    }
+
+    if (showFees && !dialog.open) {
+      dialog.showModal()
+    } else if (!showFees && dialog.open) {
+      dialog.close()
+    }
+  }, [showFees])
 
   const resolvePostLoginPath = async (user: AuthUser): Promise<string> => {
     if (isBorrowerSubscriberRole(user.role)) {
@@ -435,13 +451,43 @@ export default function LoginPage() {
 
           <div className="login-art-support-links">
             <Link to="/account">Account Settings</Link>
-            <Link to="/subscription-fees">Fees</Link>
+            <button type="button" onClick={() => setShowFees(true)}>Fees</button>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
             <Link to="/about-filscore">About</Link>
           </div>
         </div>
       </div>
+
+      <dialog
+        ref={feesDialogRef}
+        className="login-fees-dialog"
+        aria-labelledby="login-fees-title"
+        onCancel={() => setShowFees(false)}
+        onClose={() => setShowFees(false)}
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            setShowFees(false)
+          }
+        }}
+        onClick={(event) => {
+          if (event.target === event.currentTarget) {
+            setShowFees(false)
+          }
+        }}
+      >
+        <div className="login-fees-dialog-header">
+          <div>
+            <p>Plans and fees</p>
+            <h2 id="login-fees-title">Subscription options</h2>
+          </div>
+          <button type="button" onClick={() => setShowFees(false)}>Close</button>
+        </div>
+        <p className="login-fees-dialog-intro">
+          Review the latest published plans and billing amounts before signing in.
+        </p>
+        {showFees ? <SubscriptionPlansDisclosure /> : null}
+      </dialog>
     </div>
   )
 }

@@ -6914,7 +6914,8 @@ th { color: var(--dark-gold); }
 
 .login-art-forgot:hover,
 .login-art-new-user a:hover,
-.login-art-support-links a:hover {
+.login-art-support-links a:hover,
+.login-art-support-links button:hover {
   text-decoration: underline;
 }
 
@@ -6940,11 +6941,148 @@ th { color: var(--dark-gold); }
   color: #5d3300;
 }
 
-.login-art-support-links a {
+.login-art-support-links a,
+.login-art-support-links button {
+  border: 0;
+  padding: 0;
+  background: transparent;
   color: #5d3300;
+  font-family: inherit;
   font-size: 0.76rem;
   font-weight: 700;
   text-decoration: none;
+}
+
+.login-fees-dialog {
+  width: min(1120px, calc(100vw - 32px));
+  max-height: min(82vh, 760px);
+  margin: auto;
+  padding: 24px;
+  overflow: auto;
+  border: 1px solid #d9b552;
+  border-radius: 8px;
+  background: #fffdf5;
+  color: #302000;
+  box-shadow: 0 28px 80px rgba(49, 29, 0, 0.42);
+}
+
+.login-fees-dialog::backdrop {
+  background: rgba(35, 23, 5, 0.68);
+  backdrop-filter: blur(4px);
+}
+
+.login-fees-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 8px;
+}
+
+.login-fees-dialog-header p,
+.login-fees-dialog-header h2,
+.login-fees-dialog-intro {
+  margin: 0;
+}
+
+.login-fees-dialog-header p {
+  color: #805400;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.login-fees-dialog-header h2 {
+  margin-top: 4px;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1.45rem, 4vw, 2rem);
+}
+
+.login-fees-dialog-header button {
+  min-height: 38px;
+  padding: 8px 16px;
+  border: 1px solid #9d741e;
+  border-radius: 6px;
+  background: #fff7d9;
+  color: #4d3100;
+  font-weight: 800;
+}
+
+.login-fees-dialog-intro {
+  margin-bottom: 20px;
+  color: #664a14;
+}
+
+.subscription-fees-state {
+  min-height: 120px;
+  display: grid;
+  place-items: center;
+  margin: 0;
+  color: #664a14;
+  font-weight: 700;
+}
+
+.subscription-fees-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid #ead7a3;
+  border-radius: 6px;
+}
+
+.subscription-fees-table {
+  width: 100%;
+  min-width: 940px;
+  border-collapse: collapse;
+}
+
+.subscription-fees-table th,
+.subscription-fees-table td {
+  padding: 12px 14px;
+  border-bottom: 1px solid #eee1bd;
+  text-align: left;
+  vertical-align: top;
+}
+
+.subscription-fees-table th {
+  background: #f7e9bb;
+  color: #513500;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.subscription-fees-table td {
+  color: #3d2b08;
+  font-size: 0.88rem;
+  white-space: nowrap;
+}
+
+.subscription-fees-table td:first-child {
+  min-width: 220px;
+  white-space: normal;
+}
+
+.subscription-fees-table td:first-child span {
+  display: block;
+  margin-top: 4px;
+  color: #715b2e;
+  font-size: 0.8rem;
+}
+
+.subscription-fees-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+@media (max-width: 600px) {
+  .login-fees-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100vh - 20px);
+    padding: 18px 14px;
+  }
+
+  .login-fees-dialog-header {
+    gap: 12px;
+  }
 }
 
 /* ========================
