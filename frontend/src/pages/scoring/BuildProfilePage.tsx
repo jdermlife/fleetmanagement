@@ -2301,21 +2301,21 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-ten">
         <h3>Step 10: Actual vs Target</h3>
-        <p className="psychometric-section-note">First column shows the saved target. Second column is blank for actual entry. Third column is variance. Fourth column shows the variance explanation in small letters.</p>
+        <p className="psychometric-section-note">First column shows the current position. Second column is the aspiration. Third column is variance. Fourth column shows the variance explanation in small letters.</p>
 
         {targetRows.length > 0 ? <p className="psychometric-section-note">
           {completedActuals === targetRows.length
-            ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.'
+            ? 'Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs from previous states.'
             : `Actual entry completion: ${completedActuals}/${targetRows.length} (${actualPercent}%). Missing actual values use target values in the projection.`}
         </p> : <p className="build-profile-applicability-note">No saved target setup yet. Complete Step 9 and select Save Actuals and Continue to Step 10 first.</p>}
 
         {targetRows.length > 0 ? <>
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown build-profile-comparison-input-dropdown">
             <summary>Current Net Worth vs Aspired</summary>
-            <p className="psychometric-section-note">  From Step 8 and Step 9- Variance and net worth totals update automatically.</p>
+            <p className="psychometric-section-note"> </p>
             <div className="build-profile-comparison-grid">
-              {renderEditableComparisonStatement('target')}
               {renderEditableComparisonStatement('actual')}
+              {renderEditableComparisonStatement('target')}
               {renderEditableComparisonStatement('variance')}
             </div>
           </details>
@@ -2353,7 +2353,7 @@ export default function BuildProfilePage() {
           </details>
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown">
             <summary>Variance of Current  and Aspired Personal Income and Expense with Goals and Protection </summary>
-            <p className="psychometric-section-note">Target values come from Step 8. Actual values come from Step 9. Variance is Step 9 actual less Step 8 target.</p>
+            <p className="psychometric-section-note"></p>
             <div className="build-profile-comparison-grid">
               {renderFinancialComparisonStatement('target')}
               {renderFinancialComparisonStatement('actual')}
