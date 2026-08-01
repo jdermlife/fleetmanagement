@@ -58,7 +58,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('heading', { name: 'Build your Profile' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Retrieve Existing Profile' })).toBeTruthy()
     expect(screen.getByText(/^PRO-[A-Z0-9]{6}$/)).toBeTruthy()
-    expect(screen.getByLabelText('4% profile completion')).toBeTruthy()
+    expect(screen.getByLabelText('2% profile completion')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(12)
     expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
   })
@@ -275,7 +275,7 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: /Goal Setting/ }))
     expect(screen.getByLabelText('Financial Goal / Purpose')).toHaveProperty('value', 'Build Emergency Fund')
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     expect((screen.getByRole('combobox', { name: 'Long Term Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
   })
 
@@ -292,12 +292,12 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Financial Goal / Purpose')).toBeTruthy()
     expect(screen.getByLabelText('Product Being Applied For')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     expect(screen.getByRole('heading', { name: 'Personal Net Worth Statement' })).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
-    expect(screen.getByRole('heading', { name: 'Step 9: Actuals' })).toBeTruthy()
-    expect(screen.getByText('Actual Net Worth', { selector: 'strong' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: /Desired \/ Target Financial Position/ }))
+    expect(screen.getByRole('heading', { name: 'Step 9: Desired / Target Financial Position' })).toBeTruthy()
+    expect(screen.getByText('Desired / Target Net Worth', { selector: 'strong' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Monthly Expense Allocation' })).toBeNull()
 
     await user.click(screen.getByRole('button', { name: /Suitability Assessment/ }))
@@ -325,18 +325,17 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Age').getAttribute('value')).toBe(String(expectedAge))
     expect(screen.getByLabelText('Age').getAttribute('readonly')).not.toBeNull()
     expect(screen.getByText('24% complete')).toBeTruthy()
-    expect(screen.getByLabelText('6% profile completion')).toBeTruthy()
+    expect(screen.getByLabelText('4% profile completion')).toBeTruthy()
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('Target Amount'), '250000')
     await user.clear(screen.getByLabelText('Months to Achieve'))
     await user.type(screen.getByLabelText('Months to Achieve'), '18')
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
-    await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
+    await user.click(screen.getByRole('button', { name: /Desired \/ Target Financial Position/ }))
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
-    expect(screen.getByText('Ensure to save with APP Record')).toBeTruthy()
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)
@@ -711,14 +710,14 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('radio', { name: 'Not to be used as collateral' })).toBeTruthy()
   })
 
-  it('copies Net Worth Positioning Step 1 into Wealth Position Base Setting', async () => {
+  it('captures the actual current financial position in Step 8', async () => {
     const user = userEvent.setup()
     const openSpy = vi.spyOn(window, 'open').mockImplementation(() => null)
     render(<BuildProfilePage />)
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
 
-    expect(screen.getByRole('heading', { name: 'Step 8: Wealth Position Base Setting' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Step 8: Actual / Current Financial Position' })).toBeTruthy()
     expect(screen.getByText('Before and after the Net Worth Statement, please assess your income standing versus in-country and global wealth index.')).toBeTruthy()
     const widComparatorLink = screen.getByRole('link', { name: 'Open WID Income Comparator in popout' })
     expect(widComparatorLink.getAttribute('href')).toBe('https://wid.world/income-comparator/')
@@ -736,13 +735,13 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Set Date As Of')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Statement currency' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'SGD (S$)' })).toBeTruthy()
-    const detailedNetWorthDropdown = screen.getByText('Goal: Existing or Current Net Worth Here', { selector: 'strong' }).closest('details')
+    const detailedNetWorthDropdown = screen.getByText('Current Net Worth', { selector: 'strong' }).closest('details')
     expect(detailedNetWorthDropdown?.hasAttribute('open')).toBe(false)
-    expect(detailedNetWorthDropdown?.querySelector('summary > strong')?.textContent).toBe('Goal: Existing or Current Net Worth Here')
+    expect(detailedNetWorthDropdown?.querySelector('summary > strong')?.textContent?.trim()).toBe('Current Net Worth')
     const statementFiltersDropdown = screen.getByText('Statement Filters - Details of Net Worth and Income & Expenses', { selector: 'summary' }).closest('details')
     expect(statementFiltersDropdown?.hasAttribute('open')).toBe(false)
     expect(statementFiltersDropdown!.compareDocumentPosition(detailedNetWorthDropdown!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    await user.click(screen.getByText('Goal: Existing or Current Net Worth Here', { selector: 'strong' }))
+    await user.click(screen.getByText('Current Net Worth', { selector: 'strong' }))
     const detailedCashInput = within(detailedNetWorthDropdown!).getByLabelText('Cash on Hand detailed net worth amount') as HTMLInputElement
     const detailedMortgageInput = within(detailedNetWorthDropdown!).getByLabelText('Home Mortgage detailed net worth amount') as HTMLInputElement
     expect(detailedCashInput.value).toBe('')
@@ -758,7 +757,7 @@ describe('BuildProfilePage', () => {
     const cashRemarks = screen.getByLabelText('Cash on Hand remarks') as HTMLInputElement
     await user.type(cashRemarks, 'Emergency cash reserve')
     expect(cashRemarks.value).toBe('Emergency cash reserve')
-    const incomeExpenseDropdown = screen.getByText('Goal: Maintain or Desired Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }).closest('details')
+    const incomeExpenseDropdown = screen.getByText('Actual / Current Personal Income and Expenses with Goals and Protection', { selector: 'summary' }).closest('details')
     expect(incomeExpenseDropdown?.hasAttribute('open')).toBe(false)
     expect(detailedNetWorthDropdown!.compareDocumentPosition(incomeExpenseDropdown!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(incomeExpenseDropdown!.compareDocumentPosition(statementFiltersDropdown!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -791,7 +790,7 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Housing setup amount'), '18500')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'financial-goals')
     await user.type(screen.getByLabelText('Home Purchase setup amount'), '10000')
-    await user.click(screen.getByText('Goal: Maintain or Desired Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }))
+    await user.click(screen.getByText('Actual / Current Personal Income and Expenses with Goals and Protection', { selector: 'summary' }))
     expect(incomeExpenseDropdown?.hasAttribute('open')).toBe(true)
     expect((within(incomeExpenseDropdown!).getByLabelText('Salary personal statement amount') as HTMLInputElement).value).toBe('33,000.00')
     expect((within(incomeExpenseDropdown!).getByLabelText('Housing personal statement amount') as HTMLInputElement).value).toBe('18,500.00')
@@ -841,7 +840,7 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
@@ -855,15 +854,15 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'insurance-coverage')
     await user.type(screen.getByLabelText('Life Insurance setup amount'), '5000')
 
-    await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
+    await user.click(screen.getByRole('button', { name: /Desired \/ Target Financial Position/ }))
 
-    expect(screen.getByRole('heading', { name: 'Step 9: Goal' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Actual Summary' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Step 9: Desired / Target Financial Position' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Desired / Target Summary' })).toBeTruthy()
     expect(screen.getByText('Build Emergency Fund', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     expect(screen.getByText('6', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
-    const actualNetWorthDropdown = screen.getByText('Net Worth Aspiration', { selector: 'strong' }).closest('details')!
+    const actualNetWorthDropdown = screen.getByText('Desired / Target Net Worth', { selector: 'strong' }).closest('details')!
     const financialInvestmentDropdown = screen.getByText('Details of Financial Invesment', { selector: 'summary' }).closest('details')!
-    const actualIncomeDropdown = screen.getByText('Personal Income and Expense Objective', { selector: 'summary' }).closest('details')!
+    const actualIncomeDropdown = screen.getByText('Desired / Target Personal Income and Expenses', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
     expect(actualNetWorthDropdown.hasAttribute('open')).toBe(false)
     expect(financialInvestmentDropdown.hasAttribute('open')).toBe(false)
@@ -876,9 +875,9 @@ describe('BuildProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Normalize to 100%' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Apply Revised % Allocation' })).toBeNull()
 
-    expect((screen.getByLabelText('Actual statement as of date') as HTMLInputElement).value).toBe('2026-07-27')
-    await user.click(screen.getByText('Net Worth Aspiration', { selector: 'strong' }))
-    const actualCashInput = within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount') as HTMLInputElement
+    expect((screen.getByLabelText('Target statement as of date') as HTMLInputElement).value).toBe('2026-07-27')
+    await user.click(screen.getByText('Desired / Target Net Worth', { selector: 'strong' }))
+    const actualCashInput = within(actualNetWorthDropdown).getByLabelText('Cash on Hand target net worth amount') as HTMLInputElement
     expect(actualCashInput.value).toBe('50,000.00')
     await user.clear(actualCashInput)
     await user.type(actualCashInput, '45000')
@@ -894,12 +893,12 @@ describe('BuildProfilePage', () => {
     await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 original investment' }), '100000')
     await user.type(within(financialInvestmentDropdown).getByLabelText('Investment 1 date acquired'), '2026-01-15')
     await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 risk rating' }), 'Moderate')
-    await user.click(screen.getByText('Personal Income and Expense Objective', { selector: 'summary' }))
-    const actualSalaryInput = within(actualIncomeDropdown).getByLabelText('Salary actual statement amount') as HTMLInputElement
-    const actualHousingInput = within(actualIncomeDropdown).getByLabelText('Housing actual statement amount') as HTMLInputElement
-    const actualGroceriesInput = within(actualIncomeDropdown).getByLabelText('Groceries actual statement amount') as HTMLInputElement
-    const actualGoalInput = within(actualIncomeDropdown).getByLabelText('Home Purchase actual statement amount') as HTMLInputElement
-    const actualProtectionInput = within(actualIncomeDropdown).getByLabelText('Life Insurance actual statement amount') as HTMLInputElement
+    await user.click(screen.getByText('Desired / Target Personal Income and Expenses', { selector: 'summary' }))
+    const actualSalaryInput = within(actualIncomeDropdown).getByLabelText('Salary target statement amount') as HTMLInputElement
+    const actualHousingInput = within(actualIncomeDropdown).getByLabelText('Housing target statement amount') as HTMLInputElement
+    const actualGroceriesInput = within(actualIncomeDropdown).getByLabelText('Groceries target statement amount') as HTMLInputElement
+    const actualGoalInput = within(actualIncomeDropdown).getByLabelText('Home Purchase target statement amount') as HTMLInputElement
+    const actualProtectionInput = within(actualIncomeDropdown).getByLabelText('Life Insurance target statement amount') as HTMLInputElement
     expect(actualSalaryInput.value).toBe('60,000.00')
     expect(actualHousingInput.value).toBe('30,000.00')
     expect(actualGroceriesInput.value).toBe('20,000.00')
@@ -917,14 +916,16 @@ describe('BuildProfilePage', () => {
     await user.type(actualProtectionInput, '6000')
 
     await user.click(screen.getByText('Statement Filters - Details', { selector: 'summary' }))
-    await user.selectOptions(screen.getByLabelText('Actual filter by statement section'), 'liabilities')
-    expect(screen.getByLabelText('Home Mortgage actual amount')).toBeTruthy()
-    expect(screen.getByLabelText('Home Mortgage actual remarks')).toBeTruthy()
-    await user.selectOptions(screen.getByLabelText('Actual filter by statement section'), 'ai-analysis')
-    expect(screen.getByRole('note', { name: 'Net Worth actual AI advisory' })).toBeTruthy()
+    await user.selectOptions(screen.getByLabelText('Target filter by statement section'), 'liabilities')
+    expect(screen.getByLabelText('Home Mortgage target amount')).toBeTruthy()
+    expect(screen.getByLabelText('Home Mortgage target remarks')).toBeTruthy()
+    await user.selectOptions(screen.getByLabelText('Target filter by statement section'), 'ai-analysis')
+    const targetAiAdvisory = screen.getByRole('note', { name: 'Net Worth target AI advisory' })
+    expect(targetAiAdvisory.textContent).toMatch(/desired target/i)
+    expect(targetAiAdvisory.textContent).not.toMatch(/\bcurrent\b/i)
 
-    await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
-    expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Save Desired Target and Continue to Step 10' }))
+    expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Desired / Target' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedInvestmentProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') || '{}')
     expect(savedInvestmentProfile.financialInvestments).toEqual([
@@ -937,41 +938,41 @@ describe('BuildProfilePage', () => {
       }),
     ])
     const aiAnalysisDropdown = screen.getByText('FILSCORE AI Analysis', { selector: 'summary' }).closest('details')!
-    const comparisonSummaryHeading = screen.getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })
+    const comparisonSummaryHeading = screen.getByRole('heading', { name: 'Actual vs Desired / Target Summary and Recommendations' })
     expect(aiAnalysisDropdown.hasAttribute('open')).toBe(false)
     expect(aiAnalysisDropdown.contains(comparisonSummaryHeading)).toBe(true)
     await user.click(screen.getByText('FILSCORE AI Analysis', { selector: 'summary' }))
     expect(aiAnalysisDropdown.hasAttribute('open')).toBe(true)
-    expect(within(aiAnalysisDropdown).getByRole('heading', { name: 'Target vs Actual Summary and Recommendations' })).toBeTruthy()
+    expect(within(aiAnalysisDropdown).getByRole('heading', { name: 'Actual vs Desired / Target Summary and Recommendations' })).toBeTruthy()
     const summaryTitles = [
-      '1. Target vs Actual Total Assets',
-      '2. Target vs Actual Liabilities',
-      '3. Target vs Actual Net Worth',
-      '4. Target vs Actual Net Income/Loss',
-      '5. Target vs Actual Goals and Protection',
+      '1. Actual vs Desired / Target Total Assets',
+      '2. Actual vs Desired / Target Liabilities',
+      '3. Actual vs Desired / Target Net Worth',
+      '4. Actual vs Desired / Target Net Income/Loss',
+      '5. Actual vs Desired / Target Goals and Protection',
     ]
     summaryTitles.forEach((title) => expect(within(aiAnalysisDropdown).getByRole('heading', { name: title })).toBeTruthy())
-    const assetSummary = within(aiAnalysisDropdown).getByRole('heading', { name: '1. Target vs Actual Total Assets' }).closest('article')!
+    const assetSummary = within(aiAnalysisDropdown).getByRole('heading', { name: '1. Actual vs Desired / Target Total Assets' }).closest('article')!
     expect(within(assetSummary).getByText('₱50,000.00')).toBeTruthy()
     expect(within(assetSummary).getByText('₱45,000.00')).toBeTruthy()
     expect(within(assetSummary).getByText('-₱5,000.00')).toBeTruthy()
     await user.click(within(assetSummary).getByText('Detailed Analysis and Recommendation', { selector: 'summary' }))
     expect(within(assetSummary).getByText('Analysis')).toBeTruthy()
     expect(within(assetSummary).getByText('Recommendation')).toBeTruthy()
-    expect(within(assetSummary).getByText(/below the Step 8 target/)).toBeTruthy()
-    const financialComparison = screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }).closest('details')!
-    await user.click(screen.getByText('Personal Income and Expense with Goals and Protection Target vs Actuals', { selector: 'summary' }))
+    expect(within(assetSummary).getByText(/Step 8 actual assets/)).toBeTruthy()
+    const financialComparison = screen.getByText('Actual / Current vs Desired / Target Personal Income and Expenses', { selector: 'summary' }).closest('details')!
+    await user.click(screen.getByText('Actual / Current vs Desired / Target Personal Income and Expenses', { selector: 'summary' }))
     const targetStatement = financialComparison.querySelector('.build-profile-comparison-target')!
     const actualStatement = financialComparison.querySelector('.build-profile-comparison-actual')!
     const varianceStatement = financialComparison.querySelector('.build-profile-comparison-variance')!
-    expect(within(targetStatement).getByText('Step 8 Setup')).toBeTruthy()
-    expect(within(actualStatement).getByText('Step 9 Setup')).toBeTruthy()
-    expect(within(varianceStatement).getByText('Step 9 less Step 8')).toBeTruthy()
-    expect(within(within(targetStatement).getByText('Salary').parentElement!).getByText('₱60,000.00')).toBeTruthy()
-    expect(within(within(actualStatement).getByText('Salary').parentElement!).getByText('₱65,000.00')).toBeTruthy()
+    expect(within(actualStatement).getByText('Step 8')).toBeTruthy()
+    expect(within(targetStatement).getByText('Step 9')).toBeTruthy()
+    expect(within(varianceStatement).getByText('Target less Actual')).toBeTruthy()
+    expect(within(within(actualStatement).getByText('Salary').parentElement!).getByText('₱60,000.00')).toBeTruthy()
+    expect(within(within(targetStatement).getByText('Salary').parentElement!).getByText('₱65,000.00')).toBeTruthy()
     expect(within(within(varianceStatement).getByText('Salary').parentElement!).getByText('+₱5,000.00')).toBeTruthy()
-    expect(within(within(targetStatement).getByText('Net Income').parentElement!).getByText('₱10,000.00')).toBeTruthy()
-    expect(within(within(actualStatement).getByText('Net Income').parentElement!).getByText('₱22,000.00')).toBeTruthy()
+    expect(within(within(actualStatement).getByText('Net Income').parentElement!).getByText('₱10,000.00')).toBeTruthy()
+    expect(within(within(targetStatement).getByText('Net Income').parentElement!).getByText('₱22,000.00')).toBeTruthy()
     expect(within(within(varianceStatement).getByText('Net Income').parentElement!).getByText('+₱12,000.00')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Previous' }))
     expect(screen.getByText('100% complete')).toBeTruthy()
@@ -987,7 +988,7 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
-    await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
+    await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'liabilities')
@@ -995,24 +996,24 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')
     await user.type(screen.getByLabelText('Housing setup amount'), '30000')
 
-    await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
-    await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
+    await user.click(screen.getByRole('button', { name: /Desired \/ Target Financial Position/ }))
+    await user.click(screen.getByRole('button', { name: 'Save Desired Target and Continue to Step 10' }))
 
-    expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
-    expect(screen.getAllByText('Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.').length).toBeGreaterThan(0)
+    expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Desired / Target' })).toBeTruthy()
+    expect(screen.getByText('Desired target completion: 100%. Actual versus target analysis is ready.')).toBeTruthy()
     const varianceSummary = screen.getByText('Variance Filters - Detailed Lines', { selector: 'summary' })
     const varianceDropdown = varianceSummary.closest('details')!
     expect(varianceDropdown.hasAttribute('open')).toBe(false)
     await user.click(varianceSummary)
     expect(varianceDropdown.hasAttribute('open')).toBe(true)
-    expect(screen.getByRole('columnheader', { name: 'Target (Saved)' })).toBeTruthy()
-    expect(screen.getByRole('columnheader', { name: 'Actual (User Input)' })).toBeTruthy()
-    expect(screen.getByRole('columnheader', { name: 'Variance' })).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Actual / Current (Step 8)' })).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Desired / Target (Step 9)' })).toBeTruthy()
+    expect(screen.getByRole('columnheader', { name: 'Variance (Target less Actual)' })).toBeTruthy()
     expect(screen.getByRole('columnheader', { name: 'Variance Explanation' })).toBeTruthy()
-    expect(screen.getByLabelText('Cash on Hand actual value')).toBeTruthy()
+    expect(screen.getByLabelText('Cash on Hand target value')).toBeTruthy()
     expect(screen.queryByText('Pending input')).toBeNull()
 
-    const inputSummary = screen.getByText('Net Worth Target vs Actual Inputs', { selector: 'summary' })
+    const inputSummary = screen.getByText('Actual / Current Net Worth vs Desired / Target', { selector: 'summary' })
     const inputDropdown = inputSummary.closest('details')!
     expect(inputDropdown.compareDocumentPosition(varianceDropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     await user.click(inputSummary)
@@ -1022,37 +1023,37 @@ describe('BuildProfilePage', () => {
     const cashActualInput = within(inputDropdown).getByLabelText('Cash on Hand actual input') as HTMLInputElement
     expect(cashTargetInput.value).toBe('50,000.00')
     expect(cashActualInput.value).toBe('50,000.00')
-    await user.clear(cashTargetInput)
-    await user.type(cashTargetInput, '55000')
     await user.clear(cashActualInput)
-    await user.type(cashActualInput, '60000')
+    await user.type(cashActualInput, '55000')
+    await user.clear(cashTargetInput)
+    await user.type(cashTargetInput, '60000')
     expect(within(inputDropdown).getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
-    expect((screen.getByLabelText('Cash on Hand actual value') as HTMLInputElement).value).toBe('60,000.00')
+    expect((screen.getByLabelText('Cash on Hand target value') as HTMLInputElement).value).toBe('60,000.00')
 
-    await user.clear(cashTargetInput)
-    await user.type(cashTargetInput, '50000')
     await user.clear(cashActualInput)
-    expect((screen.getByLabelText('Cash on Hand actual value') as HTMLInputElement).value).toBe('')
+    await user.type(cashActualInput, '50000')
+    await user.clear(cashTargetInput)
+    expect((screen.getByLabelText('Cash on Hand target value') as HTMLInputElement).value).toBe('')
 
-    await user.type(screen.getByLabelText('Cash on Hand actual value'), '60000')
+    await user.type(screen.getByLabelText('Cash on Hand target value'), '60000')
     expect(screen.getAllByText('+₱10,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Value improved above setup and supports net worth').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Desired target is above the current amount').length).toBeGreaterThan(0)
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('placeholder')).toBe('Optional explanation')
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('aria-invalid')).toBeNull()
 
-    await user.clear(screen.getByLabelText('Home Mortgage actual value'))
-    await user.type(screen.getByLabelText('Home Mortgage actual value'), '90000')
+    await user.clear(screen.getByLabelText('Home Mortgage target value'))
+    await user.type(screen.getByLabelText('Home Mortgage target value'), '90000')
     expect(screen.getAllByText('-₱10,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Liability is lower than setup and improves net worth').length).toBeGreaterThan(0)
-    await user.clear(screen.getByLabelText('Housing actual value'))
-    await user.type(screen.getByLabelText('Housing actual value'), '35000')
+    expect(screen.getAllByText('Desired target reduces the current amount').length).toBeGreaterThan(0)
+    await user.clear(screen.getByLabelText('Housing target value'))
+    await user.type(screen.getByLabelText('Housing target value'), '35000')
     expect(screen.getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Liability increased above setup and needs control').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Desired target is above the current amount').length).toBeGreaterThan(0)
+    expect(screen.getAllByText(/Desired target completion: 100%/).length).toBeGreaterThan(0)
 
     await user.selectOptions(screen.getByLabelText('Actual vs Target filter by statement section'), 'liabilities')
-    expect(screen.queryByLabelText('Cash on Hand actual value')).toBeNull()
-    expect(screen.getByLabelText('Home Mortgage actual value')).toBeTruthy()
+    expect(screen.queryByLabelText('Cash on Hand target value')).toBeNull()
+    expect(screen.getByLabelText('Home Mortgage target value')).toBeTruthy()
     await user.type(screen.getByLabelText('Actual vs Target filter by line item'), 'mortgage')
     expect(screen.getByText('1', { selector: '.build-profile-filter-result strong' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Clear Variance Filters' }))
@@ -1060,7 +1061,8 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
-    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('50000.00')
+    expect(savedProfile.values['asset-cash-on-hand']).toBe('50000.00')
+    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('60000.00')
     expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('60000.00')
     expect(savedProfile.values['wealthVarianceNote.asset-cash-on-hand']).toBeUndefined()
 
