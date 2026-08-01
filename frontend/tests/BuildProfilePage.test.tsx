@@ -375,10 +375,16 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
+    await user.selectOptions(screen.getByRole('combobox', { name: 'Civil Status' }), 'Married')
     await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
 
     expect(screen.getByRole('heading', { name: 'Step 3: Source of Income & Wealth and Credit Values' })).toBeTruthy()
-    expect(screen.getAllByLabelText('Employment History (Current Employer)')).toHaveLength(2)
+    const employmentHistoryFields = screen.getAllByLabelText('Employment History (Current Employer)')
+    expect(employmentHistoryFields).toHaveLength(2)
+    await user.type(employmentHistoryFields[0], 'Acme Holdings')
+    await user.click(screen.getByRole('button', { name: /Spouse Employment, Co-Borrower, and Guarantor Information/ }))
+    expect(screen.getByLabelText('Spouse Current Employer / Business Name')).toHaveProperty('value', 'Acme Holdings')
+    await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
     expect(screen.getByLabelText('Nature of Work / Business')).toBeTruthy()
     expect(screen.getByLabelText('Investment Income')).toBeTruthy()
     expect(screen.getByLabelText('Employment Reference Person and Contact No.')).toBeTruthy()

@@ -882,6 +882,7 @@ export default function BuildProfilePage() {
       ...current.values,
       [key]: value,
       ...(key === 'dateOfBirth' ? { age: calculateAge(value) } : {}),
+      ...(key === 'employmentHistory' ? { spouseEmployerBusinessName: value } : {}),
     },
     ...(key === 'dependents' ? {
       dependents: Array.from({ length: Math.max(0, Number(value) || 0) }, (_, index) => current.dependents[index] ?? createDependent()),
