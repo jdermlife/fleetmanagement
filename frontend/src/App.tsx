@@ -83,6 +83,7 @@ const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage')
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
 const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHealthMultiProductPage'))
 const CalculationPage = lazy(() => import('./pages/admin/CalculationPage'))
+const AmlKycScoringPage = lazy(() => import('./pages/admin/AmlKycScoringPage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
@@ -137,6 +138,7 @@ const menuLinks: MenuLink[] = [
 
   /* ADMIN */
   { id: 'calculation', label: 'Calculation Models' },
+  { id: 'aml-kyc-scoring', label: 'AML / KYC Scoring' },
   { id: 'credit-health-multi-product', label: 'Credit Health Multi Product' },
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
@@ -220,6 +222,7 @@ const governanceMenus = [
 
 const adminMenus = [
   'calculation',
+  'aml-kyc-scoring',
   'credit-health-multi-product',
   'admin-users',
   'admin-roles',
@@ -1313,6 +1316,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin']}>
                   <CalculationPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/aml-kyc-scoring"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AmlKycScoringPage />
                 </ProtectedRoute>
               }
             />

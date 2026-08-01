@@ -18,11 +18,23 @@ vi.mock('../src/hooks/useAuthorization', () => ({
 import FinancialHealthSummaryPage from '../src/pages/scoring/FinancialHealthSummaryPage'
 
 describe('FinancialHealthSummaryPage', () => {
-  afterEach(() => cleanup())
+  afterEach(() => {
+    cleanup()
+    vi.unstubAllGlobals()
+  })
   beforeEach(() => {
     authorization.isAdmin = true
     fetchAutosaveDraft.mockReset()
     fetchAutosaveDraft.mockResolvedValue(null)
+    const values = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      clear: () => values.clear(),
+      getItem: (key: string) => values.get(key) ?? null,
+      key: (index: number) => Array.from(values.keys())[index] ?? null,
+      get length() { return values.size },
+      removeItem: (key: string) => values.delete(key),
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
   })
 
   it('starts the Financial Health Journey with Create Profile before Credit Health', () => {
@@ -44,16 +56,60 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getAllByText('Excellent').length).toBeGreaterThan(0)
     expect(screen.getByText('84.2 × 10 = 842')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Credit Health' })).toBeTruthy()
+    expect(screen.getAllByRole('heading', { name: 'Credit Health' })).toHaveLength(3)
     expect(screen.getByText('Awaiting a saved loan application draft to paint the leaf with live lending scores.')).toBeTruthy()
+    const trendGraph = screen.getByRole('img', {
+      name: 'Five-period sample trend for Financial Health Score, Credit Health, and Wealth Building Score',
+    })
+    const trendPanel = screen.getByRole('heading', { name: 'Monthly Financial Health Trend' }).closest('article')
+    expect(trendPanel).toBeTruthy()
+    expect(within(trendPanel as HTMLElement).getByText('Sample data')).toBeTruthy()
+    expect(trendGraph.querySelectorAll('[data-trend-series]')).toHaveLength(3)
+    expect(trendGraph.querySelectorAll('[data-trend-point]')).toHaveLength(15)
+    expect(within(trendGraph).getAllByText(/^(Apr|May|Jun|Jul|Aug)$/)).toHaveLength(5)
+    expect(within(trendGraph).getByText('Financial Health Score')).toBeTruthy()
+    expect(within(trendGraph).getByText('Credit Health')).toBeTruthy()
+    expect(within(trendGraph).getByText('Wealth Building Score')).toBeTruthy()
+    const leafGraph = screen.getByRole('img', { name: 'Leaf graph awaiting saved lending scores' })
+    expect(leafGraph.querySelectorAll('path[data-score-region]')).toHaveLength(4)
+    expect(leafGraph.querySelectorAll('.financial-health-leaf-score-boundary')).toHaveLength(3)
+    expect(leafGraph.querySelectorAll('linearGradient[id^="financial-health-leaf-"]')).toHaveLength(5)
 
     expect(screen.getByRole('progressbar', { name: 'Credit Health: 91 out of 100' })).toBeTruthy()
     expect(screen.getByRole('progressbar', { name: 'Goal Health: 82 out of 100' })).toBeTruthy()
+    const creditVital = screen.getByRole('progressbar', { name: 'Credit Health: 91 out of 100' })
+    fireEvent.mouseEnter(creditVital)
+    expect(screen.getByRole('tooltip').textContent).toContain('Positive: 91/100')
+    expect(screen.getByRole('tooltip').textContent).toContain('Your credit capacity and lending profile are strong.')
+    expect(screen.getByRole('tooltip').textContent).toContain('Pay obligations on time, reduce debt balances')
+    fireEvent.mouseLeave(creditVital)
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    const protectionVital = screen.getByRole('progressbar', { name: 'Protection Health: 76 out of 100' })
+    fireEvent.focus(protectionVital)
+    expect(screen.getByRole('tooltip').textContent).toContain('Needs improvement: 76/100')
+    expect(screen.getByRole('tooltip').textContent).toContain('Important insurance coverage gaps')
+    expect(screen.getByRole('tooltip').textContent).toContain('Review life, health, disability, property')
+    fireEvent.blur(protectionVital)
+    const positionRings = screen.getByRole('region', { name: 'Financial Position Rings' })
+    expect(within(positionRings).getByRole('progressbar', { name: 'Cash Flow Position Ring: 88 out of 100' })).toBeTruthy()
+    expect(within(positionRings).getByRole('progressbar', { name: 'Credit Health Ring: 91 out of 100' })).toBeTruthy()
+    expect(within(positionRings).getByRole('progressbar', { name: 'Net Worth Growth Ring: 82 out of 100' })).toBeTruthy()
+    expect(within(positionRings).getByText('Progress toward your saved net-worth goal')).toBeTruthy()
     const computationSources = screen.getByRole('region', { name: 'Computation Sources' })
     expect(within(computationSources).getByText('Overall Financial Health')).toBeTruthy()
     expect(within(computationSources).getByText('Budget & Expense Tracker draft')).toBeTruthy()
     expect(within(computationSources).getByText('Index = sum(indicator score x weight) / 100; score = round(index x 10)')).toBeTruthy()
     expect(within(computationSources).getAllByRole('row')).toHaveLength(9)
+    const comparisonChart = screen.getByRole('list', { name: 'Indicator score comparison' })
+    const investmentRow = within(comparisonChart).getByText('Investment Health').closest('[role="listitem"]')
+    expect(investmentRow).toBeTruthy()
+    fireEvent.mouseEnter(investmentRow as HTMLElement)
+    expect(screen.getByRole('tooltip').textContent).toContain('Investment Health: 71/100')
+    expect(screen.getByRole('tooltip').textContent).toContain('Overall recommendation:')
+    expect(screen.getByRole('tooltip').textContent).toContain('Automate a sustainable monthly contribution')
+    fireEvent.mouseLeave(investmentRow as HTMLElement)
+    expect(screen.queryByRole('tooltip')).toBeNull()
     expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('80.5', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('77.3', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
@@ -63,15 +119,19 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Stability and Capability' })).toBeNull()
     expect(screen.queryByText('Wealth Foundation Engine')).toBeNull()
     expect(screen.queryByRole('heading', { name: 'Wealth Foundation Score' })).toBeNull()
-    expect(screen.getAllByRole('progressbar')).toHaveLength(16)
+    expect(screen.getAllByRole('progressbar')).toHaveLength(19)
 
     const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
     expect(within(insights).getByText('1. Financial Health Change')).toBeTruthy()
     expect(within(insights).getByText('+0')).toBeTruthy()
-    expect(within(insights).getByText('Income concentration rank 5 of 7')).toBeTruthy()
-    expect(within(insights).getByText(/top 10% receive 45.4%/)).toBeTruthy()
-    expect(within(insights).getByText(/Personal wealth rank: Ranking pending/)).toBeTruthy()
-    expect(within(insights).getByText(/no values or amount thresholds/)).toBeTruthy()
+    expect(within(insights).getByText('No change in your financial health yet.')).toBeTruthy()
+    expect(within(insights).getByText('PSA Household Income Classification: Poor')).toBeTruthy()
+    expect(within(insights).getByText('Your household income is currently in the Bottom 50% in the Philippines.')).toBeTruthy()
+    expect(within(insights).getByText('Globally, your household income is around the Bottom 60% based on the WID guide.')).toBeTruthy()
+    expect(within(insights).getByText('Add your monthly budget activity to see your financial momentum.')).toBeTruthy()
+    expect(within(insights).getByText('Add your emergency fund and monthly expenses to check your resilience.')).toBeTruthy()
+    expect(within(insights).getByText(/Wealth Health, Protection Health, Investment Health are below the 80-point target/)).toBeTruthy()
+    expect(within(insights).getByText(/Focus on rebuilding Investment Health, Protection Health/)).toBeTruthy()
     const benchmarkTable = screen.getByRole('region', { name: '2024 Pre-Tax Income Distribution Benchmark' })
     expect(within(benchmarkTable).getAllByRole('row')).toHaveLength(8)
     expect(within(benchmarkTable).getByRole('row', { name: /5 Philippines 14.35% 45.40% 16.62% 2024 1.0/ })).toBeTruthy()
@@ -80,6 +140,36 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText('4. Financial Resilience')).toBeTruthy()
     expect(within(insights).getByText('5. Risk Alerts')).toBeTruthy()
     expect(within(insights).getByText('6. Opportunities')).toBeTruthy()
+  })
+
+  it('derives Philippine household benchmarks from Build Profile actuals', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-BENCHMARK',
+      values: {
+        citizenship: 'Filipino',
+        wealthCurrency: 'PHP',
+        dependents: '3',
+        'wealthActual.income-salary': '120000',
+        'wealthActual.asset-savings-account': '1500000',
+        'wealthActual.liability-personal-loan': '250000',
+      },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+      dependents: [],
+    }))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const insights = await screen.findByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
+    expect(await within(insights).findByText('PSA Household Income Classification: Upper Middle Income')).toBeTruthy()
+    expect(within(insights).getByText('Your household income is currently in the Top 10% in the Philippines.')).toBeTruthy()
+    expect(within(insights).getByText('Globally, your household income is around the Top 20% based on the WID guide.')).toBeTruthy()
+    expect(within(insights).getByText(/Monthly household income ₱120,000/)).toBeTruthy()
+    expect(within(insights).getByText(/Dependents 3/)).toBeTruthy()
+    expect(within(insights).getByText(/Net worth ₱1,250,000/)).toBeTruthy()
   })
 
   it('hides Calculation Transparency from non-admin users', () => {
@@ -192,14 +282,17 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('96.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('98.2', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
     expect(screen.getByText('92.7', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
+    expect(screen.getByRole('progressbar', { name: 'Cash Flow Position Ring: 100 out of 100' })).toBeTruthy()
+    expect(screen.getByRole('progressbar', { name: 'Net Worth Growth Ring: 100 out of 100' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
-    expect(screen.queryByText('Wealth Building Score')).toBeNull()
     expect(screen.queryByText('Wealth Foundation Engine')).toBeNull()
 
     const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
     expect(within(insights).getByText('+120')).toBeTruthy()
+    expect(within(insights).getByText(/Your financial health improved. The biggest gains came from/)).toBeTruthy()
     expect(within(insights).getByText('Improving')).toBeTruthy()
-    expect(within(insights).getByText('12/12 stable tracked months')).toBeTruthy()
+    expect(within(insights).getByText('Improving for the last 12 months. Keep it up.')).toBeTruthy()
     expect(within(insights).getByText('17.6 months')).toBeTruthy()
+    expect(within(insights).getByText('Your emergency fund can cover 17.6 months of expenses. You are in a resilient position.')).toBeTruthy()
   })
 })

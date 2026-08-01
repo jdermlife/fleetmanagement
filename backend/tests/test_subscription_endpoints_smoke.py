@@ -24,6 +24,12 @@ class FakeQuery:
         value = getattr(right, "value", None)
         if value is None and right is not None:
             value = getattr(right, "effective_value", None)
+        if value is None and right is not None:
+            boolean_literal = type(right).__name__
+            if boolean_literal == "True_":
+                value = True
+            elif boolean_literal == "False_":
+                value = False
         return key, value
 
     def filter(self, *criteria):

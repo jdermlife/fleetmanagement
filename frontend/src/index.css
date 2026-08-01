@@ -1314,6 +1314,11 @@ textarea {
   align-content: space-between;
 }
 
+.loan-certification-metric-value-small {
+  font-size: 0.72rem;
+  line-height: 1.25;
+}
+
 .loan-certification-summary-card {
   min-height: 80px;
 }
@@ -4549,6 +4554,134 @@ button.loan-repository-action-release { background: #4f46e5; }
 
   to {
     background-position: -200% 0;
+  }
+}
+
+.aml-kyc-page {
+  --aml-ink: #16324f;
+  --aml-muted: #64748b;
+  --aml-accent: #0f766e;
+}
+
+.aml-kyc-hero {
+  background:
+    linear-gradient(115deg, rgba(15, 118, 110, 0.94), rgba(22, 50, 79, 0.96)),
+    repeating-linear-gradient(135deg, transparent 0 18px, rgba(255, 255, 255, 0.05) 18px 19px);
+}
+
+.aml-kyc-progress {
+  min-width: 190px;
+  display: grid;
+  gap: 5px;
+  padding: 18px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: #ffffff;
+}
+
+.aml-kyc-progress span,
+.aml-kyc-progress small {
+  color: rgba(255, 255, 255, 0.76);
+}
+
+.aml-kyc-progress strong {
+  font-size: 1.8rem;
+}
+
+.aml-kyc-question-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 20px;
+}
+
+.aml-kyc-question {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.aml-kyc-question-number {
+  color: var(--aml-accent);
+  font-size: 0.7rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.aml-kyc-question > strong {
+  color: var(--aml-ink);
+  font-size: 0.96rem;
+}
+
+.aml-kyc-question > span:not(.aml-kyc-question-number) {
+  min-height: 42px;
+  color: var(--aml-muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.aml-kyc-question select {
+  width: 100%;
+  min-height: 42px;
+  margin-top: 4px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--aml-ink);
+}
+
+.aml-kyc-result {
+  border-left: 5px solid var(--aml-accent);
+}
+
+.aml-kyc-result > p {
+  margin: 14px 0 0;
+  color: var(--aml-muted);
+}
+
+.aml-kyc-result-grid {
+  display: grid;
+  grid-template-columns: 0.7fr 1fr 1.5fr;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.aml-kyc-result-grid > div {
+  display: grid;
+  gap: 7px;
+  padding: 16px;
+  border: 1px solid rgba(15, 118, 110, 0.2);
+  border-radius: 8px;
+  background: #f0fdfa;
+}
+
+.aml-kyc-result-grid span {
+  color: var(--aml-muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.aml-kyc-result-grid strong {
+  color: var(--aml-ink);
+  font-size: 1rem;
+}
+
+@media (max-width: 760px) {
+  .aml-kyc-question-grid,
+  .aml-kyc-result-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .aml-kyc-progress {
+    min-width: 0;
+    width: 100%;
   }
 }
 
@@ -9456,7 +9589,96 @@ th { color: var(--dark-gold); }
   margin-top: 20px;
 }
 
+.financial-health-position-rings {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.financial-health-position-ring-card {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 20px;
+  border: 1px solid color-mix(in srgb, var(--health-accent) 24%, #dbe2ea);
+  border-radius: 18px;
+  background: linear-gradient(145deg, #ffffff, var(--health-soft));
+}
+
+.financial-health-position-ring {
+  position: relative;
+  width: 104px;
+  height: 104px;
+  flex: 0 0 104px;
+}
+
+.financial-health-position-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.financial-health-position-ring .financial-health-mini-track,
+.financial-health-position-ring .financial-health-mini-progress {
+  stroke-width: 8;
+}
+
+.financial-health-position-ring > strong,
+.financial-health-position-ring > span {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+}
+
+.financial-health-position-ring > strong {
+  top: 31px;
+  color: var(--financial-health-ink);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.financial-health-position-ring > span {
+  top: 58px;
+  color: var(--financial-health-muted);
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+
+.financial-health-position-ring-copy {
+  min-width: 0;
+}
+
+.financial-health-position-ring-copy h3,
+.financial-health-position-ring-copy p {
+  margin: 0;
+}
+
+.financial-health-position-ring-copy h3 {
+  color: var(--financial-health-ink);
+  font-size: 1rem;
+}
+
+.financial-health-position-ring-copy p {
+  margin-top: 7px;
+  color: var(--financial-health-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.financial-health-position-ring-copy > strong {
+  display: block;
+  margin-top: 9px;
+  color: var(--health-accent);
+  font-size: 0.78rem;
+}
+
 .financial-health-vital-card {
+  position: relative;
   min-width: 0;
   display: flex;
   align-items: center;
@@ -9472,6 +9694,61 @@ th { color: var(--dark-gold); }
   width: 58px;
   height: 58px;
   flex: 0 0 58px;
+}
+
+.financial-health-vital-trigger {
+  border-radius: 50%;
+  cursor: help;
+  outline: none;
+}
+
+.financial-health-vital-trigger:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--health-accent) 28%, transparent);
+}
+
+.financial-health-vital-popover {
+  position: absolute;
+  z-index: 20;
+  left: 12px;
+  bottom: calc(100% + 10px);
+  width: min(300px, calc(100vw - 48px));
+  padding: 13px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-top: 3px solid var(--health-accent);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  color: var(--financial-health-ink);
+}
+
+.financial-health-vital-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 31px;
+  border: 7px solid transparent;
+  border-top-color: #ffffff;
+}
+
+.financial-health-vital-popover > strong {
+  color: #166534;
+  font-size: 0.82rem;
+}
+
+.financial-health-vital-popover.is-negative > strong {
+  color: #b42318;
+}
+
+.financial-health-vital-popover p,
+.financial-health-vital-popover span {
+  display: block;
+  margin: 7px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.financial-health-vital-popover span {
+  color: var(--financial-health-muted);
 }
 
 .financial-health-mini-ring svg {
@@ -9545,6 +9822,104 @@ th { color: var(--dark-gold); }
   gap: 20px;
 }
 
+.financial-health-sample-chip {
+  min-height: 34px;
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 11px;
+  border: 1px solid rgba(180, 134, 11, 0.24);
+  border-radius: 999px;
+  background: #fff8db;
+  color: #854d0e;
+  font-size: 0.74rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.financial-health-trend-figure {
+  margin: 18px 0 0;
+}
+
+.financial-health-trend-scroll {
+  overflow-x: auto;
+  padding: 8px 4px 0;
+}
+
+.financial-health-trend-scroll svg {
+  display: block;
+  min-width: 620px;
+  width: 100%;
+}
+
+.financial-health-trend-grid-line,
+.financial-health-trend-target {
+  stroke: rgba(148, 163, 184, 0.22);
+  stroke-width: 1;
+  stroke-dasharray: 5 7;
+}
+
+.financial-health-trend-target {
+  stroke: rgba(15, 118, 110, 0.52);
+  stroke-width: 1.5;
+}
+
+.financial-health-trend-axis-label,
+.financial-health-trend-period {
+  fill: var(--financial-health-muted);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.financial-health-trend-line {
+  fill: none;
+  stroke-width: 3;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.financial-health-trend-point {
+  fill: #ffffff;
+  stroke-width: 3;
+}
+
+.financial-health-trend-value {
+  font-size: 10px;
+  font-weight: 800;
+  paint-order: stroke;
+  stroke: #ffffff;
+  stroke-width: 3px;
+  stroke-linejoin: round;
+}
+
+.financial-health-trend-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  margin-top: 10px;
+}
+
+.financial-health-trend-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--financial-health-ink);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.financial-health-trend-legend i {
+  width: 18px;
+  height: 3px;
+  border-radius: 999px;
+}
+
+.financial-health-trend-legend small {
+  flex-basis: 100%;
+  color: var(--financial-health-muted);
+  font-size: 0.72rem;
+}
+
 .financial-health-chart-head,
 .financial-health-chart-row {
   display: grid;
@@ -9603,6 +9978,18 @@ th { color: var(--dark-gold); }
   fill: none;
   stroke: rgba(15, 23, 42, 0.22);
   stroke-width: 3;
+}
+
+.financial-health-leaf-score-region {
+  transition: filter 180ms ease;
+}
+
+.financial-health-leaf-score-boundary {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.52);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  filter: drop-shadow(0 1px 1px rgba(15, 23, 42, 0.12));
 }
 
 .financial-health-leaf-vein,
@@ -9672,9 +10059,60 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-chart-row {
+  position: relative;
   min-height: 62px;
   padding: 10px;
   border-top: 1px solid rgba(226, 232, 240, 0.78);
+  outline: none;
+}
+
+.financial-health-chart-row:focus-visible {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--health-accent) 40%, transparent);
+}
+
+.financial-health-chart-popover {
+  position: absolute;
+  z-index: 30;
+  right: 10px;
+  bottom: calc(100% - 4px);
+  width: min(340px, calc(100vw - 48px));
+  padding: 13px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-top: 3px solid var(--health-accent);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  color: var(--financial-health-ink);
+}
+
+.financial-health-chart-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  right: 30px;
+  border: 7px solid transparent;
+  border-top-color: #ffffff;
+}
+
+.financial-health-chart-popover > strong {
+  color: #166534;
+  font-size: 0.82rem;
+}
+
+.financial-health-chart-popover.is-negative > strong {
+  color: #b42318;
+}
+
+.financial-health-chart-popover p,
+.financial-health-chart-popover span {
+  display: block;
+  margin: 7px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.financial-health-chart-popover span {
+  color: var(--financial-health-muted);
 }
 
 .financial-health-chart-label,
@@ -9872,6 +10310,10 @@ th { color: var(--dark-gold); }
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  .financial-health-position-rings {
+    grid-template-columns: 1fr;
+  }
+
   .financial-health-detail-layout {
     grid-template-columns: 1fr;
   }
@@ -9964,6 +10406,7 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-vitals-grid,
+  .financial-health-position-rings,
   .financial-health-summary-grid,
   .financial-health-side-stack,
   .financial-health-insight-grid {

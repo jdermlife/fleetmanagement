@@ -538,6 +538,7 @@ export default function LoanCertificationPage() {
         <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${bandDisplay(certification.fraudScore)}</div><div class="metric-value">${scoreDisplay(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${bandDisplay(certification.socialScore)}</div><div class="metric-value">${scoreDisplay(certification.socialScore)}</div></div>
         <div class="metric"><div class="metric-label">Credit Value Score</div><div class="metric-band">${bandDisplay(certification.creditValueScore)}</div><div class="metric-value">${scoreDisplay(certification.creditValueScore)}</div></div>
+        <div class="metric"><div class="metric-label">AML Classification Score</div><div class="metric-value" style="font-size: 8px;">DB Not Available</div></div>
       </div>
       <div class="footer">
         <div class="meta">
@@ -728,11 +729,16 @@ export default function LoanCertificationPage() {
                   value: scoreDisplay(certification.creditValueScore),
                   band: bandDisplay(certification.creditValueScore),
                 },
+                {
+                  label: 'AML Classification Score',
+                  value: 'DB Not Available',
+                  band: '',
+                },
               ].map((item) => (
                 <div key={item.label} className="loan-certification-metric-card">
                   <span className="loan-certification-metric-label">{item.label}</span>
                   <span className="loan-certification-metric-band">{item.band}</span>
-                  <strong className="loan-certification-metric-value">{item.value}</strong>
+                  <strong className={`loan-certification-metric-value${item.label === 'AML Classification Score' ? ' loan-certification-metric-value-small' : ''}`}>{item.value}</strong>
                 </div>
               ))}
             </div>

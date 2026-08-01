@@ -137,8 +137,8 @@ def get_loan_record_creation_entitlement(
         db.close()
 
 
-@router.get("/plans")
-def list_plans():
+@router.get("/public-plans")
+def list_public_plans():
     db = SessionLocal()
 
     try:

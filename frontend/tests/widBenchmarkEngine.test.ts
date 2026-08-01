@@ -88,4 +88,14 @@ describe('WID benchmark engine', () => {
       globalRank: 'Top 2%',
     })
   })
+
+  it('applies the configured PSA household income boundaries', () => {
+    expect(computePhilippineIncomeBenchmark(12_999 * 12).classification).toBe('Poor')
+    expect(computePhilippineIncomeBenchmark(13_000 * 12).classification).toBe('Low Income (Non-Poor)')
+    expect(computePhilippineIncomeBenchmark(26_001 * 12).classification).toBe('Lower Middle Income')
+    expect(computePhilippineIncomeBenchmark(52_001 * 12).classification).toBe('Middle Middle Income')
+    expect(computePhilippineIncomeBenchmark(104_001 * 12).classification).toBe('Upper Middle Income')
+    expect(computePhilippineIncomeBenchmark(182_001 * 12).classification).toBe('High Income (Not Rich)')
+    expect(computePhilippineIncomeBenchmark(219_001 * 12).classification).toBe('Rich')
+  })
 })

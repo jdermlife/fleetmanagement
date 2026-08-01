@@ -104,6 +104,9 @@ describe('LoanCertificationPage', () => {
     const bureauCard = screen.getByText('Credit Bureau Score').closest('div')
     expect(bureauCard).toBeTruthy()
     expect(within(bureauCard!).getByText('91 / 100')).toBeTruthy()
+    const amlCard = screen.getByText('AML Classification Score').closest('div')
+    expect(amlCard).toBeTruthy()
+    expect(within(amlCard!).getByText('DB Not Available')).toBeTruthy()
   })
 
   it('loads the borrower and score from the selected Profile ID when the URL has no application number', async () => {

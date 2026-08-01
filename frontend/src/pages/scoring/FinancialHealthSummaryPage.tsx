@@ -35,7 +35,7 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
-import { computeWidBenchmark, countryCodeFromCitizenship, getWidIncomeBenchmarkTable } from './widBenchmarkEngine'
+import { computePhilippineIncomeBenchmark, countryCodeFromCitizenship, getWidIncomeBenchmarkTable } from './widBenchmarkEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -54,10 +54,7 @@ type LendingLeafSegment = {
   label: string
   score: number | null
   filscore: number | null
-  x: number
-  y: number
-  width: number
-  height: number
+  path: string
   fill: string
 }
 
@@ -74,6 +71,127 @@ type JourneyStep = {
 type BenchmarkContext = {
   countryCode: string
   currency: string
+  monthlyIncome: number
+  netWorth: number
+  dependents: number
+}
+
+type VitalGuidance = {
+  positive: string
+  negative: string
+  recommendation: string
+}
+
+type FinancialHealthTrendPoint = {
+  period: string
+  healthScore: number
+  creditHealth: number
+  wealthBuilding: number
+}
+
+type FinancialHealthTrendSeries = {
+  id: 'healthScore' | 'creditHealth' | 'wealthBuilding'
+  label: string
+  color: string
+  value: (point: FinancialHealthTrendPoint) => number
+  plotValue: (point: FinancialHealthTrendPoint) => number
+}
+
+const VITAL_GUIDANCE: Record<string, VitalGuidance> = {
+  credit: {
+    positive: 'Your credit capacity and lending profile are strong.',
+    negative: 'Credit capacity or lending-profile gaps may limit approval options.',
+    recommendation: 'Pay obligations on time, reduce debt balances, and keep identification and income records current.',
+  },
+  'cash-flow': {
+    positive: 'Your income currently provides a healthy cushion after expenses.',
+    negative: 'Your monthly income has limited room after recurring expenses.',
+    recommendation: 'Review recurring costs and direct part of each income payment to savings before discretionary spending.',
+  },
+  wealth: {
+    positive: 'Your assets, liquidity, and liabilities form a solid wealth base.',
+    negative: 'Your current assets and liabilities leave room to strengthen net worth.',
+    recommendation: 'Build liquid savings, reduce high-cost liabilities, and add consistently to long-term assets.',
+  },
+  budget: {
+    positive: 'Your plan and actual spending are aligned with healthy targets.',
+    negative: 'Budget gaps or spending variance are weakening financial control.',
+    recommendation: 'Set category limits, record actual expenses weekly, and adjust any category that repeatedly exceeds plan.',
+  },
+  payment: {
+    positive: 'Your debt level is manageable relative to your assets.',
+    negative: 'Debt leverage is high enough to reduce your financial flexibility.',
+    recommendation: 'Prioritize high-interest balances and avoid adding new debt until leverage improves.',
+  },
+  protection: {
+    positive: 'Your insurance coverage provides broad protection against major financial shocks.',
+    negative: 'Important insurance coverage gaps may expose your savings and income.',
+    recommendation: 'Review life, health, disability, property, and other relevant coverage, starting with the largest uninsured risk.',
+  },
+  investment: {
+    positive: 'Your investments, retirement preparation, and passive income are progressing well.',
+    negative: 'Investment and retirement readiness are below the recommended level.',
+    recommendation: 'Automate a sustainable monthly contribution and review diversification and retirement targets regularly.',
+  },
+  goal: {
+    positive: 'Your projected progress is on track for your saved financial goal.',
+    negative: 'Your current pace may not reach the saved goal by its target date.',
+    recommendation: 'Increase the monthly goal contribution, extend the timeline, or revise the target to a realistic amount.',
+  },
+}
+
+const SAMPLE_FINANCIAL_HEALTH_TREND: readonly FinancialHealthTrendPoint[] = [
+  { period: 'Apr', healthScore: 768, creditHealth: 79, wealthBuilding: 67 },
+  { period: 'May', healthScore: 784, creditHealth: 81, wealthBuilding: 70 },
+  { period: 'Jun', healthScore: 803, creditHealth: 84, wealthBuilding: 73 },
+  { period: 'Jul', healthScore: 821, creditHealth: 87, wealthBuilding: 76 },
+  { period: 'Aug', healthScore: 842, creditHealth: 91, wealthBuilding: 79 },
+]
+
+const FINANCIAL_HEALTH_TREND_SERIES: readonly FinancialHealthTrendSeries[] = [
+  {
+    id: 'healthScore',
+    label: 'Financial Health Score',
+    color: '#0f766e',
+    value: (point) => point.healthScore,
+    plotValue: (point) => point.healthScore / 10,
+  },
+  {
+    id: 'creditHealth',
+    label: 'Credit Health',
+    color: '#5856d6',
+    value: (point) => point.creditHealth,
+    plotValue: (point) => point.creditHealth,
+  },
+  {
+    id: 'wealthBuilding',
+    label: 'Wealth Building Score',
+    color: '#d4a017',
+    value: (point) => point.wealthBuilding,
+    plotValue: (point) => point.wealthBuilding,
+  },
+]
+
+const TREND_CHART_WIDTH = 720
+const TREND_CHART_HEIGHT = 286
+const TREND_CHART_LEFT = 52
+const TREND_CHART_RIGHT = 694
+const TREND_CHART_TOP = 24
+const TREND_CHART_BOTTOM = 238
+
+function trendChartX(index: number, count: number): number {
+  return TREND_CHART_LEFT + (index * (TREND_CHART_RIGHT - TREND_CHART_LEFT)) / Math.max(count - 1, 1)
+}
+
+function trendChartY(value: number): number {
+  return TREND_CHART_BOTTOM - (clampScore(value) / 100) * (TREND_CHART_BOTTOM - TREND_CHART_TOP)
+}
+
+function trendSeriesPath(series: FinancialHealthTrendSeries): string {
+  return SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => {
+    const command = index === 0 ? 'M' : 'L'
+    return `${command}${trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)} ${trendChartY(series.plotValue(point))}`
+  }).join(' ')
 }
 
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
@@ -442,7 +560,15 @@ export default function FinancialHealthSummaryPage() {
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
-  const [benchmarkContext, setBenchmarkContext] = useState<BenchmarkContext>({ countryCode: 'PH', currency: 'PHP' })
+  const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
+  const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
+  const [benchmarkContext, setBenchmarkContext] = useState<BenchmarkContext>({
+    countryCode: 'PH',
+    currency: 'PHP',
+    monthlyIncome: 0,
+    netWorth: 0,
+    dependents: 0,
+  })
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
     createProfile: false,
     creditHealth: false,
@@ -504,6 +630,16 @@ export default function FinancialHealthSummaryPage() {
           const buildProfileActualEntries = Object.fromEntries(Object.entries(buildProfileDraft?.values ?? {})
             .filter(([key, value]) => key.startsWith('wealthActual.') && value.trim() !== '')
             .map(([key, value]) => [key.slice('wealthActual.'.length), value]))
+          const buildProfileSetupEntries = Object.fromEntries(Object.entries(buildProfileDraft?.values ?? {})
+            .filter(([key, value]) => !key.includes('.') && value.trim() !== '')
+            .map(([key, value]) => [key, value]))
+          const buildProfileBenchmarkEntries = {
+            ...buildProfileSetupEntries,
+            ...buildProfileActualEntries,
+          }
+          const buildProfileBenchmarkScore = Object.keys(buildProfileBenchmarkEntries).length > 0
+            ? computeNetWorthBuildingScore({ amounts: buildProfileBenchmarkEntries })
+            : null
           const benchmarkWealthPayload = wealthPayload ?? (Object.keys(buildProfileActualEntries).length > 0
             ? { amounts: {}, actualEntries: buildProfileActualEntries }
             : null)
@@ -518,6 +654,12 @@ export default function FinancialHealthSummaryPage() {
               || (wealthPayload as (NetWorthBuildingDraftInput & { currency?: string; currencyCode?: string }) | undefined)?.currency
               || (wealthPayload as (NetWorthBuildingDraftInput & { currencyCode?: string }) | undefined)?.currencyCode
               || 'PHP',
+            monthlyIncome: buildProfileBenchmarkScore?.metrics.monthlyIncome ?? 0,
+            netWorth: buildProfileBenchmarkScore?.metrics.netWorth ?? 0,
+            dependents: Math.max(
+              0,
+              Number(buildProfileDraft?.values.dependents) || buildProfileDraft?.dependents?.length || 0,
+            ),
           })
 
           setLendingLeafScores(lendingPayload ? deriveLendingLeafScores(lendingPayload) : null)
@@ -625,12 +767,7 @@ export default function FinancialHealthSummaryPage() {
   const score = publishedSummary.score
   const band = getFinancialHealthBand(score)
   const financialHealthChange = score - DEFAULT_FINANCIAL_HEALTH_SUMMARY.score
-  const widBenchmark = computeWidBenchmark({
-    netWorth: netWorthBuildingScore?.metrics.netWorth ?? 0,
-    annualIncome: (netWorthBuildingScore?.metrics.monthlyIncome ?? 0) * 12,
-    countryCode: benchmarkContext.countryCode,
-    currency: benchmarkContext.currency,
-  })
+  const philippineIncomeBenchmark = computePhilippineIncomeBenchmark(benchmarkContext.monthlyIncome * 12)
   const widIncomeBenchmarkTable = getWidIncomeBenchmarkTable()
   const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
   const momentumLabel = !budgetHealthScore
@@ -644,26 +781,86 @@ export default function FinancialHealthSummaryPage() {
     ?? netWorthBuildingScore?.metrics.emergencyFundMonths
     ?? null
   const riskIndicators = financialHealthIndicators.filter((indicator) => indicator.score < 80)
+  const defaultIndicatorById = new Map(DEFAULT_FINANCIAL_HEALTH_SUMMARY.indicators.map((indicator) => [indicator.id, indicator]))
+  const changeContributors = financialHealthIndicators
+    .map((indicator) => ({
+      label: indicator.label,
+      change: indicator.score - (defaultIndicatorById.get(indicator.id)?.score ?? indicator.score),
+      weightedImpact: (indicator.score - (defaultIndicatorById.get(indicator.id)?.score ?? indicator.score)) * indicator.weight,
+    }))
+    .filter((indicator) => financialHealthChange > 0 ? indicator.change > 0 : indicator.change < 0)
+    .sort((left, right) => Math.abs(right.weightedImpact) - Math.abs(left.weightedImpact))
+    .slice(0, 3)
+  const changeNarration = financialHealthChange === 0
+    ? 'No change in your financial health yet.'
+    : financialHealthChange > 0
+      ? `Your financial health improved. The biggest gains came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
+      : `Your financial health declined. The biggest decreases came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
+  const momentumNarration = !budgetHealthScore
+    ? 'Add your monthly budget activity to see your financial momentum.'
+    : momentumLabel === 'Improving'
+      ? `Improving for the last ${stableMonths} months. Keep it up.`
+      : momentumLabel === 'Stable'
+        ? `Consistent for the last ${stableMonths} months. Maintain it, then look for your next improvement.`
+        : `Declining over the tracked ${stableMonths} months. Review your budget and work on improving the next month.`
+  const resilienceNarration = resilienceMonths === null
+    ? 'Add your emergency fund and monthly expenses to check your resilience.'
+    : resilienceMonths >= 6
+      ? `Your emergency fund can cover ${resilienceMonths.toFixed(1)} months of expenses. You are in a resilient position.`
+      : resilienceMonths >= 3
+        ? `Your emergency fund can cover ${resilienceMonths.toFixed(1)} months of expenses. Keep saving to strengthen it.`
+        : `Your emergency fund covers only ${resilienceMonths.toFixed(1)} months of expenses. Prioritize building it up over the next few months.`
   const opportunityIndicators = [...riskIndicators]
     .sort((left, right) => left.score - right.score)
     .slice(0, 3)
+  const totalLiabilities = netWorthBuildingScore?.metrics.totalLiabilities ?? 0
+  const riskNarration = riskIndicators.length === 0
+    ? 'Well positioned. No alerts right now.'
+    : `${riskIndicators.map((indicator) => indicator.label).join(', ')} ${riskIndicators.length === 1 ? 'is' : 'are'} below the 80-point target and may hold back your overall financial health.`
+  const opportunityNarration = totalLiabilities > 0
+    ? `You have ${new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(totalLiabilities)} in liabilities. Review interest rates and consider whether debt consolidation could lower your cost. Then focus on rebuilding ${opportunityIndicators.map((indicator) => indicator.label).join(', ') || 'your financial buffer'}.`
+    : opportunityIndicators.length > 0
+      ? `Focus on rebuilding ${opportunityIndicators.map((indicator) => indicator.label).join(', ')}. Small, consistent improvements can lift your overall score.`
+      : 'Keep building on your current habits and review your goals regularly.'
   const strongestIndicator = financialHealthIndicators.reduce((strongest, indicator) =>
     indicator.score > strongest.score ? indicator : strongest,
   )
   const priorityIndicator = financialHealthIndicators.reduce((priority, indicator) =>
     indicator.score < priority.score ? indicator : priority,
   )
-  const rightLeafTotal = 1 / 3 + 1 / 4 + 1 / 3
+  const positionRings = [
+    {
+      id: 'cash-flow',
+      label: 'Cash Flow Position',
+      description: 'Monthly income, expenses, and savings strength',
+      accent: '#32ade6',
+      softAccent: '#e8f7fd',
+    },
+    {
+      id: 'credit',
+      label: 'Credit Health',
+      description: 'Current credit capacity and lending profile',
+      accent: '#5856d6',
+      softAccent: '#efeffb',
+    },
+    {
+      id: 'goal',
+      label: 'Net Worth Growth',
+      description: 'Progress toward your saved net-worth goal',
+      accent: '#30b85c',
+      softAccent: '#e9f8ee',
+    },
+  ].map((ring) => ({
+    ...ring,
+    score: financialHealthIndicators.find((indicator) => indicator.id === ring.id)?.score ?? 0,
+  }))
   const leafSegments: LendingLeafSegment[] = [
     {
       id: 'credit',
       label: 'Credit Score',
       score: lendingLeafScores?.creditScore ?? null,
       filscore: toFilscore(lendingLeafScores?.creditScore ?? null),
-      x: 27,
-      y: 24,
-      width: 103,
-      height: 272,
+      path: 'M27 24H130C118 78 143 139 128 200C117 244 138 276 130 296H27Z',
       fill: scoreTone(lendingLeafScores?.creditScore ?? null),
     },
     {
@@ -671,10 +868,7 @@ export default function FinancialHealthSummaryPage() {
       label: 'Behaviour / Psychometric Score',
       score: lendingLeafScores?.psychometricScore ?? null,
       filscore: toFilscore(lendingLeafScores?.psychometricScore ?? null),
-      x: 130,
-      y: 24,
-      width: 103,
-      height: 272 * ((1 / 3) / rightLeafTotal),
+      path: 'M130 24H233V118C205 104 174 135 134 116C140 82 123 52 130 24Z',
       fill: scoreTone(lendingLeafScores?.psychometricScore ?? null),
     },
     {
@@ -682,10 +876,7 @@ export default function FinancialHealthSummaryPage() {
       label: 'Social Score',
       score: lendingLeafScores?.socialScore ?? null,
       filscore: toFilscore(lendingLeafScores?.socialScore ?? null),
-      x: 130,
-      y: 24 + 272 * ((1 / 3) / rightLeafTotal),
-      width: 103,
-      height: 272 * ((1 / 4) / rightLeafTotal),
+      path: 'M134 116C174 135 205 104 233 118V205C204 190 171 221 128 200C134 170 140 145 134 116Z',
       fill: scoreTone(lendingLeafScores?.socialScore ?? null),
     },
     {
@@ -693,13 +884,7 @@ export default function FinancialHealthSummaryPage() {
       label: 'Non-Starter Score',
       score: lendingLeafScores?.nonStarterScore ?? null,
       filscore: toFilscore(lendingLeafScores?.nonStarterScore ?? null),
-      x: 130,
-      y:
-        24 +
-        272 * ((1 / 3) / rightLeafTotal) +
-        272 * ((1 / 4) / rightLeafTotal),
-      width: 103,
-      height: 272 * ((1 / 3) / rightLeafTotal),
+      path: 'M128 200C171 221 204 190 233 205V296H130C138 276 117 244 128 200Z',
       fill: scoreTone(lendingLeafScores?.nonStarterScore ?? null),
     },
   ]
@@ -929,38 +1114,34 @@ export default function FinancialHealthSummaryPage() {
         <article className="financial-health-insight-card">
           <span>1. Financial Health Change</span>
           <strong>{financialHealthChange >= 0 ? '+' : ''}{financialHealthChange}</strong>
-          <small>Points versus the default published health view</small>
+          <small>{changeNarration}</small>
         </article>
         <article className="financial-health-insight-card">
           <span>2. Benchmarking</span>
-          <strong>{widBenchmark.incomeConcentrationRank
-            ? `Income concentration rank ${widBenchmark.incomeConcentrationRank} of ${widBenchmark.incomeConcentrationCountryCount}`
-            : widBenchmark.band}</strong>
-          <small>{widBenchmark.top10IncomeShare === null
-            ? widBenchmark.explanation
-            : `The top 10% receive ${(widBenchmark.top10IncomeShare * 100).toFixed(1)}% of pre-tax national income. Rank 1 means the highest concentration among the supplied countries, not the best financial health.`}</small>
-          <small>Personal wealth rank: {widBenchmark.band}. {widBenchmark.explanation}</small>
-          <small>{widBenchmark.countryName ?? widBenchmark.countryCode} · WID {widBenchmark.referenceYear ?? 'reference pending'} · Net worth {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.netWorth)} · Annual income {new Intl.NumberFormat('en', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(widBenchmark.annualIncome)}</small>
+          <strong>PSA Household Income Classification: {philippineIncomeBenchmark.classification}</strong>
+          <small>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
+          <small>Globally, your household income is around the {philippineIncomeBenchmark.globalRank} based on the WID guide.</small>
+          <small>{philippineIncomeBenchmark.interpretation} · Monthly household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.monthlyIncome)} · Annual household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.annualIncome)} · Dependents {benchmarkContext.dependents} · Net worth {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(benchmarkContext.netWorth)}</small>
         </article>
         <article className="financial-health-insight-card">
           <span>3. Financial Momentum</span>
           <strong>{momentumLabel}</strong>
-          <small>{budgetHealthScore ? `${stableMonths}/12 stable tracked months` : 'Complete Budget tracking for a 12-month trend'}</small>
+          <small>{momentumNarration}</small>
         </article>
         <article className="financial-health-insight-card">
           <span>4. Financial Resilience</span>
           <strong>{resilienceMonths === null ? 'Pending' : `${resilienceMonths.toFixed(1)} months`}</strong>
-          <small>{resilienceMonths === null ? 'Complete Wealth inputs to measure shock capacity' : resilienceMonths >= 6 ? 'Strong shock absorption capacity' : resilienceMonths >= 3 ? 'Moderate shock absorption capacity' : 'Limited shock absorption capacity'}</small>
+          <small>{resilienceNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-alert">
           <span>5. Risk Alerts</span>
           <strong>{riskIndicators.length}</strong>
-          <small>{riskIndicators.length > 0 ? riskIndicators.map((indicator) => indicator.label).join(', ') : 'No indicators below the 80-point target'}</small>
+          <small>{riskNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-opportunity">
           <span>6. Opportunities</span>
           <strong>{opportunityIndicators.length}</strong>
-          <small>{opportunityIndicators.length > 0 ? opportunityIndicators.map((indicator) => `${indicator.label} +${80 - indicator.score}`).join(', ') : 'Maintain all indicators in the excellent zone'}</small>
+          <small>{opportunityNarration}</small>
         </article>
       </section>
 
@@ -990,7 +1171,7 @@ export default function FinancialHealthSummaryPage() {
             </thead>
             <tbody>
               {widIncomeBenchmarkTable.map((row) => (
-                <tr key={row.countryCode} aria-current={row.countryCode === widBenchmark.countryCode ? 'true' : undefined}>
+                <tr key={row.countryCode} aria-current={row.countryCode === benchmarkContext.countryCode ? 'true' : undefined}>
                   <td><strong>{row.rank}</strong></td>
                   <th scope="row">{row.countryName}</th>
                   <td>{(row.bottom50Share * 100).toFixed(2)}%</td>
@@ -1032,6 +1213,56 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
+      <section className="psychometric-panel financial-health-position-panel" aria-labelledby="financial-position-rings-title">
+        <div className="psychometric-panel-header">
+          <div>
+            <span className="psychometric-panel-kicker">Core positions</span>
+            <h2 id="financial-position-rings-title">Financial Position Rings</h2>
+            <p className="financial-health-panel-intro">
+              A quick view of cash flow, credit health, and progress toward your net-worth goal.
+            </p>
+          </div>
+          <span className="financial-health-target-chip">Target 80+</span>
+        </div>
+        <div className="financial-health-position-rings">
+          {positionRings.map((ring) => (
+            <article
+              key={ring.id}
+              className="financial-health-position-ring-card"
+              style={indicatorStyle(ring.accent, ring.softAccent)}
+            >
+              <div
+                className="financial-health-position-ring"
+                role="progressbar"
+                aria-label={`${ring.label} Ring: ${ring.score} out of 100`}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-valuenow={ring.score}
+              >
+                <svg viewBox="0 0 100 100" aria-hidden="true">
+                  <circle className="financial-health-mini-track" cx="50" cy="50" r="42" pathLength="100" />
+                  <circle
+                    className="financial-health-mini-progress"
+                    cx="50"
+                    cy="50"
+                    r="42"
+                    pathLength="100"
+                    strokeDasharray={`${ring.score} ${100 - ring.score}`}
+                  />
+                </svg>
+                <strong>{ring.score}</strong>
+                <span>/ 100</span>
+              </div>
+              <div className="financial-health-position-ring-copy">
+                <h3>{ring.label}</h3>
+                <p>{ring.description}</p>
+                <strong>{ring.score >= 80 ? 'On track' : 'Needs attention'}</strong>
+              </div>
+            </article>
+          ))}
+        </div>
+      </section>
+
       <section className="psychometric-panel financial-health-vitals-panel" aria-labelledby="health-vitals-title">
         <div className="psychometric-panel-header">
           <div>
@@ -1045,40 +1276,64 @@ export default function FinancialHealthSummaryPage() {
         </div>
 
         <div className="financial-health-vitals-grid">
-          {financialHealthIndicators.map((indicator) => (
-            <article
-              key={indicator.id}
-              className="financial-health-vital-card"
-              style={indicatorStyle(indicator.accent, indicator.softAccent)}
-            >
-              <div
-                className="financial-health-mini-ring"
-                role="progressbar"
-                aria-label={`${indicator.label}: ${indicator.score} out of 100`}
-                aria-valuemin={0}
-                aria-valuemax={100}
-                aria-valuenow={indicator.score}
-              >
-                <svg viewBox="0 0 52 52" aria-hidden="true">
-                  <circle className="financial-health-mini-track" cx="26" cy="26" r="21" pathLength="100" />
-                  <circle
-                    className="financial-health-mini-progress"
-                    cx="26"
-                    cy="26"
-                    r="21"
-                    pathLength="100"
-                    strokeDasharray={`${indicator.score} ${100 - indicator.score}`}
-                  />
-                </svg>
-                <strong>{indicator.score}</strong>
-              </div>
+          {financialHealthIndicators.map((indicator) => {
+            const guidance = VITAL_GUIDANCE[indicator.id]
+            const isPositive = indicator.score >= 80
+            const popoverId = `financial-health-vital-${indicator.id}-guidance`
 
-              <div className="financial-health-vital-copy">
-                <h3>{indicator.label}</h3>
-                <span>{indicator.score >= 80 ? 'Excellent zone' : 'Build next'}</span>
-              </div>
-            </article>
-          ))}
+            return (
+              <article
+                key={indicator.id}
+                className="financial-health-vital-card"
+                style={indicatorStyle(indicator.accent, indicator.softAccent)}
+              >
+                <div
+                  className="financial-health-mini-ring financial-health-vital-trigger"
+                  role="progressbar"
+                  tabIndex={0}
+                  aria-label={`${indicator.label}: ${indicator.score} out of 100`}
+                  aria-describedby={activeVitalId === indicator.id ? popoverId : undefined}
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={indicator.score}
+                  onMouseEnter={() => setActiveVitalId(indicator.id)}
+                  onMouseLeave={() => setActiveVitalId(null)}
+                  onFocus={() => setActiveVitalId(indicator.id)}
+                  onBlur={() => setActiveVitalId(null)}
+                >
+                  <svg viewBox="0 0 52 52" aria-hidden="true">
+                    <circle className="financial-health-mini-track" cx="26" cy="26" r="21" pathLength="100" />
+                    <circle
+                      className="financial-health-mini-progress"
+                      cx="26"
+                      cy="26"
+                      r="21"
+                      pathLength="100"
+                      strokeDasharray={`${indicator.score} ${100 - indicator.score}`}
+                    />
+                  </svg>
+                  <strong>{indicator.score}</strong>
+                </div>
+
+                {activeVitalId === indicator.id ? (
+                  <div
+                    id={popoverId}
+                    className={`financial-health-vital-popover ${isPositive ? 'is-positive' : 'is-negative'}`}
+                    role="tooltip"
+                  >
+                    <strong>{isPositive ? 'Positive' : 'Needs improvement'}: {indicator.score}/100</strong>
+                    <p>{isPositive ? guidance.positive : guidance.negative}</p>
+                    <span><b>Recommendation:</b> {guidance.recommendation}</span>
+                  </div>
+                ) : null}
+
+                <div className="financial-health-vital-copy">
+                  <h3>{indicator.label}</h3>
+                  <span>{isPositive ? 'Excellent zone' : 'Build next'}</span>
+                </div>
+              </article>
+            )
+          })}
         </div>
       </section>
 
@@ -1149,6 +1404,98 @@ export default function FinancialHealthSummaryPage() {
 
       <section className="financial-health-detail-layout">
         <div className="financial-health-main-stack">
+          <article className="psychometric-panel financial-health-trend-panel" aria-labelledby="financial-health-trend-title">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Five-period trend</span>
+                <h2 id="financial-health-trend-title">Monthly Financial Health Trend</h2>
+                <p className="financial-health-panel-intro">
+                  Sample monthly history for overall health, credit health, and wealth building.
+                </p>
+              </div>
+              <span className="financial-health-sample-chip">Sample data</span>
+            </div>
+
+            <figure
+              className="financial-health-trend-figure"
+              role="img"
+              aria-label="Five-period sample trend for Financial Health Score, Credit Health, and Wealth Building Score"
+            >
+              <div className="financial-health-trend-scroll">
+                <svg viewBox={`0 0 ${TREND_CHART_WIDTH} ${TREND_CHART_HEIGHT}`} aria-hidden="true">
+                  {[0, 20, 40, 60, 80, 100].map((tick) => {
+                    const y = trendChartY(tick)
+                    return (
+                      <g key={tick}>
+                        <line
+                          className={tick === 80 ? 'financial-health-trend-target' : 'financial-health-trend-grid-line'}
+                          x1={TREND_CHART_LEFT}
+                          x2={TREND_CHART_RIGHT}
+                          y1={y}
+                          y2={y}
+                        />
+                        <text className="financial-health-trend-axis-label" x="40" y={y + 4} textAnchor="end">{tick}</text>
+                      </g>
+                    )
+                  })}
+
+                  {FINANCIAL_HEALTH_TREND_SERIES.map((series) => (
+                    <g key={series.id} data-trend-series={series.id}>
+                      <path
+                        className="financial-health-trend-line"
+                        d={trendSeriesPath(series)}
+                        stroke={series.color}
+                      />
+                      {SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => (
+                        <g key={point.period}>
+                          <circle
+                            className="financial-health-trend-point"
+                            data-trend-point={point.period}
+                            cx={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                            cy={trendChartY(series.plotValue(point))}
+                            r="5"
+                            stroke={series.color}
+                          />
+                          <text
+                            className="financial-health-trend-value"
+                            x={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                            y={trendChartY(series.plotValue(point)) - 10}
+                            textAnchor="middle"
+                            fill={series.color}
+                          >
+                            {series.value(point)}
+                          </text>
+                        </g>
+                      ))}
+                    </g>
+                  ))}
+
+                  {SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => (
+                    <text
+                      key={point.period}
+                      className="financial-health-trend-period"
+                      x={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                      y="270"
+                      textAnchor="middle"
+                    >
+                      {point.period}
+                    </text>
+                  ))}
+                </svg>
+              </div>
+
+              <figcaption className="financial-health-trend-legend">
+                {FINANCIAL_HEALTH_TREND_SERIES.map((series) => (
+                  <span key={series.id}>
+                    <i style={{ background: series.color }} aria-hidden="true" />
+                    {series.label}
+                  </span>
+                ))}
+                <small>Financial Health uses the 1000-point score; lines share a normalized 0–100 plot.</small>
+              </figcaption>
+            </figure>
+          </article>
+
           <article className="psychometric-panel financial-health-leaf-panel" aria-labelledby="lending-leaf-title">
           <div className="psychometric-panel-header">
             <div>
@@ -1168,25 +1515,36 @@ export default function FinancialHealthSummaryPage() {
                   <clipPath id="financial-health-leaf-clip">
                     <path d="M130 16C80 20 44 64 36 126C28 185 52 248 108 294C117 302 126 308 130 312C134 308 143 302 152 294C208 248 232 185 224 126C216 64 180 20 130 16Z" />
                   </clipPath>
-                </defs>
-
-                <g clipPath="url(#financial-health-leaf-clip)">
-                  <rect x="27" y="24" width="206" height="272" fill="#f8fafc" />
                   {leafSegments.map((segment) => (
-                    <g key={segment.id}>
-                      <rect x={segment.x} y={segment.y} width={segment.width} height={segment.height} fill={segment.fill} />
-                    </g>
+                    <linearGradient key={segment.id} id={`financial-health-leaf-${segment.id}-gradient`} x1="0" y1="0" x2="1" y2="1">
+                      <stop offset="0%" stopColor="#ffffff" stopOpacity="0.72" />
+                      <stop offset="48%" stopColor={segment.fill} stopOpacity="0.88" />
+                      <stop offset="100%" stopColor={segment.fill} />
+                    </linearGradient>
                   ))}
-                  <rect x="27" y="24" width="206" height="272" fill="url(#financial-health-leaf-sheen)" />
-                </g>
-
-                <defs>
                   <linearGradient id="financial-health-leaf-sheen" x1="0" y1="0" x2="1" y2="1">
                     <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
                     <stop offset="45%" stopColor="rgba(255,255,255,0.08)" />
                     <stop offset="100%" stopColor="rgba(15,23,42,0.08)" />
                   </linearGradient>
                 </defs>
+
+                <g clipPath="url(#financial-health-leaf-clip)">
+                  <rect x="27" y="24" width="206" height="272" fill="#f8fafc" />
+                  {leafSegments.map((segment) => (
+                    <path
+                      key={segment.id}
+                      className="financial-health-leaf-score-region"
+                      data-score-region={segment.id}
+                      d={segment.path}
+                      fill={`url(#financial-health-leaf-${segment.id}-gradient)`}
+                    />
+                  ))}
+                  <rect x="27" y="24" width="206" height="272" fill="url(#financial-health-leaf-sheen)" />
+                  <path className="financial-health-leaf-score-boundary" d="M130 24C118 78 143 139 128 200C117 244 138 276 130 296" />
+                  <path className="financial-health-leaf-score-boundary" d="M134 116C174 135 205 104 233 118" />
+                  <path className="financial-health-leaf-score-boundary" d="M128 200C171 221 204 190 233 205" />
+                </g>
 
                 <path className="financial-health-leaf-outline" d="M130 16C80 20 44 64 36 126C28 185 52 248 108 294C117 302 126 308 130 312C134 308 143 302 152 294C208 248 232 185 224 126C216 64 180 20 130 16Z" />
                 <path className="financial-health-leaf-vein" d="M130 30V286" />
@@ -1247,7 +1605,15 @@ export default function FinancialHealthSummaryPage() {
                   key={indicator.id}
                   className="financial-health-chart-row"
                   role="listitem"
+                  tabIndex={0}
+                  aria-describedby={activeChartIndicatorId === indicator.id
+                    ? `financial-health-chart-${indicator.id}-recommendation`
+                    : undefined}
                   style={indicatorStyle(indicator.accent, indicator.softAccent)}
+                  onMouseEnter={() => setActiveChartIndicatorId(indicator.id)}
+                  onMouseLeave={() => setActiveChartIndicatorId(null)}
+                  onFocus={() => setActiveChartIndicatorId(indicator.id)}
+                  onBlur={() => setActiveChartIndicatorId(null)}
                 >
                   <strong className="financial-health-chart-label">{indicator.label}</strong>
                   <div
@@ -1266,6 +1632,21 @@ export default function FinancialHealthSummaryPage() {
                   <span className="financial-health-chart-points">
                     {calculateWeightedContribution(indicator).toFixed(2)}
                   </span>
+                  {activeChartIndicatorId === indicator.id ? (
+                    <div
+                      id={`financial-health-chart-${indicator.id}-recommendation`}
+                      className={`financial-health-chart-popover ${indicator.score >= 80 ? 'is-positive' : 'is-negative'}`}
+                      role="tooltip"
+                    >
+                      <strong>{indicator.label}: {indicator.score}/100</strong>
+                      <p>
+                        {indicator.score >= 80
+                          ? VITAL_GUIDANCE[indicator.id].positive
+                          : VITAL_GUIDANCE[indicator.id].negative}
+                      </p>
+                      <span><b>Overall recommendation:</b> {VITAL_GUIDANCE[indicator.id].recommendation}</span>
+                    </div>
+                  ) : null}
                 </div>
               ))}
             </div>
