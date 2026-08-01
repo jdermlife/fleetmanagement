@@ -2311,8 +2311,8 @@ export default function BuildProfilePage() {
 
         {targetRows.length > 0 ? <>
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown build-profile-comparison-input-dropdown">
-            <summary>Net Worth Target vs Actual Inputs</summary>
-            <p className="psychometric-section-note">Enter target and actual asset or liability amounts. Variance and net worth totals update automatically.</p>
+            <summary>Current Net Worth vs Aspired</summary>
+            <p className="psychometric-section-note">  From Step 8 and Step 9- Variance and net worth totals update automatically.</p>
             <div className="build-profile-comparison-grid">
               {renderEditableComparisonStatement('target')}
               {renderEditableComparisonStatement('actual')}
@@ -2330,7 +2330,7 @@ export default function BuildProfilePage() {
 
             <div className="psychometric-scale-table-wrap build-profile-target-table build-profile-variance-table">
               <table className="psychometric-scale-table">
-              <thead><tr><th>Target (Saved)</th><th>Actual (User Input)</th><th>Variance</th><th>Variance Explanation</th></tr></thead>
+              <thead><tr><th>Actual (Saved)</th><th>Aspired(User Input)</th><th>Variance</th><th>Variance Explanation</th></tr></thead>
               <tbody>
                 {filteredRows.map((entry) => {
                   const noteKey = `wealthVarianceNote.${entry.id}`
@@ -2352,7 +2352,7 @@ export default function BuildProfilePage() {
             </div>
           </details>
           <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-comparison-dropdown">
-            <summary>Personal Income and Expense with Goals and Protection Target vs Actuals</summary>
+            <summary>Variance of Current  and Aspired Personal Income and Expense with Goals and Protection </summary>
             <p className="psychometric-section-note">Target values come from Step 8. Actual values come from Step 9. Variance is Step 9 actual less Step 8 target.</p>
             <div className="build-profile-comparison-grid">
               {renderFinancialComparisonStatement('target')}
