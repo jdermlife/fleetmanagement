@@ -167,7 +167,17 @@ export interface LoanApplicationRequirements {
   coBorrowers?: Array<{
     name: string
     relationship: string
+    employerBusinessName?: string
+    officeAddress?: string
+    occupation?: string
+    position?: string
+    natureOfWork?: string
+    previousEmployer?: string
+    yearsWithEmployer?: string
+    totalYearsWorking?: string
     monthlyIncome: number
+    monthlyExpenses?: number
+    otherIncomeSources?: string
     debtObligations: number
     creditStanding: string
   }>

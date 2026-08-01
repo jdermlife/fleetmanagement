@@ -272,6 +272,9 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(goalDropdown, 'Build Emergency Fund')
     expect((goalDropdown as HTMLSelectElement).value).toBe('Build Emergency Fund')
 
+    await user.click(screen.getByRole('button', { name: /Goal Setting/ }))
+    expect(screen.getByLabelText('Financial Goal / Purpose')).toHaveProperty('value', 'Build Emergency Fund')
+
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
     expect((screen.getByRole('combobox', { name: 'Long Term Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
   })
@@ -329,11 +332,11 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Target Amount'), '250000')
     await user.clear(screen.getByLabelText('Months to Achieve'))
     await user.type(screen.getByLabelText('Months to Achieve'), '18')
-    await user.type(screen.getByLabelText('As Of'), '2026-07-27')
+    await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
-    expect(screen.getByRole('status').textContent).toBe('Profile saved in this browser. Select or create a profile before FILSCORE computation.')
+    expect(screen.getByText('Ensure to save with APP Record')).toBeTruthy()
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)
@@ -483,10 +486,25 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('button', { name: '+ Add a Co-Borrower' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: '+ Add a Co-Borrower' }))
     expect(screen.getByLabelText('Co-Borrower 1 Full Name')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Current Employer / Business Name')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Office Address')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Occupation')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Position')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Nature of Work')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Years - Current Employer')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Total Years Working')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Gross Monthly Income')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Monthly Expenses')).toBeTruthy()
+    expect(screen.getByLabelText('Co-Borrower 1 Other Income Sources')).toBeTruthy()
+    await user.type(screen.getByLabelText('Co-Borrower 1 Current Employer / Business Name'), 'Northstar Trading')
+    await user.type(screen.getByLabelText('Co-Borrower 1 Position'), 'Operations Manager')
     await user.click(screen.getByRole('button', { name: '+ Add a Co-Borrower' }))
     expect(screen.getByLabelText('Co-Borrower 2 Full Name')).toBeTruthy()
 
-    await user.selectOptions(screen.getByRole('combobox', { name: 'Guarantor' }), 'true')
+    expect(screen.getByRole('heading', { name: 'Guarantor Information' })).toBeTruthy()
+    expect(screen.queryByText('Guarantor information is not required.')).toBeNull()
+    expect(screen.getByText('No guarantor has been added. Select “Add Guarantor” to include one.')).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Add Guarantor' }))
     expect(screen.getByLabelText('Guarantor 1 Full Name')).toBeTruthy()
     expect(screen.getByLabelText('Guarantor 1 Employer / Business Name')).toBeTruthy()
     await user.type(screen.getByLabelText('Guarantor 1 Full Name'), 'Alex Guarantor')
@@ -494,6 +512,7 @@ describe('BuildProfilePage', () => {
 
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.coBorrowers).toHaveLength(2)
+    expect(savedProfile.coBorrowers[0]).toMatchObject({ employerBusinessName: 'Northstar Trading', position: 'Operations Manager' })
     expect(savedProfile.guarantors[0].name).toBe('Alex Guarantor')
   })
 
@@ -532,7 +551,12 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('combobox', { name: 'Declaration of Previously with Unpaid Loan or Credit Card' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'No previous borrowing' })).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Deposit / Current Account Handling' })).toBeTruthy()
-    expect(screen.getByLabelText('Self-Declared Investment Portfolio')).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Declared Assets and Liabilities' })).toBeTruthy()
+    expect(screen.getByLabelText('Assets')).toBeTruthy()
+    expect(screen.getByLabelText('Liabilities')).toBeTruthy()
+    expect(screen.getByRole('group', { name: 'Self-Declared Portfolio' })).toBeTruthy()
+    expect(screen.getByLabelText('Asset Type')).toBeTruthy()
+    expect(screen.getByLabelText('Total Amount')).toBeTruthy()
 
     await user.type(screen.getByLabelText('Bank / Branch'), 'Makati Main Branch')
     await user.type(screen.getByLabelText('Account Number'), '1234567890')
@@ -544,6 +568,10 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(screen.getByRole('combobox', { name: '2. How many delinquencies or defaults have you had before?' }), 'Current default / foreclosure / repossession')
     await user.selectOptions(screen.getByRole('combobox', { name: '3. What is your overall loan balance compared with your total approved credit?' }), 'Less than 20%')
     await user.selectOptions(screen.getByRole('combobox', { name: '12. Has that loan already been paid?' }), 'Not yet paid')
+    await user.type(screen.getByLabelText('Assets'), '500000')
+    await user.type(screen.getByLabelText('Liabilities'), '125000')
+    await user.type(screen.getByLabelText('Asset Type'), 'Government Bonds')
+    await user.type(screen.getByLabelText('Total Amount'), '200000')
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
@@ -554,6 +582,12 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.values.creditBureauDelinquencyDefaultHistory).toBe('Current default / foreclosure / repossession')
     expect(savedProfile.values.creditBureauOverallBalanceRatio).toBe('Less than 20%')
     expect(savedProfile.values.creditBureauLoanPaidStatus).toBe('Not yet paid')
+    expect(savedProfile.values.declaredAssets).toBe('500000.00')
+    expect(savedProfile.values.declaredLiabilities).toBe('125000.00')
+    expect(savedProfile.values.portfolioAssetType).toBe('Government Bonds')
+    expect(savedProfile.values.portfolioTotalAmount).toBe('200000.00')
+    expect(savedProfile.values.selfDeclaredAssetsAndLiabilities).toBe('Assets: 500000.00 | Liabilities: 125000.00')
+    expect(savedProfile.values.selfDeclaredInvestmentPortfolio).toBe('Asset Type: Government Bonds | Total Amount: 200000.00')
   })
 
   it('copies all Lending Scorecard Step 1 requirements into Build Profile Step 6', async () => {
@@ -614,9 +648,31 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('heading', { name: 'Asset / Vehicle Information' })).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Type' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'SUVs & Crossovers' })).toBeTruthy()
+    expect(screen.getByLabelText('Maker / Brand')).toBeTruthy()
+    expect(screen.getByLabelText('Variant')).toBeTruthy()
+    expect(screen.getByLabelText('Model Year')).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Fuel Type' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Gasoline' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Diesel' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Hybrid' })).toBeTruthy()
+    expect(screen.getByRole('option', { name: 'Electric' })).toBeTruthy()
     expect(screen.getByLabelText('Vehicle Age / Condition')).toBeTruthy()
     expect(screen.getByLabelText('Insurance Provider / Company')).toBeTruthy()
     expect(screen.getByLabelText('OR Number')).toBeTruthy()
+
+  expect(screen.getByRole('heading', { name: 'Real Estate Collateral' })).toBeTruthy()
+  await user.click(screen.getByRole('button', { name: 'Add Real Estate Collateral' }))
+  await user.type(screen.getByLabelText('Real Estate 1 TCT / CTC Number'), 'TCT-9001')
+  await user.type(screen.getByLabelText('Real Estate 1 Address'), 'Makati City')
+  await user.type(screen.getByLabelText('Real Estate 1 Appraised Value'), '5000000')
+
+  expect(screen.getByRole('heading', { name: 'Financial Instruments Collateral' })).toBeTruthy()
+  await user.click(screen.getByRole('button', { name: 'Add Financial Instrument' }))
+  await user.selectOptions(screen.getByLabelText('Financial Instrument 1 Asset Type'), 'Bonds')
+  await user.selectOptions(screen.getByLabelText('Financial Instrument 1 Currency'), 'USD')
+  await user.type(screen.getByLabelText('Financial Instrument 1 Issuer'), 'Example Treasury')
+  await user.type(screen.getByLabelText('Financial Instrument 1 Value'), '100000')
+  await user.type(screen.getByLabelText('Financial Instrument 1 Mark to Market'), '105000')
 
     await user.click(screen.getByRole('button', { name: 'Add Collateral' }))
     expect(screen.getByLabelText('Additional Collateral 1 Property Type')).toBeTruthy()
@@ -628,7 +684,9 @@ describe('BuildProfilePage', () => {
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.productType).toBe('Auto Loan')
     expect(savedProfile.additionalCollaterals[0].collateralType).toBe('Equipment')
-    expect(savedProfile.additionalCollaterals[0].appraisedValue).toBe('250000')
+      expect(savedProfile.realEstateCollaterals[0]).toMatchObject({ tctCtcNumber: 'TCT-9001', address: 'Makati City', appraisedValue: '5000000.00' })
+      expect(savedProfile.financialInstrumentCollaterals[0]).toMatchObject({ assetType: 'Bonds', currency: 'USD', issuer: 'Example Treasury', value: '100000.00', markToMarket: '105000.00' })
+    expect(savedProfile.additionalCollaterals[0].appraisedValue).toBe('250000.00')
   })
 
   it('switches Step 7 between home and motorcycle collateral forms', async () => {
@@ -675,16 +733,16 @@ describe('BuildProfilePage', () => {
     expect(within(financialGoal).getByRole('option', { name: 'Reach First ₱10 Million' })).toBeTruthy()
     expect(screen.getByLabelText('Target Amount')).toBeTruthy()
     expect(screen.getByLabelText('Months to Achieve')).toBeTruthy()
-    expect(screen.getByLabelText('As Of')).toBeTruthy()
+    expect(screen.getByLabelText('Set Date As Of')).toBeTruthy()
     expect(screen.getByRole('combobox', { name: 'Statement currency' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'SGD (S$)' })).toBeTruthy()
-    const detailedNetWorthDropdown = screen.getByText('Please Build and Assess Your Net Worth Here', { selector: 'strong' }).closest('details')
+    const detailedNetWorthDropdown = screen.getByText('Goal: Existing or Current Net Worth Here', { selector: 'strong' }).closest('details')
     expect(detailedNetWorthDropdown?.hasAttribute('open')).toBe(false)
-    expect(detailedNetWorthDropdown?.querySelector('summary > strong')?.textContent).toBe('Please Build and Assess Your Net Worth Here')
-    const statementFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')
+    expect(detailedNetWorthDropdown?.querySelector('summary > strong')?.textContent).toBe('Goal: Existing or Current Net Worth Here')
+    const statementFiltersDropdown = screen.getByText('Statement Filters - Details of Net Worth and Income & Expenses', { selector: 'summary' }).closest('details')
     expect(statementFiltersDropdown?.hasAttribute('open')).toBe(false)
     expect(statementFiltersDropdown!.compareDocumentPosition(detailedNetWorthDropdown!) & Node.DOCUMENT_POSITION_PRECEDING).toBeTruthy()
-    await user.click(screen.getByText('Please Build and Assess Your Net Worth Here', { selector: 'strong' }))
+    await user.click(screen.getByText('Goal: Existing or Current Net Worth Here', { selector: 'strong' }))
     const detailedCashInput = within(detailedNetWorthDropdown!).getByLabelText('Cash on Hand detailed net worth amount') as HTMLInputElement
     const detailedMortgageInput = within(detailedNetWorthDropdown!).getByLabelText('Home Mortgage detailed net worth amount') as HTMLInputElement
     expect(detailedCashInput.value).toBe('')
@@ -694,13 +752,13 @@ describe('BuildProfilePage', () => {
     expect(within(detailedNetWorthDropdown!).getByText('+₱30,000.00')).toBeTruthy()
     await user.clear(detailedCashInput)
     await user.clear(detailedMortgageInput)
-    await user.click(screen.getByText('Statement Filters - Details', { selector: 'summary' }))
+    await user.click(screen.getByText('Statement Filters - Details of Net Worth and Income & Expenses', { selector: 'summary' }))
     expect(screen.getByLabelText('Cash on Hand setup amount')).toBeTruthy()
     expect(screen.queryByText('Net Worth', { selector: 'summary' })).toBeNull()
     const cashRemarks = screen.getByLabelText('Cash on Hand remarks') as HTMLInputElement
     await user.type(cashRemarks, 'Emergency cash reserve')
     expect(cashRemarks.value).toBe('Emergency cash reserve')
-    const incomeExpenseDropdown = screen.getByText('Determine Your Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }).closest('details')
+    const incomeExpenseDropdown = screen.getByText('Goal: Maintain or Desired Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }).closest('details')
     expect(incomeExpenseDropdown?.hasAttribute('open')).toBe(false)
     expect(detailedNetWorthDropdown!.compareDocumentPosition(incomeExpenseDropdown!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(incomeExpenseDropdown!.compareDocumentPosition(statementFiltersDropdown!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
@@ -713,6 +771,7 @@ describe('BuildProfilePage', () => {
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'liabilities')
     expect(screen.getByLabelText('Home Mortgage setup amount')).toBeTruthy()
     expect(screen.getByLabelText('Home Mortgage remarks')).toBeTruthy()
+    expect(screen.getByLabelText('Credit Cards Outstanding Balance setup amount')).toBeTruthy()
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-income')
     expect(screen.getByLabelText('Salary setup amount')).toBeTruthy()
     expect(screen.getByLabelText('Salary remarks')).toBeTruthy()
@@ -732,7 +791,7 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Housing setup amount'), '18500')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'financial-goals')
     await user.type(screen.getByLabelText('Home Purchase setup amount'), '10000')
-    await user.click(screen.getByText('Determine Your Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }))
+    await user.click(screen.getByText('Goal: Maintain or Desired Personal Income and Expenses with Goals and Protection Here', { selector: 'summary' }))
     expect(incomeExpenseDropdown?.hasAttribute('open')).toBe(true)
     expect((within(incomeExpenseDropdown!).getByLabelText('Salary personal statement amount') as HTMLInputElement).value).toBe('33,000.00')
     expect((within(incomeExpenseDropdown!).getByLabelText('Housing personal statement amount') as HTMLInputElement).value).toBe('18,500.00')
@@ -748,6 +807,7 @@ describe('BuildProfilePage', () => {
     expect(within(incomeExpenseDropdown!.querySelector('.build-profile-income-expense-result.build-profile-income-expense-protection')!).getByText('₱5,000.00')).toBeTruthy()
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'ai-analysis')
     expect(screen.getByText('Overall Financial Wellness Rating')).toBeTruthy()
+    expect(screen.getByText(/^\d+\.\d{3} months$/)).toBeTruthy()
     const netWorthAiCard = screen.getByText('Net Worth', { selector: '.build-profile-ai-advisory-card > span' }).parentElement!
     expect(netWorthAiCard.getAttribute('tabindex')).toBe('0')
     expect(within(netWorthAiCard).getByRole('note', { name: 'Net Worth AI advisory' })).toBeTruthy()
@@ -760,7 +820,8 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('1', { selector: '.build-profile-filter-result strong' })).toBeTruthy()
 
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
-    await user.type(screen.getByLabelText('As Of'), '2026-03-20')
+    expect(screen.getByText('75% complete')).toBeTruthy()
+    await user.type(screen.getByLabelText('Set Date As Of'), '2026-03-20')
     expect(screen.getByText('100% complete')).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Clear Filters' }))
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
@@ -782,7 +843,7 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
-    await user.type(screen.getByLabelText('As Of'), '2026-07-27')
+    await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-income')
     await user.type(screen.getByLabelText('Salary setup amount'), '60000')
@@ -796,11 +857,11 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: /Targeted Goal/ }))
 
-    expect(screen.getByRole('heading', { name: 'Step 9: Actuals' })).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Targeted Goal Summary' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Step 9: Goal' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Actual Summary' })).toBeTruthy()
     expect(screen.getByText('Build Emergency Fund', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     expect(screen.getByText('6', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
-    const actualNetWorthDropdown = screen.getByText('Actual Net Worth', { selector: 'strong' }).closest('details')!
+    const actualNetWorthDropdown = screen.getByText('Desired Net Worth', { selector: 'strong' }).closest('details')!
     const financialInvestmentDropdown = screen.getByText('Details of Financial Invesment', { selector: 'summary' }).closest('details')!
     const actualIncomeDropdown = screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
@@ -815,8 +876,12 @@ describe('BuildProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Normalize to 100%' })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Apply Revised % Allocation' })).toBeNull()
 
-    await user.click(screen.getByText('Actual Net Worth', { selector: 'strong' }))
-    await user.type(within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount'), '45000')
+    expect((screen.getByLabelText('Actual statement as of date') as HTMLInputElement).value).toBe('2026-07-27')
+    await user.click(screen.getByText('Desired Net Worth', { selector: 'strong' }))
+    const actualCashInput = within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount') as HTMLInputElement
+    expect(actualCashInput.value).toBe('50,000.00')
+    await user.clear(actualCashInput)
+    await user.type(actualCashInput, '45000')
     expect(within(actualNetWorthDropdown.querySelector('.build-profile-net-worth-result')!).getByText('₱45,000.00')).toBeTruthy()
     await user.click(screen.getByText('Details of Financial Invesment', { selector: 'summary' }))
     await user.click(within(financialInvestmentDropdown).getByRole('button', { name: 'Add Financial Investment' }))
@@ -830,11 +895,26 @@ describe('BuildProfilePage', () => {
     await user.type(within(financialInvestmentDropdown).getByLabelText('Investment 1 date acquired'), '2026-01-15')
     await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 risk rating' }), 'Moderate')
     await user.click(screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }))
-    await user.type(within(actualIncomeDropdown).getByLabelText('Salary actual statement amount'), '65000')
-    await user.type(within(actualIncomeDropdown).getByLabelText('Housing actual statement amount'), '25000')
-    await user.type(within(actualIncomeDropdown).getByLabelText('Groceries actual statement amount'), '18000')
-    await user.type(within(actualIncomeDropdown).getByLabelText('Home Purchase actual statement amount'), '12000')
-    await user.type(within(actualIncomeDropdown).getByLabelText('Life Insurance actual statement amount'), '6000')
+    const actualSalaryInput = within(actualIncomeDropdown).getByLabelText('Salary actual statement amount') as HTMLInputElement
+    const actualHousingInput = within(actualIncomeDropdown).getByLabelText('Housing actual statement amount') as HTMLInputElement
+    const actualGroceriesInput = within(actualIncomeDropdown).getByLabelText('Groceries actual statement amount') as HTMLInputElement
+    const actualGoalInput = within(actualIncomeDropdown).getByLabelText('Home Purchase actual statement amount') as HTMLInputElement
+    const actualProtectionInput = within(actualIncomeDropdown).getByLabelText('Life Insurance actual statement amount') as HTMLInputElement
+    expect(actualSalaryInput.value).toBe('60,000.00')
+    expect(actualHousingInput.value).toBe('30,000.00')
+    expect(actualGroceriesInput.value).toBe('20,000.00')
+    expect(actualGoalInput.value).toBe('10,000.00')
+    expect(actualProtectionInput.value).toBe('5,000.00')
+    await user.clear(actualSalaryInput)
+    await user.type(actualSalaryInput, '65000')
+    await user.clear(actualHousingInput)
+    await user.type(actualHousingInput, '25000')
+    await user.clear(actualGroceriesInput)
+    await user.type(actualGroceriesInput, '18000')
+    await user.clear(actualGoalInput)
+    await user.type(actualGoalInput, '12000')
+    await user.clear(actualProtectionInput)
+    await user.type(actualProtectionInput, '6000')
 
     await user.click(screen.getByText('Statement Filters - Details', { selector: 'summary' }))
     await user.selectOptions(screen.getByLabelText('Actual filter by statement section'), 'liabilities')
@@ -901,14 +981,14 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.values.wealthSetupSaved).toBe('true')
     expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('45000.00')
     expect(savedProfile.values['wealthActual.expense-housing']).toBe('25000.00')
-  }, 20000)
+  }, 30000)
 
   it('copies Net Worth Positioning Step 4 into Actual vs Target', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
     await user.click(screen.getByRole('button', { name: /Wealth Position Base Setting/ }))
-    await user.type(screen.getByLabelText('As Of'), '2026-07-27')
+    await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'liabilities')
     await user.type(screen.getByLabelText('Home Mortgage setup amount'), '100000')
@@ -919,7 +999,7 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: 'Save Actuals and Continue to Step 10' }))
 
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Target' })).toBeTruthy()
-    expect(screen.getByText('Actual entry completion: 0/3 (0%). Missing actual values use target values in the projection.')).toBeTruthy()
+    expect(screen.getAllByText('Actual entry completion: 100%. Variance and net worth calculations are fully based on actual inputs.').length).toBeGreaterThan(0)
     const varianceSummary = screen.getByText('Variance Filters - Detailed Lines', { selector: 'summary' })
     const varianceDropdown = varianceSummary.closest('details')!
     expect(varianceDropdown.hasAttribute('open')).toBe(false)
@@ -930,7 +1010,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('columnheader', { name: 'Variance' })).toBeTruthy()
     expect(screen.getByRole('columnheader', { name: 'Variance Explanation' })).toBeTruthy()
     expect(screen.getByLabelText('Cash on Hand actual value')).toBeTruthy()
-    expect(screen.getAllByText('Pending input')).toHaveLength(3)
+    expect(screen.queryByText('Pending input')).toBeNull()
 
     const inputSummary = screen.getByText('Net Worth Target vs Actual Inputs', { selector: 'summary' })
     const inputDropdown = inputSummary.closest('details')!
@@ -941,9 +1021,10 @@ describe('BuildProfilePage', () => {
     const cashTargetInput = within(inputDropdown).getByLabelText('Cash on Hand target input') as HTMLInputElement
     const cashActualInput = within(inputDropdown).getByLabelText('Cash on Hand actual input') as HTMLInputElement
     expect(cashTargetInput.value).toBe('50,000.00')
-    expect(cashActualInput.value).toBe('')
+    expect(cashActualInput.value).toBe('50,000.00')
     await user.clear(cashTargetInput)
     await user.type(cashTargetInput, '55000')
+    await user.clear(cashActualInput)
     await user.type(cashActualInput, '60000')
     expect(within(inputDropdown).getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
     expect((screen.getByLabelText('Cash on Hand actual value') as HTMLInputElement).value).toBe('60,000.00')
@@ -959,9 +1040,11 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('placeholder')).toBe('Optional explanation')
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('aria-invalid')).toBeNull()
 
+    await user.clear(screen.getByLabelText('Home Mortgage actual value'))
     await user.type(screen.getByLabelText('Home Mortgage actual value'), '90000')
     expect(screen.getAllByText('-₱10,000.00').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Liability is lower than setup and improves net worth').length).toBeGreaterThan(0)
+    await user.clear(screen.getByLabelText('Housing actual value'))
     await user.type(screen.getByLabelText('Housing actual value'), '35000')
     expect(screen.getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Liability increased above setup and needs control').length).toBeGreaterThan(0)

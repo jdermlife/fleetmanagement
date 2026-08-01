@@ -22,9 +22,25 @@ export type AdditionalCollateral = {
   notes: string
 }
 
+export type RealEstateCollateral = {
+  id: string
+  tctCtcNumber: string
+  address: string
+  appraisedValue: string
+}
+
+export type FinancialInstrumentCollateral = {
+  id: string
+  assetType: string
+  currency: string
+  issuer: string
+  value: string
+  markToMarket: string
+}
+
 export const AUTO_LOAN_FIELDS: CollateralField[] = [
   { key: 'assetType', label: 'Type', type: 'select', options: ['Passenger Cars', 'SUVs & Crossovers', 'Pickup Trucks', 'Motorcycles & Scooters', 'Buses & Minivans', 'Commercial Trucks'] },
-  { key: 'maker', label: 'Maker' }, { key: 'brand', label: 'Brand' }, { key: 'model', label: 'Model' }, { key: 'year', label: 'Year' },
+  { key: 'maker', label: 'Maker / Brand' }, { key: 'brand', label: 'Variant' }, { key: 'model', label: 'Model Year' }, { key: 'year', label: 'Fuel Type', type: 'select', options: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'] },
   { key: 'vehicleConditionCategory', label: 'Vehicle Age / Condition', type: 'select', options: ['Brand New', 'Used (1–3 years), Excellent Condition', 'Used (4–6 years), Good Condition', 'More than 6 years old or Fair/Poor Condition'] },
   { key: 'vehicleTypeCategory', label: 'Vehicle Type', type: 'select', options: ['Passenger vehicle for personal use', 'SUV / MPV / Pickup in good condition', 'Commercial vehicle (van, light truck)', 'Heavy equipment / Specialized vehicles', 'Salvage, rebuilt, or unregistered vehicle'] },
   { key: 'appraisedValue', label: 'Appraised Value / Brand New Price', type: 'number' },
@@ -34,7 +50,7 @@ export const AUTO_LOAN_FIELDS: CollateralField[] = [
 
 export const MOTORCYCLE_LOAN_FIELDS: CollateralField[] = [
   { key: 'assetType', label: 'Type', type: 'select', options: ['Motorcycle', 'Scooter', 'Underbone', 'Standard Bike', 'Delivery Bike'] },
-  { key: 'maker', label: 'Maker' }, { key: 'brand', label: 'Brand' }, { key: 'model', label: 'Model' }, { key: 'year', label: 'Year' },
+  { key: 'maker', label: 'Maker / Brand' }, { key: 'brand', label: 'Variant' }, { key: 'model', label: 'Model Year' }, { key: 'year', label: 'Fuel Type', type: 'select', options: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'] },
   { key: 'appraisedValue', label: 'Motorcycle Value', type: 'number' },
   { key: 'motorcycleIntendedUse', label: 'Intended Use', type: 'select', options: ['Personal use', 'Personal & occasional business', 'Full-time delivery/ride-hailing', 'Commercial/high mileage'] },
 ]
@@ -60,4 +76,20 @@ export const createAdditionalCollateral = (): AdditionalCollateral => ({
   id: `COL-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   collateralType: '', propertyType: '', maker: '', brand: '', model: '', year: '', appraisedValue: '',
   insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', tctCctNumber: '', notes: '',
+})
+
+export const createRealEstateCollateral = (): RealEstateCollateral => ({
+  id: `REC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+  tctCtcNumber: '',
+  address: '',
+  appraisedValue: '',
+})
+
+export const createFinancialInstrumentCollateral = (): FinancialInstrumentCollateral => ({
+  id: `FIC-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+  assetType: '',
+  currency: '',
+  issuer: '',
+  value: '',
+  markToMarket: '',
 })

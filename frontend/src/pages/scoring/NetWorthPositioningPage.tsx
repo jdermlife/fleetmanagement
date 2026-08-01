@@ -369,7 +369,7 @@ export const NET_WORTH_STATEMENT_ENTRIES: StatementEntry[] = [
   { id: 'liability-motorcycle-loan', label: 'Motorcycle Loan', section: 'liabilities', category: 'Vehicle Loans' },
   { id: 'liability-commercial-vehicle-loan', label: 'Commercial Vehicle Loan', section: 'liabilities', category: 'Vehicle Loans' },
   { id: 'liability-personal-loan', label: 'Personal Loan', section: 'liabilities', category: 'Personal Loans' },
-  { id: 'liability-salary-loan', label: 'Salary Loan', section: 'liabilities', category: 'Personal Loans' },
+  { id: 'liability-salary-loan', label: 'Credit Cards Outstanding Balance', section: 'liabilities', category: 'Personal Loans' },
   { id: 'liability-emergency-loan', label: 'Emergency Loan', section: 'liabilities', category: 'Personal Loans' },
   { id: 'liability-multi-purpose-loan', label: 'Multi-Purpose Loan', section: 'liabilities', category: 'Personal Loans' },
   { id: 'liability-business-loan', label: 'Business Loan', section: 'liabilities', category: 'Business Loans' },

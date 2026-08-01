@@ -136,8 +136,8 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
       { key: 'depositRegularity', label: 'Deposit Regularity', type: 'select', options: ['Regular deposits', 'Irregular deposits', 'No savings relationship'] },
       { key: 'bankingRelationshipTier', label: 'Banking Relationship', type: 'select', options: ['Premium/Preferred banking customer with multiple products', 'Active savings/current account with regular transactions', 'Limited banking relationship', 'No banking relationship'] },
       { key: 'existingInsurancePolicies', label: 'Existing Insurance Policies', type: 'textarea', rows: 3 },
-      { key: 'selfDeclaredAssetsAndLiabilities', label: 'Self-Declared Assets and Liabilities', type: 'textarea', rows: 4 },
-      { key: 'selfDeclaredInvestmentPortfolio', label: 'Self-Declared Investment Portfolio', type: 'textarea', rows: 4 },
+      { key: 'selfDeclaredAssetsAndLiabilities', label: 'Declared Assets and Liabilities' },
+      { key: 'selfDeclaredInvestmentPortfolio', label: 'Self-Declared Portfolio' },
     ],
   },
 ]

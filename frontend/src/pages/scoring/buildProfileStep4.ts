@@ -31,7 +31,17 @@ export const SPOUSE_EMPLOYMENT_FIELDS: RelatedPartyField[] = [
 export const CO_BORROWER_FIELDS: RelatedPartyField[] = [
   { key: 'name', label: 'Full Name' },
   { key: 'relationship', label: 'Relationship' },
-  { key: 'monthlyIncome', label: 'Monthly Income', type: 'number' },
+  { key: 'employerBusinessName', label: 'Current Employer / Business Name' },
+  { key: 'officeAddress', label: 'Office Address' },
+  { key: 'occupation', label: 'Occupation' },
+  { key: 'position', label: 'Position' },
+  { key: 'natureOfWork', label: 'Nature of Work' },
+  { key: 'previousEmployer', label: 'Previous Employer' },
+  { key: 'yearsWithEmployer', label: 'Years - Current Employer' },
+  { key: 'totalYearsWorking', label: 'Total Years Working' },
+  { key: 'monthlyIncome', label: 'Gross Monthly Income', type: 'number' },
+  { key: 'monthlyExpenses', label: 'Monthly Expenses', type: 'number' },
+  { key: 'otherIncomeSources', label: 'Other Income Sources' },
   { key: 'debtObligations', label: 'Debt Obligations', type: 'number' },
   { key: 'creditStanding', label: 'Credit Standing', type: 'select', options: ['Excellent', 'Good', 'Fair', 'Poor'] },
 ]
@@ -52,7 +62,17 @@ export type CoBorrower = {
   id: string
   name: string
   relationship: string
+  employerBusinessName: string
+  officeAddress: string
+  occupation: string
+  position: string
+  natureOfWork: string
+  previousEmployer: string
+  yearsWithEmployer: string
+  totalYearsWorking: string
   monthlyIncome: string
+  monthlyExpenses: string
+  otherIncomeSources: string
   debtObligations: string
   creditStanding: string
 }
@@ -74,7 +94,17 @@ export const createCoBorrower = (): CoBorrower => ({
   id: `CB-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
   name: '',
   relationship: '',
+  employerBusinessName: '',
+  officeAddress: '',
+  occupation: '',
+  position: '',
+  natureOfWork: '',
+  previousEmployer: '',
+  yearsWithEmployer: '',
+  totalYearsWorking: '',
   monthlyIncome: '',
+  monthlyExpenses: '',
+  otherIncomeSources: '',
   debtObligations: '',
   creditStanding: '',
 })

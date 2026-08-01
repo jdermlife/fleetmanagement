@@ -156,10 +156,19 @@ export const calculateApplicationInformationCompletion = (
       ? coBorrowers.flatMap((coBorrower) => [
           hasText(coBorrower.name),
           hasText(coBorrower.relationship),
+          hasText(coBorrower.employerBusinessName),
+          hasText(coBorrower.officeAddress),
+          hasText(coBorrower.occupation),
+          hasText(coBorrower.position),
+          hasText(coBorrower.natureOfWork),
+          hasText(coBorrower.yearsWithEmployer),
+          hasText(coBorrower.totalYearsWorking),
           hasPositiveNumber(coBorrower.monthlyIncome),
+          hasPositiveNumber(coBorrower.monthlyExpenses),
+          hasText(coBorrower.otherIncomeSources),
           hasText(coBorrower.creditStanding),
         ])
-      : [false, false, false, false]
+      : Array.from({ length: 13 }, () => false)
     : []
   const step4Applicable = married || hasCoBorrower
   const step4Checks = [...spouseChecks, ...coBorrowerChecks]

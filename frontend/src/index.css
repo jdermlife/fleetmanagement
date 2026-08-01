@@ -5237,6 +5237,17 @@ th { color: var(--dark-gold); }
   grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
 }
 
+.build-profile-two-column-declaration-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.build-profile-declaration-box legend {
+  padding: 0 4px;
+  color: #172554;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
 .build-profile-declaration-grid label {
   display: grid;
   gap: 7px;
@@ -6600,7 +6611,8 @@ th { color: var(--dark-gold); }
   }
 
   .build-profile-property-declaration-grid,
-  .build-profile-investment-declaration-grid {
+  .build-profile-investment-declaration-grid,
+  .build-profile-two-column-declaration-grid {
     grid-template-columns: 1fr;
   }
 

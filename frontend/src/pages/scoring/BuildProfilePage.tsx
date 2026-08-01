@@ -53,8 +53,12 @@ import {
   HOME_LOAN_FIELDS,
   MOTORCYCLE_LOAN_FIELDS,
   createAdditionalCollateral,
+  createFinancialInstrumentCollateral,
+  createRealEstateCollateral,
   type AdditionalCollateral,
   type CollateralField,
+  type FinancialInstrumentCollateral,
+  type RealEstateCollateral,
 } from './buildProfileStep7'
 import { BUILD_PROFILE_STORAGE_KEY, getCurrentBuildProfileOwner } from './buildProfileReplication'
 
@@ -71,6 +75,8 @@ type ProfileData = {
   coBorrowers: CoBorrower[]
   guarantors: Guarantor[]
   additionalCollaterals: AdditionalCollateral[]
+  realEstateCollaterals: RealEstateCollateral[]
+  financialInstrumentCollaterals: FinancialInstrumentCollateral[]
   additionalLoans: Array<Record<string, string | number>>
   propertyDeclarations: PropertyDeclaration[]
   step3FinancialInvestments: FinancialInvestmentDeclaration[]
@@ -144,6 +150,9 @@ const BUILD_PROFILE_AMOUNT_KEYS = new Set([
   'loanMonthlyAmortization',
   'averageSavingsBalance',
   'averageDailyBalance',
+  'declaredAssets',
+  'declaredLiabilities',
+  'portfolioTotalAmount',
 ])
 
 const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: string }> = [
@@ -215,7 +224,7 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
 }
 
 function createPropertyDeclaration(): PropertyDeclaration {
@@ -317,6 +326,8 @@ function scorePreparationFingerprint(profile: ProfileData): string {
     coBorrowers: profile.coBorrowers,
     guarantors: profile.guarantors,
     additionalCollaterals: profile.additionalCollaterals,
+    realEstateCollaterals: profile.realEstateCollaterals,
+    financialInstrumentCollaterals: profile.financialInstrumentCollaterals,
     propertyDeclarations: profile.propertyDeclarations,
     step3FinancialInvestments: profile.step3FinancialInvestments,
     financialInvestments: profile.financialInvestments,
@@ -508,7 +519,17 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
       id: `CB-${application.application_no}-${index + 1}`,
       name: item.name,
       relationship: item.relationship,
+      employerBusinessName: item.employerBusinessName || '',
+      officeAddress: item.officeAddress || '',
+      occupation: item.occupation || '',
+      position: item.position || '',
+      natureOfWork: item.natureOfWork || '',
+      previousEmployer: item.previousEmployer || '',
+      yearsWithEmployer: item.yearsWithEmployer || '',
+      totalYearsWorking: item.totalYearsWorking || '',
       monthlyIncome: String(item.monthlyIncome || ''),
+      monthlyExpenses: String(item.monthlyExpenses || ''),
+      otherIncomeSources: item.otherIncomeSources || '',
       debtObligations: String(item.debtObligations || ''),
       creditStanding: item.creditStanding,
     })),
@@ -612,7 +633,17 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
   requirements.coBorrowers = profile.coBorrowers.map((item) => ({
     name: item.name,
     relationship: item.relationship,
+    employerBusinessName: item.employerBusinessName,
+    officeAddress: item.officeAddress,
+    occupation: item.occupation,
+    position: item.position,
+    natureOfWork: item.natureOfWork,
+    previousEmployer: item.previousEmployer,
+    yearsWithEmployer: item.yearsWithEmployer,
+    totalYearsWorking: item.totalYearsWorking,
     monthlyIncome: Number(item.monthlyIncome) || 0,
+    monthlyExpenses: Number(item.monthlyExpenses) || 0,
+    otherIncomeSources: item.otherIncomeSources,
     debtObligations: Number(item.debtObligations) || 0,
     creditStanding: item.creditStanding,
   }))
@@ -776,7 +807,13 @@ export default function BuildProfilePage() {
     WORKFLOW_STEPS.forEach(({ id }) => {
       if (id === 8) {
         const completedFields = [profile.values.asOfDate, profile.values.financialGoal, profile.values.wealthCurrency || 'PHP'].filter((value) => value?.trim()).length
-        result[id] = Math.round((completedFields / 3) * 100)
+        const monthlyIncome = NET_WORTH_STATEMENT_ENTRIES
+          .filter((entry) => entry.section === 'monthly-income')
+          .reduce((sum, entry) => sum + Math.max(0, Number(profile.values[entry.id] || 0)), 0)
+        const monthlyExpenses = NET_WORTH_STATEMENT_ENTRIES
+          .filter((entry) => entry.section === 'monthly-expenses')
+          .reduce((sum, entry) => sum + Math.max(0, Number(profile.values[entry.id] || 0)), 0)
+        result[id] = Math.round(((completedFields + (monthlyIncome - monthlyExpenses > 0 ? 1 : 0)) / 4) * 100)
       }
       else if (id === 9) {
         const editableEntries = NET_WORTH_STATEMENT_ENTRIES.filter((entry) => !entry.autoGenerated)
@@ -854,6 +891,8 @@ export default function BuildProfilePage() {
           securityValid,
           ...primaryFields.map((field) => field.type === 'number' ? Number(profile.values[field.key] || 0) > 0 : Boolean(profile.values[field.key]?.trim())),
           ...profile.additionalCollaterals.flatMap((item) => ['collateralType', 'maker', 'brand', 'model', 'year'].map((key) => Boolean(item[key as keyof AdditionalCollateral]?.trim())).concat(Number(item.appraisedValue) > 0)),
+          ...profile.realEstateCollaterals.flatMap((item) => [Boolean(item.tctCtcNumber.trim()), Boolean(item.address.trim()), Number(item.appraisedValue) > 0]),
+          ...profile.financialInstrumentCollaterals.flatMap((item) => [Boolean(item.assetType.trim()), Boolean(item.currency.trim()), Boolean(item.issuer.trim()), Number(item.value) > 0, Number(item.markToMarket) > 0]),
         ]
         result[id] = Math.round((checks.filter(Boolean).length / checks.length) * 100)
       }
@@ -883,12 +922,54 @@ export default function BuildProfilePage() {
       [key]: value,
       ...(key === 'dateOfBirth' ? { age: calculateAge(value) } : {}),
       ...(key === 'employmentHistory' ? { spouseEmployerBusinessName: value } : {}),
+      ...(key === 'financialGoal' ? { loanPurpose: value } : {}),
     },
     ...(key === 'dependents' ? {
       dependents: Array.from({ length: Math.max(0, Number(value) || 0) }, (_, index) => current.dependents[index] ?? createDependent()),
     } : {}),
   }))
-  const goToStep = (step: ProfileStep) => setProfile((current) => ({ ...current, step }))
+
+  const updateDeclaredAssetsAndLiabilities = (key: 'declaredAssets' | 'declaredLiabilities', value: string) => setProfile((current) => {
+    const declaredAssets = key === 'declaredAssets' ? value : current.values.declaredAssets || ''
+    const declaredLiabilities = key === 'declaredLiabilities' ? value : current.values.declaredLiabilities || ''
+    return {
+      ...current,
+      values: {
+        ...current.values,
+        [key]: value,
+        selfDeclaredAssetsAndLiabilities: `Assets: ${declaredAssets || '0'} | Liabilities: ${declaredLiabilities || '0'}`,
+      },
+    }
+  })
+
+  const updateSelfDeclaredPortfolio = (key: 'portfolioAssetType' | 'portfolioTotalAmount', value: string) => setProfile((current) => {
+    const assetType = key === 'portfolioAssetType' ? value : current.values.portfolioAssetType || ''
+    const totalAmount = key === 'portfolioTotalAmount' ? value : current.values.portfolioTotalAmount || ''
+    return {
+      ...current,
+      values: {
+        ...current.values,
+        [key]: value,
+        selfDeclaredInvestmentPortfolio: `Asset Type: ${assetType || 'Not specified'} | Total Amount: ${totalAmount || '0'}`,
+      },
+    }
+  })
+  const goToStep = (step: ProfileStep) => setProfile((current) => {
+    if (step !== 9) return { ...current, step }
+
+    const values = { ...current.values }
+    NET_WORTH_STATEMENT_ENTRIES.filter((entry) => !entry.autoGenerated).forEach((entry) => {
+      const actualKey = `wealthActual.${entry.id}`
+      if (values[actualKey] === undefined && values[entry.id]?.trim()) {
+        values[actualKey] = values[entry.id]
+      }
+    })
+    if (values.wealthActualAsOfDate === undefined && values.asOfDate?.trim()) {
+      values.wealthActualAsOfDate = values.asOfDate
+    }
+
+    return { ...current, step, values }
+  })
 
   const prepareStep12Scores = useCallback((profileSnapshot: ProfileData = profile) => {
     const applicationNo = profileSnapshot.selectedApplicationNo?.trim()
@@ -960,7 +1041,7 @@ export default function BuildProfilePage() {
         setSourceApplication({ ...baseline, ...payload })
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
-        setSaveMessage('Profile saved in this browser. Create or select an APP record to save it in PostgreSQL.')
+        setSaveMessage('Ensure to save with APP Record')
       }
     } catch {
       setSaveMessage('Unable to save and synchronize this profile.')
@@ -998,6 +1079,16 @@ export default function BuildProfilePage() {
   const updateAdditionalCollateral = (id: string, field: keyof AdditionalCollateral, value: string) => setProfile((current) => ({
     ...current,
     additionalCollaterals: current.additionalCollaterals.map((item) => item.id === id ? { ...item, [field]: value } : item),
+  }))
+
+  const updateRealEstateCollateral = (id: string, field: keyof RealEstateCollateral, value: string) => setProfile((current) => ({
+    ...current,
+    realEstateCollaterals: current.realEstateCollaterals.map((item) => item.id === id ? { ...item, [field]: value } : item),
+  }))
+
+  const updateFinancialInstrumentCollateral = (id: string, field: keyof FinancialInstrumentCollateral, value: string) => setProfile((current) => ({
+    ...current,
+    financialInstrumentCollaterals: current.financialInstrumentCollaterals.map((item) => item.id === id ? { ...item, [field]: value } : item),
   }))
 
   const updateFinancialInvestment = (id: string, field: keyof FinancialInvestment, value: string) => setProfile((current) => ({
@@ -1139,6 +1230,26 @@ export default function BuildProfilePage() {
   const renderBankingField = (field: BankingField) => {
     const value = profile.values[field.key] ?? ''
     const datalistId = `build-profile-${field.key}-options`
+
+    if (field.key === 'selfDeclaredAssetsAndLiabilities') {
+      return <fieldset key={field.key} className="build-profile-declaration-box build-profile-field-wide">
+        <legend>Declared Assets and Liabilities</legend>
+        <div className="build-profile-declaration-grid build-profile-two-column-declaration-grid">
+          <label>Assets<NumericFormat value={profile.values.declaredAssets ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateDeclaredAssetsAndLiabilities('declaredAssets', numericValue)} /></label>
+          <label>Liabilities<NumericFormat value={profile.values.declaredLiabilities ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateDeclaredAssetsAndLiabilities('declaredLiabilities', numericValue)} /></label>
+        </div>
+      </fieldset>
+    }
+
+    if (field.key === 'selfDeclaredInvestmentPortfolio') {
+      return <fieldset key={field.key} className="build-profile-declaration-box build-profile-field-wide">
+        <legend>Self-Declared Portfolio</legend>
+        <div className="build-profile-declaration-grid build-profile-two-column-declaration-grid">
+          <label>Asset Type<input value={profile.values.portfolioAssetType ?? ''} onChange={(event) => updateSelfDeclaredPortfolio('portfolioAssetType', event.target.value)} /></label>
+          <label>Total Amount<NumericFormat value={profile.values.portfolioTotalAmount ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateSelfDeclaredPortfolio('portfolioTotalAmount', numericValue)} /></label>
+        </div>
+      </fieldset>
+    }
 
     if (field.type === 'calculated') {
       const creditLimit = Number(profile.values.creditLimit || 0)
@@ -1341,15 +1452,18 @@ export default function BuildProfilePage() {
           </div> : <p className="build-profile-applicability-note">No co-borrower has been added. Select “+ Add a Co-Borrower” to include one.</p>}
         </section>
 
-        {guarantorApplicable ? <section className="build-profile-detail-section">
-          <div className="build-profile-section-heading"><h4>Guarantor Information</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, guarantors: [...current.guarantors, createGuarantor()] }))}>Add Guarantor</button></div>
-          <div className="build-profile-related-party-list">
+        <section className="build-profile-detail-section">
+          <div className="build-profile-section-heading"><h4>Guarantor Information</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, values: { ...current.values, hasGuarantor: 'true' }, guarantors: [...current.guarantors, createGuarantor()] }))}>Add Guarantor</button></div>
+          {profile.guarantors.length > 0 ? <div className="build-profile-related-party-list">
             {profile.guarantors.map((item, index) => <article key={item.id}>
-              <div className="build-profile-section-heading"><h5>Guarantor #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => ({ ...current, guarantors: current.guarantors.filter((record) => record.id !== item.id) }))}>Remove</button></div>
+              <div className="build-profile-section-heading"><h5>Guarantor #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => {
+                const guarantors = current.guarantors.filter((record) => record.id !== item.id)
+                return { ...current, values: { ...current.values, hasGuarantor: String(guarantors.length > 0) }, guarantors }
+              })}>Remove</button></div>
               <div className="build-profile-form-grid">{GUARANTOR_FIELDS.map((field) => renderRelatedPartyField(field, item[field.key as keyof Guarantor], (value) => updateRelatedParty<Guarantor>('guarantors', item.id, field.key as keyof Guarantor, value), `Guarantor ${index + 1} `))}</div>
             </article>)}
-          </div>
-        </section> : <p className="build-profile-applicability-note">Guarantor information is not required.</p>}
+          </div> : <p className="build-profile-applicability-note">No guarantor has been added. Select “Add Guarantor” to include one.</p>}
+        </section>
       </div>
     }
 
@@ -1461,6 +1575,36 @@ export default function BuildProfilePage() {
         </section> : null}
 
         <section className="build-profile-detail-section">
+          <div className="build-profile-section-heading"><h4>Real Estate Collateral</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, realEstateCollaterals: [...current.realEstateCollaterals, createRealEstateCollateral()] }))}>Add Real Estate Collateral</button></div>
+          {profile.realEstateCollaterals.length === 0 ? <p className="build-profile-applicability-note">No real estate collateral added.</p> : <div className="build-profile-related-party-list">
+            {profile.realEstateCollaterals.map((item, index) => <article key={item.id}>
+              <div className="build-profile-section-heading"><h5>Real Estate Collateral #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => ({ ...current, realEstateCollaterals: current.realEstateCollaterals.filter((record) => record.id !== item.id) }))}>Remove</button></div>
+              <div className="build-profile-form-grid">
+                <label>Real Estate {index + 1} TCT / CTC Number<input aria-invalid={!item.tctCtcNumber.trim()} value={item.tctCtcNumber} onChange={(event) => updateRealEstateCollateral(item.id, 'tctCtcNumber', event.target.value)} /></label>
+                <label className="build-profile-field-wide">Real Estate {index + 1} Address<input aria-invalid={!item.address.trim()} value={item.address} onChange={(event) => updateRealEstateCollateral(item.id, 'address', event.target.value)} /></label>
+                <label>Real Estate {index + 1} Appraised Value<NumericFormat aria-invalid={Number(item.appraisedValue) <= 0} value={item.appraisedValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateRealEstateCollateral(item.id, 'appraisedValue', value)} /></label>
+              </div>
+            </article>)}
+          </div>}
+        </section>
+
+        <section className="build-profile-detail-section">
+          <div className="build-profile-section-heading"><h4>Financial Instruments Collateral</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, financialInstrumentCollaterals: [...current.financialInstrumentCollaterals, createFinancialInstrumentCollateral()] }))}>Add Financial Instrument</button></div>
+          {profile.financialInstrumentCollaterals.length === 0 ? <p className="build-profile-applicability-note">No financial instrument collateral added.</p> : <div className="build-profile-related-party-list">
+            {profile.financialInstrumentCollaterals.map((item, index) => <article key={item.id}>
+              <div className="build-profile-section-heading"><h5>Financial Instrument #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => ({ ...current, financialInstrumentCollaterals: current.financialInstrumentCollaterals.filter((record) => record.id !== item.id) }))}>Remove</button></div>
+              <div className="build-profile-form-grid">
+                <label>Financial Instrument {index + 1} Asset Type<select aria-invalid={!item.assetType.trim()} value={item.assetType} onChange={(event) => updateFinancialInstrumentCollateral(item.id, 'assetType', event.target.value)}><option value="">Select...</option>{['Time Deposit', 'Stocks', 'Bonds', 'ETF', 'Others'].map((option) => <option key={option} value={option}>{option}</option>)}</select></label>
+                <label>Financial Instrument {index + 1} Currency<select aria-invalid={!item.currency.trim()} value={item.currency} onChange={(event) => updateFinancialInstrumentCollateral(item.id, 'currency', event.target.value)}><option value="">Select...</option><option value="PHP">Peso</option><option value="USD">USD</option></select></label>
+                <label>Financial Instrument {index + 1} Issuer<input aria-invalid={!item.issuer.trim()} value={item.issuer} onChange={(event) => updateFinancialInstrumentCollateral(item.id, 'issuer', event.target.value)} /></label>
+                <label>Financial Instrument {index + 1} Value<NumericFormat aria-invalid={Number(item.value) <= 0} value={item.value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInstrumentCollateral(item.id, 'value', value)} /></label>
+                <label>Financial Instrument {index + 1} Mark to Market<NumericFormat aria-invalid={Number(item.markToMarket) <= 0} value={item.markToMarket} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInstrumentCollateral(item.id, 'markToMarket', value)} /></label>
+              </div>
+            </article>)}
+          </div>}
+        </section>
+
+        <section className="build-profile-detail-section">
           <div className="build-profile-section-heading"><h4>Additional Collaterals</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, additionalCollaterals: [...current.additionalCollaterals, createAdditionalCollateral()] }))}>Add Collateral</button></div>
           {profile.additionalCollaterals.length === 0 ? <p className="build-profile-applicability-note">No additional collaterals added.</p> : <div className="build-profile-related-party-list">
             {profile.additionalCollaterals.map((item, index) => <article key={item.id}>
@@ -1492,7 +1636,7 @@ export default function BuildProfilePage() {
         'ai-savings-rate': `${wealthScore.metrics.savingsRatePercent.toFixed(1)}%`,
         'ai-dti': `${wealthScore.metrics.debtToIncomeRatioPercent.toFixed(1)}%`,
         'ai-dta': `${wealthScore.metrics.debtToAssetRatioPercent.toFixed(1)}%`,
-        'ai-emergency-fund-months': `${wealthScore.metrics.emergencyFundMonths.toFixed(1)} months`,
+        'ai-emergency-fund-months': `${wealthScore.metrics.emergencyFundMonths.toFixed(3)} months`,
         'ai-credit-health': `${wealthScore.componentScores.leverageControl.toFixed(0)}/100`,
         'ai-investment-readiness': `${wealthScore.componentScores.investmentReadiness.toFixed(0)}/100`,
         'ai-retirement-readiness': `${wealthScore.componentScores.retirementReadiness.toFixed(0)}/100`,
@@ -1567,7 +1711,7 @@ export default function BuildProfilePage() {
         <section className="build-profile-detail-section">
           <h4>Personal Net Worth Statement</h4>
           <div className="build-profile-form-grid">
-            <label>Long Term Financial Goal
+            <label>Long Term Financial Goal 
               <select aria-invalid={!profile.values.financialGoal?.trim()} value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>
                 <option value="">Select Financial Goal</option>
                 {NET_WORTH_FINANCIAL_GOAL_OPTIONS.map((goal) => <option key={goal} value={goal}>{goal}</option>)}
@@ -1586,7 +1730,7 @@ export default function BuildProfilePage() {
             <label>Months to Achieve
               <input type="number" min="1" value={profile.values.targetMonths ?? '12'} onChange={(event) => updateValue('targetMonths', event.target.value)} />
             </label>
-            <label>As Of
+            <label>Set Date As Of
               <input aria-invalid={!profile.values.asOfDate?.trim()} type="date" value={profile.values.asOfDate ?? ''} onChange={(event) => updateValue('asOfDate', event.target.value)} />
             </label>
             <label>Currency
@@ -1602,7 +1746,7 @@ export default function BuildProfilePage() {
         </section>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth">
-          <summary><strong>Goal: Maintain or Desired Net Worth Here</strong></summary>
+          <summary><strong>Goal: Existing or Current Net Worth Here</strong></summary>
           <div className="build-profile-net-worth-meta"><span>Enter all applicable assets and liabilities</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns">
             {(['assets', 'liabilities'] as const).map((section) => {
@@ -1650,7 +1794,7 @@ export default function BuildProfilePage() {
         </details>
 
         <details className="build-profile-detail-section build-profile-statement-filters">
-          <summary>Statement Filters - Details</summary>
+          <summary>Statement Filters - Details of Net Worth and Income & Expenses </summary>
           <div className="build-profile-form-grid">
             <label>Statement Section
               <select aria-label="Filter by statement section" value={wealthSectionFilter} onChange={(event) => {
@@ -1742,7 +1886,7 @@ export default function BuildProfilePage() {
         'ai-savings-rate': `${actualScore.metrics.savingsRatePercent.toFixed(1)}%`,
         'ai-dti': `${actualScore.metrics.debtToIncomeRatioPercent.toFixed(1)}%`,
         'ai-dta': `${actualScore.metrics.debtToAssetRatioPercent.toFixed(1)}%`,
-        'ai-emergency-fund-months': `${actualScore.metrics.emergencyFundMonths.toFixed(1)} months`,
+        'ai-emergency-fund-months': `${actualScore.metrics.emergencyFundMonths.toFixed(3)} months`,
         'ai-credit-health': `${actualScore.componentScores.leverageControl.toFixed(0)}/100`,
         'ai-investment-readiness': `${actualScore.componentScores.investmentReadiness.toFixed(0)}/100`,
         'ai-retirement-readiness': `${actualScore.componentScores.retirementReadiness.toFixed(0)}/100`,
@@ -1801,11 +1945,11 @@ export default function BuildProfilePage() {
       }
 
       return <div className="build-profile-step-content build-profile-step-nine">
-        <h3>Step 9: Actuals</h3>
+        <h3>Step 9: Goal</h3>
         <p className="psychometric-section-note">Enter your actual financial position. Step 8 values remain the target baseline for comparison in Step 10.</p>
 
         <section className="build-profile-detail-section">
-          <h4>Targeted Goal Summary</h4>
+          <h4>Actual Summary</h4>
           <div className="build-profile-totals-grid build-profile-target-summary">
             <div><span>As Of</span><strong>{profile.values.asOfDate || 'Not set'}</strong></div>
             <div><span>Financial Goal</span><strong>{profile.values.financialGoal || 'Not selected'}</strong></div>
@@ -1815,8 +1959,8 @@ export default function BuildProfilePage() {
         </section>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth build-profile-actual-net-worth">
-          <summary><strong>Actual Net Worth</strong></summary>
-          <div className="build-profile-net-worth-meta"><span>Enter actual assets and liabilities</span><label>Actual As Of <input aria-label="Actual statement as of date" type="date" value={profile.values.wealthActualAsOfDate ?? ''} onChange={(event) => updateValue('wealthActualAsOfDate', event.target.value)} /></label></div>
+          <summary><strong>Desired Net Worth</strong></summary>
+          <div className="build-profile-net-worth-meta"><span>Desired Net Worth automatically captures existing assets and liabilities. Make changes for desired assets and liabilities.</span><label>Actual As Of <input aria-label="Actual statement as of date" type="date" value={profile.values.wealthActualAsOfDate ?? ''} onChange={(event) => updateValue('wealthActualAsOfDate', event.target.value)} /></label></div>
           <div className="build-profile-net-worth-columns">
             {(['assets', 'liabilities'] as const).map((section) => {
               const rows = actualNetWorthRows.filter((entry) => entry.section === section)
