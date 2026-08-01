@@ -26,10 +26,16 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
     try {
       return await importer()
     } catch (error) {
-      // Refresh once to recover from stale chunk references after deployment.
-      if (typeof window !== 'undefined' && !sessionStorage.getItem('lazy-retry')) {
-        sessionStorage.setItem('lazy-retry', '1')
-        window.location.reload()
+      if (typeof window !== 'undefined') {
+        const failedAsset = String(error).match(/https?:\/\/[^\s]+\.js/)?.[0] ?? String(error)
+        const retryKey = `lazy-retry:${failedAsset}`
+
+        if (!sessionStorage.getItem(retryKey)) {
+          sessionStorage.setItem(retryKey, '1')
+          const refreshUrl = new URL(window.location.href)
+          refreshUrl.searchParams.set('__lazy_retry', Date.now().toString())
+          window.location.replace(refreshUrl)
+        }
       }
       throw error
     }
