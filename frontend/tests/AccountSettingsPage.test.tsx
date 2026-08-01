@@ -2,9 +2,9 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockListSubscriptionPlans } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockListPublicSubscriptionPlans } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
-  mockListSubscriptionPlans: vi.fn(),
+  mockListPublicSubscriptionPlans: vi.fn(),
 }))
 
 vi.mock('../src/api', () => ({
@@ -14,7 +14,7 @@ vi.mock('../src/api', () => ({
   getAuthToken: () => 'access-token',
   getErrorMessage: (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback,
-  listSubscriptionPlans: mockListSubscriptionPlans,
+  listPublicSubscriptionPlans: mockListPublicSubscriptionPlans,
   logout: vi.fn(),
   updateAccountPreferences: vi.fn(),
 }))
@@ -52,7 +52,7 @@ function createStorageMock(): Storage {
 describe('AccountSettingsPage', () => {
   beforeEach(() => {
     mockFetchCurrentUser.mockReset()
-    mockListSubscriptionPlans.mockReset()
+    mockListPublicSubscriptionPlans.mockReset()
     mockFetchCurrentUser.mockResolvedValue({
       id: 42,
       username: 'signed-in-user',
@@ -66,7 +66,7 @@ describe('AccountSettingsPage', () => {
       updatedAt: '2026-07-01T00:00:00Z',
       lastLoginAt: null,
     })
-    mockListSubscriptionPlans.mockRejectedValue(new Error('Insufficient permissions'))
+    mockListPublicSubscriptionPlans.mockRejectedValue(new Error('Unable to load plans'))
 
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -88,7 +88,39 @@ describe('AccountSettingsPage', () => {
     expect(await screen.findByText('signed-in-user')).toBeTruthy()
     expect(screen.getByText('user@example.com')).toBeTruthy()
     expect(screen.queryByText('Sign in to view your account details, change your password, or manage your access.')).toBeNull()
-    expect(screen.queryByText('Insufficient permissions')).toBeNull()
+    expect(screen.queryByText('Unable to load plans')).toBeNull()
+    expect(screen.getByRole('link', { name: 'Subscription Payment' }).getAttribute('href')).toBe('/subscription-payment')
+  })
+
+  it('opens Subscription Payment with the suggested upgrade for a subscriber', async () => {
+    mockListPublicSubscriptionPlans.mockResolvedValue([
+      {
+        id: 7,
+        plan_code: 'BASIC',
+        plan_name: 'Basic',
+        monthly_price: 100,
+        currency: 'PHP',
+        support_level: 'STANDARD',
+      },
+      {
+        id: 8,
+        plan_code: 'PLUS',
+        plan_name: 'Plus',
+        monthly_price: 200,
+        currency: 'PHP',
+        support_level: 'PRIORITY',
+      },
+    ])
+
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    )
+
+    const paymentLink = await screen.findByRole('link', { name: 'Subscription Payment' })
+    expect(paymentLink.getAttribute('href')).toBe('/subscription-payment?planId=8')
+    expect(screen.getByText(/for Plus/)).toBeTruthy()
   })
 
   it('restores all welcome pop-ups without clearing unrelated settings', async () => {

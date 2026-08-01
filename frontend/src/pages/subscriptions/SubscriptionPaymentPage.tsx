@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import axios from 'axios'
 
 import {
   capturePublicTrialPayPalOrder,
@@ -10,15 +9,14 @@ import {
   createPayPalOrder,
   createSubscriptionCheckout,
   createSubscription,
+  getMySubscription,
   getAuthToken,
   getErrorMessage,
-  listSubscriptionPlans,
-  listSubscriptions,
+  listPublicSubscriptionPlans,
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
-import SubscriptionAccessDeniedCard from './SubscriptionAccessDeniedCard'
 
 function billingAmount(plan: SubscriptionPlan): number {
   const monthlyPrice = plan.monthly_price && plan.monthly_price > 0 ? plan.monthly_price : 0
@@ -126,7 +124,6 @@ export default function SubscriptionPaymentPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [loadMessage, setLoadMessage] = useState('')
-  const [hasSubscriptionAccessDenied, setHasSubscriptionAccessDenied] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
@@ -156,27 +153,18 @@ export default function SubscriptionPaymentPage() {
   useEffect(() => {
     if (guestTrialPlan) {
       setIsLoading(false)
-      setHasSubscriptionAccessDenied(false)
       return
     }
 
     const loadData = async () => {
       try {
-        const [planRows, subscriptionRows] = await Promise.all([
-          listSubscriptionPlans(),
-          listSubscriptions(),
+        const [planRows, subscription] = await Promise.all([
+          listPublicSubscriptionPlans(),
+          getMySubscription(),
         ])
         setPlans(planRows)
-        setSubscriptions(subscriptionRows)
-        setHasSubscriptionAccessDenied(false)
+        setSubscriptions(subscription ? [subscription] : [])
       } catch (error) {
-        if (axios.isAxiosError(error) && error.response?.status === 403) {
-          setHasSubscriptionAccessDenied(true)
-          setLoadMessage('You do not have access to subscription billing. Contact your administrator to request billing permissions.')
-          return
-        }
-
-        setHasSubscriptionAccessDenied(false)
         setLoadMessage(getErrorMessage(error, 'Unable to load subscription payment details.'))
       } finally {
         setIsLoading(false)
@@ -242,7 +230,6 @@ export default function SubscriptionPaymentPage() {
   const canRenderPayPalButtons =
     !guestTrialPlan &&
     !isLoading &&
-    !hasSubscriptionAccessDenied &&
     Boolean(selectedSubscription || selectedPlan)
   const canRenderGuestPayPalButtons =
     Boolean(guestTrialPlan)
@@ -365,8 +352,8 @@ export default function SubscriptionPaymentPage() {
               : 'PayPal payment captured successfully. Your subscription is now updated.'
 
             try {
-              const subscriptionRows = await listSubscriptions()
-              setSubscriptions(subscriptionRows)
+              const subscription = await getMySubscription()
+              setSubscriptions(subscription ? [subscription] : [])
               setPaymentMessage(successMessage)
             } catch {
               setPaymentMessage(`${successMessage} Refresh the page to update the subscription summary.`)
@@ -645,7 +632,7 @@ export default function SubscriptionPaymentPage() {
 
       {isLoading ? <p className="status-message">Loading payment details...</p> : null}
 
-      {!isLoading && !hasSubscriptionAccessDenied && (selectedSubscription || selectedPlan) ? (
+      {!isLoading && (selectedSubscription || selectedPlan) ? (
         <>
           <section className="stack-panel auth-panel trial-expired-plan-summary">
             <h2>{selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}</h2>
@@ -708,13 +695,7 @@ export default function SubscriptionPaymentPage() {
         </>
       ) : null}
 
-      {!isLoading && hasSubscriptionAccessDenied ? (
-        <div className="stack-panel auth-panel">
-          <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
-        </div>
-      ) : null}
-
-      {!isLoading && !hasSubscriptionAccessDenied && !selectedSubscription && !selectedPlan ? (
+      {!isLoading && !selectedSubscription && !selectedPlan ? (
         <section className="stack-panel auth-panel">
           <p className="status-message">
             No subscription selected. Please choose or create a subscription from your account page first.

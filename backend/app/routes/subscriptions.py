@@ -728,7 +728,7 @@ def create_free_subscription(
 @router.post("/create-checkout")
 def create_checkout_for_plan(
     payload: SubscriptionCheckoutCreateRequest,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = _session_with_rls(user)
     try:
@@ -813,7 +813,7 @@ def create_checkout_for_plan(
 @router.post("")
 def create_subscription(
     payload: SubscriptionCreate,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = _session_with_rls(user)
     try:
@@ -1216,7 +1216,7 @@ def _create_paypal_order_for_user(
 )
 def create_paypal_order(
     payload: PayPalCreateOrderRequest,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     return _create_paypal_order_for_user(payload=payload, user=user)
 
@@ -1348,7 +1348,7 @@ def _capture_paypal_order_for_user(
 )
 def capture_paypal_order(
     payload: PayPalCaptureOrderRequest,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     return _capture_paypal_order_for_user(payload=payload, user=user)
 

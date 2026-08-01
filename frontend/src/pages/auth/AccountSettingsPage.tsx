@@ -8,7 +8,7 @@ import {
   fetchCurrentUser,
   getAuthToken,
   getErrorMessage,
-  listSubscriptionPlans,
+  listPublicSubscriptionPlans,
   logout,
   updateAccountPreferences,
   type LoginResponse,
@@ -88,7 +88,7 @@ export default function AccountSettingsPage() {
 
     const loadSubscriptionPlans = async () => {
       try {
-        setPlans(await listSubscriptionPlans())
+        setPlans(await listPublicSubscriptionPlans())
       } catch {
         // Subscription-plan access is optional and must not hide an authenticated account.
         setPlans([])
@@ -315,9 +315,9 @@ export default function AccountSettingsPage() {
             <>
               To upgrade, visit{' '}
               <Link to={`/subscription-payment?planId=${suggestedUpgrade.id}`}>
-                {suggestedUpgrade.plan_name}
+                Subscription Payment
               </Link>
-              .
+              {' '}for {suggestedUpgrade.plan_name}.
             </>
           ) : (
             <>

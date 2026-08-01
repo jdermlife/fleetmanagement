@@ -8,8 +8,8 @@ const apiMocks = vi.hoisted(() => ({
   createSubscription: vi.fn(),
   createSubscriptionCheckout: vi.fn(),
   createSubscriptionPayment: vi.fn(),
-  listSubscriptionPlans: vi.fn(),
-  listSubscriptions: vi.fn(),
+  getMySubscription: vi.fn(),
+  listPublicSubscriptionPlans: vi.fn(),
 }))
 
 vi.mock('axios', () => ({
@@ -20,6 +20,7 @@ vi.mock('axios', () => ({
 
 vi.mock('../src/api', () => ({
   ...apiMocks,
+  getAuthToken: () => 'subscriber-access-token',
   getErrorMessage: (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback,
 }))
@@ -63,8 +64,8 @@ const payment = {
 describe('SubscriptionPaymentPage PayPal Buttons', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_PAYPAL_CLIENT_ID', 'test-client')
-    apiMocks.listSubscriptionPlans.mockResolvedValue([plan])
-    apiMocks.listSubscriptions.mockResolvedValue([])
+    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([plan])
+    apiMocks.getMySubscription.mockResolvedValue(null)
     apiMocks.createSubscription.mockResolvedValue(subscription)
     apiMocks.createPayPalOrder.mockResolvedValue({
       order_id: 'ORDER-123',
