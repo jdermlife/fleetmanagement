@@ -861,9 +861,9 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('heading', { name: 'Actual Summary' })).toBeTruthy()
     expect(screen.getByText('Build Emergency Fund', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
     expect(screen.getByText('6', { selector: '.build-profile-target-summary strong' })).toBeTruthy()
-    const actualNetWorthDropdown = screen.getByText('Desired Net Worth', { selector: 'strong' }).closest('details')!
+    const actualNetWorthDropdown = screen.getByText('Net Worth Aspiration', { selector: 'strong' }).closest('details')!
     const financialInvestmentDropdown = screen.getByText('Details of Financial Invesment', { selector: 'summary' }).closest('details')!
-    const actualIncomeDropdown = screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }).closest('details')!
+    const actualIncomeDropdown = screen.getByText('Personal Income and Expense Objective', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
     expect(actualNetWorthDropdown.hasAttribute('open')).toBe(false)
     expect(financialInvestmentDropdown.hasAttribute('open')).toBe(false)
@@ -877,7 +877,7 @@ describe('BuildProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Apply Revised % Allocation' })).toBeNull()
 
     expect((screen.getByLabelText('Actual statement as of date') as HTMLInputElement).value).toBe('2026-07-27')
-    await user.click(screen.getByText('Desired Net Worth', { selector: 'strong' }))
+    await user.click(screen.getByText('Net Worth Aspiration', { selector: 'strong' }))
     const actualCashInput = within(actualNetWorthDropdown).getByLabelText('Cash on Hand actual net worth amount') as HTMLInputElement
     expect(actualCashInput.value).toBe('50,000.00')
     await user.clear(actualCashInput)
@@ -894,7 +894,7 @@ describe('BuildProfilePage', () => {
     await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 original investment' }), '100000')
     await user.type(within(financialInvestmentDropdown).getByLabelText('Investment 1 date acquired'), '2026-01-15')
     await user.type(within(financialInvestmentDropdown).getByRole('textbox', { name: 'Investment 1 risk rating' }), 'Moderate')
-    await user.click(screen.getByText('Actual Personal Income and Expense', { selector: 'summary' }))
+    await user.click(screen.getByText('Personal Income and Expense Objective', { selector: 'summary' }))
     const actualSalaryInput = within(actualIncomeDropdown).getByLabelText('Salary actual statement amount') as HTMLInputElement
     const actualHousingInput = within(actualIncomeDropdown).getByLabelText('Housing actual statement amount') as HTMLInputElement
     const actualGroceriesInput = within(actualIncomeDropdown).getByLabelText('Groceries actual statement amount') as HTMLInputElement
