@@ -1314,17 +1314,26 @@ textarea {
   align-content: space-between;
 }
 
-.loan-certification-metric-value-small {
-  font-size: 0.72rem;
-  line-height: 1.25;
-}
-
 .loan-certification-summary-card {
   min-height: 80px;
 }
 
 .loan-certification-metric-card {
   min-height: 84px;
+}
+
+.loan-certification-metric-card-aml {
+  border: 2px solid #0f2547;
+  border-radius: 0;
+  background: #ffff99;
+  align-content: center;
+}
+
+.loan-certification-aml-score {
+  color: #000000;
+  font-size: clamp(1.2rem, 2.2vw, 1.65rem);
+  font-weight: 500;
+  line-height: 1.15;
 }
 
 .loan-certification-summary-label,

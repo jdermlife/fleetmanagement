@@ -363,17 +363,15 @@ export default function CreditHealthMultiProductPage() {
 
         <div
           style={{
-            backgroundColor: '#dbeafe',
-            borderRadius: '8px',
+            backgroundColor: '#ffff99',
+            border: '2px solid #0f2547',
             padding: '16px',
-            textAlign: 'left',
+            display: 'flex',
+            alignItems: 'center',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
-            AML CLASSIFICATION SCORE
-          </div>
-          <div style={{ fontSize: '12px', fontWeight: '600', color: '#0f766e' }}>
-            DB Not Available
+          <div style={{ fontSize: '24px', fontWeight: '500', color: '#000000' }}>
+            AML Score: NA
           </div>
         </div>
       </div>
