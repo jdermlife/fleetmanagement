@@ -44,7 +44,7 @@ export const STEP_3_SECTIONS: Step3Section[] = [
 
 
   {
-    title: 'Detailed Employment Information',
+    title: 'Detailed Employment Information-Borrower',
     fields: [
       { key: 'employmentStatus', label: 'Employment Status', type: 'select', options: ['Regular', 'Contractual', 'Project-Basis', 'Consulting', 'Part-time'] },
       { key: 'employerName', label: 'Employer / Business Name' },
@@ -92,8 +92,8 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'communityReputation', label: 'Community Reputation', type: 'select', options: ['Excellent references', 'Good references', 'Average', 'Limited information', 'Adverse information'] },
       { key: 'professionalOrganizationMemberships', label: 'Professional Organization Memberships', type: 'textarea' },
       { key: 'professionalLicenses', label: 'Professional Licenses', type: 'textarea' },
-      { key: 'additionalPropertyDeclarations', label: 'Additional Property Declarations', type: 'textarea' },
-      { key: 'additionalVehicleDeclarations', label: 'Additional Vehicle Declarations', type: 'textarea' },
+      { key: 'additionalPropertyDeclarations', label: 'Additional Property Declarations' },
+      { key: 'additionalVehicleDeclarations', label: 'Financial Investments' },
       { key: 'communityInvolvementInformation', label: 'Community Involvement Information', type: 'textarea' },
       { key: 'facebookProfile', label: 'Facebook Profile Links' },
       { key: 'facebookProfileDateOpened', label: 'Facebook Profile Date Opened', type: 'date', countsTowardCompletion: false },

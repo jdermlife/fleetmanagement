@@ -5202,6 +5202,56 @@ th { color: var(--dark-gold); }
   background: #ffffff;
 }
 
+.build-profile-declaration-box {
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #f8fafc;
+}
+
+.build-profile-declaration-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.build-profile-declaration-list article {
+  padding: 14px;
+  border: 1px solid #dbe2ea;
+  border-radius: 6px;
+  background: #ffffff;
+}
+
+.build-profile-declaration-grid {
+  display: grid;
+  gap: 12px;
+  align-items: end;
+}
+
+.build-profile-property-declaration-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+}
+
+.build-profile-investment-declaration-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr)) auto;
+}
+
+.build-profile-declaration-grid label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: #334155;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.build-profile-declaration-grid input {
+  min-width: 0;
+  min-height: 42px;
+  background: #ffffff;
+}
+
 .build-profile-page :is(input, select, textarea)[aria-invalid="true"],
 .build-profile-page fieldset[aria-invalid="true"],
 .build-profile-score-links button[aria-invalid="true"] {
@@ -6546,6 +6596,11 @@ th { color: var(--dark-gold); }
   }
 
   .build-profile-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .build-profile-property-declaration-grid,
+  .build-profile-investment-declaration-grid {
     grid-template-columns: 1fr;
   }
 

@@ -72,6 +72,8 @@ type ProfileData = {
   guarantors: Guarantor[]
   additionalCollaterals: AdditionalCollateral[]
   additionalLoans: Array<Record<string, string | number>>
+  propertyDeclarations: PropertyDeclaration[]
+  step3FinancialInvestments: FinancialInvestmentDeclaration[]
   financialInvestments: FinancialInvestment[]
   dependents: Dependent[]
 }
@@ -89,6 +91,21 @@ type FinancialInvestment = {
   unrealizedGainLoss: string
   yieldDividendPercent: string
   riskRating: string
+}
+
+type PropertyDeclaration = {
+  id: string
+  propertyType: string
+  titleDocumentNumber: string
+  marketValue: string
+}
+
+type FinancialInvestmentDeclaration = {
+  id: string
+  assetType: string
+  issuer: string
+  amount: string
+  marketValue: string
 }
 
 type Dependent = {
@@ -198,7 +215,26 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], additionalLoans: [], financialInvestments: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
+}
+
+function createPropertyDeclaration(): PropertyDeclaration {
+  return {
+    id: `PROP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    propertyType: '',
+    titleDocumentNumber: '',
+    marketValue: '',
+  }
+}
+
+function createFinancialInvestmentDeclaration(): FinancialInvestmentDeclaration {
+  return {
+    id: `FIN-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
+    assetType: '',
+    issuer: '',
+    amount: '',
+    marketValue: '',
+  }
 }
 
 function createFinancialInvestment(): FinancialInvestment {
@@ -220,6 +256,23 @@ function createFinancialInvestment(): FinancialInvestment {
 
 function createDependent(): Dependent {
   return { id: `DEP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`, name: '', dateOfBirth: '' }
+}
+
+function propertyDeclarationSummary(items: PropertyDeclaration[]): string {
+  return items.map((item) => [
+    item.propertyType,
+    item.titleDocumentNumber,
+    item.marketValue ? `Market Value: ${item.marketValue}` : '',
+  ].filter(Boolean).join(' | ')).filter(Boolean).join('\n')
+}
+
+function financialInvestmentSummary(items: FinancialInvestmentDeclaration[]): string {
+  return items.map((item) => [
+    item.assetType,
+    item.issuer,
+    item.amount ? `Amount: ${item.amount}` : '',
+    item.marketValue ? `Market Value: ${item.marketValue}` : '',
+  ].filter(Boolean).join(' | ')).filter(Boolean).join('\n')
 }
 
 function loadProfile(): ProfileData {
@@ -264,6 +317,8 @@ function scorePreparationFingerprint(profile: ProfileData): string {
     coBorrowers: profile.coBorrowers,
     guarantors: profile.guarantors,
     additionalCollaterals: profile.additionalCollaterals,
+    propertyDeclarations: profile.propertyDeclarations,
+    step3FinancialInvestments: profile.step3FinancialInvestments,
     financialInvestments: profile.financialInvestments,
     dependents: profile.dependents,
   })
@@ -949,6 +1004,24 @@ export default function BuildProfilePage() {
     financialInvestments: current.financialInvestments.map((item) => item.id === id ? { ...item, [field]: value } : item),
   }))
 
+  const updateFinancialInvestmentDeclaration = (id: string, field: keyof FinancialInvestmentDeclaration, value: string) => setProfile((current) => {
+    const step3FinancialInvestments = current.step3FinancialInvestments.map((item) => item.id === id ? { ...item, [field]: value } : item)
+    return {
+      ...current,
+      step3FinancialInvestments,
+      values: { ...current.values, additionalVehicleDeclarations: financialInvestmentSummary(step3FinancialInvestments) },
+    }
+  })
+
+  const updatePropertyDeclaration = (id: string, field: keyof PropertyDeclaration, value: string) => setProfile((current) => {
+    const propertyDeclarations = current.propertyDeclarations.map((item) => item.id === id ? { ...item, [field]: value } : item)
+    return {
+      ...current,
+      propertyDeclarations,
+      values: { ...current.values, additionalPropertyDeclarations: propertyDeclarationSummary(propertyDeclarations) },
+    }
+  })
+
   const updateDependent = (id: string, field: 'name' | 'dateOfBirth', value: string) => setProfile((current) => ({
     ...current,
     dependents: current.dependents.map((dependent) => dependent.id === id ? { ...dependent, [field]: value } : dependent),
@@ -991,6 +1064,51 @@ export default function BuildProfilePage() {
     const value = field.key === 'grossMonthlyIncome'
       ? String(Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0))
       : profile.values[field.key] ?? ''
+
+    if (field.key === 'additionalPropertyDeclarations') {
+      return <div key={field.key} className="build-profile-declaration-box build-profile-field-wide">
+        <div className="build-profile-section-heading">
+          <h5>Additional Property Declarations</h5>
+          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, propertyDeclarations: [...current.propertyDeclarations, createPropertyDeclaration()] }))}>Add Property</button>
+        </div>
+        {profile.propertyDeclarations.length === 0 ? <p className="build-profile-applicability-note">No additional property declared.</p> : <div className="build-profile-declaration-list">
+          {profile.propertyDeclarations.map((item, index) => <article key={item.id}>
+            <div className="build-profile-declaration-grid build-profile-property-declaration-grid">
+              <label>Type of Property<input value={item.propertyType} onChange={(event) => updatePropertyDeclaration(item.id, 'propertyType', event.target.value)} /></label>
+              <label>Title / OR / CR / CTC<input value={item.titleDocumentNumber} onChange={(event) => updatePropertyDeclaration(item.id, 'titleDocumentNumber', event.target.value)} /></label>
+              <label>Market Value<NumericFormat value={item.marketValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updatePropertyDeclaration(item.id, 'marketValue', value)} /></label>
+              <button type="button" className="loan-footer-button" onClick={() => setProfile((current) => {
+                const propertyDeclarations = current.propertyDeclarations.filter((record) => record.id !== item.id)
+                return { ...current, propertyDeclarations, values: { ...current.values, additionalPropertyDeclarations: propertyDeclarationSummary(propertyDeclarations) } }
+              })}>Remove Property {index + 1}</button>
+            </div>
+          </article>)}
+        </div>}
+      </div>
+    }
+
+    if (field.key === 'additionalVehicleDeclarations') {
+      return <div key={field.key} className="build-profile-declaration-box build-profile-field-wide">
+        <div className="build-profile-section-heading">
+          <h5>Financial Investments</h5>
+          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, step3FinancialInvestments: [...current.step3FinancialInvestments, createFinancialInvestmentDeclaration()] }))}>Add Financial Investment</button>
+        </div>
+        {profile.step3FinancialInvestments.length === 0 ? <p className="build-profile-applicability-note">No financial investment declared.</p> : <div className="build-profile-declaration-list">
+          {profile.step3FinancialInvestments.map((item, index) => <article key={item.id}>
+            <div className="build-profile-declaration-grid build-profile-investment-declaration-grid">
+              <label>Type of Asset<input value={item.assetType} onChange={(event) => updateFinancialInvestmentDeclaration(item.id, 'assetType', event.target.value)} /></label>
+              <label>Issuer<input value={item.issuer} onChange={(event) => updateFinancialInvestmentDeclaration(item.id, 'issuer', event.target.value)} /></label>
+              <label>Amount<NumericFormat value={item.amount} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestmentDeclaration(item.id, 'amount', value)} /></label>
+              <label>Market Value<NumericFormat value={item.marketValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value }) => updateFinancialInvestmentDeclaration(item.id, 'marketValue', value)} /></label>
+              <button type="button" className="loan-footer-button" onClick={() => setProfile((current) => {
+                const step3FinancialInvestments = current.step3FinancialInvestments.filter((record) => record.id !== item.id)
+                return { ...current, step3FinancialInvestments, values: { ...current.values, additionalVehicleDeclarations: financialInvestmentSummary(step3FinancialInvestments) } }
+              })}>Remove Investment {index + 1}</button>
+            </div>
+          </article>)}
+        </div>}
+      </div>
+    }
 
     if (field.type === 'checkbox') {
       const className = `build-profile-checkbox-field${field.mustBeChecked ? ' build-profile-checkbox-field-required' : ''}`
