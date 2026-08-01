@@ -2124,6 +2124,10 @@ button.loan-repository-action-release { background: #4f46e5; }
     grid-template-columns: 1fr;
   }
 
+  .loan-certification-metric-card-credit-values {
+    grid-column: 1;
+  }
+
   .loan-certification-footer {
     flex-direction: column;
     align-items: flex-start;
