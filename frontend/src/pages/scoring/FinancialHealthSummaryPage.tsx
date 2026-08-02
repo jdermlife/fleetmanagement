@@ -1144,50 +1144,7 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
-      <section className="psychometric-panel financial-health-source-panel" aria-labelledby="wid-benchmark-table-title">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">WID benchmark reference</span>
-            <h2 id="wid-benchmark-table-title">2024 Pre-Tax Income Distribution Benchmark</h2>
-            <p className="financial-health-panel-intro">
-              Countries are ranked by the pre-tax national income share received by the top 10% of adults.
-              A lower rank number means greater income concentration, not stronger financial health.
-            </p>
-          </div>
-        </div>
-        <div className="calculation-reference-table-wrap">
-          <table className="calculation-reference-table financial-health-source-table">
-            <thead>
-              <tr>
-                <th scope="col">Rank</th>
-                <th scope="col">Country</th>
-                <th scope="col">Bottom 50%</th>
-                <th scope="col">Top 10%</th>
-                <th scope="col">Top 1%</th>
-                <th scope="col">Year</th>
-                <th scope="col">Data quality</th>
-              </tr>
-            </thead>
-            <tbody>
-              {widIncomeBenchmarkTable.map((row) => (
-                <tr key={row.countryCode} aria-current={row.countryCode === benchmarkContext.countryCode ? 'true' : undefined}>
-                  <td><strong>{row.rank}</strong></td>
-                  <th scope="row">{row.countryName}</th>
-                  <td>{(row.bottom50Share * 100).toFixed(2)}%</td>
-                  <td><strong>{(row.top10Share * 100).toFixed(2)}%</strong></td>
-                  <td>{(row.top1Share * 100).toFixed(2)}%</td>
-                  <td>{row.year}</td>
-                  <td>{row.dataQuality.toFixed(1)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        <p className="financial-health-panel-intro">
-          WID series: share (`s`) of pre-tax national income (`ptinc`), adults aged 20+ (`992`).
-          Personal income or wealth percentiles require monetary threshold (`t`) series in compatible local currency.
-        </p>
-      </section>
+
 
       <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
