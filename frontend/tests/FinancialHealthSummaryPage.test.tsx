@@ -43,9 +43,10 @@ describe('FinancialHealthSummaryPage', () => {
     const checklist = screen.getByRole('list', { name: 'Financial Health journey checklist' })
     const journeyItems = within(checklist).getAllByRole('listitem')
 
-    expect(within(checklist).getByText('Financial Health', { selector: '.financial-health-journey-hub' })).toBeTruthy()
-    expect(within(journeyItems[0]).getByRole('heading', { name: '☐ Create Profile' })).toBeTruthy()
+    expect(within(checklist).getByText('Financial Health', { selector: '.financial-health-journey-hub span' })).toBeTruthy()
+    expect(within(journeyItems[0]).getByRole('heading', { name: 'Create Profile' })).toBeTruthy()
     expect(within(journeyItems[0]).getByRole('button', { name: 'Create Profile' })).toBeTruthy()
+    expect(within(journeyItems[1]).getByRole('heading', { name: 'Assess Credit Health' })).toBeTruthy()
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 

@@ -8443,17 +8443,17 @@ th { color: var(--dark-gold); }
 .financial-health-journey-cycle {
   position: relative;
   display: block;
-  width: min(100%, 700px);
-  height: 430px;
-  margin: 4px auto;
+  width: min(100%, 620px);
+  height: 500px;
+  margin: 8px auto;
 }
 
 .financial-health-journey-cycle::before {
   content: '';
   position: absolute;
   z-index: 0;
-  inset: 48px 88px 50px;
-  border: 3px solid #176b8d;
+  inset: 64px 104px 66px;
+  border: 2px solid rgba(40, 116, 54, 0.24);
   border-radius: 50%;
   pointer-events: none;
 }
@@ -8463,36 +8463,49 @@ th { color: var(--dark-gold); }
   top: 50%;
   left: 50%;
   z-index: 1;
-  width: 136px;
+  width: 172px;
   aspect-ratio: 1;
   display: grid;
   place-items: center;
-  padding: 18px;
-  border: 4px solid #176b8d;
+  padding: 13px;
+  border: 2px solid #063f1d;
   border-radius: 50%;
-  background: #ffffff;
-  color: #124f68;
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.18);
-  font-size: 1.05rem;
-  font-weight: 800;
-  line-height: 1.15;
+  background: linear-gradient(145deg, #f97938 0%, #dc5722 100%);
+  color: #ffffff;
+  box-shadow: inset 0 2px 2px rgba(255, 255, 255, 0.48), 0 8px 20px rgba(15, 23, 42, 0.2);
+  font-size: 1.18rem;
+  font-weight: 700;
+  line-height: 1.2;
   text-align: center;
   transform: translate(-50%, -50%);
+}
+
+.financial-health-journey-hub span {
+  width: 140px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  border: 2px solid #062e17;
+  border-radius: 50%;
+  background: #0d5b23;
+  box-shadow: inset 0 3px 7px rgba(255, 255, 255, 0.16);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step {
   position: absolute;
   z-index: 1;
-  width: 176px;
-  min-height: 96px;
+  width: 126px;
+  min-height: 126px;
+  aspect-ratio: 1;
   grid-template-columns: 1fr;
-  align-content: space-between;
-  gap: 8px;
+  align-content: center;
+  gap: 7px;
+  padding: 16px 12px 13px;
   text-align: center;
-  border-color: rgba(255, 255, 255, 0.62);
-  border-radius: 9px;
+  border: 2px solid rgba(255, 255, 255, 0.74);
+  border-radius: 50%;
   color: #ffffff;
-  box-shadow: 0 7px 14px rgba(15, 23, 42, 0.22);
+  box-shadow: inset 0 5px 8px rgba(255, 255, 255, 0.24), inset 0 -6px 10px rgba(0, 0, 0, 0.12), 0 7px 14px rgba(15, 23, 42, 0.22);
   overflow: hidden;
 }
 
@@ -8505,42 +8518,47 @@ th { color: var(--dark-gold); }
   word-break: normal;
 }
 
+.financial-health-journey-cycle .financial-health-journey-step-copy h3 {
+  font-size: 0.82rem;
+  line-height: 1.15;
+}
+
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(1) {
   top: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: #e96f2c;
+  background: linear-gradient(145deg, #ff8149, #e85d20);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(2) {
-  top: 72px;
-  right: 18px;
-  background: #858585;
+  top: 91px;
+  right: 24px;
+  background: linear-gradient(145deg, #347fbd, #15558e);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(3) {
-  right: 18px;
-  bottom: 38px;
-  background: #e5ad00;
+  right: 24px;
+  bottom: 69px;
+  background: linear-gradient(145deg, #dce32b, #a9bd00);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(4) {
   bottom: 0;
   left: 50%;
   transform: translateX(-50%);
-  background: #3768bd;
+  background: linear-gradient(145deg, #92cc32, #5fa817);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(5) {
-  bottom: 38px;
-  left: 18px;
-  background: #5b9d39;
+  bottom: 69px;
+  left: 24px;
+  background: linear-gradient(145deg, #69b643, #258326);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step:nth-child(6) {
-  top: 72px;
-  left: 18px;
-  background: #0f766e;
+  top: 91px;
+  left: 24px;
+  background: linear-gradient(145deg, #398a48, #09651f);
 }
 
 .financial-health-journey-cycle .financial-health-journey-step-copy p {
@@ -8556,13 +8574,15 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-journey-cycle .financial-health-journey-action {
-  width: 100%;
-  min-height: 32px;
-  padding: 5px 8px;
-  border-color: rgba(255, 255, 255, 0.52);
-  background: rgba(255, 255, 255, 0.14);
+  width: auto;
+  min-height: 25px;
+  margin: 0 auto;
+  padding: 3px 8px;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(0, 0, 0, 0.14);
   color: #ffffff;
-  font-size: 0.78rem;
+  font-size: 0.66rem;
+  line-height: 1.1;
 }
 
 .financial-health-journey-cycle .financial-health-journey-action:hover,
@@ -8572,58 +8592,75 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-journey-cycle .financial-health-journey-step-complete {
-  border-color: #dcfce7;
-  box-shadow: 0 0 0 3px #22c55e, 0 7px 14px rgba(15, 23, 42, 0.22);
+  border-color: #ffffff;
+  box-shadow: 0 0 0 3px #16a34a, inset 0 5px 8px rgba(255, 255, 255, 0.24), 0 7px 14px rgba(15, 23, 42, 0.22);
+}
+
+.financial-health-journey-step-check {
+  position: absolute;
+  top: 8px;
+  right: 13px;
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #ffffff;
+  border-radius: 50%;
+  background: #15803d;
+  color: #ffffff;
+  font-size: 0.76rem;
+  font-weight: 900;
 }
 
 .financial-health-journey-arrow {
   position: absolute;
   z-index: 0;
-  font-size: 2.65rem;
-  line-height: 1;
-  font-weight: 800;
-  text-shadow: 0 0 1px currentColor;
+  width: 38px;
+  height: 18px;
+  background: currentColor;
+  clip-path: polygon(0 20%, 64% 20%, 64% 0, 100% 50%, 64% 100%, 64% 80%, 0 80%);
+  filter: drop-shadow(0 2px 1px rgba(15, 23, 42, 0.2));
 }
 
 .financial-health-journey-arrow-1 {
-  top: 54px;
-  right: 172px;
+  top: 69px;
+  right: 171px;
   color: #e96f2c;
-  transform: rotate(35deg);
+  transform: rotate(38deg);
 }
 
 .financial-health-journey-arrow-2 {
-  right: 66px;
-  bottom: 178px;
-  color: #858585;
+  right: 64px;
+  bottom: 236px;
+  color: #e6ae00;
   transform: rotate(90deg);
 }
 
 .financial-health-journey-arrow-3 {
-  right: 172px;
-  bottom: 45px;
-  color: #e5ad00;
+  right: 171px;
+  bottom: 62px;
+  color: #b5c900;
   transform: rotate(145deg);
 }
 
 .financial-health-journey-arrow-4 {
-  bottom: 45px;
-  left: 172px;
-  color: #3768bd;
+  bottom: 62px;
+  left: 171px;
+  color: #69aa1b;
   transform: rotate(215deg);
 }
 
 .financial-health-journey-arrow-5 {
-  bottom: 178px;
-  left: 66px;
-  color: #5b9d39;
+  bottom: 236px;
+  left: 64px;
+  color: #348d2b;
   transform: rotate(270deg);
 }
 
 .financial-health-journey-arrow-6 {
-  top: 54px;
-  left: 172px;
-  color: #0f766e;
+  top: 69px;
+  left: 171px;
+  color: #13742a;
   transform: rotate(325deg);
 }
 
@@ -8984,20 +9021,24 @@ th { color: var(--dark-gold); }
 
   .financial-health-journey-cycle {
     width: 100%;
-    height: 360px;
+    height: 390px;
   }
 
   .financial-health-journey-cycle::before {
     display: block;
-    inset: 38px 42px 44px;
-    border-width: 3px;
+    inset: 48px 42px;
+    border-width: 2px;
   }
 
   .financial-health-journey-hub {
-    width: 104px;
-    padding: 12px;
-    border-width: 3px;
+    width: 94px;
+    padding: 7px;
+    border-width: 2px;
     font-size: 0.82rem;
+  }
+
+  .financial-health-journey-hub span {
+    width: 76px;
   }
 
   .financial-health-journey-arrow {
@@ -9007,10 +9048,10 @@ th { color: var(--dark-gold); }
 
   .financial-health-journey-cycle .financial-health-journey-step {
     position: absolute;
-    width: 112px;
-    min-height: 76px;
+    width: 96px;
+    min-height: 96px;
     gap: 5px;
-    padding: 7px;
+    padding: 10px 7px 8px;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(1) {
@@ -9020,13 +9061,13 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(2) {
-    top: 86px;
+    top: 76px;
     right: 0;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(3) {
     right: 0;
-    bottom: 86px;
+    bottom: 76px;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(4) {
@@ -9037,12 +9078,12 @@ th { color: var(--dark-gold); }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(5) {
     top: auto;
-    bottom: 86px;
+    bottom: 76px;
     left: 0;
   }
 
   .financial-health-journey-cycle .financial-health-journey-step:nth-child(6) {
-    top: 86px;
+    top: 76px;
     left: 0;
   }
 
@@ -9062,9 +9103,10 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-journey-cycle .financial-health-journey-action {
-    min-height: 28px;
+    width: auto;
+    min-height: 24px;
     padding: 3px 4px;
-    font-size: 0.62rem;
+    font-size: 0.56rem;
     line-height: 1.15;
   }
 

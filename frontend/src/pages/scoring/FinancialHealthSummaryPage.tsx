@@ -205,7 +205,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'creditHealth',
-    label: 'Credit Health',
+    label: 'Assess Credit Health',
     launchLabel: 'Launch Credit Health',
     route: '/lending-scorecard',
     description:
@@ -213,7 +213,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'wealthBuilder',
-    label: 'Wealth Building',
+    label: 'Set Wealth Building Target',
     launchLabel: 'Launch Wealth Builder',
     route: '/net-worth-positioning',
     description:
@@ -221,7 +221,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'budgetTargets',
-    label: 'Budget Targets',
+    label: 'Set Limit and Manage Resources',
     launchLabel: 'Arrange My Targets',
     route: '/budget-expense-tracker',
     description:
@@ -229,7 +229,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billsLoans',
-    label: 'Loans',
+    label: 'Optimize',
     launchLabel: 'Optimize Loan',
     route: '/loan-monitoring',
     description:
@@ -237,7 +237,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billManager',
-    label: 'Bill Manager',
+    label: 'Enhance Discipline',
     launchLabel: 'Manage Bills',
     route: '/bill-reminder',
     description:
@@ -940,9 +940,8 @@ export default function FinancialHealthSummaryPage() {
                     role="listitem"
                   >
                     <div className="financial-health-journey-step-copy">
-                      <h3>
-                        {isCompleted ? '☑' : '☐'} {step.label}
-                      </h3>
+                      {isCompleted ? <span className="financial-health-journey-step-check" aria-label="Completed">✓</span> : null}
+                      <h3>{step.label}</h3>
                       <p>{step.description}</p>
                     </div>
                     <button
@@ -955,13 +954,13 @@ export default function FinancialHealthSummaryPage() {
                   </article>
                 )
               })}
-              <div className="financial-health-journey-hub">Financial Health</div>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-1" aria-hidden="true">→</span>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-2" aria-hidden="true">→</span>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true">→</span>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-4" aria-hidden="true">→</span>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-5" aria-hidden="true">→</span>
-              <span className="financial-health-journey-arrow financial-health-journey-arrow-6" aria-hidden="true">→</span>
+              <div className="financial-health-journey-hub"><span>Financial Health</span></div>
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-1" aria-hidden="true" />
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-2" aria-hidden="true" />
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true" />
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-4" aria-hidden="true" />
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-5" aria-hidden="true" />
+              <span className="financial-health-journey-arrow financial-health-journey-arrow-6" aria-hidden="true" />
             </div>
 
             <div className="financial-health-journey-progress" aria-live="polite">
