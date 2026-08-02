@@ -35,7 +35,7 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
-import { computePhilippineIncomeBenchmark, countryCodeFromCitizenship, getWidIncomeBenchmarkTable } from './widBenchmarkEngine'
+import { computePhilippineIncomeBenchmark, countryCodeFromCitizenship } from './widBenchmarkEngine'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -768,7 +768,6 @@ export default function FinancialHealthSummaryPage() {
   const band = getFinancialHealthBand(score)
   const financialHealthChange = score - DEFAULT_FINANCIAL_HEALTH_SUMMARY.score
   const philippineIncomeBenchmark = computePhilippineIncomeBenchmark(benchmarkContext.monthlyIncome * 12)
-  const widIncomeBenchmarkTable = getWidIncomeBenchmarkTable()
   const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
   const momentumLabel = !budgetHealthScore
     ? 'Pending'
