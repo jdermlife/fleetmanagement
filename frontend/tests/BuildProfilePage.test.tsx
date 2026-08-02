@@ -262,6 +262,24 @@ describe('BuildProfilePage', () => {
     expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
   })
 
+  it('opens both score pages from a local profile without repository synchronization', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+    const profileId = screen.getByText(/^PRO-[A-Z0-9]{6}$/).textContent
+
+    await user.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
+
+    expect(await screen.findByText(`${profileId} is ready. Credit Health will create a repository record when saved.`)).toBeTruthy()
+    expect(mockFetchLoanApplication).not.toHaveBeenCalled()
+    expect(mockUpdateLoanApplication).not.toHaveBeenCalled()
+
+    await user.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith(`/lending-scorecard/filscore?profileId=${profileId}`)
+
+    await user.click(screen.getByRole('button', { name: 'Open Wealth Building Score' }))
+    expect(mockNavigate).toHaveBeenLastCalledWith(`/net-worth-positioning?profileId=${profileId}`)
+  })
+
   it('selects the Financial Goal immediately after Profile ID', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
@@ -417,30 +435,54 @@ describe('BuildProfilePage', () => {
     expect(screen.getAllByLabelText(/^\d+\. /)).toHaveLength(50)
   })
 
-  it('excludes optional Step 3 fraud and social dates while requiring the profile attestation', async () => {
+  it('excludes optional Step 3 fraud and social dates while requiring an attestation response', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
     await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
 
-    const optionalFields = [
+    const optionalSocialDateFields = [
       'Facebook Profile Date Opened',
       'Instagram Profile Date Opened',
       'X / Twitter Profile Date Opened',
       'TikTok Profile Date Opened',
       'LinkedIn Profile Date Opened',
-      'Identity Theft Indicator',
     ]
-    optionalFields.forEach((label) => expect(screen.getByLabelText(label).getAttribute('aria-invalid')).toBe('false'))
-    for (const label of optionalFields.slice(0, 5)) await user.type(screen.getByLabelText(label), '2020-01-01')
-    await user.click(screen.getByLabelText('Identity Theft Indicator'))
+    optionalSocialDateFields.forEach((label) => expect(screen.getByLabelText(label).getAttribute('aria-invalid')).toBe('false'))
+    for (const label of optionalSocialDateFields) await user.type(screen.getByLabelText(label), '2020-01-01')
+    const identityTheftGroup = screen.getByRole('group', { name: 'Identity Theft Indicator' })
+    expect(identityTheftGroup.getAttribute('aria-invalid')).toBe('false')
+    await user.click(within(identityTheftGroup).getByRole('checkbox', { name: 'Yes' }))
     expect(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values, 0% information provided/ })).toBeTruthy()
 
-    const attestation = screen.getByLabelText(/I confirm that my profile has no record of fraudulent events or acts/)
-    expect(attestation.getAttribute('aria-invalid')).toBe('true')
-    expect(attestation.closest('label')?.classList.contains('build-profile-checkbox-field-required')).toBe(true)
-    await user.click(attestation)
-    expect(attestation.getAttribute('aria-invalid')).toBe('false')
+    const attestationGroup = screen.getByRole('group', { name: /I confirm that my profile has no record of fraudulent events or acts/ })
+    expect(attestationGroup.getAttribute('aria-invalid')).toBe('true')
+    await user.click(within(attestationGroup).getByRole('checkbox', { name: 'No' }))
+    expect(attestationGroup.getAttribute('aria-invalid')).toBe('false')
+  })
+
+  it('counts either Fraud Intelligence Yes or No checkbox toward Step 3 completion', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
+
+    const fakeNationalIdGroup = screen.getByRole('group', { name: 'Fake National ID' })
+    const yes = within(fakeNationalIdGroup).getByRole('checkbox', { name: 'Yes' })
+    const no = within(fakeNationalIdGroup).getByRole('checkbox', { name: 'No' })
+    const stepButton = screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ })
+
+    expect(stepButton.getAttribute('aria-label')).toContain('0% information provided')
+    await user.click(yes)
+    const yesCompletion = stepButton.getAttribute('aria-label')
+    expect(yes).toHaveProperty('checked', true)
+    expect(no).toHaveProperty('checked', false)
+    expect(yesCompletion).not.toContain('0% information provided')
+
+    await user.click(no)
+    expect(yes).toHaveProperty('checked', false)
+    expect(no).toHaveProperty('checked', true)
+    expect(stepButton.getAttribute('aria-label')).toBe(yesCompletion)
   })
 
   it('provides spouse and repeatable dependent requirements in Step 2', async () => {

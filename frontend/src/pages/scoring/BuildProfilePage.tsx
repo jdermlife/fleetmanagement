@@ -834,6 +834,7 @@ export default function BuildProfilePage() {
         const completionFields = STEP_3_FIELDS.filter((field) => field.countsTowardCompletion !== false)
         const completedFields = completionFields.filter((field) => {
           if (field.key === 'grossMonthlyIncome') return Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0) > 0
+          if (field.yesNoChoice) return profile.values[field.key] === 'true' || profile.values[field.key] === 'false'
           if (field.mustBeChecked) return profile.values[field.key] === 'true'
           return profile.values[field.key] !== undefined && profile.values[field.key] !== ''
         }).length
@@ -1024,8 +1025,13 @@ export default function BuildProfilePage() {
 
   useEffect(() => {
     if (profile.step !== 12) return
+    if (!scoreApplicationNo) {
+      setScorePreparationStatus('ready')
+      setSaveMessage('Local profile is ready. A repository record will be created when the Credit Health assessment is saved.')
+      return
+    }
     void prepareStep12Scores().catch(() => undefined)
-  }, [prepareStep12Scores, profile.step, scorePreparationKey])
+  }, [prepareStep12Scores, profile.step, scoreApplicationNo, scorePreparationKey])
 
   const saveProfile = async () => {
     try {
@@ -1054,6 +1060,11 @@ export default function BuildProfilePage() {
   ) => {
     const updatedProfile = { ...profile, values: { ...profile.values, [key]: 'true' } }
     setProfile(updatedProfile)
+    if (!scoreApplicationNo) {
+      persistProfileSnapshot(updatedProfile)
+      navigate(`${destination}?profileId=${encodeURIComponent(profile.profileId)}`)
+      return
+    }
     setPendingScorePage(key)
     try {
       const preparedApplication = await prepareStep12Scores(profile)
@@ -1203,6 +1214,20 @@ export default function BuildProfilePage() {
     }
 
     if (field.type === 'checkbox') {
+      if (field.yesNoChoice) {
+        return <fieldset key={field.key} className="build-profile-yes-no-field" aria-invalid={field.countsTowardCompletion === false ? false : value !== 'true' && value !== 'false'}>
+          <legend>{field.label}</legend>
+          <div>
+            {(['true', 'false'] as const).map((option) => {
+              const optionLabel = option === 'true' ? 'Yes' : 'No'
+              return <label key={option}>
+                <input type="checkbox" checked={value === option} onChange={(event) => updateValue(field.key, event.target.checked ? option : '')} />
+                <span>{optionLabel}</span>
+              </label>
+            })}
+          </div>
+        </fieldset>
+      }
       const className = `build-profile-checkbox-field${field.mustBeChecked ? ' build-profile-checkbox-field-required' : ''}`
       return <label key={field.key} className={className}>
         <input aria-invalid={field.mustBeChecked ? value !== 'true' : field.countsTowardCompletion === false ? false : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
@@ -2485,7 +2510,9 @@ export default function BuildProfilePage() {
           {scorePreparationStatus === 'preparing'
             ? `Preparing ${scoreApplicationNo || 'selected profile'}...`
             : scorePreparationStatus === 'ready'
-              ? `${scoreApplicationNo} is ready for both score pages.`
+              ? scoreApplicationNo
+                ? `${scoreApplicationNo} is ready for both score pages.`
+                : `${profile.profileId} is ready. Credit Health will create a repository record when saved.`
               : scorePreparationStatus === 'error'
                 ? 'Automatic preparation was not completed. Select a score button to retry.'
                 : 'Waiting to prepare the selected profile.'}
@@ -2503,13 +2530,7 @@ export default function BuildProfilePage() {
             <span>FILSCORE Assessment</span>
             <h4>Wealth Building Score</h4>
             <p>Review net worth positioning, financial foundations, and wealth-building behavior.</p>
-            <button type="button" aria-busy={pendingScorePage === 'wealthBuildingScoreOpened' || scorePreparationStatus === 'preparing'} aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} disabled={pendingScorePage !== null || scorePreparationStatus === 'preparing'} onClick={() => {
-              if (sourceApplication) void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')
-              else {
-                persistProfileSnapshot(profile)
-                navigate(`/net-worth-positioning?profileId=${encodeURIComponent(profile.profileId)}`)
-              }
-            }}>
+            <button type="button" aria-busy={pendingScorePage === 'wealthBuildingScoreOpened' || scorePreparationStatus === 'preparing'} aria-invalid={profile.values.wealthBuildingScoreOpened !== 'true'} disabled={pendingScorePage !== null || scorePreparationStatus === 'preparing'} onClick={() => void openScorePage('wealthBuildingScoreOpened', '/net-worth-positioning')}>
               {pendingScorePage === 'wealthBuildingScoreOpened' ? <><span className="build-profile-score-spinner" aria-hidden="true" />Opening Wealth Building Score...</> : 'Open Wealth Building Score'}
             </button>
           </article>

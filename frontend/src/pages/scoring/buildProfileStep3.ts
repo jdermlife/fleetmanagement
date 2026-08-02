@@ -5,6 +5,7 @@ export type Step3Field = {
   options?: string[]
   readOnly?: boolean
   mustBeChecked?: boolean
+  yesNoChoice?: boolean
   countsTowardCompletion?: boolean
 }
 
@@ -155,16 +156,16 @@ export const STEP_3_SECTIONS: Step3Section[] = [
       { key: 'watchlistStatus', label: 'Watchlist Screening', type: 'select', options: ['Clear', 'Manual review', 'Positive match'] },
       { key: 'previousFraudRecords', label: 'Previous Fraud Records', type: 'select', options: ['None', 'Minor alerts', 'Confirmed fraud'] },
       { key: 'applicationVelocity', label: 'Application Velocity', type: 'select', options: ['Normal', 'Multiple recent applications', 'Excessive activity'] },
-      { key: 'fakeNationalId', label: 'Fake National ID', type: 'checkbox' },
-      { key: 'forgedPayslip', label: 'Forged Payslip', type: 'checkbox' },
-      { key: 'forgedBankStatement', label: 'Forged Bank Statement', type: 'checkbox' },
-      { key: 'identityTheftIndicator', label: 'Identity Theft Indicator', type: 'checkbox', countsTowardCompletion: false },
-      { key: 'sanctionsPepMatch', label: 'Sanctions / PEP Match', type: 'checkbox' },
+      { key: 'fakeNationalId', label: 'Fake National ID', type: 'checkbox', yesNoChoice: true },
+      { key: 'forgedPayslip', label: 'Forged Payslip', type: 'checkbox', yesNoChoice: true },
+      { key: 'forgedBankStatement', label: 'Forged Bank Statement', type: 'checkbox', yesNoChoice: true },
+      { key: 'identityTheftIndicator', label: 'Identity Theft Indicator', type: 'checkbox', yesNoChoice: true, countsTowardCompletion: false },
+      { key: 'sanctionsPepMatch', label: 'Sanctions / PEP Match', type: 'checkbox', yesNoChoice: true },
       {
         key: 'fraudAndDocumentAuthenticityAttestation',
         label: 'I confirm that my profile has no record of fraudulent events or acts and that all documents I have provided are authentic. I am fully aware that otherwise, the credit health measurement results may be inaccurate.',
         type: 'checkbox',
-        mustBeChecked: true,
+        yesNoChoice: true,
       },
     ],
   },
