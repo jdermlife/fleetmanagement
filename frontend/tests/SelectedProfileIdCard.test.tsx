@@ -48,6 +48,19 @@ describe('selected profile identity', () => {
     expect(screen.getByText('Jane Doe')).toBeTruthy()
   })
 
+  it('supports an ID User caption for the APP profile card', () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-USER',
+      values: {},
+    }))
+
+    render(<SelectedProfileIdCard label="APP Profile ID" description="ID User" />)
+
+    expect(screen.getByText('APP Profile ID')).toBeTruthy()
+    expect(screen.getByText('PRO-USER')).toBeTruthy()
+    expect(screen.getByText('ID User')).toBeTruthy()
+  })
+
   it('uses only an actual application selection for report analysis', () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-LOCAL',

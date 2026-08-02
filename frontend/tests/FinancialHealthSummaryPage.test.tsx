@@ -50,6 +50,35 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 
+  it('shows APP identity and Step 8 financial amounts in thousands', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-USER',
+      values: {
+        'asset-cash-on-hand': '1500000',
+        'liability-personal-loan': '250000',
+        'income-salary': '120000',
+        'expense-housing': '20000',
+        'insurance-life': '500000',
+        'insurance-health': '250000',
+        'wealthActual.asset-cash-on-hand': '9999999',
+      },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+    }))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const profileLine = screen.getByRole('region', { name: 'Selected financial health profile' })
+    expect(within(profileLine).getByText('APP Profile ID')).toBeTruthy()
+    expect(within(profileLine).getByText('ID User')).toBeTruthy()
+    expect(await within(profileLine).findByText('1,250k')).toBeTruthy()
+    expect(within(profileLine).getByText('100k')).toBeTruthy()
+    expect(within(profileLine).getByText('750k')).toBeTruthy()
+  })
+
   it('shows the score, band, indicators, and transparent formula', () => {
     render(<FinancialHealthSummaryPage />)
 

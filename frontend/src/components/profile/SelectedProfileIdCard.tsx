@@ -10,6 +10,7 @@ export function resolveSelectedProfileId(searchParams: URLSearchParams): string 
 type SelectedProfileIdCardProps = {
   className?: string
   compactId?: boolean
+  description?: string
   label?: string
   name?: string
 }
@@ -17,6 +18,7 @@ type SelectedProfileIdCardProps = {
 export default function SelectedProfileIdCard({
   className = 'psychometric-summary-card psychometric-summary-card-highlight',
   compactId = false,
+  description = 'Selected personal profile reference',
   label = 'Profile ID',
   name,
 }: SelectedProfileIdCardProps) {
@@ -33,7 +35,7 @@ export default function SelectedProfileIdCard({
         {profileId && name
           ? <><span className="selected-profile-name-label">Name</span><b className="selected-profile-name">{name}</b></>
           : profileId
-            ? 'Selected personal profile reference'
+            ? description
           : <a href="/build-profile" className="auth-link-button">Select a profile in Build Profile</a>}
       </small>
     </article>

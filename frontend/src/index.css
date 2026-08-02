@@ -9299,6 +9299,8 @@ th { color: var(--dark-gold); }
 
 .financial-health-profile-line {
   display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
 }
 
 .financial-health-profile-line .financial-health-summary-tile {
@@ -10481,6 +10483,7 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-summary-grid,
+  .financial-health-profile-line,
   .financial-health-side-stack,
   .financial-health-insight-grid {
     grid-template-columns: 1fr 1fr;
@@ -10554,6 +10557,7 @@ th { color: var(--dark-gold); }
   .financial-health-vitals-grid,
   .financial-health-position-rings,
   .financial-health-summary-grid,
+  .financial-health-profile-line,
   .financial-health-side-stack,
   .financial-health-insight-grid {
     grid-template-columns: 1fr;

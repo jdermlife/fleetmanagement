@@ -75,6 +75,11 @@ type BenchmarkContext = {
   netWorth: number
   dependents: number
 }
+type Step8ProfileMetrics = {
+  actualNetWorth: number
+  netIncome: number
+  protectionLevelAmount: number
+}
 
 type VitalGuidance = {
   positive: string
@@ -550,6 +555,25 @@ function deriveLendingLeafScores(payload: unknown): LendingLeafScores | null {
   }
 }
 
+function resolveStep8ProfileMetrics(values: Record<string, string>): Step8ProfileMetrics {
+  const step8Amounts = Object.fromEntries(Object.entries(values)
+    .filter(([key, value]) => !key.includes('.') && value.trim() !== ''))
+  const score = computeNetWorthBuildingScore({ amounts: step8Amounts })
+  const protectionLevelAmount = Object.entries(values)
+    .filter(([key]) => key.startsWith('insurance-') && !key.includes('.'))
+    .reduce((total, [, value]) => total + Math.max(0, Number(value) || 0), 0)
+
+  return {
+    actualNetWorth: score.metrics.netWorth,
+    netIncome: score.metrics.monthlyCashFlow,
+    protectionLevelAmount,
+  }
+}
+
+function formatThousands(value: number): string {
+  return `${new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value / 1000)}k`
+}
+
 export default function FinancialHealthSummaryPage() {
   const { isAdmin } = useAuthorization()
   const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
@@ -568,6 +592,11 @@ export default function FinancialHealthSummaryPage() {
     monthlyIncome: 0,
     netWorth: 0,
     dependents: 0,
+  })
+  const [step8ProfileMetrics, setStep8ProfileMetrics] = useState<Step8ProfileMetrics>({
+    actualNetWorth: 0,
+    netIncome: 0,
+    protectionLevelAmount: 0,
   })
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
     createProfile: false,
@@ -626,6 +655,8 @@ export default function FinancialHealthSummaryPage() {
           const creditPayload = creditHealthDraft?.payload
           const wealthPayload = netWorthDraft?.payload
           const buildProfileDraft = readReplicatedBuildProfile()
+
+          setStep8ProfileMetrics(resolveStep8ProfileMetrics(buildProfileDraft?.values ?? {}))
 
           const buildProfileActualEntries = Object.fromEntries(Object.entries(buildProfileDraft?.values ?? {})
             .filter(([key, value]) => key.startsWith('wealthActual.') && value.trim() !== '')
@@ -1105,7 +1136,22 @@ export default function FinancialHealthSummaryPage() {
       </section>
 
       <section className="financial-health-profile-line" aria-label="Selected financial health profile">
-        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" />
+        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" label="APP Profile ID" description="ID User" />
+        <article className="financial-health-summary-tile">
+          <span>Actual Net Worth</span>
+          <strong>{formatThousands(step8ProfileMetrics.actualNetWorth)}</strong>
+          <small>Build Profile Step 8 current net worth</small>
+        </article>
+        <article className="financial-health-summary-tile">
+          <span>Net Income</span>
+          <strong>{formatThousands(step8ProfileMetrics.netIncome)}</strong>
+          <small>Build Profile Step 8 monthly net income</small>
+        </article>
+        <article className="financial-health-summary-tile">
+          <span>Protection Level Amount</span>
+          <strong>{formatThousands(step8ProfileMetrics.protectionLevelAmount)}</strong>
+          <small>Build Profile Step 8 insurance protection</small>
+        </article>
       </section>
 
       <section className="financial-health-insight-grid" aria-label="Financial Health change, benchmarking, momentum, resilience, risks, and opportunities">
