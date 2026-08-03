@@ -3,7 +3,7 @@ import axios, { AxiosError, AxiosResponse } from 'axios'
 import { clearAutosaveDraftsForToken } from './autosave/draftStorage'
 
 const LOCAL_API_FALLBACK = 'http://localhost:5000'
-const PRODUCTION_API_PROXY_FALLBACK = '/backend'
+const PRODUCTION_API_PROXY_FALLBACK = ''
 const RENDER_API_FALLBACKS = [
   'https://fleetmanagement-dq9t.onrender.com',
 ]
@@ -17,7 +17,7 @@ const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
   .filter(Boolean)
 
 const isDevelopment = import.meta.env.DEV
-const productionProxyCandidates = isDevelopment ? [] : [PRODUCTION_API_PROXY_FALLBACK]
+const productionProxyCandidates: string[] = []
 
 const apiBaseUrlCandidates = Array.from(
   new Set([
