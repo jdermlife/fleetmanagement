@@ -35,7 +35,9 @@ const healthCheckClient = axios.create({
 })
 
 let activeApiBaseUrl =
-  apiBaseUrlCandidates[0] ?? (isDevelopment ? LOCAL_API_FALLBACK : PRODUCTION_API_PROXY_FALLBACK)
+  apiBaseUrlCandidates.length > 0
+    ? apiBaseUrlCandidates[0]
+    : LOCAL_API_FALLBACK
 
 let apiBaseUrlResolutionRequest: Promise<void> | null = null
 let apiBaseUrlResolved = false
