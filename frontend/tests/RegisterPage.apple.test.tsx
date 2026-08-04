@@ -52,10 +52,6 @@ describe('RegisterPage Apple sign-up', () => {
 
   beforeEach(() => {
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
-    vi.stubEnv(
-      'VITE_APPLE_REDIRECT_URI',
-      'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
-    )
     mockNavigate.mockReset()
     mockRequestAppleSignInToken.mockReset()
     mockLoginWithApple.mockReset()
@@ -185,7 +181,7 @@ describe('RegisterPage Apple sign-up', () => {
     await waitFor(() => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledWith({
         clientId: 'com.quantech.filscore.web',
-        redirectURI: 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback',
+        redirectURI: `${window.location.origin}/auth/apple/callback`,
       })
     })
     expect(mockLoginWithApple).toHaveBeenCalledWith({

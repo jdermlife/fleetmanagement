@@ -49,7 +49,7 @@ The backend runs on `http://localhost:5000`.
 2. Install dependencies: `npm install`
 3. Create a `.env.local` file:
    ```
-   VITE_API_URL=https://fleetmanagement-dq9t.onrender.com
+   VITE_API_URL=http://localhost:5000
    VITE_GOOGLE_ALLOWED_HOSTS=localhost,127.0.0.1,fleetmanagement.vercel.app,staging.fleetmanagement.vercel.app
    VITE_PAYMENT_DEFAULT_CHANNEL=Bank Transfer
    VITE_PAYMENT_BANK_NAME=Your Bank Name
@@ -62,7 +62,6 @@ The backend runs on `http://localhost:5000`.
    VITE_PAYMENT_SUPPORT_EMAIL=support@example.com
    VITE_GOOGLE_CLIENT_ID=your-google-oauth-web-client-id
    VITE_APPLE_CLIENT_ID=your-apple-service-id
-   VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback
    ```
 4. Start the dev server: `npm run dev`
 
@@ -108,16 +107,15 @@ To enable Apple Sign-In in the web UI:
 
 1. Create an Apple Service ID in Apple Developer Console.
 2. Enable Sign in with Apple for the Service ID.
-3. Register the exact HTTPS frontend Return URL. Apple does not accept `localhost` or an IP address.
+3. Register every HTTPS frontend Return URL. Apple does not accept `localhost` or an IP address.
 4. Set frontend env values:
    - `VITE_APPLE_CLIENT_ID=your-apple-service-id`
-   - `VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback`
 5. Ensure backend `APPLE_OAUTH_CLIENT_ID` matches `VITE_APPLE_CLIENT_ID`.
-6. Redeploy both services after changing these values; Vite embeds frontend values at build time.
+6. Register `/auth/apple/callback` for each deployed frontend origin in Apple Developer Console.
 
-The Vercel `/backend` rewrite forwards this same-origin callback to the active Render API at
-`/api/auth/apple/callback`. In Apple Developer, register `fleetmanagement-flame.vercel.app` as a
-web domain and register the full return URL above exactly.
+Production browser API requests use the same-origin `/api` proxy. Native Capacitor builds continue
+to use `VITE_API_URL`. OAuth callback URLs are derived from `window.location.origin`, so changing
+frontend domains does not require a frontend configuration change.
 
 For first-time Apple sign-in, users must select subscriber type and lender data-sharing preference.
 
@@ -164,7 +162,6 @@ For first-time Apple sign-in, users must select subscriber type and lender data-
 | VITE_PAYMENT_SUPPORT_EMAIL | Support contact shown on the subscription payment page | Placeholder |
 | VITE_GOOGLE_CLIENT_ID | Google OAuth Web client ID for Google Sign-In | Placeholder |
 | VITE_APPLE_CLIENT_ID | Apple Service ID for Apple Sign-In | Placeholder |
-| VITE_APPLE_REDIRECT_URI | Apple Sign-In redirect URI registered in Apple console | Placeholder |
 
 ## Security Notes
 

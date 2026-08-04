@@ -9,6 +9,7 @@ import {
   REGISTER_SUBSCRIBER_OPTIONS,
   type RegisterSubscriberType,
 } from '../../authRoles'
+import { APP_CONFIG } from '../../config'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
 
@@ -88,10 +89,9 @@ function isTrialExpiredMessage(message: string | null | undefined): boolean {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
-  const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
-    || 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
+  const googleClientId = APP_CONFIG.googleClientId
+  const appleClientId = APP_CONFIG.appleClientId
+  const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
   const [username, setUsername] = useState('')

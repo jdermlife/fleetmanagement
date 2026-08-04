@@ -1,31 +1,14 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
 
 import { clearAutosaveDraftsForToken } from './autosave/draftStorage'
+import { APP_CONFIG } from './config'
 
-const LOCAL_API_FALLBACK = 'http://localhost:5000'
-const RENDER_API_FALLBACKS = [
-  'https://fleetmanagement-dq9t.onrender.com',
-]
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 
-const configuredBaseUrls = (import.meta.env.VITE_API_URL ?? '')
-  .split(',')
-  .map((origin) => origin.trim().replace(/\/$/, ''))
-  .filter(Boolean)
-
 const isDevelopment = import.meta.env.DEV
-const productionProxyCandidates: string[] = []
-
-const apiBaseUrlCandidates = Array.from(
-  new Set([
-    ...productionProxyCandidates,
-    ...configuredBaseUrls,
-    ...(configuredBaseUrls.length === 0 && isDevelopment ? [LOCAL_API_FALLBACK] : []),
-    ...RENDER_API_FALLBACKS,
-  ])
-)
+const apiBaseUrlCandidates = [APP_CONFIG.apiBase]
 
 const healthCheckClient = axios.create({
   timeout: 6000,
@@ -37,7 +20,7 @@ const healthCheckClient = axios.create({
 let activeApiBaseUrl =
   apiBaseUrlCandidates.length > 0
     ? apiBaseUrlCandidates[0]
-    : LOCAL_API_FALLBACK
+    : APP_CONFIG.apiBase
 
 let apiBaseUrlResolutionRequest: Promise<void> | null = null
 let apiBaseUrlResolved = false

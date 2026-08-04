@@ -6,6 +6,7 @@ import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser 
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
+import { APP_CONFIG } from '../../config'
 import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
@@ -165,10 +166,9 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || getDefaultRedirectPath()
-  const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
-  const appleClientId = import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
-  const appleRedirectUri = import.meta.env.VITE_APPLE_REDIRECT_URI?.trim()
-    || 'https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback'
+  const googleClientId = APP_CONFIG.googleClientId
+  const appleClientId = APP_CONFIG.appleClientId
+  const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
   const isAppleConfigured = appleClientId.length > 0
