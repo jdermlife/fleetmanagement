@@ -1,0 +1,23 @@
+import { describe, expect, it } from 'vitest'
+
+import { resolveApiBase } from '../src/config'
+
+describe('resolveApiBase', () => {
+  it('uses the configured backend URL in production', () => {
+    expect(resolveApiBase('https://fleetmanagement-dq9t.onrender.com/', false)).toBe(
+      'https://fleetmanagement-dq9t.onrender.com',
+    )
+  })
+
+  it('uses the configured backend URL in development', () => {
+    expect(resolveApiBase('http://localhost:5000/', true)).toBe('http://localhost:5000')
+  })
+
+  it('keeps the same-origin proxy fallback when no production URL is configured', () => {
+    expect(resolveApiBase(undefined, false)).toBe('/api')
+  })
+
+  it('keeps the local backend fallback when no development URL is configured', () => {
+    expect(resolveApiBase(undefined, true)).toBe('http://localhost:5000')
+  })
+})

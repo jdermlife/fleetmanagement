@@ -1,21 +1,19 @@
-import { Capacitor } from '@capacitor/core'
-
 function getCurrentOrigin(): string {
   return typeof window === 'undefined' ? '' : window.location.origin
 }
 
+export function resolveApiBase(configuredApiBase: string | undefined, isDevelopment: boolean): string {
+  const normalizedApiBase = configuredApiBase?.trim().replace(/\/$/, '')
+  if (normalizedApiBase) {
+    return normalizedApiBase
+  }
+
+  return isDevelopment ? 'http://localhost:5000' : '/api'
+}
+
 export const APP_CONFIG = {
   get apiBase() {
-    const configuredApiBase = import.meta.env.VITE_API_URL?.trim().replace(/\/$/, '')
-    if (import.meta.env.DEV) {
-      return configuredApiBase || 'http://localhost:5000'
-    }
-
-    if (Capacitor.isNativePlatform() && configuredApiBase) {
-      return configuredApiBase
-    }
-
-    return '/api'
+    return resolveApiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV)
   },
   get appleClientId() {
     return import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'

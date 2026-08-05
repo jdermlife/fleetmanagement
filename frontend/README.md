@@ -50,7 +50,7 @@ The backend runs on `http://localhost:5000`.
 3. Create a `.env.local` file:
    ```
    VITE_API_URL=http://localhost:5000
-   VITE_GOOGLE_ALLOWED_HOSTS=localhost,127.0.0.1,fleetmanagement.vercel.app,staging.fleetmanagement.vercel.app
+   VITE_GOOGLE_ALLOWED_HOSTS=localhost,127.0.0.1,fleetmanagement.vercel.app,staging.fleetmanagement.vercel.app,fleetmanagement-flame.vercel.app,filscore-ai.quantech.international,www.filscore-ai.quantech.international
    VITE_PAYMENT_DEFAULT_CHANNEL=Bank Transfer
    VITE_PAYMENT_BANK_NAME=Your Bank Name
    VITE_PAYMENT_BANK_ACCOUNT_NAME=Your Business Name
@@ -113,9 +113,9 @@ To enable Apple Sign-In in the web UI:
 5. Ensure backend `APPLE_OAUTH_CLIENT_ID` matches `VITE_APPLE_CLIENT_ID`.
 6. Register `/auth/apple/callback` for each deployed frontend origin in Apple Developer Console.
 
-Production browser API requests use the same-origin `/api` proxy. Native Capacitor builds continue
-to use `VITE_API_URL`. OAuth callback URLs are derived from `window.location.origin`, so changing
-frontend domains does not require a frontend configuration change.
+All builds use `VITE_API_URL` when it is configured. Production browser builds fall back to the
+same-origin `/api` proxy only when it is absent. OAuth callback URLs are derived from
+`window.location.origin`, so changing frontend domains does not require a frontend code change.
 
 For first-time Apple sign-in, users must select subscriber type and lender data-sharing preference.
 
