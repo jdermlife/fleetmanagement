@@ -10,6 +10,7 @@ from fastapi.responses import Response
 from starlette.middleware.gzip import GZipMiddleware
 from sqlalchemy import text
 
+from app.api_path_compat import ApiPathCompatibilityMiddleware
 from app.cors import get_allowed_frontend_origins, get_configured_frontend_origins, get_frontend_origin_regex
 from app.database import Base, SessionLocal, engine
 from app.fastapi_rate_limit import RATE_LIMIT_ENABLED, RateLimitMiddleware
@@ -491,6 +492,9 @@ async def immutable_audit_log_middleware(request: Request, call_next):
         db.close()
 
     return response
+
+
+app.add_middleware(ApiPathCompatibilityMiddleware)
 
 app.include_router(driver_router)
 app.include_router(dashboard_router)
