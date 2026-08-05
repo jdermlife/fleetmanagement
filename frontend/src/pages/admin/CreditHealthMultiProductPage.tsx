@@ -60,14 +60,14 @@ export default function CreditHealthMultiProductPage() {
       setLoading(true)
       setMessage('')
       try {
-        // Get current user
-        await fetchCurrentUser()
-
-        const latestApplications = await fetchLoanApplications({
-          limit: 1,
-          offset: 0,
-          summary: false,
-        })
+        const [, latestApplications] = await Promise.all([
+          fetchCurrentUser(),
+          fetchLoanApplications({
+            limit: 1,
+            offset: 0,
+            summary: false,
+          }),
+        ])
 
         const latestApplication = latestApplications[0]
         if (!latestApplication) {

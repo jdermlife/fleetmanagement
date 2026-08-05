@@ -11,7 +11,7 @@ import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
 
-async function resolveBorrowerRedirectPath(redirectTo: string): Promise<string> {
+function resolveBorrowerRedirectPath(redirectTo: string): string {
   if (redirectTo.startsWith('/lending-scorecard')) {
     return redirectTo
   }
@@ -194,7 +194,7 @@ export default function LoginPage() {
     }
   }, [showFees])
 
-  const resolvePostLoginPath = async (user: AuthUser): Promise<string> => {
+  const resolvePostLoginPath = (user: AuthUser): string => {
     if (isBorrowerSubscriberRole(user.role)) {
       return resolveBorrowerRedirectPath(redirectTo)
     }
@@ -209,8 +209,7 @@ export default function LoginPage() {
 
     try {
       const response = await login({ username, password })
-      const nextPath = await resolvePostLoginPath(response.user)
-      navigate(nextPath)
+      navigate(resolvePostLoginPath(response.user))
     } catch (error) {
       const resolvedMessage = getErrorMessage(error, 'Unable to sign in right now.')
       if (isTrialExpiredMessage(resolvedMessage)) {
@@ -238,8 +237,7 @@ export default function LoginPage() {
       const loginResponse = await loginWithGoogle({
         idToken,
       })
-      const nextPath = await resolvePostLoginPath(loginResponse.user)
-      navigate(nextPath)
+      navigate(resolvePostLoginPath(loginResponse.user))
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (
@@ -283,8 +281,7 @@ export default function LoginPage() {
       const loginResponse = await loginWithApple({
         idToken: appleTokenResult.idToken,
       })
-      const nextPath = await resolvePostLoginPath(loginResponse.user)
-      navigate(nextPath)
+      navigate(resolvePostLoginPath(loginResponse.user))
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (

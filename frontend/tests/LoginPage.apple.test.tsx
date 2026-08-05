@@ -3,9 +3,10 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockNavigate, mockRequestAppleSignInToken, mockLoginWithApple, mockLoginWithGoogle } = vi.hoisted(() => ({
+const { mockNavigate, mockRequestAppleSignInToken, mockLogin, mockLoginWithApple, mockLoginWithGoogle } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
   mockRequestAppleSignInToken: vi.fn(),
+  mockLogin: vi.fn(),
   mockLoginWithApple: vi.fn(),
   mockLoginWithGoogle: vi.fn(),
 }))
@@ -41,7 +42,7 @@ vi.mock('axios', () => ({
 vi.mock('../src/api', () => ({
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
   getMySubscription: vi.fn().mockResolvedValue({ status: 'ACTIVE' }),
-  login: vi.fn(),
+  login: mockLogin,
   loginWithGoogle: mockLoginWithGoogle,
   loginWithApple: mockLoginWithApple,
 }))
@@ -95,6 +96,7 @@ describe('LoginPage Apple sign-in', () => {
     })
     mockNavigate.mockReset()
     mockRequestAppleSignInToken.mockReset()
+    mockLogin.mockReset()
     mockLoginWithApple.mockReset()
     mockLoginWithGoogle.mockReset()
   })
@@ -116,6 +118,43 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.getByPlaceholderText('Password')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Log In' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+  })
+
+  it('navigates immediately after email login succeeds', async () => {
+    mockLogin.mockResolvedValue({
+      user: {
+        id: 8,
+        username: 'email-user',
+        email: 'email-user@example.com',
+        role: 'subscriber_borrower',
+        roles: ['subscriber_borrower'],
+        permissions: [],
+        isActive: true,
+        createdAt: '2026-07-10T00:00:00Z',
+        updatedAt: '2026-07-10T00:00:00Z',
+        lastLoginAt: null,
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Other Email' }))
+    await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
+    await user.type(screen.getByPlaceholderText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Log In' }))
+
+    await waitFor(() => {
+      expect(mockLogin).toHaveBeenCalledWith({
+        username: 'email-user@example.com',
+        password: 'password123',
+      })
+      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary')
+    })
   })
 
   it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
