@@ -7,6 +7,7 @@ import { StatusBar, Style } from '@capacitor/status-bar'
 import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App'
+import { APP_CONFIG } from './config'
 import './index.css'
 
 const setupNativeMobileRuntime = async () => {
@@ -26,7 +27,7 @@ const setupNativeMobileRuntime = async () => {
 
 void setupNativeMobileRuntime()
 
-const googleClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID?.trim() || ''
+const googleClientId = APP_CONFIG.googleClientId
 
 const appNode = (
   <BrowserRouter>
