@@ -7190,6 +7190,124 @@ th { color: var(--dark-gold); }
   text-decoration: none;
 }
 
+.login-signing-overlay {
+  position: fixed;
+  z-index: 1000;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(47, 28, 0, 0.72);
+  backdrop-filter: blur(8px);
+}
+
+.login-signing-panel {
+  width: min(100%, 430px);
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  padding: 34px 32px 30px;
+  border: 1px solid rgba(218, 165, 32, 0.72);
+  border-radius: 8px;
+  background: #fffdf5;
+  color: #332000;
+  box-shadow: 0 28px 80px rgba(35, 20, 0, 0.48);
+  text-align: center;
+}
+
+.login-signing-mark {
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+  border: 1px solid #e4c56f;
+  border-radius: 50%;
+  background: #fff7d9;
+}
+
+.login-signing-mark span {
+  width: 28px;
+  height: 28px;
+  border: 3px solid #eadba9;
+  border-top-color: #9a6800;
+  border-radius: 50%;
+  animation: login-signing-spin 0.85s linear infinite;
+}
+
+.login-signing-kicker,
+.login-signing-panel h2,
+.login-signing-panel p {
+  margin: 0;
+}
+
+.login-signing-kicker {
+  color: #805400;
+  font-size: 0.75rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.login-signing-panel h2 {
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(1.5rem, 5vw, 2rem);
+}
+
+.login-signing-panel p {
+  max-width: 34ch;
+  color: #664a14;
+  line-height: 1.55;
+}
+
+.login-signing-progress {
+  width: min(100%, 290px);
+  height: 4px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: #eadfbf;
+}
+
+.login-signing-progress span {
+  display: block;
+  width: 42%;
+  height: 100%;
+  border-radius: inherit;
+  background: #a87300;
+  animation: login-signing-progress 1.25s ease-in-out infinite;
+}
+
+.login-signing-panel small {
+  color: #806a3c;
+  font-size: 0.75rem;
+}
+
+@keyframes login-signing-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes login-signing-progress {
+  from {
+    transform: translateX(-110%);
+  }
+  to {
+    transform: translateX(240%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .login-signing-mark span,
+  .login-signing-progress span {
+    animation: none;
+  }
+
+  .login-signing-progress span {
+    width: 100%;
+  }
+}
+
 .login-fees-dialog {
   width: min(1120px, calc(100vw - 32px));
   max-height: min(82vh, 760px);

@@ -169,6 +169,34 @@ describe('LoginPage Apple sign-in', () => {
     })
   })
 
+  it('shows a signing-in overlay while email authentication is pending and closes it on failure', async () => {
+    let rejectLogin: (reason?: unknown) => void = () => undefined
+    mockLogin.mockImplementation(() => new Promise((_resolve, reject) => {
+      rejectLogin = reject
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Other Email' }))
+    await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
+    await user.type(screen.getByPlaceholderText('Password'), 'incorrect-password')
+    await user.click(screen.getByRole('button', { name: 'Log In' }))
+
+    expect(screen.getByRole('dialog', { name: 'Signing you in' })).toBeTruthy()
+
+    rejectLogin(new Error('Invalid credentials'))
+
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Signing you in' })).toBeNull()
+      expect(screen.getByText('Unable to sign in right now.')).toBeTruthy()
+    })
+  })
+
   it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
