@@ -120,6 +120,18 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
   })
 
+  it('links to the public service and dispute policies from the login page', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('link', { name: 'Returns & Refunds' }).getAttribute('href')).toBe('/return-refund-policy')
+    expect(screen.getByRole('link', { name: 'Customer Service' }).getAttribute('href')).toBe('/customer-service')
+    expect(screen.getByRole('link', { name: 'Dispute Resolution' }).getAttribute('href')).toBe('/dispute-resolution')
+  })
+
   it('navigates immediately after email login succeeds', async () => {
     mockLogin.mockResolvedValue({
       user: {

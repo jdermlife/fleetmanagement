@@ -83,6 +83,9 @@ const AboutFilscorePage = lazy(() => import('./pages/legal/AboutFilscorePage'))
 const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'))
 const TermsPage = lazy(() => import('./pages/legal/TermsPage'))
 const SupportPage = lazy(() => import('./pages/legal/SupportPage'))
+const ReturnRefundPolicyPage = lazy(() => import('./pages/legal/ReturnRefundPolicyPage'))
+const CustomerServicePage = lazy(() => import('./pages/legal/CustomerServicePage'))
+const DisputeResolutionPage = lazy(() => import('./pages/legal/DisputeResolutionPage'))
 const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPage'))
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
@@ -1358,6 +1361,21 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/terms"
               element={<TermsPage />}
+            />
+
+            <Route
+              path="/return-refund-policy"
+              element={<ReturnRefundPolicyPage />}
+            />
+
+            <Route
+              path="/customer-service"
+              element={<CustomerServicePage />}
+            />
+
+            <Route
+              path="/dispute-resolution"
+              element={<DisputeResolutionPage />}
             />
 
             <Route

@@ -81,6 +81,15 @@ export default function SupportPage() {
             <Link className="auth-link-button" to="/terms">
               Terms &amp; Consent
             </Link>
+            <Link className="auth-link-button" to="/return-refund-policy">
+              Return and Refund Policy
+            </Link>
+            <Link className="auth-link-button" to="/customer-service">
+              Customer Service
+            </Link>
+            <Link className="auth-link-button" to="/dispute-resolution">
+              Dispute Resolution
+            </Link>
             <Link className="auth-link-button" to="/subscription-fees">
               Subscription Fees
             </Link>

@@ -132,11 +132,14 @@ export default function PrivacyPage() {
         <section className="card auth-helper-card">
           <h3>Related Help</h3>
           <p>
-            For support, reviewer access coordination, or account follow-up, visit the public support page.
+            For customer service, reviewer access coordination, account follow-up, or a formal
+            dispute, use the related public pages.
           </p>
-          <p>
-            <Link to="/support">Support</Link>
-          </p>
+          <div className="form-actions">
+            <Link className="auth-link-button" to="/customer-service">Customer Service</Link>
+            <Link className="auth-link-button" to="/dispute-resolution">Dispute Resolution</Link>
+            <Link className="auth-link-button" to="/support">Support</Link>
+          </div>
         </section>
       </div>
     </div>

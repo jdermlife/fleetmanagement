@@ -452,6 +452,9 @@ export default function LoginPage() {
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
             <Link to="/about-filscore">About</Link>
+            <Link to="/return-refund-policy">Returns &amp; Refunds</Link>
+            <Link to="/customer-service">Customer Service</Link>
+            <Link to="/dispute-resolution">Dispute Resolution</Link>
           </div>
         </div>
       </div>

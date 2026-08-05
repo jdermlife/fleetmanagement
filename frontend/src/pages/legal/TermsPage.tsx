@@ -57,6 +57,21 @@ export default function TermsPage() {
             <Link to="/support">Support</Link>
           </p>
         </section>
+
+        <section className="card auth-helper-card">
+          <h3>Subscriptions, Refunds, and Disputes</h3>
+          <p>
+            Subscription charges, cancellations, refund requests, customer-service cases, and
+            disputes are handled under the related public policies below. These policies form part
+            of the service disclosures and do not limit non-waivable rights under applicable law.
+          </p>
+          <div className="form-actions">
+            <Link className="auth-link-button" to="/return-refund-policy">Return and Refund Policy</Link>
+            <Link className="auth-link-button" to="/customer-service">Customer Service</Link>
+            <Link className="auth-link-button" to="/dispute-resolution">Dispute Resolution</Link>
+            <Link className="auth-link-button" to="/privacy">Privacy Disclosures</Link>
+          </div>
+        </section>
       </div>
     </div>
   )
