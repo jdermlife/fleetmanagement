@@ -1,10 +1,17 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockListPublicSubscriptionPlans } = vi.hoisted(() => ({
+const {
+  mockFetchCurrentUser,
+  mockListPublicSubscriptionPlans,
+  mockLogout,
+  mockPrepareAutosavesForLogout,
+} = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockListPublicSubscriptionPlans: vi.fn(),
+  mockLogout: vi.fn(),
+  mockPrepareAutosavesForLogout: vi.fn(),
 }))
 
 vi.mock('../src/api', () => ({
@@ -15,12 +22,12 @@ vi.mock('../src/api', () => ({
   getErrorMessage: (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback,
   listPublicSubscriptionPlans: mockListPublicSubscriptionPlans,
-  logout: vi.fn(),
+  logout: mockLogout,
   updateAccountPreferences: vi.fn(),
 }))
 
 vi.mock('../src/autosave/useAutosaveDraft', () => ({
-  prepareAutosavesForLogout: vi.fn(),
+  prepareAutosavesForLogout: mockPrepareAutosavesForLogout,
 }))
 
 import AccountSettingsPage from '../src/pages/auth/AccountSettingsPage'
@@ -53,6 +60,8 @@ describe('AccountSettingsPage', () => {
   beforeEach(() => {
     mockFetchCurrentUser.mockReset()
     mockListPublicSubscriptionPlans.mockReset()
+    mockLogout.mockReset()
+    mockPrepareAutosavesForLogout.mockReset()
     mockFetchCurrentUser.mockResolvedValue({
       id: 42,
       username: 'signed-in-user',
@@ -67,6 +76,8 @@ describe('AccountSettingsPage', () => {
       lastLoginAt: null,
     })
     mockListPublicSubscriptionPlans.mockRejectedValue(new Error('Unable to load plans'))
+    mockLogout.mockResolvedValue(undefined)
+    mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
 
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -146,5 +157,36 @@ describe('AccountSettingsPage', () => {
     journeyKeys.forEach((key) => expect(window.localStorage.getItem(key)).toBeNull())
     expect(window.localStorage.getItem('fms:theme')).toBe('civic')
     expect(screen.getByRole('status').textContent).toContain('Welcome pop-ups restored')
+  })
+
+  it('shows the signing-out overlay until autosaves and logout finish', async () => {
+    let resolveAutosaves: () => void = () => undefined
+    let resolveLogout: () => void = () => undefined
+    mockPrepareAutosavesForLogout.mockImplementation(() => new Promise<void>((resolve) => {
+      resolveAutosaves = resolve
+    }))
+    mockLogout.mockImplementation(() => new Promise<void>((resolve) => {
+      resolveLogout = resolve
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Sign Out' }))
+
+    expect(screen.getByRole('dialog', { name: 'Signing you out' })).toBeTruthy()
+    expect(mockLogout).not.toHaveBeenCalled()
+
+    resolveAutosaves()
+    await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1))
+    expect(screen.getByRole('dialog', { name: 'Signing you out' })).toBeTruthy()
+
+    resolveLogout()
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Signing you out' })).toBeNull()
+    })
   })
 })

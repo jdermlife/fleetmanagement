@@ -6,6 +6,7 @@ import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser 
 import { requestAppleSignInToken } from '../../appleAuth'
 import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
+import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
 import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
@@ -460,28 +461,13 @@ export default function LoginPage() {
       </div>
 
       {isSaving ? (
-        <div
-          className="login-signing-overlay"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="login-signing-title"
-          aria-describedby="login-signing-description"
-        >
-          <div className="login-signing-panel">
-            <div className="login-signing-mark" aria-hidden="true">
-              <span />
-            </div>
-            <p className="login-signing-kicker">Secure access</p>
-            <h2 id="login-signing-title">Signing you in</h2>
-            <p id="login-signing-description">
-              Verifying your account and preparing your financial health dashboard.
-            </p>
-            <div className="login-signing-progress" aria-hidden="true">
-              <span />
-            </div>
-            <small>Please keep this window open.</small>
-          </div>
-        </div>
+        <AuthProgressOverlay
+          idPrefix="login-signing"
+          kicker="Secure access"
+          title="Signing you in"
+          description="Verifying your account and preparing your financial health dashboard."
+          footnote="Please keep this window open."
+        />
       ) : null}
 
       <dialog

@@ -15,6 +15,7 @@ import {
   type SubscriptionPlan,
 } from '../../api'
 import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
+import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
@@ -51,6 +52,7 @@ export default function AccountSettingsPage() {
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
   const [isLoading, setIsLoading] = useState(true)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [isUpdatingPreferences, setIsUpdatingPreferences] = useState(false)
@@ -105,9 +107,14 @@ export default function AccountSettingsPage() {
   }, [theme])
 
   const handleLogout = async () => {
-    await prepareAutosavesForLogout()
-    await logout()
-    navigate('/login')
+    setIsSigningOut(true)
+    try {
+      await prepareAutosavesForLogout()
+      await logout()
+      navigate('/login')
+    } finally {
+      setIsSigningOut(false)
+    }
   }
 
   const handlePasswordChange = async (event: FormEvent<HTMLFormElement>) => {
@@ -279,7 +286,7 @@ export default function AccountSettingsPage() {
           </div>
         </div>
         <div className="form-actions">
-          <button type="button" onClick={handleLogout}>
+          <button type="button" onClick={handleLogout} disabled={isSigningOut}>
             Sign Out
           </button>
           <Link className="auth-link-button" to="/privacy">
@@ -507,6 +514,15 @@ export default function AccountSettingsPage() {
 
         {deleteMessage ? <p className="status-message">{deleteMessage}</p> : null}
       </form>
+      {isSigningOut ? (
+        <AuthProgressOverlay
+          idPrefix="account-signing-out"
+          kicker="Secure session"
+          title="Signing you out"
+          description="Securing your saved work and closing your session."
+          footnote="Please keep this window open."
+        />
+      ) : null}
     </div>
   )
 }

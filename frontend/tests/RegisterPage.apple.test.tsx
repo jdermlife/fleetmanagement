@@ -21,6 +21,10 @@ vi.mock('../src/appleAuth', () => ({
   requestAppleSignInToken: mockRequestAppleSignInToken,
 }))
 
+vi.mock('@react-oauth/google', () => ({
+  GoogleLogin: () => <button type="button">Sign up with Google</button>,
+}))
+
 vi.mock('../src/api', () => ({
   createFreeSubscription: vi.fn().mockResolvedValue({}),
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
@@ -55,6 +59,15 @@ describe('RegisterPage Apple sign-up', () => {
     mockNavigate.mockReset()
     mockRequestAppleSignInToken.mockReset()
     mockLoginWithApple.mockReset()
+    const values = new Map<string, string>()
+    vi.stubGlobal('localStorage', {
+      clear: () => values.clear(),
+      getItem: (key: string) => values.get(key) ?? null,
+      key: (index: number) => Array.from(values.keys())[index] ?? null,
+      get length() { return values.size },
+      removeItem: (key: string) => values.delete(key),
+      setItem: (key: string, value: string) => values.set(key, value),
+    })
   })
 
   it('shows Apple validation feedback beside the Apple button', async () => {
@@ -161,6 +174,8 @@ describe('RegisterPage Apple sign-up', () => {
   })
 
   it('exchanges the Apple token after all registration choices are completed', async () => {
+    window.localStorage.setItem('fms:journey:minimized', '1')
+    window.localStorage.setItem('fms:journey:do-not-show', '1')
     mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
     mockLoginWithApple.mockResolvedValue({
       user: {
@@ -189,6 +204,8 @@ describe('RegisterPage Apple sign-up', () => {
       subscriberType: 'borrower',
       lenderDataSharingConsent: true,
     })
+    expect(window.localStorage.getItem('fms:journey:minimized')).toBeNull()
+    expect(window.localStorage.getItem('fms:journey:do-not-show')).toBeNull()
     expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
   })
 })

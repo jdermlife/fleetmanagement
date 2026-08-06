@@ -1162,9 +1162,8 @@ export default function FinancialHealthSummaryPage() {
         </article>
         <article className="financial-health-insight-card">
           <span>2. Benchmarking</span>
-          <strong>PSA Household Income Classification: {philippineIncomeBenchmark.classification}</strong>
+          <strong>World Inequality Database Result: {philippineIncomeBenchmark.globalRank}</strong>
           <small>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
-          <small>Globally, your household income is around the {philippineIncomeBenchmark.globalRank} based on the WID guide.</small>
           <small>{philippineIncomeBenchmark.interpretation} · Monthly household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.monthlyIncome)} · Annual household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.annualIncome)} · Dependents {benchmarkContext.dependents} · Net worth {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(benchmarkContext.netWorth)}</small>
         </article>
         <article className="financial-health-insight-card">

@@ -227,6 +227,7 @@ describe('BuildProfilePage', () => {
     mockUpdateLoanApplication.mockImplementationOnce(() => new Promise((resolve) => { resolvePreparation = resolve }))
     await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
 
+    expect(screen.getByRole('dialog', { name: 'Computing Credit Health Score' })).toBeTruthy()
     expect(await screen.findByText('Preparing APP-REVIEW-1...')).toBeTruthy()
     const creditButton = screen.getByRole('button', { name: 'Open Credit Health Score' })
     const wealthButton = screen.getByRole('button', { name: 'Open Wealth Building Score' })
@@ -247,6 +248,7 @@ describe('BuildProfilePage', () => {
       )
       expect(screen.getByText('APP-REVIEW-1 is ready for both score pages.')).toBeTruthy()
     })
+    expect(screen.queryByRole('dialog', { name: 'Computing Credit Health Score' })).toBeNull()
     expect(mockUpdateLoanApplication).toHaveBeenCalledTimes(1)
     expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
 
@@ -260,6 +262,26 @@ describe('BuildProfilePage', () => {
     })
     expect(mockUpdateLoanApplication).toHaveBeenCalledTimes(1)
     expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
+  })
+
+  it('shows an overlay while retrieving a repository profile', async () => {
+    mockSearchParams.value = 'applicationNo=APP-PENDING-1'
+    let rejectRetrieval!: (reason?: unknown) => void
+    mockFetchLoanApplication.mockImplementationOnce(() => new Promise((_, reject) => {
+      rejectRetrieval = reject
+    }))
+
+    render(<BuildProfilePage />)
+
+    expect(await screen.findByRole('dialog', { name: 'Loading your profile' })).toBeTruthy()
+    expect(screen.getByText('Retrieving APP-PENDING-1 and preparing the saved record.')).toBeTruthy()
+
+    rejectRetrieval(new Error('Unable to retrieve profile'))
+
+    expect(await screen.findByText('Unable to load profile APP-PENDING-1.')).toBeTruthy()
+    await waitFor(() => {
+      expect(screen.queryByRole('dialog', { name: 'Loading your profile' })).toBeNull()
+    })
   })
 
   it('opens both score pages from a local profile without repository synchronization', async () => {

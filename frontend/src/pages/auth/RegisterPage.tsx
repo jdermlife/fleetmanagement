@@ -110,6 +110,12 @@ export default function RegisterPage() {
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
 
+  const openFinancialHealthJourney = () => {
+    window.localStorage.removeItem('fms:journey:minimized')
+    window.localStorage.removeItem('fms:journey:do-not-show')
+    navigate('/financial-health-summary', { replace: true })
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -141,7 +147,7 @@ export default function RegisterPage() {
       })
       const loginResponse = await login({ username, password })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/financial-health-summary', { replace: true })
+      openFinancialHealthJourney()
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
     } finally {
@@ -175,7 +181,7 @@ export default function RegisterPage() {
         lenderDataSharingConsent: marketingConsent,
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/financial-health-summary', { replace: true })
+      openFinancialHealthJourney()
     } catch (error) {
       const backendMessage = extractBackendErrorMessage(error)
       if (isTrialExpiredMessage(backendMessage)) {
@@ -214,7 +220,7 @@ export default function RegisterPage() {
         lenderDataSharingConsent: marketingConsent,
       })
       await createFreeSubscription({ user_id: loginResponse.user.id })
-      navigate('/financial-health-summary', { replace: true })
+      openFinancialHealthJourney()
     } catch (error) {
       const backendMessage = extractBackendErrorMessage(error)
       if (isTrialExpiredMessage(backendMessage)) {

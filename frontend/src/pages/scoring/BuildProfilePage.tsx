@@ -8,6 +8,7 @@ import {
   type LoanApplicationPayload,
   type LoanApplicationRecord,
 } from '../../api/loan'
+import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAiAdvisories } from './aiAdvisoryEngine'
@@ -752,6 +753,7 @@ export default function BuildProfilePage() {
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
+  const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
   const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
   const preparedScoreKeyRef = useRef('')
@@ -785,6 +787,7 @@ export default function BuildProfilePage() {
     if (!requestedApplicationNo) return
 
     let cancelled = false
+    setIsLoadingProfile(true)
     setSaveMessage(`Loading profile ${requestedApplicationNo}...`)
     void loadProfileApplication(requestedApplicationNo)
       .then((application) => {
@@ -795,6 +798,9 @@ export default function BuildProfilePage() {
       })
       .catch(() => {
         if (!cancelled) setSaveMessage(`Unable to load profile ${requestedApplicationNo}.`)
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoadingProfile(false)
       })
 
     return () => {
@@ -2624,6 +2630,24 @@ export default function BuildProfilePage() {
         {saveMessage ? <p className="status-message" role="status">{saveMessage}</p> : null}
       </article>
     </section>
+
+    {isLoadingProfile ? (
+      <AuthProgressOverlay
+        idPrefix="build-profile-loading"
+        kicker="Profile records"
+        title="Loading your profile"
+        description={`Retrieving ${requestedApplicationNo} and preparing the saved record.`}
+        footnote="Please keep this window open."
+      />
+    ) : scorePreparationStatus === 'preparing' || pendingScorePage !== null ? (
+      <AuthProgressOverlay
+        idPrefix="build-profile-computing"
+        kicker="FILSCORE assessment"
+        title={pendingScorePage === 'wealthBuildingScoreOpened' ? 'Computing Wealth Building Score' : 'Computing Credit Health Score'}
+        description="Loading your profile data and preparing the latest assessment results."
+        footnote="This may take a few moments."
+      />
+    ) : null}
 
   </div>
 }

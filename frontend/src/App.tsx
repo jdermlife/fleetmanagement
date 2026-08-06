@@ -10,6 +10,7 @@ import {
   isLenderSubscriberRole,
 } from './authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
+import AuthProgressOverlay from './components/auth/AuthProgressOverlay'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
 import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
@@ -182,6 +183,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
+  const [isSigningOut, setIsSigningOut] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
   const [govOpen, setGovOpen] = useState(true)
@@ -374,10 +376,15 @@ const isSignedIn = authReady && Boolean(currentUser)
   }, [currentUser])
 
   const handleTopbarLogout = async () => {
-    await prepareAutosavesForLogout()
-    await logout()
-    setCurrentUser(null)
-    navigate('/login')
+    setIsSigningOut(true)
+    try {
+      await prepareAutosavesForLogout()
+      await logout()
+      setCurrentUser(null)
+      navigate('/login')
+    } finally {
+      setIsSigningOut(false)
+    }
   }
 
   useEffect(() => {
@@ -824,6 +831,7 @@ const isSignedIn = authReady && Boolean(currentUser)
     {currentUser ? (
       <button
         type="button"
+        disabled={isSigningOut}
         onClick={() => {
           closeMenu()
           void handleTopbarLogout()
@@ -1425,6 +1433,15 @@ const isSignedIn = authReady && Boolean(currentUser)
           </Routes>
         </Suspense>
       </main>
+      {isSigningOut ? (
+        <AuthProgressOverlay
+          idPrefix="app-signing-out"
+          kicker="Secure session"
+          title="Signing you out"
+          description="Securing your saved work and closing your session."
+          footnote="Please keep this window open."
+        />
+      ) : null}
     </div>
   )
 }
