@@ -988,16 +988,6 @@ export default function FinancialHealthSummaryPage() {
 
   return (
     <div className="psychometric-page financial-health-page">
-      {isJourneyMinimized && !isJourneyDismissed ? (
-        <button
-          type="button"
-          className="financial-health-journey-fab"
-          onClick={openJourney}
-        >
-          Open Financial Health Journey
-        </button>
-      ) : null}
-
       {!isJourneyMinimized && !isJourneyDismissed ? (
         <section className="financial-health-journey-overlay" role="dialog" aria-modal="true" aria-labelledby="financial-health-journey-title">
           <article className="financial-health-journey-modal">
@@ -1186,6 +1176,15 @@ export default function FinancialHealthSummaryPage() {
                 : 'Checking saved inputs...'}
           </span>
         </div>
+        {isJourneyMinimized && !isJourneyDismissed ? (
+          <button
+            type="button"
+            className="financial-health-journey-fab"
+            onClick={openJourney}
+          >
+            Open Financial Health Journey
+          </button>
+        ) : null}
         <button
           type="button"
           className="psychometric-reset-button financial-health-compute-button"

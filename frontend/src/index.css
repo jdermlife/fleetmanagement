@@ -702,8 +702,9 @@ textarea {
 
 .app-menu-panel {
   position: absolute;
-  top: 72px;
-  right: 24px;
+  top: 100%;
+  right: auto;
+  left: 96px;
   width: min(360px, calc(100vw - 24px));
   max-height: calc(100vh - 88px);
   overflow-y: auto;
@@ -7683,8 +7684,9 @@ th { color: var(--dark-gold); }
 
   .app-menu-panel {
     width: calc(100vw - 20px);
-    right: 10px;
-    top: 76px;
+    right: auto;
+    left: 76px;
+    top: 100%;
     max-height: calc(100vh - 92px);
     padding: 12px;
   }
@@ -7923,8 +7925,9 @@ th { color: var(--dark-gold); }
 
   .app-menu-panel {
     width: min(320px, calc(100vw - 20px));
-    right: 10px;
-    top: 72px;
+    right: auto;
+    left: 12px;
+    top: 100%;
     max-height: calc(100dvh - 84px);
     border-radius: 10px;
     padding: 8px;
@@ -9083,10 +9086,10 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-journey-fab {
-  position: fixed;
-  right: 20px;
-  bottom: 20px;
-  z-index: 1100;
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   border: 1px solid rgba(184, 134, 11, 0.7);
   background: #fde68a;
   color: #5b3f00;
@@ -9475,9 +9478,7 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-journey-fab {
-    right: 12px;
-    bottom: 12px;
-    width: calc(100% - 24px);
+    width: 100%;
     justify-content: center;
   }
 

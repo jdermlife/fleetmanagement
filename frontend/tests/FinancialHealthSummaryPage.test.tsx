@@ -50,6 +50,19 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 
+  it('places the minimized journey opener between the model note and compute button', () => {
+    window.localStorage.setItem('fms:journey:minimized', '1')
+    render(<FinancialHealthSummaryPage />)
+
+    const computeBar = screen.getByRole('region', { name: 'Financial Health computation controls' })
+    const modelNote = within(computeBar).getByText('Default Financial Health model displayed')
+    const journeyButton = within(computeBar).getByRole('button', { name: 'Open Financial Health Journey' })
+    const computeButton = within(computeBar).getByRole('button', { name: 'Compute Latest Financial Health' })
+
+    expect(modelNote.compareDocumentPosition(journeyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(journeyButton.compareDocumentPosition(computeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('shows APP identity and Step 8 financial amounts in thousands', async () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-USER',
