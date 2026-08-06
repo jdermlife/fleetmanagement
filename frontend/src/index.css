@@ -478,11 +478,10 @@ textarea {
 
 .app-topbar-row {
   display: flex;
+  flex-direction: column;
   width: 100%;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 18px;
+  align-items: stretch;
+  gap: 10px;
 }
 
 .app-topbar-actions {
@@ -491,8 +490,8 @@ textarea {
   align-items: center;
   flex-wrap: wrap;
   gap: 8px;
-  justify-content: flex-end;
-  margin-left: auto;
+  justify-content: flex-start;
+  margin-left: 72px;
 }
 
 .autosave-status {
@@ -561,7 +560,7 @@ textarea {
 }
 
 .app-brand-block {
-  flex: 1 1 320px;
+  width: 100%;
   min-width: 0;
 }
 
@@ -7675,7 +7674,7 @@ th { color: var(--dark-gold); }
   }
 
   .app-topbar-actions {
-    margin-left: auto;
+    margin-left: 60px;
   }
 
   .app-menu-toggle {
@@ -7899,6 +7898,7 @@ th { color: var(--dark-gold); }
   .app-topbar-actions {
     width: 100%;
     justify-content: stretch;
+    margin-left: 0;
   }
 
   .app-menu-toggle {

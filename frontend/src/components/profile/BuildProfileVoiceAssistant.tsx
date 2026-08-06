@@ -81,6 +81,27 @@ function normalizeText(value: string): string {
   return value.trim().toLowerCase().replace(/[^a-z0-9]+/g, ' ')
 }
 
+function selectChoices(field: VoiceField): string[] {
+  if (!(field instanceof HTMLSelectElement)) return []
+  return Array.from(field.options)
+    .filter((option) => option.value)
+    .map((option) => (option.textContent || option.value).trim())
+    .filter(Boolean)
+}
+
+function formatChoices(choices: string[]): string {
+  if (choices.length <= 1) return choices[0] || ''
+  if (choices.length === 2) return `${choices[0]} or ${choices[1]}`
+  return `${choices.slice(0, -1).join(', ')}, or ${choices[choices.length - 1]}`
+}
+
+function questionPrompt(field: VoiceField, label: string): string {
+  const choices = selectChoices(field)
+  return choices.length
+    ? `Please provide ${label}. Your choices are ${formatChoices(choices)}.`
+    : `Please provide ${label}.`
+}
+
 function resolveSelectValue(field: HTMLSelectElement, transcript: string): string | null {
   const spoken = normalizeText(transcript)
   const ordinalMatch = spoken.match(/(?:option|choice)\s+(\d+)/)
@@ -199,6 +220,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
 
     stopRecognition()
     const label = fieldLabel(field)
+    const choices = selectChoices(field)
     const recognition = new Recognition()
     recognitionRef.current = recognition
     recognition.continuous = false
@@ -254,7 +276,9 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
       try {
         recognition.start()
         setIsListening(true)
-        setMessage(`Listening for ${label}...`)
+        setMessage(choices.length
+          ? `Listening for ${label}. Available choices: ${formatChoices(choices)}.`
+          : `Listening for ${label}...`)
       } catch {
         setMessage('The microphone is already in use. Stop listening and try again.')
       }
@@ -262,7 +286,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
 
     setFieldName(label)
     field.focus()
-    speak(`Please provide ${label}.`, listen)
+    speak(questionPrompt(field, label), listen)
   }
 
   const beginInterview = () => {

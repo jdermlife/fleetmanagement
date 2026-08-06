@@ -29,6 +29,7 @@ ALTER_STATEMENTS = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS password_reset_expires TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_user_notification_sent_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(100)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_device TEXT",
 ]

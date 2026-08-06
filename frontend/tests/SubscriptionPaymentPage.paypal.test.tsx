@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const apiMocks = vi.hoisted(() => ({
   capturePayPalOrder: vi.fn(),
   createPayPalOrder: vi.fn(),
+  createFreeSubscription: vi.fn(),
   createSubscription: vi.fn(),
   createSubscriptionCheckout: vi.fn(),
   createSubscriptionPayment: vi.fn(),
@@ -180,5 +181,44 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       'PayPal returned an unexpected order id',
     )
     expect(apiMocks.capturePayPalOrder).not.toHaveBeenCalled()
+  })
+
+  it('activates a zero-value free trial without invoking PayPal or PayMongo', async () => {
+    const freePlan = {
+      ...plan,
+      id: 1,
+      plan_code: 'FREE',
+      plan_name: 'Free',
+      monthly_price: 0,
+      yearly_price: 0,
+      minimum_monthly_fee: 0,
+    }
+    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([freePlan])
+    apiMocks.createFreeSubscription.mockResolvedValue({
+      ...subscription,
+      id: 1,
+      plan_id: 1,
+      status: 'TRIAL',
+      subscription_type: 'FREE',
+    })
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=1']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const startTrial = await screen.findByRole('button', { name: 'Start Free Trial' })
+    expect(screen.queryByRole('button', { name: 'Pay with PayMongo' })).toBeNull()
+    expect(screen.queryByText('PayPal', { selector: 'h3' })).toBeNull()
+
+    await act(async () => startTrial.click())
+
+    expect(apiMocks.createFreeSubscription).toHaveBeenCalledTimes(1)
+    expect(apiMocks.createSubscriptionCheckout).not.toHaveBeenCalled()
+    expect(apiMocks.createPayPalOrder).not.toHaveBeenCalled()
+    expect(await screen.findByText(/No payment was required/)).toBeTruthy()
   })
 })

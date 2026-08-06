@@ -3,7 +3,14 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { createFreeSubscription, getErrorMessage, loginWithApple, loginWithGoogle, register } from '../../api'
+import {
+  createFreeSubscription,
+  getErrorMessage,
+  listPublicSubscriptionPlans,
+  loginWithApple,
+  loginWithGoogle,
+  register,
+} from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
@@ -116,6 +123,21 @@ export default function RegisterPage() {
     navigate('/financial-health-summary', { replace: true })
   }
 
+  const continueAfterRegistration = async (userId: number) => {
+    if (subscriptionPlan === 'FREE_TRIAL') {
+      await createFreeSubscription({ user_id: userId })
+      openFinancialHealthJourney()
+      return
+    }
+
+    const plans = await listPublicSubscriptionPlans()
+    const selectedPaidPlan = plans.find((plan) => plan.plan_code === 'SINGLE_PROFILE')
+    if (!selectedPaidPlan) {
+      throw new Error('The Subscriber Single Profile payment plan is currently unavailable.')
+    }
+    navigate(`/subscription-payment?planId=${selectedPaidPlan.id}`, { replace: true })
+  }
+
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
 
@@ -145,8 +167,7 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
       })
-      await createFreeSubscription({ user_id: loginResponse.user.id })
-      openFinancialHealthJourney()
+      await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
     } finally {
@@ -179,8 +200,7 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
       })
-      await createFreeSubscription({ user_id: loginResponse.user.id })
-      openFinancialHealthJourney()
+      await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
       const backendMessage = extractBackendErrorMessage(error)
       if (isTrialExpiredMessage(backendMessage)) {
@@ -218,8 +238,7 @@ export default function RegisterPage() {
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
       })
-      await createFreeSubscription({ user_id: loginResponse.user.id })
-      openFinancialHealthJourney()
+      await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
       const backendMessage = extractBackendErrorMessage(error)
       if (isTrialExpiredMessage(backendMessage)) {

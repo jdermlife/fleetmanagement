@@ -693,6 +693,7 @@ export interface AdminUser {
   subscription_id?: number | null
   api_access?: boolean
   email_verified?: boolean
+  admin_user_notification_sent_at?: string | null
   last_login_ip?: string | null
   last_login_device?: string | null
   total_login_count?: number

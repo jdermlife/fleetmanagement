@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, timedelta
 
 import pytest
 from fastapi import FastAPI
@@ -73,6 +73,9 @@ class FakeSession:
         bucket.append(row)
 
     def commit(self):
+        return None
+
+    def flush(self):
         return None
 
     def refresh(self, _row):
@@ -167,6 +170,50 @@ def test_public_plans_endpoint_lists_only_active_public_plans_smoke(
     rows = response.json()
     assert len(rows) == 1
     assert rows[0]["plan_code"] == "FREE"
+
+
+def test_free_plan_activates_two_day_internal_trial_once(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    free_plan = SubscriptionPlan(
+        id=1,
+        plan_code="FREE",
+        plan_name="Free",
+        billing_cycle="MONTHLY",
+        monthly_price=0,
+        yearly_price=0,
+        is_active=True,
+        is_public=True,
+    )
+    account = User(
+        id=42,
+        username="subscriber",
+        email="subscriber@example.com",
+        password_hash="unused",
+        role="subscriber",
+        is_active=True,
+        account_status="ACTIVE",
+    )
+    fake_db.rows_by_model[SubscriptionPlan] = [free_plan]
+    fake_db.rows_by_model[User] = [account]
+
+    first_response = client.post("/api/subscriptions/create-free", headers=subscriber_headers, json={})
+
+    assert first_response.status_code == 200
+    trial = first_response.json()
+    assert trial["status"] == "TRIAL"
+    assert trial["subscription_type"] == "FREE"
+    assert date.fromisoformat(trial["trial_end"]) - date.fromisoformat(trial["trial_start"]) == timedelta(days=2)
+    assert account.subscription_id == trial["id"]
+    first_expiry = account.account_access_expires_at
+
+    second_response = client.post("/api/subscriptions/create-free", headers=subscriber_headers, json={})
+
+    assert second_response.status_code == 200
+    assert second_response.json()["id"] == trial["id"]
+    assert account.account_access_expires_at == first_expiry
 
 
 def test_subscriber_subscription_owner_scope_smoke(

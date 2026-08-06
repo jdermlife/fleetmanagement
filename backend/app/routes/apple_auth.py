@@ -21,6 +21,7 @@ from app.routes.security import (
     get_db,
 )
 from app.services.account_access_service import configure_new_account_access
+from app.services.new_user_notification_service import notify_admins_of_new_user
 from security.auth import hash_password
 
 
@@ -95,6 +96,7 @@ def login_with_apple_identity_token(
         _ensure_default_role(user, db, role_name)
         db.commit()
         db.refresh(user)
+        notify_admins_of_new_user(user, db)
 
     _enforce_login_access_policy(user, db)
 

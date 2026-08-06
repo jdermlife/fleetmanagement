@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from calendar import monthrange
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
 import json
 import os
@@ -49,7 +49,7 @@ from app.schemas.subscription_schema import (
     SubscriptionUsageCreate,
 )
 from app.services.email_service import send_email
-from app.services.account_access_service import renew_account_access_after_payment
+from app.services.account_access_service import configure_new_account_access, renew_account_access_after_payment
 from app.services.paymongo import (
     PayMongoAPIError,
     PayMongoConfigurationError,
@@ -694,30 +694,61 @@ def create_free_subscription(
     try:
         target_user_id = payload.user_id if _is_admin(user) and payload.user_id else user.id
 
-        existing = (
+        existing_free = (
             db.query(Subscription)
             .filter(Subscription.user_id == target_user_id)
-            .filter(Subscription.status.in_(["PENDING", "TRIAL", "ACTIVE", "SUSPENDED"]))
+            .filter(Subscription.subscription_type == "FREE")
             .order_by(Subscription.created_at.desc())
             .first()
         )
-        if existing is not None:
-            return _serialize_subscription(existing)
+        if existing_free is not None:
+            if existing_free.status == "PENDING":
+                trial_start = date.today()
+                existing_free.status = "TRIAL"
+                existing_free.trial_start = trial_start
+                existing_free.trial_end = trial_start + timedelta(days=2)
+                existing_free.subscription_start = trial_start
+                existing_free.auto_renew = False
+                account = db.query(User).filter(User.id == target_user_id).first()
+                if account is not None:
+                    account.subscription_id = existing_free.id
+                    configure_new_account_access(account)
+                db.commit()
+                db.refresh(existing_free)
+            return _serialize_subscription(existing_free)
+
+        existing_entitlement = (
+            db.query(Subscription)
+            .filter(Subscription.user_id == target_user_id)
+            .filter(Subscription.status.in_(["TRIAL", "ACTIVE"]))
+            .order_by(Subscription.created_at.desc())
+            .first()
+        )
+        if existing_entitlement is not None:
+            return _serialize_subscription(existing_entitlement)
 
         free_plan = _find_default_free_plan(db)
         if free_plan is None:
             raise HTTPException(status_code=422, detail="No subscription plans are configured")
 
+        trial_start = date.today()
         row = Subscription(
             subscription_no=_build_subscription_no("FREE"),
             user_id=target_user_id,
             plan_id=free_plan.id,
-            status="PENDING",
+            status="TRIAL",
             subscription_type="FREE",
-            subscription_start=date.today(),
-            auto_renew=True,
+            trial_start=trial_start,
+            trial_end=trial_start + timedelta(days=2),
+            subscription_start=trial_start,
+            auto_renew=False,
         )
         db.add(row)
+        db.flush()
+        account = db.query(User).filter(User.id == target_user_id).first()
+        if account is not None:
+            account.subscription_id = row.id
+            configure_new_account_access(account)
         db.commit()
         db.refresh(row)
         return _serialize_subscription(row)

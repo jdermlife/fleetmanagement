@@ -42,6 +42,7 @@ from app.services.mfa_service import (
     verify_totp,
 )
 from app.services.email_service import send_email
+from app.services.new_user_notification_service import notify_admins_of_new_user
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.rbac import ROLE_PERMISSIONS, Role as RBACRole
 from security.auth import SECRET_KEY, TokenError, create_token, decode_token, hash_password, verify_password
@@ -313,6 +314,7 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "subscription_id": user.subscription_id,
         "api_access": user.api_access,
         "email_verified": user.email_verified,
+        "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
         "lender_data_sharing_consent": user.lender_data_sharing_consent,
@@ -625,6 +627,7 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
 
     db.commit()
     db.refresh(user)
+    notify_admins_of_new_user(user, db)
     return _build_login_payload(user, request, db)
 
 
@@ -737,6 +740,7 @@ def login_with_google_token(
         _ensure_default_role(user, db, role_name)
         db.commit()
         db.refresh(user)
+        notify_admins_of_new_user(user, db)
 
     _enforce_login_access_policy(user, db)
 
@@ -805,6 +809,7 @@ def login_with_apple_token(
         _ensure_default_role(user, db, role_name)
         db.commit()
         db.refresh(user)
+        notify_admins_of_new_user(user, db)
 
     _enforce_login_access_policy(user, db)
 
@@ -1290,6 +1295,7 @@ def admin_create_user(
 
     db.commit()
     db.refresh(user)
+    notify_admins_of_new_user(user, db)
     return {"user": _serialize_user(user, db)}
 
 

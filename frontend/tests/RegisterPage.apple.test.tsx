@@ -3,7 +3,16 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockNavigate, mockRegister, mockRequestAppleSignInToken, mockLoginWithApple } = vi.hoisted(() => ({
+const {
+  mockCreateFreeSubscription,
+  mockListPublicSubscriptionPlans,
+  mockNavigate,
+  mockRegister,
+  mockRequestAppleSignInToken,
+  mockLoginWithApple,
+} = vi.hoisted(() => ({
+  mockCreateFreeSubscription: vi.fn(),
+  mockListPublicSubscriptionPlans: vi.fn(),
   mockNavigate: vi.fn(),
   mockRegister: vi.fn(),
   mockRequestAppleSignInToken: vi.fn(),
@@ -27,8 +36,9 @@ vi.mock('@react-oauth/google', () => ({
 }))
 
 vi.mock('../src/api', () => ({
-  createFreeSubscription: vi.fn().mockResolvedValue({}),
+  createFreeSubscription: mockCreateFreeSubscription,
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
+  listPublicSubscriptionPlans: mockListPublicSubscriptionPlans,
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
   loginWithApple: mockLoginWithApple,
@@ -58,6 +68,12 @@ describe('RegisterPage Apple sign-up', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     mockNavigate.mockReset()
+    mockCreateFreeSubscription.mockReset()
+    mockCreateFreeSubscription.mockResolvedValue({})
+    mockListPublicSubscriptionPlans.mockReset()
+    mockListPublicSubscriptionPlans.mockResolvedValue([
+      { id: 2, plan_code: 'SINGLE_PROFILE' },
+    ])
     mockRegister.mockReset()
     mockRegister.mockResolvedValue({
       token: 'registration-access-token',
@@ -125,6 +141,27 @@ describe('RegisterPage Apple sign-up', () => {
 
     expect((freePlan as HTMLInputElement).checked).toBe(false)
     expect((starterPlan as HTMLInputElement).checked).toBe(true)
+  })
+
+  it('routes a paid registration to payment without activating the free trial', async () => {
+    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
+    mockLoginWithApple.mockResolvedValue({
+      user: { id: 9, role: 'subscriber_borrower' },
+    })
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('radio', { name: /starter\s*php 160\.00 per month/i }))
+    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/subscription-payment?planId=2', { replace: true })
+    })
+    expect(mockCreateFreeSubscription).not.toHaveBeenCalled()
   })
 
   it('orders Apple before Google and reveals credential fields from Other Email', async () => {

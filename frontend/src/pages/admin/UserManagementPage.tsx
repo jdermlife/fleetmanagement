@@ -315,6 +315,10 @@ export default function UserManagementPage() {
                       <div className="text-slate-700">{formatDateCreated(user.created_at)}</div>
                     </div>
                     <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Admin Email Sent</div>
+                      <div className="text-slate-700">{formatNotificationSentAt(user.admin_user_notification_sent_at)}</div>
+                    </div>
+                    <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Subscription Plan</div>
                       <div className="text-slate-700">{getSubscriptionPlanName(user)}</div>
                     </div>
@@ -349,6 +353,7 @@ export default function UserManagementPage() {
                   <th className="px-3 py-2 text-left">Username</th>
                   <th className="px-3 py-2 text-left">Email</th>
                   <th className="px-3 py-2 text-left">Date Created</th>
+                  <th className="px-3 py-2 text-left">Admin Email Sent</th>
                   <th className="px-3 py-2 text-left">Status</th>
                   <th className="px-3 py-2 text-left">Role</th>
                   <th className="px-3 py-2 text-left">Subscription Plan</th>
@@ -361,6 +366,7 @@ export default function UserManagementPage() {
                     <td className="px-3 py-2">{user.username}</td>
                     <td className="px-3 py-2">{user.email}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{formatDateCreated(user.created_at)}</td>
+                    <td className="px-3 py-2 whitespace-nowrap">{formatNotificationSentAt(user.admin_user_notification_sent_at)}</td>
                     <td className="px-3 py-2">{user.account_status ?? (user.is_active ? 'ACTIVE' : 'DISABLED')}</td>
                     <td className="px-3 py-2">
                       <input
@@ -409,4 +415,26 @@ function formatDateCreated(value?: string): string {
     month: 'short',
     year: 'numeric',
   }).format(createdAt)
+}
+
+function formatNotificationSentAt(value?: string | null): string {
+  if (!value) {
+    return 'Pending/Failed'
+  }
+
+  const sentAt = new Date(value)
+  if (Number.isNaN(sentAt.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('en-PH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    timeZone: 'Asia/Manila',
+    timeZoneName: 'short',
+  }).format(sentAt)
 }

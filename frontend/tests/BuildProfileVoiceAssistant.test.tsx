@@ -68,7 +68,8 @@ describe('BuildProfileVoiceAssistant', () => {
 
     act(() => MockSpeechRecognition.current?.respond('Jordan Santos'))
     expect(screen.getByText('Jordan Santos')).toBeTruthy()
-    expect(screen.getByText('Listening for Gender...')).toBeTruthy()
+    expect(spokenPrompts).toContain('Please provide Gender. Your choices are Male or Female.')
+    expect(screen.getByText('Listening for Gender. Available choices: Male or Female.')).toBeTruthy()
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('')
     expect((screen.getByLabelText('Gender') as HTMLSelectElement).value).toBe('')
 
@@ -111,7 +112,8 @@ describe('BuildProfileVoiceAssistant', () => {
     await user.click(screen.getByRole('button', { name: 'Answer profile questions by voice' }))
     act(() => MockSpeechRecognition.current?.respond('unknown'))
     expect(spokenPrompts).toContain('That response was not valid for Gender. Please try again.')
-    expect(screen.getByText('Listening for Gender...')).toBeTruthy()
+    expect(spokenPrompts.filter((prompt) => prompt === 'Please provide Gender. Your choices are Male or Female.')).toHaveLength(2)
+    expect(screen.getByText('Listening for Gender. Available choices: Male or Female.')).toBeTruthy()
 
     act(() => MockSpeechRecognition.current?.respond('still unknown'))
     expect(spokenPrompts).toContain('Please manual entry the response')

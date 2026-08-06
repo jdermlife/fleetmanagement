@@ -7,6 +7,7 @@ import {
   createPublicTrialPayMongoCheckout,
   createPublicTrialPayPalOrder,
   createPayPalOrder,
+  createFreeSubscription,
   createSubscriptionCheckout,
   createSubscription,
   getMySubscription,
@@ -127,6 +128,7 @@ export default function SubscriptionPaymentPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
+  const [isStartingFreeTrial, setIsStartingFreeTrial] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
@@ -227,8 +229,13 @@ export default function SubscriptionPaymentPage() {
     return billingAmount(activePlan)
   }, [guestTrialPlan, selectedPlan, selectedSubscriptionPlan])
 
+  const isFreeTrialPlan = !guestTrialPlan
+    && (selectedSubscriptionPlan ?? selectedPlan)?.plan_code === 'FREE'
+    && dueAmount === 0
+
   const canRenderPayPalButtons =
     !guestTrialPlan &&
+    !isFreeTrialPlan &&
     !isLoading &&
     Boolean(selectedSubscription || selectedPlan)
   const canRenderGuestPayPalButtons =
@@ -507,6 +514,20 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
+  const handleStartFreeTrial = async () => {
+    setIsStartingFreeTrial(true)
+    setPaymentMessage('Starting your free two-day trial...')
+    try {
+      const trial = await createFreeSubscription()
+      setSubscriptions([trial])
+      setPaymentMessage('Your free two-day trial is active. No payment was required.')
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start the free trial right now.'))
+    } finally {
+      setIsStartingFreeTrial(false)
+    }
+  }
+
   const handleStartGuestCheckout = async () => {
     if (!guestTrialPlan) {
       return
@@ -652,9 +673,27 @@ export default function SubscriptionPaymentPage() {
             ) : null}
           </section>
 
+          {isFreeTrialPlan ? (
+            <section className="stack-panel auth-panel" aria-label="Free trial activation">
+              <h2>Start Free Trial</h2>
+              <p>Activate two days of trial access immediately. PayPal and PayMongo are not required for PHP 0.00.</p>
+              <button
+                type="button"
+                className="auth-link-button auth-apple-button"
+                onClick={() => void handleStartFreeTrial()}
+                disabled={isStartingFreeTrial || paymentSubscription?.status === 'TRIAL'}
+              >
+                {paymentSubscription?.status === 'TRIAL'
+                  ? 'Free Trial Active'
+                  : isStartingFreeTrial
+                    ? 'Starting Free Trial...'
+                    : 'Start Free Trial'}
+              </button>
+            </section>
+          ) : (
           <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
             <h2>Choose Payment Channel</h2>
-            <p>Select one secure payment option below.</p>
+            <p>Select PayMongo or PayPal below.</p>
 
             <div className="trial-expired-payment-buttons">
               <div className="trial-expired-payment-option register-social-option">
@@ -692,6 +731,7 @@ export default function SubscriptionPaymentPage() {
               </div>
             </div>
           </section>
+          )}
         </>
       ) : null}
 
