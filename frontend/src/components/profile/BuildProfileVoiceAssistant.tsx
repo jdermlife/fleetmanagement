@@ -34,6 +34,13 @@ interface BuildProfileVoiceAssistantProps {
 
 type VoiceField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
 
+type RecordedAnswer = {
+  field: VoiceField
+  label: string
+  transcript: string
+  value: string
+}
+
 function isVisible(element: HTMLElement): boolean {
   if (element.hidden || element.closest('[hidden]')) return false
   if (element.closest('details:not([open])')) return false
@@ -90,17 +97,21 @@ function resolveSelectValue(field: HTMLSelectElement, transcript: string): strin
   return option?.value ?? null
 }
 
-function applyNativeValue(field: VoiceField, transcript: string): boolean {
+function resolveFieldValue(field: VoiceField, transcript: string): string | null {
   let value = transcript.trim()
   if (field instanceof HTMLSelectElement) {
     const selectedValue = resolveSelectValue(field, transcript)
-    if (selectedValue === null) return false
+    if (selectedValue === null) return null
     value = selectedValue
   } else if (field instanceof HTMLInputElement && (field.type === 'number' || field.inputMode === 'decimal')) {
     value = value.replace(/[^\d.-]/g, '')
-    if (!value) return false
+    if (!value) return null
   }
 
+  return value || null
+}
+
+function applyNativeValue(field: VoiceField, value: string): void {
   const prototype = field instanceof HTMLSelectElement
     ? HTMLSelectElement.prototype
     : field instanceof HTMLTextAreaElement
@@ -111,33 +122,42 @@ function applyNativeValue(field: VoiceField, transcript: string): boolean {
   field.dispatchEvent(new Event('input', { bubbles: true }))
   field.dispatchEvent(new Event('change', { bubbles: true }))
   field.focus()
-  return true
 }
 
 export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfileVoiceAssistantProps) {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
-  const activeFieldRef = useRef<VoiceField | null>(null)
+  const queueRef = useRef<VoiceField[]>([])
+  const recordedAnswersRef = useRef<RecordedAnswer[]>([])
+  const sessionActiveRef = useRef(false)
   const [fieldName, setFieldName] = useState('')
-  const [message, setMessage] = useState('Select the microphone to answer the next incomplete field.')
-  const [transcript, setTranscript] = useState('')
+  const [message, setMessage] = useState('Select the microphone to answer all incomplete fields in this step.')
+  const [recordedAnswers, setRecordedAnswers] = useState<RecordedAnswer[]>([])
   const [isListening, setIsListening] = useState(false)
+  const [isReviewing, setIsReviewing] = useState(false)
   const Recognition = typeof window === 'undefined'
     ? undefined
     : window.SpeechRecognition || window.webkitSpeechRecognition
 
-  const stopListening = () => {
+  const stopRecognition = () => {
     recognitionRef.current?.stop()
     recognitionRef.current = null
     window.speechSynthesis?.cancel()
     setIsListening(false)
   }
 
-  useEffect(() => {
-    stopListening()
-    activeFieldRef.current = null
+  const resetInterview = (nextMessage = 'Select the microphone to answer all incomplete fields in this step.') => {
+    stopRecognition()
+    sessionActiveRef.current = false
+    queueRef.current = []
+    recordedAnswersRef.current = []
+    setRecordedAnswers([])
+    setIsReviewing(false)
     setFieldName('')
-    setTranscript('')
-    setMessage('Select the microphone to answer the next incomplete field.')
+    setMessage(nextMessage)
+  }
+
+  useEffect(() => {
+    resetInterview()
   }, [currentStep])
 
   useEffect(() => () => {
@@ -145,37 +165,77 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
     window.speechSynthesis?.cancel()
   }, [])
 
-  const beginListening = () => {
-    if (!Recognition) {
-      setMessage('Voice entry is not supported by this browser. Use Chrome or Edge and allow microphone access.')
+  const speak = (text: string, onEnd?: () => void) => {
+    if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
+      const prompt = new SpeechSynthesisUtterance(text)
+      prompt.onend = () => onEnd?.()
+      window.speechSynthesis.cancel()
+      window.speechSynthesis.speak(prompt)
+      return
+    }
+    onEnd?.()
+  }
+
+  const finishInterview = () => {
+    sessionActiveRef.current = false
+    recognitionRef.current = null
+    setIsListening(false)
+    setIsReviewing(true)
+    setFieldName('Review recorded answers')
+    setMessage('All voice-compatible questions are answered. Verify every response, then apply all answers before moving to the next workflow step.')
+    speak('All questions in this workflow step have been answered. Please verify and apply all answers before moving to the next workflow step.')
+  }
+
+  const askQuestion = (index: number) => {
+    if (!sessionActiveRef.current) return
+    const field = queueRef.current[index]
+    if (!field) {
+      finishInterview()
       return
     }
 
-    const fields = getVoiceFields()
-    const nextField = fields.find((field) => !field.value.trim()) ?? fields[0]
-    if (!nextField) {
-      setMessage('This step has no voice-compatible fields to complete.')
-      return
-    }
-
-    stopListening()
-    const label = fieldLabel(nextField)
+    stopRecognition()
+    const label = fieldLabel(field)
     const recognition = new Recognition()
-    activeFieldRef.current = nextField
     recognitionRef.current = recognition
     recognition.continuous = false
     recognition.interimResults = false
     recognition.lang = document.documentElement.lang || 'en-US'
     recognition.onresult = (event) => {
       const response = event.results[0]?.[0]?.transcript?.trim() || ''
-      setTranscript(response)
-      setMessage(response ? 'Review the response, then apply it to the field.' : 'No response was detected. Try again.')
       setIsListening(false)
+      recognitionRef.current = null
+      if (!response) {
+        setMessage(`No response was detected for ${label}. Listening again...`)
+        askQuestion(index)
+        return
+      }
+
+      const value = resolveFieldValue(field, response)
+      if (value === null) {
+        setMessage(`${label} did not match an available option or number. Listening again...`)
+        speak(`That response was not valid for ${label}. Please try again.`, () => askQuestion(index))
+        return
+      }
+
+      const answer = { field, label, transcript: response, value }
+      const nextAnswers = [...recordedAnswersRef.current, answer]
+      recordedAnswersRef.current = nextAnswers
+      setRecordedAnswers(nextAnswers)
+      setMessage(`${label} recorded. Moving to the next question.`)
+      askQuestion(index + 1)
     }
     recognition.onerror = (event) => {
       const denied = event.error === 'not-allowed' || event.error === 'service-not-allowed'
-      setMessage(denied ? 'Microphone access was denied. Allow access in your browser settings and try again.' : 'The response could not be captured. Try again.')
       setIsListening(false)
+      recognitionRef.current = null
+      if (denied) {
+        sessionActiveRef.current = false
+        setMessage('Microphone access was denied. Allow access in your browser settings and try again.')
+        return
+      }
+      setMessage(`The response for ${label} could not be captured. Listening again...`)
+      speak(`I could not capture ${label}. Please try again.`, () => askQuestion(index))
     }
     recognition.onend = () => setIsListening(false)
 
@@ -190,28 +250,34 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
     }
 
     setFieldName(label)
-    setTranscript('')
-    nextField.focus()
-    if ('speechSynthesis' in window && 'SpeechSynthesisUtterance' in window) {
-      const prompt = new SpeechSynthesisUtterance(`Please provide ${label}.`)
-      prompt.onend = listen
-      window.speechSynthesis.cancel()
-      window.speechSynthesis.speak(prompt)
-    } else {
-      listen()
-    }
+    field.focus()
+    speak(`Please provide ${label}.`, listen)
   }
 
-  const applyResponse = () => {
-    const field = activeFieldRef.current
-    if (!field || !transcript) return
-    if (!applyNativeValue(field, transcript)) {
-      setMessage('The response did not match an available option. Say the option label or option number and try again.')
+  const beginInterview = () => {
+    if (!Recognition) {
+      setMessage('Voice entry is not supported by this browser. Use Chrome or Edge and allow microphone access.')
       return
     }
-    setTranscript('')
-    activeFieldRef.current = null
-    setMessage(`${fieldName} updated. Review the field, then continue with the next question.`)
+
+    const fields = getVoiceFields().filter((field) => !field.value.trim())
+    if (!fields.length) {
+      setMessage('All voice-compatible fields in this step already have answers.')
+      speak('All voice-compatible fields in this workflow step already have answers. Please verify them before moving to the next step.')
+      return
+    }
+
+    resetInterview('Starting the voice interview...')
+    queueRef.current = fields
+    sessionActiveRef.current = true
+    askQuestion(0)
+  }
+
+  const applyAllAnswers = () => {
+    recordedAnswersRef.current.forEach(({ field, value }) => applyNativeValue(field, value))
+    const appliedCount = recordedAnswersRef.current.length
+    resetInterview(`${appliedCount} answers applied. Review the fields, then move to the next workflow step.`)
+    speak(`${appliedCount} answers have been applied. Please review the fields before moving to the next workflow step.`)
   }
 
   return (
@@ -219,7 +285,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
       <button
         type="button"
         className={`build-profile-voice-button${isListening ? ' build-profile-voice-button-listening' : ''}`}
-        onClick={isListening ? stopListening : beginListening}
+        onClick={isListening ? () => resetInterview('Voice interview stopped. Select the microphone to start again.') : beginInterview}
         aria-label={isListening ? 'Stop listening' : 'Answer profile questions by voice'}
         title={isListening ? 'Stop listening' : 'Answer profile questions by voice'}
       >
@@ -228,10 +294,15 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
       <div className="build-profile-voice-copy">
         <strong>{isListening ? 'Listening' : fieldName || 'Voice-guided entry'}</strong>
         <small role="status">{message}</small>
-        {transcript ? <blockquote>{transcript}</blockquote> : null}
-        {transcript ? <div className="build-profile-voice-actions">
-          <button type="button" onClick={applyResponse}>Apply Response</button>
-          <button type="button" onClick={beginListening}>Try Again</button>
+        {recordedAnswers.length > 0 ? <ol className="build-profile-voice-review-list">
+          {recordedAnswers.map((answer, index) => <li key={`${answer.label}-${index}`}>
+            <strong>{answer.label}</strong>
+            <span>{answer.transcript}</span>
+          </li>)}
+        </ol> : null}
+        {isReviewing ? <div className="build-profile-voice-actions">
+          <button type="button" onClick={applyAllAnswers}>Apply All Answers</button>
+          <button type="button" onClick={() => resetInterview('Answers discarded. Select the microphone to start again.')}>Discard and Restart</button>
         </div> : null}
         <small className="build-profile-voice-privacy">FILSCORE does not store microphone audio. Your browser speech service may process it.</small>
       </div>

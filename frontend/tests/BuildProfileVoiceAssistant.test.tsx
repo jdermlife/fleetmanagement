@@ -44,8 +44,21 @@ describe('BuildProfileVoiceAssistant', () => {
     MockSpeechRecognition.current = null
   })
 
-  it('reviews a spoken response before applying it to the next incomplete field', async () => {
+  it('records every response continuously and applies only after final review', async () => {
     vi.stubGlobal('webkitSpeechRecognition', MockSpeechRecognition)
+    const spokenPrompts: string[] = []
+    class MockSpeechSynthesisUtterance {
+      onend: (() => void) | null = null
+      constructor(public text: string) {}
+    }
+    vi.stubGlobal('SpeechSynthesisUtterance', MockSpeechSynthesisUtterance)
+    vi.stubGlobal('speechSynthesis', {
+      cancel: vi.fn(),
+      speak: (prompt: MockSpeechSynthesisUtterance) => {
+        spokenPrompts.push(prompt.text)
+        prompt.onend?.()
+      },
+    })
     const user = userEvent.setup()
     render(<VoiceForm />)
 
@@ -53,17 +66,22 @@ describe('BuildProfileVoiceAssistant', () => {
     expect(MockSpeechRecognition.current?.start).toHaveBeenCalled()
 
     act(() => MockSpeechRecognition.current?.respond('Jordan Santos'))
-    expect(screen.getByText('Jordan Santos', { selector: 'blockquote' })).toBeTruthy()
+    expect(screen.getByText('Jordan Santos')).toBeTruthy()
+    expect(screen.getByText('Listening for Gender...')).toBeTruthy()
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('Gender') as HTMLSelectElement).value).toBe('')
 
-    await user.click(screen.getByRole('button', { name: 'Apply Response' }))
-    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
-    expect(screen.getByText(/Full Name updated/)).toBeTruthy()
-
-    await user.click(screen.getByRole('button', { name: 'Answer profile questions by voice' }))
     act(() => MockSpeechRecognition.current?.respond('Female'))
-    await user.click(screen.getByRole('button', { name: 'Apply Response' }))
+    expect(screen.getByText(/All voice-compatible questions are answered/)).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Apply All Answers' })).toBeTruthy()
+    expect(spokenPrompts.at(-1)).toMatch(/verify and apply all answers before moving to the next workflow step/i)
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('')
+    expect((screen.getByLabelText('Gender') as HTMLSelectElement).value).toBe('')
+
+    await user.click(screen.getByRole('button', { name: 'Apply All Answers' }))
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
     expect((screen.getByLabelText('Gender') as HTMLSelectElement).value).toBe('Female')
+    expect(screen.getByText(/2 answers applied/)).toBeTruthy()
   })
 
   it('explains when browser speech recognition is unavailable', async () => {

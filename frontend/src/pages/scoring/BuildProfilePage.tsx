@@ -768,6 +768,7 @@ export default function BuildProfilePage() {
   const [varianceSectionFilter, setVarianceSectionFilter] = useState<'all' | StatementSection>('all')
   const [varianceCategoryFilter, setVarianceCategoryFilter] = useState('all')
   const [varianceLineSearch, setVarianceLineSearch] = useState('')
+  const [profileEntryMode, setProfileEntryMode] = useState<'manual' | 'voice'>('manual')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
   const scoreApplicationNo = profile.selectedApplicationNo?.trim()
     || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
@@ -2585,22 +2586,40 @@ export default function BuildProfilePage() {
                 <h2>Build your Profile</h2>
                 <small>Step {profile.step} of 12: {currentStep.label}</small>
               </div>
-              <BuildProfileVoiceAssistant currentStep={profile.step} />
-              <div className="build-profile-workflow-steps">
-                {WORKFLOW_STEPS.map((workflowStep) => {
-                  const completion = stepCompletion[workflowStep.id]
-                  return <button
-                    key={workflowStep.id}
+              <div className="build-profile-workflow-entry-row">
+                <div className="build-profile-workflow-steps">
+                  {WORKFLOW_STEPS.map((workflowStep) => {
+                    const completion = stepCompletion[workflowStep.id]
+                    return <button
+                      key={workflowStep.id}
+                      type="button"
+                      onClick={() => goToStep(workflowStep.id)}
+                      className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
+                      aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
+                      title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
+                    >
+                      {workflowStep.id}
+                    </button>
+                  })}
+                </div>
+                <div className="build-profile-entry-modes" aria-label="Profile entry mode">
+                  <button
                     type="button"
-                    onClick={() => goToStep(workflowStep.id)}
-                    className={`build-profile-workflow-step ${getWorkflowStepCompletionClass(completion)}${profile.step === workflowStep.id ? ' build-profile-workflow-step-active' : ''}`}
-                    aria-label={`Step ${workflowStep.id}: ${workflowStep.label}, ${completion}% information provided`}
-                    title={`Step ${workflowStep.id}: ${workflowStep.label} (${completion}% complete)`}
-                  >
-                    {workflowStep.id}
-                  </button>
-                })}
+                    className={profileEntryMode === 'manual' ? 'build-profile-entry-mode-active' : undefined}
+                    aria-label="Manual Entry"
+                    aria-pressed={profileEntryMode === 'manual'}
+                    onClick={() => setProfileEntryMode('manual')}
+                  >Manual<br />Entry</button>
+                  <button
+                    type="button"
+                    className={profileEntryMode === 'voice' ? 'build-profile-entry-mode-active' : undefined}
+                    aria-label="Voice Guided Entry"
+                    aria-pressed={profileEntryMode === 'voice'}
+                    onClick={() => setProfileEntryMode('voice')}
+                  >Voice Guided<br />Entry</button>
+                </div>
               </div>
+              {profileEntryMode === 'voice' ? <BuildProfileVoiceAssistant currentStep={profile.step} /> : null}
             </div>
             <div className="build-profile-workflow-column build-profile-workflow-retrieve">
               <div className="build-profile-workflow-column-heading">

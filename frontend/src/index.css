@@ -5179,6 +5179,31 @@ th { color: var(--dark-gold); }
   font-size: 0.78rem;
 }
 
+.build-profile-voice-review-list {
+  display: grid;
+  gap: 6px;
+  max-height: 190px;
+  margin: 8px 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+
+.build-profile-voice-review-list li {
+  display: grid;
+  gap: 2px;
+  padding: 7px 9px;
+  border-left: 3px solid #2563eb;
+  background: #ffffff;
+  color: #172554;
+  font-size: 0.74rem;
+}
+
+.build-profile-voice-review-list li strong {
+  font-size: 0.68rem;
+  text-transform: uppercase;
+}
+
 .build-profile-voice-actions {
   display: flex;
   flex-wrap: wrap;
@@ -5219,6 +5244,41 @@ th { color: var(--dark-gold); }
   gap: 8px;
 }
 
+.build-profile-workflow-entry-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 14px;
+  align-items: start;
+}
+
+.build-profile-entry-modes {
+  display: grid;
+  grid-template-columns: repeat(2, 86px);
+  gap: 8px;
+}
+
+.build-profile-entry-modes button {
+  width: 86px;
+  min-height: 76px;
+  padding: 8px 6px;
+  border: 2px solid #334155;
+  border-radius: 0;
+  background: #dbeafe;
+  color: #17365d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.18;
+  cursor: pointer;
+}
+
+.build-profile-entry-modes button:hover,
+.build-profile-entry-modes button:focus-visible,
+.build-profile-entry-modes .build-profile-entry-mode-active {
+  border-color: #0f4c81;
+  background: #bfdbfe;
+  box-shadow: inset 0 -4px 0 #2563eb;
+}
+
 .build-profile-workflow-action {
   width: 100%;
   min-height: 42px;
@@ -5252,17 +5312,17 @@ th { color: var(--dark-gold); }
 
 .build-profile-workflow-steps {
   display: grid;
-  grid-template-columns: repeat(6, 40px);
+  grid-template-columns: repeat(6, 36px);
   justify-content: start;
-  gap: 10px;
+  gap: 8px;
   padding: 0;
 }
 
 .build-profile-workflow-step {
   display: inline-grid;
   place-items: center;
-  width: 40px;
-  height: 40px;
+  width: 36px;
+  height: 36px;
   padding: 0;
   border: 2px solid transparent;
   border-radius: 6px;
@@ -6750,7 +6810,7 @@ th { color: var(--dark-gold); }
 
 @media (max-width: 960px) {
   .build-profile-workflow-steps {
-    grid-template-columns: repeat(6, 40px);
+    grid-template-columns: repeat(6, 36px);
   }
 }
 
@@ -6820,8 +6880,12 @@ th { color: var(--dark-gold); }
     grid-column: 1 / -1;
   }
 
+  .build-profile-workflow-entry-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .build-profile-workflow-steps {
-    grid-template-columns: repeat(4, 40px);
+    grid-template-columns: repeat(4, 36px);
   }
 
   .build-profile-score-links {

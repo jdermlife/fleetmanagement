@@ -80,25 +80,59 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText(/^PRO-[A-Z0-9]{6}$/)).toBeTruthy()
     expect(screen.getByLabelText('2% profile completion')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(12)
+    expect(screen.getByRole('button', { name: 'Manual Entry' }).getAttribute('aria-pressed')).toBe('true')
+    expect(screen.getByRole('button', { name: 'Voice Guided Entry' }).getAttribute('aria-pressed')).toBe('false')
+    expect(screen.queryByRole('region', { name: 'Voice-guided profile entry' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
   })
 
   it('applies an accepted voice response through the Build Profile autosave flow', async () => {
     vi.stubGlobal('webkitSpeechRecognition', MockProfileSpeechRecognition)
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-VOICE1',
+      step: 1,
+      values: {
+        mobileNumber: '09171234567',
+        governmentId: 'ID-123',
+        placeOfBirth: 'Manila',
+        gender: 'Male',
+        dependents: '0',
+        citizenship: 'Filipino',
+        civilStatus: 'Single',
+        homePhoneNumber: '021234567',
+        tin: 'TIN-123',
+        sssGsis: 'SSS-123',
+        otherGovernmentId: 'Passport',
+        otherGovernmentIdNumber: 'P-123',
+        address: 'Makati City',
+        permanentAddress: 'Makati City',
+        mailingAddress: 'Makati City',
+        lengthOfStay: '5 years',
+        homeOwnership: 'Own',
+        education: 'College Degree',
+        numberOfVehiclesOwned: '1',
+      },
+    }))
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
+    await user.click(screen.getByRole('button', { name: 'Voice Guided Entry' }))
     await user.click(screen.getByRole('button', { name: 'Answer profile questions by voice' }))
     expect(MockProfileSpeechRecognition.current?.start).toHaveBeenCalled()
 
     act(() => MockProfileSpeechRecognition.current?.respond('Jordan Santos'))
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('')
-    await user.click(screen.getByRole('button', { name: 'Apply Response' }))
+    expect(screen.getByText('Listening for Email Address...')).toBeTruthy()
+    act(() => MockProfileSpeechRecognition.current?.respond('jordan@example.com'))
+    expect(screen.getByText(/All voice-compatible questions are answered/)).toBeTruthy()
+    await user.click(screen.getByRole('button', { name: 'Apply All Answers' }))
 
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
+    expect((screen.getByLabelText('Email Address') as HTMLInputElement).value).toBe('jordan@example.com')
     await waitFor(() => {
       const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
       expect(savedProfile.values.fullName).toBe('Jordan Santos')
+      expect(savedProfile.values.email).toBe('jordan@example.com')
     })
   })
 
