@@ -19,6 +19,14 @@ vi.mock('@react-oauth/google', () => ({
   ),
 }))
 
+vi.mock('@marsidev/react-turnstile', () => ({
+  Turnstile: ({ onSuccess }: { onSuccess?: (token: string) => void }) => (
+    <button type="button" onClick={() => onSuccess?.('turnstile-token-123')}>
+      Complete security verification
+    </button>
+  ),
+}))
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return {
@@ -83,6 +91,7 @@ describe('LoginPage Apple sign-in', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'google-client-id')
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'turnstile-site-key')
     const storageMock = createStorageMock()
     Object.defineProperty(window, 'localStorage', {
       value: storageMock,
@@ -117,6 +126,8 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.getByPlaceholderText('Email or username')).toBeTruthy()
     expect(screen.getByPlaceholderText('Password')).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Log In' })).toBeTruthy()
+    expect((screen.getByRole('button', { name: 'Log In' }) as HTMLButtonElement).disabled).toBe(true)
+    expect(screen.getByRole('button', { name: 'Complete security verification' })).toBeTruthy()
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
   })
 
@@ -158,12 +169,14 @@ describe('LoginPage Apple sign-in', () => {
     await user.click(screen.getByRole('button', { name: 'Other Email' }))
     await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
     await user.type(screen.getByPlaceholderText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Complete security verification' }))
     await user.click(screen.getByRole('button', { name: 'Log In' }))
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         username: 'email-user@example.com',
         password: 'password123',
+        turnstileToken: 'turnstile-token-123',
       })
       expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary')
     })
@@ -185,6 +198,7 @@ describe('LoginPage Apple sign-in', () => {
     await user.click(screen.getByRole('button', { name: 'Other Email' }))
     await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
     await user.type(screen.getByPlaceholderText('Password'), 'incorrect-password')
+    await user.click(screen.getByRole('button', { name: 'Complete security verification' }))
     await user.click(screen.getByRole('button', { name: 'Log In' }))
 
     expect(screen.getByRole('dialog', { name: 'Signing you in' })).toBeTruthy()

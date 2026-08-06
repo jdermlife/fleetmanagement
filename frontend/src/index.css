@@ -7114,6 +7114,24 @@ th { color: var(--dark-gold); }
   padding: 0;
 }
 
+.login-art-turnstile {
+  min-height: 65px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.login-art-turnstile > div {
+  width: 100%;
+}
+
+.login-art-turnstile-note {
+  color: #4c2700;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-align: center;
+}
+
 .login-art-submit {
   width: 100%;
   min-height: 64px;

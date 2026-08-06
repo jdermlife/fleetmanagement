@@ -482,7 +482,7 @@ export default function AccountSettingsPage() {
       <form className="card auth-panel auth-danger-panel" onSubmit={handleDeleteAccount}>
         <h3>Delete Account</h3>
         <p className="intro">
-          This action disables account access. Type <strong>DELETE</strong> to confirm.
+          This action disables account access and associated data. Type <strong>DELETE</strong> to confirm.
         </p>
 
         <label>

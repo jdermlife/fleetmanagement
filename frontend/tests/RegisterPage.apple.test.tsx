@@ -3,8 +3,9 @@ import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockNavigate, mockRequestAppleSignInToken, mockLoginWithApple } = vi.hoisted(() => ({
+const { mockNavigate, mockRegister, mockRequestAppleSignInToken, mockLoginWithApple } = vi.hoisted(() => ({
   mockNavigate: vi.fn(),
+  mockRegister: vi.fn(),
   mockRequestAppleSignInToken: vi.fn(),
   mockLoginWithApple: vi.fn(),
 }))
@@ -31,7 +32,7 @@ vi.mock('../src/api', () => ({
   login: vi.fn(),
   loginWithGoogle: vi.fn(),
   loginWithApple: mockLoginWithApple,
-  register: vi.fn(),
+  register: mockRegister,
 }))
 
 import RegisterPage from '../src/pages/auth/RegisterPage'
@@ -57,6 +58,12 @@ describe('RegisterPage Apple sign-up', () => {
   beforeEach(() => {
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     mockNavigate.mockReset()
+    mockRegister.mockReset()
+    mockRegister.mockResolvedValue({
+      token: 'registration-access-token',
+      refreshToken: 'registration-refresh-token',
+      user: { id: 10, role: 'subscriber_borrower' },
+    })
     mockRequestAppleSignInToken.mockReset()
     mockLoginWithApple.mockReset()
     const values = new Map<string, string>()
@@ -146,6 +153,37 @@ describe('RegisterPage Apple sign-up', () => {
     expect(screen.getByLabelText('Password')).toBeTruthy()
     expect(screen.getByLabelText('Confirm password')).toBeTruthy()
     expect(screen.getByRole('button', { name: /create account/i })).toBeTruthy()
+  })
+
+  it('uses the authenticated registration response without a second password login', async () => {
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = userEvent.setup()
+    const consentBoxes = screen.getAllByRole('checkbox')
+    await user.click(consentBoxes[0])
+    await user.click(consentBoxes[1])
+    await user.click(screen.getByRole('button', { name: /other email/i }))
+    await user.type(screen.getByLabelText('Username'), 'new-user')
+    await user.type(screen.getByLabelText('Email'), 'new-user@example.com')
+    await user.type(screen.getByLabelText('Cellphone Number'), '09171234567')
+    await user.type(screen.getByLabelText('Password'), 'password123')
+    await user.type(screen.getByLabelText('Confirm password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Create Account' }))
+
+    await waitFor(() => {
+      expect(mockRegister).toHaveBeenCalledWith({
+        username: 'new-user',
+        email: 'new-user@example.com',
+        password: 'password123',
+        subscriberType: 'borrower',
+        lenderDataSharingConsent: false,
+      })
+      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
+    })
   })
 
   it('redirects expired trial users to the trial reminder page', async () => {

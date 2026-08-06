@@ -11,6 +11,7 @@ import {
   type WorkflowStatus,
 } from "../../api/loan";
 import Authorize from "../../components/auth/Authorize";
+import AuthProgressOverlay from "../../components/auth/AuthProgressOverlay";
 import { useAuthorization } from "../../hooks/useAuthorization";
 
 const statusOptions: Array<"All" | WorkflowStatus> = [
@@ -922,6 +923,16 @@ export default function LoanRepository() {
           </div>
         </div>
       </div>
+
+      {isImporting ? (
+        <AuthProgressOverlay
+          idPrefix="loan-repository-uploading"
+          kicker="Record repository"
+          title="Uploading your records"
+          description="Validating the selected file, importing loan records, and refreshing the repository."
+          footnote="Please keep this window open until the upload is complete."
+        />
+      ) : null}
     </div>
   );
 }

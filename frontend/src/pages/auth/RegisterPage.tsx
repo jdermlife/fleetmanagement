@@ -3,7 +3,7 @@ import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 
-import { createFreeSubscription, getErrorMessage, login, loginWithApple, loginWithGoogle, register } from '../../api'
+import { createFreeSubscription, getErrorMessage, loginWithApple, loginWithGoogle, register } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
 import {
   REGISTER_SUBSCRIBER_OPTIONS,
@@ -138,14 +138,13 @@ export default function RegisterPage() {
     setMessage('')
 
     try {
-      await register({
+      const loginResponse = await register({
         username,
         email,
         password,
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
       })
-      const loginResponse = await login({ username, password })
       await createFreeSubscription({ user_id: loginResponse.user.id })
       openFinancialHealthJourney()
     } catch (error) {

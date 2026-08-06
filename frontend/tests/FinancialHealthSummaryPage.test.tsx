@@ -202,6 +202,48 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText(/Net worth ₱1,250,000/)).toBeTruthy()
   })
 
+  it('reports investments outside the Step 11 risk appetite', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-CONSERVATIVE',
+      values: {},
+      documents: [],
+      suitabilityAnswers: Object.fromEntries(Array.from({ length: 8 }, (_, index) => [`suitability-q${index + 1}`, '2'])),
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+      financialInvestments: [
+        { investmentType: 'Bond', issuerAsset: 'Treasury Bond', riskRating: 'Low' },
+        { investmentType: 'Equity (Stock)', issuerAsset: 'Growth Equity Fund', riskRating: 'High' },
+      ],
+    }))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const riskAlerts = (await screen.findByText('5. Risk Alerts')).closest('article')!
+    expect(within(riskAlerts).getByText(/Growth Equity Fund is outside your Conservative risk appetite/)).toBeTruthy()
+    expect(within(riskAlerts).queryByText(/Treasury Bond is outside/)).toBeNull()
+  })
+
+  it('confirms recorded investments are within the Step 11 risk appetite', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-AGGRESSIVE',
+      values: {},
+      documents: [],
+      suitabilityAnswers: Object.fromEntries(Array.from({ length: 8 }, (_, index) => [`suitability-q${index + 1}`, '4'])),
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+      financialInvestments: [
+        { investmentType: 'Alternative', issuerAsset: 'Private Markets Fund', riskRating: 'High' },
+      ],
+    }))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const riskAlerts = (await screen.findByText('5. Risk Alerts')).closest('article')!
+    expect(within(riskAlerts).getByText('All recorded investments are within your Aggressive risk appetite based on the Step 11 Suitability Assessment.')).toBeTruthy()
+  })
+
   it('hides Calculation Transparency from non-admin users', () => {
     authorization.isAdmin = false
 

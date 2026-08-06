@@ -63,6 +63,8 @@ export FRONTEND_ORIGIN_REGEX="^https://fleetmanagement(?:-[a-z0-9-]+)?(?:-jdione
 export GOOGLE_OAUTH_CLIENT_ID="<your-google-web-client-id>"
 export APPLE_OAUTH_CLIENT_ID="<your-apple-service-id>"
 export APPLE_JWKS_CACHE_TTL_SECONDS="3600"
+export TURNSTILE_REQUIRED="true"
+export TURNSTILE_SECRET_KEY="<your-cloudflare-turnstile-secret-key>"
 
 # AI Services (if enabled)
 export OPENAI_API_KEY="<your-openai-api-key>"
@@ -88,6 +90,7 @@ VITE_API_URL=https://api.yourdomain.com
 VITE_GOOGLE_CLIENT_ID=<your-google-web-client-id>
 VITE_APPLE_CLIENT_ID=<your-apple-service-id>
 VITE_APPLE_REDIRECT_URI=https://app.yourdomain.com
+VITE_TURNSTILE_SITE_KEY=<your-cloudflare-turnstile-site-key>
 ```
 
 ### Apple Sign-In Production Checklist

@@ -34,4 +34,7 @@ export const APP_CONFIG = {
   get googleRedirect() {
     return `${getCurrentOrigin()}/auth/google/callback`
   },
+  get turnstileSiteKey() {
+    return import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() || ''
+  },
 } as const

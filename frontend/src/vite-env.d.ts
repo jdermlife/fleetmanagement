@@ -5,6 +5,7 @@ declare interface ImportMetaEnv {
   readonly VITE_GOOGLE_CLIENT_ID?: string
   readonly VITE_GOOGLE_ALLOWED_HOSTS?: string
   readonly VITE_APPLE_CLIENT_ID?: string
+  readonly VITE_TURNSTILE_SITE_KEY?: string
   readonly VITE_PAYMENT_DEFAULT_CHANNEL?: string
   readonly VITE_PAYMENT_BANK_ACCOUNT_NAME?: string
   readonly VITE_PAYMENT_BANK_ACCOUNT_NO?: string

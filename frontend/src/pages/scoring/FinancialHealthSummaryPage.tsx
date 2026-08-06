@@ -81,6 +81,11 @@ type Step8ProfileMetrics = {
   protectionLevelAmount: number
 }
 
+type InvestmentSuitabilityRisk = {
+  outsideRiskAppetite: string[]
+  profile: 'Risk Averse' | 'Conservative' | 'Moderate' | 'Aggressive' | 'Pending'
+}
+
 type VitalGuidance = {
   positive: string
   negative: string
@@ -574,6 +579,48 @@ function formatThousands(value: number): string {
   return `${new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value / 1000)}k`
 }
 
+function resolveInvestmentSuitabilityRisk(
+  suitabilityAnswers: Record<string, string>,
+  investments: Array<Record<string, string>>,
+): InvestmentSuitabilityRisk {
+  const answers = Array.from({ length: 8 }, (_, index) => Number(suitabilityAnswers[`suitability-q${index + 1}`]))
+  if (answers.some((answer) => answer < 1 || answer > 4)) {
+    return { outsideRiskAppetite: [], profile: 'Pending' }
+  }
+
+  const score = answers.reduce((sum, answer) => sum + answer, 0)
+  const appetite = score <= 8
+    ? { level: 1, profile: 'Risk Averse' as const }
+    : score <= 16
+      ? { level: 2, profile: 'Conservative' as const }
+      : score <= 27
+        ? { level: 3, profile: 'Moderate' as const }
+        : { level: 4, profile: 'Aggressive' as const }
+  const typeRiskLevel: Record<string, number> = {
+    Bond: 2,
+    'Mutual Fund': 3,
+    'Equity (Stock)': 3,
+    Alternative: 4,
+  }
+
+  const outsideRiskAppetite = investments.flatMap((investment) => {
+    const typeLevel = typeRiskLevel[investment.investmentType] ?? 0
+    const normalizedRating = investment.riskRating?.trim().toLowerCase() ?? ''
+    const ratingLevel = /high|aggressive|speculative/.test(normalizedRating)
+      ? 4
+      : /medium|moderate/.test(normalizedRating)
+        ? 3
+        : /low|conservative/.test(normalizedRating)
+          ? 1
+          : 0
+    if (Math.max(typeLevel, ratingLevel) <= appetite.level) return []
+
+    return [investment.issuerAsset?.trim() || investment.investmentType?.trim() || 'Unnamed investment']
+  })
+
+  return { outsideRiskAppetite, profile: appetite.profile }
+}
+
 export default function FinancialHealthSummaryPage() {
   const { isAdmin } = useAuthorization()
   const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
@@ -597,6 +644,10 @@ export default function FinancialHealthSummaryPage() {
     actualNetWorth: 0,
     netIncome: 0,
     protectionLevelAmount: 0,
+  })
+  const [investmentSuitabilityRisk, setInvestmentSuitabilityRisk] = useState<InvestmentSuitabilityRisk>({
+    outsideRiskAppetite: [],
+    profile: 'Pending',
   })
   const [journeyStepCompletion, setJourneyStepCompletion] = useState<Record<JourneyStepId, boolean>>({
     createProfile: false,
@@ -657,6 +708,10 @@ export default function FinancialHealthSummaryPage() {
           const buildProfileDraft = readReplicatedBuildProfile()
 
           setStep8ProfileMetrics(resolveStep8ProfileMetrics(buildProfileDraft?.values ?? {}))
+          setInvestmentSuitabilityRisk(resolveInvestmentSuitabilityRisk(
+            buildProfileDraft?.suitabilityAnswers ?? {},
+            buildProfileDraft?.financialInvestments ?? [],
+          ))
 
           const buildProfileActualEntries = Object.fromEntries(Object.entries(buildProfileDraft?.values ?? {})
             .filter(([key, value]) => key.startsWith('wealthActual.') && value.trim() !== '')
@@ -844,9 +899,15 @@ export default function FinancialHealthSummaryPage() {
     .sort((left, right) => left.score - right.score)
     .slice(0, 3)
   const totalLiabilities = netWorthBuildingScore?.metrics.totalLiabilities ?? 0
+  const investmentRiskAlertCount = investmentSuitabilityRisk.outsideRiskAppetite.length
   const riskNarration = riskIndicators.length === 0
     ? 'Well positioned. No alerts right now.'
     : `${riskIndicators.map((indicator) => indicator.label).join(', ')} ${riskIndicators.length === 1 ? 'is' : 'are'} below the 80-point target and may hold back your overall financial health.`
+  const investmentRiskNarration = investmentSuitabilityRisk.profile === 'Pending'
+    ? 'Complete Build Profile Step 11 Suitability Assessment to evaluate investments against your risk appetite.'
+    : investmentRiskAlertCount > 0
+      ? `${investmentSuitabilityRisk.outsideRiskAppetite.join(', ')} ${investmentRiskAlertCount === 1 ? 'is' : 'are'} outside your ${investmentSuitabilityRisk.profile} risk appetite based on the Step 11 Suitability Assessment.`
+      : `All recorded investments are within your ${investmentSuitabilityRisk.profile} risk appetite based on the Step 11 Suitability Assessment.`
   const opportunityNarration = totalLiabilities > 0
     ? `You have ${new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(totalLiabilities)} in liabilities. Review interest rates and consider whether debt consolidation could lower your cost. Then focus on rebuilding ${opportunityIndicators.map((indicator) => indicator.label).join(', ') || 'your financial buffer'}.`
     : opportunityIndicators.length > 0
@@ -1178,8 +1239,9 @@ export default function FinancialHealthSummaryPage() {
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-alert">
           <span>5. Risk Alerts</span>
-          <strong>{riskIndicators.length}</strong>
+          <strong>{riskIndicators.length + investmentRiskAlertCount}</strong>
           <small>{riskNarration}</small>
+          <small>{investmentRiskNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-opportunity">
           <span>6. Opportunities</span>

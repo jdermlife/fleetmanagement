@@ -368,6 +368,7 @@ export function getApiBaseUrl(): string {
 export interface LoginRequest {
   username: string
   password: string
+  turnstileToken?: string
 }
 
 export interface GoogleLoginRequest {
@@ -481,7 +482,11 @@ function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   await ensureHealthyApiBaseUrl()
-  const response = await api.post('/api/auth/login', credentials)
+  const response = await api.post('/api/auth/login', {
+    username: credentials.username,
+    password: credentials.password,
+    turnstile_token: credentials.turnstileToken,
+  })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
 
@@ -550,7 +555,7 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
   }
 }
 
-export async function register(data: RegisterRequest): Promise<LoginResponse['user']> {
+export async function register(data: RegisterRequest): Promise<LoginResponse> {
   await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/register', {
     username: data.username,
@@ -560,10 +565,15 @@ export async function register(data: RegisterRequest): Promise<LoginResponse['us
     lender_data_sharing_consent: data.lenderDataSharingConsent,
   })
   const responseData = response.data as Record<string, unknown>
-  const rawUser =
-    (responseData.user as Record<string, unknown> | undefined) ??
-    (response.data as Record<string, unknown>)
-  return normalizeAuthUser(rawUser)
+  const rawUser = responseData.user as Record<string, unknown> | undefined
+  if (!rawUser) {
+    throw new Error('Unexpected registration response received from the backend.')
+  }
+
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
+  const currentUser = storeCurrentUser(normalizeAuthUser(rawUser))
+  currentUserRequest = null
+  return { token: accessToken, refreshToken, user: currentUser }
 }
 
 export async function logout(): Promise<void> {
