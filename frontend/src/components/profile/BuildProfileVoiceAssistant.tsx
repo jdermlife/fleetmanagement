@@ -105,6 +105,7 @@ function resolveFieldValue(field: VoiceField, transcript: string): string | null
     value = selectedValue
   } else if (field instanceof HTMLInputElement && (field.type === 'number' || field.inputMode === 'decimal')) {
     value = value.replace(/[^\d.-]/g, '')
+    if (!value && normalizeText(transcript).split(' ').includes('zero')) value = '0'
     if (!value) return null
   }
 
@@ -129,6 +130,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
   const queueRef = useRef<VoiceField[]>([])
   const recordedAnswersRef = useRef<RecordedAnswer[]>([])
   const sessionActiveRef = useRef(false)
+  const invalidAttemptsRef = useRef(0)
   const [fieldName, setFieldName] = useState('')
   const [message, setMessage] = useState('Select the microphone to answer all incomplete fields in this step.')
   const [recordedAnswers, setRecordedAnswers] = useState<RecordedAnswer[]>([])
@@ -150,6 +152,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
     sessionActiveRef.current = false
     queueRef.current = []
     recordedAnswersRef.current = []
+    invalidAttemptsRef.current = 0
     setRecordedAnswers([])
     setIsReviewing(false)
     setFieldName('')
@@ -213,11 +216,19 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
 
       const value = resolveFieldValue(field, response)
       if (value === null) {
+        invalidAttemptsRef.current += 1
+        if (invalidAttemptsRef.current >= 2) {
+          invalidAttemptsRef.current = 0
+          setMessage(`${label} requires manual entry. Moving to the next question.`)
+          speak('Please manual entry the response', () => askQuestion(index + 1))
+          return
+        }
         setMessage(`${label} did not match an available option or number. Listening again...`)
         speak(`That response was not valid for ${label}. Please try again.`, () => askQuestion(index))
         return
       }
 
+      invalidAttemptsRef.current = 0
       const answer = { field, label, transcript: response, value }
       const nextAnswers = [...recordedAnswersRef.current, answer]
       recordedAnswersRef.current = nextAnswers
