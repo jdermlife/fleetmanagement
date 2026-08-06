@@ -25,10 +25,10 @@ if (isReleaseBuildRequested && !hasReleaseKeystore) {
 }
 
 android {
-    namespace = "com.fms.mobile"
+    namespace = "com.quantech.filscore"
     compileSdk = rootProject.ext.compileSdkVersion
     defaultConfig {
-        applicationId "com.fms.mobile"
+        applicationId "com.quantech.filscore"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 2

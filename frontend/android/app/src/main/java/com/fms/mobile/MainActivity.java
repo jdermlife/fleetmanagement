@@ -1,4 +1,4 @@
-package com.fms.mobile;
+package com.quantech.filscore;
 
 import com.getcapacitor.BridgeActivity;
 
