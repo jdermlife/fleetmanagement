@@ -9,6 +9,7 @@ import {
   type LoanApplicationRecord,
 } from '../../api/loan'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
+import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAiAdvisories } from './aiAdvisoryEngine'
@@ -2584,6 +2585,7 @@ export default function BuildProfilePage() {
                 <h2>Build your Profile</h2>
                 <small>Step {profile.step} of 12: {currentStep.label}</small>
               </div>
+              <BuildProfileVoiceAssistant currentStep={profile.step} />
               <div className="build-profile-workflow-steps">
                 {WORKFLOW_STEPS.map((workflowStep) => {
                   const completion = stepCompletion[workflowStep.id]

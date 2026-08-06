@@ -1,4 +1,4 @@
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react'
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -26,6 +26,26 @@ vi.mock('../src/api/loan', () => ({
 }))
 
 import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
+
+class MockProfileSpeechRecognition {
+  static current: MockProfileSpeechRecognition | null = null
+  continuous = false
+  interimResults = false
+  lang = ''
+  onend: (() => void) | null = null
+  onerror: ((event: Event & { error: string }) => void) | null = null
+  onresult: ((event: Event & { results: ArrayLike<{ 0: { transcript: string } }> }) => void) | null = null
+  start = vi.fn()
+  stop = vi.fn()
+
+  constructor() {
+    MockProfileSpeechRecognition.current = this
+  }
+
+  respond(transcript: string) {
+    this.onresult?.({ results: [{ 0: { transcript } }] } as unknown as Event & { results: ArrayLike<{ 0: { transcript: string } }> })
+  }
+}
 
 describe('BuildProfilePage', () => {
   beforeEach(() => {
@@ -61,6 +81,25 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('2% profile completion')).toBeTruthy()
     expect(screen.getAllByRole('button', { name: /information provided/ })).toHaveLength(12)
     expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
+  })
+
+  it('applies an accepted voice response through the Build Profile autosave flow', async () => {
+    vi.stubGlobal('webkitSpeechRecognition', MockProfileSpeechRecognition)
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: 'Answer profile questions by voice' }))
+    expect(MockProfileSpeechRecognition.current?.start).toHaveBeenCalled()
+
+    act(() => MockProfileSpeechRecognition.current?.respond('Jordan Santos'))
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('')
+    await user.click(screen.getByRole('button', { name: 'Apply Response' }))
+
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
+    await waitFor(() => {
+      const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+      expect(savedProfile.values.fullName).toBe('Jordan Santos')
+    })
   })
 
   it('collapses and expands the Build your Profile workflow menu', async () => {
