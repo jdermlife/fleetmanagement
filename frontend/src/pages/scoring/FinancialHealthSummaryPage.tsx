@@ -207,7 +207,7 @@ function trendSeriesPath(series: FinancialHealthTrendSeries): string {
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   {
     id: 'createProfile',
-    label: 'Create Profile',
+    label: 'Create/Update Profile',
     launchLabel: 'Create Profile',
     route: '/build-profile',
     description:
@@ -239,7 +239,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billsLoans',
-    label: 'Optimize',
+    label: 'Optimize Resources',
     launchLabel: 'Optimize Loan',
     route: '/loan-monitoring',
     description:
