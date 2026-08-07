@@ -123,7 +123,7 @@ async def credit_advisor(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
             openai_model=os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini"),
-            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.2:3b"),
         )
 
         elapsed_ms = int((time.perf_counter() - started_at) * 1000)
@@ -213,7 +213,7 @@ async def credit_card_risk_check(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
             openai_model=os.getenv("OPENAI_CHAT_MODEL", "gpt-4.1-mini"),
-            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.1:8b"),
+            ollama_model=os.getenv("OLLAMA_MODEL", "llama3.2:3b"),
         )
 
         elapsed_ms = int((time.perf_counter() - started_at) * 1000)

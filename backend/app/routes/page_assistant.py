@@ -16,6 +16,7 @@ from app.services.page_assistant_service import (
     AI_DISCLAIMER,
     answer_page_assistant,
 )
+from app.services.ai_provider import OpenAIQuotaExhaustedError
 
 
 router = APIRouter()
@@ -35,7 +36,8 @@ def _answer(payload: PageAssistantRequest, current_user: CurrentUser | None) -> 
             role=current_user.role if current_user else None,
         )
 
-        if result.provider_result is not None:
+        governance_logging_enabled = os.getenv("AI_GOVERNANCE_LOGGING_ENABLED", "true").lower() == "true"
+        if result.provider_result is not None and governance_logging_enabled:
             try:
                 governance_db = SessionLocal()
                 request_log = create_ai_request(
@@ -72,6 +74,14 @@ def _answer(payload: PageAssistantRequest, current_user: CurrentUser | None) -> 
             refused=result.refused,
             disclaimer=AI_DISCLAIMER,
         )
+    except OpenAIQuotaExhaustedError as exc:
+        raise HTTPException(
+            status_code=503,
+            detail={
+                "code": "openai_quota_exhausted",
+                "message": "OpenAI usage is exhausted; the local assistant fallback may be used.",
+            },
+        ) from exc
     except Exception as exc:
         if governance_db is not None and request_log is not None:
             try:

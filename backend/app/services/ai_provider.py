@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import os
 import time
+from collections.abc import Mapping
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 from openai import OpenAI
@@ -20,6 +22,18 @@ class AITextResult:
 
 
 _openai_client: OpenAI | None = None
+
+OPENAI_QUOTA_ERROR_CODES = {
+    "billing_hard_limit_reached",
+    "credit_balance_exhausted",
+    "insufficient_quota",
+    "organization_spend_limit_exceeded",
+    "project_spend_limit_exceeded",
+}
+
+
+class OpenAIQuotaExhaustedError(RuntimeError):
+    """Raised only when OpenAI reports an exhausted credit or spend quota."""
 
 
 def _normalize_mode(value: str | None) -> str:
@@ -40,6 +54,36 @@ def _get_openai_client() -> OpenAI:
         _openai_client = OpenAI(api_key=api_key)
 
     return _openai_client
+
+
+def _openai_error_details(exc: Exception) -> tuple[str, str, str]:
+    body: Any = getattr(exc, "body", None)
+    if isinstance(body, Mapping):
+        nested_error = body.get("error")
+        details = nested_error if isinstance(nested_error, Mapping) else body
+    else:
+        details = {}
+
+    code = str(details.get("code") or getattr(exc, "code", "") or "").strip().lower()
+    error_type = str(details.get("type") or getattr(exc, "type", "") or "").strip().lower()
+    message = str(details.get("message") or str(exc) or "").strip().lower()
+    return code, error_type, message
+
+
+def is_openai_quota_exhausted(exc: Exception) -> bool:
+    code, error_type, message = _openai_error_details(exc)
+    if code in OPENAI_QUOTA_ERROR_CODES or error_type == "insufficient_quota":
+        return True
+
+    quota_phrases = (
+        "credit balance is exhausted",
+        "exceeded your current quota",
+        "insufficient quota",
+        "organization spend limit",
+        "project spend limit",
+        "billing hard limit",
+    )
+    return any(phrase in message for phrase in quota_phrases)
 
 
 def _build_text_prompt(system_prompt: str, user_prompt: str) -> str:
@@ -77,6 +121,26 @@ def _call_openai(
         total_tokens=total_tokens,
         latency_ms=latency_ms,
     )
+
+
+def _call_openai_with_quota_detection(
+    *,
+    user_prompt: str,
+    system_prompt: str,
+    model_name: str,
+) -> AITextResult:
+    try:
+        return _call_openai(
+            user_prompt=user_prompt,
+            system_prompt=system_prompt,
+            model_name=model_name,
+        )
+    except Exception as exc:
+        if is_openai_quota_exhausted(exc):
+            raise OpenAIQuotaExhaustedError(
+                "OpenAI credits or the configured spend limit are exhausted."
+            ) from exc
+        raise
 
 
 def _call_ollama(
@@ -125,14 +189,17 @@ def generate_text_with_fallback(
     user_prompt: str,
     system_prompt: str,
     openai_model: str = "gpt-4.1-mini",
-    ollama_model: str = "llama3.1:8b",
+    ollama_model: str = "llama3.2:3b",
 ) -> AITextResult:
     provider_mode = _normalize_mode(os.getenv("AI_PROVIDER_MODE"))
     hybrid_primary = (os.getenv("AI_HYBRID_PRIMARY", "openai") or "openai").strip().lower()
+    fallback_policy = (os.getenv("AI_HYBRID_FALLBACK_POLICY", "quota_only") or "quota_only").strip().lower()
+    if fallback_policy not in {"quota_only", "any_error"}:
+        fallback_policy = "quota_only"
     ollama_base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434").strip()
 
     if provider_mode == "openai":
-        return _call_openai(
+        return _call_openai_with_quota_detection(
             user_prompt=user_prompt,
             system_prompt=system_prompt,
             model_name=openai_model,
@@ -158,7 +225,7 @@ def generate_text_with_fallback(
     for provider in (first_provider, second_provider):
         try:
             if provider == "openai":
-                return _call_openai(
+                return _call_openai_with_quota_detection(
                     user_prompt=user_prompt,
                     system_prompt=system_prompt,
                     model_name=openai_model,
@@ -170,9 +237,17 @@ def generate_text_with_fallback(
                 model_name=ollama_model,
                 base_url=ollama_base_url,
             )
-        except Exception as exc:  # pragma: no cover - best effort provider fallback
+        except Exception as exc:
             if first_error is None:
                 first_error = exc
+
+                should_fallback = (
+                    provider == "ollama"
+                    or fallback_policy == "any_error"
+                    or isinstance(exc, OpenAIQuotaExhaustedError)
+                )
+                if not should_fallback:
+                    raise
 
     if first_error:
         raise first_error

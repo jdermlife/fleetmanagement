@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 
-import { DEFAULT_GOOGLE_CLIENT_ID, resolveApiBase, resolveGoogleClientId } from '../src/config'
+import {
+  DEFAULT_GOOGLE_CLIENT_ID,
+  DEFAULT_OLLAMA_FALLBACK_URL,
+  resolveApiBase,
+  resolveGoogleClientId,
+  resolveOllamaFallbackUrl,
+} from '../src/config'
 
 describe('resolveApiBase', () => {
   it('uses the configured backend URL in production', () => {
@@ -29,5 +35,17 @@ describe('resolveGoogleClientId', () => {
 
   it('keeps Google Sign-In enabled when a deployment omits the build variable', () => {
     expect(resolveGoogleClientId(undefined)).toBe(DEFAULT_GOOGLE_CLIENT_ID)
+  })
+})
+
+describe('resolveOllamaFallbackUrl', () => {
+  it('uses a configured fallback without a trailing slash', () => {
+    expect(resolveOllamaFallbackUrl(' https://example.com/local-ai/ ')).toBe(
+      'https://example.com/local-ai',
+    )
+  })
+
+  it('uses the secured FILSCORE endpoint when no build variable is configured', () => {
+    expect(resolveOllamaFallbackUrl(undefined)).toBe(DEFAULT_OLLAMA_FALLBACK_URL)
   })
 })

@@ -1003,6 +1003,20 @@ export interface PageAssistantResponse {
   disclaimer: string
 }
 
+export function isOpenAiQuotaExhaustionResponse(payload: unknown): boolean {
+  if (!payload || typeof payload !== 'object' || !('detail' in payload)) {
+    return false
+  }
+
+  const detail = (payload as { detail?: unknown }).detail
+  return Boolean(
+    detail
+    && typeof detail === 'object'
+    && 'code' in detail
+    && (detail as { code?: unknown }).code === 'openai_quota_exhausted',
+  )
+}
+
 export async function askPageAssistant(payload: {
   message: string
   pagePath: string
@@ -1012,13 +1026,31 @@ export async function askPageAssistant(payload: {
   const endpoint = payload.authenticated
     ? '/ai/page-assistant'
     : '/ai/page-assistant/public'
-  const response = await api.post<PageAssistantResponse>(endpoint, {
+  const requestBody = {
     message: payload.message,
     page_path: payload.pagePath,
     history: payload.history.slice(-6),
-  })
+  }
 
-  return response.data
+  try {
+    const response = await api.post<PageAssistantResponse>(endpoint, requestBody)
+    return response.data
+  } catch (error) {
+    const shouldUseLocalFallback = (
+      axios.isAxiosError(error)
+      && isOpenAiQuotaExhaustionResponse(error.response?.data)
+    )
+    if (!shouldUseLocalFallback) {
+      throw error
+    }
+
+    const fallbackResponse = await healthCheckClient.post<PageAssistantResponse>(
+      APP_CONFIG.ollamaFallbackUrl,
+      requestBody,
+      { timeout: 120000 },
+    )
+    return fallbackResponse.data
+  }
 }
 
 export interface SubscriptionPlan {

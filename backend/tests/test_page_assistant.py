@@ -1,9 +1,10 @@
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.routes import page_assistant as page_assistant_route
 from app.routes.page_assistant import router
 from app.schemas.ai_governance_schema import PageAssistantHistoryItem
-from app.services.ai_provider import AITextResult
+from app.services.ai_provider import AITextResult, OpenAIQuotaExhaustedError
 from app.services import page_assistant_service as assistant
 
 
@@ -115,3 +116,29 @@ def test_sensitive_history_is_not_forwarded_to_provider(monkeypatch):
     )
 
     assert "hidden scoring algorithm" not in captured["user_prompt"]
+
+
+def test_openai_quota_exhaustion_returns_distributed_fallback_signal(monkeypatch):
+    def quota_exhausted(**_kwargs):
+        raise OpenAIQuotaExhaustedError("credits exhausted")
+
+    monkeypatch.setattr(page_assistant_route, "answer_page_assistant", quota_exhausted)
+    app = FastAPI()
+    app.include_router(router)
+
+    response = TestClient(app).post(
+        "/ai/page-assistant/public",
+        json={
+            "message": "Where can I find customer service?",
+            "page_path": "/login",
+            "history": [],
+        },
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": {
+            "code": "openai_quota_exhausted",
+            "message": "OpenAI usage is exhausted; the local assistant fallback may be used.",
+        }
+    }

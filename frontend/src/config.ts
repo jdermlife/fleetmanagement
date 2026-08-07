@@ -4,6 +4,8 @@ function getCurrentOrigin(): string {
 
 export const DEFAULT_GOOGLE_CLIENT_ID =
   '542183516756-2q3nuh3oui4cjdvcr7hpts6b40kfhheo.apps.googleusercontent.com'
+export const DEFAULT_OLLAMA_FALLBACK_URL =
+  'https://filscore-ai.quantech.international/local-ai/page-assistant'
 
 export function resolveApiBase(configuredApiBase: string | undefined, isDevelopment: boolean): string {
   const normalizedApiBase = configuredApiBase?.trim().replace(/\/$/, '')
@@ -16,6 +18,10 @@ export function resolveApiBase(configuredApiBase: string | undefined, isDevelopm
 
 export function resolveGoogleClientId(configuredClientId: string | undefined): string {
   return configuredClientId?.trim() || DEFAULT_GOOGLE_CLIENT_ID
+}
+
+export function resolveOllamaFallbackUrl(configuredUrl: string | undefined): string {
+  return configuredUrl?.trim().replace(/\/$/, '') || DEFAULT_OLLAMA_FALLBACK_URL
 }
 
 export const APP_CONFIG = {
@@ -33,6 +39,9 @@ export const APP_CONFIG = {
   },
   get googleRedirect() {
     return `${getCurrentOrigin()}/auth/google/callback`
+  },
+  get ollamaFallbackUrl() {
+    return resolveOllamaFallbackUrl(import.meta.env.VITE_OLLAMA_FALLBACK_URL)
   },
   get turnstileSiteKey() {
     return import.meta.env.VITE_TURNSTILE_SITE_KEY?.trim() || ''
