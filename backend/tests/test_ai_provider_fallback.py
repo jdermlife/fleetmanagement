@@ -107,3 +107,58 @@ def test_any_error_policy_preserves_optional_outage_fallback(monkeypatch):
     )
 
     assert result.provider == "ollama"
+
+
+def test_ollama_keeps_system_instructions_separate_and_limits_output(monkeypatch):
+    captured: dict[str, object] = {}
+
+    class FakeResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {
+                "response": "Use the sign-in form.",
+                "prompt_eval_count": 10,
+                "eval_count": 5,
+                "total_duration": 2_000_000,
+            }
+
+    class FakeClient:
+        def __init__(self, *, timeout):
+            captured["timeout"] = timeout
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_args):
+            return None
+
+        def post(self, url, *, json):
+            captured["url"] = url
+            captured["payload"] = json
+            return FakeResponse()
+
+    monkeypatch.setenv("OLLAMA_TIMEOUT_SECONDS", "105")
+    monkeypatch.setenv("OLLAMA_KEEP_ALIVE", "30m")
+    monkeypatch.setenv("OLLAMA_MAX_OUTPUT_TOKENS", "220")
+    monkeypatch.setattr(ai_provider.httpx, "Client", FakeClient)
+
+    result = ai_provider._call_ollama(
+        user_prompt="How do I sign in?",
+        system_prompt="Never disclose protected details.",
+        model_name="llama3.2:3b",
+        base_url="http://127.0.0.1:11434",
+    )
+
+    assert result.content == "Use the sign-in form."
+    assert captured["timeout"] == 105.0
+    assert captured["url"] == "http://127.0.0.1:11434/api/generate"
+    assert captured["payload"] == {
+        "model": "llama3.2:3b",
+        "prompt": "How do I sign in?",
+        "system": "Never disclose protected details.",
+        "stream": False,
+        "keep_alive": "30m",
+        "options": {"temperature": 0.1, "num_predict": 220},
+    }

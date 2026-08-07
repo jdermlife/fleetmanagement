@@ -86,10 +86,6 @@ def is_openai_quota_exhausted(exc: Exception) -> bool:
     return any(phrase in message for phrase in quota_phrases)
 
 
-def _build_text_prompt(system_prompt: str, user_prompt: str) -> str:
-    return f"SYSTEM:\n{system_prompt}\n\nUSER:\n{user_prompt}"
-
-
 def _call_openai(
     *,
     user_prompt: str,
@@ -154,11 +150,13 @@ def _call_ollama(
     timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "105"))
     payload = {
         "model": model_name,
-        "prompt": _build_text_prompt(system_prompt, user_prompt),
+        "prompt": user_prompt,
+        "system": system_prompt,
         "stream": False,
         "keep_alive": os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
         "options": {
-            "temperature": 0.2,
+            "temperature": 0.1,
+            "num_predict": int(os.getenv("OLLAMA_MAX_OUTPUT_TOKENS", "220")),
         },
     }
 
