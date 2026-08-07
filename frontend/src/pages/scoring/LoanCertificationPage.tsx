@@ -8,6 +8,11 @@ import {
 } from '../../api/loan'
 import { getErrorMessage } from '../../api'
 import { APP_NAME, brandLogoDataUri } from '../../brand'
+import { useAuthorization } from '../../hooks/useAuthorization'
+import {
+  PAID_SCORE_CERTIFICATION_MESSAGE,
+  usePaidScoreCertificationAccess,
+} from '../../hooks/usePaidScoreCertificationAccess'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import {
   calculateInformationProvidedPercent,
@@ -144,6 +149,8 @@ const getCertificationMetadata = (applicationNo: string, issuedAt: string) => {
 }
 
 export default function LoanCertificationPage() {
+  const { isAdmin } = useAuthorization()
+  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
@@ -236,12 +243,18 @@ export default function LoanCertificationPage() {
     )
     const hasRating =
       certification.informationProvidedPercent >= CREDIT_RATING_MINIMUM_INFORMATION_PERCENT
-    const scoreDisplay = (value: number | null) => hasRating ? formatScore(value) : 'Not Produced'
-    const bandDisplay = (value: number | null) => hasRating
+    const scoreDisplay = (value: number | null) => hasPaidScoreAccess
+      ? (hasRating ? formatScore(value) : 'Not Produced')
+      : ''
+    const bandDisplay = (value: number | null) => hasPaidScoreAccess && hasRating
       ? formatBand(value)
-      : 'Insufficient Information'
-    const labelDisplay = hasRating ? certification.label : 'Rating Not Produced'
-    const decisionDisplay = hasRating ? certification.decision : 'Insufficient Information'
+      : (hasPaidScoreAccess ? 'Insufficient Information' : '')
+    const labelDisplay = hasPaidScoreAccess
+      ? (hasRating ? certification.label : 'Rating Not Produced')
+      : ''
+    const decisionDisplay = hasPaidScoreAccess
+      ? (hasRating ? certification.decision : 'Insufficient Information')
+      : ''
 
     const html = `<!DOCTYPE html>
 <html lang="en">
@@ -521,6 +534,7 @@ export default function LoanCertificationPage() {
         and the following summarized score results were recorded for credit evaluation.
       </div>
       ${hasRating ? '' : `<div class="rating-unavailable">Rating Not Produced — ${informationProvided} of the required information was provided. At least ${CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required.</div>`}
+      ${hasPaidScoreAccess ? '' : `<div class="rating-unavailable">${PAID_SCORE_CERTIFICATION_MESSAGE}</div>`}
       <div class="summary">
         <div class="summary-card">
           <div class="summary-label">Composite Score</div>
@@ -537,7 +551,7 @@ export default function LoanCertificationPage() {
       </div>
       <div class="metrics">
         <div class="metric"><div class="metric-label">${getCreditScoreLabel(certification.productType)}</div><div class="metric-band">${bandDisplay(certification.creditScore)}</div><div class="metric-value">${scoreDisplay(certification.creditScore)}</div></div>
-        <div class="metric"><div class="metric-label">Credit Bureau Score</div><div class="metric-band">100-Point Bureau Model</div><div class="metric-value">${formatCreditBureauScore(certification.creditBureauScore, hasRating)}</div></div>
+        <div class="metric"><div class="metric-label">Credit Bureau Score</div><div class="metric-band">${hasPaidScoreAccess ? '100-Point Bureau Model' : ''}</div><div class="metric-value">${hasPaidScoreAccess ? formatCreditBureauScore(certification.creditBureauScore, hasRating) : ''}</div></div>
         <div class="metric"><div class="metric-label">Non-Starter Score</div><div class="metric-band">${bandDisplay(certification.fraudScore)}</div><div class="metric-value">${scoreDisplay(certification.fraudScore)}</div></div>
         <div class="metric"><div class="metric-label">Social Score</div><div class="metric-band">${bandDisplay(certification.socialScore)}</div><div class="metric-value">${scoreDisplay(certification.socialScore)}</div></div>
         <div class="metric metric-credit-values"><div class="metric-label">Credit Value Score</div><div class="metric-band">${bandDisplay(certification.creditValueScore)}</div><div class="metric-value">${scoreDisplay(certification.creditValueScore)}</div></div>
@@ -573,7 +587,7 @@ export default function LoanCertificationPage() {
     window.URL.revokeObjectURL(downloadUrl)
   }
 
-  if (isLoading) {
+  if (isLoading || isScoreAccessLoading) {
     return (
       <div className="loan-certification-page">
         <div className="loan-certification-shell">
@@ -610,12 +624,18 @@ export default function LoanCertificationPage() {
   )
   const hasRating =
     certification.informationProvidedPercent >= CREDIT_RATING_MINIMUM_INFORMATION_PERCENT
-  const scoreDisplay = (value: number | null) => hasRating ? formatScore(value) : 'Not Produced'
-  const bandDisplay = (value: number | null) => hasRating
+  const scoreDisplay = (value: number | null) => hasPaidScoreAccess
+    ? (hasRating ? formatScore(value) : 'Not Produced')
+    : ''
+  const bandDisplay = (value: number | null) => hasPaidScoreAccess && hasRating
     ? formatBand(value)
-    : 'Insufficient Information'
-  const labelDisplay = hasRating ? certification.label : 'Rating Not Produced'
-  const decisionDisplay = hasRating ? certification.decision : 'Insufficient Information'
+    : (hasPaidScoreAccess ? 'Insufficient Information' : '')
+  const labelDisplay = hasPaidScoreAccess
+    ? (hasRating ? certification.label : 'Rating Not Produced')
+    : ''
+  const decisionDisplay = hasPaidScoreAccess
+    ? (hasRating ? certification.decision : 'Insufficient Information')
+    : ''
 
   return (
     <div className="loan-certification-page">
@@ -683,6 +703,12 @@ export default function LoanCertificationPage() {
               </div>
             ) : null}
 
+            {!hasPaidScoreAccess ? (
+              <div className="loan-certification-rating-unavailable" role="alert">
+                <strong>{PAID_SCORE_CERTIFICATION_MESSAGE}</strong>
+              </div>
+            ) : null}
+
             <div className="loan-certification-summary-grid">
               <div className="loan-certification-summary-card">
                 <span className="loan-certification-summary-label">Composite Score</span>
@@ -713,8 +739,10 @@ export default function LoanCertificationPage() {
                 },
                 {
                   label: 'Credit Bureau Score',
-                  value: formatCreditBureauScore(certification.creditBureauScore, hasRating),
-                  band: '100-Point Bureau Model',
+                  value: hasPaidScoreAccess
+                    ? formatCreditBureauScore(certification.creditBureauScore, hasRating)
+                    : '',
+                  band: hasPaidScoreAccess ? '100-Point Bureau Model' : '',
                 },
                 {
                   label: 'Non-Starter Score',

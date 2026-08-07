@@ -9,7 +9,12 @@ import {
 } from '../../autosave/draftApi';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
+import { useAuthorization } from '../../hooks/useAuthorization';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
+import {
+  PAID_SCORE_CERTIFICATION_MESSAGE,
+  usePaidScoreCertificationAccess,
+} from '../../hooks/usePaidScoreCertificationAccess';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import {
   saveLoanApplicationNetWorth,
@@ -632,6 +637,8 @@ function buildVarianceExplanation(section: StatementSection, variance: number) {
 
 export default function NetWorthPositioningPage() {
   const DARK_GOLD_COLOR = '#B8860B';
+  const { isAdmin } = useAuthorization();
+  const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin);
   const [searchParams] = useSearchParams();
   const {
     selectedApplicationNo: applicationNo,
@@ -1581,11 +1588,12 @@ export default function NetWorthPositioningPage() {
 @media(max-width:760px){body{padding:8px}.hero{align-items:flex-start;flex-direction:column}.hero-score{width:100%;min-width:0;text-align:left}.summary,.layout,.lower{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,1fr)}.composite{grid-template-columns:1fr}.score-card.primary{grid-column:auto}}
 @media print{body{padding:0;background:#fff}.report{gap:7px}.hero,.tile,.panel,.certificate{break-inside:avoid;box-shadow:none}}
 </style></head><body><main class="report">
-<section class="hero"><div><span class="eyebrow">Net Worth and Goal Tracking</span><h1>Composite Wealth Score</h1><p>Period: ${escapeHtml(asOfDate || snapshot.dateLabel)}</p></div><div class="hero-score"><span>Composite Wealth Score</span><strong>${wealthCompositeScore.score}</strong><small>${escapeHtml(`${wealthCompositeScore.grade} - ${wealthCompositeScore.rating}`)}</small></div></section>
-<section class="summary"><div class="tile"><span>Progress</span><strong>${completionPercent}%</strong><small>FILSCORE-Wealth</small></div><div class="tile"><span>Setup Assets</span><strong>${escapeHtml(formatCurrency(setupAssetsTotal))}</strong><small>Current setup for asset lines</small></div><div class="tile"><span>Setup Liabilities</span><strong>${escapeHtml(formatCurrency(setupLiabilitiesTotal))}</strong><small>Current setup for liability lines</small></div><div class="tile"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong><small>${escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`)}</small></div></section>
+<section class="hero"><div><span class="eyebrow">Net Worth and Goal Tracking</span><h1>Composite Wealth Score</h1><p>Period: ${escapeHtml(asOfDate || snapshot.dateLabel)}</p></div><div class="hero-score"><span>Composite Wealth Score</span><strong>${hasPaidScoreAccess ? wealthCompositeScore.score : ''}</strong><small>${hasPaidScoreAccess ? escapeHtml(`${wealthCompositeScore.grade} - ${wealthCompositeScore.rating}`) : ''}</small></div></section>
+<section class="summary"><div class="tile"><span>Progress</span><strong>${completionPercent}%</strong><small>FILSCORE-Wealth</small></div><div class="tile"><span>Setup Assets</span><strong>${escapeHtml(formatCurrency(setupAssetsTotal))}</strong><small>Current setup for asset lines</small></div><div class="tile"><span>Setup Liabilities</span><strong>${escapeHtml(formatCurrency(setupLiabilitiesTotal))}</strong><small>Current setup for liability lines</small></div><div class="tile"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong><small>${hasPaidScoreAccess ? escapeHtml(`${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}`) : ''}</small></div></section>
 <section class="layout"><article class="certificate"><div class="certificate-inner"><div class="brand"><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} logo"/><p class="eyebrow">Certification of Wealth Assessment</p><h2>${escapeHtml(APP_NAME)}</h2></div><p class="reference">Reference No. ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}</p><div class="name">${escapeHtml(wealthClientName)}</div><p class="message">This certifies that the above applicant completed the FILSCORE wealth assessment workflow and the summarized results below were generated for financial evaluation.</p>
-<div class="composite"><div class="score-card primary"><span>Composite Score</span><strong>${wealthCompositeScore.score}</strong></div><div class="score-card"><span>Label</span><strong>${escapeHtml(wealthCompositeScore.grade)}</strong></div><div class="score-card"><span>Position</span><strong>${escapeHtml(positionStatement.title)}</strong></div></div>
-<div class="metrics"><div class="metric"><span>Net Worth Positioning Score</span><strong>${netWorthBuildingScore.score}</strong><small>${escapeHtml(netWorthBuildingScore.rating)}</small></div><div class="metric"><span>Wealth Behaviour Score</span><strong>${wealthBehaviourScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthBehaviourScore,'Wealth Behaviour'))}</small></div><div class="metric"><span>Wealth Foundation Score</span><strong>${wealthFoundationScore.score}</strong><small>${escapeHtml(wealthFoundationScore.rating)}</small></div><div class="metric"><span>Wealth Authenticity Score</span><strong>${wealthAuthenticityScore}</strong><small>${escapeHtml(wealthCertificationBand(wealthAuthenticityScore,'Wealth Authenticity'))}</small></div></div>
+${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIFICATION_MESSAGE}</strong></div>`}
+<div class="composite"><div class="score-card primary"><span>Composite Score</span><strong>${hasPaidScoreAccess ? wealthCompositeScore.score : ''}</strong></div><div class="score-card"><span>Label</span><strong>${hasPaidScoreAccess ? escapeHtml(wealthCompositeScore.grade) : ''}</strong></div><div class="score-card"><span>Position</span><strong>${hasPaidScoreAccess ? escapeHtml(positionStatement.title) : ''}</strong></div></div>
+<div class="metrics"><div class="metric"><span>Net Worth Positioning Score</span><strong>${hasPaidScoreAccess ? netWorthBuildingScore.score : ''}</strong><small>${hasPaidScoreAccess ? escapeHtml(netWorthBuildingScore.rating) : ''}</small></div><div class="metric"><span>Wealth Behaviour Score</span><strong>${hasPaidScoreAccess ? wealthBehaviourScore : ''}</strong><small>${hasPaidScoreAccess ? escapeHtml(wealthCertificationBand(wealthBehaviourScore,'Wealth Behaviour')) : ''}</small></div><div class="metric"><span>Wealth Foundation Score</span><strong>${hasPaidScoreAccess ? wealthFoundationScore.score : ''}</strong><small>${hasPaidScoreAccess ? escapeHtml(wealthFoundationScore.rating) : ''}</small></div><div class="metric"><span>Wealth Authenticity Score</span><strong>${hasPaidScoreAccess ? wealthAuthenticityScore : ''}</strong><small>${hasPaidScoreAccess ? escapeHtml(wealthCertificationBand(wealthAuthenticityScore,'Wealth Authenticity')) : ''}</small></div></div>
 <div class="certificate-footer"><div class="meta"><strong>Certificate ID:</strong> ${escapeHtml(snapshot.sourceApplicationNo || 'Draft')}<br/><strong>Issued:</strong> ${escapeHtml(issuedLabel)}<br/><strong>Status:</strong> ${escapeHtml(certificationState)}<br/><strong>Role:</strong> ${escapeHtml(certifierRole.trim() || 'Borrower')}<br/><strong>Certification Date:</strong> ${escapeHtml(certificationDate)}</div><img src="${brandLogoDataUri}" alt="${escapeHtml(APP_NAME)} verification mark"/></div></div></article>
 <aside class="side"><article class="panel"><span class="eyebrow">Wealth Assessment</span><h3>Position Scorecards</h3><p>The certificate summarizes the four wealth scores used in this assessment.</p></article><article class="panel"><span class="eyebrow">Setup Snapshot</span><h3>${savedSetup.length>0?'Saved Setup':'Draft Setup'}</h3><div class="rows"><div class="row"><span>As Of</span><strong>${escapeHtml(asOfDate||'Not set')}</strong></div><div class="row"><span>Currency</span><strong>${escapeHtml(selectedCurrencyLabel)}</strong></div><div class="row"><span>Financial Goal</span><strong>${escapeHtml(selectedFinancialGoal||'Not selected')}</strong></div><div class="row"><span>Setup Entries</span><strong>${savedSetup.length}</strong></div><div class="row"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(setupNetWorth))}</strong></div></div></article><article class="panel"><span class="eyebrow">Position Health</span><h3>${escapeHtml(netWorthBuildingScore.grade)}</h3><div class="rows"><div class="row"><span>Wealth Score</span><strong>${netWorthBuildingScore.score}</strong></div><div class="row"><span>Range</span><strong>${escapeHtml(netWorthBuildingScore.rating)}</strong></div><div class="row"><span>Position</span><strong>${escapeHtml(positionStatement.title)}</strong></div></div></article><article class="panel"><span class="eyebrow">Net Worth Visuals</span><h3>Setup vs Projected Net Worth</h3><div class="rows"><div><div class="row"><span>Setup Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.setupNetWorth))}</strong></div><div class="bar"><i style="width:70%"></i></div></div><div><div class="row"><span>Projected Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.projectedNetWorth))}</strong></div><div class="bar"><i style="width:90%"></i></div></div><div class="row"><span>Net Worth Variance</span><strong>${escapeHtml(formatSignedCurrency(positionStatement.netWorthVariance))}</strong></div></div></article><article class="panel"><span class="eyebrow">Activity</span><h3>Activity Timeline</h3><div class="rows"><div class="row"><span>Application Source</span><strong>${escapeHtml(snapshot.sourceLabel)}</strong></div><div class="row"><span>Application Number</span><strong>${escapeHtml(snapshot.sourceApplicationNo||'Draft')}</strong></div><div class="row"><span>Last Updated</span><strong>${escapeHtml(issuedLabel)}</strong></div><div class="row"><span>Current Step</span><strong>Step 5: Results</strong></div></div></article></aside></section>
 <section class="lower"><article class="panel"><span class="eyebrow">Position vs Goal</span><h3 class="${goalForecast.isAchievable?'status-good':'status-bad'}">${escapeHtml(goalForecast.status)}</h3><div class="rows"><div class="row"><span>Goal Target</span><strong>${escapeHtml(formatCurrency(goalForecast.effectiveTargetAmount))}</strong></div><div class="row"><span>Time Frame</span><strong>${goalForecast.sanitizedMonths} months</strong></div><div class="row"><span>Actual Net Worth Position</span><strong>${escapeHtml(formatSignedCurrency(actualNetWorth))}</strong></div><div class="row"><span>Projected Position at Deadline</span><strong>${escapeHtml(formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline))}</strong></div><div class="row"><span>Possibility to Reach Goal</span><strong>${goalForecast.possibilityPercent}%</strong></div></div></article><article class="panel"><span class="eyebrow">Statement of Position</span><h3 style="color:${positionStatement.color}">${escapeHtml(positionStatement.title)}</h3><div class="rows"><div class="row"><span>Total Assets (Projected)</span><strong>${escapeHtml(formatCurrency(totals.projectedAssets))}</strong></div><div class="row"><span>Total Liabilities (Projected)</span><strong>${escapeHtml(formatCurrency(totals.projectedLiabilities))}</strong></div><div class="row"><span>Actual Net Worth Position</span><strong>${escapeHtml(formatSignedCurrency(actualNetWorth))}</strong></div><div class="row"><span>Net Worth Variance</span><strong>${escapeHtml(formatSignedCurrency(positionStatement.netWorthVariance))}</strong></div></div><p>${escapeHtml(positionStatement.conclusion)}</p></article><article class="panel"><span class="eyebrow">AI Analysis</span><h3>Net Worth Variance Coaching</h3><p>AI-assisted analysis highlights your current variance trend and financial pressure points.</p><div class="rows"><div class="row"><span>Position Status</span><strong>${escapeHtml(goalForecast.status)}</strong></div><div class="row"><span>Projected Net Worth</span><strong>${escapeHtml(formatSignedCurrency(totals.projectedNetWorth))}</strong></div><div class="row"><span>Variance Coverage</span><strong>${positionStatement.projectedCoverage}%</strong></div></div></article><article class="panel"><span class="eyebrow">Recommendations</span><h3>Actionable Next Steps</h3><ul><li>Review the largest asset and liability variances each cycle.</li><li>Align monthly savings with the required gain of ${escapeHtml(formatCurrency(goalForecast.requiredMonthlyGain))}.</li><li>Keep setup and actual values current and certified.</li><li>Reassess the target timeline when projected coverage falls below 100%.</li></ul></article></section>
@@ -1598,6 +1606,7 @@ export default function NetWorthPositioningPage() {
     formatCurrency,
     formatSignedCurrency,
     goalForecast,
+    hasPaidScoreAccess,
     netWorthBuildingScore.grade,
     netWorthBuildingScore.rating,
     netWorthBuildingScore.score,
@@ -2930,26 +2939,26 @@ export default function NetWorthPositioningPage() {
                 <section className="psychometric-summary-grid budget-dashboard-summary-grid">
                   <article className="psychometric-summary-card psychometric-summary-card-highlight">
                     <span>Net Worth Positioning Score</span>
-                    <strong>{netWorthBuildingScore.score}</strong>
-                    <small>{netWorthBuildingScore.grade} - {netWorthBuildingScore.rating}</small>
+                    <strong>{hasPaidScoreAccess ? netWorthBuildingScore.score : ''}</strong>
+                    <small>{hasPaidScoreAccess ? `${netWorthBuildingScore.grade} - ${netWorthBuildingScore.rating}` : ''}</small>
                   </article>
 
                   <article className="psychometric-summary-card">
                     <span>Wealth Behaviour Score</span>
-                    <strong>{wealthBehaviourScore}</strong>
-                    <small>{wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour')}</small>
+                    <strong>{hasPaidScoreAccess ? wealthBehaviourScore : ''}</strong>
+                    <small>{hasPaidScoreAccess ? wealthCertificationBand(wealthBehaviourScore, 'Wealth Behaviour') : ''}</small>
                   </article>
 
                   <article className="psychometric-summary-card">
                     <span>Wealth Foundation Score</span>
-                    <strong>{wealthFoundationScore.score}</strong>
-                    <small>{wealthFoundationScore.rating}</small>
+                    <strong>{hasPaidScoreAccess ? wealthFoundationScore.score : ''}</strong>
+                    <small>{hasPaidScoreAccess ? wealthFoundationScore.rating : ''}</small>
                   </article>
 
                   <article className="psychometric-summary-card">
                     <span>Wealth Authenticity Score</span>
-                    <strong>{wealthAuthenticityScore}</strong>
-                    <small>{wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity')}</small>
+                    <strong>{hasPaidScoreAccess ? wealthAuthenticityScore : ''}</strong>
+                    <small>{hasPaidScoreAccess ? wealthCertificationBand(wealthAuthenticityScore, 'Wealth Authenticity') : ''}</small>
                   </article>
                 </section>
 
@@ -2988,6 +2997,12 @@ export default function NetWorthPositioningPage() {
                       Application: <strong>{snapshot.sourceApplicationNo}</strong> | Issued{' '}
                       <strong>{new Date(wealthCertificationIssuedAt || Date.now()).toLocaleString()}</strong>
                     </p>
+
+                    {!hasPaidScoreAccess ? (
+                      <div className="loan-certification-rating-unavailable" role="alert">
+                        <strong>{PAID_SCORE_CERTIFICATION_MESSAGE}</strong>
+                      </div>
+                    ) : null}
 
                     <div className="budget-dashboard-category-summary" style={{ marginBottom: '12px' }}>
                       <label className="budget-dashboard-category-summary-card" style={{ cursor: 'pointer' }}>
@@ -3074,8 +3089,8 @@ export default function NetWorthPositioningPage() {
                     {wealthExecutiveSummaryItems.map((item) => (
                       <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
                         <p className="text-sm font-bold text-amber-800">{item.label}</p>
-                        <p className="mt-3 text-3xl font-bold leading-none text-amber-900">{item.value}</p>
-                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">{item.detail}</p>
+                        <p className="mt-3 text-3xl font-bold leading-none text-amber-900">{hasPaidScoreAccess ? item.value : ''}</p>
+                        <p className="mt-2 text-xs font-semibold uppercase tracking-wide text-amber-700">{hasPaidScoreAccess ? item.detail : ''}</p>
                       </div>
                     ))}
                   </div>
@@ -3114,7 +3129,7 @@ export default function NetWorthPositioningPage() {
                       {wealthScoringSignalItems.map((item) => (
                         <div key={item.label} className="rounded-md border border-amber-300 bg-amber-50 p-4">
                           <p className="text-sm font-bold text-amber-800">{item.label}</p>
-                          <p className="mt-3 text-2xl font-bold leading-none text-amber-900">{item.value}</p>
+                          <p className="mt-3 text-2xl font-bold leading-none text-amber-900">{hasPaidScoreAccess ? item.value : ''}</p>
                         </div>
                       ))}
                     </div>

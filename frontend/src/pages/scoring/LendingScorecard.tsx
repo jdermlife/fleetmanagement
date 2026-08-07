@@ -38,6 +38,10 @@ import {
   isWorkflowAutoRejectProbability,
 } from '../../config/creditPolicy';
 import { useAuthorization } from '../../hooks/useAuthorization';
+import {
+  PAID_SCORE_CERTIFICATION_MESSAGE,
+  usePaidScoreCertificationAccess,
+} from '../../hooks/usePaidScoreCertificationAccess';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
@@ -1990,7 +1994,8 @@ export default function LendingScorecard() {
     openFilscore: () => Promise<void>;
   } | null>(null);
   const [searchParams] = useSearchParams();
-  const { user } = useAuthorization();
+  const { isAdmin, user } = useAuthorization();
+  const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin);
   const { selectedApplicationNo } = useSelectedAnalysisEntity();
   const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || selectedApplicationNo;
   const requestedProfileId = searchParams.get('profileId')?.trim() || '';
@@ -4369,6 +4374,9 @@ export default function LendingScorecard() {
   const completionPercent = informationProvidedPercent;
   const reportHasRating = hasSufficientInformationForRating && displayedQuantSummary !== null;
   const reportScore = (value: number | null | undefined) => {
+    if (!hasPaidScoreAccess) {
+      return '';
+    }
     if (!reportHasRating) {
       return 'Pending';
     }
@@ -4376,6 +4384,9 @@ export default function LendingScorecard() {
     return toFilscore(value)?.toString() ?? 'Pending';
   };
   const reportBand = (value: number | null | undefined) => {
+    if (!hasPaidScoreAccess) {
+      return '';
+    }
     if (!reportHasRating) {
       return 'Rating Not Produced';
     }
@@ -4566,6 +4577,12 @@ export default function LendingScorecard() {
                     </div>
                   ) : null}
 
+                  {!hasPaidScoreAccess ? (
+                    <div className="loan-certification-rating-unavailable" role="alert">
+                      <strong>{PAID_SCORE_CERTIFICATION_MESSAGE}</strong>
+                    </div>
+                  ) : null}
+
                   <div className="loan-certification-summary-grid">
                     <div className="loan-certification-summary-card">
                       <span className="loan-certification-summary-label">Composite Score</span>
@@ -4574,19 +4591,19 @@ export default function LendingScorecard() {
                     <div className="loan-certification-summary-card">
                       <span className="loan-certification-summary-label">Label</span>
                       <strong className="loan-certification-summary-value">
-                        {reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : 'Pending'}
+                        {hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : ''}
                       </strong>
                     </div>
                     <div className="loan-certification-summary-card">
                       <span className="loan-certification-summary-label">Decision</span>
-                      <strong className="loan-certification-summary-value">{reportHasRating ? displayedQuantSummary.decision : 'Pending'}</strong>
+                      <strong className="loan-certification-summary-value">{hasPaidScoreAccess && reportHasRating ? displayedQuantSummary.decision : ''}</strong>
                     </div>
                   </div>
 
                   <div className="loan-certification-metrics-grid">
                     {[
                       { label: `Credit Score - ${formData.loan.productType}`, value: reportScore(displayedQuantSummary?.credit_score), band: reportBand(displayedQuantSummary?.credit_score) },
-                      { label: 'Credit Bureau Score', value: reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : 'Pending', band: '100-Point Bureau Model' },
+                      { label: 'Credit Bureau Score', value: hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : '', band: hasPaidScoreAccess ? '100-Point Bureau Model' : '' },
                       { label: 'Non-Starter Score', value: reportScore(displayedQuantSummary?.fraud_score), band: reportBand(displayedQuantSummary?.fraud_score) },
                       { label: 'Social Score', value: reportScore(displayedQuantSummary?.social_score), band: reportBand(displayedQuantSummary?.social_score) },
                       { label: 'Credit Values Score', value: reportScore(displayedQuantSummary?.psychometric_score), band: reportBand(displayedQuantSummary?.psychometric_score) },
@@ -4623,11 +4640,11 @@ export default function LendingScorecard() {
                 <div className="lending-driver-columns">
                   <div>
                     <b>Positive drivers</b>
-                    <ul>{positiveScoreDrivers.length > 0 ? positiveScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>Complete certification to identify strengths.</li>}</ul>
+                    <ul>{hasPaidScoreAccess && positiveScoreDrivers.length > 0 ? positiveScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>{hasPaidScoreAccess ? 'Complete certification to identify strengths.' : PAID_SCORE_CERTIFICATION_MESSAGE}</li>}</ul>
                   </div>
                   <div>
                     <b>Negative drivers</b>
-                    <ul>{negativeScoreDrivers.length > 0 ? negativeScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>Complete certification to identify constraints.</li>}</ul>
+                    <ul>{hasPaidScoreAccess && negativeScoreDrivers.length > 0 ? negativeScoreDrivers.map((item) => <li key={item.label}>{item.label}: {item.score}</li>) : <li>{hasPaidScoreAccess ? 'Complete certification to identify constraints.' : PAID_SCORE_CERTIFICATION_MESSAGE}</li>}</ul>
                   </div>
                 </div>
                 <small>The highest and lowest certified components explain the composite score.</small>
@@ -4639,7 +4656,7 @@ export default function LendingScorecard() {
                 <div className="lending-score-timeline-wrap">
                   <table className="lending-score-timeline">
                     <thead><tr><th>Month</th>{certifiedScoreComponents.map((item) => <th key={item.label}>{item.label}</th>)}</tr></thead>
-                    <tbody>{scoreTimeline.map((row) => <tr key={row.month}><td>{row.month === 0 ? 'Current' : row.month}</td>{row.scores.map((item) => <td key={item.label}>{item.score ?? 'Pending'}</td>)}</tr>)}</tbody>
+                    <tbody>{scoreTimeline.map((row) => <tr key={row.month}><td>{row.month === 0 ? 'Current' : row.month}</td>{row.scores.map((item) => <td key={item.label}>{hasPaidScoreAccess ? item.score ?? 'Pending' : ''}</td>)}</tr>)}</tbody>
                   </table>
                 </div>
                 <small>Illustrative path toward 800 if the recommendations are completed; this is not historical score data.</small>

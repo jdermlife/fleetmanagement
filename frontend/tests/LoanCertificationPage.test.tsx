@@ -2,9 +2,19 @@ import { cleanup, render, screen, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter, Route, Routes } from 'react-router-dom'
 
-const { mockFetchLoanApplication, mockRecomputeStoredScores } = vi.hoisted(() => ({
+const { mockFetchLoanApplication, mockGetMySubscription, mockRecomputeStoredScores } = vi.hoisted(() => ({
   mockFetchLoanApplication: vi.fn(),
+  mockGetMySubscription: vi.fn(),
   mockRecomputeStoredScores: vi.fn(),
+}))
+
+vi.mock('../src/api', () => ({
+  getErrorMessage: (_error: unknown, fallback: string) => fallback,
+  getMySubscription: mockGetMySubscription,
+}))
+
+vi.mock('../src/hooks/useAuthorization', () => ({
+  useAuthorization: () => ({ isAdmin: false }),
 }))
 
 vi.mock('../src/api/loan', () => ({
@@ -24,6 +34,8 @@ describe('LoanCertificationPage', () => {
     mockFetchLoanApplication.mockReset()
     mockRecomputeStoredScores.mockReset()
     mockRecomputeStoredScores.mockResolvedValue({ message: 'computed', quant_scores: {} })
+    mockGetMySubscription.mockReset()
+    mockGetMySubscription.mockResolvedValue({ status: 'ACTIVE', subscription_type: 'PAID' })
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       clear: () => values.clear(),
@@ -158,5 +170,40 @@ describe('LoanCertificationPage', () => {
     const compositeCard = screen.getByText('Composite Score').closest('div')
     expect(compositeCard).toBeTruthy()
     expect(within(compositeCard!).getByText('830')).toBeTruthy()
+  })
+
+  it('leaves certification scores blank for a free trial and shows the paid-only prompt', async () => {
+    mockGetMySubscription.mockResolvedValue({ status: 'TRIAL', subscription_type: 'FREE' })
+    mockFetchLoanApplication.mockResolvedValue({
+      application_no: 'APP-FREE-1',
+      borrower_name: 'Free Trial User',
+      product_type: 'Personal Loan',
+      status: 'CREDIT_REVIEW',
+      credit_bureau_reports: { bureau_score: 91 },
+      overall_scores: {
+        final_score: 90,
+        final_grade: 'A',
+        final_rating: 'Excellent',
+        final_decision: 'APPROVE',
+        credit_score: 89,
+        fraud_score: 87,
+        social_score: 86,
+        psychometric_score: 91,
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/loan-certification?applicationNo=APP-FREE-1']}>
+        <Routes>
+          <Route path="/loan-certification" element={<LoanCertificationPage />} />
+        </Routes>
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('Score available for paid users only.')).toBeTruthy()
+    const compositeValue = screen.getByText('Composite Score').parentElement?.querySelector('strong')
+    expect(compositeValue?.textContent).toBe('')
+    expect(screen.queryByText('830')).toBeNull()
+    expect(screen.queryByText('91 / 100')).toBeNull()
   })
 })
