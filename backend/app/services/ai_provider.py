@@ -151,16 +151,18 @@ def _call_ollama(
     base_url: str,
 ) -> AITextResult:
     started_at = time.perf_counter()
+    timeout_seconds = float(os.getenv("OLLAMA_TIMEOUT_SECONDS", "105"))
     payload = {
         "model": model_name,
         "prompt": _build_text_prompt(system_prompt, user_prompt),
         "stream": False,
+        "keep_alive": os.getenv("OLLAMA_KEEP_ALIVE", "30m"),
         "options": {
             "temperature": 0.2,
         },
     }
 
-    with httpx.Client(timeout=45.0) as client:
+    with httpx.Client(timeout=timeout_seconds) as client:
         response = client.post(f"{base_url.rstrip('/')}/api/generate", json=payload)
         response.raise_for_status()
         data = response.json()
