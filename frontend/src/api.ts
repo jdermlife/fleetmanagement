@@ -992,6 +992,35 @@ export async function checkCreditCardRiskWithAi(
   return response.data
 }
 
+export interface PageAssistantHistoryItem {
+  role: 'user' | 'assistant'
+  content: string
+}
+
+export interface PageAssistantResponse {
+  answer: string
+  refused: boolean
+  disclaimer: string
+}
+
+export async function askPageAssistant(payload: {
+  message: string
+  pagePath: string
+  history: PageAssistantHistoryItem[]
+  authenticated: boolean
+}): Promise<PageAssistantResponse> {
+  const endpoint = payload.authenticated
+    ? '/ai/page-assistant'
+    : '/ai/page-assistant/public'
+  const response = await api.post<PageAssistantResponse>(endpoint, {
+    message: payload.message,
+    page_path: payload.pagePath,
+    history: payload.history.slice(-6),
+  })
+
+  return response.data
+}
+
 export interface SubscriptionPlan {
   id: number
   plan_code: string

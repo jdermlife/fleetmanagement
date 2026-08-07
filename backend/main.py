@@ -49,6 +49,7 @@ from app.models.subscription import (  # noqa: F401
 from app.routes.drivers import router as driver_router
 from app.routes.dashboard import router as dashboard_router
 from app.routes.ai import router as ai_router
+from app.routes.page_assistant import router as page_assistant_router
 from app.routes.workflow import router as workflow_router
 from app.routes.documents import router as documents_router
 from app.routes.audit_logs import router as audit_logs_router
@@ -499,6 +500,7 @@ app.add_middleware(ApiPathCompatibilityMiddleware)
 app.include_router(driver_router)
 app.include_router(dashboard_router)
 app.include_router(ai_router)
+app.include_router(page_assistant_router)
 app.include_router(fleet_operations_router)
 app.include_router(lease_router)
 app.include_router(database_router)

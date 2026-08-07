@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -107,4 +108,21 @@ class CreditCardRiskCheckResponse(BaseModel):
     output_tokens: int
     total_tokens: int
     latency_ms: int
+
+
+class PageAssistantHistoryItem(BaseModel):
+    role: Literal["user", "assistant"]
+    content: str = Field(..., min_length=1, max_length=1200)
+
+
+class PageAssistantRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1200)
+    page_path: str = Field(default="/", min_length=1, max_length=240)
+    history: list[PageAssistantHistoryItem] = Field(default_factory=list, max_length=6)
+
+
+class PageAssistantResponse(BaseModel):
+    answer: str
+    refused: bool
+    disclaimer: str
 

@@ -13,6 +13,7 @@ import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
 import AuthProgressOverlay from './components/auth/AuthProgressOverlay'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
+import FloatingChatbot from './components/ai/FloatingChatbot'
 import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
 
 type MenuLink = {
@@ -1433,6 +1434,11 @@ const isSignedIn = authReady && Boolean(currentUser)
           </Routes>
         </Suspense>
       </main>
+      <FloatingChatbot
+        pathname={location.pathname}
+        authenticated={Boolean(currentUser)}
+        ready={authReady}
+      />
       {isSigningOut ? (
         <AuthProgressOverlay
           idPrefix="app-signing-out"
