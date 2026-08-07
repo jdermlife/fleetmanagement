@@ -1,14 +1,16 @@
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const {
   mockFetchCurrentUser,
+  mockDeleteAccount,
   mockListPublicSubscriptionPlans,
   mockLogout,
   mockPrepareAutosavesForLogout,
 } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
+  mockDeleteAccount: vi.fn(),
   mockListPublicSubscriptionPlans: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
@@ -16,7 +18,7 @@ const {
 
 vi.mock('../src/api', () => ({
   changePassword: vi.fn(),
-  deleteAccount: vi.fn(),
+  deleteAccount: mockDeleteAccount,
   fetchCurrentUser: mockFetchCurrentUser,
   getAuthToken: () => 'access-token',
   getErrorMessage: (error: unknown, fallback: string) =>
@@ -59,6 +61,7 @@ function createStorageMock(): Storage {
 describe('AccountSettingsPage', () => {
   beforeEach(() => {
     mockFetchCurrentUser.mockReset()
+    mockDeleteAccount.mockReset()
     mockListPublicSubscriptionPlans.mockReset()
     mockLogout.mockReset()
     mockPrepareAutosavesForLogout.mockReset()
@@ -78,6 +81,7 @@ describe('AccountSettingsPage', () => {
     mockListPublicSubscriptionPlans.mockRejectedValue(new Error('Unable to load plans'))
     mockLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
+    mockDeleteAccount.mockResolvedValue({ message: 'Associated account data deleted successfully' })
 
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -188,5 +192,33 @@ describe('AccountSettingsPage', () => {
     await waitFor(() => {
       expect(screen.queryByRole('dialog', { name: 'Signing you out' })).toBeNull()
     })
+  })
+
+  it('offers mutually exclusive account and data deletion options', async () => {
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    )
+
+    const deletionForm = (await screen.findByRole('heading', { name: 'Deletion Options' })).closest('form')
+    expect(deletionForm).toBeTruthy()
+    const deletionControls = within(deletionForm as HTMLFormElement)
+    const deleteAccountOption = deletionControls.getByLabelText('This action deletes account and associated data.')
+    const deleteDataOption = deletionControls.getByLabelText('Delete data associated with this account but, account is retained.')
+    expect((deleteAccountOption as HTMLInputElement).checked).toBe(true)
+    expect((deleteDataOption as HTMLInputElement).checked).toBe(false)
+
+    fireEvent.click(deleteDataOption)
+    expect((deleteAccountOption as HTMLInputElement).checked).toBe(false)
+    expect((deleteDataOption as HTMLInputElement).checked).toBe(true)
+
+    fireEvent.change(deletionControls.getByLabelText('Current password'), { target: { value: 'password123' } })
+    fireEvent.change(deletionControls.getByLabelText('Confirmation text'), { target: { value: 'DELETE' } })
+    fireEvent.click(deletionControls.getByRole('button', { name: 'Delete Associated Data' }))
+
+    await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalledWith('password123', 'data_only'))
+    expect(mockLogout).not.toHaveBeenCalled()
+    expect(mockPrepareAutosavesForLogout).not.toHaveBeenCalled()
   })
 })

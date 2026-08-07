@@ -27,6 +27,11 @@ from app.fastapi_auth import (
 )
 from app.models.permissions import Permission
 from app.models.roles import Role, role_permissions, user_roles
+from app.models.ai_governance import AIFeedback, AIRequest, AIResponse
+from app.models.autosave_draft import AutosaveDraft
+from app.models.loan_application import LoanApplication
+from app.models.notification import Notification, NotificationPreference
+from app.models.profile_history import ProfileHistory
 from app.models.users import AuthSession, MfaBackupCode, User
 from app.services.account_access_service import (
     configure_new_account_access,
@@ -95,6 +100,7 @@ class ChangePasswordRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     current_password: str
+    deletion_mode: Literal["account_and_data", "data_only"] = "account_and_data"
 
 
 class PasswordResetRequest(BaseModel):
@@ -1113,6 +1119,31 @@ def delete_account(
 
     if not verify_password(payload.current_password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
+
+    owned_records = (
+        (AIFeedback, AIFeedback.user_id),
+        (AIResponse, AIResponse.user_id),
+        (AIRequest, AIRequest.user_id),
+        (Notification, Notification.user_id),
+        (NotificationPreference, NotificationPreference.user_id),
+        (ProfileHistory, ProfileHistory.owner_id),
+        (AutosaveDraft, AutosaveDraft.owner_id),
+        (LoanApplication, LoanApplication.created_by),
+    )
+    for model, owner_column in owned_records:
+        for record in db.query(model).filter(owner_column == db_user.id).all():
+            db.delete(record)
+
+    if payload.deletion_mode == "data_only":
+        db_user.first_name = None
+        db_user.middle_name = None
+        db_user.last_name = None
+        db_user.mobile_no = None
+        db_user.profile_photo = None
+        db_user.lender_data_sharing_consent = False
+        db_user.lender_data_sharing_consent_recorded_at = None
+        db.commit()
+        return {"message": "Associated account data deleted successfully"}
 
     now = datetime.now(timezone.utc)
     db_user.is_active = False

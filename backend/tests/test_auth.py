@@ -7,8 +7,10 @@ import pytest
 from fastapi import FastAPI, HTTPException
 from fastapi.testclient import TestClient
 
+from app import fastapi_auth
 from app.fastapi_auth import CurrentUser
 from app.models.roles import Role
+from app.models.autosave_draft import AutosaveDraft
 from app.models.subscription import Subscription, SubscriptionPlan
 from app.models.users import User
 from app.routes import apple_auth as apple_auth_routes
@@ -61,6 +63,9 @@ class FakeSession:
     def refresh(self, _row):
         return None
 
+    def delete(self, row):
+        self.rows_by_model.setdefault(type(row), []).remove(row)
+
     def close(self):
         return None
 
@@ -90,6 +95,7 @@ def app_client(monkeypatch, fake_db: FakeSession):
     app = FastAPI()
     app.include_router(security_module.router, prefix="/api")
     app.dependency_overrides[security_module.get_db] = lambda: fake_db
+    app.dependency_overrides[fastapi_auth.get_db] = lambda: fake_db
 
     with TestClient(app) as client:
         yield client, auth_module, fake_db
@@ -494,6 +500,54 @@ def test_delete_account_endpoint_disables_authenticated_user(app_client):
     assert "disabled" in response.json()["message"].lower()
     assert user.is_active is False
     assert user.is_deleted is True
+
+
+def test_delete_account_endpoint_removes_data_but_retains_account(app_client):
+    client, auth_module, fake_db = app_client
+
+    user = User(
+        id=8,
+        username="retainuser",
+        email="retain@example.com",
+        password_hash=auth_module.hash_password("password123"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        first_name="Retain",
+        mobile_no="09171234567",
+        profile_photo="profile-data",
+        lender_data_sharing_consent=True,
+        mfa_enabled=False,
+    )
+    draft = AutosaveDraft(
+        id=1,
+        owner_id=user.id,
+        scope="profile",
+        entity_key="current",
+        payload={"income": 1000},
+        revision=1,
+        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+    )
+    fake_db.rows_by_model[User] = [user]
+    fake_db.rows_by_model[AutosaveDraft] = [draft]
+
+    token = auth_module.create_token(8, "retainuser", "subscriber_borrower", expires_in_hours=1)
+    response = client.post(
+        "/api/auth/delete-account",
+        json={"current_password": "password123", "deletion_mode": "data_only"},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert "data deleted" in response.json()["message"].lower()
+    assert user.is_active is True
+    assert user.is_deleted is False
+    assert user.account_status == "ACTIVE"
+    assert user.first_name is None
+    assert user.mobile_no is None
+    assert user.profile_photo is None
+    assert fake_db.rows_by_model[AutosaveDraft] == []
 
 
 def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, monkeypatch):

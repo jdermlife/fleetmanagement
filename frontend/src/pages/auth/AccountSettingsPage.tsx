@@ -51,6 +51,7 @@ export default function AccountSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const [deletionMode, setDeletionMode] = useState<'account_and_data' | 'data_only'>('account_and_data')
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [isChangingPassword, setIsChangingPassword] = useState(false)
@@ -153,11 +154,17 @@ export default function AccountSettingsPage() {
     setDeleteMessage('')
 
     try {
-      await prepareAutosavesForLogout()
-      const response = await deleteAccount(deletePassword)
+      if (deletionMode === 'account_and_data') {
+        await prepareAutosavesForLogout()
+      }
+      const response = await deleteAccount(deletePassword, deletionMode)
       setDeleteMessage(response.message)
-      await logout()
-      window.setTimeout(() => navigate('/login'), 1200)
+      setDeletePassword('')
+      setDeleteConfirmation('')
+      if (deletionMode === 'account_and_data') {
+        await logout()
+        window.setTimeout(() => navigate('/login'), 1200)
+      }
     } catch (error) {
       setDeleteMessage(getErrorMessage(error, 'Unable to delete the account right now.'))
     } finally {
@@ -480,10 +487,28 @@ export default function AccountSettingsPage() {
       </form>
 
       <form className="card auth-panel auth-danger-panel" onSubmit={handleDeleteAccount}>
-        <h3>Delete Account</h3>
+        <h3>Deletion Options</h3>
         <p className="intro">
-          This action disables account access and associated data. Type <strong>DELETE</strong> to confirm.
+          Select one option, then type <strong>DELETE</strong> to confirm.
         </p>
+
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={deletionMode === 'account_and_data'}
+            onChange={() => setDeletionMode('account_and_data')}
+          />
+          This action deletes account and associated data.
+        </label>
+
+        <label className="checkbox-label">
+          <input
+            type="checkbox"
+            checked={deletionMode === 'data_only'}
+            onChange={() => setDeletionMode('data_only')}
+          />
+          Delete data associated with this account but, account is retained.
+        </label>
 
         <label>
           Current password
@@ -508,7 +533,11 @@ export default function AccountSettingsPage() {
 
         <div className="form-actions">
           <button className="button-danger" type="submit" disabled={isDeletingAccount}>
-            {isDeletingAccount ? 'Disabling...' : 'Delete Account'}
+            {isDeletingAccount
+              ? 'Deleting...'
+              : deletionMode === 'account_and_data'
+                ? 'Delete Account and Data'
+                : 'Delete Associated Data'}
           </button>
         </div>
 

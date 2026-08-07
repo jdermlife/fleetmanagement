@@ -832,9 +832,11 @@ export async function changePassword(
 
 export async function deleteAccount(
   currentPassword: string,
+  deletionMode: 'account_and_data' | 'data_only' = 'account_and_data',
 ): Promise<{ message: string }> {
   const response = await api.post<{ message: string }>('/api/auth/delete-account', {
     current_password: currentPassword,
+    deletion_mode: deletionMode,
   })
   return response.data
 }
