@@ -10,6 +10,8 @@ def normalize_api_path(path: str) -> str:
         return path[len("/api"):]
     if path == "/api/health":
         return "/health"
+    if path == "/api/ai" or path.startswith("/api/ai/"):
+        return path[len("/api"):]
     return path
 
 

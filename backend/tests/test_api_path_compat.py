@@ -39,6 +39,13 @@ def test_maps_proxied_health_check_to_root_health_endpoint():
     assert run_middleware("/api/health") == ("/health", b"/health")
 
 
+def test_maps_proxied_ai_request_to_root_ai_router():
+    assert run_middleware("/api/ai/page-assistant/public") == (
+        "/ai/page-assistant/public",
+        b"/ai/page-assistant/public",
+    )
+
+
 def test_preserves_normal_api_paths():
     assert run_middleware("/api/auth/apple-token") == (
         "/api/auth/apple-token",
