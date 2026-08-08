@@ -95,6 +95,7 @@ const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionMana
 const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHealthMultiProductPage'))
 const CalculationPage = lazy(() => import('./pages/admin/CalculationPage'))
 const AmlKycScoringPage = lazy(() => import('./pages/admin/AmlKycScoringPage'))
+const AboutFilscoreMobilePage = lazy(() => import('./pages/admin/AboutFilscoreMobilePage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
@@ -154,6 +155,7 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
+  { id: 'about-filscore-mobile', label: 'About FILSCORE for Apple and Android' },
   { id: 'subscription-payment', label: 'Subscription Payment' },
   { id: 'trial-expired', label: 'Trial Expired Reminder' },
 ]
@@ -239,6 +241,7 @@ const adminMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'about-filscore-mobile',
   'subscription-payment',
   'trial-expired',
 ]
@@ -259,6 +262,7 @@ const subscriberHiddenMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'about-filscore-mobile',
   'trial-expired',
 ]
 
@@ -1343,6 +1347,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin']}>
                   <AmlKycScoringPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/about-filscore-mobile"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <AboutFilscoreMobilePage />
                 </ProtectedRoute>
               }
             />
