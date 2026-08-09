@@ -3,6 +3,7 @@ interface AuthProgressOverlayProps {
   footnote: string
   idPrefix: string
   kicker: string
+  orbitLabels?: readonly [string, string, string]
   title: string
 }
 
@@ -11,6 +12,7 @@ export default function AuthProgressOverlay({
   footnote,
   idPrefix,
   kicker,
+  orbitLabels,
   title,
 }: AuthProgressOverlayProps) {
   const titleId = `${idPrefix}-title`
@@ -18,18 +20,22 @@ export default function AuthProgressOverlay({
 
   return (
     <div
-      className="login-signing-overlay"
+      className={`login-signing-overlay${orbitLabels ? ' login-signing-overlay--labelled' : ''}`}
       role="dialog"
       aria-modal="true"
       aria-busy="true"
       aria-labelledby={titleId}
       aria-describedby={descriptionId}
     >
-      <div className="login-signing-orbit" aria-hidden="true">
-        <span />
-        <span />
-        <span />
-        <span />
+      <div
+        className={`login-signing-orbit${orbitLabels ? ' login-signing-orbit--labelled' : ''}`}
+        aria-hidden="true"
+      >
+        {orbitLabels ? orbitLabels.map((label) => (
+          <span key={label}><strong>{label}</strong></span>
+        )) : (
+          <><span /><span /><span /><span /></>
+        )}
       </div>
       <div className="login-signing-panel">
         <div className="login-signing-mark" aria-hidden="true">

@@ -12,16 +12,20 @@ describe('AuthProgressOverlay', () => {
     render(
       <AuthProgressOverlay
         idPrefix="test-upload"
-        kicker="Record repository"
-        title="Uploading your records"
-        description="Validating and importing the selected file."
+        kicker="Secure access"
+        title="Signing you in"
+        orbitLabels={['Financial Health', 'Credit Worthy', 'Networth Growth']}
+        description="Verifying your account and preparing your dashboard."
         footnote="Please keep this window open."
       />,
     )
 
-    const overlay = screen.getByRole('dialog', { name: 'Uploading your records' })
+    const overlay = screen.getByRole('dialog', { name: 'Signing you in' })
     expect(overlay.getAttribute('aria-busy')).toBe('true')
-    expect(screen.getByRole('progressbar', { name: 'Uploading your records in progress' })).toBeTruthy()
-    expect(screen.getByText('Validating and importing the selected file.')).toBeTruthy()
+    expect(screen.getByRole('progressbar', { name: 'Signing you in in progress' })).toBeTruthy()
+    expect(screen.getByText('Verifying your account and preparing your dashboard.')).toBeTruthy()
+    expect(screen.getByText('Financial Health')).toBeTruthy()
+    expect(screen.getByText('Credit Worthy')).toBeTruthy()
+    expect(screen.getByText('Networth Growth')).toBeTruthy()
   })
 })

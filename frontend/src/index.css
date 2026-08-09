@@ -7986,6 +7986,46 @@ th { color: var(--dark-gold); }
   left: -3%;
 }
 
+.login-signing-orbit--labelled {
+  animation: none;
+}
+
+.login-signing-orbit--labelled span {
+  width: clamp(112px, 12vw, 142px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.login-signing-orbit--labelled span:nth-child(1) {
+  top: -6%;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.login-signing-orbit--labelled span:nth-child(2) {
+  top: 44%;
+  right: -8%;
+}
+
+.login-signing-orbit--labelled span:nth-child(3) {
+  right: auto;
+  bottom: -6%;
+  left: 12%;
+}
+
+.login-signing-orbit--labelled strong {
+  max-width: 10ch;
+  font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
+  font-size: clamp(0.76rem, 1.5vw, 0.98rem);
+  font-weight: 900;
+  line-height: 1.15;
+  text-wrap: balance;
+  text-shadow: 0 2px 4px rgba(38, 23, 0, 0.72);
+}
+
 .login-signing-panel {
   position: relative;
   width: min(100%, 560px);
@@ -8131,8 +8171,56 @@ th { color: var(--dark-gold); }
     width: 34px;
   }
 
+  .login-signing-overlay--labelled {
+    padding-top: max(132px, env(safe-area-inset-top));
+  }
+
+  .login-signing-orbit--labelled {
+    inset: max(18px, env(safe-area-inset-top)) 8px auto;
+    width: auto;
+    height: 96px;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+    aspect-ratio: auto;
+  }
+
+  .login-signing-orbit--labelled span,
+  .login-signing-orbit--labelled span:nth-child(n) {
+    position: static;
+    width: min(27vw, 94px);
+    padding: 9px;
+    justify-self: center;
+    transform: none;
+  }
+
+  .login-signing-orbit--labelled strong {
+    font-size: clamp(0.62rem, 3vw, 0.75rem);
+  }
+
+  .login-signing-overlay--labelled .login-signing-panel {
+    max-height: calc(100dvh - 154px);
+  }
+
   .login-signing-panel {
     gap: 11px;
+  }
+}
+
+@media (min-width: 621px) and (max-height: 650px) {
+  .login-signing-orbit--labelled span {
+    width: 92px;
+    padding: 10px;
+  }
+
+  .login-signing-orbit--labelled strong {
+    font-size: 0.72rem;
+  }
+
+  .login-signing-overlay--labelled .login-signing-panel {
+    width: min(68vw, 500px);
+    gap: 8px;
+    padding-block: 24px;
   }
 }
 

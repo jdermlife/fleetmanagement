@@ -531,6 +531,7 @@ export default function LoginPage() {
           idPrefix="login-signing"
           kicker="Secure access"
           title="Signing you in"
+          orbitLabels={['Financial Health', 'Credit Worthy', 'Networth Growth']}
           description="Verifying your account and preparing your financial health dashboard."
           footnote="Please keep this window open."
         />
