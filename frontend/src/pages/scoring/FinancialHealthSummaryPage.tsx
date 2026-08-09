@@ -1124,6 +1124,21 @@ export default function FinancialHealthSummaryPage() {
             from eight weighted health indicators.
           </p>
 
+          <dl className="financial-health-group-guide">
+            <div>
+              <dt>Foundation &amp; reliability</dt>
+              <dd>Credit, Cash Flow, and Payment Health</dd>
+            </div>
+            <div>
+              <dt>Control &amp; resilience</dt>
+              <dd>Budget, Wealth, and Protection Health</dd>
+            </div>
+            <div>
+              <dt>Future progress</dt>
+              <dd>Investment and Goal Health</dd>
+            </div>
+          </dl>
+
           <div className="financial-health-status-row">
             <span className="financial-health-status-dot" aria-hidden="true" />
             <strong>{band}</strong>
