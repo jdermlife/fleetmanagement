@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildFinancialHealthGroupRings,
   calculateFinancialHealthIndex,
   calculateWeightedContribution,
   financialHealthIndicators,
@@ -25,6 +26,12 @@ describe('financial health model', () => {
     expect(index).toBe(84.2)
     expect(score).toBe(842)
     expect(getFinancialHealthBand(score)).toBe('Excellent')
+  })
+
+  it('uses gold, silver, and bronze for the three summary rings', () => {
+    const rings = buildFinancialHealthGroupRings(financialHealthIndicators)
+
+    expect(rings.map((ring) => ring.color)).toEqual(['#d4af37', '#c0c7d1', '#cd7f32'])
   })
 
   it('marks an incomplete indicator set as provisional instead of reweighting it', () => {

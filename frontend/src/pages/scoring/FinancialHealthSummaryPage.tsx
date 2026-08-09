@@ -1153,15 +1153,6 @@ export default function FinancialHealthSummaryPage() {
               <span>/ 1000</span>
             </div>
           </div>
-
-          <figcaption className="financial-health-ring-legend">
-            {groupRings.map((ring) => (
-              <span key={ring.label}>
-                <i style={{ background: ring.color }} aria-hidden="true" />
-                {ring.label} {ring.displayValue}
-              </span>
-            ))}
-          </figcaption>
         </figure>
       </section>
 
