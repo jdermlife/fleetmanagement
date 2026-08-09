@@ -120,13 +120,13 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 const menuLinks: MenuLink[] = [
   { id: 'build-profile', label: 'Create / Update Profile' },
-  { id: 'financial-health-summary', label: 'Financial Health Dashboard' },
+  { id: 'financial-health-summary', label: 'Financial Health' },
   { id: 'lending-scorecard', label: 'Credit Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
   { id: 'loan-monitoring', label: 'Debt Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
-  { id: 'dashboard', label: 'Multiple Accounts Snapshot' },
+  { id: 'dashboard', label: 'Multiple Accounts' },
 
   /* AI MENU */
   { id: 'ai-dashboard', label: 'AI Dashboard' },
@@ -151,11 +151,11 @@ const menuLinks: MenuLink[] = [
   /* ADMIN */
   { id: 'calculation', label: 'Calculation Models' },
   { id: 'aml-kyc-scoring', label: 'AML / KYC Scoring' },
-  { id: 'credit-health-multi-product', label: 'Credit Health Multi Product' },
+  { id: 'credit-health-multi-product', label: 'Credit Health Multi' },
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
-  { id: 'about-filscore-mobile', label: 'About FILSCORE for Apple and Android' },
+  { id: 'about-filscore-mobile', label: 'About FILSCORE for Apps' },
   { id: 'subscription-payment', label: 'Subscription Payment' },
   { id: 'trial-expired', label: 'Trial Expired Reminder' },
 ]
