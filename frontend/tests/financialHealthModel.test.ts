@@ -31,7 +31,7 @@ describe('financial health model', () => {
   it('uses gold, silver, and bronze for the three summary rings', () => {
     const rings = buildFinancialHealthGroupRings(financialHealthIndicators)
 
-    expect(rings.map((ring) => ring.color)).toEqual(['#d4af37', '#c0c7d1', '#cd7f32'])
+    expect(rings.map((ring) => ring.color)).toEqual(['#ffd633', '#eef3f8', '#ff9f43'])
   })
 
   it('marks an incomplete indicator set as provisional instead of reweighting it', () => {

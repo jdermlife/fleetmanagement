@@ -10044,9 +10044,10 @@ th { color: var(--dark-gold); }
   flex: 0 1 280px;
   margin: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 0;
+  gap: 6px;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 24px;
@@ -10082,6 +10083,7 @@ th { color: var(--dark-gold); }
 
 .financial-health-ring-progress {
   stroke-linecap: round;
+  filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.58));
   animation: financial-health-ring-draw 700ms ease-out both;
 }
 
@@ -10112,6 +10114,31 @@ th { color: var(--dark-gold); }
   font-size: 0.68rem;
   font-size: clamp(0.58rem, 4.8cqi, 0.68rem);
   font-weight: 700;
+}
+
+.financial-health-ring-legend {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: clamp(0.56rem, 3.2cqi, 0.66rem);
+  font-weight: 700;
+}
+
+.financial-health-ring-legend span {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.financial-health-ring-legend i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
 }
 
 .financial-health-summary-grid {

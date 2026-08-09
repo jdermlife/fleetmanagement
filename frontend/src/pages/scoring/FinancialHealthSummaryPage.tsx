@@ -188,6 +188,11 @@ const TREND_CHART_LEFT = 52
 const TREND_CHART_RIGHT = 694
 const TREND_CHART_TOP = 24
 const TREND_CHART_BOTTOM = 238
+const FINANCIAL_HEALTH_RING_LEGEND = [
+  'Gold · Foundation',
+  'Silver · Controls',
+  'Bronze · Future',
+] as const
 
 function trendChartX(index: number, count: number): number {
   return TREND_CHART_LEFT + (index * (TREND_CHART_RIGHT - TREND_CHART_LEFT)) / Math.max(count - 1, 1)
@@ -1153,6 +1158,20 @@ export default function FinancialHealthSummaryPage() {
               <span>/ 1000</span>
             </div>
           </div>
+          <figcaption className="financial-health-ring-legend">
+            {groupRings.map((ring, index) => (
+              <span key={ring.label}>
+                <i
+                  style={{
+                    background: ring.color,
+                    boxShadow: `0 0 8px ${ring.color}`,
+                  }}
+                  aria-hidden="true"
+                />
+                {FINANCIAL_HEALTH_RING_LEGEND[index]}
+              </span>
+            ))}
+          </figcaption>
         </figure>
       </section>
 
