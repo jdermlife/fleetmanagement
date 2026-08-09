@@ -615,7 +615,7 @@ const isSignedIn = authReady && Boolean(currentUser)
             marginTop: '10px',
           }}
         >
-          <span>🛡 GOVERNANCE & COMPLIANCE</span>
+          <span>🛡 GOVERNANCE</span>
           <span className="app-menu-group-arrow" aria-hidden="true">{govOpen ? '▲' : '▼'}</span>
         </button>
 
