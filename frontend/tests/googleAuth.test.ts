@@ -51,7 +51,6 @@ describe('native Google authentication', () => {
     expect(mockLogin).toHaveBeenCalledWith({
       provider: 'google',
       options: {
-        scopes: ['email', 'profile'],
         filterByAuthorizedAccounts: false,
       },
     })

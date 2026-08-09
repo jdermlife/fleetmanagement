@@ -41,7 +41,6 @@ export async function requestGoogleSignInToken(webClientId: string): Promise<str
   const response = await SocialLogin.login({
     provider: 'google',
     options: {
-      scopes: ['email', 'profile'],
       filterByAuthorizedAccounts: false,
     },
   })
