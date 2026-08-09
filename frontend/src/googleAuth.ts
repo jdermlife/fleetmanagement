@@ -7,15 +7,20 @@ export function isNativeGoogleSignIn(): boolean {
   return Capacitor.isNativePlatform()
 }
 
-export async function requestGoogleSignInToken(webClientId: string): Promise<string> {
+export async function initializeNativeGoogleSignIn(webClientId: string): Promise<void> {
   if (!isNativeGoogleSignIn()) {
-    throw new Error('Native Google Sign-In is only available in the mobile app.')
+    return
+  }
+
+  const resolvedClientId = webClientId.trim()
+  if (!resolvedClientId) {
+    throw new Error('Google Sign-In is not configured for this mobile app.')
   }
 
   if (!initializationRequest) {
     initializationRequest = SocialLogin.initialize({
       google: {
-        webClientId,
+        webClientId: resolvedClientId,
         mode: 'online',
       },
     }).catch((error) => {
@@ -25,6 +30,14 @@ export async function requestGoogleSignInToken(webClientId: string): Promise<str
   }
 
   await initializationRequest
+}
+
+export async function requestGoogleSignInToken(webClientId: string): Promise<string> {
+  if (!isNativeGoogleSignIn()) {
+    throw new Error('Native Google Sign-In is only available in the mobile app.')
+  }
+
+  await initializeNativeGoogleSignIn(webClientId)
   const response = await SocialLogin.login({
     provider: 'google',
     options: {

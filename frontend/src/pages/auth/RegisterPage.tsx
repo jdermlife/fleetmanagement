@@ -1,7 +1,7 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 
 import {
   createFreeSubscription,
@@ -20,6 +20,10 @@ import { APP_CONFIG } from '../../config'
 import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
+
+type RegistrationNavigationState = {
+  registrationMethod?: 'apple' | 'google' | 'email'
+}
 
 function extractBackendErrorMessage(error: unknown): string | null {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -97,6 +101,8 @@ function isTrialExpiredMessage(message: string | null | undefined): boolean {
 
 export default function RegisterPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  const registrationState = location.state as RegistrationNavigationState | null
   const googleClientId = APP_CONFIG.googleClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
@@ -115,7 +121,9 @@ export default function RegisterPage() {
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
   const [appleMessage, setAppleMessage] = useState('')
-  const [showEmailRegistration, setShowEmailRegistration] = useState(false)
+  const [showEmailRegistration, setShowEmailRegistration] = useState(
+    registrationState?.registrationMethod === 'email',
+  )
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
 

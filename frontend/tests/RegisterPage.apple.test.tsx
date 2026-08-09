@@ -124,6 +124,22 @@ describe('RegisterPage Apple sign-up', () => {
     expect((multipleProfile as HTMLInputElement).disabled).toBe(true)
   })
 
+  it('opens email registration when routed from Other Email', () => {
+    render(
+      <MemoryRouter
+        initialEntries={[{
+          pathname: '/register',
+          state: { registrationMethod: 'email' },
+        }]}
+      >
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('textbox', { name: /username/i })).toBeTruthy()
+    expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+  })
+
   it('allows the Starter subscription plan to be selected', async () => {
     render(
       <MemoryRouter initialEntries={['/register']}>

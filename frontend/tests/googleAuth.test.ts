@@ -18,7 +18,7 @@ vi.mock('@capgo/capacitor-social-login', () => ({
   },
 }))
 
-import { requestGoogleSignInToken } from '../src/googleAuth'
+import { initializeNativeGoogleSignIn, requestGoogleSignInToken } from '../src/googleAuth'
 
 describe('native Google authentication', () => {
   beforeEach(() => {
@@ -37,6 +37,7 @@ describe('native Google authentication', () => {
   })
 
   it('initializes native Google once and returns an ID token', async () => {
+    await expect(initializeNativeGoogleSignIn('web-client-id')).resolves.toBeUndefined()
     await expect(requestGoogleSignInToken('web-client-id')).resolves.toBe('native-google-id-token')
     await expect(requestGoogleSignInToken('web-client-id')).resolves.toBe('native-google-id-token')
 

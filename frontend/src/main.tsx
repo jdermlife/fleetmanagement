@@ -8,6 +8,7 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App'
 import { APP_CONFIG } from './config'
+import { initializeNativeGoogleSignIn } from './googleAuth'
 import './index.css'
 
 const isNativeMobileApp = Capacitor.isNativePlatform()
@@ -34,6 +35,12 @@ const setupNativeMobileRuntime = async () => {
 void setupNativeMobileRuntime()
 
 const googleClientId = APP_CONFIG.googleClientId
+
+if (isNativeMobileApp && googleClientId) {
+  void initializeNativeGoogleSignIn(googleClientId).catch(() => {
+    // The button retries initialization and presents any error to the user.
+  })
+}
 
 const appNode = (
   <BrowserRouter>
