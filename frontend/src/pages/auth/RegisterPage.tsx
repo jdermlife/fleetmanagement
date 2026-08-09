@@ -23,6 +23,7 @@ type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
 
 type RegistrationNavigationState = {
   registrationMethod?: 'apple' | 'google' | 'email'
+  email?: string
 }
 
 function extractBackendErrorMessage(error: unknown): string | null {
@@ -110,7 +111,7 @@ export default function RegisterPage() {
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
   const [username, setUsername] = useState('')
-  const [email, setEmail] = useState('')
+  const [email, setEmail] = useState(registrationState?.email?.trim() || '')
   const [cellphoneNumber, setCellphoneNumber] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')

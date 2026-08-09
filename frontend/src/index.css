@@ -7905,43 +7905,144 @@ th { color: var(--dark-gold); }
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 24px;
-  background: rgba(47, 28, 0, 0.72);
-  backdrop-filter: blur(8px);
+  isolation: isolate;
+  overflow: hidden;
+  padding: max(20px, env(safe-area-inset-top)) max(20px, env(safe-area-inset-right)) max(20px, env(safe-area-inset-bottom)) max(20px, env(safe-area-inset-left));
+  background:
+    radial-gradient(circle at 50% 46%, rgba(255, 255, 255, 0.98) 0 17%, rgba(255, 251, 232, 0.96) 49%, rgba(247, 237, 201, 0.98) 100%);
+  backdrop-filter: blur(10px);
+}
+
+.login-signing-overlay::before,
+.login-signing-overlay::after {
+  position: absolute;
+  z-index: -2;
+  content: "";
+  pointer-events: none;
+}
+
+.login-signing-overlay::before {
+  width: min(76vw, 760px);
+  aspect-ratio: 1;
+  border: clamp(2px, 0.3vw, 4px) solid rgba(148, 119, 41, 0.22);
+  border-radius: 50%;
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.74),
+    inset 0 0 80px rgba(217, 178, 77, 0.08);
+}
+
+.login-signing-overlay::after {
+  width: min(90vw, 920px);
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255, 244, 198, 0.32), transparent 67%);
+  filter: blur(8px);
+}
+
+.login-signing-orbit {
+  position: absolute;
+  z-index: -1;
+  width: min(76vw, 760px);
+  aspect-ratio: 1;
+  pointer-events: none;
+  animation: login-signing-orbit 18s linear infinite;
+}
+
+.login-signing-orbit span {
+  position: absolute;
+  width: clamp(34px, 5vw, 54px);
+  aspect-ratio: 1;
+  border: 2px solid rgba(255, 255, 255, 0.82);
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 34% 30%, #fff7c8 0 7%, #f2cf54 29%, #ad7607 68%, #624006 100%);
+  box-shadow:
+    0 0 0 5px rgba(208, 166, 47, 0.15),
+    0 9px 24px rgba(99, 66, 6, 0.22),
+    inset 0 2px 5px rgba(255, 255, 255, 0.78);
+}
+
+.login-signing-orbit span:nth-child(1) {
+  top: -3%;
+  left: 47%;
+}
+
+.login-signing-orbit span:nth-child(2) {
+  top: 47%;
+  right: -3%;
+  background:
+    radial-gradient(circle at 34% 30%, #ffffff 0 7%, #e6e2d6 29%, #aaa18d 68%, #5d5648 100%);
+}
+
+.login-signing-orbit span:nth-child(3) {
+  right: 47%;
+  bottom: -3%;
+  background:
+    radial-gradient(circle at 34% 30%, #ffe6bd 0 7%, #c98945 29%, #905119 68%, #4d2908 100%);
+}
+
+.login-signing-orbit span:nth-child(4) {
+  top: 47%;
+  left: -3%;
 }
 
 .login-signing-panel {
-  width: min(100%, 430px);
+  position: relative;
+  width: min(100%, 560px);
+  max-height: calc(100dvh - 40px);
   display: grid;
   justify-items: center;
-  gap: 10px;
-  padding: 34px 32px 30px;
-  border: 1px solid rgba(218, 165, 32, 0.72);
-  border-radius: 8px;
-  background: #fffdf5;
-  color: #332000;
-  box-shadow: 0 28px 80px rgba(35, 20, 0, 0.48);
+  gap: 14px;
+  overflow: auto;
+  padding: clamp(32px, 6vw, 52px) clamp(24px, 6vw, 54px) clamp(28px, 5vw, 46px);
+  border: 3px solid #8a6421;
+  border-radius: clamp(22px, 4vw, 34px);
+  outline: 1px solid rgba(255, 255, 255, 0.88);
+  outline-offset: -7px;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.96), rgba(255, 251, 232, 0.98)),
+    #fffdf5;
+  color: #3d2809;
+  box-shadow:
+    0 28px 70px rgba(68, 46, 9, 0.3),
+    0 8px 20px rgba(68, 46, 9, 0.18),
+    inset 0 1px 0 #ffffff;
   text-align: center;
 }
 
+.login-signing-panel::before {
+  position: absolute;
+  inset: 9px 12% auto;
+  height: 1px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, rgba(255, 223, 132, 0.88), transparent);
+  content: "";
+}
+
 .login-signing-mark {
-  width: 58px;
-  height: 58px;
+  width: clamp(68px, 11vw, 82px);
+  aspect-ratio: 1;
   display: grid;
   place-items: center;
-  margin-bottom: 4px;
-  border: 1px solid #e4c56f;
+  margin-bottom: 2px;
+  border: 2px solid #e3bb50;
   border-radius: 50%;
-  background: #fff7d9;
+  background:
+    radial-gradient(circle at 38% 32%, #ffffff 0 8%, #fff5cf 46%, #f5e3a1 100%);
+  box-shadow:
+    0 0 0 8px rgba(215, 173, 55, 0.08),
+    inset 0 0 16px rgba(187, 130, 7, 0.12);
 }
 
 .login-signing-mark span {
-  width: 28px;
-  height: 28px;
-  border: 3px solid #eadba9;
+  width: clamp(32px, 5.5vw, 42px);
+  aspect-ratio: 1;
+  border: 5px solid #eadba9;
   border-top-color: #9a6800;
+  border-right-color: #c28b0a;
   border-radius: 50%;
-  animation: login-signing-spin 0.85s linear infinite;
+  filter: drop-shadow(0 2px 2px rgba(118, 76, 0, 0.18));
+  animation: login-signing-spin 0.9s linear infinite;
 }
 
 .login-signing-kicker,
@@ -7951,30 +8052,36 @@ th { color: var(--dark-gold); }
 }
 
 .login-signing-kicker {
-  color: #805400;
-  font-size: 0.75rem;
+  color: #6c4610;
+  font-size: clamp(0.72rem, 1.7vw, 0.84rem);
   font-weight: 900;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .login-signing-panel h2 {
   font-family: "Trebuchet MS", "Franklin Gothic Medium", "Segoe UI", sans-serif;
-  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-size: clamp(1.85rem, 6vw, 2.55rem);
+  line-height: 1.08;
+  text-wrap: balance;
 }
 
 .login-signing-panel p {
-  max-width: 34ch;
-  color: #664a14;
-  line-height: 1.55;
+  max-width: 38ch;
+  color: #694a18;
+  font-size: clamp(0.95rem, 2.5vw, 1.12rem);
+  line-height: 1.58;
+  text-wrap: balance;
 }
 
 .login-signing-progress {
-  width: min(100%, 290px);
-  height: 4px;
-  margin-top: 8px;
+  width: min(100%, 390px);
+  height: 7px;
+  margin-top: 10px;
   overflow: hidden;
   border-radius: 999px;
-  background: #eadfbf;
+  background: #eadcb5;
+  box-shadow: inset 0 1px 2px rgba(95, 62, 4, 0.16);
 }
 
 .login-signing-progress span {
@@ -7982,13 +8089,15 @@ th { color: var(--dark-gold); }
   width: 42%;
   height: 100%;
   border-radius: inherit;
-  background: #a87300;
+  background: linear-gradient(90deg, #8f5d00, #dcae28, #a36b00);
+  box-shadow: 0 0 10px rgba(208, 161, 24, 0.68);
   animation: login-signing-progress 1.25s ease-in-out infinite;
 }
 
 .login-signing-panel small {
-  color: #806a3c;
-  font-size: 0.75rem;
+  color: #765b2c;
+  font-size: clamp(0.78rem, 2vw, 0.9rem);
+  line-height: 1.4;
 }
 
 @keyframes login-signing-spin {
@@ -8006,9 +8115,31 @@ th { color: var(--dark-gold); }
   }
 }
 
+@keyframes login-signing-orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 620px) {
+  .login-signing-overlay::before,
+  .login-signing-orbit {
+    width: 118vw;
+  }
+
+  .login-signing-orbit span {
+    width: 34px;
+  }
+
+  .login-signing-panel {
+    gap: 11px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   .login-signing-mark span,
-  .login-signing-progress span {
+  .login-signing-progress span,
+  .login-signing-orbit {
     animation: none;
   }
 

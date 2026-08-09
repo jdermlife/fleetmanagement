@@ -200,6 +200,42 @@ def test_login_endpoint_exists(app_client):
     assert "refresh_token" in payload
 
 
+def test_login_reports_missing_account_after_verification(app_client):
+    client, _auth_module, _fake_db = app_client
+
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "missing@example.com", "password": "password123"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Account not found. Continue to registration."
+
+
+def test_login_keeps_wrong_password_as_invalid_credentials(app_client):
+    client, auth_module, fake_db = app_client
+    user = User(
+        id=12,
+        username="existinguser",
+        email="existing@example.com",
+        password_hash=auth_module.hash_password("correct-password"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+
+    response = client.post(
+        "/api/auth/login",
+        json={"username": "existing@example.com", "password": "wrong-password"},
+    )
+
+    assert response.status_code == 401
+    assert response.json()["detail"] == "Invalid credentials"
+
+
 def test_login_requires_valid_turnstile_when_configured(app_client, monkeypatch):
     client, auth_module, fake_db = app_client
     monkeypatch.setenv("TURNSTILE_SECRET_KEY", "turnstile-test-secret")

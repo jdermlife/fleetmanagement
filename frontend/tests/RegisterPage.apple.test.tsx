@@ -129,7 +129,10 @@ describe('RegisterPage Apple sign-up', () => {
       <MemoryRouter
         initialEntries={[{
           pathname: '/register',
-          state: { registrationMethod: 'email' },
+          state: {
+            registrationMethod: 'email',
+            email: 'new-user@example.com',
+          },
         }]}
       >
         <RegisterPage />
@@ -137,6 +140,7 @@ describe('RegisterPage Apple sign-up', () => {
     )
 
     expect(screen.getByRole('textbox', { name: /username/i })).toBeTruthy()
+    expect((screen.getByRole('textbox', { name: /^email/i }) as HTMLInputElement).value).toBe('new-user@example.com')
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
   })
 

@@ -652,7 +652,10 @@ def login(
     )
 
     if user is None:
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+        raise HTTPException(
+            status_code=404,
+            detail="Account not found. Continue to registration.",
+        )
 
     if not verify_password(payload.password, user.password_hash):
         user.failed_login_attempts = (user.failed_login_attempts or 0) + 1
