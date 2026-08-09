@@ -776,6 +776,35 @@ textarea {
   text-transform: uppercase;
 }
 
+.app-menu-group-toggle {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 0;
+  cursor: pointer;
+  font-family: inherit;
+  line-height: 1.25;
+  text-align: left;
+}
+
+.app-menu-group-toggle:hover,
+.app-menu-group-toggle:focus-visible {
+  filter: brightness(1.08);
+}
+
+.app-menu-group-toggle:focus-visible {
+  outline: 3px solid rgba(250, 204, 21, 0.72);
+  outline-offset: 2px;
+}
+
+.app-menu-group-arrow {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+  line-height: 1;
+}
+
 .app-menu-link {
   font-size: 0.95rem;
   font-weight: 600;

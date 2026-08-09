@@ -190,6 +190,8 @@ function App() {
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
   const [govOpen, setGovOpen] = useState(true)
+  const [adminOpen, setAdminOpen] = useState(true)
+  const [profileOpen, setProfileOpen] = useState(true)
 
   const closeMenu = () => {
     setMenuOpen(false)
@@ -471,9 +473,11 @@ const isSignedIn = authReady && Boolean(currentUser)
   >
     {/* TOOLS */}
 
-    <div
+    <button
+      type="button"
       onClick={() => setFleetOpen(!fleetOpen)}
-      className="app-menu-group app-menu-group-fleet"
+      className="app-menu-group app-menu-group-fleet app-menu-group-toggle"
+      aria-expanded={fleetOpen}
       style={{
         background: 'var(--app-menu-group-fleet-bg)',
         color: 'var(--app-menu-group-fleet-text)',
@@ -483,8 +487,9 @@ const isSignedIn = authReady && Boolean(currentUser)
         fontWeight: 'bold',
       }}
     >
-      TOOLS {fleetOpen ? '▲' : '▼'}
-    </div>
+      <span>TOOLS</span>
+      <span className="app-menu-group-arrow" aria-hidden="true">{fleetOpen ? '▲' : '▼'}</span>
+    </button>
 
     {fleetOpen &&
       fleetMenus.map((page) => (
@@ -510,9 +515,11 @@ const isSignedIn = authReady && Boolean(currentUser)
       <>
         {/* AI TOOLS */}
 
-        <div
+        <button
+          type="button"
           onClick={() => setAiOpen(!aiOpen)}
-          className="app-menu-group app-menu-group-ai"
+          className="app-menu-group app-menu-group-ai app-menu-group-toggle"
+          aria-expanded={aiOpen}
           style={{
             background: 'var(--app-menu-group-ai-bg)',
             color: 'var(--app-menu-group-ai-text)',
@@ -523,8 +530,9 @@ const isSignedIn = authReady && Boolean(currentUser)
             marginTop: '10px',
           }}
         >
-          🤖 AI TOOLS {aiOpen ? '▲' : '▼'}
-        </div>
+          <span>🤖 AI TOOLS</span>
+          <span className="app-menu-group-arrow" aria-hidden="true">{aiOpen ? '▲' : '▼'}</span>
+        </button>
 
         {aiOpen &&
           aiMenuItems.map((page) => (
@@ -550,8 +558,11 @@ const isSignedIn = authReady && Boolean(currentUser)
 
     {isAdminUser && adminMenuItems.length > 0 && (
       <>
-        <div
-          className="app-menu-group app-menu-group-account"
+        <button
+          type="button"
+          onClick={() => setAdminOpen(!adminOpen)}
+          className="app-menu-group app-menu-group-account app-menu-group-toggle"
+          aria-expanded={adminOpen}
           style={{
             background: 'var(--app-menu-group-admin-bg)',
             color: 'var(--app-menu-group-admin-text)',
@@ -561,9 +572,10 @@ const isSignedIn = authReady && Boolean(currentUser)
             marginTop: '10px',
           }}
         >
-          ADMINISTRATION
-        </div>
-        {adminMenuItems.map((page) => (
+          <span>ADMINISTRATION</span>
+          <span className="app-menu-group-arrow" aria-hidden="true">{adminOpen ? '▲' : '▼'}</span>
+        </button>
+        {adminOpen && adminMenuItems.map((page) => (
           <Link
             key={page.id}
             to={`/${page.id}`}
@@ -588,9 +600,11 @@ const isSignedIn = authReady && Boolean(currentUser)
       <>
         {/* GOVERNANCE */}
 
-        <div
+        <button
+          type="button"
           onClick={() => setGovOpen(!govOpen)}
-          className="app-menu-group app-menu-group-governance"
+          className="app-menu-group app-menu-group-governance app-menu-group-toggle"
+          aria-expanded={govOpen}
           style={{
             background: 'var(--app-menu-group-governance-bg)',
             color: 'var(--app-menu-group-governance-text)',
@@ -601,8 +615,9 @@ const isSignedIn = authReady && Boolean(currentUser)
             marginTop: '10px',
           }}
         >
-          🛡 GOVERNANCE & COMPLIANCE {govOpen ? '▲' : '▼'}
-        </div>
+          <span>🛡 GOVERNANCE & COMPLIANCE</span>
+          <span className="app-menu-group-arrow" aria-hidden="true">{govOpen ? '▲' : '▼'}</span>
+        </button>
 
         {govOpen &&
           govMenuItems.map((page) => (
@@ -626,8 +641,11 @@ const isSignedIn = authReady && Boolean(currentUser)
       </>
     )}
 
-    <div
-      className="app-menu-group app-menu-group-account"
+    <button
+      type="button"
+      onClick={() => setProfileOpen(!profileOpen)}
+      className="app-menu-group app-menu-group-account app-menu-group-toggle"
+      aria-expanded={profileOpen}
       style={{
         background: 'var(--app-menu-group-account-bg)',
         color: 'var(--app-menu-group-account-text)',
@@ -637,11 +655,14 @@ const isSignedIn = authReady && Boolean(currentUser)
         marginTop: '10px',
       }}
     >
-      PROFILE
-    </div>
+      <span>PROFILE</span>
+      <span className="app-menu-group-arrow" aria-hidden="true">{profileOpen ? '▲' : '▼'}</span>
+    </button>
 
-    {currentUser ? (
+    {profileOpen ? (
       <>
+        {currentUser ? (
+          <>
         <Link
           to="/account"
           onClick={closeMenu}
@@ -657,9 +678,9 @@ const isSignedIn = authReady && Boolean(currentUser)
         >
           Account Settings
         </Link>
-      </>
-    ) : (
-      <>
+          </>
+        ) : (
+          <>
         <Link
           to="/login"
           onClick={closeMenu}
@@ -690,10 +711,10 @@ const isSignedIn = authReady && Boolean(currentUser)
         >
           Create Account
         </Link>
-      </>
-    )}
-    {isAdminUser ? (
-      <>
+          </>
+        )}
+        {isAdminUser ? (
+          <>
         <Link
           to="/billing"
           onClick={closeMenu}
@@ -769,10 +790,10 @@ const isSignedIn = authReady && Boolean(currentUser)
         >
           Subscription Billing
         </Link>
-      </>
-    ) : null}
-    {isAdminUser ? (
-      <Link
+          </>
+        ) : null}
+        {isAdminUser ? (
+          <Link
         to="/subscription-fees"
         onClick={closeMenu}
         className="app-menu-link app-menu-link-account"
@@ -786,9 +807,9 @@ const isSignedIn = authReady && Boolean(currentUser)
         }}
       >
         Subscription Fees
-      </Link>
-    ) : null}
-    <Link
+          </Link>
+        ) : null}
+        <Link
       to="/support"
       onClick={closeMenu}
       className="app-menu-link app-menu-link-account"
@@ -802,8 +823,8 @@ const isSignedIn = authReady && Boolean(currentUser)
       }}
     >
       Support
-    </Link>
-    <Link
+        </Link>
+        <Link
       to="/privacy"
       onClick={closeMenu}
       className="app-menu-link app-menu-link-account"
@@ -817,8 +838,8 @@ const isSignedIn = authReady && Boolean(currentUser)
       }}
     >
       Privacy Disclosures
-    </Link>
-    <Link
+        </Link>
+        <Link
       to="/terms"
       onClick={closeMenu}
       className="app-menu-link app-menu-link-account"
@@ -832,7 +853,9 @@ const isSignedIn = authReady && Boolean(currentUser)
       }}
     >
       Terms & Consent
-    </Link>
+        </Link>
+      </>
+    ) : null}
     {currentUser ? (
       <button
         type="button"
