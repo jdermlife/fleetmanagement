@@ -20,6 +20,8 @@ def test_allowed_frontend_origins_include_defaults_and_configured_values():
     ])
 
     assert "http://localhost:5173" in origins
+    assert "https://localhost" in origins
+    assert "capacitor://localhost" in origins
     assert "https://fleetmanagement.vercel.app" in origins
     assert "https://filscore-ai.quantech.international" in origins
     assert "https://www.filscore-ai.quantech.international" in origins

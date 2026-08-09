@@ -11170,3 +11170,253 @@ th { color: var(--dark-gold); }
     animation: none;
   }
 }
+
+/* Keep the installed app touch-first even when a WebView reports a wider CSS viewport. */
+html.native-mobile-app,
+html.native-mobile-app body,
+html.native-mobile-app #root {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+html.native-mobile-app {
+  -webkit-text-size-adjust: 100%;
+}
+
+html.native-mobile-app body {
+  overscroll-behavior-y: none;
+}
+
+.native-mobile-app :is(.app-shell, .content, .psychometric-page, .psychometric-panel, .psychometric-summary-card) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app .sidebar {
+  min-height: auto;
+  padding: 10px 12px;
+}
+
+.native-mobile-app .app-topbar-row {
+  align-items: stretch;
+  gap: 8px;
+}
+
+.native-mobile-app .app-brand-lockup {
+  gap: 10px;
+}
+
+.native-mobile-app .app-brand-mark {
+  width: 44px;
+  height: 44px;
+}
+
+.native-mobile-app .app-brand-title {
+  font-size: 1.12rem;
+}
+
+.native-mobile-app .app-brand-subtitle {
+  font-size: 0.66rem;
+  letter-spacing: 0;
+}
+
+.native-mobile-app .app-topbar-actions,
+.native-mobile-app .app-topbar-control-group {
+  width: 100%;
+  margin-left: 0;
+  align-items: stretch;
+}
+
+.native-mobile-app .app-menu-toggle {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 44px;
+  justify-content: center;
+  padding: 8px 10px;
+  font-size: 0.72rem;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.native-mobile-app .app-mini-nav-button {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.native-mobile-app .app-menu-panel {
+  left: 8px;
+  right: 8px;
+  width: auto;
+  max-height: calc(100dvh - 112px - env(safe-area-inset-top));
+  padding: 8px;
+  border-radius: 8px;
+}
+
+.native-mobile-app .app-menu-group,
+.native-mobile-app .app-menu-link {
+  min-height: 44px;
+}
+
+.native-mobile-app .content {
+  width: 100%;
+  padding: 12px 10px calc(76px + env(safe-area-inset-bottom));
+  overflow-x: clip;
+}
+
+.native-mobile-app .content-login {
+  padding: 0;
+}
+
+.native-mobile-app :is(input, select, textarea) {
+  max-width: 100%;
+  min-height: 44px;
+  font-size: 16px;
+}
+
+.native-mobile-app :is(
+  .psychometric-summary-grid,
+  .psychometric-layout,
+  .psychometric-formula-grid,
+  .psychometric-option-grid,
+  .budget-dashboard-layout,
+  .budget-dashboard-card-grid,
+  .budget-dashboard-comparison-grid,
+  .budget-dashboard-category-grid,
+  .dashboard-grid,
+  .scorecard-grid,
+  .vehicle-grid,
+  .access-grid
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app :is(
+  .psychometric-hero,
+  .psychometric-panel-header,
+  .psychometric-section-header,
+  .dashboard-header,
+  .scorecard-header,
+  .scorecard-section-header
+) {
+  flex-direction: column;
+}
+
+.native-mobile-app .psychometric-hero-metric,
+.native-mobile-app .psychometric-section-score,
+.native-mobile-app .loan-page-status-chip {
+  width: 100%;
+  min-width: 0;
+  justify-items: start;
+  text-align: left;
+}
+
+.native-mobile-app .table-responsive,
+.native-mobile-app .subscription-fees-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+}
+
+.native-mobile-app .page-assistant {
+  right: 8px;
+  bottom: max(8px, env(safe-area-inset-bottom));
+}
+
+.native-mobile-app .page-assistant-launcher-wrap {
+  align-items: flex-end;
+}
+
+.native-mobile-app .page-assistant-launcher {
+  width: 50px;
+  height: 50px;
+  min-height: 50px;
+  padding: 7px;
+  justify-content: center;
+  border-radius: 50%;
+}
+
+.native-mobile-app .page-assistant-launcher > span:not(:first-child),
+.native-mobile-app .page-assistant-launcher-notice {
+  display: none;
+}
+
+.native-mobile-app .page-assistant-panel {
+  width: calc(100vw - 16px);
+  height: min(620px, calc(100dvh - 90px));
+  min-height: min(380px, calc(100dvh - 90px));
+  border-radius: 8px;
+}
+
+.native-mobile-app .build-profile-page {
+  width: 100%;
+  overflow-x: clip;
+}
+
+.native-mobile-app :is(
+  .build-profile-layout,
+  .build-profile-workflow-body,
+  .build-profile-form-grid,
+  .build-profile-property-declaration-grid,
+  .build-profile-investment-declaration-grid,
+  .build-profile-two-column-declaration-grid,
+  .build-profile-score-links,
+  .build-profile-totals-grid,
+  .build-profile-wealth-entry-grid
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app .build-profile-workflow-column,
+.native-mobile-app .build-profile-detail-section,
+.native-mobile-app .build-profile-form-panel {
+  padding: 14px;
+}
+
+.native-mobile-app .build-profile-workflow-retrieve {
+  border-top: 1px solid #dbe4f0;
+  border-left: 0;
+}
+
+.native-mobile-app .build-profile-workflow-entry-row {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app .build-profile-workflow-steps {
+  grid-template-columns: repeat(4, 40px);
+  gap: 10px;
+}
+
+.native-mobile-app .build-profile-workflow-step {
+  width: 40px;
+  height: 40px;
+}
+
+.native-mobile-app .build-profile-entry-modes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.native-mobile-app .build-profile-entry-modes button {
+  width: 100%;
+  min-height: 60px;
+}
+
+.native-mobile-app .build-profile-workflow-actions,
+.native-mobile-app .build-profile-form-actions {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.native-mobile-app .build-profile-workflow-action:last-child,
+.native-mobile-app .build-profile-form-actions .loan-inline-button-primary {
+  grid-column: 1 / -1;
+}
+
+.native-mobile-app .build-profile-form-actions .loan-inline-button-primary {
+  grid-row: 1;
+}
+
+.native-mobile-app .build-profile-form-actions button {
+  width: 100%;
+  min-width: 0;
+  min-height: 46px;
+}

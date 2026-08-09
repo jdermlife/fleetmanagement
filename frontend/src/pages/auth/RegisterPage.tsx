@@ -17,6 +17,7 @@ import {
   type RegisterSubscriberType,
 } from '../../authRoles'
 import { APP_CONFIG } from '../../config'
+import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
 
@@ -97,6 +98,7 @@ function isTrialExpiredMessage(message: string | null | undefined): boolean {
 export default function RegisterPage() {
   const navigate = useNavigate()
   const googleClientId = APP_CONFIG.googleClientId
+  const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
@@ -208,6 +210,24 @@ export default function RegisterPage() {
         return
       }
 
+      setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleNativeGoogleSignUp = async () => {
+    if (!acceptedTerms || !acceptedPrivacy) {
+      setMessage('Review and accept the terms and privacy disclosures to continue.')
+      return
+    }
+
+    setIsSaving(true)
+    setMessage('')
+    try {
+      const idToken = await requestGoogleSignInToken(googleClientId)
+      await handleGoogleSuccess({ credential: idToken })
+    } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
       setIsSaving(false)
@@ -399,7 +419,17 @@ export default function RegisterPage() {
 
         <div className="register-social-option">
           <p className="auth-role-copy register-social-label">Google Account</p>
-          {isGoogleEnabled ? (
+          {isGoogleEnabled && useNativeGoogleSignIn ? (
+            <button
+              type="button"
+              className="auth-link-button"
+              onClick={() => void handleNativeGoogleSignUp()}
+              disabled={isSaving}
+            >
+              {isSaving ? 'Continuing with Google...' : 'Sign up with Google'}
+            </button>
+          ) : null}
+          {isGoogleEnabled && !useNativeGoogleSignIn ? (
             <div className="register-google-button-wrap">
               <GoogleLogin
                 onSuccess={handleGoogleSuccess}

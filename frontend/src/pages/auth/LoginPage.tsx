@@ -9,6 +9,7 @@ import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
+import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
 const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
@@ -169,6 +170,7 @@ export default function LoginPage() {
   const [searchParams] = useSearchParams()
   const redirectTo = searchParams.get('redirect') || getDefaultRedirectPath()
   const googleClientId = APP_CONFIG.googleClientId
+  const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
@@ -273,6 +275,19 @@ export default function LoginPage() {
     }
   }
 
+  const handleNativeGoogleSignIn = async () => {
+    setIsSaving(true)
+    setMessage('')
+    try {
+      const idToken = await requestGoogleSignInToken(googleClientId)
+      await handleGoogleSuccess({ credential: idToken })
+    } catch (error) {
+      setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Google right now.'))
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
   const handleAppleSignIn = async () => {
     if (!isAppleConfigured) {
       setMessage('Apple Sign-In is available when configured.')
@@ -359,7 +374,18 @@ export default function LoginPage() {
                 </span>
                 <span>Continue with Google</span>
               </div>
-              {isGoogleEnabled ? (
+              {isGoogleEnabled && useNativeGoogleSignIn ? (
+                <button
+                  type="button"
+                  className="login-art-social-button"
+                  onClick={() => void handleNativeGoogleSignIn()}
+                  disabled={isSaving}
+                >
+                  <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
+                  <span>Continue with Google</span>
+                </button>
+              ) : null}
+              {isGoogleEnabled && !useNativeGoogleSignIn ? (
                 <div className="login-art-google-live">
                   <GoogleLogin
                     onSuccess={handleGoogleSuccess}

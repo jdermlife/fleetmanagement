@@ -1,7 +1,7 @@
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.fms.mobile',
+  appId: 'com.quantech.filscore',
   appName: 'FMS Mobile',
   webDir: 'dist',
   bundledWebRuntime: false,
@@ -23,6 +23,15 @@ const config: CapacitorConfig = {
     Keyboard: {
       resize: 'native',
       resizeOnFullScreen: true,
+    },
+    SocialLogin: {
+      providers: {
+        google: true,
+        facebook: false,
+        apple: false,
+        twitter: false,
+      },
+      logLevel: 1,
     },
   },
 };

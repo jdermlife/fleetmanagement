@@ -10,12 +10,18 @@ import App from './App'
 import { APP_CONFIG } from './config'
 import './index.css'
 
+const isNativeMobileApp = Capacitor.isNativePlatform()
+
+document.documentElement.classList.toggle('native-mobile-app', isNativeMobileApp)
+document.documentElement.dataset.platform = Capacitor.getPlatform()
+
 const setupNativeMobileRuntime = async () => {
-  if (!Capacitor.isNativePlatform()) {
+  if (!isNativeMobileApp) {
     return
   }
 
   try {
+    await StatusBar.setOverlaysWebView({ overlay: false })
     await StatusBar.setStyle({ style: Style.Dark })
     await StatusBar.setBackgroundColor({ color: '#b8860b' })
     await Keyboard.setResizeMode({ mode: KeyboardResize.Body })

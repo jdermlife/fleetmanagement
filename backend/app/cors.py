@@ -7,6 +7,8 @@ DEFAULT_FRONTEND_ORIGINS = (
     "http://localhost:3000",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://localhost",
+    "capacitor://localhost",
     "https://fleetmanagement.vercel.app",
     "https://fleetmanagement-flame.vercel.app",
     "https://fleetmanagement-n8u4pr3bu-jdionedas-projects.vercel.app",
