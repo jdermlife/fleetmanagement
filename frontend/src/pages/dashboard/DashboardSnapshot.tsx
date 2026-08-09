@@ -861,6 +861,7 @@ function Panel({
         <p style={{ ...subtleTextStyle, marginTop: "5px", fontSize: "0.8rem", lineHeight: 1.5 }}>{subtitle}</p>
       </div>
       <div
+        className="dashboard-chart-container"
         style={{
           display: "grid",
           flex: 1,
@@ -888,7 +889,7 @@ function ResponsiveGrid({
       style={{
         display: "grid",
         gap: "18px",
-        gridTemplateColumns: `repeat(auto-fit, minmax(${minWidth}px, 1fr))`,
+        gridTemplateColumns: `repeat(auto-fit, minmax(min(${minWidth}px, 100%), 1fr))`,
         ...style,
       }}
     >
@@ -908,7 +909,7 @@ function SectionGrid({
         alignItems: "stretch",
         columnGap: "12px",
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fit, minmax(410px, 1fr))",
+        gridTemplateColumns: "repeat(auto-fit, minmax(min(410px, 100%), 1fr))",
         rowGap: "0px",
       }}
     >
@@ -986,8 +987,8 @@ function LineChart({
   const gradientId = `line-${accent.replace("#", "")}`;
 
   return (
-    <div style={{ minHeight: "170px", overflowX: "auto" }}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ minWidth: "400px", width: "100%" }}>
+    <div className="dashboard-svg-chart" style={{ minHeight: "170px" }}>
+      <svg className="dashboard-chart-svg" viewBox={`0 0 ${width} ${height}`}>
         <defs>
           <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor={accent} stopOpacity="0.3" />
@@ -1047,6 +1048,7 @@ function VerticalBars({ accent, data }: { accent: string; data: TrendPoint[] }) 
     <ResponsiveGrid minWidth={120} style={{ alignItems: "end", minHeight: "185px" }}>
       {data.map((item) => (
         <div
+          className="dashboard-bar-card"
           key={item.label}
           style={{
             background: "#f8fafc",
@@ -1056,9 +1058,9 @@ function VerticalBars({ accent, data }: { accent: string; data: TrendPoint[] }) 
           }}
         >
           <div
+            className="dashboard-bar-label"
             style={{
               color: "#64748b",
-              fontSize: "0.7rem",
               fontWeight: 700,
               letterSpacing: "0.14em",
               textTransform: "uppercase",
@@ -1087,7 +1089,7 @@ function VerticalBars({ accent, data }: { accent: string; data: TrendPoint[] }) 
               }}
             />
           </div>
-          <div style={{ color: "#0f172a", fontSize: "1.15rem", fontWeight: 700, marginTop: "10px" }}>
+          <div className="dashboard-bar-value" style={{ color: "#0f172a", fontWeight: 700, marginTop: "10px" }}>
             {item.value.toLocaleString()}
           </div>
         </div>
@@ -1107,6 +1109,7 @@ function StackedBarChart({ data }: { data: OutcomePoint[] }) {
     <ResponsiveGrid minWidth={170} style={{ alignItems: "end", minHeight: "185px" }}>
       {data.map((item) => (
         <div
+          className="dashboard-bar-card"
           key={item.label}
           style={{
             background: "#f8fafc",
@@ -1115,7 +1118,7 @@ function StackedBarChart({ data }: { data: OutcomePoint[] }) {
             padding: "14px",
           }}
         >
-          <div style={{ color: "#0f172a", fontSize: "0.92rem", fontWeight: 700 }}>{item.label}</div>
+          <div className="dashboard-bar-title" style={{ color: "#0f172a", fontWeight: 700 }}>{item.label}</div>
           <div
             style={{
               background: "rgba(226,232,240,0.72)",
@@ -1147,10 +1150,10 @@ function StackedBarChart({ data }: { data: OutcomePoint[] }) {
               }}
             />
           </div>
-          <div style={{ color: "#10b981", fontSize: "0.84rem", fontWeight: 700, marginTop: "12px" }}>
+          <div className="dashboard-bar-detail" style={{ color: "#10b981", fontWeight: 700, marginTop: "12px" }}>
             Approved: {item.approved.toLocaleString()}
           </div>
-          <div style={{ color: "#ef4444", fontSize: "0.84rem", fontWeight: 700, marginTop: "4px" }}>
+          <div className="dashboard-bar-detail" style={{ color: "#ef4444", fontWeight: 700, marginTop: "4px" }}>
             Rejected: {item.rejected.toLocaleString()}
           </div>
         </div>
@@ -1177,32 +1180,32 @@ function PieChart({ data }: { data: PurposeSlice[] }) {
 
   return (
     <div
+      className="dashboard-split-chart dashboard-pie-chart"
       style={{
         alignItems: "center",
         display: "grid",
         gap: "18px",
-        gridTemplateColumns: "minmax(140px, 180px) minmax(0, 1fr)",
         minHeight: "185px",
       }}
     >
       <div
+        className="dashboard-pie-shell"
         style={{
           alignItems: "center",
           background: "#fff",
           border: "1px solid rgba(148,163,184,0.18)",
           borderRadius: "999px",
           display: "flex",
-          height: "148px",
           justifyContent: "center",
           margin: "0 auto",
-          width: "148px",
         }}
       >
-        <div style={{ background: gradient, borderRadius: "999px", height: "116px", width: "116px" }} />
+        <div className="dashboard-pie-shape" style={{ background: gradient, borderRadius: "999px" }} />
       </div>
-      <div style={{ display: "grid", gap: "10px" }}>
+      <div className="dashboard-chart-legend" style={{ display: "grid", gap: "10px" }}>
         {data.map((slice) => (
           <div
+            className="dashboard-chart-legend-row"
             key={slice.label}
             style={{
               alignItems: "center",
@@ -1214,13 +1217,13 @@ function PieChart({ data }: { data: PurposeSlice[] }) {
               padding: "12px 14px",
             }}
           >
-            <div style={{ alignItems: "center", display: "flex", gap: "10px" }}>
+            <div className="dashboard-chart-legend-label" style={{ alignItems: "center", display: "flex", gap: "10px" }}>
               <span style={{ background: slice.color, borderRadius: "999px", display: "inline-block", height: "12px", width: "12px" }} />
-              <span style={{ color: "#0f172a", fontWeight: 600 }}>{slice.label}</span>
+              <span className="dashboard-chart-legend-name" style={{ color: "#0f172a", fontWeight: 600 }}>{slice.label}</span>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#0f172a", fontWeight: 700 }}>{slice.value.toLocaleString()}</div>
-              <div style={{ color: "#64748b", fontSize: "0.8rem" }}>{formatPercent(slice.value / total)}</div>
+            <div className="dashboard-chart-legend-value" style={{ textAlign: "right" }}>
+              <div className="dashboard-chart-legend-number" style={{ color: "#0f172a", fontWeight: 700 }}>{slice.value.toLocaleString()}</div>
+              <div className="dashboard-chart-legend-percent" style={{ color: "#64748b" }}>{formatPercent(slice.value / total)}</div>
             </div>
           </div>
         ))}
@@ -1265,16 +1268,16 @@ function RadarRiskChart({ data }: { data: RiskProfilePoint[] }) {
 
   return (
     <div
+      className="dashboard-split-chart dashboard-radar-chart"
       style={{
         alignItems: "center",
         display: "grid",
         gap: "18px",
-        gridTemplateColumns: "minmax(180px, 340px) minmax(0, 1fr)",
         minHeight: "190px",
       }}
     >
-      <div style={{ margin: "0 auto", overflowX: "auto", width: "100%" }}>
-        <svg viewBox={`0 0 ${size} ${size}`} style={{ maxWidth: "320px", minWidth: "240px", width: "100%" }}>
+      <div className="dashboard-chart-visual" style={{ margin: "0 auto", width: "100%" }}>
+        <svg className="dashboard-chart-svg dashboard-radar-svg" viewBox={`0 0 ${size} ${size}`}>
           {levels.map((level) => {
             const points = data
               .map((_point, index) => {
@@ -1321,6 +1324,7 @@ function RadarRiskChart({ data }: { data: RiskProfilePoint[] }) {
             <g key={`point-${vertex.label}`}>
               <circle cx={vertex.x} cy={vertex.y} fill="#ef4444" r="5" />
               <text
+                className="dashboard-radar-label"
                 style={{ fill: "#0f172a", fontSize: "11px", fontWeight: 700 }}
                 textAnchor="middle"
                 x={vertex.labelX}
@@ -1333,9 +1337,10 @@ function RadarRiskChart({ data }: { data: RiskProfilePoint[] }) {
         </svg>
       </div>
 
-      <div style={{ display: "grid", gap: "10px" }}>
+      <div className="dashboard-chart-legend" style={{ display: "grid", gap: "10px" }}>
         {data.map((point) => (
           <div
+            className="dashboard-chart-legend-row"
             key={point.label}
             style={{
               alignItems: "center",
@@ -1347,10 +1352,10 @@ function RadarRiskChart({ data }: { data: RiskProfilePoint[] }) {
               padding: "10px 12px",
             }}
           >
-            <span style={{ color: "#0f172a", fontSize: "0.84rem", fontWeight: 700 }}>
+            <span className="dashboard-chart-legend-name" style={{ color: "#0f172a", fontWeight: 700 }}>
               {point.label}
             </span>
-            <span style={{ color: "#ef4444", fontSize: "0.84rem", fontWeight: 700 }}>
+            <span className="dashboard-chart-legend-number" style={{ color: "#ef4444", fontWeight: 700 }}>
               {formatPercent(point.riskRate)}
             </span>
           </div>
@@ -1371,8 +1376,8 @@ function GeoChart({ data }: { data: GeoPoint[] }) {
   const max = Math.max(...data.map((point) => point.count), 1);
 
   return (
-    <div style={{ minHeight: "190px", overflowX: "auto" }}>
-      <svg viewBox="0 0 1000 620" style={{ minWidth: "400px", width: "100%", maxHeight: "220px" }}>
+    <div className="dashboard-svg-chart" style={{ minHeight: "190px" }}>
+      <svg className="dashboard-chart-svg dashboard-geo-svg" viewBox="0 0 1000 620">
         <defs>
           <linearGradient id="geo-gradient" x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#eff6ff" />
@@ -1391,10 +1396,20 @@ function GeoChart({ data }: { data: GeoPoint[] }) {
           return (
             <g key={point.label}>
               <circle cx={point.x} cy={point.y} r={radius} fill="rgba(8,145,178,0.22)" stroke="#0891b2" strokeWidth="3" />
-              <text x={point.x} y={point.y + 4} textAnchor="middle" style={{ fill: "#0f172a", fontSize: "11px", fontWeight: 700 }}>
+              <text
+                x={point.x}
+                y={point.y + 4}
+                textAnchor="middle"
+                style={{ fill: "#0f172a", fontSize: `${Math.max(7, Math.min(11, radius * 0.55))}px`, fontWeight: 700 }}
+              >
                 {point.label}
               </text>
-              <text x={point.x} y={point.y + radius + 16} textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 600 }}>
+              <text
+                x={point.x}
+                y={point.y + radius + 16}
+                textAnchor="middle"
+                style={{ fill: "#64748b", fontSize: `${Math.max(7, Math.min(11, radius * 0.5))}px`, fontWeight: 600 }}
+              >
                 {point.count.toLocaleString()}
               </text>
             </g>
@@ -1422,8 +1437,8 @@ function ScatterChart({ data }: { data: ScatterPoint[] }) {
   const loanRange = maxLoan - minLoan || 1;
 
   return (
-    <div style={{ minHeight: "170px", overflowX: "auto" }}>
-      <svg viewBox={`0 0 ${width} ${height}`} style={{ minWidth: "400px", width: "100%" }}>
+    <div className="dashboard-svg-chart" style={{ minHeight: "170px" }}>
+      <svg className="dashboard-chart-svg" viewBox={`0 0 ${width} ${height}`}>
         <rect x={padX} y={padY} width={width - padX * 2} height={height - padY * 2} rx="24" fill="#f8fafc" />
         {[0, 1, 2, 3].map((step) => {
           const y = padY + (step * (height - padY * 2)) / 3;
@@ -1466,16 +1481,16 @@ function DonutChart({ data }: { data: PurposeSlice[] }) {
 
   return (
     <div
+      className="dashboard-split-chart dashboard-donut-chart"
       style={{
         alignItems: "center",
         display: "grid",
         gap: "18px",
-        gridTemplateColumns: "minmax(135px, 170px) minmax(0, 1fr)",
         minHeight: "185px",
       }}
     >
-      <div style={{ margin: "0 auto" }}>
-        <svg viewBox="0 0 200 200" style={{ height: "136px", width: "136px" }}>
+      <div className="dashboard-chart-visual" style={{ margin: "0 auto" }}>
+        <svg className="dashboard-chart-svg dashboard-donut-svg" viewBox="0 0 200 200">
           <circle cx="100" cy="100" fill="none" r="72" stroke="#e2e8f0" strokeWidth="26" />
           {data.map((slice) => {
             const dash = (slice.value / total) * circumference;
@@ -1502,14 +1517,24 @@ function DonutChart({ data }: { data: PurposeSlice[] }) {
           <text x="100" y="96" textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
             Applicants
           </text>
-          <text x="100" y="120" textAnchor="middle" style={{ fill: "#0f172a", fontSize: "26px", fontWeight: 700 }}>
+          <text
+            x="100"
+            y="120"
+            textAnchor="middle"
+            style={{
+              fill: "#0f172a",
+              fontSize: `${Math.max(14, 26 - Math.max(0, total.toLocaleString().length - 5) * 2)}px`,
+              fontWeight: 700,
+            }}
+          >
             {total.toLocaleString()}
           </text>
         </svg>
       </div>
-      <div style={{ display: "grid", gap: "10px" }}>
+      <div className="dashboard-chart-legend" style={{ display: "grid", gap: "10px" }}>
         {data.map((slice) => (
           <div
+            className="dashboard-chart-legend-row"
             key={slice.label}
             style={{
               alignItems: "center",
@@ -1521,13 +1546,13 @@ function DonutChart({ data }: { data: PurposeSlice[] }) {
               padding: "12px 14px",
             }}
           >
-            <div style={{ alignItems: "center", display: "flex", gap: "10px" }}>
+            <div className="dashboard-chart-legend-label" style={{ alignItems: "center", display: "flex", gap: "10px" }}>
               <span style={{ background: slice.color, borderRadius: "999px", display: "inline-block", height: "12px", width: "12px" }} />
-              <span style={{ color: "#0f172a", fontWeight: 600 }}>{slice.label}</span>
+              <span className="dashboard-chart-legend-name" style={{ color: "#0f172a", fontWeight: 600 }}>{slice.label}</span>
             </div>
-            <div style={{ textAlign: "right" }}>
-              <div style={{ color: "#0f172a", fontWeight: 700 }}>{slice.value.toLocaleString()}</div>
-              <div style={{ color: "#64748b", fontSize: "0.8rem" }}>{formatPercent(slice.value / total)}</div>
+            <div className="dashboard-chart-legend-value" style={{ textAlign: "right" }}>
+              <div className="dashboard-chart-legend-number" style={{ color: "#0f172a", fontWeight: 700 }}>{slice.value.toLocaleString()}</div>
+              <div className="dashboard-chart-legend-percent" style={{ color: "#64748b" }}>{formatPercent(slice.value / total)}</div>
             </div>
           </div>
         ))}

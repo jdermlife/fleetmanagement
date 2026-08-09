@@ -763,7 +763,7 @@ function ResponsiveGrid({
       style={{
         display: "grid",
         gap: "18px",
-        gridTemplateColumns: `repeat(auto-fit, minmax(${minWidth}px, 1fr))`,
+        gridTemplateColumns: `repeat(auto-fit, minmax(min(${minWidth}px, 100%), 1fr))`,
         ...style,
       }}
     >
@@ -776,12 +776,12 @@ function HorizontalBarChart({ slices }: { slices: ChartSlice[] }) {
   const max = Math.max(1, ...slices.map((slice) => slice.value));
 
   return (
-    <div style={{ display: "grid", gap: "10px" }}>
+    <div className="snapshot-responsive-chart" style={{ display: "grid", gap: "10px" }}>
       {slices.map((slice) => (
         <div key={slice.label}>
-          <div style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
-            <span style={{ color: "#334155", fontSize: "0.8rem", fontWeight: 600 }}>{slice.label}</span>
-            <span style={{ color: "#0f172a", fontSize: "0.82rem", fontWeight: 700 }}>{slice.value.toLocaleString()}</span>
+          <div className="snapshot-chart-label-row" style={{ alignItems: "center", display: "flex", justifyContent: "space-between", marginBottom: "4px" }}>
+            <span className="snapshot-chart-label" style={{ color: "#334155", fontWeight: 600 }}>{slice.label}</span>
+            <span className="snapshot-chart-value" style={{ color: "#0f172a", fontWeight: 700 }}>{slice.value.toLocaleString()}</span>
           </div>
           <div style={{ background: "#e2e8f0", borderRadius: "999px", height: "10px", overflow: "hidden" }}>
             <div
@@ -803,7 +803,7 @@ function TrendBars({ points }: { points: TrendPoint[] }) {
   const max = Math.max(1, ...points.map((point) => point.value));
 
   return (
-    <div style={{ alignItems: "end", display: "grid", gap: "10px", gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
+    <div className="snapshot-responsive-chart snapshot-trend-chart" style={{ alignItems: "end", display: "grid", gap: "10px", gridTemplateColumns: `repeat(${points.length}, minmax(0, 1fr))` }}>
       {points.map((point) => (
         <div key={point.label} style={{ textAlign: "center" }}>
           <div
@@ -815,8 +815,8 @@ function TrendBars({ points }: { points: TrendPoint[] }) {
             }}
             title={`${point.label}: ${point.value}`}
           />
-          <div style={{ color: "#334155", fontSize: "0.72rem", fontWeight: 700 }}>{point.value}</div>
-          <div style={{ color: "#64748b", fontSize: "0.68rem" }}>{point.label}</div>
+          <div className="snapshot-trend-value" style={{ color: "#334155", fontWeight: 700 }}>{point.value}</div>
+          <div className="snapshot-trend-label" style={{ color: "#64748b" }}>{point.label}</div>
         </div>
       ))}
     </div>
