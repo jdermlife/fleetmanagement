@@ -193,6 +193,11 @@ const FINANCIAL_HEALTH_RING_LEGEND = [
   'Silver · Controls',
   'Bronze · Future',
 ] as const
+const FINANCIAL_HEALTH_RING_STROKES = [
+  'url(#financial-health-ring-gold)',
+  'url(#financial-health-ring-silver)',
+  'url(#financial-health-ring-bronze)',
+] as const
 
 function trendChartX(index: number, count: number): number {
   return TREND_CHART_LEFT + (index * (TREND_CHART_RIGHT - TREND_CHART_LEFT)) / Math.max(count - 1, 1)
@@ -1132,7 +1137,30 @@ export default function FinancialHealthSummaryPage() {
         >
           <div className="financial-health-ring-visual">
             <svg viewBox="0 0 184 184" aria-hidden="true">
-              {groupRings.map((ring) => (
+              <defs>
+                <linearGradient id="financial-health-ring-gold" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#7b5008" />
+                  <stop offset="0.24" stopColor="#f4c54f" />
+                  <stop offset="0.43" stopColor="#ffe99a" />
+                  <stop offset="0.68" stopColor="#d69a1e" />
+                  <stop offset="1" stopColor="#845508" />
+                </linearGradient>
+                <linearGradient id="financial-health-ring-silver" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#656b73" />
+                  <stop offset="0.24" stopColor="#d5d9de" />
+                  <stop offset="0.43" stopColor="#f7f8f9" />
+                  <stop offset="0.68" stopColor="#adb3ba" />
+                  <stop offset="1" stopColor="#686e76" />
+                </linearGradient>
+                <linearGradient id="financial-health-ring-bronze" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+                  <stop offset="0" stopColor="#663213" />
+                  <stop offset="0.24" stopColor="#c67a3b" />
+                  <stop offset="0.43" stopColor="#f0ad70" />
+                  <stop offset="0.68" stopColor="#a95726" />
+                  <stop offset="1" stopColor="#653012" />
+                </linearGradient>
+              </defs>
+              {groupRings.map((ring, index) => (
                 <g key={ring.label} transform="rotate(-90 92 92)">
                   <circle
                     className="financial-health-ring-track"
@@ -1147,7 +1175,7 @@ export default function FinancialHealthSummaryPage() {
                     cy="92"
                     r={ring.radius}
                     pathLength="100"
-                    stroke={ring.color}
+                    stroke={FINANCIAL_HEALTH_RING_STROKES[index]}
                     strokeDasharray={`${ring.value} ${100 - ring.value}`}
                   />
                 </g>
