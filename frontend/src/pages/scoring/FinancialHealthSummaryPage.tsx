@@ -1127,7 +1127,7 @@ export default function FinancialHealthSummaryPage() {
         <div className="psychometric-hero-copy financial-health-hero-copy">
           <span className="psychometric-eyebrow">FILSCORE Financial Vital Signs</span>
           <h1 id="financial-health-title">Financial Health</h1>
-          <p style="display: none;">
+          <p hidden>
             One clear view of your financial stability, control, and future progress—calculated
             from eight weighted health indicators.
           </p>
