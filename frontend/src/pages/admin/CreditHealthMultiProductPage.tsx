@@ -191,6 +191,7 @@ export default function CreditHealthMultiProductPage() {
 
     return (
     <div
+      className="credit-health-certificate"
       style={{
         backgroundColor: '#fffaf0',
         border: '6px solid #1e3a8a',
@@ -202,35 +203,36 @@ export default function CreditHealthMultiProductPage() {
       }}
     >
       {/* Header */}
-      <div style={{ marginBottom: 20 }}>
-        <div style={{ fontSize: '12px', letterSpacing: '2px', color: '#d97706', fontWeight: '600' }}>
+      <div className="credit-health-certificate-header" style={{ marginBottom: 20 }}>
+        <div className="credit-health-certificate-kicker" style={{ fontSize: '12px', letterSpacing: '2px', color: '#d97706', fontWeight: '600' }}>
           CERTIFICATION OF CREDIT READINESS ASSESSMENT
         </div>
-        <div style={{ fontSize: '36px', fontWeight: '900', color: '#1e3a8a', margin: '12px 0' }}>
+        <div className="credit-health-certificate-title" style={{ fontSize: '36px', fontWeight: '900', color: '#1e3a8a', margin: '12px 0' }}>
           FILSCORE
         </div>
       </div>
 
       {/* Reference and Product */}
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: 20, borderBottom: '1px solid #e5e7eb', paddingBottom: 16 }}>
+      <div className="credit-health-certificate-reference" style={{ fontSize: '12px', color: '#666', marginBottom: 20, borderBottom: '1px solid #e5e7eb', paddingBottom: 16 }}>
         <div>REFERENCE NO. {product.applicationNo}</div>
         <div style={{ marginTop: 4 }}>PRODUCT BEING APPLIED FOR: {product.productType.toUpperCase()}</div>
       </div>
 
       {/* Applicant Name */}
-      <div style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e3a8a', margin: '24px 0' }}>
+      <div className="credit-health-certificate-applicant" style={{ fontSize: '28px', fontWeight: 'bold', color: '#1e3a8a', margin: '24px 0' }}>
         {product.borrowerName}
       </div>
 
       {/* Certification Statement */}
-      <div style={{ fontSize: '12px', color: '#666', marginBottom: 24, fontStyle: 'italic' }}>
+      <div className="credit-health-certificate-statement" style={{ fontSize: '12px', color: '#666', marginBottom: 24, fontStyle: 'italic' }}>
         This certifies that the above application completed the FILSCORE assessment workflow and the summarized results below were generated for credit evaluation and certification use.
       </div>
 
       {/* Main Score Boxes - 3 column layout */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: 24 }}>
+      <div className="credit-health-certificate-primary-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '12px', marginBottom: 24 }}>
         {/* Composite Score */}
         <div
+          className="credit-health-certificate-score-card"
           style={{
             backgroundColor: '#fef3c7',
             borderRadius: '8px',
@@ -238,14 +240,15 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>COMPOSITE SCORE</div>
-          <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-score-label" style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>COMPOSITE SCORE</div>
+          <div className="credit-health-certificate-score-value" style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.compositeScore || 'N/A'}
           </div>
         </div>
 
         {/* Label (Grade) */}
         <div
+          className="credit-health-certificate-score-card"
           style={{
             backgroundColor: '#fef3c7',
             borderRadius: '8px',
@@ -253,14 +256,15 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>LABEL</div>
-          <div style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-score-label" style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>LABEL</div>
+          <div className="credit-health-certificate-score-value" style={{ fontSize: '42px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.finalGrade || 'N/A'}
           </div>
         </div>
 
         {/* Decision/Rating */}
         <div
+          className="credit-health-certificate-score-card"
           style={{
             backgroundColor: '#fef3c7',
             borderRadius: '8px',
@@ -268,17 +272,18 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>DECISION</div>
-          <div style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-score-label" style={{ fontSize: '11px', color: '#92400e', fontWeight: '600', marginBottom: 8 }}>DECISION</div>
+          <div className="credit-health-certificate-score-value credit-health-certificate-decision" style={{ fontSize: '24px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.finalRating ? product.finalRating.toUpperCase() : 'N/A'}
           </div>
         </div>
       </div>
 
       {/* Individual Scores - 2x2 grid */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 24 }}>
+      <div className="credit-health-certificate-detail-grid" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: 24 }}>
         {/* Credit Score */}
         <div
+          className="credit-health-certificate-detail-card"
           style={{
             backgroundColor: '#dbeafe',
             borderRadius: '8px',
@@ -287,21 +292,22 @@ export default function CreditHealthMultiProductPage() {
             gridColumn: 2,
           }}
         >
-          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
+          <div className="credit-health-certificate-detail-label" style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
             CREDIT SCORE - {product.productType.toUpperCase()}
           </div>
           {product.creditScore.grade && (
-            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+            <div className="credit-health-certificate-grade" style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
               {product.creditScore.grade}
             </div>
           )}
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-detail-value" style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.creditScore.score || 'N/A'}
           </div>
         </div>
 
         {/* Non-Starter Score (Fraud) */}
         <div
+          className="credit-health-certificate-detail-card"
           style={{
             backgroundColor: '#dbeafe',
             borderRadius: '8px',
@@ -309,21 +315,22 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'left',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
+          <div className="credit-health-certificate-detail-label" style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>
             NON-STARTER SCORE
           </div>
           {product.fraudScore.grade && (
-            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+            <div className="credit-health-certificate-grade" style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
               {product.fraudScore.grade}
             </div>
           )}
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-detail-value" style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.fraudScore.score || 'N/A'}
           </div>
         </div>
 
         {/* Social Score */}
         <div
+          className="credit-health-certificate-detail-card"
           style={{
             backgroundColor: '#dbeafe',
             borderRadius: '8px',
@@ -331,19 +338,20 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'left',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>SOCIAL SCORE</div>
+          <div className="credit-health-certificate-detail-label" style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>SOCIAL SCORE</div>
           {product.socialScore.grade && (
-            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+            <div className="credit-health-certificate-grade" style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
               {product.socialScore.grade}
             </div>
           )}
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-detail-value" style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.socialScore.score || 'N/A'}
           </div>
         </div>
 
         {/* Credit Values Score */}
         <div
+          className="credit-health-certificate-detail-card"
           style={{
             backgroundColor: '#dbeafe',
             borderRadius: '8px',
@@ -351,13 +359,13 @@ export default function CreditHealthMultiProductPage() {
             textAlign: 'left',
           }}
         >
-          <div style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>CREDIT VALUES SCORE</div>
+          <div className="credit-health-certificate-detail-label" style={{ fontSize: '11px', color: '#0c4a6e', fontWeight: '600', marginBottom: 8 }}>CREDIT VALUES SCORE</div>
           {product.psychometricScore.grade && (
-            <div style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
+            <div className="credit-health-certificate-grade" style={{ fontSize: '13px', color: '#0c4a6e', fontWeight: '600', marginBottom: 4 }}>
               {product.psychometricScore.grade}
             </div>
           )}
-          <div style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
+          <div className="credit-health-certificate-detail-value" style={{ fontSize: '32px', fontWeight: 'bold', color: '#0f766e' }}>
             {product.psychometricScore.score || 'N/A'}
           </div>
         </div>
@@ -369,9 +377,10 @@ export default function CreditHealthMultiProductPage() {
           <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', marginBottom: 10, letterSpacing: '0.06em' }}>
             OTHER PRODUCT SCORES
           </div>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
+          <div className="credit-health-certificate-other-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: '12px' }}>
             {supplementalProducts.map((item) => (
               <div
+                className="credit-health-certificate-other-card"
                 key={item.productType}
                 style={{
                   backgroundColor: '#fef3c7',
@@ -381,10 +390,10 @@ export default function CreditHealthMultiProductPage() {
                   border: '1px solid #fde68a',
                 }}
               >
-                <div style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', marginBottom: 6 }}>
+                <div className="credit-health-certificate-detail-label" style={{ fontSize: '11px', color: '#92400e', fontWeight: '700', marginBottom: 6 }}>
                   {item.productType.toUpperCase()}
                 </div>
-                <div style={{ fontSize: '30px', color: '#0f766e', fontWeight: 'bold', lineHeight: 1 }}>
+                <div className="credit-health-certificate-detail-value" style={{ fontSize: '30px', color: '#0f766e', fontWeight: 'bold', lineHeight: 1 }}>
                   {item.score ?? 'N/A'}
                 </div>
               </div>

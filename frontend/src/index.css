@@ -11714,6 +11714,214 @@ th { color: var(--dark-gold); }
   }
 }
 
+/* Shared chart typography scales with each visual instead of the viewport. */
+:is(
+  .dashboard-metric-card,
+  .dashboard-info-tile,
+  .snapshot-kpi,
+  .scorecard-summary-card,
+  .scorecard-section-badge,
+  .psychometric-hero-metric,
+  .psychometric-summary-card,
+  .psychometric-section-score,
+  .budget-health-component-card,
+  .loan-health-component-card,
+  .financial-health-chart-row,
+  .financial-health-trend-scroll,
+  .credit-health-certificate,
+  .credit-health-certificate-score-card,
+  .credit-health-certificate-detail-card,
+  .credit-health-certificate-other-card
+) {
+  container-type: inline-size;
+  min-width: 0;
+  max-width: 100%;
+}
+
+:is(
+  .dashboard-metric-card,
+  .dashboard-info-tile,
+  .snapshot-kpi,
+  .scorecard-summary-card,
+  .scorecard-section-badge,
+  .psychometric-hero-metric,
+  .psychometric-summary-card,
+  .psychometric-section-score,
+  .budget-health-component-card,
+  .loan-health-component-card,
+  .budget-dashboard-indicator,
+  .financial-health-ring-score,
+  .financial-health-position-ring,
+  .financial-health-mini-ring,
+  .financial-health-chart-row,
+  .credit-health-certificate-score-card,
+  .credit-health-certificate-detail-card,
+  .credit-health-certificate-other-card
+) > * {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.dashboard-metric-label,
+.dashboard-metric-detail,
+.dashboard-info-label,
+.dashboard-info-note {
+  overflow-wrap: anywhere;
+  line-height: 1.3;
+}
+
+.dashboard-metric-label {
+  font-size: clamp(0.68rem, 4.8cqi, 0.86rem) !important;
+}
+
+.dashboard-metric-value {
+  font-size: clamp(1rem, 9cqi, 1.46rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-metric-detail {
+  font-size: clamp(0.62rem, 4cqi, 0.72rem) !important;
+}
+
+.dashboard-info-label {
+  font-size: clamp(0.62rem, 4.2cqi, 0.72rem) !important;
+  letter-spacing: clamp(0.04em, 0.8cqi, 0.14em) !important;
+}
+
+.dashboard-info-value {
+  font-size: clamp(1rem, 9cqi, 1.55rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-info-note {
+  font-size: clamp(0.68rem, 4.6cqi, 0.82rem) !important;
+}
+
+.dashboard-chart-svg :is(
+  .dashboard-svg-value,
+  .dashboard-svg-label,
+  .dashboard-svg-axis-label,
+  .dashboard-radar-label,
+  .dashboard-geo-label,
+  .dashboard-geo-value,
+  .dashboard-donut-caption
+) {
+  font-size: clamp(7px, 3.2cqi, 11px) !important;
+}
+
+.dashboard-donut-value {
+  font-size: clamp(14px, 7cqi, 24px) !important;
+}
+
+.snapshot-kpi strong,
+.scorecard-total,
+.psychometric-summary-card strong {
+  font-size: clamp(1.05rem, 10cqi, 2rem);
+  overflow-wrap: anywhere;
+}
+
+.scorecard-section-badge strong,
+.psychometric-section-score strong {
+  font-size: clamp(0.9rem, 10cqi, 1.2rem);
+  overflow-wrap: anywhere;
+}
+
+.psychometric-hero-metric strong {
+  font-size: clamp(1.6rem, 25cqi, 4rem);
+  overflow-wrap: anywhere;
+}
+
+.budget-health-component-card span {
+  font-size: clamp(0.6rem, 7cqi, 0.76rem);
+  overflow-wrap: anywhere;
+}
+
+.budget-health-component-card strong {
+  font-size: clamp(0.88rem, 12cqi, 1.25rem);
+  overflow-wrap: anywhere;
+}
+
+.budget-health-component-card small {
+  font-size: clamp(0.52rem, 5.4cqi, 0.62rem);
+}
+
+.loan-health-component-card span {
+  font-size: clamp(0.62rem, 7cqi, 0.75rem);
+  overflow-wrap: anywhere;
+}
+
+.loan-health-component-card strong {
+  font-size: clamp(0.9rem, 11cqi, 1.15rem);
+  overflow-wrap: anywhere;
+}
+
+.loan-health-component-card small {
+  font-size: clamp(0.58rem, 5.8cqi, 0.68rem);
+  overflow-wrap: anywhere;
+}
+
+.financial-health-chart-label {
+  font-size: clamp(0.7rem, 3.8cqi, 0.86rem);
+  overflow-wrap: anywhere;
+}
+
+.financial-health-chart-value,
+.financial-health-chart-weight,
+.financial-health-chart-points {
+  font-size: clamp(0.68rem, 3.5cqi, 0.82rem);
+  overflow-wrap: anywhere;
+}
+
+.financial-health-trend-scroll :is(
+  .financial-health-trend-axis-label,
+  .financial-health-trend-period,
+  .financial-health-trend-value
+) {
+  font-size: clamp(8px, 2.8cqi, 11px);
+}
+
+.credit-health-certificate :is(
+  .credit-health-certificate-kicker,
+  .credit-health-certificate-reference,
+  .credit-health-certificate-statement
+) {
+  font-size: clamp(0.66rem, 2.2cqi, 0.75rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-certificate-title {
+  font-size: clamp(1.55rem, 6cqi, 2.25rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-certificate-applicant {
+  font-size: clamp(1.15rem, 5cqi, 1.75rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-certificate-score-label,
+.credit-health-certificate-detail-label,
+.credit-health-certificate-grade {
+  font-size: clamp(0.58rem, 5.5cqi, 0.8rem) !important;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-certificate-score-value {
+  font-size: clamp(1.3rem, 20cqi, 2.625rem) !important;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-certificate-decision {
+  font-size: clamp(0.82rem, 11cqi, 1.5rem) !important;
+}
+
+.credit-health-certificate-detail-value {
+  font-size: clamp(1.1rem, 15cqi, 2rem) !important;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+
 /* Keep the installed app touch-first even when a WebView reports a wider CSS viewport. */
 html.native-mobile-app,
 html.native-mobile-app body,
@@ -11962,4 +12170,281 @@ html.native-mobile-app body {
   width: 100%;
   min-width: 0;
   min-height: 46px;
+}
+
+/* Android chart and indicator safeguards apply even when a WebView reports a desktop-like width. */
+.native-mobile-app :is(
+  .snapshot-kpis,
+  .snapshot-chart-card,
+  .snapshot-responsive-chart,
+  .dashboard-chart-container,
+  .dashboard-svg-chart,
+  .dashboard-chart-visual,
+  .dashboard-chart-legend,
+  .dashboard-chart-legend-row,
+  .dashboard-bar-card,
+  .scorecard-summary-card,
+  .scorecard-section-badge,
+  .psychometric-hero-metric,
+  .psychometric-summary-card,
+  .psychometric-section-score,
+  .psychometric-score-ring,
+  .budget-health-component-card,
+  .loan-health-component-card,
+  .budget-dashboard-indicator,
+  .financial-health-ring-figure,
+  .financial-health-ring-visual,
+  .financial-health-position-ring-card,
+  .financial-health-position-ring,
+  .financial-health-vital-card,
+  .financial-health-mini-ring,
+  .financial-health-trend-scroll,
+  .financial-health-chart-row,
+  .credit-health-certificate,
+  .credit-health-certificate-score-card,
+  .credit-health-certificate-detail-card,
+  .credit-health-certificate-other-card
+) {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app :is(
+  .snapshot-responsive-chart,
+  .dashboard-chart-container,
+  .dashboard-metric-card,
+  .dashboard-info-tile,
+  .psychometric-score-ring,
+  .budget-health-component-card,
+  .loan-health-component-card,
+  .financial-health-ring-figure,
+  .financial-health-position-ring-card,
+  .financial-health-vital-card,
+  .credit-health-certificate-score-card,
+  .credit-health-certificate-detail-card,
+  .credit-health-certificate-other-card
+) {
+  container-type: inline-size;
+}
+
+.native-mobile-app :is(
+  .dashboard-metric-label,
+  .dashboard-metric-value,
+  .dashboard-metric-detail,
+  .dashboard-info-label,
+  .dashboard-info-value,
+  .dashboard-info-note,
+  .snapshot-chart-label,
+  .snapshot-chart-value,
+  .snapshot-trend-label,
+  .snapshot-trend-value,
+  .dashboard-chart-legend-name,
+  .dashboard-chart-legend-number,
+  .dashboard-chart-legend-percent,
+  .dashboard-bar-label,
+  .dashboard-bar-title,
+  .dashboard-bar-value,
+  .dashboard-bar-detail,
+  .scorecard-total,
+  .scorecard-section-badge,
+  .psychometric-hero-metric,
+  .psychometric-summary-card,
+  .psychometric-section-score,
+  .budget-health-component-card,
+  .loan-health-component-card,
+  .budget-dashboard-indicator,
+  .financial-health-ring-score,
+  .financial-health-position-ring,
+  .financial-health-mini-ring,
+  .financial-health-chart-row,
+  .credit-health-certificate
+) {
+  overflow-wrap: anywhere;
+}
+
+.native-mobile-app :is(
+  .dashboard-chart-svg,
+  .financial-health-trend-scroll svg
+) {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  height: auto;
+  overflow: hidden;
+}
+
+.native-mobile-app :is(
+  .dashboard-split-chart,
+  .dashboard-radar-chart,
+  .dashboard-pie-chart,
+  .dashboard-donut-chart
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app .dashboard-chart-legend-row {
+  align-items: flex-start !important;
+  gap: 8px !important;
+  padding: 10px !important;
+}
+
+.native-mobile-app .dashboard-chart-legend-label {
+  align-items: flex-start !important;
+}
+
+.native-mobile-app .dashboard-donut-svg {
+  width: clamp(104px, 44cqi, 136px);
+}
+
+.native-mobile-app .trend-chart svg {
+  min-width: 0;
+}
+
+.native-mobile-app .scorecard-legend {
+  grid-template-columns: repeat(auto-fit, minmax(min(112px, 100%), 1fr));
+}
+
+.native-mobile-app .budget-health-component-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(132px, 100%), 1fr));
+}
+
+.native-mobile-app .loan-health-component-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(128px, 100%), 1fr));
+}
+
+.native-mobile-app .financial-health-ring-figure {
+  width: 100%;
+  min-width: 0;
+  flex-basis: auto;
+}
+
+.native-mobile-app .financial-health-ring-visual {
+  width: min(78cqi, 260px);
+  flex-basis: auto;
+}
+
+.native-mobile-app .financial-health-ring-legend {
+  width: min(240px, 100%);
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app :is(
+  .financial-health-vitals-grid,
+  .financial-health-position-rings,
+  .financial-health-summary-grid,
+  .financial-health-profile-line,
+  .financial-health-insight-grid
+) {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.native-mobile-app .financial-health-chart-head {
+  display: none;
+}
+
+.native-mobile-app .financial-health-chart-row {
+  grid-template-columns: minmax(0, 1fr) 42px 48px 54px;
+  grid-template-areas:
+    "label score weight points"
+    "bar bar bar bar";
+  gap: 7px;
+  padding-inline: 4px;
+}
+
+.native-mobile-app .financial-health-chart-label { grid-area: label; }
+.native-mobile-app .financial-health-bar-track { grid-area: bar; }
+.native-mobile-app .financial-health-chart-value { grid-area: score; }
+.native-mobile-app .financial-health-chart-weight { grid-area: weight; }
+.native-mobile-app .financial-health-chart-points { grid-area: points; }
+
+.native-mobile-app .financial-health-journey-cycle {
+  container-type: inline-size;
+  width: min(100%, 390px);
+  height: auto;
+  aspect-ratio: 1;
+}
+
+.native-mobile-app .financial-health-journey-cycle::before {
+  inset: 12cqi 11cqi;
+}
+
+.native-mobile-app .financial-health-journey-hub {
+  container-type: inline-size;
+  width: 24cqi;
+  padding: 1.8cqi;
+  font-size: clamp(0.62rem, 3.4cqi, 0.82rem);
+}
+
+.native-mobile-app .financial-health-journey-hub span {
+  width: 80%;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step {
+  container-type: inline-size;
+  width: 24.6cqi;
+  min-height: 0;
+  gap: 1.2cqi;
+  padding: 2.5cqi 1.8cqi 2cqi;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(1) {
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(2) {
+  top: 19.5%;
+  right: 0;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(3) {
+  right: 0;
+  bottom: 19.5%;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(4) {
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(5) {
+  top: auto;
+  bottom: 19.5%;
+  left: 0;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(6) {
+  top: 19.5%;
+  left: 0;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step-copy h3 {
+  font-size: clamp(0.52rem, 8cqi, 0.7rem);
+  line-height: 1.15;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-action {
+  min-height: 22px;
+  padding: 2px 4px;
+  font-size: clamp(0.48rem, 6.5cqi, 0.58rem);
+  line-height: 1.1;
+}
+
+.native-mobile-app .credit-health-certificate {
+  padding: clamp(14px, 5cqi, 40px) !important;
+  overflow: hidden;
+}
+
+.native-mobile-app :is(
+  .credit-health-certificate-primary-grid,
+  .credit-health-certificate-detail-grid,
+  .credit-health-certificate-other-grid
+) {
+  grid-template-columns: minmax(0, 1fr) !important;
+}
+
+.native-mobile-app .credit-health-certificate-detail-card {
+  grid-column: auto !important;
 }

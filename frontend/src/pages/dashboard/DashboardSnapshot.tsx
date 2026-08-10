@@ -800,6 +800,7 @@ export default function DashboardSnapshot() {
 function MetricCard({ metric }: { metric: MetricCardData }) {
   return (
     <div
+      className="dashboard-metric-card"
       style={{
         background: metric.accent,
         border: "1px solid rgba(184,134,11,0.18)",
@@ -810,6 +811,7 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
       }}
     >
       <div
+        className="dashboard-metric-label"
         style={{
           color: "#334155",
           fontSize: "0.86rem",
@@ -819,10 +821,10 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
       >
         {metric.label}
       </div>
-      <div style={{ color: "#0f172a", fontSize: "1.46rem", fontWeight: 700, lineHeight: 1.02 }}>
+      <div className="dashboard-metric-value" style={{ color: "#0f172a", fontSize: "1.46rem", fontWeight: 700, lineHeight: 1.02 }}>
         {metric.value}
       </div>
-      <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "7px" }}>
+      <div className="dashboard-metric-detail" style={{ color: "#334155", fontSize: "0.72rem", marginTop: "7px" }}>
         {metric.detail}
       </div>
     </div>
@@ -929,6 +931,7 @@ function InfoTile({
 }) {
   return (
     <div
+      className="dashboard-info-tile"
       style={{
         background: "#f8fafc",
         border: "1px solid rgba(148,163,184,0.18)",
@@ -937,6 +940,7 @@ function InfoTile({
       }}
     >
       <div
+        className="dashboard-info-label"
         style={{
           color: "#64748b",
           fontSize: "0.72rem",
@@ -947,10 +951,10 @@ function InfoTile({
       >
         {label}
       </div>
-      <div style={{ color: "#0f172a", fontSize: "1.55rem", fontWeight: 700, marginTop: "10px" }}>
+      <div className="dashboard-info-value" style={{ color: "#0f172a", fontSize: "1.55rem", fontWeight: 700, marginTop: "10px" }}>
         {value}
       </div>
-      <div style={{ color: "#64748b", fontSize: "0.82rem", marginTop: "4px" }}>{note}</div>
+      <div className="dashboard-info-note" style={{ color: "#64748b", fontSize: "0.82rem", marginTop: "4px" }}>{note}</div>
     </div>
   );
 }
@@ -1015,6 +1019,7 @@ function LineChart({
           <g key={point.label}>
             <circle cx={point.x} cy={point.y} fill="#fff" r="5" stroke={accent} strokeWidth="3" />
             <text
+              className="dashboard-svg-value"
               x={point.x}
               y={point.y - 12}
               textAnchor="middle"
@@ -1023,6 +1028,7 @@ function LineChart({
               {formatValue(point.value)}
             </text>
             <text
+              className="dashboard-svg-label"
               x={point.x}
               y={height - 6}
               textAnchor="middle"
@@ -1397,6 +1403,7 @@ function GeoChart({ data }: { data: GeoPoint[] }) {
             <g key={point.label}>
               <circle cx={point.x} cy={point.y} r={radius} fill="rgba(8,145,178,0.22)" stroke="#0891b2" strokeWidth="3" />
               <text
+                className="dashboard-geo-label"
                 x={point.x}
                 y={point.y + 4}
                 textAnchor="middle"
@@ -1405,6 +1412,7 @@ function GeoChart({ data }: { data: GeoPoint[] }) {
                 {point.label}
               </text>
               <text
+                className="dashboard-geo-value"
                 x={point.x}
                 y={point.y + radius + 16}
                 textAnchor="middle"
@@ -1459,10 +1467,10 @@ function ScatterChart({ data }: { data: ScatterPoint[] }) {
           const y = height - padY - ((point.loanAmount - minLoan) / loanRange) * (height - padY * 2);
           return <circle key={point.label} cx={x} cy={y} fill="rgba(14,165,233,0.45)" r="4.2" />;
         })}
-        <text x={width / 2} y={height - 6} textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 600 }}>
+        <text className="dashboard-svg-axis-label" x={width / 2} y={height - 6} textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 600 }}>
           Borrower monthly income
         </text>
-        <text transform={`translate(18 ${height / 2}) rotate(-90)`} textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 600 }}>
+        <text className="dashboard-svg-axis-label" transform={`translate(18 ${height / 2}) rotate(-90)`} textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 600 }}>
           Loan amount requested
         </text>
       </svg>
@@ -1514,10 +1522,11 @@ function DonutChart({ data }: { data: PurposeSlice[] }) {
               />
             );
           })}
-          <text x="100" y="96" textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
+          <text className="dashboard-donut-caption" x="100" y="96" textAnchor="middle" style={{ fill: "#64748b", fontSize: "11px", fontWeight: 700, letterSpacing: "0.14em", textTransform: "uppercase" }}>
             Applicants
           </text>
           <text
+            className="dashboard-donut-value"
             x="100"
             y="120"
             textAnchor="middle"

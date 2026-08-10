@@ -720,6 +720,7 @@ function normalizeRiskScore(value: number | null | undefined): number {
 function MetricCard({ metric }: { metric: MetricCardData }) {
   return (
     <div
+      className="dashboard-metric-card"
       style={{
         background: metric.accent,
         border: "1px solid rgba(184,134,11,0.18)",
@@ -730,6 +731,7 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
       }}
     >
       <div
+        className="dashboard-metric-label"
         style={{
           color: "#334155",
           fontSize: "0.86rem",
@@ -739,10 +741,10 @@ function MetricCard({ metric }: { metric: MetricCardData }) {
       >
         {metric.label}
       </div>
-      <div style={{ color: "#0f172a", fontSize: "1.46rem", fontWeight: 700, lineHeight: 1.02 }}>
+      <div className="dashboard-metric-value" style={{ color: "#0f172a", fontSize: "1.46rem", fontWeight: 700, lineHeight: 1.02 }}>
         {metric.value}
       </div>
-      <div style={{ color: "#334155", fontSize: "0.72rem", marginTop: "7px" }}>
+      <div className="dashboard-metric-detail" style={{ color: "#334155", fontSize: "0.72rem", marginTop: "7px" }}>
         {metric.detail}
       </div>
     </div>
