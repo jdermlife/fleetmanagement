@@ -1053,6 +1053,14 @@ export default function FinancialHealthSummaryPage() {
               <span className="financial-health-journey-arrow financial-health-journey-arrow-5" aria-hidden="true" />
               <span className="financial-health-journey-arrow financial-health-journey-arrow-6" aria-hidden="true" />
             </div>
+            <button
+              type="button"
+              className="financial-health-journey-minimize"
+              onClick={minimizeJourney}
+              aria-label="Minimize Financial Health Journey"
+            >
+              Minimize
+            </button>
 
             <div className="financial-health-journey-progress" aria-live="polite">
               <h3>Financial Health Journey</h3>
