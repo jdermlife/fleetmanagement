@@ -51,6 +51,7 @@ import {
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
   type InformationStepNumber,
 } from './applicationCompleteness';
+import CreditHealthScoreGraph from './CreditHealthScoreGraph';
 import { getFilscoreBand, toFilscore } from './filscoreScale';
 import { buildLendingScoreTimeline, calculateAffordableLoan } from './lendingDecisionInsights';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
@@ -4324,17 +4325,6 @@ export default function LendingScorecard() {
     },
   ];
   const improvementAreas = getLendingImprovementAreas();
-  const compositeGradeBands = [
-    { range: '950-1000', grade: 'A++', rating: 'World Class' },
-    { range: '900-949', grade: 'A+', rating: 'Exceptional' },
-    { range: '850-899', grade: 'A', rating: 'Excellent' },
-    { range: '800-849', grade: 'B+', rating: 'Very Good' },
-    { range: '750-799', grade: 'B', rating: 'Good' },
-    { range: '700-749', grade: 'C+', rating: 'Fair' },
-    { range: '650-699', grade: 'C', rating: 'Needs Improvement' },
-    { range: '600-649', grade: 'D', rating: 'High Risk' },
-    { range: 'Below 600', grade: 'F', rating: 'Critical' },
-  ];
   const workflowActionButtonClass =
     workflowActionState === 'processing'
       ? 'bg-amber-500 hover:bg-amber-500 border-amber-600 text-white'
@@ -4468,12 +4458,19 @@ export default function LendingScorecard() {
         </div>
 
 
-           <div className="psychometric-hero-metric">
-          <span>{compositeGradeBands.find(band => band.grade === displayedQuantSummary?.final_grade)?.grade ?? 'Please complete workflow form'}</span>
-          <span>{compositeGradeBands.find(band => band.rating === displayedQuantSummary?.final_rating)?.rating ?? 'Ensure to provide information'}</span>
-          <strong>{compositeInternalScore !== null && toFilscore(compositeInternalScore) !== null ? toFilscore(compositeInternalScore)!.toString() : 'Pending'}</strong>
-          <small>  Status  {currentStepLabel}</small>
-          <small> Information Provided {completionPercent}%</small>
+        <div className="credit-health-score-graph-panel">
+          <CreditHealthScoreGraph
+            scores={{
+              credit: toFilscore(displayedQuantSummary?.credit_score),
+              nonStarter: toFilscore(displayedQuantSummary?.fraud_score),
+              social: toFilscore(displayedQuantSummary?.social_score),
+              psychometric: toFilscore(displayedQuantSummary?.psychometric_score),
+            }}
+          />
+          <div className="credit-health-score-graph-status">
+            <span>{currentStepLabel}</span>
+            <strong>{completionPercent}% information provided</strong>
+          </div>
         </div>
 
       </section>
