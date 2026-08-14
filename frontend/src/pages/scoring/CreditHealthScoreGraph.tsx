@@ -7,67 +7,42 @@ export type CreditHealthGraphScores = {
   psychometric: number | null;
 };
 
-type ScoreRegion = {
+type ScoreRing = {
   id: keyof CreditHealthGraphScores;
   label: string;
-  displayLabel: string;
-  path: string;
-  labelX: number;
-  labelY: number;
-  valueX: number;
-  valueY: number;
-  textClassName: string;
-  gradient: [string, string, string];
+  radius: number;
+  color: string;
+  gradient: [string, string, string, string];
 };
 
-const SCORE_REGIONS: ScoreRegion[] = [
+const SCORE_RINGS: ScoreRing[] = [
   {
     id: 'credit',
     label: 'Credit Score',
-    displayLabel: 'Credit Score',
-    path: 'M27 24H130C118 78 143 139 128 200C117 244 138 276 130 296H27Z',
-    labelX: 78,
-    labelY: 145,
-    valueX: 78,
-    valueY: 172,
-    textClassName: 'credit-health-graph-text-light',
-    gradient: ['#60a5fa', '#2563eb', '#1e3a8a'],
-  },
-  {
-    id: 'psychometric',
-    label: 'Psychometric Score',
-    displayLabel: 'Psychometric',
-    path: 'M130 24H233V118C205 104 174 135 134 116C140 82 123 52 130 24Z',
-    labelX: 183,
-    labelY: 69,
-    valueX: 183,
-    valueY: 94,
-    textClassName: 'credit-health-graph-text-dark',
-    gradient: ['#ffffff', '#f8fafc', '#cbd5e1'],
-  },
-  {
-    id: 'social',
-    label: 'Social Score',
-    displayLabel: 'Social Score',
-    path: 'M134 116C174 135 205 104 233 118V205C204 190 171 221 128 200C134 170 140 145 134 116Z',
-    labelX: 183,
-    labelY: 154,
-    valueX: 183,
-    valueY: 179,
-    textClassName: 'credit-health-graph-text-dark',
-    gradient: ['#fef08a', '#facc15', '#ca8a04'],
+    radius: 80,
+    color: '#3b82f6',
+    gradient: ['#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
   },
   {
     id: 'nonStarter',
     label: 'Non-Starter Score',
-    displayLabel: 'Non-Starter',
-    path: 'M128 200C171 221 204 190 233 205V296H130C138 276 117 244 128 200Z',
-    labelX: 183,
-    labelY: 238,
-    valueX: 183,
-    valueY: 263,
-    textClassName: 'credit-health-graph-text-light',
-    gradient: ['#fb7185', '#dc2626', '#7f1d1d'],
+    radius: 64,
+    color: '#ef4444',
+    gradient: ['#fecaca', '#fb7185', '#dc2626', '#7f1d1d'],
+  },
+  {
+    id: 'social',
+    label: 'Social Score',
+    radius: 48,
+    color: '#facc15',
+    gradient: ['#fef9c3', '#fde047', '#eab308', '#a16207'],
+  },
+  {
+    id: 'psychometric',
+    label: 'Psychometric Score',
+    radius: 32,
+    color: '#ffffff',
+    gradient: ['#ffffff', '#f8fafc', '#dbe4ee', '#94a3b8'],
   },
 ];
 
@@ -75,62 +50,63 @@ function displayScore(score: number | null): string {
   return typeof score === 'number' && Number.isFinite(score) ? Math.round(score).toString() : 'Pending';
 }
 
+function ringProgress(score: number | null): number {
+  if (typeof score !== 'number' || !Number.isFinite(score)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, score / 10));
+}
+
 export default function CreditHealthScoreGraph({ scores }: { scores: CreditHealthGraphScores }) {
   const graphId = useId().replace(/:/g, '');
-  const ariaLabel = SCORE_REGIONS
-    .map((region) => `${region.label}: ${displayScore(scores[region.id])}`)
+  const ariaLabel = SCORE_RINGS
+    .map((ring) => `${ring.label}: ${displayScore(scores[ring.id])}`)
     .join(', ');
 
   return (
     <figure className="credit-health-score-graph">
-      <svg viewBox="0 0 260 320" role="img" aria-label={ariaLabel}>
-        <defs>
-          <clipPath id={`${graphId}-leaf`}>
-            <path d="M130 16C80 20 44 64 36 126C28 185 52 248 108 294C117 302 126 308 130 312C134 308 143 302 152 294C208 248 232 185 224 126C216 64 180 20 130 16Z" />
-          </clipPath>
-          {SCORE_REGIONS.map((region) => (
-            <linearGradient key={region.id} id={`${graphId}-${region.id}`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={region.gradient[0]} />
-              <stop offset="52%" stopColor={region.gradient[1]} />
-              <stop offset="100%" stopColor={region.gradient[2]} />
-            </linearGradient>
-          ))}
-          <linearGradient id={`${graphId}-sheen`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#ffffff" stopOpacity="0.42" />
-            <stop offset="48%" stopColor="#ffffff" stopOpacity="0.04" />
-            <stop offset="100%" stopColor="#020617" stopOpacity="0.18" />
-          </linearGradient>
-        </defs>
-
-        <g clipPath={`url(#${graphId}-leaf)`}>
-          {SCORE_REGIONS.map((region) => (
-            <path
-              key={region.id}
-              data-score-region={region.id}
-              d={region.path}
-              fill={`url(#${graphId}-${region.id})`}
+      <figcaption className="credit-health-score-indicators" aria-label="Credit Health score indicators">
+        {SCORE_RINGS.map((ring) => (
+          <div key={ring.id} className="credit-health-score-indicator">
+            <i
+              style={{ background: ring.color, boxShadow: `0 0 8px ${ring.color}` }}
+              aria-hidden="true"
             />
-          ))}
-          <rect x="27" y="24" width="206" height="272" fill={`url(#${graphId}-sheen)`} />
-          <path className="credit-health-graph-boundary" d="M130 24C118 78 143 139 128 200C117 244 138 276 130 296" />
-          <path className="credit-health-graph-boundary" d="M134 116C174 135 205 104 233 118" />
-          <path className="credit-health-graph-boundary" d="M128 200C171 221 204 190 233 205" />
-        </g>
-
-        <path className="credit-health-graph-outline" d="M130 16C80 20 44 64 36 126C28 185 52 248 108 294C117 302 126 308 130 312C134 308 143 302 152 294C208 248 232 185 224 126C216 64 180 20 130 16Z" />
-        <path className="credit-health-graph-vein" d="M130 30V286" />
-
-        {SCORE_REGIONS.map((region) => (
-          <g key={`${region.id}-label`} className={region.textClassName}>
-            <text className="credit-health-graph-label" x={region.labelX} y={region.labelY} textAnchor="middle">
-              {region.displayLabel}
-            </text>
-            <text className="credit-health-graph-value" x={region.valueX} y={region.valueY} textAnchor="middle">
-              {displayScore(scores[region.id])}
-            </text>
-          </g>
+            <span>{ring.label}</span>
+            <strong>{displayScore(scores[ring.id])}</strong>
+          </div>
         ))}
-      </svg>
+      </figcaption>
+
+      <div className="credit-health-score-ring-visual">
+        <svg viewBox="0 0 200 200" role="img" aria-label={ariaLabel}>
+          <defs>
+            {SCORE_RINGS.map((ring) => (
+              <linearGradient key={ring.id} id={`${graphId}-${ring.id}`} x1="25" y1="20" x2="175" y2="180" gradientUnits="userSpaceOnUse">
+                <stop offset="0%" stopColor={ring.gradient[0]} />
+                <stop offset="30%" stopColor={ring.gradient[1]} />
+                <stop offset="68%" stopColor={ring.gradient[2]} />
+                <stop offset="100%" stopColor={ring.gradient[3]} />
+              </linearGradient>
+            ))}
+          </defs>
+
+          {SCORE_RINGS.map((ring) => {
+            const progress = ringProgress(scores[ring.id]);
+            return (
+              <g key={ring.id} transform="rotate(-90 100 100)">
+                <circle className="credit-health-score-ring-track" data-score-track={ring.id} cx="100" cy="100" r={ring.radius} pathLength="100" style={{ stroke: ring.color }} />
+                <circle className="credit-health-score-ring-progress" data-score-ring={ring.id} cx="100" cy="100" r={ring.radius} pathLength="100" stroke={`url(#${graphId}-${ring.id})`} strokeDasharray={`${progress} ${100 - progress}`} />
+              </g>
+            );
+          })}
+        </svg>
+        <div className="credit-health-score-ring-center" aria-hidden="true">
+          <strong>FILSCORE</strong>
+          <span>Credit Health</span>
+        </div>
+      </div>
     </figure>
   );
 }

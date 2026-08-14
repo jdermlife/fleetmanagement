@@ -3259,8 +3259,8 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .credit-health-score-graph-panel {
-  flex: 0 0 clamp(260px, 28vw, 340px);
-  width: clamp(260px, 28vw, 340px);
+  flex: 0 0 clamp(340px, 34vw, 440px);
+  width: clamp(340px, 34vw, 440px);
   align-self: center;
   display: grid;
   gap: 8px;
@@ -3271,56 +3271,102 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .credit-health-score-graph {
-  width: min(100%, 286px);
-  aspect-ratio: 13 / 16;
+  width: 100%;
   margin: 0 auto;
+  display: grid;
+  grid-template-columns: minmax(118px, 0.8fr) minmax(190px, 1.2fr);
+  align-items: center;
+  gap: 12px;
 }
 
-.credit-health-score-graph svg {
+.credit-health-score-indicators {
+  display: grid;
+  gap: 9px;
+  min-width: 0;
+}
+
+.credit-health-score-indicator {
+  display: grid;
+  grid-template-columns: 10px minmax(0, 1fr);
+  align-items: center;
+  gap: 3px 7px;
+  min-width: 0;
+  padding: 7px 8px;
+  border-left: 2px solid rgba(255, 255, 255, 0.16);
+  background: rgba(2, 6, 23, 0.38);
+}
+
+.credit-health-score-indicator i {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.credit-health-score-indicator span {
+  min-width: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 0.68rem;
+  font-weight: 700;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.credit-health-score-indicator strong {
+  grid-column: 2;
+  color: #ffffff;
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.credit-health-score-ring-visual {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+}
+
+.credit-health-score-ring-visual svg {
   display: block;
   width: 100%;
   height: 100%;
-  overflow: visible;
   filter: drop-shadow(0 10px 14px rgba(2, 6, 23, 0.32));
 }
 
-.credit-health-graph-boundary {
+.credit-health-score-ring-track,
+.credit-health-score-ring-progress {
   fill: none;
-  stroke: rgba(15, 23, 42, 0.48);
-  stroke-width: 2;
+  stroke-width: 11;
 }
 
-.credit-health-graph-outline {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.9);
-  stroke-width: 3;
+.credit-health-score-ring-track {
+  opacity: 0.2;
 }
 
-.credit-health-graph-vein {
-  fill: none;
-  stroke: rgba(15, 23, 42, 0.46);
-  stroke-width: 2;
+.credit-health-score-ring-progress {
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.5));
+  animation: financial-health-ring-draw 700ms ease-out both;
 }
 
-.credit-health-graph-text-light {
-  fill: #ffffff;
-  filter: drop-shadow(0 1px 2px rgba(2, 6, 23, 0.9));
+.credit-health-score-ring-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  pointer-events: none;
 }
 
-.credit-health-graph-text-dark {
-  fill: #172033;
+.credit-health-score-ring-center strong {
+  color: #ffffff;
+  font-size: clamp(0.68rem, 1.3vw, 0.9rem);
+  line-height: 1;
 }
 
-.credit-health-graph-label {
-  font-size: 10px;
-  font-weight: 800;
-  letter-spacing: 0;
-}
-
-.credit-health-graph-value {
-  font-size: 17px;
-  font-weight: 900;
-  letter-spacing: 0;
+.credit-health-score-ring-center span {
+  margin-top: 3px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: clamp(0.5rem, 0.9vw, 0.64rem);
+  font-weight: 700;
 }
 
 .credit-health-score-graph-status {
@@ -3349,6 +3395,15 @@ button.loan-repository-action-release { background: #4f46e5; }
     width: min(100%, 360px);
     flex-basis: auto;
     align-self: center;
+  }
+
+  .credit-health-score-graph {
+    grid-template-columns: minmax(104px, 0.75fr) minmax(176px, 1.25fr);
+    gap: 8px;
+  }
+
+  .credit-health-score-indicator {
+    padding: 6px;
   }
 }
 
@@ -3778,8 +3833,145 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: rgba(53, 39, 83, 0.34);
 }
 
-.budget-dashboard-scorecard {
-  background: rgba(122, 94, 15, 0.34);
+.budget-utilization-graph {
+  width: clamp(340px, 36vw, 480px);
+  min-width: 0;
+  padding: 22px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: 8px;
+  background: rgba(15, 36, 28, 0.72);
+  box-shadow: 0 18px 38px rgba(7, 25, 18, 0.24);
+  color: #f8fafc;
+}
+
+.budget-utilization-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.budget-utilization-heading span {
+  display: block;
+  margin-bottom: 3px;
+  color: #fed7aa;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.budget-utilization-heading h2 {
+  margin: 0;
+  color: #ffffff;
+  font-size: 1.2rem;
+  letter-spacing: 0;
+}
+
+.budget-utilization-heading > strong {
+  color: #86efac;
+  font-size: clamp(1.55rem, 3vw, 2.3rem);
+  line-height: 1;
+}
+
+.budget-utilization-track {
+  position: relative;
+  height: 24px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 237, 213, 0.56);
+  border-radius: 6px;
+  background: #9a3412;
+  box-shadow: 0 5px 16px rgba(234, 88, 12, 0.34), inset 0 2px 5px rgba(67, 20, 7, 0.42);
+}
+
+.budget-utilization-budget-shadow,
+.budget-utilization-progress {
+  position: absolute;
+  inset: 0;
+}
+
+.budget-utilization-budget-shadow {
+  background: linear-gradient(90deg, #c2410c, #fb923c 58%, #fdba74);
+  opacity: 0.82;
+}
+
+.budget-utilization-progress {
+  right: auto;
+  min-width: 0;
+  background: linear-gradient(90deg, #166534, #22c55e 62%, #86efac);
+  box-shadow: 5px 0 12px rgba(22, 101, 52, 0.52);
+  transition: width 320ms ease;
+}
+
+.budget-utilization-overflow {
+  height: 7px;
+  margin-top: 7px;
+  overflow: hidden;
+  border-radius: 4px;
+  background: rgba(255, 237, 213, 0.18);
+}
+
+.budget-utilization-overflow span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #ef4444);
+}
+
+.budget-utilization-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 8px 14px;
+  margin-top: 14px;
+}
+
+.budget-utilization-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #f8fafc;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.budget-utilization-swatch {
+  width: 10px;
+  height: 10px;
+  flex: 0 0 auto;
+  border-radius: 2px;
+}
+
+.budget-utilization-swatch-used {
+  background: #22c55e;
+}
+
+.budget-utilization-swatch-budget {
+  background: #fb923c;
+  box-shadow: 0 2px 7px rgba(251, 146, 60, 0.54);
+}
+
+.budget-utilization-graph > small {
+  display: block;
+  margin-top: 10px;
+  color: #d1fae5;
+  font-size: 0.74rem;
+  line-height: 1.4;
+}
+
+@media (max-width: 700px) {
+  .budget-utilization-graph {
+    width: 100%;
+    padding: 18px;
+  }
+
+  .budget-utilization-heading {
+    align-items: center;
+  }
+
+  .budget-utilization-legend {
+    display: grid;
+    justify-content: start;
+  }
 }
 
 .budget-dashboard-summary-grid strong {

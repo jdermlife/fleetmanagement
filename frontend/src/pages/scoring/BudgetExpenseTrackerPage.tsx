@@ -6,7 +6,6 @@ import { saveLoanApplicationBudget } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
-import { computeBudgetHealthScore } from './budgetHealthEngine';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 
 type WorkflowStep = 1 | 2 | 3;
@@ -59,13 +58,6 @@ function formatCurrency(amount: number) {
     currency: 'PHP',
     maximumFractionDigits: 0,
   }).format(amount);
-}
-
-function budgetHealthComponentClass(score: number, maximum: number) {
-  const ratio = maximum > 0 ? score / maximum : 0;
-  if (ratio <= 1 / 3) return 'budget-health-component-low';
-  if (ratio <= 2 / 3) return 'budget-health-component-medium';
-  return 'budget-health-component-high';
 }
 
 function formatSignedCurrency(amount: number) {
@@ -415,24 +407,6 @@ export default function BudgetExpenseTrackerPage() {
     };
   }, [expenseAllocationDraft, snapshot.categoryItems]);
 
-  const budgetHealthScore = useMemo(() => computeBudgetHealthScore({
-    periodStart,
-    periodEnd,
-    incomeDraft,
-    expenseDraft,
-    expenseAllocationDraft,
-    savedSetup,
-    actualEntries,
-  }), [
-    actualEntries,
-    expenseAllocationDraft,
-    expenseDraft,
-    incomeDraft,
-    periodEnd,
-    periodStart,
-    savedSetup,
-  ]);
-
   const handleNormalizeExpenseAllocation = () => {
     const currentTotal = snapshot.categoryItems.reduce((total, item) => {
       return total + toSafeNumber(expenseAllocationDraft[item.id] ?? '');
@@ -649,6 +623,38 @@ export default function BudgetExpenseTrackerPage() {
       actualNet: actualIncomeTotal - actualExpenseTotal,
     };
   }, [varianceRows]);
+
+  const budgetUtilization = useMemo(() => {
+    const savedExpenseRows = varianceRows.filter((item) => item.type === 'expense');
+    const actualExpenseRows = savedExpenseRows.filter((item) => item.hasActual);
+    const hasActualExpenses = actualExpenseRows.length > 0;
+    const hasSavedExpenseBudget = savedExpenseRows.length > 0;
+    const budgetAmount = hasActualExpenses
+      ? actualExpenseRows.reduce((total, item) => total + item.setupAmount, 0)
+      : hasSavedExpenseBudget
+        ? savedExpenseRows.reduce((total, item) => total + item.setupAmount, 0)
+        : snapshot.totalExpenseBudget;
+    const utilizedAmount = hasActualExpenses
+      ? actualExpenseRows.reduce((total, item) => total + item.actualAmount, 0)
+      : hasSavedExpenseBudget
+        ? 0
+        : snapshot.totalKnownExpenses;
+    const utilizationPercent = budgetAmount > 0 ? (utilizedAmount / budgetAmount) * 100 : 0;
+
+    return {
+      budgetAmount,
+      utilizedAmount,
+      utilizationPercent,
+      progressPercent: Math.min(100, utilizationPercent),
+      overflowPercent: Math.min(100, Math.max(0, utilizationPercent - 100)),
+      remainingAmount: Math.max(0, budgetAmount - utilizedAmount),
+      sourceLabel: hasActualExpenses
+        ? 'from entered actuals'
+        : hasSavedExpenseBudget
+          ? 'awaiting actual expenses'
+          : 'from current financial data',
+    };
+  }, [snapshot.totalExpenseBudget, snapshot.totalKnownExpenses, varianceRows]);
 
   const topVarianceRows = useMemo(() => {
     return varianceRows
@@ -897,10 +903,44 @@ export default function BudgetExpenseTrackerPage() {
           </p>
         </div>
 
-        <div className="psychometric-hero-metric budget-dashboard-scorecard">
-          <span>Budget Health Score</span>
-          <strong>{budgetHealthScore.score.toFixed(1)}</strong>
-          <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>
+        <div className="budget-utilization-graph" aria-labelledby="budget-utilization-title">
+          <div className="budget-utilization-heading">
+            <div>
+              <span>Budget Performance</span>
+              <h2 id="budget-utilization-title">Budget Utilization</h2>
+            </div>
+            <strong>{budgetUtilization.utilizationPercent.toFixed(1)}%</strong>
+          </div>
+          <div
+            className="budget-utilization-track"
+            role="progressbar"
+            aria-label="Budget utilization"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={Math.round(budgetUtilization.progressPercent)}
+            aria-valuetext={`${budgetUtilization.utilizationPercent.toFixed(1)}% utilized, ${formatCurrency(budgetUtilization.utilizedAmount)} of ${formatCurrency(budgetUtilization.budgetAmount)} budget`}
+          >
+            <div className="budget-utilization-budget-shadow" />
+            <div
+              className="budget-utilization-progress"
+              style={{ width: `${budgetUtilization.progressPercent}%` }}
+            />
+          </div>
+          {budgetUtilization.overflowPercent > 0 ? (
+            <div className="budget-utilization-overflow" aria-label={`${budgetUtilization.overflowPercent.toFixed(1)}% over budget`}>
+              <span style={{ width: `${budgetUtilization.overflowPercent}%` }} />
+            </div>
+          ) : null}
+          <div className="budget-utilization-legend">
+            <span><i className="budget-utilization-swatch budget-utilization-swatch-used" />Utilized {formatCurrency(budgetUtilization.utilizedAmount)}</span>
+            <span><i className="budget-utilization-swatch budget-utilization-swatch-budget" />Budget {formatCurrency(budgetUtilization.budgetAmount)}</span>
+          </div>
+          <small>
+            {budgetUtilization.utilizationPercent > 100
+              ? `${formatCurrency(budgetUtilization.utilizedAmount - budgetUtilization.budgetAmount)} over budget`
+              : `${formatCurrency(budgetUtilization.remainingAmount)} remaining`}
+            {` ${budgetUtilization.sourceLabel}`}
+          </small>
         </div>
       </section>
 
@@ -929,52 +969,6 @@ export default function BudgetExpenseTrackerPage() {
           <strong>{formatSignedCurrency(budgetSetupTotals.net)}</strong>
           <small>{snapshot.performanceBand}</small>
         </article>
-      </section>
-
-      <section className="psychometric-panel" aria-labelledby="budget-health-breakdown-title">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Budget Health component</span>
-            <h2 id="budget-health-breakdown-title">Budget Health Score Breakdown</h2>
-          </div>
-          <div className="budget-health-component-legend" aria-label="Budget Health component color thresholds">
-            <span><i className="budget-health-legend-swatch budget-health-legend-low" />1/3 or below</span>
-            <span><i className="budget-health-legend-swatch budget-health-legend-medium" />Up to 2/3</span>
-            <span><i className="budget-health-legend-swatch budget-health-legend-high" />Beyond 2/3</span>
-          </div>
-        </div>
-        <div className="psychometric-summary-grid budget-health-component-grid">
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.planning, 20)}`}>
-            <span>Budget Planning</span>
-            <strong>{budgetHealthScore.planning} / 20</strong>
-            <small>Period, budget, income, expenses, and allocation setup</small>
-          </article>
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.adherence, 30)}`}>
-            <span>Budget Adherence</span>
-            <strong>{budgetHealthScore.adherence} / 30</strong>
-            <small>{budgetHealthScore.metrics.variancePercent === null ? 'Enter actual expenses' : `${budgetHealthScore.metrics.variancePercent.toFixed(2)}% variance`}</small>
-          </article>
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.savingsDiscipline, 20)}`}>
-            <span>Savings Discipline</span>
-            <strong>{budgetHealthScore.savingsDiscipline} / 20</strong>
-            <small>{budgetHealthScore.metrics.savingsRatePercent === null ? 'Enter income and expenses' : `${budgetHealthScore.metrics.savingsRatePercent.toFixed(2)}% savings rate`}</small>
-          </article>
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.expenseAllocation, 15)}`}>
-            <span>Expense Allocation</span>
-            <strong>{budgetHealthScore.expenseAllocation.toFixed(1)} / 15</strong>
-            <small>{budgetHealthScore.metrics.allocationTotalPercent.toFixed(2)}% allocated</small>
-          </article>
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.cashFlowStability, 15)}`}>
-            <span>Cash Flow Stability</span>
-            <strong>{budgetHealthScore.cashFlowStability} / 15</strong>
-            <small>{budgetHealthScore.metrics.stableMonths} stable month{budgetHealthScore.metrics.stableMonths === 1 ? '' : 's'} recorded</small>
-          </article>
-          <article className={`psychometric-summary-card budget-health-component-card ${budgetHealthComponentClass(budgetHealthScore.aiAdjustment, 8)}`}>
-            <span>AI Adjustments</span>
-            <strong>{budgetHealthScore.aiAdjustment > 0 ? '+' : ''}{budgetHealthScore.aiAdjustment}</strong>
-            <small>Evidence-based behavior modifiers, capped at 100</small>
-          </article>
-        </div>
       </section>
 
       <section className="budget-dashboard-layout">
