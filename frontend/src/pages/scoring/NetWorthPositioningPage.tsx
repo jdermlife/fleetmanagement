@@ -29,6 +29,7 @@ import { readReplicatedBuildProfile, toNetWorthDraft } from './buildProfileRepli
 import { computeWealthCompositeScore } from './wealthCompositeEngine';
 import { computeWealthFoundationScore } from './wealthFoundationEngine';
 import NetWorthJourney from './NetWorthJourney';
+import WealthBalanceRadar from './WealthBalanceRadar';
 
 type WorkflowStep = 1 | 2 | 3 | 4 | 5;
 export type StatementSection =
@@ -1802,11 +1803,12 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
           <h1>Composite Wealth Score</h1>
           <p>Period: <strong>{asOfDate || snapshot.dateLabel}</strong></p>
         </div>
-        <div className="psychometric-hero-metric networth-dashboard-scorecard">
-          <span>Composite Wealth Score</span>
-          <strong>{wealthCompositeScore.score}</strong>
-          <small>{wealthCompositeScore.grade} - {wealthCompositeScore.rating}</small>
-        </div>
+        <WealthBalanceRadar
+          netWorthPositioning={netWorthBuildingScore.score}
+          wealthBehaviour={wealthBehaviourScore}
+          wealthFoundation={wealthFoundationScore.score}
+          wealthAuthenticity={wealthAuthenticityScore}
+        />
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary networth-report-summary" aria-label="Net worth summary">
