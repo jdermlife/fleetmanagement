@@ -144,6 +144,8 @@ describe('LoginPage Apple sign-in', () => {
   })
 
   it('navigates immediately after email login succeeds', async () => {
+    window.localStorage.setItem('fms:journey:minimized', '1')
+    window.localStorage.setItem('fms:journey:do-not-show', '1')
     mockLogin.mockResolvedValue({
       user: {
         id: 8,
@@ -160,7 +162,7 @@ describe('LoginPage Apple sign-in', () => {
     })
 
     render(
-      <MemoryRouter initialEntries={['/login']}>
+      <MemoryRouter initialEntries={['/login?redirect=%2Flending-scorecard']}>
         <LoginPage />
       </MemoryRouter>
     )
@@ -178,7 +180,9 @@ describe('LoginPage Apple sign-in', () => {
         password: 'password123',
         turnstileToken: 'turnstile-token-123',
       })
-      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary')
+      expect(window.localStorage.getItem('fms:journey:minimized')).toBeNull()
+      expect(window.localStorage.getItem('fms:journey:do-not-show')).toBeNull()
+      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
     })
   })
 
@@ -286,7 +290,7 @@ describe('LoginPage Apple sign-in', () => {
     })
 
     await waitFor(() => {
-      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary')
+      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
     })
   })
 

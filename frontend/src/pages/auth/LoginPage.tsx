@@ -2,40 +2,18 @@ import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { Turnstile } from '@marsidev/react-turnstile'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { getErrorMessage, login, loginWithApple, loginWithGoogle, type AuthUser } from '../../api'
+import { Link, useNavigate } from 'react-router-dom'
+import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
-import { isBorrowerSubscriberRole } from '../../authRoles'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
 import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
-const BORROWER_ALLOWED_REDIRECTS = new Set(['/lending-scorecard', '/financial-health-summary'])
-
-function resolveBorrowerRedirectPath(redirectTo: string): string {
-  if (redirectTo.startsWith('/lending-scorecard')) {
-    return redirectTo
-  }
-
-  if (BORROWER_ALLOWED_REDIRECTS.has(redirectTo)) {
-    return redirectTo
-  }
-
-  const [, redirectQuery = ''] = redirectTo.split('?', 2)
-  const redirectApplicationNo = new URLSearchParams(redirectQuery).get('applicationNo')
-
-  if (redirectApplicationNo) {
-    return `/lending-scorecard?applicationNo=${encodeURIComponent(redirectApplicationNo)}`
-  }
-
-  return '/financial-health-summary'
-}
-
-function getDefaultRedirectPath() {
-  return '/financial-health-summary'
-}
+const FINANCIAL_HEALTH_PATH = '/financial-health-summary'
+const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
+const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
 
 function getBackendErrorPayload(error: unknown): { status?: number; detail?: string } {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
@@ -167,8 +145,6 @@ function GoogleMark() {
 
 export default function LoginPage() {
   const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const redirectTo = searchParams.get('redirect') || getDefaultRedirectPath()
   const googleClientId = APP_CONFIG.googleClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
@@ -202,12 +178,10 @@ export default function LoginPage() {
     }
   }, [showFees])
 
-  const resolvePostLoginPath = (user: AuthUser): string => {
-    if (isBorrowerSubscriberRole(user.role)) {
-      return resolveBorrowerRedirectPath(redirectTo)
-    }
-
-    return redirectTo
+  const openFinancialHealthJourney = () => {
+    window.localStorage.removeItem(JOURNEY_MINIMIZED_STORAGE_KEY)
+    window.localStorage.removeItem(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
+    navigate(FINANCIAL_HEALTH_PATH, { replace: true })
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -216,8 +190,8 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      const response = await login({ username, password, turnstileToken: turnstileToken || undefined })
-      navigate(resolvePostLoginPath(response.user))
+      await login({ username, password, turnstileToken: turnstileToken || undefined })
+      openFinancialHealthJourney()
     } catch (error) {
       const { status } = getBackendErrorPayload(error)
       if (status === 404) {
@@ -258,10 +232,10 @@ export default function LoginPage() {
     setIsSaving(true)
     setMessage('')
     try {
-      const loginResponse = await loginWithGoogle({
+      await loginWithGoogle({
         idToken,
       })
-      navigate(resolvePostLoginPath(loginResponse.user))
+      openFinancialHealthJourney()
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (
@@ -315,10 +289,10 @@ export default function LoginPage() {
         redirectURI: appleRedirectUri,
       })
 
-      const loginResponse = await loginWithApple({
+      await loginWithApple({
         idToken: appleTokenResult.idToken,
       })
-      navigate(resolvePostLoginPath(loginResponse.user))
+      openFinancialHealthJourney()
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (
