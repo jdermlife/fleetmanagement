@@ -98,6 +98,7 @@ const AmlKycScoringPage = lazy(() => import('./pages/admin/AmlKycScoringPage'))
 const AboutFilscoreMobilePage = lazy(() => import('./pages/admin/AboutFilscoreMobilePage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
+const PaymentSuccessPage = lazyWithRetry(() => import('./pages/subscriptions/PaymentSuccessPage'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
 const BillingPage = lazyWithRetry(() => import('./pages/subscriptions/BillingPage'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
@@ -1184,6 +1185,11 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/subscription/payment"
               element={<SubscriptionPaymentPage />}
+            />
+
+            <Route
+              path="/payment-success"
+              element={<PaymentSuccessPage />}
             />
 
             <Route

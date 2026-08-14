@@ -139,11 +139,18 @@ export default function SubscriptionPaymentPage() {
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
   const selectedGuestPlanId = searchParams.get('plan')
   const guestAccountQuery = searchParams.get('account')?.trim() || ''
+  const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
   const guestTrialPlan =
     !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
       : null
+
+  useEffect(() => {
+    if (checkoutStatus === 'success') {
+      navigate('/payment-success?provider=paymongo', { replace: true })
+    }
+  }, [checkoutStatus, navigate])
 
   useEffect(() => {
     if (!guestTrialPlan) {
@@ -347,23 +354,19 @@ export default function SubscriptionPaymentPage() {
             }
 
             setPaymentMessage('PayPal approved the order. Finalizing payment...')
-            const captureResult = await capturePayPalOrder({
+            await capturePayPalOrder({
               order_id: orderId,
               subscription_id: checkoutContext.subscriptionId,
             })
             paypalCheckoutContextRef.current = null
             paypalRequestContextRef.current = null
 
-            const successMessage = captureResult.already_processed
-              ? 'PayPal payment was already processed and remains successful.'
-              : 'PayPal payment captured successfully. Your subscription is now updated.'
-
             try {
               const subscription = await getMySubscription()
               setSubscriptions(subscription ? [subscription] : [])
-              setPaymentMessage(successMessage)
+              navigate('/payment-success?provider=paypal', { replace: true })
             } catch {
-              setPaymentMessage(`${successMessage} Refresh the page to update the subscription summary.`)
+              navigate('/payment-success?provider=paypal', { replace: true })
             }
           },
           onCancel: () => {
@@ -396,7 +399,7 @@ export default function SubscriptionPaymentPage() {
       void Promise.resolve(buttons?.close?.()).catch(() => undefined)
       container.replaceChildren()
     }
-  }, [canRenderPayPalButtons, paypalCurrency])
+  }, [canRenderPayPalButtons, navigate, paypalCurrency])
 
   useEffect(() => {
     if (!canRenderGuestPayPalButtons || !guestTrialPlan) {
@@ -459,7 +462,7 @@ export default function SubscriptionPaymentPage() {
               plan: guestTrialPlan.id,
               order_id: orderId,
             })
-            setPaymentMessage('PayPal payment captured successfully. Your subscription is now updated.')
+            navigate('/payment-success?provider=paypal', { replace: true })
           },
           onCancel: () => {
             setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
@@ -489,7 +492,7 @@ export default function SubscriptionPaymentPage() {
       void Promise.resolve(buttons?.close?.()).catch(() => undefined)
       container.replaceChildren()
     }
-  }, [canRenderGuestPayPalButtons, guestAccountIdentifier, guestTrialPlan])
+  }, [canRenderGuestPayPalButtons, guestAccountIdentifier, guestTrialPlan, navigate])
 
   const handleStartCheckout = async () => {
     setIsStartingCheckout(true)

@@ -12,6 +12,15 @@ const apiMocks = vi.hoisted(() => ({
   getMySubscription: vi.fn(),
   listPublicSubscriptionPlans: vi.fn(),
 }))
+const mockNavigate = vi.hoisted(() => vi.fn())
+
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  }
+})
 
 vi.mock('axios', () => ({
   default: {
@@ -64,6 +73,7 @@ const payment = {
 
 describe('SubscriptionPaymentPage PayPal Buttons', () => {
   beforeEach(() => {
+    mockNavigate.mockReset()
     vi.stubEnv('VITE_PAYPAL_CLIENT_ID', 'test-client')
     apiMocks.listPublicSubscriptionPlans.mockResolvedValue([plan])
     apiMocks.getMySubscription.mockResolvedValue(null)
@@ -143,7 +153,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       order_id: 'ORDER-123',
       subscription_id: 99,
     })
-    expect(await screen.findByText('PayPal payment captured successfully. Your subscription is now updated.')).toBeTruthy()
+    expect(mockNavigate).toHaveBeenCalledWith('/payment-success?provider=paypal', { replace: true })
     expect(screen.queryByRole('button', { name: /capture paypal payment/i })).toBeNull()
     expect(buttons).toHaveBeenCalledTimes(1)
 
@@ -220,5 +230,22 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(apiMocks.createSubscriptionCheckout).not.toHaveBeenCalled()
     expect(apiMocks.createPayPalOrder).not.toHaveBeenCalled()
     expect(await screen.findByText(/No payment was required/)).toBeTruthy()
+  })
+
+  it('routes a successful PayMongo return to the payment success page', async () => {
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?checkout=success']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith('/payment-success?provider=paymongo', {
+        replace: true,
+      })
+    })
   })
 })
