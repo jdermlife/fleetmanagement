@@ -16,6 +16,7 @@ import { computeCashCoverage } from './cashCoverageEngine';
 import CashCoverageGauge from './CashCoverageGauge';
 import { computeCollateralCoverage } from './collateralCoverageEngine';
 import CollateralCoverageGauge from './CollateralCoverageGauge';
+import DebtBalanceStackedChart, { type DebtBalanceAccount } from './DebtBalanceStackedChart';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
 
@@ -620,6 +621,23 @@ export default function LoanMonitoringPage() {
 
     return [primaryRow, ...additionalRows].filter((item) => item.originalLoanAmount > 0);
   }, [selectedRecord, snapshot.statementRows, selectedApplicationNo, loanType, entityIssuer, collateralIfAny, additionalSchedules]);
+  const debtBalanceAccounts = useMemo<DebtBalanceAccount[]>(() => {
+    const primaryLabel = [selectedRecord?.product_type || loanType || 'Selected Loan', entityIssuer]
+      .filter(Boolean)
+      .join(' - ');
+    const primaryAccount = snapshot.statementRows.length > 0 ? [{
+      id: selectedApplicationNo || 'selected-loan',
+      label: primaryLabel,
+      balances: snapshot.statementRows,
+    }] : [];
+    const additionalAccounts = additionalSchedules.map((schedule, index) => ({
+      id: schedule.id || `additional-loan-${index}`,
+      label: [schedule.loanType || 'Additional Loan', schedule.entityIssuer].filter(Boolean).join(' - '),
+      balances: schedule.rows,
+    }));
+
+    return [...primaryAccount, ...additionalAccounts];
+  }, [additionalSchedules, entityIssuer, loanType, selectedApplicationNo, selectedRecord, snapshot.statementRows]);
   const debtSavingsAnalysis = useMemo(() => {
     const balance = Math.max(0, Number(outstandingBalanceInput) || Number(newLoanAmount) || 0);
     const annualRate = Math.max(0, Number(newLoanInterestRate) || 0);
@@ -1973,7 +1991,8 @@ export default function LoanMonitoringPage() {
           ) : null}
         </div>
 
-        <aside className="budget-dashboard-side loan-monitoring-cash-coverage-side" aria-label="Cash Coverage analysis">
+        <aside className="budget-dashboard-side loan-monitoring-cash-coverage-side" aria-label="Debt and coverage analysis">
+          <DebtBalanceStackedChart accounts={debtBalanceAccounts} />
           <CashCoverageGauge result={cashCoverage} />
           <CollateralCoverageGauge result={collateralCoverage} />
         </aside>

@@ -3947,6 +3947,82 @@ button.loan-repository-action-release { background: #4f46e5; }
   width: 100%;
 }
 
+.debt-balance-stacked-chart {
+  width: 100%;
+  margin: 0;
+  padding: 18px 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.debt-balance-stacked-chart figcaption span {
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.debt-balance-stacked-chart figcaption h2 {
+  margin: 3px 0 12px;
+  font-size: 1.05rem;
+}
+
+.debt-balance-stacked-chart svg {
+  display: block;
+  width: 100%;
+  min-height: 150px;
+  overflow: visible;
+}
+
+.debt-balance-chart-axis {
+  stroke: #cbd5e1;
+  stroke-width: 1;
+}
+
+.debt-balance-chart-total,
+.debt-balance-chart-month {
+  fill: #475569;
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.debt-balance-chart-month {
+  font-size: 9px;
+}
+
+.debt-balance-chart-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px 12px;
+  margin-top: 4px;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.debt-balance-chart-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.debt-balance-chart-legend i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 2px;
+}
+
+.debt-balance-chart-empty {
+  margin: 18px 0 2px;
+  color: #64748b;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
 .collateral-coverage-gauge {
   width: 100%;
   margin: 0;
