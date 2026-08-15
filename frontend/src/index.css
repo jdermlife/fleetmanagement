@@ -3917,10 +3917,80 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .loan-monitoring-dashboard-hero {
+  align-items: center;
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.24), transparent 24%),
     radial-gradient(circle at bottom left, rgba(250, 204, 21, 0.16), transparent 24%),
     linear-gradient(135deg, #0f172a 0%, #132a4a 56%, #0f766e 100%);
+}
+
+.loan-monitoring-dashboard-hero .psychometric-hero-copy {
+  flex: 0 1 390px;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-tachometer {
+  grid-template-columns: minmax(250px, 0.9fr) minmax(330px, 1.1fr);
+  flex: 1 1 690px;
+  gap: 10px 16px;
+  margin: 0;
+  padding: 14px 16px;
+  border-color: rgba(186, 230, 253, 0.28);
+  background: rgba(6, 24, 43, 0.58);
+  box-shadow: none;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-heading {
+  grid-column: 1 / -1;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-heading span,
+.loan-monitoring-dashboard-hero .loan-optimization-heading p {
+  display: none;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-heading h2 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-dial svg {
+  max-height: 190px;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-inputs {
+  grid-template-columns: 1fr;
+  gap: 6px;
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-inputs article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 0;
+  padding: 8px 10px;
+  border-top: 0;
+  border-left: 3px solid #38bdf8;
+  background: rgba(20, 36, 58, 0.9);
+}
+
+.loan-monitoring-dashboard-hero .loan-optimization-inputs strong {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  margin: 0 0 0 8px;
+  font-size: 1.05rem;
+}
+
+@media (max-width: 1120px) {
+  .loan-monitoring-dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .loan-monitoring-dashboard-hero .psychometric-hero-copy,
+  .loan-monitoring-dashboard-hero .loan-optimization-tachometer {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .loan-monitoring-dashboard-scorecard {
@@ -4087,6 +4157,16 @@ button.loan-repository-action-release { background: #4f46e5; }
   .loan-optimization-inputs {
     grid-column: auto;
     grid-template-columns: 1fr;
+  }
+
+  .loan-monitoring-dashboard-hero .loan-optimization-tachometer {
+    grid-template-columns: 1fr;
+    padding: 12px;
+  }
+
+  .loan-monitoring-dashboard-hero .loan-optimization-heading,
+  .loan-monitoring-dashboard-hero .loan-optimization-inputs {
+    grid-column: auto;
   }
 }
 

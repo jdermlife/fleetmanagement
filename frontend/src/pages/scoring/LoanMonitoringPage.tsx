@@ -1228,6 +1228,7 @@ export default function LoanMonitoringPage() {
             using portfolio-monitoring best practices.
           </p>
         </div>
+        <LoanOptimizationTachometer input={loanOptimizationInput} />
       </section>
 
       <section className="psychometric-summary-grid" style={{ marginBottom: '12px' }}>
@@ -1256,9 +1257,6 @@ export default function LoanMonitoringPage() {
         </article>
 
       </section>
-
-      <LoanOptimizationTachometer input={loanOptimizationInput} />
-
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">
           <article className="psychometric-panel workflow-horizontal-panel">
