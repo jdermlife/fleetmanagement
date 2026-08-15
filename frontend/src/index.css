@@ -3938,6 +3938,115 @@ button.loan-repository-action-release { background: #4f46e5; }
   color: #fff;
 }
 
+.loan-monitoring-cash-coverage-side {
+  position: sticky;
+  top: 20px;
+}
+
+.loan-monitoring-cash-coverage-side .cash-coverage-gauge {
+  width: 100%;
+}
+
+.collateral-coverage-gauge {
+  width: 100%;
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+  color: #0f172a;
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+
+.collateral-coverage-gauge figcaption span {
+  color: #0369a1;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.collateral-coverage-gauge figcaption h2 {
+  margin: 3px 0 0;
+  font-size: 1.05rem;
+}
+
+.collateral-coverage-dial {
+  position: relative;
+  aspect-ratio: 200 / 178;
+  margin-top: 8px;
+}
+
+.collateral-coverage-dial svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.collateral-coverage-arc {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 14;
+}
+
+.collateral-coverage-needle {
+  stroke: #0f172a;
+  stroke-linecap: round;
+  stroke-width: 4;
+}
+
+.collateral-coverage-hub {
+  fill: #0f172a;
+  stroke: #f8fafc;
+  stroke-width: 3;
+}
+
+.collateral-coverage-dial text {
+  fill: #475569;
+  font-size: 8px;
+  font-weight: 800;
+  text-anchor: middle;
+}
+
+.collateral-coverage-reading {
+  position: absolute;
+  inset: 62% 0 auto;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+}
+
+.collateral-coverage-reading strong {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  line-height: 1;
+}
+
+.collateral-coverage-reading span {
+  color: #475569;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.collateral-coverage-details {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.collateral-coverage-details span {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+.collateral-coverage-details strong {
+  color: #0f172a;
+  text-align: right;
+}
+
 .cash-coverage-gauge figcaption span {
   color: #bae6fd;
   font-size: 0.72rem;
@@ -9024,10 +9133,6 @@ th { color: var(--dark-gold); }
     position: static;
   }
 
-  .loan-monitoring-dashboard-page .budget-dashboard-side {
-    display: none !important;
-  }
-
   .bill-reminder-dashboard-page .budget-dashboard-side {
     margin-top: 14px;
   }
@@ -9040,6 +9145,12 @@ th { color: var(--dark-gold); }
   .bill-reminder-dashboard-page .budget-dashboard-main,
   .loan-monitoring-dashboard-page .budget-dashboard-main {
     width: 100%;
+  }
+
+  .loan-monitoring-dashboard-page .loan-monitoring-cash-coverage-side {
+    position: static;
+    display: grid;
+    margin-top: 14px;
   }
 
   .networth-dashboard-page .budget-dashboard-layout {

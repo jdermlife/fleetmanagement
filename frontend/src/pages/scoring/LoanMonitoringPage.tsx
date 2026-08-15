@@ -14,6 +14,8 @@ import { readReplicatedBuildProfile } from './buildProfileReplication';
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine';
 import { computeCashCoverage } from './cashCoverageEngine';
 import CashCoverageGauge from './CashCoverageGauge';
+import { computeCollateralCoverage } from './collateralCoverageEngine';
+import CollateralCoverageGauge from './CollateralCoverageGauge';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
 
@@ -891,6 +893,59 @@ export default function LoanMonitoringPage() {
     return computeCashCoverage({ liquidCash, monthlyExpenses });
   }, [budgetDraft]);
 
+  const collateralCoverage = useMemo(() => {
+    const replicatedProfile = readReplicatedBuildProfile();
+    const storedProfile = selectedRecord?.requirements?.buildProfile;
+    const repositoryProfile = storedProfile && typeof storedProfile === 'object' && !Array.isArray(storedProfile)
+      ? storedProfile as Record<string, unknown>
+      : {};
+    const buildProfile = replicatedProfile ?? repositoryProfile;
+    const storedValues = 'values' in buildProfile ? buildProfile.values : null;
+    const profileValues = storedValues && typeof storedValues === 'object' && !Array.isArray(storedValues)
+      ? storedValues as Record<string, unknown>
+      : {};
+    const profileCollection = (key: string) => {
+      const collection = key in buildProfile ? buildProfile[key as keyof typeof buildProfile] : undefined;
+      return Array.isArray(collection) ? collection as Array<Record<string, unknown>> : [];
+    };
+    const primaryCollateral = Math.max(
+      0,
+      Number(profileValues.appraisedValue) || 0,
+      Number(profileValues.propertyAppraisedValue) || 0,
+    );
+    const additionalCollateral = profileCollection('additionalCollaterals').reduce(
+      (total, collateral) => total + Math.max(0, Number(collateral.appraisedValue) || 0),
+      0,
+    );
+    const realEstateCollateral = profileCollection('realEstateCollaterals').reduce(
+      (total, collateral) => total + Math.max(0, Number(collateral.appraisedValue) || 0),
+      0,
+    );
+    const financialCollateral = profileCollection('financialInstrumentCollaterals').reduce(
+      (total, collateral) => total + Math.max(0, Number(collateral.markToMarket) || Number(collateral.value) || 0),
+      0,
+    );
+    const loanBalance = Math.max(
+      0,
+      Number(outstandingBalanceInput)
+        || Number(profileValues.loanCurrentBalance)
+        || Number(profileValues.currentBalance)
+        || Number(selectedRecord?.loan_amount)
+        || Number(profileValues.requestedAmount)
+        || Number(newLoanAmount)
+        || 0,
+    );
+
+    return computeCollateralCoverage({
+      loanBalance,
+      collateralValue: primaryCollateral
+        + additionalCollateral
+        + realEstateCollateral
+        + financialCollateral
+        || Math.max(0, Number(selectedRecord?.appraised_value) || 0),
+    });
+  }, [newLoanAmount, outstandingBalanceInput, selectedRecord]);
+
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
       id: 1,
@@ -1153,8 +1208,6 @@ export default function LoanMonitoringPage() {
             using portfolio-monitoring best practices.
           </p>
         </div>
-
-        <CashCoverageGauge result={cashCoverage} />
       </section>
 
       <section className="psychometric-summary-grid" style={{ marginBottom: '12px' }}>
@@ -1919,6 +1972,11 @@ export default function LoanMonitoringPage() {
             </article>
           ) : null}
         </div>
+
+        <aside className="budget-dashboard-side loan-monitoring-cash-coverage-side" aria-label="Cash Coverage analysis">
+          <CashCoverageGauge result={cashCoverage} />
+          <CollateralCoverageGauge result={collateralCoverage} />
+        </aside>
 
       </section>
 

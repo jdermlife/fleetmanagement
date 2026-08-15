@@ -88,6 +88,41 @@ describe('LoanMonitoringPage', () => {
     expect(screen.getByText('₱100,000')).toBeTruthy()
   })
 
+  it('shows optimal collateral coverage from Build Profile steps 6 and 7', async () => {
+    mockReadReplicatedBuildProfile.mockReturnValue({
+      profileId: 'PROFILE-COLLATERAL-COVERAGE',
+      values: {
+        requestedAmount: '500000',
+        loanCurrentBalance: '500000',
+        appraisedValue: '800000',
+      },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [{ appraisedValue: '200000' }],
+    })
+    mockFetchAutosaveDraft.mockResolvedValue(null)
+    mockUseLoanApplicationsMetrics.mockReturnValue({
+      applications: [],
+      error: '',
+      lastUpdated: null,
+      loading: false,
+      reload: mockReload,
+    })
+
+    render(
+      <MemoryRouter>
+        <LoanMonitoringPage />
+      </MemoryRouter>,
+    )
+
+    const gauge = await screen.findByRole('meter', { name: /Collateral Coverage: 200.0%/ })
+    expect(gauge.getAttribute('aria-label')).toContain('Optimal')
+    expect(screen.getByText('₱1,000,000')).toBeTruthy()
+    expect(screen.getByText('₱500,000')).toBeTruthy()
+  })
+
   it('omits market interest-rate and collateral-value checks from Loan Setup', () => {
     mockUseLoanApplicationsMetrics.mockReturnValue({
       applications: [{
