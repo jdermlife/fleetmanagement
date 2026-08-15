@@ -125,7 +125,7 @@ const menuLinks: MenuLink[] = [
   { id: 'lending-scorecard', label: 'Credit Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
-  { id: 'loan-monitoring', label: 'Debt Optimizer' },
+  { id: 'loan-monitoring', label: 'Resource Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
   { id: 'dashboard', label: 'Multiple Accounts' },
 

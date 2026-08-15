@@ -17,6 +17,7 @@ import CashCoverageGauge from './CashCoverageGauge';
 import { computeCollateralCoverage } from './collateralCoverageEngine';
 import CollateralCoverageGauge from './CollateralCoverageGauge';
 import DebtBalanceStackedChart, { type DebtBalanceAccount } from './DebtBalanceStackedChart';
+import LoanOptimizationTachometer from './LoanOptimizationTachometer';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
 
@@ -27,13 +28,6 @@ interface AdditionalLoanStatementRow {
   principal: number;
   interest: number;
   endBalance: number;
-}
-
-function loanHealthComponentClass(score: number, maximum: number) {
-  const ratio = maximum > 0 ? score / maximum : 0;
-  if (ratio <= 1 / 3) return 'loan-health-component-low';
-  if (ratio <= 2 / 3) return 'loan-health-component-medium';
-  return 'loan-health-component-high';
 }
 
 interface AdditionalLoanSchedule {
@@ -653,6 +647,9 @@ export default function LoanMonitoringPage() {
       extraPayment,
       monthsSaved: Math.max(0, baseline.months - accelerated.months),
       interestSaved: Math.max(0, baseline.totalInterest - accelerated.totalInterest),
+      savingsPercent: baseline.totalInterest > 0
+        ? Math.min(100, Math.max(0, ((baseline.totalInterest - accelerated.totalInterest) / baseline.totalInterest) * 100))
+        : 0,
       payoffMonths: accelerated.months,
     };
   }, [outstandingBalanceInput, newLoanAmount, newLoanInterestRate, newLoanTerm, extraMonthlyPayment]);
@@ -963,6 +960,11 @@ export default function LoanMonitoringPage() {
         || Math.max(0, Number(selectedRecord?.appraised_value) || 0),
     });
   }, [newLoanAmount, outstandingBalanceInput, selectedRecord]);
+  const loanOptimizationInput = useMemo(() => ({
+    prioritizedLoanSavingsPercent: debtSavingsAnalysis.savingsPercent,
+    cashOptimizationScore: cashCoverage.score,
+    collateralOptimizationScore: collateralCoverage.score,
+  }), [cashCoverage.score, collateralCoverage.score, debtSavingsAnalysis.savingsPercent]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -1217,7 +1219,7 @@ export default function LoanMonitoringPage() {
       <section className="psychometric-hero loan-monitoring-dashboard-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Loan Performance Oversight</span>
-          <h1>Debt Optimizer-Loan Monitoring</h1>
+          <h1>Debt Cash Collateral Optimizer</h1>
           <p>
             Period: <strong>{snapshot.dateLabel}</strong>
           </p>
@@ -1255,56 +1257,7 @@ export default function LoanMonitoringPage() {
 
       </section>
 
-      <section className="psychometric-panel" aria-labelledby="loan-monitoring-score-breakdown-title">
-        <div className="psychometric-panel-header">
-          <div>
-            <span className="psychometric-panel-kicker">Loan Health component</span>
-            <h2 id="loan-monitoring-score-breakdown-title">Loan Monitoring Score Breakdown</h2>
-          </div>
-          <div className="loan-health-component-legend" aria-label="Loan Health component color thresholds">
-            <span><i className="loan-health-legend-swatch loan-health-legend-low" />1/3 or below</span>
-            <span><i className="loan-health-legend-swatch loan-health-legend-medium" />Up to 2/3</span>
-            <span><i className="loan-health-legend-swatch loan-health-legend-high" />Beyond 2/3</span>
-          </div>
-        </div>
-        <div className="psychometric-summary-grid loan-health-component-grid">
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.paymentPerformance, 30)}`}>
-            <span>Payment Performance</span>
-            <strong>{loanMonitoringScore.components.paymentPerformance} / 30</strong>
-            <small>Timeliness and past-due behavior</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.balanceManagement, 15)}`}>
-            <span>Balance Reduction</span>
-            <strong>{loanMonitoringScore.components.balanceManagement} / 15</strong>
-            <small>{loanMonitoringScore.metrics.balanceReductionPercent === null ? 'Balance data needed' : `${loanMonitoringScore.metrics.balanceReductionPercent.toFixed(2)}% reduction`}</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.debtServiceCapacity, 20)}`}>
-            <span>Debt Service Capacity</span>
-            <strong>{loanMonitoringScore.components.debtServiceCapacity} / 20</strong>
-            <small>{loanMonitoringScore.metrics.dsrPercent === null ? 'DSR data needed' : `${loanMonitoringScore.metrics.dsrPercent.toFixed(2)}% DSR`}</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.loanUtilization, 10)}`}>
-            <span>Loan Utilization</span>
-            <strong>{loanMonitoringScore.components.loanUtilization} / 10</strong>
-            <small>{loanMonitoringScore.metrics.utilizationPercent === null ? 'Credit capacity needed' : `${loanMonitoringScore.metrics.utilizationPercent.toFixed(2)}% utilized`}</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.collateralQuality, 10)}`}>
-            <span>Collateral Quality</span>
-            <strong>{loanMonitoringScore.components.collateralQuality} / 10</strong>
-            <small>{loanMonitoringScore.metrics.ltvPercent === null ? 'Collateral value needed' : `${loanMonitoringScore.metrics.ltvPercent.toFixed(2)}% weighted LTV`}</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.portfolioHealth, 10)}`}>
-            <span>Portfolio Health</span>
-            <strong>{loanMonitoringScore.components.portfolioHealth} / 10</strong>
-            <small>Loan count, rates, refinancing, consolidation, and diversification</small>
-          </article>
-          <article className={`psychometric-summary-card loan-health-component-card ${loanHealthComponentClass(loanMonitoringScore.components.aiAdjustment, 5)}`}>
-            <span>AI Behavioral Adjustment</span>
-            <strong>{loanMonitoringScore.components.aiAdjustment > 0 ? '+' : ''}{loanMonitoringScore.components.aiAdjustment} / 5</strong>
-            <small>Prepayment, refinancing, deterioration, and past-due signals</small>
-          </article>
-        </div>
-      </section>
+      <LoanOptimizationTachometer input={loanOptimizationInput} />
 
       <section className="budget-dashboard-layout">
         <div className="budget-dashboard-main">

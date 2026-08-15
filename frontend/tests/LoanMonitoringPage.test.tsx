@@ -84,6 +84,8 @@ describe('LoanMonitoringPage', () => {
 
     const gauge = await screen.findByRole('meter', { name: /Cash Coverage: 200.0%/ })
     expect(gauge.getAttribute('aria-label')).toContain('Optimal')
+    expect(screen.getByRole('meter', { name: /Loan Optimization Opportunity/ })).toBeTruthy()
+    expect(screen.queryByText('Loan Monitoring Score Breakdown')).toBeNull()
     expect(screen.getByText('₱200,000')).toBeTruthy()
     expect(screen.getByText('₱100,000')).toBeTruthy()
   })
