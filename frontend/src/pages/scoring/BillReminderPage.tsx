@@ -8,6 +8,7 @@ import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetri
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { computeBillPaymentHealthScore } from './billPaymentHealthEngine';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
+import BillDueDateHeatMap from './BillDueDateHeatMap';
 
 type WorkflowStep = 1 | 2 | 3;
 type BillerFrequency = 'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annual' | 'Weekly';
@@ -1046,11 +1047,7 @@ export default function BillReminderPage() {
           </p>
         </div>
 
-        <div className="psychometric-hero-metric bill-reminder-dashboard-scorecard">
-          <span>Bills Payment Health Score</span>
-          <strong>{billPaymentHealth.score.toFixed(1)}</strong>
-          <small>{`${billPaymentHealth.grade} - ${billPaymentHealth.interpretation}`}</small>
-        </div>
+        <BillDueDateHeatMap bills={savedSetup.length > 0 ? savedSetup : draftBillers} />
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">

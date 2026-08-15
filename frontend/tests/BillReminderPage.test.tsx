@@ -121,8 +121,10 @@ describe('BillReminderPage Step 3 payments', () => {
   })
 
   it('shows health insights, score impact, and monthly payment outlook', async () => {
-    render(<BillReminderPage />)
+    const { container } = render(<BillReminderPage />)
 
+    expect(await screen.findByRole('grid', { name: /bill due dates/i })).toBeTruthy()
+    expect(container.querySelector('.bill-reminder-dashboard-scorecard')).toBeNull()
     expect(await screen.findByRole('heading', { name: 'Bill Payment Health Score Breakdown' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Strengths' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Opportunities' })).toBeTruthy()

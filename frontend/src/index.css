@@ -4470,14 +4470,164 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .bill-reminder-dashboard-hero {
+  align-items: center;
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.22), transparent 22%),
     radial-gradient(circle at bottom left, rgba(234, 179, 8, 0.18), transparent 24%),
     linear-gradient(135deg, #11253f 0%, #1d4b6b 54%, #0f766e 100%);
 }
 
-.bill-reminder-dashboard-scorecard {
-  background: rgba(12, 53, 80, 0.34);
+.bill-reminder-dashboard-hero .psychometric-hero-copy {
+  flex: 0 1 360px;
+}
+
+.bill-due-heat-map {
+  flex: 1 1 760px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.58);
+}
+
+.bill-due-heat-map header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  margin-bottom: 10px;
+}
+
+.bill-due-heat-map header > div:first-child > span {
+  color: #bae6fd;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.bill-due-heat-map h2 {
+  margin: 2px 0 0;
+  color: #fff;
+  font-size: 1.1rem;
+}
+
+.bill-due-heat-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 6px 10px;
+  color: #e2e8f0;
+  font-size: 0.65rem;
+}
+
+.bill-due-heat-map-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.bill-due-heat-map-legend i {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+
+.bill-due-heat-green { background: #22c55e; }
+.bill-due-heat-amber { background: #f59e0b; }
+.bill-due-heat-red { background: #ef4444; }
+
+.bill-due-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: 3px;
+}
+
+.bill-due-calendar-weekday {
+  padding: 3px;
+  color: #cbd5e1;
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.bill-due-calendar-day {
+  min-width: 0;
+  min-height: 48px;
+  padding: 4px;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  background: rgba(30, 41, 59, 0.72);
+  color: #cbd5e1;
+  font-size: 0.64rem;
+}
+
+.bill-due-calendar-empty { opacity: 0.38; }
+
+.bill-due-calendar-today {
+  outline: 2px solid #f8fafc;
+  outline-offset: -2px;
+}
+
+.bill-due-calendar-today > span:first-child {
+  color: #fff;
+  font-weight: 900;
+}
+
+.bill-due-calendar-bill {
+  margin-top: 3px;
+  padding: 3px 4px;
+  overflow: hidden;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 0.58rem;
+  font-weight: 800;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bill-due-calendar-bill-green { background: #15803d; }
+.bill-due-calendar-bill-amber { background: #b45309; }
+.bill-due-calendar-bill-red { background: #b91c1c; }
+
+.bill-due-heat-map-empty {
+  margin: 12px 0 0;
+  color: #cbd5e1;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 1050px) {
+  .bill-reminder-dashboard-hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .bill-reminder-dashboard-hero .psychometric-hero-copy,
+  .bill-reminder-dashboard-hero .bill-due-heat-map {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+@media (max-width: 620px) {
+  .bill-due-heat-map { padding: 10px; }
+
+  .bill-due-heat-map header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .bill-due-heat-map-legend { justify-content: flex-start; }
+
+  .bill-due-calendar-day {
+    min-height: 40px;
+    padding: 2px;
+  }
+
+  .bill-due-calendar-bill {
+    padding: 2px;
+    font-size: 0.5rem;
+  }
 }
 
 .collateral-dashboard-hero {
