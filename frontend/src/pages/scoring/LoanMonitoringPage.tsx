@@ -10,6 +10,10 @@ import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity
 import { computeBudgetHealthScore, type BudgetHealthDraftInput, type BudgetHealthScoreResult } from './budgetHealthEngine';
 import { buildLoanMonitoringSnapshot } from './liveTrackerMetrics';
 import { computeLoanMonitoringScore, type LoanMonitoringScoreResult } from './loanMonitoringScoreEngine';
+import { readReplicatedBuildProfile } from './buildProfileReplication';
+import { computeNetWorthBuildingScore } from './netWorthBuildingEngine';
+import { computeCashCoverage } from './cashCoverageEngine';
+import CashCoverageGauge from './CashCoverageGauge';
 
 type WorkflowStep = 1 | 2 | 3 | 4;
 
@@ -427,6 +431,7 @@ export default function LoanMonitoringPage() {
   const [monitoringSaveMessage, setMonitoringSaveMessage] = useState('');
   const [isSavingAdditionalLoans, setIsSavingAdditionalLoans] = useState(false);
   const [budgetHealthScore, setBudgetHealthScore] = useState<BudgetHealthScoreResult | null>(null);
+  const [budgetDraft, setBudgetDraft] = useState<BudgetHealthDraftInput | null>(null);
   const [step, setStep] = useState<WorkflowStep>(1);
 
   const monitoringDraft = useMemo<LoanMonitoringDraft>(() => ({
@@ -492,10 +497,14 @@ export default function LoanMonitoringPage() {
       try {
         const draft = await fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', entityKey || 'identity-pending');
         if (!disposed) {
+          setBudgetDraft(draft?.payload ?? null);
           setBudgetHealthScore(draft?.payload ? computeBudgetHealthScore(draft.payload) : null);
         }
       } catch {
-        if (!disposed) setBudgetHealthScore(null);
+        if (!disposed) {
+          setBudgetDraft(null);
+          setBudgetHealthScore(null);
+        }
       }
     };
 
@@ -859,6 +868,29 @@ export default function LoanMonitoringPage() {
     };
   }, [consolidationAnalysis.currentMonthlyPayment, debtSavingsAnalysis.interestSaved, loanMonitoringScore.score, selectedRecord, snapshot.pastDueCount]);
 
+  const cashCoverage = useMemo(() => {
+    const buildProfile = readReplicatedBuildProfile();
+    const stepEightAmounts = buildProfile?.values ?? {};
+    const liquidCash = buildProfile
+      ? computeNetWorthBuildingScore({ amounts: stepEightAmounts }).metrics.liquidAssets
+      : 0;
+    const savedExpenseRows = (budgetDraft?.savedSetup ?? []).filter((item) => item.type === 'expense');
+    const monthlyExpenses = savedExpenseRows.length > 0
+      ? savedExpenseRows.reduce((total, item) => {
+          const actualValue = budgetDraft?.actualEntries?.[item.id];
+          const effectiveValue = String(actualValue ?? '').trim() !== ''
+            ? Number(actualValue)
+            : item.setupAmount;
+          return total + Math.max(0, Number(effectiveValue) || 0);
+        }, 0)
+      : Object.values(budgetDraft?.expenseDraft ?? {}).reduce<number>(
+          (total, value) => total + Math.max(0, Number(value) || 0),
+          0,
+        );
+
+    return computeCashCoverage({ liquidCash, monthlyExpenses });
+  }, [budgetDraft]);
+
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
       id: 1,
@@ -1122,11 +1154,7 @@ export default function LoanMonitoringPage() {
           </p>
         </div>
 
-        <div className="psychometric-hero-metric loan-monitoring-dashboard-scorecard">
-          <span>Loan Health Score</span>
-          <strong>{loanMonitoringScore.score.toFixed(1)}</strong>
-          <small>{loanMonitoringScore.grade} - {loanMonitoringScore.interpretation}</small>
-        </div>
+        <CashCoverageGauge result={cashCoverage} />
       </section>
 
       <section className="psychometric-summary-grid" style={{ marginBottom: '12px' }}>
@@ -1608,7 +1636,7 @@ export default function LoanMonitoringPage() {
                     <thead>
                       <tr>
                         <th>Loan Type</th>
-                        <th>Issuer/Lender</th>
+                        <th>Issuer/ Lender</th>
                         <th>Original Loan Amount</th>
                         <th>Interest Rate</th>
                         <th>Term</th>

@@ -3927,6 +3927,114 @@ button.loan-repository-action-release { background: #4f46e5; }
   background: rgba(9, 38, 68, 0.34);
 }
 
+.cash-coverage-gauge {
+  width: min(100%, 360px);
+  flex: 0 1 360px;
+  margin: 0;
+  padding: 18px 20px;
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  border-radius: 8px;
+  background: rgba(9, 38, 68, 0.44);
+  color: #fff;
+}
+
+.cash-coverage-gauge figcaption span {
+  color: #bae6fd;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cash-coverage-gauge figcaption h2 {
+  margin: 3px 0 0;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.cash-coverage-gauge-visual {
+  position: relative;
+  aspect-ratio: 200 / 118;
+  margin-top: 6px;
+}
+
+.cash-coverage-gauge-visual svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+
+.cash-coverage-gauge-track,
+.cash-coverage-gauge-progress {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 12;
+}
+
+.cash-coverage-gauge-track {
+  stroke: rgba(255, 255, 255, 0.14);
+}
+
+.cash-coverage-gauge-progress {
+  stroke: url(#cash-coverage-scale);
+}
+
+.cash-coverage-gauge-marker {
+  fill: #fff;
+  stroke: #082f49;
+  stroke-width: 3;
+}
+
+.cash-coverage-gauge-min,
+.cash-coverage-gauge-optimal,
+.cash-coverage-gauge-max {
+  fill: #dbeafe;
+  font-size: 8px;
+  font-weight: 700;
+  text-anchor: middle;
+}
+
+.cash-coverage-gauge-reading {
+  position: absolute;
+  inset: 52% 0 auto;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+}
+
+.cash-coverage-gauge-reading strong {
+  font-size: clamp(1.55rem, 3vw, 2.2rem);
+  line-height: 1;
+}
+
+.cash-coverage-gauge-reading span {
+  color: #dbeafe;
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.cash-coverage-gauge-details {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+}
+
+.cash-coverage-gauge-details span {
+  min-width: 0;
+  color: #bae6fd;
+  font-size: 0.68rem;
+}
+
+.cash-coverage-gauge-details strong {
+  display: block;
+  margin-top: 3px;
+  overflow-wrap: anywhere;
+  color: #fff;
+  font-size: 0.76rem;
+}
+
 .bill-reminder-dashboard-page,
 .collateral-dashboard-page,
 .networth-dashboard-page {
@@ -9627,6 +9735,15 @@ th { color: var(--dark-gold); }
   .budget-dashboard-page .budget-health-component-grid .budget-health-component-card {
     padding: 18px;
     border-radius: 50%;
+  }
+
+  .cash-coverage-gauge {
+    width: 100%;
+    padding: 14px;
+  }
+
+  .cash-coverage-gauge-details {
+    grid-template-columns: 1fr;
   }
 
   :is(.budget-dashboard-page, .loan-monitoring-dashboard-page, .bill-reminder-dashboard-page, .networth-dashboard-page) .psychometric-panel-header {

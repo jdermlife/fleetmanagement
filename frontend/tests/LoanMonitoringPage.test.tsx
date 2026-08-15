@@ -2,7 +2,9 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { MemoryRouter } from 'react-router-dom'
 
-const { mockReload, mockSaveMonitoring, mockUpdateLoanApplication, mockUseLoanApplicationsMetrics } = vi.hoisted(() => ({
+const { mockFetchAutosaveDraft, mockReadReplicatedBuildProfile, mockReload, mockSaveMonitoring, mockUpdateLoanApplication, mockUseLoanApplicationsMetrics } = vi.hoisted(() => ({
+  mockFetchAutosaveDraft: vi.fn(),
+  mockReadReplicatedBuildProfile: vi.fn(),
   mockReload: vi.fn(),
   mockSaveMonitoring: vi.fn(),
   mockUpdateLoanApplication: vi.fn(),
@@ -11,6 +13,14 @@ const { mockReload, mockSaveMonitoring, mockUpdateLoanApplication, mockUseLoanAp
 
 vi.mock('../src/autosave', () => ({
   useAutosaveDraft: vi.fn(() => ({ isHydrated: true })),
+}))
+
+vi.mock('../src/autosave/draftApi', () => ({
+  fetchAutosaveDraft: mockFetchAutosaveDraft,
+}))
+
+vi.mock('../src/pages/scoring/buildProfileReplication', () => ({
+  readReplicatedBuildProfile: mockReadReplicatedBuildProfile,
 }))
 
 vi.mock('../src/api/loan', () => ({
@@ -22,6 +32,14 @@ vi.mock('../src/hooks/useLoanApplicationsMetrics', () => ({
   useLoanApplicationsMetrics: mockUseLoanApplicationsMetrics,
 }))
 
+vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
+  useSelectedAnalysisEntity: vi.fn(() => ({
+    selectedApplicationNo: '',
+    entityKey: 'profile:cash-coverage',
+    isIdentityReady: true,
+  })),
+}))
+
 import LoanMonitoringPage from '../src/pages/scoring/LoanMonitoringPage'
 
 describe('LoanMonitoringPage', () => {
@@ -29,6 +47,45 @@ describe('LoanMonitoringPage', () => {
     cleanup()
     vi.clearAllMocks()
     vi.restoreAllMocks()
+  })
+
+  it('shows cash coverage from Build Profile liquid cash and Budget Tracker actual expenses', async () => {
+    mockReadReplicatedBuildProfile.mockReturnValue({
+      profileId: 'PROFILE-CASH-COVERAGE',
+      values: {
+        'asset-cash-on-hand': '50000',
+        'asset-savings-account': '150000',
+      },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+    })
+    mockFetchAutosaveDraft.mockResolvedValue({
+      payload: {
+        savedSetup: [{ id: 'expense-rent', setupAmount: 120000, type: 'expense' }],
+        actualEntries: { 'expense-rent': '100000' },
+      },
+    })
+    mockUseLoanApplicationsMetrics.mockReturnValue({
+      applications: [],
+      error: '',
+      lastUpdated: null,
+      loading: false,
+      reload: mockReload,
+    })
+
+    render(
+      <MemoryRouter>
+        <LoanMonitoringPage />
+      </MemoryRouter>,
+    )
+
+    const gauge = await screen.findByRole('meter', { name: /Cash Coverage: 200.0%/ })
+    expect(gauge.getAttribute('aria-label')).toContain('Optimal')
+    expect(screen.getByText('₱200,000')).toBeTruthy()
+    expect(screen.getByText('₱100,000')).toBeTruthy()
   })
 
   it('omits market interest-rate and collateral-value checks from Loan Setup', () => {
