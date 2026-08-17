@@ -236,7 +236,7 @@ def test_login_keeps_wrong_password_as_invalid_credentials(app_client):
     assert response.json()["detail"] == "Invalid credentials"
 
 
-def test_login_requires_valid_turnstile_when_configured(app_client, monkeypatch):
+def test_login_does_not_call_turnstile(app_client, monkeypatch):
     client, auth_module, fake_db = app_client
     monkeypatch.setenv("TURNSTILE_SECRET_KEY", "turnstile-test-secret")
     monkeypatch.setenv("TURNSTILE_REQUIRED", "true")
@@ -253,79 +253,17 @@ def test_login_requires_valid_turnstile_when_configured(app_client, monkeypatch)
     )
     fake_db.rows_by_model[User] = [user]
 
-    missing_response = client.post(
-        "/api/auth/login",
-        json={"username": "captchauser", "password": "password123"},
-    )
-
-    assert missing_response.status_code == 400
-    assert missing_response.json()["detail"] == "Complete the security verification before signing in"
-
-    class TurnstileResponse:
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return {"success": False}
-
-    monkeypatch.setattr(security_routes.requests, "post", lambda *_args, **_kwargs: TurnstileResponse())
-    invalid_response = client.post(
+    turnstile_request = pytest.fail
+    monkeypatch.setattr(security_routes.requests, "post", turnstile_request)
+    response = client.post(
         "/api/auth/login",
         json={
             "username": "captchauser",
             "password": "password123",
-            "turnstile_token": "invalid-token",
-        },
-    )
-
-    assert invalid_response.status_code == 400
-    assert invalid_response.json()["detail"] == "Security verification failed. Please try again"
-
-
-def test_login_accepts_successful_turnstile_verification(app_client, monkeypatch):
-    client, auth_module, fake_db = app_client
-    monkeypatch.setenv("TURNSTILE_SECRET_KEY", "turnstile-test-secret")
-    monkeypatch.setenv("TURNSTILE_REQUIRED", "true")
-    user = User(
-        id=3,
-        username="verifieduser",
-        email="verified@example.com",
-        password_hash=auth_module.hash_password("password123"),
-        role="subscriber_borrower",
-        is_active=True,
-        is_deleted=False,
-        account_status="ACTIVE",
-        mfa_enabled=False,
-    )
-    fake_db.rows_by_model[User] = [user]
-    captured_request = {}
-
-    class TurnstileResponse:
-        def raise_for_status(self):
-            return None
-
-        def json(self):
-            return {"success": True}
-
-    def verify_turnstile(url, *, data, timeout):
-        captured_request.update({"url": url, "data": data, "timeout": timeout})
-        return TurnstileResponse()
-
-    monkeypatch.setattr(security_routes.requests, "post", verify_turnstile)
-    response = client.post(
-        "/api/auth/login",
-        json={
-            "username": "verifieduser",
-            "password": "password123",
-            "turnstile_token": "verified-token",
         },
     )
 
     assert response.status_code == 200
-    assert captured_request["url"] == security_routes.TURNSTILE_VERIFY_URL
-    assert captured_request["data"]["secret"] == "turnstile-test-secret"
-    assert captured_request["data"]["response"] == "verified-token"
-    assert captured_request["timeout"] == 5
 
 
 def test_login_deactivates_expired_unpaid_account(app_client):

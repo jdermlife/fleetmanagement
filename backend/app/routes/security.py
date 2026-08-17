@@ -193,7 +193,6 @@ REGISTERABLE_SUBSCRIBER_ROLES = {
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
 }
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRY_MINUTES", "30"))
-TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 
 def get_db():
@@ -202,30 +201,6 @@ def get_db():
         yield db
     finally:
         db.close()
-
-
-def _verify_turnstile_token(token: str | None, remote_ip: str | None) -> None:
-    secret_key = os.getenv("TURNSTILE_SECRET_KEY", "").strip()
-    is_required = os.getenv("TURNSTILE_REQUIRED", "false").lower() == "true"
-    if not secret_key:
-        if is_required:
-            raise HTTPException(status_code=503, detail="Security verification is not configured")
-        return
-    if not token:
-        raise HTTPException(status_code=400, detail="Complete the security verification before signing in")
-
-    verification_payload = {"secret": secret_key, "response": token}
-    if remote_ip:
-        verification_payload["remoteip"] = remote_ip
-    try:
-        response = requests.post(TURNSTILE_VERIFY_URL, data=verification_payload, timeout=5)
-        response.raise_for_status()
-        result = response.json()
-    except (requests.RequestException, ValueError) as exc:
-        raise HTTPException(status_code=503, detail="Security verification is temporarily unavailable") from exc
-
-    if not isinstance(result, dict) or result.get("success") is not True:
-        raise HTTPException(status_code=400, detail="Security verification failed. Please try again")
 
 
 def _serialize_permission(permission: Permission) -> dict[str, object]:
@@ -466,7 +441,6 @@ def _build_login_payload(user: User, request: Request, db: Session) -> dict[str,
     user.last_login_device = request.headers.get("User-Agent")
 
     db.commit()
-    db.refresh(user)
 
     return {
         "access_token": access_token,
@@ -644,7 +618,6 @@ def login(
     db: Session = Depends(get_db),
 ):
     set_rls_context(db, None, "admin")
-    _verify_turnstile_token(payload.turnstile_token, request.client.host if request.client else None)
     user = (
         db.query(User)
         .filter((User.username == payload.username) | (User.email == payload.username))
