@@ -1476,11 +1476,13 @@ const isSignedIn = authReady && Boolean(currentUser)
           </Routes>
         </Suspense>
       </main>
-      <FloatingChatbot
-        pathname={location.pathname}
-        authenticated={Boolean(currentUser)}
-        ready={authReady}
-      />
+      {!isLoginRoute ? (
+        <FloatingChatbot
+          pathname={location.pathname}
+          authenticated={Boolean(currentUser)}
+          ready={authReady}
+        />
+      ) : null}
       {isSigningOut ? (
         <AuthProgressOverlay
           idPrefix="app-signing-out"

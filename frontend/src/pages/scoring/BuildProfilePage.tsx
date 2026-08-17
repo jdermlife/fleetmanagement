@@ -915,6 +915,7 @@ export default function BuildProfilePage() {
   }, [profile])
 
   const completionPercent = Math.round(Object.values(stepCompletion).reduce((sum, percent) => sum + percent, 0) / WORKFLOW_STEPS.length)
+  const incompleteActivities = WORKFLOW_STEPS.filter(({ id }) => stepCompletion[id] < 100)
   const profileStatus = completionPercent === 100 ? 'Complete' : completionPercent > 0 ? 'In Progress' : 'Getting Started'
   const updateValue = (key: string, value: string) => setProfile((current) => ({
     ...current,
@@ -2556,7 +2557,60 @@ export default function BuildProfilePage() {
   return <div className="psychometric-page lending-psychometric-page build-profile-page">
     <section className="psychometric-hero lending-psychometric-hero">
       <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1>Create Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
-      <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}><span>Profile Completion</span><strong>{completionPercent}%</strong><small>Step {profile.step} of 12: {currentStep.label}</small><div className="build-profile-progress-track" aria-hidden="true"><div style={{ width: `${completionPercent}%` }} /></div></div>
+      <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}>
+        <div className="build-profile-incomplete-activities">
+          <span>Incomplete Activities</span>
+          {incompleteActivities.length > 0 ? (
+            <ul>
+              {incompleteActivities.map((activity) => (
+                <li key={activity.id}>
+                  <div>
+                    <span>{activity.id}. {activity.label}</span>
+                    <small>{100 - stepCompletion[activity.id]}% remaining</small>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p>All profile activities are complete.</p>
+          )}
+        </div>
+        <div className="build-profile-completion-chart">
+          <div
+            className="build-profile-completion-ring"
+            role="progressbar"
+            aria-label="Profile completion"
+            aria-valuemin={0}
+            aria-valuemax={100}
+            aria-valuenow={completionPercent}
+          >
+            <svg viewBox="0 0 120 120" aria-hidden="true">
+              <defs>
+                <linearGradient id="build-profile-completion-gradient" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="#c9182b" />
+                  <stop offset="48%" stopColor="#f7c600" />
+                  <stop offset="100%" stopColor="#1261a0" />
+                </linearGradient>
+              </defs>
+              <circle className="build-profile-completion-ring-track" cx="60" cy="60" r="49" />
+              <circle
+                className="build-profile-completion-ring-value"
+                cx="60"
+                cy="60"
+                r="49"
+                pathLength="100"
+                strokeDasharray={`${completionPercent} 100`}
+              />
+            </svg>
+            <div className="build-profile-completion-ring-label">
+              <strong>{completionPercent}%</strong>
+              <span>Complete</span>
+            </div>
+          </div>
+          <small>Step {profile.step} of 12</small>
+          <span>{currentStep.label}</span>
+        </div>
+      </div>
     </section>
 
     <section className="psychometric-summary-grid lending-psychometric-summary-grid">
