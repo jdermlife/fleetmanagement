@@ -481,7 +481,6 @@ function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/login', {
     username: credentials.username,
     password: credentials.password,
@@ -505,7 +504,6 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
-  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
@@ -530,7 +528,6 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 }
 
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
-  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/apple-token', {
     identity_token: payload.idToken,
     id_token: payload.idToken,
