@@ -1,5 +1,4 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
-import { Turnstile } from '@marsidev/react-turnstile'
 import type { FormEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -152,8 +151,6 @@ export default function LoginPage() {
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
   const isAppleConfigured = appleClientId.length > 0
-  const turnstileSiteKey = APP_CONFIG.turnstileSiteKey
-  const isTurnstileConfigured = turnstileSiteKey.length > 0
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [message, setMessage] = useState('')
@@ -161,8 +158,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [showEmailLogin, setShowEmailLogin] = useState(false)
   const [showFees, setShowFees] = useState(false)
-  const [turnstileToken, setTurnstileToken] = useState('')
-  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
   const feesDialogRef = useRef<HTMLDialogElement>(null)
 
   useEffect(() => {
@@ -190,7 +185,7 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      await login({ username, password, turnstileToken: turnstileToken || undefined })
+      await login({ username, password })
       openFinancialHealthJourney()
     } catch (error) {
       const { status } = getBackendErrorPayload(error)
@@ -213,10 +208,6 @@ export default function LoginPage() {
       }
 
       setMessage(resolvedMessage)
-      if (isTurnstileConfigured) {
-        setTurnstileToken('')
-        setTurnstileResetKey((current) => current + 1)
-      }
     } finally {
       setIsSaving(false)
     }
@@ -453,28 +444,9 @@ export default function LoginPage() {
                   </button>
                 </label>
 
-                {isTurnstileConfigured ? (
-                  <div className="login-art-turnstile" aria-label="Security verification">
-                    <Turnstile
-                      key={turnstileResetKey}
-                      siteKey={turnstileSiteKey}
-                      onSuccess={setTurnstileToken}
-                      onExpire={() => setTurnstileToken('')}
-                      onError={() => {
-                        setTurnstileToken('')
-                        setMessage('Security verification could not be completed. Please try again.')
-                      }}
-                      options={{ theme: 'light', size: 'flexible' }}
-                    />
-                  </div>
-                ) : null}
-
-                <button type="submit" className="login-art-submit" disabled={isSaving || (isTurnstileConfigured && !turnstileToken)}>
+                <button type="submit" className="login-art-submit" disabled={isSaving}>
                   {isSaving ? 'Signing In...' : 'Log In'}
                 </button>
-                {isTurnstileConfigured && !turnstileToken ? (
-                  <small className="login-art-turnstile-note">Complete the security verification to enable email sign-in.</small>
-                ) : null}
               </form>
             </>
           ) : null}

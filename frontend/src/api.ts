@@ -368,7 +368,6 @@ export function getApiBaseUrl(): string {
 export interface LoginRequest {
   username: string
   password: string
-  turnstileToken?: string
 }
 
 export interface GoogleLoginRequest {
@@ -447,6 +446,7 @@ export interface RegisterRequest {
   password: string
   subscriberType: 'borrower' | 'lender'
   lenderDataSharingConsent: boolean
+  turnstileToken?: string
 }
 
 function extractSessionTokens(responseData: Record<string, unknown>): {
@@ -484,7 +484,6 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
   const response = await api.post('/api/auth/login', {
     username: credentials.username,
     password: credentials.password,
-    turnstile_token: credentials.turnstileToken,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -560,6 +559,7 @@ export async function register(data: RegisterRequest): Promise<LoginResponse> {
     password: data.password,
     subscriber_type: data.subscriberType,
     lender_data_sharing_consent: data.lenderDataSharingConsent,
+    turnstile_token: data.turnstileToken,
   })
   const responseData = response.data as Record<string, unknown>
   const rawUser = responseData.user as Record<string, unknown> | undefined
@@ -785,7 +785,7 @@ export async function createAdminPermission(payload: {
   return response.data.permission
 }
 
-export async function requestPasswordReset(emailOrUsername: string): Promise<{
+export async function requestPasswordReset(emailOrUsername: string, turnstileToken?: string): Promise<{
   message: string
   reset_token?: string
   user_id?: number
@@ -796,6 +796,7 @@ export async function requestPasswordReset(emailOrUsername: string): Promise<{
     user_id?: number
   }>('/api/auth/password-reset-request', {
     email_or_username: emailOrUsername,
+    turnstile_token: turnstileToken,
   })
   return response.data
 }

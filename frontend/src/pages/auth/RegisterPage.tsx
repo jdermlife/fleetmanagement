@@ -1,4 +1,5 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
+import { Turnstile } from '@marsidev/react-turnstile'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -110,6 +111,8 @@ export default function RegisterPage() {
   const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
+  const turnstileSiteKey = APP_CONFIG.turnstileSiteKey
+  const isTurnstileConfigured = turnstileSiteKey.length > 0
   const [username, setUsername] = useState('')
   const [email, setEmail] = useState(registrationState?.email?.trim() || '')
   const [cellphoneNumber, setCellphoneNumber] = useState('')
@@ -127,6 +130,8 @@ export default function RegisterPage() {
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
 
   const openFinancialHealthJourney = () => {
     window.localStorage.removeItem('fms:journey:minimized')
@@ -177,10 +182,15 @@ export default function RegisterPage() {
         password,
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
+        turnstileToken: turnstileToken || undefined,
       })
       await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to create your account right now.'))
+      if (isTurnstileConfigured) {
+        setTurnstileToken('')
+        setTurnstileResetKey((current) => current + 1)
+      }
     } finally {
       setIsSaving(false)
     }
@@ -531,8 +541,24 @@ export default function RegisterPage() {
           />
         </label>
 
+        {isTurnstileConfigured ? (
+          <div className="login-art-turnstile" aria-label="Security verification">
+            <Turnstile
+              key={turnstileResetKey}
+              siteKey={turnstileSiteKey}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+              onError={() => {
+                setTurnstileToken('')
+                setMessage('Security verification could not be completed. Please try again.')
+              }}
+              options={{ theme: 'light', size: 'flexible' }}
+            />
+          </div>
+        ) : null}
+
         <div className="form-actions">
-          <button type="submit" disabled={isSaving}>
+          <button type="submit" disabled={isSaving || (isTurnstileConfigured && !turnstileToken)}>
             {isSaving ? 'Creating Account...' : 'Create Account'}
           </button>
           <Link className="auth-link-button" to="/login">

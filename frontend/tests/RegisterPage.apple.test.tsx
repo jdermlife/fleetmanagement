@@ -35,6 +35,14 @@ vi.mock('@react-oauth/google', () => ({
   GoogleLogin: () => <button type="button">Sign up with Google</button>,
 }))
 
+vi.mock('@marsidev/react-turnstile', () => ({
+  Turnstile: ({ onSuccess }: { onSuccess?: (token: string) => void }) => (
+    <button type="button" onClick={() => onSuccess?.('turnstile-token-123')}>
+      Complete security verification
+    </button>
+  ),
+}))
+
 vi.mock('../src/api', () => ({
   createFreeSubscription: mockCreateFreeSubscription,
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
@@ -67,6 +75,7 @@ describe('RegisterPage Apple sign-up', () => {
 
   beforeEach(() => {
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
+    vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'turnstile-site-key')
     mockNavigate.mockReset()
     mockCreateFreeSubscription.mockReset()
     mockCreateFreeSubscription.mockResolvedValue({})
@@ -229,6 +238,7 @@ describe('RegisterPage Apple sign-up', () => {
     await user.type(screen.getByLabelText('Cellphone Number'), '09171234567')
     await user.type(screen.getByLabelText('Password'), 'password123')
     await user.type(screen.getByLabelText('Confirm password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Complete security verification' }))
     await user.click(screen.getByRole('button', { name: 'Create Account' }))
 
     await waitFor(() => {
@@ -238,6 +248,7 @@ describe('RegisterPage Apple sign-up', () => {
         password: 'password123',
         subscriberType: 'borrower',
         lenderDataSharingConsent: false,
+        turnstileToken: 'turnstile-token-123',
       })
       expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
     })

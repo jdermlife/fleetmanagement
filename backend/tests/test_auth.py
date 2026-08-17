@@ -173,6 +173,81 @@ def test_register_endpoint_exists(app_client):
     assert len(fake_db.rows_by_model[User]) == 1
 
 
+def test_register_requires_turnstile_when_configured(app_client, monkeypatch):
+    client, _auth_module, fake_db = app_client
+    monkeypatch.setenv("TURNSTILE_SECRET_KEY", "turnstile-test-secret")
+    monkeypatch.setenv("TURNSTILE_REQUIRED", "true")
+
+    response = client.post(
+        "/api/auth/register",
+        json={
+            "username": "blocked-user",
+            "email": "blocked@example.com",
+            "password": "password123",
+            "subscriber_type": "borrower",
+            "lender_data_sharing_consent": False,
+        },
+    )
+
+    assert response.status_code == 400
+    assert response.json()["detail"] == "Complete the security verification before continuing"
+    assert fake_db.rows_by_model.get(User, []) == []
+
+
+def test_password_reset_verifies_turnstile_before_sending_email(app_client, monkeypatch):
+    client, auth_module, fake_db = app_client
+    monkeypatch.setenv("TURNSTILE_SECRET_KEY", "turnstile-test-secret")
+    monkeypatch.setenv("TURNSTILE_REQUIRED", "true")
+    monkeypatch.setenv("SMTP_SERVER", "smtp.example.com")
+    monkeypatch.setenv("SMTP_PORT", "587")
+    monkeypatch.setenv("SMTP_USERNAME", "mailer@example.com")
+    monkeypatch.setenv("SMTP_PASSWORD", "smtp-password")
+    user = User(
+        id=7,
+        username="reset-user",
+        email="reset@example.com",
+        password_hash=auth_module.hash_password("password123"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+    events = []
+
+    class TurnstileResponse:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"success": True}
+
+    def verify_turnstile(url, *, data, timeout):
+        events.append("turnstile")
+        assert url == security_routes.TURNSTILE_VERIFY_URL
+        assert data["response"] == "verified-token"
+        assert timeout == 5
+        return TurnstileResponse()
+
+    def send_reset_email(*_args, **_kwargs):
+        events.append("email")
+
+    monkeypatch.setattr(security_routes.requests, "post", verify_turnstile)
+    monkeypatch.setattr(security_routes, "send_email", send_reset_email)
+
+    response = client.post(
+        "/api/auth/password-reset-request",
+        json={
+            "email_or_username": "reset@example.com",
+            "turnstile_token": "verified-token",
+        },
+    )
+
+    assert response.status_code == 200
+    assert events == ["turnstile", "email"]
+
+
 def test_login_endpoint_exists(app_client):
     client, auth_module, fake_db = app_client
 

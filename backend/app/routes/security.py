@@ -64,7 +64,6 @@ admin_router = APIRouter(prefix="/admin", tags=["security-admin"])
 class LoginRequest(BaseModel):
     username: str
     password: str
-    turnstile_token: str | None = Field(default=None, max_length=2048)
     mfa_code: str | None = None
     backup_code: str | None = None
 
@@ -79,6 +78,7 @@ class RegisterRequest(BaseModel):
     password: str = Field(min_length=8)
     subscriber_type: Literal["borrower", "lender"]
     lender_data_sharing_consent: bool
+    turnstile_token: str | None = Field(default=None, max_length=2048)
 
 
 class GoogleTokenLoginRequest(BaseModel):
@@ -105,6 +105,7 @@ class DeleteAccountRequest(BaseModel):
 
 class PasswordResetRequest(BaseModel):
     email_or_username: str = Field(min_length=3)
+    turnstile_token: str | None = Field(default=None, max_length=2048)
 
 
 class PasswordResetConfirmRequest(BaseModel):
@@ -193,6 +194,7 @@ REGISTERABLE_SUBSCRIBER_ROLES = {
     "lender": RBACRole.SUBSCRIBER_LENDER.value,
 }
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRY_MINUTES", "30"))
+TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
 
 
 def get_db():
@@ -201,6 +203,30 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def _verify_turnstile_token(token: str | None, remote_ip: str | None) -> None:
+    secret_key = os.getenv("TURNSTILE_SECRET_KEY", "").strip()
+    is_required = os.getenv("TURNSTILE_REQUIRED", "false").lower() == "true"
+    if not secret_key:
+        if is_required:
+            raise HTTPException(status_code=503, detail="Security verification is not configured")
+        return
+    if not token:
+        raise HTTPException(status_code=400, detail="Complete the security verification before continuing")
+
+    verification_payload = {"secret": secret_key, "response": token}
+    if remote_ip:
+        verification_payload["remoteip"] = remote_ip
+    try:
+        response = requests.post(TURNSTILE_VERIFY_URL, data=verification_payload, timeout=5)
+        response.raise_for_status()
+        result = response.json()
+    except (requests.RequestException, ValueError) as exc:
+        raise HTTPException(status_code=503, detail="Security verification is temporarily unavailable") from exc
+
+    if not isinstance(result, dict) or result.get("success") is not True:
+        raise HTTPException(status_code=400, detail="Security verification failed. Please try again")
 
 
 def _serialize_permission(permission: Permission) -> dict[str, object]:
@@ -570,6 +596,7 @@ def _verify_apple_id_token(id_token: str) -> dict[str, object]:
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 def register(payload: RegisterRequest, request: Request, db: Session = Depends(get_db)):
+    _verify_turnstile_token(payload.turnstile_token, request.client.host if request.client else None)
     set_rls_context(db, None, "admin")
     existing = (
         db.query(User)
@@ -964,7 +991,8 @@ def update_preferences(
 
 
 @router.post("/password-reset-request")
-def request_password_reset(payload: PasswordResetRequest, db: Session = Depends(get_db)):
+def request_password_reset(payload: PasswordResetRequest, request: Request, db: Session = Depends(get_db)):
+    _verify_turnstile_token(payload.turnstile_token, request.client.host if request.client else None)
     normalized_identifier = payload.email_or_username.strip().lower()
     if not normalized_identifier:
         raise HTTPException(status_code=400, detail="Username or email is required")

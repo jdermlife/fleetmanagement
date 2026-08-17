@@ -1,15 +1,21 @@
+import { Turnstile } from '@marsidev/react-turnstile'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { getErrorMessage, requestPasswordReset } from '../../api'
+import { APP_CONFIG } from '../../config'
 
 export default function ForgotPasswordPage() {
+  const turnstileSiteKey = APP_CONFIG.turnstileSiteKey
+  const isTurnstileConfigured = turnstileSiteKey.length > 0
   const [emailOrUsername, setEmailOrUsername] = useState('')
   const [message, setMessage] = useState('')
   const [resetToken, setResetToken] = useState('')
   const [userId, setUserId] = useState<number | null>(null)
   const [isSaving, setIsSaving] = useState(false)
+  const [turnstileToken, setTurnstileToken] = useState('')
+  const [turnstileResetKey, setTurnstileResetKey] = useState(0)
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
@@ -19,12 +25,16 @@ export default function ForgotPasswordPage() {
     setUserId(null)
 
     try {
-      const response = await requestPasswordReset(emailOrUsername)
+      const response = await requestPasswordReset(emailOrUsername, turnstileToken || undefined)
       setMessage(response.message)
       setResetToken(response.reset_token ?? '')
       setUserId(response.user_id ?? null)
     } catch (error) {
       setMessage(getErrorMessage(error, 'Unable to start password reset right now.'))
+      if (isTurnstileConfigured) {
+        setTurnstileToken('')
+        setTurnstileResetKey((current) => current + 1)
+      }
     } finally {
       setIsSaving(false)
     }
@@ -49,8 +59,24 @@ export default function ForgotPasswordPage() {
           />
         </label>
 
+        {isTurnstileConfigured ? (
+          <div className="login-art-turnstile" aria-label="Security verification">
+            <Turnstile
+              key={turnstileResetKey}
+              siteKey={turnstileSiteKey}
+              onSuccess={setTurnstileToken}
+              onExpire={() => setTurnstileToken('')}
+              onError={() => {
+                setTurnstileToken('')
+                setMessage('Security verification could not be completed. Please try again.')
+              }}
+              options={{ theme: 'light', size: 'flexible' }}
+            />
+          </div>
+        ) : null}
+
         <div className="form-actions">
-          <button type="submit" disabled={isSaving}>
+          <button type="submit" disabled={isSaving || (isTurnstileConfigured && !turnstileToken)}>
             {isSaving ? 'Requesting...' : 'Request Reset'}
           </button>
           <Link className="auth-link-button" to="/login">
