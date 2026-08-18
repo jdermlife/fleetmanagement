@@ -7,6 +7,7 @@ import tests._warning_filters  # noqa: F401
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.fastapi_auth import get_db as auth_get_db
 from app.routes.security import (
     _fallback_permissions_for_role_names,
     _resolve_registration_role,
@@ -20,6 +21,16 @@ from security.auth import create_token
 class SecurityPermissionTests(unittest.TestCase):
     def test_user_management_endpoint_is_admin_only(self) -> None:
         class EmptyQuery:
+            def filter(self, *_args):
+                return self
+
+            def first(self):
+                return SimpleNamespace(
+                    is_active=True,
+                    is_deleted=False,
+                    account_access_expires_at=None,
+                )
+
             def order_by(self, *_args):
                 return self
 
@@ -36,6 +47,7 @@ class SecurityPermissionTests(unittest.TestCase):
         app = FastAPI()
         app.include_router(admin_router, prefix="/api")
         app.dependency_overrides[get_db] = empty_database_override
+        app.dependency_overrides[auth_get_db] = empty_database_override
         client = TestClient(app)
 
         subscriber_token = create_token(42, "subscriber", "subscriber", expires_in_hours=1)
