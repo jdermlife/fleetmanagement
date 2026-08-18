@@ -33,6 +33,19 @@ export DATABASE_URL="postgresql://user:password@db.supabase.co:5432/postgres"
 export DATABASE_URL="postgresql://user:password@railway.internal:5432/railway"
 ```
 
+#### Contabo VPS
+```bash
+export DATABASE_URL="postgresql://fleet_user:replace_with_password@CONTABO_SERVER_IP:5432/fleet_management?sslmode=require"
+```
+
+Replace `CONTABO_SERVER_IP`, the database name, username, and password with the values configured on the Contabo server. Store the URL as a deployment secret rather than committing credentials to this repository.
+
+On the Contabo VPS:
+1. Configure PostgreSQL to listen on the server's private or public network interface.
+2. Restrict `pg_hba.conf` access to the backend server's IP address.
+3. Permit PostgreSQL port `5432` only from the backend server in the Contabo firewall.
+4. Configure PostgreSQL TLS before using `sslmode=require`.
+
 #### Any PostgreSQL Provider
 ```bash
 export DATABASE_URL="postgresql://user:password@host:port/database"
