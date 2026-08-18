@@ -3,10 +3,26 @@ from __future__ import annotations
 import csv
 import io
 from datetime import datetime, timezone
+from zipfile import ZipFile
 
+import pytest
 from app.models.loan_application import LoanApplication
 from app.services import loan_repository_io
 from app.services.loan_repository_io import EXPORT_FIELDS, UPSERT_FIELDS, generate_csv_bytes
+
+
+def test_xlsx_xml_parser_rejects_dtd_declarations() -> None:
+    archive_buffer = io.BytesIO()
+    with ZipFile(archive_buffer, "w") as archive:
+        archive.writestr(
+            "xl/workbook.xml",
+            b'<!DOCTYPE workbook [<!ENTITY payload "unsafe">]><workbook>&payload;</workbook>',
+        )
+
+    archive_buffer.seek(0)
+    with ZipFile(archive_buffer) as archive:
+        with pytest.raises(ValueError, match="prohibited declaration"):
+            loan_repository_io.parse_xlsx_xml_member(archive, "xl/workbook.xml")
 
 
 def test_export_fields_match_loan_application_table_columns() -> None:

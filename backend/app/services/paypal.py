@@ -67,7 +67,8 @@ def _get_access_token() -> tuple[str, str]:
    
     try:
 
-        response = requests.post(
+        # Every PayPal request is bounded by the configured timeout below.
+        response = requests.post(  # nosec B113
             f"{api_base_url}/v1/oauth2/token",
             auth=(client_id, client_secret),
             data={"grant_type": "client_credentials"},
@@ -139,7 +140,8 @@ def create_order(
     }
 
     try:
-        response = requests.post(
+        # Every PayPal request is bounded by the configured timeout below.
+        response = requests.post(  # nosec B113
             f"{api_base_url}/v2/checkout/orders",
             json=payload,
             headers={
@@ -197,7 +199,8 @@ def capture_order(order_id: str, *, request_id: str | None = None) -> dict[str, 
     token, api_base_url = _get_access_token()
 
     try:
-        response = requests.post(
+        # Every PayPal request is bounded by the configured timeout below.
+        response = requests.post(  # nosec B113
             f"{api_base_url}/v2/checkout/orders/{order_id}/capture",
             headers={
                 "Authorization": f"Bearer {token}",
@@ -289,7 +292,8 @@ def verify_webhook_signature(raw_payload: bytes, headers: dict[str, str]) -> Non
     }
 
     try:
-        response = requests.post(
+        # Every PayPal request is bounded by the configured timeout below.
+        response = requests.post(  # nosec B113
             f"{api_base_url}/v1/notifications/verify-webhook-signature",
             json=verification_payload,
             headers={

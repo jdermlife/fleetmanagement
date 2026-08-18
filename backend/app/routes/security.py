@@ -1026,15 +1026,20 @@ def request_password_reset(payload: PasswordResetRequest, request: Request, db: 
     reset_email_sent = False
     if _can_send_password_reset_email():
         try:
+            reset_email_body = "\n".join(
+                (
+                    "Use this password reset token to update your FMS account password.",
+                    "",
+                    f"User ID: {user.id}",
+                    f"Reset token: {reset_token}",
+                    f"Expires at: {expires_at.isoformat()}",
+                    "",
+                )
+            )
             send_email(
                 user.email,
                 "FMS password reset",
-                (
-                    "Use this password reset token to update your FMS account password.\n\n"
-                    f"User ID: {user.id}\n"
-                    f"Reset token: {reset_token}\n"
-                    f"Expires at: {expires_at.isoformat()}\n"
-                ),
+                reset_email_body,
             )
             reset_email_sent = True
         except Exception:

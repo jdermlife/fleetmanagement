@@ -6,6 +6,7 @@ import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.database import get_db
 from app.models.subscription import Feature, Subscription, SubscriptionPayment, SubscriptionPlan
 from app.models.users import User
 from app.routes import subscriptions as subscription_routes
@@ -94,8 +95,30 @@ def fake_db(monkeypatch):
 
 @pytest.fixture
 def client(fake_db):
+    auth_db = FakeSession()
+    auth_db.rows_by_model[User] = [
+        User(
+            id=1,
+            username="admin",
+            email="admin@example.com",
+            password_hash="unused",
+            role="admin",
+            is_active=True,
+            account_status="ACTIVE",
+        ),
+        User(
+            id=42,
+            username="subscriber",
+            email="subscriber@example.com",
+            password_hash="unused",
+            role="subscriber",
+            is_active=True,
+            account_status="ACTIVE",
+        ),
+    ]
     app = FastAPI()
     app.include_router(subscriptions_router, prefix="/api")
+    app.dependency_overrides[get_db] = lambda: auth_db
     return TestClient(app)
 
 
@@ -216,7 +239,7 @@ def test_free_plan_activates_two_day_internal_trial_once(
     assert account.account_access_expires_at == first_expiry
 
 
-def test_subscriber_subscription_owner_scope_smoke(
+def test_subscriber_cannot_list_all_subscriptions_smoke(
     client: TestClient,
     fake_db: FakeSession,
     subscriber_headers,
@@ -240,10 +263,8 @@ def test_subscriber_subscription_owner_scope_smoke(
     fake_db.rows_by_model[Subscription] = [own_subscription, foreign_subscription]
 
     list_response = client.get("/api/subscriptions", headers=subscriber_headers)
-    assert list_response.status_code == 200
-    rows = list_response.json()
-    assert len(rows) == 1
-    assert rows[0]["subscription_no"] == "SUB-OWN-001"
+
+    assert list_response.status_code == 403
 
 
 def test_subscriber_can_fetch_own_subscription_me_smoke(
@@ -420,7 +441,7 @@ def test_admin_can_update_plan_amendment_fields_smoke(
     assert payload["is_public"] is False
 
 
-def test_subscriber_can_update_own_subscription_amendment_fields_smoke(
+def test_subscriber_cannot_update_subscription_amendment_fields_smoke(
     client: TestClient,
     fake_db: FakeSession,
     subscriber_headers,
@@ -448,11 +469,10 @@ def test_subscriber_can_update_own_subscription_amendment_fields_smoke(
         },
     )
 
-    assert response.status_code == 200
-    payload = response.json()
-    assert payload["subscription_type"] == "PAID"
-    assert payload["renewal_count"] == 3
-    assert payload["current_users"] == 4
+    assert response.status_code == 403
+    assert own_subscription.subscription_type == "TRIAL"
+    assert own_subscription.renewal_count == 0
+    assert own_subscription.current_users == 1
 
 
 def test_entitlement_endpoint_admin_allowed_smoke(client: TestClient, admin_headers):

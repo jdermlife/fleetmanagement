@@ -7,7 +7,7 @@ from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from app.database import get_db
 from app.models.users import User
 from app.services.account_access_service import deactivate_if_access_expired
-from security.auth import TokenError, decode_token
+import security.auth as token_auth
 
 
 AUTH_REQUIRED = os.getenv("ENFORCE_AUTH", "true").lower() == "true"
@@ -39,8 +39,8 @@ def get_current_user(
         return None
 
     try:
-        payload = decode_token(credentials.credentials)
-    except TokenError as exc:
+        payload = token_auth.decode_token(credentials.credentials)
+    except token_auth.TokenError as exc:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(exc),

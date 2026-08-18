@@ -12,6 +12,7 @@ from fastapi import APIRouter, Depends, UploadFile, File, Query
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
+from starlette.background import BackgroundTask
 from openai import OpenAI
 from dotenv import load_dotenv
 
@@ -552,19 +553,23 @@ def download_meeting_pdf(meeting_id: int):
                 detail="Meeting not found"
             )
 
-        pdf_path = tempfile.mktemp(
-            suffix=".pdf"
-        )
+        with tempfile.NamedTemporaryFile(suffix=".pdf", delete=False) as pdf_file:
+            pdf_path = pdf_file.name
 
-        generate_minutes_pdf(
-            pdf_path,
-            meeting
-        )
+        try:
+            generate_minutes_pdf(
+                pdf_path,
+                meeting
+            )
+        except Exception:
+            os.unlink(pdf_path)
+            raise
         
         return FileResponse(
             path=pdf_path,
             filename=f"{meeting.meeting_title}.pdf",
-            media_type="application/pdf"
+            media_type="application/pdf",
+            background=BackgroundTask(os.unlink, pdf_path),
         )
 
     finally:

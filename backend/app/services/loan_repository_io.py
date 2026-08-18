@@ -57,6 +57,8 @@ STATUS_ALIASES = {
 
 EXPORT_FIELDS: list[str] = [column.name for column in LoanApplication.__table__.columns]
 EXISTING_RECORD_LOOKUP_CHUNK_SIZE = 1000
+MAX_XLSX_ARCHIVE_BYTES = 50 * 1024 * 1024
+MAX_XLSX_XML_MEMBER_BYTES = 10 * 1024 * 1024
 
 HEADER_ALIASES: dict[str, str] = {
     "application no": "application_no",
@@ -331,6 +333,19 @@ def column_letters_to_index(reference: str) -> int:
     return max(index - 1, 0)
 
 
+def parse_xlsx_xml_member(archive: ZipFile, member_name: str) -> ET.Element:
+    member = archive.getinfo(member_name)
+    if member.file_size > MAX_XLSX_XML_MEMBER_BYTES:
+        raise ValueError(f"Excel XML member is too large: {member_name}")
+
+    xml_bytes = archive.read(member)
+    if b"<!DOCTYPE" in xml_bytes or b"<!ENTITY" in xml_bytes:
+        raise ValueError(f"Excel XML member contains a prohibited declaration: {member_name}")
+
+    # DTDs, entities, and oversized XML are rejected before the standard parser sees the bytes.
+    return ET.fromstring(xml_bytes)  # nosec B314
+
+
 def parse_xlsx_rows(file_bytes: bytes) -> list[dict[str, Any]]:
     namespace = {
         "main": "http://schemas.openxmlformats.org/spreadsheetml/2006/main",
@@ -338,15 +353,18 @@ def parse_xlsx_rows(file_bytes: bytes) -> list[dict[str, Any]]:
     }
 
     with ZipFile(io.BytesIO(file_bytes)) as archive:
+        if sum(member.file_size for member in archive.infolist()) > MAX_XLSX_ARCHIVE_BYTES:
+            raise ValueError("Excel archive expands beyond the supported size limit")
+
         shared_strings: list[str] = []
         if "xl/sharedStrings.xml" in archive.namelist():
-            shared_tree = ET.fromstring(archive.read("xl/sharedStrings.xml"))
+            shared_tree = parse_xlsx_xml_member(archive, "xl/sharedStrings.xml")
             shared_strings = [
                 "".join(node.itertext())
                 for node in shared_tree.findall("main:si", namespace)
             ]
 
-        workbook_tree = ET.fromstring(archive.read("xl/workbook.xml"))
+        workbook_tree = parse_xlsx_xml_member(archive, "xl/workbook.xml")
         sheet = workbook_tree.find("main:sheets/main:sheet", namespace)
         if sheet is None:
             return []
@@ -355,7 +373,7 @@ def parse_xlsx_rows(file_bytes: bytes) -> list[dict[str, Any]]:
         if relationship_id is None:
             return []
 
-        relationships_tree = ET.fromstring(archive.read("xl/_rels/workbook.xml.rels"))
+        relationships_tree = parse_xlsx_xml_member(archive, "xl/_rels/workbook.xml.rels")
         target = None
         for relationship in relationships_tree.findall("rel:Relationship", namespace):
             if relationship.attrib.get("Id") == relationship_id:
@@ -366,7 +384,7 @@ def parse_xlsx_rows(file_bytes: bytes) -> list[dict[str, Any]]:
             return []
 
         worksheet_path = f"xl/{target.lstrip('/')}"
-        sheet_tree = ET.fromstring(archive.read(worksheet_path))
+        sheet_tree = parse_xlsx_xml_member(archive, worksheet_path)
         rows: list[list[Any]] = []
 
         for row_node in sheet_tree.findall("main:sheetData/main:row", namespace):

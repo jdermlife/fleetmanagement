@@ -11,6 +11,7 @@ from app.models.fuel_logs import FuelLog
 from app.models.gps_tracking import GpsTrackingRecord
 from app.models.insurance_records import InsuranceRecord
 from app.models.maintenance_logs import MaintenanceRecord
+from app.models.users import User
 from app.models.vehicles import Vehicle
 from app.routes.fleet_operations import router as fleet_operations_router
 from security.auth import create_token
@@ -81,7 +82,28 @@ class FakeSession:
 
 @pytest.fixture
 def fake_db():
-    return FakeSession()
+    session = FakeSession()
+    session.rows_by_model[User] = [
+        User(
+            id=1,
+            username="admin",
+            email="admin@example.com",
+            password_hash="unused",
+            role="admin",
+            is_active=True,
+            account_status="ACTIVE",
+        ),
+        User(
+            id=2,
+            username="viewer",
+            email="viewer@example.com",
+            password_hash="unused",
+            role="viewer",
+            is_active=True,
+            account_status="ACTIVE",
+        ),
+    ]
+    return session
 
 
 @pytest.fixture

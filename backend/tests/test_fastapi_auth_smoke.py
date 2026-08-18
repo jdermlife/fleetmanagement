@@ -4,6 +4,8 @@ import importlib
 import os
 import sys
 import unittest
+from types import SimpleNamespace
+from unittest.mock import MagicMock
 
 import tests._warning_filters  # noqa: F401
 
@@ -34,9 +36,11 @@ class FastAPIAuthSmokeTests(unittest.TestCase):
         os.environ["ENABLE_RATE_LIMIT"] = "false"
 
         import security.auth as auth_module
+        import app.fastapi_auth as fastapi_auth_module
         import main as main_module
 
         cls.auth_module = importlib.reload(auth_module)
+        cls.fastapi_auth_module = fastapi_auth_module
         cls.main_module = importlib.reload(main_module)
         cls.client = TestClient(cls.main_module.app)
 
@@ -68,19 +72,33 @@ class FastAPIAuthSmokeTests(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
 
     def test_viewer_token_cannot_create_driver(self) -> None:
-        token = self.auth_module.create_token(2, "viewer.user", "Viewer", expires_in_hours=1)
-        response = self.client.post(
-            "/drivers",
-            headers={"Authorization": f"Bearer {token}"},
-            json={
-                "firstName": "Smoke",
-                "lastName": "Tester",
-                "licenseNumber": "LIC-SMOKE-001",
-                "phone": "+630000000000",
-                "email": "smoke.tester@example.com",
-                "status": "Active",
-            },
+        active_user = SimpleNamespace(
+            is_active=True,
+            is_deleted=False,
+            account_access_expires_at=None,
         )
+        db = MagicMock()
+        db.query.return_value.filter.return_value.first.return_value = active_user
+        get_db = self.fastapi_auth_module.get_db
+        self.main_module.app.dependency_overrides[get_db] = lambda: db
+
+        token = self.auth_module.create_token(2, "viewer.user", "Viewer", expires_in_hours=1)
+        try:
+            response = self.client.post(
+                "/drivers",
+                headers={"Authorization": f"Bearer {token}"},
+                json={
+                    "firstName": "Smoke",
+                    "lastName": "Tester",
+                    "licenseNumber": "LIC-SMOKE-001",
+                    "phone": "+630000000000",
+                    "email": "smoke.tester@example.com",
+                    "status": "Active",
+                },
+            )
+        finally:
+            self.main_module.app.dependency_overrides.pop(get_db, None)
+
         self.assertEqual(response.status_code, 403)
 
 
