@@ -1371,7 +1371,7 @@ def admin_update_user(
             raise HTTPException(status_code=404, detail="Role not found")
         user.role_id = payload.role_id
         user.role = db_role.name
-    if payload.subscription_id is not None:
+    if "subscription_id" in payload.model_fields_set:
         user.subscription_id = payload.subscription_id
     if payload.api_access is not None:
         user.api_access = payload.api_access

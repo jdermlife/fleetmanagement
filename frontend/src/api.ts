@@ -737,7 +737,7 @@ export async function updateAdminUser(
     last_name?: string
     mobile_no?: string
     role_id?: number
-    subscription_id?: number
+    subscription_id?: number | null
     api_access?: boolean
     email_verified?: boolean
   },

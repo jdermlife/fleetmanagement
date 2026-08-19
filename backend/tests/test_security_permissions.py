@@ -56,6 +56,18 @@ class SecurityPermissionTests(unittest.TestCase):
             headers={"Authorization": f"Bearer {subscriber_token}"},
         )
         self.assertEqual(subscriber_response.status_code, 403)
+        subscriber_update_response = client.patch(
+            "/api/admin/users/1",
+            headers={"Authorization": f"Bearer {subscriber_token}"},
+            json={"account_status": "DISABLED", "is_active": False},
+        )
+        self.assertEqual(subscriber_update_response.status_code, 403)
+        subscriber_role_response = client.put(
+            "/api/admin/users/1/roles",
+            headers={"Authorization": f"Bearer {subscriber_token}"},
+            json={"roles": ["admin"]},
+        )
+        self.assertEqual(subscriber_role_response.status_code, 403)
 
         admin_token = create_token(1, "admin", "admin", expires_in_hours=1)
         admin_response = client.get(

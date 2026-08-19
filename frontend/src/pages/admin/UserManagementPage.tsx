@@ -16,6 +16,17 @@ import {
 } from '../../api'
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
+type AccountStatus = NonNullable<AdminUser['account_status']>
+
+const ACCOUNT_STATUSES: AccountStatus[] = [
+  'ACTIVE',
+  'PENDING',
+  'LOCKED',
+  'SUSPENDED',
+  'DISABLED',
+  'DELETED',
+]
+
 function uniqueRoleList(value: string): string[] {
   return Array.from(
     new Set(
@@ -47,6 +58,8 @@ export default function UserManagementPage() {
   const [newUserRoles, setNewUserRoles] = useState('')
 
   const [roleDrafts, setRoleDrafts] = useState<Record<number, string>>({})
+  const [statusDrafts, setStatusDrafts] = useState<Record<number, AccountStatus>>({})
+  const [subscriptionDrafts, setSubscriptionDrafts] = useState<Record<number, number | ''>>({})
   const userFormAutosave = useAutosaveDraft({
     scope: 'admin-user-create',
     entityKey: 'default',
@@ -102,6 +115,17 @@ export default function UserManagementPage() {
       setRoleDrafts(
         Object.fromEntries(loadedUsers.map((user) => [user.id, user.roles.join(', ')])),
       )
+      setStatusDrafts(
+        Object.fromEntries(
+          loadedUsers.map((user) => [
+            user.id,
+            user.account_status ?? (user.is_active ? 'ACTIVE' : 'DISABLED'),
+          ]),
+        ),
+      )
+      setSubscriptionDrafts(
+        Object.fromEntries(loadedUsers.map((user) => [user.id, user.subscription_id ?? ''])),
+      )
     } catch (error) {
       setMessage(getErrorMessage(error, 'Failed to load users.'))
     } finally {
@@ -125,14 +149,6 @@ export default function UserManagementPage() {
       ]),
     )
   }, [subscriptionPlans, subscriptions])
-
-  const getSubscriptionPlanName = (user: AdminUser) => {
-    if (!user.subscription_id) {
-      return 'No Subscription'
-    }
-
-    return subscriptionPlanNames.get(user.subscription_id) ?? 'Plan unavailable'
-  }
 
   const handleCreateUser = async () => {
     setMessage('')
@@ -167,14 +183,23 @@ export default function UserManagementPage() {
     }
   }
 
-  const handleSaveRoles = async (userId: number) => {
+  const handleSaveUser = async (user: AdminUser) => {
     setMessage('')
     try {
-      await assignAdminUserRoles(userId, uniqueRoleList(roleDrafts[userId] ?? ''))
+      const accountStatus = statusDrafts[user.id] ?? 'DISABLED'
+      const subscriptionId = subscriptionDrafts[user.id]
+      await Promise.all([
+        assignAdminUserRoles(user.id, uniqueRoleList(roleDrafts[user.id] ?? '')),
+        updateAdminUser(user.id, {
+          account_status: accountStatus,
+          is_active: accountStatus === 'ACTIVE',
+          subscription_id: subscriptionId === '' ? null : subscriptionId,
+        }),
+      ])
       await loadData()
-      setMessage('Roles updated successfully.')
+      setMessage('User changes saved successfully.')
     } catch (error) {
-      setMessage(getErrorMessage(error, 'Failed to update roles.'))
+      setMessage(getErrorMessage(error, 'Failed to save user changes.'))
     }
   }
 
@@ -243,12 +268,9 @@ export default function UserManagementPage() {
                 )
               }
             >
-              <option value="ACTIVE">ACTIVE</option>
-              <option value="PENDING">PENDING</option>
-              <option value="LOCKED">LOCKED</option>
-              <option value="SUSPENDED">SUSPENDED</option>
-              <option value="DISABLED">DISABLED</option>
-              <option value="DELETED">DELETED</option>
+              {ACCOUNT_STATUSES.map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
           </label>
           <label>
@@ -319,24 +341,62 @@ export default function UserManagementPage() {
                       <div className="text-slate-700">{formatNotificationSentAt(user.admin_user_notification_sent_at)}</div>
                     </div>
                     <div>
+                      <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Status</div>
+                      <select
+                        aria-label={`Status for ${user.username}`}
+                        value={statusDrafts[user.id] ?? 'DISABLED'}
+                        onChange={(event) =>
+                          setStatusDrafts((prev) => ({
+                            ...prev,
+                            [user.id]: event.target.value as AccountStatus,
+                          }))
+                        }
+                      >
+                        {ACCOUNT_STATUSES.map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </div>
+                    <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Subscription Plan</div>
-                      <div className="text-slate-700">{getSubscriptionPlanName(user)}</div>
+                      <select
+                        aria-label={`Subscription plan for ${user.username}`}
+                        value={subscriptionDrafts[user.id] ?? ''}
+                        onChange={(event) =>
+                          setSubscriptionDrafts((prev) => ({
+                            ...prev,
+                            [user.id]: event.target.value ? Number(event.target.value) : '',
+                          }))
+                        }
+                      >
+                        <option value="">No Subscription</option>
+                        {subscriptions.map((subscription) => (
+                          <option key={subscription.id} value={subscription.id}>
+                            {subscription.subscription_no} - {subscriptionPlanNames.get(subscription.id) ?? 'Plan unavailable'}
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <div className="text-xs font-semibold uppercase tracking-[0.12em] text-slate-500">Role</div>
-                      <input
+                      <select
                         aria-label={`Role for ${user.username}`}
                         value={roleDrafts[user.id] ?? ''}
                         onChange={(event) =>
                           setRoleDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
                         }
-                      />
+                      >
+                        <option value="">No Role</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>{role.name}</option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
                   <div className="mt-4 flex flex-wrap gap-2">
-                    <button type="button" onClick={() => void handleSaveRoles(user.id)}>
-                      Save Roles
+                    <button type="button" onClick={() => void handleSaveUser(user)}>
+                      Save Changes
                     </button>
                     <button type="button" onClick={() => void handleToggleStatus(user)}>
                       {user.is_active ? 'Disable' : 'Enable'}
@@ -367,21 +427,59 @@ export default function UserManagementPage() {
                     <td className="px-3 py-2">{user.email}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{formatDateCreated(user.created_at)}</td>
                     <td className="px-3 py-2 whitespace-nowrap">{formatNotificationSentAt(user.admin_user_notification_sent_at)}</td>
-                    <td className="px-3 py-2">{user.account_status ?? (user.is_active ? 'ACTIVE' : 'DISABLED')}</td>
                     <td className="px-3 py-2">
-                      <input
+                      <select
+                        aria-label={`Status for ${user.username}`}
+                        value={statusDrafts[user.id] ?? 'DISABLED'}
+                        onChange={(event) =>
+                          setStatusDrafts((prev) => ({
+                            ...prev,
+                            [user.id]: event.target.value as AccountStatus,
+                          }))
+                        }
+                      >
+                        {ACCOUNT_STATUSES.map((status) => (
+                          <option key={status} value={status}>{status}</option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-3 py-2">
+                      <select
                         aria-label={`Role for ${user.username}`}
                         value={roleDrafts[user.id] ?? ''}
                         onChange={(event) =>
                           setRoleDrafts((prev) => ({ ...prev, [user.id]: event.target.value }))
                         }
-                      />
+                      >
+                        <option value="">No Role</option>
+                        {roles.map((role) => (
+                          <option key={role.id} value={role.name}>{role.name}</option>
+                        ))}
+                      </select>
                     </td>
-                    <td className="px-3 py-2">{getSubscriptionPlanName(user)}</td>
+                    <td className="px-3 py-2">
+                      <select
+                        aria-label={`Subscription plan for ${user.username}`}
+                        value={subscriptionDrafts[user.id] ?? ''}
+                        onChange={(event) =>
+                          setSubscriptionDrafts((prev) => ({
+                            ...prev,
+                            [user.id]: event.target.value ? Number(event.target.value) : '',
+                          }))
+                        }
+                      >
+                        <option value="">No Subscription</option>
+                        {subscriptions.map((subscription) => (
+                          <option key={subscription.id} value={subscription.id}>
+                            {subscription.subscription_no} - {subscriptionPlanNames.get(subscription.id) ?? 'Plan unavailable'}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
                     <td className="px-3 py-2">
                       <div className="form-actions">
-                        <button type="button" onClick={() => void handleSaveRoles(user.id)}>
-                          Save Roles
+                        <button type="button" onClick={() => void handleSaveUser(user)}>
+                          Save Changes
                         </button>
                         <button type="button" onClick={() => void handleToggleStatus(user)}>
                           {user.is_active ? 'Disable' : 'Enable'}
