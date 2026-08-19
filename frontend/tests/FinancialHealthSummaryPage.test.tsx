@@ -44,10 +44,31 @@ describe('FinancialHealthSummaryPage', () => {
     const journeyItems = within(checklist).getAllByRole('listitem')
 
     expect(within(checklist).getByText('Financial Health', { selector: '.financial-health-journey-hub span' })).toBeTruthy()
-    expect(within(journeyItems[0]).getByRole('heading', { name: 'Create Profile' })).toBeTruthy()
+    expect(within(journeyItems[0]).getByRole('heading', { name: 'Create/Update Profile' })).toBeTruthy()
     expect(within(journeyItems[0]).getByRole('button', { name: 'Create Profile' })).toBeTruthy()
-    expect(within(journeyItems[1]).getByRole('heading', { name: 'Assess Credit Health' })).toBeTruthy()
+    expect(within(journeyItems[1]).getByRole('heading', { name: 'Credit Health' })).toBeTruthy()
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
+  })
+
+  it('reveals journey guidance when outer and central circles are hovered or focused', () => {
+    render(<FinancialHealthSummaryPage />)
+
+    const checklist = screen.getByRole('list', { name: 'Financial Health journey checklist' })
+    const journeyItems = within(checklist).getAllByRole('listitem')
+    fireEvent.mouseEnter(journeyItems[0])
+    expect(screen.getByRole('tooltip').textContent).toContain('Complete the 12-step workflow form')
+    fireEvent.mouseLeave(journeyItems[0])
+    expect(screen.queryByRole('tooltip')).toBeNull()
+
+    const financialHealthCircle = within(checklist).getByText('Financial Health', {
+      selector: '.financial-health-journey-hub span',
+    }).parentElement
+    expect(financialHealthCircle).toBeTruthy()
+    fireEvent.focus(financialHealthCircle as HTMLElement)
+    expect(screen.getByRole('tooltip').textContent).toContain('overall assessment of financial stability and resilience')
+    expect(screen.getByRole('tooltip').textContent).toContain('risks and opportunities that lie ahead')
+    fireEvent.blur(financialHealthCircle as HTMLElement)
+    expect(screen.queryByRole('tooltip')).toBeNull()
   })
 
   it('places the minimized journey opener between the model note and compute button', () => {
@@ -99,7 +120,7 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getAllByText('Excellent').length).toBeGreaterThan(0)
     expect(screen.getByText('84.2 × 10 = 842')).toBeTruthy()
-    expect(screen.getAllByRole('heading', { name: 'Credit Health' })).toHaveLength(3)
+    expect(screen.getAllByRole('heading', { name: 'Credit Health' })).toHaveLength(4)
     expect(screen.getByText('Awaiting a saved loan application draft to paint the leaf with live lending scores.')).toBeTruthy()
     const trendGraph = screen.getByRole('img', {
       name: 'Five-period sample trend for Financial Health Score, Credit Health, and Wealth Building Score',

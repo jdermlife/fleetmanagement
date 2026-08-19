@@ -68,6 +68,13 @@ type JourneyStep = {
   description: string
 }
 
+type JourneyDetailId = JourneyStepId | 'financialHealth'
+
+type JourneyDetail = {
+  title: string
+  points: string[]
+}
+
 type BenchmarkContext = {
   countryCode: string
   currency: string
@@ -225,7 +232,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'creditHealth',
-    label: 'Assess Credit Health',
+    label: 'Credit Health',
     launchLabel: 'Launch Credit Health',
     route: '/lending-scorecard',
     description:
@@ -233,7 +240,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'wealthBuilder',
-    label: 'Set Wealth Building Target',
+    label: 'Composite Wealth Score',
     launchLabel: 'Launch Wealth Builder',
     route: '/net-worth-positioning',
     description:
@@ -241,7 +248,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'budgetTargets',
-    label: 'Set Limit and Manage Resources',
+    label: 'Budget & Expense Tracker',
     launchLabel: 'Arrange My Targets',
     route: '/budget-expense-tracker',
     description:
@@ -249,7 +256,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billsLoans',
-    label: 'Optimize Resources',
+    label: 'Resources Performance Oversight',
     launchLabel: 'Optimize Loan',
     route: '/loan-monitoring',
     description:
@@ -257,13 +264,78 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billManager',
-    label: 'Enhance Discipline',
+    label: 'Bill Manager',
     launchLabel: 'Manage Bills',
     route: '/bill-reminder',
     description:
       'Manage your bills.',
   },
 ]
+
+const FINANCIAL_HEALTH_JOURNEY_DETAILS: Record<JourneyDetailId, JourneyDetail> = {
+  createProfile: {
+    title: 'Create / Update Profile',
+    points: [
+      'Complete the 12-step workflow form to establish your Financial Health Summary.',
+      'Enter zero, none, or not applicable where relevant.',
+      'A completion percentage is displayed in the main dashboard.',
+      'Each step is color-coded to highlight progress and pending items.',
+    ],
+  },
+  creditHealth: {
+    title: 'Credit Health',
+    points: [
+      'Derived from Credit Score, Non-Starter Score, Social Score, and Psychometric Score.',
+      'Goes beyond numbers by reflecting reputation, reliability, and financial trustworthiness.',
+      'Indicates the likelihood of loan approval and highlights areas for improvement.',
+    ],
+  },
+  wealthBuilder: {
+    title: 'Composite Wealth Score',
+    points: [
+      'Combines Net Worth Positioning, Wealth Behaviour, Wealth Foundation, and Wealth Authenticity.',
+      'Answers: Where am I today?',
+      'Answers: Why am I here?',
+      'Answers: Where am I going?',
+      'Answers: What should I do next?',
+    ],
+  },
+  budgetTargets: {
+    title: 'Budget & Expense Tracker',
+    points: [
+      'Guides budget setup and regular updates of actual expenses.',
+      'Captures both financial discipline and behavioral patterns.',
+      'Directly contributes to the Financial Health Score.',
+    ],
+  },
+  billsLoans: {
+    title: 'Resources Performance Oversight',
+    points: [
+      'Measures how Debt, Cash, and Collateral are optimized.',
+      'Covers loan setup and loan statement management.',
+      'Includes collateral tracking linked to the Profile section.',
+      'Provides visibility into resource efficiency and risk exposure.',
+    ],
+  },
+  billManager: {
+    title: 'Bill Manager',
+    points: [
+      'Enables payment reminders and monitoring of billing cycles.',
+      'Reduces missed payments and strengthens financial reliability.',
+      'Integrates seamlessly into the Financial Health Scorecard.',
+    ],
+  },
+  financialHealth: {
+    title: 'Financial Health',
+    points: [
+      'Provides an overall assessment of financial stability and resilience.',
+      'Captures Stability & Reliability, Control & Resilience, and Future Progress.',
+      'Shows what your financial health is today.',
+      'Shows how your income compares to your work.',
+      'Highlights the risks and opportunities that lie ahead.',
+    ],
+  },
+}
 
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
 const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
@@ -643,6 +715,7 @@ export default function FinancialHealthSummaryPage() {
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
+  const [activeJourneyDetailId, setActiveJourneyDetailId] = useState<JourneyDetailId | null>(null)
   const [benchmarkContext, setBenchmarkContext] = useState<BenchmarkContext>({
     countryCode: 'PH',
     currency: 'PHP',
@@ -995,6 +1068,9 @@ export default function FinancialHealthSummaryPage() {
         .map((segment) => `${segment.label} ${segment.score ?? 'Pending'} out of 100`)
         .join(', ')
     : 'Leaf graph awaiting saved lending scores'
+  const activeJourneyDetail = activeJourneyDetailId
+    ? FINANCIAL_HEALTH_JOURNEY_DETAILS[activeJourneyDetailId]
+    : null
 
   return (
     <div className="psychometric-page financial-health-page">
@@ -1014,7 +1090,7 @@ export default function FinancialHealthSummaryPage() {
             <h2 id="financial-health-journey-title">Welcome to Your Financial Health Journey!</h2>
             <p>
               Congratulations on creating your FILSCORE account. Complete these steps to unlock
-              the full power of your profile and receive more accurate financial recommendations.
+              the full power of your profile and receive more accurate financial recommendations. Hover in each circle to learn more about each step. Click the button to launch the step and complete it.
             </p>
 
             <div
@@ -1029,6 +1105,16 @@ export default function FinancialHealthSummaryPage() {
                     key={step.id}
                     className={`financial-health-journey-step ${isCompleted ? 'financial-health-journey-step-complete' : ''}`}
                     role="listitem"
+                    tabIndex={0}
+                    aria-describedby={activeJourneyDetailId === step.id ? 'financial-health-journey-detail' : undefined}
+                    onMouseEnter={() => setActiveJourneyDetailId(step.id)}
+                    onMouseLeave={() => setActiveJourneyDetailId(null)}
+                    onFocus={() => setActiveJourneyDetailId(step.id)}
+                    onBlur={(event) => {
+                      if (!event.currentTarget.contains(event.relatedTarget as Node | null)) {
+                        setActiveJourneyDetailId(null)
+                      }
+                    }}
                   >
                     <div className="financial-health-journey-step-copy">
                       {isCompleted ? <span className="financial-health-journey-step-check" aria-label="Completed">✓</span> : null}
@@ -1045,7 +1131,29 @@ export default function FinancialHealthSummaryPage() {
                   </article>
                 )
               })}
-              <div className="financial-health-journey-hub"><span>Financial Health</span></div>
+              <div
+                className="financial-health-journey-hub"
+                tabIndex={0}
+                aria-describedby={activeJourneyDetailId === 'financialHealth' ? 'financial-health-journey-detail' : undefined}
+                onMouseEnter={() => setActiveJourneyDetailId('financialHealth')}
+                onMouseLeave={() => setActiveJourneyDetailId(null)}
+                onFocus={() => setActiveJourneyDetailId('financialHealth')}
+                onBlur={() => setActiveJourneyDetailId(null)}
+              >
+                <span>Financial Health</span>
+              </div>
+              {activeJourneyDetail ? (
+                <aside
+                  id="financial-health-journey-detail"
+                  className="financial-health-journey-detail"
+                  role="tooltip"
+                >
+                  <strong>{activeJourneyDetail.title}</strong>
+                  <ul>
+                    {activeJourneyDetail.points.map((point) => <li key={point}>{point}</li>)}
+                  </ul>
+                </aside>
+              ) : null}
               <span className="financial-health-journey-arrow financial-health-journey-arrow-1" aria-hidden="true" />
               <span className="financial-health-journey-arrow financial-health-journey-arrow-2" aria-hidden="true" />
               <span className="financial-health-journey-arrow financial-health-journey-arrow-3" aria-hidden="true" />

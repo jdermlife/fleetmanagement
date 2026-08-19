@@ -1218,7 +1218,7 @@ export default function LoanMonitoringPage() {
     <div className="psychometric-page loan-monitoring-dashboard-page">
       <section className="psychometric-hero loan-monitoring-dashboard-hero">
         <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">Loan Performance Oversight</span>
+          <span className="psychometric-eyebrow">Resources Performance Oversight</span>
           <h1>Debt Cash Collateral Optimizer</h1>
           <p>
             Period: <strong>{snapshot.dateLabel}</strong>
