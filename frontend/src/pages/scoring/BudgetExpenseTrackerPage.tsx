@@ -899,7 +899,7 @@ export default function BudgetExpenseTrackerPage() {
           rel="noreferrer"
           className="auth-link-button"
         >
-          Click here !! Record your Income and Expenses by taking a picture of Receipts and Invoices.
+          Always Reassess Your Income.
         </a>
           </p>
         </div>
