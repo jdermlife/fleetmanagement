@@ -1800,7 +1800,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
       <section className="psychometric-hero networth-dashboard-hero networth-report-hero">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
-          <h1>Composite Wealth Score</h1>
+          <h1>Wealth Building  Score</h1>
           <p>Period: <strong>{asOfDate || snapshot.dateLabel}</strong></p>
         </div>
         <WealthBalanceRadar
@@ -1848,7 +1848,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
                   </div>
                 </div>
                 <p className="loan-certification-reference">Reference No. <strong>{snapshot.sourceApplicationNo || 'Draft'}</strong></p>
-                <p className="loan-certification-reference">FILSCORE Wealth Building Score Certification</p>
+                <p className="loan-certification-reference">FILSCORE Wealth Building Score </p>
                 <div className="loan-certification-name">{wealthClientName}</div>
                 <p className="loan-certification-copy">
                   This certifies that the above client completed the FILSCORE wealth assessment and the summarized results below were generated for financial evaluation and planning.

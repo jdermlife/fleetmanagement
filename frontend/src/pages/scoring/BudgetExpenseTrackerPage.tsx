@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useAutosaveDraft } from '../../autosave';
 import { saveLoanApplicationBudget } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
+import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
@@ -945,7 +946,7 @@ export default function BudgetExpenseTrackerPage() {
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">
-        <SelectedProfileIdCard />
+        <SelectedProfileIdCard compactId label="Record ID" />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{completionPercent}%</strong>
@@ -1012,9 +1013,15 @@ export default function BudgetExpenseTrackerPage() {
                 );
               })}
             </div>
+            <WorkflowVoiceGuidedEntry
+              ariaLabel="Voice-guided budget and expense entry"
+              currentStep={step}
+              rootSelector=".budget-expense-voice-form .budget-workflow-step-block"
+              subjectLabel="budget and expense"
+            />
           </article>
 
-          <article className="psychometric-panel">
+          <article className="psychometric-panel budget-expense-voice-form">
             <div className="psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow Form </span>

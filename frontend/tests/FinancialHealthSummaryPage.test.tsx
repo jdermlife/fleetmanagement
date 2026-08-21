@@ -88,6 +88,7 @@ describe('FinancialHealthSummaryPage', () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-USER',
       values: {
+        fullName: 'Jane Doe',
         'asset-cash-on-hand': '1500000',
         'liability-personal-loan': '250000',
         'income-salary': '120000',
@@ -106,8 +107,8 @@ describe('FinancialHealthSummaryPage', () => {
     render(<FinancialHealthSummaryPage />)
 
     const profileLine = screen.getByRole('region', { name: 'Selected financial health profile' })
-    expect(within(profileLine).getByText('APP Profile ID')).toBeTruthy()
-    expect(within(profileLine).getByText('ID User')).toBeTruthy()
+    expect(within(profileLine).getByText('Record ID')).toBeTruthy()
+    expect(within(profileLine).getByText('Jane Doe')).toBeTruthy()
     expect(await within(profileLine).findByText('1,250k')).toBeTruthy()
     expect(within(profileLine).getByText('100k')).toBeTruthy()
     expect(within(profileLine).getByText('750k')).toBeTruthy()

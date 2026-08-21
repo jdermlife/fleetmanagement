@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useAutosaveDraft } from '../../autosave';
 import { saveLoanApplicationBillReminders } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
+import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { computeBillPaymentHealthScore } from './billPaymentHealthEngine';
@@ -1051,7 +1052,7 @@ export default function BillReminderPage() {
       </section>
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">
-        <SelectedProfileIdCard />
+        <SelectedProfileIdCard compactId label="Record ID" />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{completionPercent}%</strong>
@@ -1119,9 +1120,15 @@ export default function BillReminderPage() {
                 );
               })}
             </div>
+            <WorkflowVoiceGuidedEntry
+              ariaLabel="Voice-guided bill manager entry"
+              currentStep={step}
+              rootSelector=".bill-manager-voice-form .budget-workflow-step-block"
+              subjectLabel="bill manager"
+            />
           </article>
 
-          <article className="psychometric-panel">
+          <article className="psychometric-panel bill-manager-voice-form">
             <div className="psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow Form</span>

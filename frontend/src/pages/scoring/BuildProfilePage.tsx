@@ -10,6 +10,7 @@ import {
 } from '../../api/loan'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
+import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAiAdvisories } from './aiAdvisoryEngine'
@@ -2614,7 +2615,7 @@ export default function BuildProfilePage() {
     </section>
 
     <section className="psychometric-summary-grid lending-psychometric-summary-grid">
-      <article className="psychometric-summary-card psychometric-summary-card-highlight"><span>Profile ID</span><strong>{profile.profileId}</strong><small>Your personal profile reference</small></article>
+      <SelectedProfileIdCard compactId label="Record ID" profileId={profile.profileId} name={profile.values.fullName} />
       <article className="psychometric-summary-card build-profile-goal-summary">
         <label htmlFor="build-profile-summary-financial-goal">Financial Goal</label>
         <select id="build-profile-summary-financial-goal" aria-label="Profile Financial Goal" value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>

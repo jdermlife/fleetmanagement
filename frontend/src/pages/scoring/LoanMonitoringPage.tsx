@@ -5,6 +5,7 @@ import { useAutosaveDraft } from '../../autosave';
 import { fetchAutosaveDraft } from '../../autosave/draftApi';
 import { saveLoanApplicationMonitoring, updateLoanApplication } from '../../api/loan';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
+import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
 import { computeBudgetHealthScore, type BudgetHealthDraftInput, type BudgetHealthScoreResult } from './budgetHealthEngine';
@@ -1236,7 +1237,7 @@ export default function LoanMonitoringPage() {
       </section>
 
       <section className="psychometric-summary-grid dashboard-five-card-summary loan-monitoring-summary-grid">
-        <SelectedProfileIdCard />
+        <SelectedProfileIdCard compactId label="Record ID" />
 
         <article className="psychometric-summary-card">
           <span>Available Credit</span>
@@ -1326,9 +1327,15 @@ export default function LoanMonitoringPage() {
                 );
               })}
             </div>
+            <WorkflowVoiceGuidedEntry
+              ariaLabel="Voice-guided loan monitoring entry"
+              currentStep={step}
+              rootSelector=".loan-monitoring-voice-form .budget-workflow-step-block"
+              subjectLabel="loan monitoring"
+            />
           </article>
 
-          <article className="psychometric-panel">
+          <article className="psychometric-panel loan-monitoring-voice-form">
             <div className="psychometric-panel-header">
               <div>
                 <span className="psychometric-panel-kicker">Workflow Form</span>

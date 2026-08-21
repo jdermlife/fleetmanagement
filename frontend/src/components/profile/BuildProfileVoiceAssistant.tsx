@@ -29,7 +29,10 @@ declare global {
 }
 
 interface BuildProfileVoiceAssistantProps {
+  ariaLabel?: string
   currentStep: number
+  rootSelector?: string
+  subjectLabel?: string
 }
 
 type VoiceField = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
@@ -48,8 +51,8 @@ function isVisible(element: HTMLElement): boolean {
   return style.display !== 'none' && style.visibility !== 'hidden'
 }
 
-function getVoiceFields(): VoiceField[] {
-  const root = document.querySelector('.build-profile-form-panel .build-profile-step-content')
+function getVoiceFields(rootSelector: string): VoiceField[] {
+  const root = document.querySelector(rootSelector)
   if (!root) return []
 
   return Array.from(root.querySelectorAll<VoiceField>('input, select, textarea')).filter((field) => {
@@ -146,7 +149,12 @@ function applyNativeValue(field: VoiceField, value: string): void {
   field.focus()
 }
 
-export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfileVoiceAssistantProps) {
+export default function BuildProfileVoiceAssistant({
+  ariaLabel = 'Voice-guided profile entry',
+  currentStep,
+  rootSelector = '.build-profile-form-panel .build-profile-step-content',
+  subjectLabel = 'profile',
+}: BuildProfileVoiceAssistantProps) {
   const recognitionRef = useRef<SpeechRecognitionInstance | null>(null)
   const queueRef = useRef<VoiceField[]>([])
   const recordedAnswersRef = useRef<RecordedAnswer[]>([])
@@ -295,7 +303,7 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
       return
     }
 
-    const fields = getVoiceFields().filter((field) => !field.value.trim())
+    const fields = getVoiceFields(rootSelector).filter((field) => !field.value.trim())
     if (!fields.length) {
       setMessage('All voice-compatible fields in this step already have answers.')
       speak('All voice-compatible fields in this workflow step already have answers. Please verify them before moving to the next step.')
@@ -316,13 +324,13 @@ export default function BuildProfileVoiceAssistant({ currentStep }: BuildProfile
   }
 
   return (
-    <section className="build-profile-voice-assistant" aria-label="Voice-guided profile entry">
+    <section className="build-profile-voice-assistant" aria-label={ariaLabel}>
       <button
         type="button"
         className={`build-profile-voice-button${isListening ? ' build-profile-voice-button-listening' : ''}`}
         onClick={isListening ? () => resetInterview('Voice interview stopped. Select the microphone to start again.') : beginInterview}
-        aria-label={isListening ? 'Stop listening' : 'Answer profile questions by voice'}
-        title={isListening ? 'Stop listening' : 'Answer profile questions by voice'}
+        aria-label={isListening ? 'Stop listening' : `Answer ${subjectLabel} questions by voice`}
+        title={isListening ? 'Stop listening' : `Answer ${subjectLabel} questions by voice`}
       >
         <span className="build-profile-microphone-icon" aria-hidden="true"><span /></span>
       </button>

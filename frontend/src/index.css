@@ -7001,6 +7001,19 @@ th { color: var(--dark-gold); }
   box-shadow: inset 0 -4px 0 #2563eb;
 }
 
+.workflow-voice-entry-panel {
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+  margin-top: 14px;
+}
+
+.workflow-voice-entry-panel .build-profile-voice-assistant {
+  width: 100%;
+  margin-bottom: 0;
+  text-align: left;
+}
+
 .build-profile-workflow-action {
   width: 100%;
   min-height: 42px;

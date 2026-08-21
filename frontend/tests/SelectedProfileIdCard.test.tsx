@@ -1,7 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { render, screen } from '@testing-library/react'
 
-import SelectedProfileIdCard, { resolveSelectedProfileId } from '../src/components/profile/SelectedProfileIdCard'
+import SelectedProfileIdCard, {
+  resolveSelectedProfileId,
+  resolveSelectedProfileName,
+} from '../src/components/profile/SelectedProfileIdCard'
 import { resolveSelectedApplicationNo } from '../src/hooks/useSelectedAnalysisEntity'
 import {
   estimateYearsToTargetNetWorth,
@@ -46,6 +49,24 @@ describe('selected profile identity', () => {
     expect(screen.getByText('Record ID')).toBeTruthy()
     expect(screen.getByText('APP-123').classList.contains('selected-profile-id-compact')).toBe(true)
     expect(screen.getByText('Jane Doe')).toBeTruthy()
+  })
+
+  it('uses the replicated Build Profile name for the matching selected record', () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-LOCAL',
+      selectedApplicationNo: 'APP-123',
+      values: { fullName: 'Jane Doe' },
+    }))
+
+    expect(resolveSelectedProfileName(new URLSearchParams('applicationNo=APP-123'))).toBe('Jane Doe')
+    expect(resolveSelectedProfileName(new URLSearchParams('applicationNo=APP-OTHER'))).toBe('')
+  })
+
+  it('supports a live Build Profile ID and name before persistence', () => {
+    render(<SelectedProfileIdCard compactId label="Record ID" profileId="PRO-LIVE" name="Ana Cruz" />)
+
+    expect(screen.getByText('PRO-LIVE')).toBeTruthy()
+    expect(screen.getByText('Ana Cruz')).toBeTruthy()
   })
 
   it('supports an ID User caption for the APP profile card', () => {
