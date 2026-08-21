@@ -95,6 +95,23 @@ def test_health_and_home_endpoints(app_client):
     assert "message" in home_response.json()
 
 
+def test_unhandled_errors_include_cors_headers(app_client):
+    client, _auth_module, _fake_db = app_client
+
+    def raise_unhandled_error():
+        raise RuntimeError("test error")
+
+    client.app.add_api_route("/_test/unhandled-error", raise_unhandled_error)
+    response = client.get(
+        "/_test/unhandled-error",
+        headers={"Origin": "https://fleetmanagement-flame.vercel.app"},
+    )
+
+    assert response.status_code == 500
+    assert response.json() == {"detail": "Internal server error"}
+    assert response.headers["Access-Control-Allow-Origin"] == "https://fleetmanagement-flame.vercel.app"
+
+
 def test_database_status_requires_and_allows_admin_token(app_client):
     client, auth_module, _fake_db = app_client
 

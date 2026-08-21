@@ -298,7 +298,6 @@ cors_kwargs = {
 if origin_regex:
     cors_kwargs["allow_origin_regex"] = origin_regex
 
-app.add_middleware(CORSMiddleware, **cors_kwargs)
 app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 
@@ -495,7 +494,20 @@ async def immutable_audit_log_middleware(request: Request, call_next):
     return response
 
 
+@app.middleware("http")
+async def unhandled_exception_boundary(request: Request, call_next):
+    try:
+        return await call_next(request)
+    except Exception:
+        return Response(
+            content=json.dumps({"detail": "Internal server error"}),
+            media_type="application/json",
+            status_code=500,
+        )
+
+
 app.add_middleware(ApiPathCompatibilityMiddleware)
+app.add_middleware(CORSMiddleware, **cors_kwargs)
 
 app.include_router(driver_router)
 app.include_router(dashboard_router)
