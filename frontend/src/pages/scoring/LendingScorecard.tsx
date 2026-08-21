@@ -4561,7 +4561,7 @@ export default function LendingScorecard() {
                     </div>
                   </div>
                   <p className="loan-certification-reference">Reference No. <strong>{formData.id}</strong></p>
-                  <p className="loan-certification-reference">Product Being Applied For: <strong>{formData.loan.productType || 'Not Specified'}</strong></p>
+                  <p className="loan-certification-reference">Product Being Assessed For: <strong>{formData.loan.productType || 'Not Specified'}</strong></p>
                   <div className="loan-certification-name">{borrowerDisplayName}</div>
                   <p className="loan-certification-copy">
                     This certifies that the above application completed the {APP_NAME} assessment workflow and the summarized results below were generated for credit evaluation and certification use.
