@@ -16,6 +16,8 @@ SEED_STATEMENTS = [
     ('GCASH', 'GCash', 'https://api.gcash.com', '/api/webhooks/gcash', TRUE),
     ('MAYA', 'Maya', 'https://api.maya.ph', '/api/webhooks/maya', TRUE),
     ('PAYMONGO', 'PayMongo', 'https://api.paymongo.com', '/api/subscriptions/payments/paymongo/webhook', TRUE),
+    ('GOOGLE_PLAY', 'Google Play', 'https://androidpublisher.googleapis.com', '/api/subscriptions/store-notifications/google', TRUE),
+    ('APPLE_APP_STORE', 'Apple App Store', 'https://api.storekit.itunes.apple.com', '/api/subscriptions/store-notifications/apple', TRUE),
     ('XENDIT', 'Xendit', 'https://api.xendit.co', '/api/webhooks/xendit', TRUE)
     ON CONFLICT(provider_code) DO NOTHING;
     """,

@@ -45,6 +45,8 @@ from app.models.subscription import (  # noqa: F401
     SubscriptionPayment,
     SubscriptionPlan,
     SubscriptionUsage,
+    StoreProduct,
+    StorePurchase,
 )
 from app.routes.drivers import router as driver_router
 from app.routes.dashboard import router as dashboard_router

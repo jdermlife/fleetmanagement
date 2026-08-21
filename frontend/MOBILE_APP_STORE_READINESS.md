@@ -63,6 +63,19 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
   - Play: 5% -> 25% -> 100%
   - iOS: phased release recommended
 
+## 9. Native Subscription Billing
+- [ ] Create matching subscription products in Google Play Console and App Store Connect.
+- [ ] Configure backend `STORE_PRODUCT_MAPPINGS_JSON`, for example:
+  `[{"platform":"ANDROID","plan_code":"SINGLE_PROFILE","product_id":"filscore_single_monthly","base_plan_id":"monthly"},{"platform":"IOS","plan_code":"SINGLE_PROFILE","product_id":"com.quantech.filscore.single.monthly"}]`
+- [ ] Configure `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` as service-account JSON or a secret-file path.
+- [ ] Configure `GOOGLE_PLAY_PACKAGE_NAME=com.quantech.filscore`.
+- [ ] Configure Google Play Real-time Developer Notifications to push to `/api/subscriptions/store-notifications/google` with OIDC authentication.
+- [ ] Configure `GOOGLE_PUBSUB_AUDIENCE` to the full notification endpoint URL and `GOOGLE_PUBSUB_SERVICE_ACCOUNT_EMAIL` to the push service account.
+- [ ] Provision Apple Root CA G3 as a backend secret file and configure `APPLE_ROOT_CA_PATH`.
+- [ ] Configure `APPLE_BUNDLE_ID=com.quantech.filscore` and `APPLE_STORE_ENVIRONMENT=Production`.
+- [ ] Configure App Store Server Notifications V2 to `/api/subscriptions/store-notifications/apple`.
+- [ ] Run `migrate_store_billing.py`, then verify product titles and localized prices on physical test devices.
+
 ## Notes
 - iOS App Store uploads require macOS + Xcode.
 - Current project already supports mobile sync via: npm run mobile:sync

@@ -10,6 +10,7 @@ import {
   createFreeSubscription,
   createSubscriptionCheckout,
   createSubscription,
+  fetchCurrentUser,
   getMySubscription,
   getAuthToken,
   getErrorMessage,
@@ -17,6 +18,14 @@ import {
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
+import {
+  isNativeStoreBilling,
+  loadNativeStoreProducts,
+  manageNativeSubscriptions,
+  purchaseNativeSubscription,
+  restoreNativeSubscriptions,
+  type NativeStoreProduct,
+} from '../../nativeBilling'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 
 function billingAmount(plan: SubscriptionPlan): number {
@@ -129,6 +138,8 @@ export default function SubscriptionPaymentPage() {
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
   const [isStartingFreeTrial, setIsStartingFreeTrial] = useState(false)
+  const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
+  const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
@@ -141,6 +152,7 @@ export default function SubscriptionPaymentPage() {
   const guestAccountQuery = searchParams.get('account')?.trim() || ''
   const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
+  const usesNativeStore = isNativeStoreBilling()
   const guestTrialPlan =
     !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
@@ -183,6 +195,17 @@ export default function SubscriptionPaymentPage() {
     void loadData()
   }, [guestTrialPlan])
 
+  useEffect(() => {
+    if (!usesNativeStore || !isAuthenticated || guestTrialPlan) {
+      return
+    }
+    void loadNativeStoreProducts()
+      .then(setNativeProducts)
+      .catch((error) => {
+        setLoadMessage(getErrorMessage(error, 'Unable to load subscriptions from the app store.'))
+      })
+  }, [guestTrialPlan, isAuthenticated, usesNativeStore])
+
   const selectedPlan = useMemo(
     () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
     [plans, selectedPlanId],
@@ -216,6 +239,11 @@ export default function SubscriptionPaymentPage() {
   const selectedSubscriptionPlan = useMemo(
     () => plans.find((plan) => plan.id === paymentSubscription?.plan_id) ?? selectedPlan,
     [plans, paymentSubscription?.plan_id, selectedPlan],
+  )
+
+  const selectedNativeProduct = useMemo(
+    () => nativeProducts.find((product) => product.mapping.plan_id === selectedSubscriptionPlan?.id) ?? null,
+    [nativeProducts, selectedSubscriptionPlan?.id],
   )
 
   const paypalCurrency = useMemo(
@@ -531,6 +559,49 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
+  const handleNativePurchase = async () => {
+    if (!selectedNativeProduct) {
+      setPaymentMessage('This subscription is not configured in the app store.')
+      return
+    }
+    setIsNativePurchasePending(true)
+    setPaymentMessage('Waiting for app store confirmation...')
+    try {
+      const currentUser = await fetchCurrentUser()
+      const purchase = await purchaseNativeSubscription(
+        selectedNativeProduct,
+        currentUser.id,
+        paymentSubscription?.id,
+      )
+      if (purchase.status === 'ACTIVE' || purchase.status === 'GRACE_PERIOD') {
+        navigate(`/payment-success?provider=${purchase.platform === 'IOS' ? 'apple' : 'google-play'}`, { replace: true })
+      } else {
+        setPaymentMessage(`The app store reports this subscription as ${purchase.status.toLowerCase()}.`)
+      }
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to complete the app store purchase.'))
+    } finally {
+      setIsNativePurchasePending(false)
+    }
+  }
+
+  const handleRestoreNativePurchases = async () => {
+    setIsNativePurchasePending(true)
+    setPaymentMessage('Restoring app store purchases...')
+    try {
+      const restored = await restoreNativeSubscriptions(nativeProducts)
+      setPaymentMessage(
+        restored.length > 0
+          ? 'Your app store subscriptions have been restored.'
+          : 'No active app store subscriptions were found.',
+      )
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to restore app store purchases.'))
+    } finally {
+      setIsNativePurchasePending(false)
+    }
+  }
+
   const handleStartGuestCheckout = async () => {
     if (!guestTrialPlan) {
       return
@@ -555,6 +626,18 @@ export default function SubscriptionPaymentPage() {
     } finally {
       setIsStartingCheckout(false)
     }
+  }
+
+  if (guestTrialPlan && usesNativeStore) {
+    return (
+      <div className="standalone-card auth-screen trial-expired-page subscription-payment-guest-page">
+        <h1>App Store Subscription</h1>
+        <p className="status-message">Sign in to purchase or restore a subscription through this device&apos;s app store.</p>
+        <div className="form-actions">
+          <Link className="auth-link-button" to="/login">Back to Login</Link>
+        </div>
+      </div>
+    )
   }
 
   if (guestTrialPlan) {
@@ -661,7 +744,9 @@ export default function SubscriptionPaymentPage() {
           <section className="stack-panel auth-panel trial-expired-plan-summary">
             <h2>{selectedSubscriptionPlan?.plan_name ?? selectedPlan?.plan_name ?? 'Subscription'}</h2>
             <p className="trial-expired-price">
-              {(selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP')} {dueAmount.toFixed(2)}
+              {usesNativeStore && selectedNativeProduct
+                ? selectedNativeProduct.priceString
+                : `${selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP'} ${dueAmount.toFixed(2)}`}
             </p>
             <p>
               Billing cycle: {(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
@@ -693,6 +778,42 @@ export default function SubscriptionPaymentPage() {
                     : 'Start Free Trial'}
               </button>
             </section>
+          ) : (
+          usesNativeStore ? (
+          <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="App store subscription">
+            <h2>{selectedNativeProduct?.title ?? 'App Store Subscription'}</h2>
+            <p>{selectedNativeProduct?.description ?? 'This plan is not yet available from the app store.'}</p>
+            {selectedNativeProduct ? (
+              <p className="trial-expired-price">{selectedNativeProduct.priceString}</p>
+            ) : null}
+            <div className="trial-expired-payment-buttons">
+              <button
+                type="button"
+                className="auth-link-button auth-apple-button"
+                onClick={() => void handleNativePurchase()}
+                disabled={isNativePurchasePending || !selectedNativeProduct}
+              >
+                {isNativePurchasePending ? 'Processing...' : 'Subscribe'}
+              </button>
+              <button
+                type="button"
+                className="auth-link-button"
+                onClick={() => void handleRestoreNativePurchases()}
+                disabled={isNativePurchasePending || nativeProducts.length === 0}
+              >
+                Restore Purchases
+              </button>
+              <button
+                type="button"
+                className="auth-link-button"
+                onClick={() => void manageNativeSubscriptions().catch((error) => {
+                  setPaymentMessage(getErrorMessage(error, 'Unable to open subscription management.'))
+                })}
+              >
+                Manage Subscription
+              </button>
+            </div>
+          </section>
           ) : (
           <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
             <h2>Choose Payment Channel</h2>
@@ -734,6 +855,7 @@ export default function SubscriptionPaymentPage() {
               </div>
             </div>
           </section>
+          )
           )}
         </>
       ) : null}

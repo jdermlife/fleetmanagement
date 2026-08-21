@@ -3,7 +3,15 @@ import { Link, useSearchParams } from 'react-router-dom'
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
   const provider = searchParams.get('provider')
-  const providerLabel = provider === 'paypal' ? 'PayPal' : provider === 'paymongo' ? 'PayMongo' : null
+  const providerLabel = provider === 'paypal'
+    ? 'PayPal'
+    : provider === 'paymongo'
+      ? 'PayMongo'
+      : provider === 'apple'
+        ? 'Apple App Store'
+        : provider === 'google-play'
+          ? 'Google Play'
+          : null
 
   return (
     <main className="payment-success-page">

@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 from calendar import monthrange
+import base64
 from datetime import date, datetime, timedelta, timezone
 from decimal import Decimal, ROUND_HALF_UP
+import hashlib
 import json
 import os
 import uuid
@@ -23,9 +25,12 @@ from app.models.subscription import (
     SubscriptionPayment,
     SubscriptionPlan,
     SubscriptionUsage,
+    StoreProduct,
+    StorePurchase,
 )
 from app.models.users import User
 from app.schemas.subscription_schema import (
+    AppleStoreNotificationRequest,
     FeatureCreate,
     FreeSubscriptionCreateRequest,
     PayPalCaptureOrderRequest,
@@ -47,6 +52,8 @@ from app.schemas.subscription_schema import (
     SubscriptionPlanUpdate,
     SubscriptionUpdate,
     SubscriptionUsageCreate,
+    StoreProductCreateRequest,
+    StorePurchaseVerificationRequest,
 )
 from app.services.email_service import send_email
 from app.services.account_access_service import configure_new_account_access, renew_account_access_after_payment
@@ -66,6 +73,15 @@ from app.services.paypal import (
     verify_webhook_signature as verify_paypal_webhook_signature,
 )
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
+from app.services.store_billing import (
+    decode_apple_signed_payload,
+    StoreBillingConfigurationError,
+    StorePurchaseVerificationError,
+    verify_apple_transaction,
+    verify_google_play_purchase,
+    verify_google_pubsub_token,
+    verify_store_purchase,
+)
 
 router = APIRouter(prefix="/subscriptions", tags=["subscriptions"])
 
@@ -211,6 +227,69 @@ def _serialize_subscription_payment(payment: SubscriptionPayment) -> dict:
         "paid_at": payment.paid_at,
         "created_at": payment.created_at,
     }
+
+
+def _serialize_store_product(store_product: StoreProduct) -> dict:
+    return {
+        "id": store_product.id,
+        "plan_id": store_product.plan_id,
+        "platform": store_product.platform,
+        "product_id": store_product.product_id,
+        "base_plan_id": store_product.base_plan_id,
+        "is_active": store_product.is_active,
+    }
+
+
+def _serialize_store_purchase(store_purchase: StorePurchase) -> dict:
+    return {
+        "id": store_purchase.id,
+        "subscription_id": store_purchase.subscription_id,
+        "platform": store_purchase.platform,
+        "product_id": store_purchase.store_product.product_id,
+        "transaction_id": store_purchase.transaction_id,
+        "original_transaction_id": store_purchase.original_transaction_id,
+        "status": store_purchase.status,
+        "purchased_at": store_purchase.purchased_at,
+        "expires_at": store_purchase.expires_at,
+        "verified_at": store_purchase.verified_at,
+        "payment": _serialize_subscription_payment(store_purchase.payment) if store_purchase.payment else None,
+    }
+
+
+def _store_purchase_grants_entitlement(status: str, expires_at: datetime | None) -> bool:
+    if status in {"ACTIVE", "GRACE_PERIOD"}:
+        return True
+    return status == "CANCELLED" and expires_at is not None and expires_at > datetime.now(timezone.utc)
+
+
+def _synchronize_store_purchase(db, purchase: StorePurchase, verified) -> None:
+    purchase.transaction_id = verified.transaction_id
+    purchase.original_transaction_id = verified.original_transaction_id
+    purchase.purchase_token_hash = verified.purchase_token_hash
+    purchase.status = verified.status
+    purchase.purchased_at = verified.purchased_at
+    purchase.expires_at = verified.expires_at
+    purchase.verified_at = datetime.now(timezone.utc)
+    subscription = purchase.subscription
+    payment = purchase.payment
+    grants_entitlement = _store_purchase_grants_entitlement(verified.status, verified.expires_at)
+    if grants_entitlement:
+        subscription.status = "ACTIVE"
+        subscription.auto_renew = verified.status != "CANCELLED"
+        if verified.expires_at is not None:
+            subscription.next_billing_date = verified.expires_at.date()
+        if payment is not None:
+            payment.provider_transaction_id = verified.transaction_id
+            if payment.payment_status != "SUCCESS":
+                payment.payment_status = "SUCCESS"
+                payment.paid_at = verified.purchased_at or datetime.now(timezone.utc)
+                _apply_successful_payment(db, payment, subscription=subscription)
+    else:
+        subscription.auto_renew = False
+        subscription.subscription_end = verified.expires_at.date() if verified.expires_at else date.today()
+        subscription.status = "CANCELLED" if verified.status == "CANCELLED" else "EXPIRED"
+        if payment is not None and verified.status in {"REVOKED", "REFUNDED"}:
+            payment.payment_status = "REFUNDED"
 
 
 def _add_months(value: date, months: int) -> date:
@@ -569,6 +648,302 @@ def _mark_payment_success(
     except Exception:
         # Email or invoice rendering issues should not fail payment activation.
         pass
+
+
+@router.get("/store-products")
+def list_store_products(
+    platform: str = Query(pattern="^(ANDROID|IOS)$"),
+    user: CurrentUser = Depends(require_authenticated_user),
+):
+    db = _session_with_rls(user)
+    try:
+        rows = (
+            db.query(StoreProduct)
+            .filter(StoreProduct.platform == platform)
+            .filter(StoreProduct.is_active.is_(True))
+            .order_by(StoreProduct.id.asc())
+            .all()
+        )
+        return [_serialize_store_product(row) for row in rows]
+    finally:
+        db.close()
+
+
+@router.post("/store-products")
+def create_store_product(
+    payload: StoreProductCreateRequest,
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    db = _session_with_rls(user)
+    try:
+        plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == payload.plan_id).first()
+        if plan is None:
+            raise HTTPException(status_code=404, detail="Subscription plan not found")
+        existing = (
+            db.query(StoreProduct)
+            .filter(StoreProduct.platform == payload.platform)
+            .filter(StoreProduct.product_id == payload.product_id)
+            .first()
+        )
+        if existing is not None:
+            raise HTTPException(status_code=409, detail="Store product already exists")
+        row = StoreProduct(**payload.model_dump())
+        db.add(row)
+        db.commit()
+        db.refresh(row)
+        return _serialize_store_product(row)
+    finally:
+        db.close()
+
+
+@router.post("/store-purchases/verify")
+def verify_native_store_purchase(
+    payload: StorePurchaseVerificationRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+):
+    try:
+        verified = verify_store_purchase(payload.platform, payload.verification_data)
+    except StoreBillingConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except StorePurchaseVerificationError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
+
+    if verified.platform != payload.platform or verified.product_id != payload.product_id:
+        raise HTTPException(status_code=422, detail="Verified store product does not match the request")
+
+    db = _session_with_rls(user)
+    try:
+        existing_purchase = (
+            db.query(StorePurchase)
+            .filter(StorePurchase.platform == verified.platform)
+            .filter(StorePurchase.transaction_id == verified.transaction_id)
+            .first()
+        )
+        if existing_purchase is not None:
+            if existing_purchase.user_id != user.id:
+                raise HTTPException(status_code=409, detail="Store transaction is linked to another account")
+            return _serialize_store_purchase(existing_purchase)
+
+        store_product = (
+            db.query(StoreProduct)
+            .filter(StoreProduct.platform == verified.platform)
+            .filter(StoreProduct.product_id == verified.product_id)
+            .filter(StoreProduct.is_active.is_(True))
+            .first()
+        )
+        if store_product is None:
+            raise HTTPException(status_code=404, detail="Store product is not mapped to a subscription plan")
+        plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == store_product.plan_id).first()
+        if plan is None or plan.is_active is False:
+            raise HTTPException(status_code=422, detail="Mapped subscription plan is unavailable")
+
+        subscription_query = db.query(Subscription).filter(Subscription.user_id == user.id)
+        if payload.subscription_id is not None:
+            subscription = subscription_query.filter(Subscription.id == payload.subscription_id).first()
+            if subscription is None:
+                raise HTTPException(status_code=404, detail="Subscription not found")
+            if subscription.plan_id != plan.id:
+                raise HTTPException(status_code=422, detail="Subscription does not match the store product")
+        else:
+            subscription = (
+                subscription_query
+                .filter(Subscription.plan_id == plan.id)
+                .filter(Subscription.status.in_(["PENDING", "TRIAL", "ACTIVE"]))
+                .order_by(Subscription.created_at.desc())
+                .first()
+            )
+        if subscription is None:
+            subscription = Subscription(
+                subscription_no=_build_subscription_no("STORE"),
+                user_id=user.id,
+                plan_id=plan.id,
+                status="PENDING",
+                subscription_type="PAID",
+                subscription_start=date.today(),
+                auto_renew=True,
+            )
+            db.add(subscription)
+            db.flush()
+
+        provider_code = "GOOGLE_PLAY" if verified.platform == "ANDROID" else "APPLE_APP_STORE"
+        provider = db.query(PaymentProvider).filter(PaymentProvider.provider_code == provider_code).first()
+        if provider is None:
+            provider = PaymentProvider(
+                provider_code=provider_code,
+                provider_name="Google Play" if verified.platform == "ANDROID" else "Apple App Store",
+                is_active=True,
+            )
+            db.add(provider)
+            db.flush()
+        if provider.is_active is False:
+            raise HTTPException(status_code=503, detail=f"{provider.provider_name} is not active")
+
+        activates_entitlement = _store_purchase_grants_entitlement(verified.status, verified.expires_at)
+        payment = SubscriptionPayment(
+            payment_reference=f"STORE-{uuid.uuid4().hex.upper()}",
+            subscription_id=subscription.id,
+            provider_id=provider.id,
+            amount=_subscription_checkout_amount(plan),
+            currency=plan.currency,
+            payment_method=provider.provider_name,
+            payment_status="SUCCESS" if activates_entitlement else ("PENDING" if verified.status == "PENDING" else "FAILED"),
+            provider_transaction_id=verified.transaction_id,
+            paid_at=verified.purchased_at if activates_entitlement else None,
+        )
+        db.add(payment)
+        db.flush()
+        purchase = StorePurchase(
+            user_id=user.id,
+            subscription_id=subscription.id,
+            store_product_id=store_product.id,
+            payment_id=payment.id,
+            platform=verified.platform,
+            transaction_id=verified.transaction_id,
+            original_transaction_id=verified.original_transaction_id,
+            purchase_token_hash=verified.purchase_token_hash,
+            status=verified.status,
+            purchased_at=verified.purchased_at,
+            expires_at=verified.expires_at,
+            verified_at=datetime.now(timezone.utc),
+        )
+        db.add(purchase)
+        if activates_entitlement:
+            subscription.payment_provider_id = provider.id
+            _mark_payment_success(
+                db,
+                payment=payment,
+                provider=provider,
+                payment_method=provider.provider_name,
+                processed_at=datetime.now(timezone.utc),
+                paid_at=verified.purchased_at,
+            )
+            if verified.expires_at is not None:
+                subscription.next_billing_date = verified.expires_at.date()
+        db.commit()
+        db.refresh(purchase)
+        return _serialize_store_purchase(purchase)
+    finally:
+        db.close()
+
+
+@router.post("/store-notifications/apple")
+def receive_apple_store_notification(payload: AppleStoreNotificationRequest):
+    try:
+        notification = decode_apple_signed_payload(payload.signedPayload)
+        event_id = str(notification.get("notificationUUID") or "").strip()
+        event_type = str(notification.get("notificationType") or "UNKNOWN")
+        event_subtype = str(notification.get("subtype") or "")
+        data = notification.get("data")
+        if not event_id or not isinstance(data, dict):
+            raise StorePurchaseVerificationError("Apple notification is incomplete")
+        expected_bundle_id = os.getenv("APPLE_BUNDLE_ID", "com.quantech.filscore").strip()
+        expected_environment = os.getenv("APPLE_STORE_ENVIRONMENT", "Production").strip().lower()
+        if str(data.get("bundleId") or "") != expected_bundle_id:
+            raise StorePurchaseVerificationError("Apple notification belongs to another application")
+        if str(data.get("environment") or "").lower() != expected_environment:
+            raise StorePurchaseVerificationError("Apple notification environment does not match")
+        signed_transaction = str(data.get("signedTransactionInfo") or "")
+        verified = verify_apple_transaction(signed_transaction)
+    except StoreBillingConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except StorePurchaseVerificationError as exc:
+        raise HTTPException(status_code=401, detail=str(exc)) from exc
+
+    db = SessionLocal()
+    try:
+        provider = db.query(PaymentProvider).filter(PaymentProvider.provider_code == "APPLE_APP_STORE").first()
+        if provider is None:
+            raise HTTPException(status_code=503, detail="Apple App Store provider is not configured")
+        duplicate = (
+            db.query(PaymentWebhook)
+            .filter(PaymentWebhook.provider_id == provider.id)
+            .filter(PaymentWebhook.provider_event_id == event_id)
+            .first()
+        )
+        if duplicate is not None:
+            return {"received": True, "duplicate": True}
+        purchase = (
+            db.query(StorePurchase)
+            .filter(StorePurchase.platform == "IOS")
+            .filter(
+                (StorePurchase.transaction_id == verified.transaction_id)
+                | (StorePurchase.original_transaction_id == verified.original_transaction_id)
+            )
+            .first()
+        )
+        processed = purchase is not None
+        if purchase is not None:
+            _synchronize_store_purchase(db, purchase, verified)
+            if event_type == "DID_CHANGE_RENEWAL_STATUS" and event_subtype == "AUTO_RENEW_DISABLED":
+                purchase.subscription.auto_renew = False
+        db.add(PaymentWebhook(
+            provider_id=provider.id,
+            provider_event_id=event_id,
+            event_type=event_type,
+            payload=notification,
+            processed=processed,
+            processed_at=datetime.now(timezone.utc) if processed else None,
+        ))
+        db.commit()
+        return {"received": True, "processed": processed}
+    finally:
+        db.close()
+
+
+@router.post("/store-notifications/google")
+async def receive_google_store_notification(request: Request):
+    try:
+        verify_google_pubsub_token(request.headers.get("Authorization"))
+        envelope = await request.json()
+        message = envelope["message"]
+        event_id = str(message["messageId"])
+        notification = json.loads(base64.b64decode(message["data"]))
+        subscription_notification = notification["subscriptionNotification"]
+        purchase_token = str(subscription_notification["purchaseToken"])
+        verified = verify_google_play_purchase(purchase_token)
+    except StoreBillingConfigurationError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError, StorePurchaseVerificationError) as exc:
+        raise HTTPException(status_code=401, detail="Invalid Google Play notification") from exc
+
+    db = SessionLocal()
+    try:
+        provider = db.query(PaymentProvider).filter(PaymentProvider.provider_code == "GOOGLE_PLAY").first()
+        if provider is None:
+            raise HTTPException(status_code=503, detail="Google Play provider is not configured")
+        duplicate = (
+            db.query(PaymentWebhook)
+            .filter(PaymentWebhook.provider_id == provider.id)
+            .filter(PaymentWebhook.provider_event_id == event_id)
+            .first()
+        )
+        if duplicate is not None:
+            return {"received": True, "duplicate": True}
+        token_hash = hashlib.sha256(purchase_token.encode("utf-8")).hexdigest()
+        purchase = (
+            db.query(StorePurchase)
+            .filter(StorePurchase.platform == "ANDROID")
+            .filter(
+                (StorePurchase.purchase_token_hash == token_hash)
+                | (StorePurchase.original_transaction_id == verified.original_transaction_id)
+            )
+            .first()
+        )
+        processed = purchase is not None
+        if purchase is not None:
+            _synchronize_store_purchase(db, purchase, verified)
+        db.add(PaymentWebhook(
+            provider_id=provider.id,
+            provider_event_id=event_id,
+            event_type=str(subscription_notification.get("notificationType") or "UNKNOWN"),
+            payload=notification,
+            processed=processed,
+            processed_at=datetime.now(timezone.utc) if processed else None,
+        ))
+        db.commit()
+        return {"received": True, "processed": processed}
+    finally:
+        db.close()
 
 
 def _commit_paypal_webhook(db, webhook: PaymentWebhook) -> PaymentWebhook | None:

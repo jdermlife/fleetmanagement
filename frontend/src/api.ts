@@ -1178,6 +1178,31 @@ export interface PayPalCaptureResult {
   payment: SubscriptionPayment
 }
 
+export type NativeStorePlatform = 'ANDROID' | 'IOS'
+
+export interface StoreProductMapping {
+  id: number
+  plan_id: number
+  platform: NativeStorePlatform
+  product_id: string
+  base_plan_id: string | null
+  is_active: boolean
+}
+
+export interface VerifiedStorePurchase {
+  id: number
+  subscription_id: number
+  platform: NativeStorePlatform
+  product_id: string
+  transaction_id: string
+  original_transaction_id: string | null
+  status: 'ACTIVE' | 'PENDING' | 'GRACE_PERIOD' | 'EXPIRED' | 'CANCELLED' | 'REVOKED' | 'REFUNDED'
+  purchased_at: string | null
+  expires_at: string | null
+  verified_at: string
+  payment: SubscriptionPayment | null
+}
+
 export interface SubscriptionInvoice {
   id: number
   invoice_no: string
@@ -1426,6 +1451,23 @@ export async function createSubscriptionCheckout(payload: {
   billing_cycle: 'MONTHLY' | 'QUARTERLY' | 'YEARLY'
 }): Promise<{ checkout_url: string }> {
   const response = await api.post<{ checkout_url: string }>('/api/subscriptions/create-checkout', payload)
+  return response.data
+}
+
+export async function listStoreProducts(platform: NativeStorePlatform): Promise<StoreProductMapping[]> {
+  const response = await api.get<StoreProductMapping[]>('/api/subscriptions/store-products', {
+    params: { platform },
+  })
+  return response.data
+}
+
+export async function verifyNativeStorePurchase(payload: {
+  platform: NativeStorePlatform
+  product_id: string
+  verification_data: string
+  subscription_id?: number
+}): Promise<VerifiedStorePurchase> {
+  const response = await api.post<VerifiedStorePurchase>('/api/subscriptions/store-purchases/verify', payload)
   return response.data
 }
 

@@ -27,6 +27,7 @@
     "@capacitor/splash-screen": "^8.0.1",
     "@capacitor/status-bar": "^8.0.2",
     "@capgo/capacitor-social-login": "^8.3.40",
+    "@capgo/native-purchases": "^8.6.6",
     "@marsidev/react-turnstile": "^1.5.5",
     "@neondatabase/serverless": "^1.1.0",
     "@react-oauth/google": "^0.13.5",

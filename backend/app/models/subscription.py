@@ -91,6 +91,28 @@ class SubscriptionPlan(Base):
 
     subscriptions = relationship("Subscription", back_populates="plan", lazy="selectin")
     plan_features = relationship("PlanFeature", back_populates="plan", cascade="all, delete-orphan")
+    store_products = relationship("StoreProduct", back_populates="plan", cascade="all, delete-orphan")
+
+
+class StoreProduct(Base):
+    __tablename__ = "store_products"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    plan_id = Column(BigInteger, ForeignKey("subscription_plans.id"), nullable=False, index=True)
+    platform = Column(String(20), nullable=False)
+    product_id = Column(String(255), nullable=False)
+    base_plan_id = Column(String(255))
+    is_active = Column(Boolean, nullable=False, default=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint("platform IN ('ANDROID','IOS')", name="ck_store_products_platform"),
+        UniqueConstraint("platform", "product_id", name="uq_store_products_platform_product"),
+    )
+
+    plan = relationship("SubscriptionPlan", back_populates="store_products", lazy="selectin")
+    purchases = relationship("StorePurchase", back_populates="store_product", lazy="selectin")
 
 
 class PaymentProvider(Base):
@@ -198,6 +220,40 @@ class SubscriptionPayment(Base):
 
     subscription = relationship("Subscription", back_populates="payments", lazy="selectin")
     provider = relationship("PaymentProvider", back_populates="payments", lazy="selectin")
+    store_purchase = relationship("StorePurchase", back_populates="payment", uselist=False)
+
+
+class StorePurchase(Base):
+    __tablename__ = "store_purchases"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), nullable=False, index=True)
+    store_product_id = Column(BigInteger, ForeignKey("store_products.id"), nullable=False, index=True)
+    payment_id = Column(BigInteger, ForeignKey("subscription_payments.id"), unique=True, index=True)
+    platform = Column(String(20), nullable=False)
+    transaction_id = Column(String(255), nullable=False)
+    original_transaction_id = Column(String(255))
+    purchase_token_hash = Column(String(64), nullable=False)
+    status = Column(String(30), nullable=False)
+    purchased_at = Column(DateTime(timezone=True))
+    expires_at = Column(DateTime(timezone=True))
+    verified_at = Column(DateTime(timezone=True), nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint("platform IN ('ANDROID','IOS')", name="ck_store_purchases_platform"),
+        CheckConstraint(
+            "status IN ('ACTIVE','PENDING','GRACE_PERIOD','EXPIRED','CANCELLED','REVOKED','REFUNDED')",
+            name="ck_store_purchases_status",
+        ),
+        UniqueConstraint("platform", "transaction_id", name="uq_store_purchases_platform_transaction"),
+    )
+
+    subscription = relationship("Subscription", lazy="selectin")
+    store_product = relationship("StoreProduct", back_populates="purchases", lazy="selectin")
+    payment = relationship("SubscriptionPayment", back_populates="store_purchase", lazy="selectin")
 
 
 class SubscriptionInvoice(Base):

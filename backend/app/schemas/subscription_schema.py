@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -239,6 +239,31 @@ class SubscriptionCheckoutCreateRequest(BaseModel):
 
     plan: str = Field(min_length=1, max_length=50)
     billing_cycle: str = Field(min_length=3, max_length=20)
+
+
+class StoreProductCreateRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    plan_id: int
+    platform: Literal["ANDROID", "IOS"]
+    product_id: str = Field(min_length=3, max_length=255)
+    base_plan_id: str | None = Field(default=None, max_length=255)
+    is_active: bool = True
+
+
+class StorePurchaseVerificationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    platform: Literal["ANDROID", "IOS"]
+    product_id: str = Field(min_length=3, max_length=255)
+    verification_data: str = Field(min_length=8, max_length=65536)
+    subscription_id: int | None = None
+
+
+class AppleStoreNotificationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    signedPayload: str = Field(min_length=8, max_length=131072)
 
 
 class SubscriptionInvoiceCreate(BaseModel):
