@@ -86,6 +86,7 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 - Capacitor 8 Android builds require Java 21. On Windows with Android Studio installed:
   `$env:JAVA_HOME="$env:ProgramFiles\Android\Android Studio\jbr"; Set-Location android; .\gradlew.bat :app:bundleRelease`
 - Upload `android/app/build/outputs/bundle/release/app-release.aab` to the Play internal testing track before production rollout.
+- Release builds use R8 optimization and resource shrinking. Keep the matching `android/app/build/outputs/mapping/release/mapping.txt` for every uploaded version; Play can also read the mapping embedded in the AAB metadata.
 - Confirm `https://fleetmanagement-dq9t.onrender.com/health` returns HTTP 200 before submission.
 - Android requires `INTERNET` and `com.android.vending.BILLING`; iOS uses the trusted HTTPS certificate without an ATS exception.
 - Test email login on a physical release-build device, close and reopen the app, and confirm the authenticated session is restored before promoting the Play/App Store release.
