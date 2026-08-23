@@ -6,6 +6,7 @@ import {
   resolveApiBase,
   resolveGoogleClientId,
   resolveOllamaFallbackUrl,
+  validateConfiguredApiBase,
 } from '../src/config'
 
 describe('resolveApiBase', () => {
@@ -25,6 +26,18 @@ describe('resolveApiBase', () => {
 
   it('keeps the local backend fallback when no development URL is configured', () => {
     expect(resolveApiBase(undefined, true)).toBe('http://localhost:5000')
+  })
+
+  it('rejects the malformed hostname from the previous Play Store build', () => {
+    expect(() => validateConfiguredApiBase('https://fleetmanagement=dq9t.onrender.com')).toThrow(
+      'invalid hostname',
+    )
+  })
+
+  it('requires HTTPS for non-local API endpoints', () => {
+    expect(() => validateConfiguredApiBase('http://fleetmanagement-dq9t.onrender.com')).toThrow(
+      'must use HTTPS',
+    )
   })
 })
 

@@ -90,6 +90,42 @@ describe('loginWithApple', () => {
     vi.resetModules()
   })
 
+  it('persists standard login tokens across an app reload', async () => {
+    const apiModule = await import('../src/api')
+    const authClient = clients[1]
+
+    authClient.post.mockResolvedValue({
+      data: {
+        access_token: 'login-access-token',
+        refresh_token: 'login-refresh-token',
+        user: {
+          id: 9,
+          username: 'mobile-user',
+          email: 'mobile@example.com',
+          role: 'subscriber_borrower',
+          roles: ['subscriber_borrower'],
+          permissions: [],
+          is_active: true,
+          created_at: '2026-08-23T00:00:00Z',
+          updated_at: '2026-08-23T00:00:00Z',
+          last_login_at: null,
+        },
+      },
+    })
+
+    await apiModule.login({ username: 'mobile-user', password: 'not-a-real-password' })
+
+    expect(window.localStorage.getItem('auth_token')).toBe('login-access-token')
+    expect(window.localStorage.getItem('refresh_token')).toBe('login-refresh-token')
+
+    vi.resetModules()
+    const reloadedApiModule = await import('../src/api')
+
+    expect(reloadedApiModule.getAuthToken()).toBe('login-access-token')
+    expect(reloadedApiModule.getRefreshToken()).toBe('login-refresh-token')
+    expect(clients.at(-1)?.defaults.headers.common.Authorization).toBe('Bearer login-access-token')
+  })
+
   it('posts identity_token to apple-token endpoint and stores session tokens', async () => {
     const apiModule = await import('../src/api')
 

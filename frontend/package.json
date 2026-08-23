@@ -13,7 +13,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "preview": "vite preview",
-    "mobile:sync": "npm run build && npx cap sync",
+    "mobile:verify-env": "node scripts/validate-mobile-release.mjs",
+    "mobile:verify-assets": "node scripts/verify-mobile-assets.mjs",
+    "mobile:sync": "npm run mobile:verify-env && npm run build && npx cap sync && npm run mobile:verify-assets",
     "mobile:android": "npm run mobile:sync && npx cap open android",
     "mobile:ios": "npm run mobile:sync && npx cap open ios"
   },

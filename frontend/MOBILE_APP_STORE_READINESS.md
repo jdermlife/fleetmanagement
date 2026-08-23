@@ -78,4 +78,14 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 
 ## Notes
 - iOS App Store uploads require macOS + Xcode.
-- Current project already supports mobile sync via: npm run mobile:sync
+- Run `npm run mobile:sync` before every Android or iOS release. The command now:
+  - requires production `VITE_API_URL=https://fleetmanagement-dq9t.onrender.com`;
+  - rejects malformed or non-HTTPS API hostnames;
+  - builds and synchronizes Capacitor assets;
+  - verifies the API URL in both Android and iOS bundles.
+- Capacitor 8 Android builds require Java 21. On Windows with Android Studio installed:
+  `$env:JAVA_HOME="$env:ProgramFiles\Android\Android Studio\jbr"; Set-Location android; .\gradlew.bat :app:bundleRelease`
+- Upload `android/app/build/outputs/bundle/release/app-release.aab` to the Play internal testing track before production rollout.
+- Confirm `https://fleetmanagement-dq9t.onrender.com/health` returns HTTP 200 before submission.
+- Android requires `INTERNET` and `com.android.vending.BILLING`; iOS uses the trusted HTTPS certificate without an ATS exception.
+- Test email login on a physical release-build device, close and reopen the app, and confirm the authenticated session is restored before promoting the Play/App Store release.

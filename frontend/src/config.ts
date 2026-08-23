@@ -7,10 +7,32 @@ export const DEFAULT_GOOGLE_CLIENT_ID =
 export const DEFAULT_OLLAMA_FALLBACK_URL =
   'https://filscore-ai.quantech.international/local-ai/page-assistant'
 
+export function validateConfiguredApiBase(configuredApiBase: string): string {
+  const normalizedApiBase = configuredApiBase.trim().replace(/\/$/, '')
+  let parsedUrl: URL
+
+  try {
+    parsedUrl = new URL(normalizedApiBase)
+  } catch {
+    throw new Error('VITE_API_URL must be a valid absolute URL.')
+  }
+
+  if (parsedUrl.protocol !== 'https:' && parsedUrl.hostname !== 'localhost') {
+    throw new Error('VITE_API_URL must use HTTPS outside local development.')
+  }
+  if (!/^[a-z0-9.-]+$/i.test(parsedUrl.hostname)) {
+    throw new Error('VITE_API_URL contains an invalid hostname.')
+  }
+  if (parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.hash) {
+    throw new Error('VITE_API_URL must not contain credentials, query parameters, or fragments.')
+  }
+
+  return normalizedApiBase
+}
+
 export function resolveApiBase(configuredApiBase: string | undefined, isDevelopment: boolean): string {
-  const normalizedApiBase = configuredApiBase?.trim().replace(/\/$/, '')
-  if (normalizedApiBase) {
-    return normalizedApiBase
+  if (configuredApiBase?.trim()) {
+    return validateConfiguredApiBase(configuredApiBase)
   }
 
   return isDevelopment ? 'http://localhost:5000' : '/api'
