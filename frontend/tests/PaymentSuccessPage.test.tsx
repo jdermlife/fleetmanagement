@@ -14,12 +14,13 @@ describe('PaymentSuccessPage', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Thank You for Subscription!' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'Thank You for Your Subscription!' })).toBeTruthy()
     expect(screen.getByText(/payment through PayPal was completed/i)).toBeTruthy()
+    expect(screen.getByText(/lasting financial wellness for many years to come/i)).toBeTruthy()
     expect(screen.getByRole('status').textContent).toContain('Subscription activated')
     expect(
       screen.getByRole('link', {
-        name: /Continue your Journey to Robust Financial Health!/i,
+        name: /Go to Financial Health/i,
       }).getAttribute('href'),
     ).toBe('/financial-health-summary')
   })

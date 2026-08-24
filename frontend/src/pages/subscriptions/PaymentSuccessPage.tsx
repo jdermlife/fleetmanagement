@@ -21,10 +21,10 @@ export default function PaymentSuccessPage() {
         </div>
 
         <p className="payment-success-kicker">Payment Successful</p>
-        <h1 id="payment-success-title">Thank You for Subscription!</h1>
+        <h1 id="payment-success-title">Thank You for Your Subscription!</h1>
         <p className="payment-success-intro">
           Your subscription payment{providerLabel ? ` through ${providerLabel}` : ''} was completed.
-          Your access is ready, and your financial health tools are available to support your next steps.
+          Your access is ready. We wish you lasting financial wellness for many years to come.
         </p>
 
         <div className="payment-success-confirmation" role="status">
@@ -33,7 +33,7 @@ export default function PaymentSuccessPage() {
         </div>
 
         <Link className="payment-success-action" to="/financial-health-summary">
-          Continue your Journey to Robust Financial Health!
+          Go to Financial Health
           <span aria-hidden="true">→</span>
         </Link>
       </section>
