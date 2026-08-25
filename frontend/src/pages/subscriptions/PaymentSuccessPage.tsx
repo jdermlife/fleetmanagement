@@ -2,7 +2,7 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 export default function PaymentSuccessPage() {
   const [searchParams] = useSearchParams()
-  const provider = searchParams.get('provider')
+  const provider = searchParams.get('provider')?.trim().toLowerCase()
   const providerLabel = provider === 'paypal'
     ? 'PayPal'
     : provider === 'paymongo'
@@ -21,21 +21,40 @@ export default function PaymentSuccessPage() {
         </div>
 
         <p className="payment-success-kicker">Payment Successful</p>
-        <h1 id="payment-success-title">Thank You for Your Subscription!</h1>
+        <h1 id="payment-success-title">Your payment is complete</h1>
         <p className="payment-success-intro">
-          Your subscription payment{providerLabel ? ` through ${providerLabel}` : ''} was completed.
-          Your access is ready. We wish you lasting financial wellness for many years to come.
+          Thank you. Your subscription payment{providerLabel ? ` through ${providerLabel}` : ''} was
+          received successfully.
         </p>
 
         <div className="payment-success-confirmation" role="status">
-          <strong>Subscription activated</strong>
-          <span>A receipt and payment record will be available in your billing history.</span>
+          <div>
+            <strong>Payment received</strong>
+            <span>The transaction was returned to FILSCORE successfully.</span>
+          </div>
+          <div>
+            <strong>Access update</strong>
+            <span>Your subscription access is ready or will update shortly after provider confirmation.</span>
+          </div>
+          <div>
+            <strong>Payment record</strong>
+            <span>Your account will retain the payment details for future reference.</span>
+          </div>
         </div>
 
-        <Link className="payment-success-action" to="/financial-health-summary">
-          Go to Financial Health
-          <span aria-hidden="true">→</span>
-        </Link>
+        <div className="payment-success-actions">
+          <Link className="payment-success-action" to="/financial-health-summary">
+            Continue to Financial Health
+            <span aria-hidden="true">→</span>
+          </Link>
+          <Link className="payment-success-action payment-success-action-secondary" to="/account">
+            View Account
+          </Link>
+        </div>
+
+        <p className="payment-success-support">
+          Please do not pay again if access takes a moment to update.
+        </p>
       </section>
     </main>
   )

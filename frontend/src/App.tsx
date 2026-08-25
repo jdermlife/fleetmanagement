@@ -328,6 +328,7 @@ const adminMenuItems = isAdminUser
   : []
 
 const isLoginRoute = location.pathname === '/login'
+const isPaymentSuccessRoute = ['/payment-success', '/payment/success'].includes(location.pathname)
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/financial-health-summary', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
 
@@ -398,11 +399,13 @@ const isSignedIn = authReady && Boolean(currentUser)
   useEffect(() => {
     const handleSessionExpired = () => {
       setCurrentUser(null)
-      navigate('/login')
+      if (!isPaymentSuccessRoute) {
+        navigate('/login')
+      }
     }
     window.addEventListener('auth:session-expired', handleSessionExpired)
     return () => window.removeEventListener('auth:session-expired', handleSessionExpired)
-  }, [navigate])
+  }, [isPaymentSuccessRoute, navigate])
 
   return (
     <div className="app-shell">
@@ -1193,6 +1196,11 @@ const isSignedIn = authReady && Boolean(currentUser)
             />
 
             <Route
+              path="/payment/success"
+              element={<PaymentSuccessPage />}
+            />
+
+            <Route
               path="/billing"
               element={
                 <ProtectedRoute roles={['admin']}>
@@ -1476,7 +1484,7 @@ const isSignedIn = authReady && Boolean(currentUser)
           </Routes>
         </Suspense>
       </main>
-      {!isLoginRoute ? (
+      {!isLoginRoute && !isPaymentSuccessRoute ? (
         <FloatingChatbot
           pathname={location.pathname}
           authenticated={Boolean(currentUser)}

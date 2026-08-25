@@ -7,21 +7,33 @@ import PaymentSuccessPage from '../src/pages/subscriptions/PaymentSuccessPage'
 describe('PaymentSuccessPage', () => {
   afterEach(() => cleanup())
 
-  it('thanks the subscriber and continues to Financial Health', () => {
+  it('confirms the provider payment and offers clear next actions', () => {
     render(
       <MemoryRouter initialEntries={['/payment-success?provider=paypal']}>
         <PaymentSuccessPage />
       </MemoryRouter>,
     )
 
-    expect(screen.getByRole('heading', { name: 'Thank You for Your Subscription!' })).toBeTruthy()
-    expect(screen.getByText(/payment through PayPal was completed/i)).toBeTruthy()
-    expect(screen.getByText(/lasting financial wellness for many years to come/i)).toBeTruthy()
-    expect(screen.getByRole('status').textContent).toContain('Subscription activated')
+    expect(screen.getByRole('heading', { name: 'Your payment is complete' })).toBeTruthy()
+    expect(screen.getByText(/payment through PayPal was received successfully/i)).toBeTruthy()
+    expect(screen.getByRole('status').textContent).toContain('Payment received')
+    expect(screen.getByRole('status').textContent).toContain('Access update')
     expect(
       screen.getByRole('link', {
-        name: /Go to Financial Health/i,
+        name: /Continue to Financial Health/i,
       }).getAttribute('href'),
     ).toBe('/financial-health-summary')
+    expect(screen.getByRole('link', { name: 'View Account' }).getAttribute('href')).toBe('/account')
+  })
+
+  it('renders a provider-neutral confirmation for the legacy gateway return URL', () => {
+    render(
+      <MemoryRouter initialEntries={['/payment/success']}>
+        <PaymentSuccessPage />
+      </MemoryRouter>,
+    )
+
+    expect(screen.getByRole('heading', { name: 'Your payment is complete' })).toBeTruthy()
+    expect(screen.getByText('Thank you. Your subscription payment was received successfully.')).toBeTruthy()
   })
 })
