@@ -268,6 +268,11 @@ export default function SubscriptionPaymentPage() {
     && (selectedSubscriptionPlan ?? selectedPlan)?.plan_code === 'FREE'
     && dueAmount === 0
 
+  const preferredPaidPlan = useMemo(() => {
+    const paidPlans = plans.filter((plan) => plan.plan_code !== 'FREE' && billingAmount(plan) > 0)
+    return paidPlans.find((plan) => plan.plan_code === 'SINGLE_PROFILE') ?? paidPlans[0] ?? null
+  }, [plans])
+
   const canRenderPayPalButtons =
     !guestTrialPlan &&
     !isFreeTrialPlan &&
@@ -546,12 +551,21 @@ export default function SubscriptionPaymentPage() {
   }
 
   const handleStartFreeTrial = async () => {
+    if (!usesNativeStore && paymentSubscription?.status === 'TRIAL') {
+      navigate('/financial-health-summary', { replace: true })
+      return
+    }
+
     setIsStartingFreeTrial(true)
     setPaymentMessage('Starting your free two-day trial...')
     try {
       const trial = await createFreeSubscription()
       setSubscriptions([trial])
-      setPaymentMessage('Your free two-day trial is active. No payment was required.')
+      if (usesNativeStore) {
+        setPaymentMessage('Your free two-day trial is active. No payment was required.')
+      } else {
+        navigate('/financial-health-summary', { replace: true })
+      }
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start the free trial right now.'))
     } finally {
@@ -769,14 +783,25 @@ export default function SubscriptionPaymentPage() {
                 type="button"
                 className="auth-link-button auth-apple-button"
                 onClick={() => void handleStartFreeTrial()}
-                disabled={isStartingFreeTrial || paymentSubscription?.status === 'TRIAL'}
+                disabled={isStartingFreeTrial || (usesNativeStore && paymentSubscription?.status === 'TRIAL')}
               >
                 {paymentSubscription?.status === 'TRIAL'
-                  ? 'Free Trial Active'
+                  ? usesNativeStore
+                    ? 'Free Trial Active'
+                    : 'Continue to Financial Health'
                   : isStartingFreeTrial
                     ? 'Starting Free Trial...'
                     : 'Start Free Trial'}
               </button>
+              {!usesNativeStore && preferredPaidPlan ? (
+                <p className="status-message">
+                  Ready to subscribe?{' '}
+                  <Link to={`/subscription-payment?planId=${preferredPaidPlan.id}`}>
+                    Pay for {preferredPaidPlan.plan_name} now
+                  </Link>
+                  .
+                </p>
+              ) : null}
             </section>
           ) : (
           usesNativeStore ? (

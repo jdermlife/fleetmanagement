@@ -203,7 +203,13 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       yearly_price: 0,
       minimum_monthly_fee: 0,
     }
-    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([freePlan])
+    const paidPlan = {
+      ...plan,
+      id: 2,
+      plan_code: 'SINGLE_PROFILE',
+      plan_name: 'Subscriber Single Profile Plan',
+    }
+    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([freePlan, paidPlan])
     apiMocks.createFreeSubscription.mockResolvedValue({
       ...subscription,
       id: 1,
@@ -221,6 +227,9 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     const startTrial = await screen.findByRole('button', { name: 'Start Free Trial' })
+    expect(
+      screen.getByRole('link', { name: 'Pay for Subscriber Single Profile Plan now' }).getAttribute('href'),
+    ).toBe('/subscription-payment?planId=2')
     expect(screen.queryByRole('button', { name: 'Pay with PayMongo' })).toBeNull()
     expect(screen.queryByText('PayPal', { selector: 'h3' })).toBeNull()
 
@@ -229,7 +238,41 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(apiMocks.createFreeSubscription).toHaveBeenCalledTimes(1)
     expect(apiMocks.createSubscriptionCheckout).not.toHaveBeenCalled()
     expect(apiMocks.createPayPalOrder).not.toHaveBeenCalled()
-    expect(await screen.findByText(/No payment was required/)).toBeTruthy()
+    expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
+  })
+
+  it('continues an active browser trial to financial health', async () => {
+    const freePlan = {
+      ...plan,
+      id: 1,
+      plan_code: 'FREE',
+      plan_name: 'Free',
+      monthly_price: 0,
+      yearly_price: 0,
+      minimum_monthly_fee: 0,
+    }
+    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([freePlan])
+    apiMocks.getMySubscription.mockResolvedValue({
+      ...subscription,
+      id: 1,
+      plan_id: 1,
+      status: 'TRIAL',
+      subscription_type: 'FREE',
+    })
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=1']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const continueButton = await screen.findByRole('button', { name: 'Continue to Financial Health' })
+    await act(async () => continueButton.click())
+
+    expect(apiMocks.createFreeSubscription).not.toHaveBeenCalled()
+    expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
   })
 
   it('routes a successful PayMongo return to the payment success page', async () => {
