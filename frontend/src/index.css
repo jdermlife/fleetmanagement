@@ -6520,6 +6520,14 @@ th { color: var(--dark-gold); }
 .admin-user-billing-table th,
 .admin-user-billing-table td { white-space: nowrap; }
 .admin-user-billing-table td:nth-child(2) { white-space: normal; min-width: 220px; }
+.admin-user-billing-filters { background: #ffffff; }
+.admin-user-billing-filters th { padding: 8px; }
+.admin-user-billing-filters input {
+  width: 100%;
+  min-width: 118px;
+  padding: 7px 8px;
+  font-size: 0.82rem;
+}
 .auth-support-links { display: flex; gap: 12px; flex-wrap: wrap; }
 .auth-token-preview { overflow-wrap: anywhere; }
 .auth-link-button {

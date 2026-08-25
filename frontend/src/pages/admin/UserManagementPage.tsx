@@ -19,6 +19,26 @@ import {
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
 
 type AccountStatus = NonNullable<AdminUser['account_status']>
+type BillingFilterKey =
+  | 'username'
+  | 'email'
+  | 'plan'
+  | 'amount'
+  | 'merchant'
+  | 'lastPaymentDate'
+  | 'nextDueDate'
+  | 'ipAddress'
+
+const EMPTY_BILLING_FILTERS: Record<BillingFilterKey, string> = {
+  username: '',
+  email: '',
+  plan: '',
+  amount: '',
+  merchant: '',
+  lastPaymentDate: '',
+  nextDueDate: '',
+  ipAddress: '',
+}
 
 const ACCOUNT_STATUSES: AccountStatus[] = [
   'ACTIVE',
@@ -46,6 +66,7 @@ export default function UserManagementPage() {
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
   const [payments, setPayments] = useState<SubscriptionPayment[]>([])
+  const [billingFilters, setBillingFilters] = useState(EMPTY_BILLING_FILTERS)
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -182,6 +203,30 @@ export default function UserManagementPage() {
       return { user, subscription, plan, latestPayment }
     })
   }, [payments, subscriptionPlans, subscriptions, users])
+
+  const filteredUserBillingRows = useMemo(
+    () => userBillingRows.filter(({ user, subscription, plan, latestPayment }) => {
+      const values: Record<BillingFilterKey, string> = {
+        username: user.username,
+        email: user.email,
+        plan: plan?.plan_name ?? 'N/A',
+        amount: formatPaymentAmount(latestPayment),
+        merchant: formatPaymentMerchant(latestPayment),
+        lastPaymentDate: formatBillingDate(latestPayment?.paid_at ?? latestPayment?.created_at),
+        nextDueDate: formatBillingDate(subscription?.next_invoice_date),
+        ipAddress: user.last_login_ip ?? 'N/A',
+      }
+
+      return (Object.keys(billingFilters) as BillingFilterKey[]).every((key) =>
+        values[key].toLocaleLowerCase().includes(billingFilters[key].trim().toLocaleLowerCase()),
+      )
+    }),
+    [billingFilters, userBillingRows],
+  )
+
+  const updateBillingFilter = (key: BillingFilterKey, value: string) => {
+    setBillingFilters((current) => ({ ...current, [key]: value }))
+  }
 
   const handleCreateUser = async () => {
     setMessage('')
@@ -544,23 +589,40 @@ export default function UserManagementPage() {
                   <th>Email</th>
                   <th>Payment Plan</th>
                   <th>Payment Amount</th>
+                  <th>Payment Merchant / Method</th>
                   <th>Last Payment Date</th>
                   <th>Next Due Date</th>
                   <th>IP Address</th>
                 </tr>
+                <tr className="admin-user-billing-filters">
+                  <th><input aria-label="Filter by username" value={billingFilters.username} onChange={(event) => updateBillingFilter('username', event.target.value)} /></th>
+                  <th><input aria-label="Filter by email" value={billingFilters.email} onChange={(event) => updateBillingFilter('email', event.target.value)} /></th>
+                  <th><input aria-label="Filter by payment plan" value={billingFilters.plan} onChange={(event) => updateBillingFilter('plan', event.target.value)} /></th>
+                  <th><input aria-label="Filter by payment amount" value={billingFilters.amount} onChange={(event) => updateBillingFilter('amount', event.target.value)} /></th>
+                  <th><input aria-label="Filter by payment merchant or method" value={billingFilters.merchant} onChange={(event) => updateBillingFilter('merchant', event.target.value)} /></th>
+                  <th><input aria-label="Filter by last payment date" value={billingFilters.lastPaymentDate} onChange={(event) => updateBillingFilter('lastPaymentDate', event.target.value)} /></th>
+                  <th><input aria-label="Filter by next due date" value={billingFilters.nextDueDate} onChange={(event) => updateBillingFilter('nextDueDate', event.target.value)} /></th>
+                  <th><input aria-label="Filter by IP address" value={billingFilters.ipAddress} onChange={(event) => updateBillingFilter('ipAddress', event.target.value)} /></th>
+                </tr>
               </thead>
               <tbody>
-                {userBillingRows.map(({ user, subscription, plan, latestPayment }) => (
+                {filteredUserBillingRows.map(({ user, subscription, plan, latestPayment }) => (
                   <tr key={`billing-${user.id}`}>
                     <td>{user.username}</td>
                     <td>{user.email}</td>
                     <td>{plan?.plan_name ?? 'N/A'}</td>
                     <td>{formatPaymentAmount(latestPayment)}</td>
+                    <td>{formatPaymentMerchant(latestPayment)}</td>
                     <td>{formatBillingDate(latestPayment?.paid_at ?? latestPayment?.created_at)}</td>
                     <td>{formatBillingDate(subscription?.next_invoice_date)}</td>
                     <td>{user.last_login_ip ?? 'N/A'}</td>
                   </tr>
                 ))}
+                {filteredUserBillingRows.length === 0 ? (
+                  <tr>
+                    <td colSpan={8}>No users match the selected filters.</td>
+                  </tr>
+                ) : null}
               </tbody>
             </table>
           </div>
@@ -584,6 +646,10 @@ function formatPaymentAmount(payment: SubscriptionPayment | null): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   })}`
+}
+
+function formatPaymentMerchant(payment: SubscriptionPayment | null): string {
+  return payment?.payment_method?.trim() || 'N/A'
 }
 
 function formatBillingDate(value?: string | null): string {
