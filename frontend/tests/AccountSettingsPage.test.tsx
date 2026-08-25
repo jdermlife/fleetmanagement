@@ -6,12 +6,14 @@ const {
   mockFetchCurrentUser,
   mockDeleteAccount,
   mockListPublicSubscriptionPlans,
+  mockListSubscriptionPayments,
   mockLogout,
   mockPrepareAutosavesForLogout,
 } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockDeleteAccount: vi.fn(),
   mockListPublicSubscriptionPlans: vi.fn(),
+  mockListSubscriptionPayments: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
 }))
@@ -24,6 +26,7 @@ vi.mock('../src/api', () => ({
   getErrorMessage: (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback,
   listPublicSubscriptionPlans: mockListPublicSubscriptionPlans,
+  listSubscriptionPayments: mockListSubscriptionPayments,
   logout: mockLogout,
   updateAccountPreferences: vi.fn(),
 }))
@@ -63,6 +66,7 @@ describe('AccountSettingsPage', () => {
     mockFetchCurrentUser.mockReset()
     mockDeleteAccount.mockReset()
     mockListPublicSubscriptionPlans.mockReset()
+    mockListSubscriptionPayments.mockReset()
     mockLogout.mockReset()
     mockPrepareAutosavesForLogout.mockReset()
     mockFetchCurrentUser.mockResolvedValue({
@@ -79,6 +83,7 @@ describe('AccountSettingsPage', () => {
       lastLoginAt: null,
     })
     mockListPublicSubscriptionPlans.mockRejectedValue(new Error('Unable to load plans'))
+    mockListSubscriptionPayments.mockResolvedValue([])
     mockLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
     mockDeleteAccount.mockResolvedValue({ message: 'Associated account data deleted successfully' })
@@ -136,6 +141,48 @@ describe('AccountSettingsPage', () => {
     const paymentLink = await screen.findByRole('link', { name: 'Subscription Payment' })
     expect(paymentLink.getAttribute('href')).toBe('/subscription-payment?planId=8')
     expect(screen.getByText(/for Plus/)).toBeTruthy()
+  })
+
+  it('shows the latest successful payment below account status', async () => {
+    mockListSubscriptionPayments.mockResolvedValue([
+      {
+        id: 12,
+        payment_reference: 'PAY-OLD',
+        subscription_id: 7,
+        provider_id: 1,
+        invoice_no: 'INV-OLD',
+        amount: 100,
+        currency: 'PHP',
+        payment_method: 'PayPal',
+        payment_status: 'SUCCESS',
+        provider_transaction_id: 'OLD-1',
+        paid_at: '2026-07-01T08:00:00Z',
+        created_at: '2026-07-01T08:00:00Z',
+      },
+      {
+        id: 13,
+        payment_reference: 'PAY-LATEST',
+        subscription_id: 7,
+        provider_id: 2,
+        invoice_no: 'INV-LATEST',
+        amount: 160,
+        currency: 'PHP',
+        payment_method: 'PayMongo',
+        payment_status: 'SUCCESS',
+        provider_transaction_id: 'LATEST-1',
+        paid_at: '2026-08-20T09:30:00Z',
+        created_at: '2026-08-20T09:30:00Z',
+      },
+    ])
+
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByText('PHP 160.00')).toBeTruthy()
+    expect(screen.getByText(new Date('2026-08-20T09:30:00Z').toLocaleString())).toBeTruthy()
   })
 
   it('restores all welcome pop-ups without clearing unrelated settings', async () => {

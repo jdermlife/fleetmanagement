@@ -38,7 +38,15 @@ class FakeQuery:
             key, value = self._extract(criterion)
             if key is None:
                 continue
-            self._rows = [row for row in self._rows if getattr(row, key, None) == value]
+            self._rows = [
+                row
+                for row in self._rows
+                if (
+                    getattr(row, key, None)
+                    if hasattr(row, key)
+                    else getattr(getattr(row, "subscription", None), key, None)
+                ) == value
+            ]
         return self
 
     def join(self, *_args, **_kwargs):
@@ -324,6 +332,53 @@ def test_subscriber_cannot_pay_foreign_subscription_smoke(
     )
 
     assert response.status_code == 403
+
+
+def test_subscriber_lists_only_own_subscription_payments_smoke(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    own_subscription = Subscription(
+        id=51,
+        subscription_no="SUB-OWN",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    foreign_subscription = Subscription(
+        id=52,
+        subscription_no="SUB-FOREIGN",
+        user_id=999,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    own_payment = SubscriptionPayment(
+        id=61,
+        payment_reference="PAY-OWN",
+        subscription_id=own_subscription.id,
+        amount=160,
+        currency="PHP",
+        payment_status="SUCCESS",
+    )
+    own_payment.subscription = own_subscription
+    foreign_payment = SubscriptionPayment(
+        id=62,
+        payment_reference="PAY-FOREIGN",
+        subscription_id=foreign_subscription.id,
+        amount=1600,
+        currency="PHP",
+        payment_status="SUCCESS",
+    )
+    foreign_payment.subscription = foreign_subscription
+    fake_db.rows_by_model[SubscriptionPayment] = [foreign_payment, own_payment]
+
+    response = client.get("/api/subscriptions/payments", headers=subscriber_headers)
+
+    assert response.status_code == 200
+    assert [payment["payment_reference"] for payment in response.json()] == ["PAY-OWN"]
 
 
 def test_admin_can_confirm_subscription_payment_smoke(

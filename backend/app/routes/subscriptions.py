@@ -1334,7 +1334,7 @@ def create_payment_provider(
 
 @router.get("/payments")
 def list_subscription_payments(
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     db = _session_with_rls(user)
     try:

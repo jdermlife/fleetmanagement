@@ -9,9 +9,11 @@ import {
   getAuthToken,
   getErrorMessage,
   listPublicSubscriptionPlans,
+  listSubscriptionPayments,
   logout,
   updateAccountPreferences,
   type LoginResponse,
+  type SubscriptionPayment,
   type SubscriptionPlan,
 } from '../../api'
 import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
@@ -58,6 +60,7 @@ export default function AccountSettingsPage() {
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [isUpdatingPreferences, setIsUpdatingPreferences] = useState(false)
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
+  const [latestPayment, setLatestPayment] = useState<SubscriptionPayment | null>(null)
   const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share'>(
     'do_not_share',
   )
@@ -98,8 +101,25 @@ export default function AccountSettingsPage() {
       }
     }
 
+    const loadLatestPayment = async () => {
+      try {
+        const payments = await listSubscriptionPayments()
+        const successfulPayments = payments
+          .filter((payment) => payment.payment_status === 'SUCCESS')
+          .sort((left, right) => {
+            const leftDate = new Date(left.paid_at ?? left.created_at).getTime()
+            const rightDate = new Date(right.paid_at ?? right.created_at).getTime()
+            return rightDate - leftDate
+          })
+        setLatestPayment(successfulPayments[0] ?? null)
+      } catch {
+        setLatestPayment(null)
+      }
+    }
+
     void loadCurrentUser()
     void loadSubscriptionPlans()
+    void loadLatestPayment()
   }, [])
 
   useEffect(() => {
@@ -286,6 +306,25 @@ export default function AccountSettingsPage() {
           <div>
             <span>Status</span>
             <strong>{user.isActive ? 'Active' : 'Disabled'}</strong>
+          </div>
+          <div>
+            <span>Last payment date</span>
+            <strong>
+              {latestPayment
+                ? new Date(latestPayment.paid_at ?? latestPayment.created_at).toLocaleString()
+                : 'N/A'}
+            </strong>
+          </div>
+          <div>
+            <span>Last payment amount</span>
+            <strong>
+              {latestPayment?.amount != null
+                ? `${latestPayment.currency ?? 'PHP'} ${latestPayment.amount.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  })}`
+                : 'N/A'}
+            </strong>
           </div>
           <div>
             <span>Last login</span>
