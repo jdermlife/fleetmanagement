@@ -26,12 +26,12 @@ describe('requestAppleSignInToken', () => {
 
     const result = await requestAppleSignInToken({
       clientId: 'com.quantech.filscore.web',
-      iosClientId: 'com.fms.mobile',
+      iosClientId: 'com.quantech.filscore',
       redirectURI: 'https://unused-in-native.example/auth/apple/callback',
     })
 
     expect(socialLoginMocks.initialize).toHaveBeenCalledWith({
-      apple: { clientId: 'com.fms.mobile' },
+      apple: { clientId: 'com.quantech.filscore' },
     })
     expect(socialLoginMocks.login).toHaveBeenCalledWith({
       provider: 'apple',

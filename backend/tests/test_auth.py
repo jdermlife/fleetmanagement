@@ -535,7 +535,7 @@ def test_apple_id_token_verifier_accepts_native_ios_audience(monkeypatch):
     identity_token = security_routes.jwt.encode(
         {
             "iss": security_routes.APPLE_OAUTH_ISSUER,
-            "aud": "com.fms.mobile",
+            "aud": "com.quantech.filscore",
             "sub": "native-apple-user-123",
             "iat": now,
             "exp": now + timedelta(minutes=5),
@@ -546,7 +546,7 @@ def test_apple_id_token_verifier_accepts_native_ios_audience(monkeypatch):
     )
 
     monkeypatch.setattr(security_routes, "_load_apple_sign_in_keys", lambda: [public_jwk])
-    monkeypatch.setattr(security_routes, "APPLE_IOS_CLIENT_ID", "com.fms.mobile")
+    monkeypatch.setattr(security_routes, "APPLE_IOS_CLIENT_ID", "com.quantech.filscore")
 
     claims = security_routes._verify_apple_id_token(identity_token)
 

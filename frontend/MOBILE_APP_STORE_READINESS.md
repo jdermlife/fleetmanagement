@@ -5,7 +5,7 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 
 ## 1. App Identity and Versioning
 - [ ] Set final Android application ID in frontend/android/app/build.gradle (default: com.fms.mobile)
-- [ ] Set final iOS bundle ID in Xcode project settings (default: com.fms.mobile)
+- [x] Set final iOS bundle ID in Xcode project settings (`com.quantech.filscore`)
 - [ ] Set release version and build number:
   - Android: versionName + versionCode in frontend/android/app/build.gradle
   - iOS: MARKETING_VERSION + CURRENT_PROJECT_VERSION in Xcode target Build Settings

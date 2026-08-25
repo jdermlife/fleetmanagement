@@ -61,7 +61,7 @@ Conclusion:
 
 Current repo state:
 
-- iOS bundle identifier is still `com.fms.mobile` in `frontend/ios/App/App.xcodeproj/project.pbxproj`
+- iOS bundle identifier is `com.quantech.filscore` in `frontend/ios/App/App.xcodeproj/project.pbxproj`
 - iOS marketing/build version still `1.0` / `1`
 - app-store readiness checklist still has open items in `frontend/MOBILE_APP_STORE_READINESS.md`
 - no evidence of Xcode archive, TestFlight upload, or App Store Connect submission
@@ -78,7 +78,7 @@ These are the main blockers visible in the repository today.
 ### Identity and Release Defaults
 
 - Android package id still uses default-style value: `com.fms.mobile`
-- iOS bundle id still uses default-style value: `com.fms.mobile`
+- iOS bundle id has been finalized as `com.quantech.filscore`
 - app name in Capacitor config is still `FMS Mobile`
 - Android and iOS versioning is still at initial release values
 
@@ -130,7 +130,7 @@ These are the main blockers visible in the repository today.
 
 ### Phase 3: iOS Production Readiness
 
-- Replace `com.fms.mobile` with final iOS bundle id
+- Verify the final `com.quantech.filscore` iOS bundle id in Apple Developer and App Store Connect
 - Set final marketing version and build number
 - Configure Apple signing team and provisioning
 - Archive the app from Xcode

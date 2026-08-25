@@ -54,7 +54,7 @@ export const APP_CONFIG = {
     return import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'
   },
   get appleIosClientId() {
-    return import.meta.env.VITE_APPLE_IOS_CLIENT_ID?.trim() || 'com.fms.mobile'
+    return import.meta.env.VITE_APPLE_IOS_CLIENT_ID?.trim() || 'com.quantech.filscore'
   },
   get appleRedirect() {
     return `${getCurrentOrigin()}/auth/apple/callback`

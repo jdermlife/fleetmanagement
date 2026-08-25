@@ -184,7 +184,7 @@ APPLE_OAUTH_CLIENT_ID = (
     os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
     or "com.quantech.filscore.web"
 )
-APPLE_IOS_CLIENT_ID = os.getenv("APPLE_IOS_CLIENT_ID", "com.fms.mobile").strip()
+APPLE_IOS_CLIENT_ID = os.getenv("APPLE_IOS_CLIENT_ID", "com.quantech.filscore").strip()
 APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))

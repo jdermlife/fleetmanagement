@@ -65,7 +65,7 @@ The backend performs an idempotent startup preflight for application-specific FI
    ```
    VITE_API_URL=http://localhost:5000
    VITE_APPLE_CLIENT_ID=your-apple-service-id
-   VITE_APPLE_IOS_CLIENT_ID=com.fms.mobile
+   VITE_APPLE_IOS_CLIENT_ID=com.quantech.filscore
    VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback
    ```
 4. Start the dev server: `npm run dev`
@@ -91,14 +91,14 @@ curl -H "Authorization: Bearer <token>" http://localhost:5000/vehicles
 
 Configure Apple Sign-In in Apple Developer Console and mirror those values in backend and frontend environment variables.
 
-1. In Apple Developer Console, create or use a Service ID for web sign-in and enable Sign in with Apple for the `com.fms.mobile` App ID.
+1. In Apple Developer Console, create or use a Service ID for web sign-in and enable Sign in with Apple for the `com.quantech.filscore` App ID.
 2. Regenerate the iOS provisioning profile after enabling the capability.
 3. Register `fleetmanagement-flame.vercel.app` as a web domain and add the exact HTTPS callback URL as a Return URL. Apple does not accept `localhost` or an IP address.
 4. Set matching environment variables:
    - Backend: `APPLE_OAUTH_CLIENT_ID=your-apple-service-id`
-   - Backend: `APPLE_IOS_CLIENT_ID=com.fms.mobile`
+   - Backend: `APPLE_IOS_CLIENT_ID=com.quantech.filscore`
    - Frontend: `VITE_APPLE_CLIENT_ID=your-apple-service-id`
-   - Frontend: `VITE_APPLE_IOS_CLIENT_ID=com.fms.mobile`
+   - Frontend: `VITE_APPLE_IOS_CLIENT_ID=com.quantech.filscore`
    - Frontend: `VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback`
 5. Keep each backend client ID aligned with its corresponding frontend web or iOS client ID.
 
