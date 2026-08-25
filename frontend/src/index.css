@@ -6510,6 +6510,16 @@ th { color: var(--dark-gold); }
 .auth-profile-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 .auth-profile-grid span { display: block; color: #6b7280; font-size: 0.85rem; }
 .auth-profile-grid strong { display: block; margin-top: 4px; }
+.admin-user-billing-card { margin-top: 16px; }
+.admin-user-billing-table-wrap {
+  width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+.admin-user-billing-table { min-width: 1080px; }
+.admin-user-billing-table th,
+.admin-user-billing-table td { white-space: nowrap; }
+.admin-user-billing-table td:nth-child(2) { white-space: normal; min-width: 220px; }
 .auth-support-links { display: flex; gap: 12px; flex-wrap: wrap; }
 .auth-token-preview { overflow-wrap: anywhere; }
 .auth-link-button {

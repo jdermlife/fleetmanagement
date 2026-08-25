@@ -6,11 +6,13 @@ import {
   getErrorMessage,
   listAdminRoles,
   listAdminUsers,
+  listSubscriptionPayments,
   listSubscriptionPlans,
   listSubscriptions,
   updateAdminUser,
   type AdminRole,
   type AdminUser,
+  type SubscriptionPayment,
   type SubscriptionPlan,
   type SubscriptionRecord,
 } from '../../api'
@@ -43,6 +45,7 @@ export default function UserManagementPage() {
   const [roles, setRoles] = useState<AdminRole[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>([])
+  const [payments, setPayments] = useState<SubscriptionPayment[]>([])
   const [message, setMessage] = useState('')
   const [loading, setLoading] = useState(true)
 
@@ -102,16 +105,18 @@ export default function UserManagementPage() {
     setLoading(true)
     setMessage('')
     try {
-      const [loadedUsers, loadedRoles, loadedSubscriptions, loadedSubscriptionPlans] = await Promise.all([
+      const [loadedUsers, loadedRoles, loadedSubscriptions, loadedSubscriptionPlans, loadedPayments] = await Promise.all([
         listAdminUsers(),
         listAdminRoles(),
         listSubscriptions(),
         listSubscriptionPlans(),
+        listSubscriptionPayments(),
       ])
       setUsers(loadedUsers)
       setRoles(loadedRoles)
       setSubscriptions(loadedSubscriptions)
       setSubscriptionPlans(loadedSubscriptionPlans)
+      setPayments(loadedPayments)
       setRoleDrafts(
         Object.fromEntries(loadedUsers.map((user) => [user.id, user.roles.join(', ')])),
       )
@@ -149,6 +154,34 @@ export default function UserManagementPage() {
       ]),
     )
   }, [subscriptionPlans, subscriptions])
+
+  const userBillingRows = useMemo(() => {
+    const plansById = new Map(subscriptionPlans.map((plan) => [plan.id, plan]))
+    const subscriptionsById = new Map(subscriptions.map((subscription) => [subscription.id, subscription]))
+
+    return users.map((user) => {
+      const userSubscriptions = subscriptions.filter(
+        (subscription) => subscription.user_id === user.id || subscription.id === user.subscription_id,
+      )
+      const userSubscriptionIds = new Set(userSubscriptions.map((subscription) => subscription.id))
+      const latestPayment = payments
+        .filter(
+          (payment) =>
+            payment.payment_status === 'SUCCESS' && userSubscriptionIds.has(payment.subscription_id),
+        )
+        .sort((left, right) => paymentTimestamp(right) - paymentTimestamp(left))[0] ?? null
+      const paymentSubscription = latestPayment
+        ? subscriptionsById.get(latestPayment.subscription_id) ?? null
+        : null
+      const assignedSubscription = user.subscription_id
+        ? subscriptionsById.get(user.subscription_id) ?? null
+        : null
+      const subscription = paymentSubscription ?? assignedSubscription ?? userSubscriptions[0] ?? null
+      const plan = subscription ? plansById.get(subscription.plan_id) ?? null : null
+
+      return { user, subscription, plan, latestPayment }
+    })
+  }, [payments, subscriptionPlans, subscriptions, users])
 
   const handleCreateUser = async () => {
     setMessage('')
@@ -494,8 +527,80 @@ export default function UserManagementPage() {
           </>
         )}
       </div>
+
+      <div className="card admin-user-billing-card">
+        <h3>User Payment Overview</h3>
+        <p className="intro">Latest successful subscription payment and billing schedule by user.</p>
+        {loading ? (
+          <p>Loading payment overview...</p>
+        ) : users.length === 0 ? (
+          <p className="status-message">No users found.</p>
+        ) : (
+          <div className="admin-user-billing-table-wrap">
+            <table className="admin-user-billing-table">
+              <thead>
+                <tr>
+                  <th>Username</th>
+                  <th>Email</th>
+                  <th>Payment Plan</th>
+                  <th>Payment Amount</th>
+                  <th>Last Payment Date</th>
+                  <th>Next Due Date</th>
+                  <th>IP Address</th>
+                </tr>
+              </thead>
+              <tbody>
+                {userBillingRows.map(({ user, subscription, plan, latestPayment }) => (
+                  <tr key={`billing-${user.id}`}>
+                    <td>{user.username}</td>
+                    <td>{user.email}</td>
+                    <td>{plan?.plan_name ?? 'N/A'}</td>
+                    <td>{formatPaymentAmount(latestPayment)}</td>
+                    <td>{formatBillingDate(latestPayment?.paid_at ?? latestPayment?.created_at)}</td>
+                    <td>{formatBillingDate(subscription?.next_invoice_date)}</td>
+                    <td>{user.last_login_ip ?? 'N/A'}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
     </div>
   )
+}
+
+function paymentTimestamp(payment: SubscriptionPayment): number {
+  const timestamp = new Date(payment.paid_at ?? payment.created_at).getTime()
+  return Number.isNaN(timestamp) ? 0 : timestamp
+}
+
+function formatPaymentAmount(payment: SubscriptionPayment | null): string {
+  if (payment?.amount == null) {
+    return 'N/A'
+  }
+
+  return `${payment.currency ?? 'PHP'} ${payment.amount.toLocaleString('en-PH', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`
+}
+
+function formatBillingDate(value?: string | null): string {
+  if (!value) {
+    return 'N/A'
+  }
+
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) {
+    return value
+  }
+
+  return new Intl.DateTimeFormat('en-PH', {
+    day: '2-digit',
+    month: 'short',
+    year: 'numeric',
+  }).format(date)
 }
 
 function formatDateCreated(value?: string): string {
