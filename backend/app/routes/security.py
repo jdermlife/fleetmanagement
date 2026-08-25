@@ -184,6 +184,7 @@ APPLE_OAUTH_CLIENT_ID = (
     os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
     or "com.quantech.filscore.web"
 )
+APPLE_IOS_CLIENT_ID = os.getenv("APPLE_IOS_CLIENT_ID", "com.fms.mobile").strip()
 APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))
@@ -528,7 +529,12 @@ def _load_apple_sign_in_keys() -> list[dict[str, object]]:
 def _verify_apple_id_token(id_token: str) -> dict[str, object]:
     if jwt is None:
         raise HTTPException(status_code=500, detail="PyJWT dependency missing")
-    if not APPLE_OAUTH_CLIENT_ID:
+    accepted_audiences = [
+        audience
+        for audience in (APPLE_OAUTH_CLIENT_ID, APPLE_IOS_CLIENT_ID)
+        if audience
+    ]
+    if not accepted_audiences:
         raise HTTPException(status_code=503, detail="Apple Sign-In is not configured")
 
     try:
@@ -563,7 +569,7 @@ def _verify_apple_id_token(id_token: str) -> dict[str, object]:
             id_token,
             public_key,
             algorithms=["RS256"],
-            audience=APPLE_OAUTH_CLIENT_ID,
+            audience=accepted_audiences,
             issuer=APPLE_OAUTH_ISSUER,
         )
     except jwt.ExpiredSignatureError as exc:
@@ -575,8 +581,8 @@ def _verify_apple_id_token(id_token: str) -> dict[str, object]:
         raise HTTPException(
             status_code=401,
             detail=(
-                "Apple token was issued for a different Service ID. "
-                "Ensure APPLE_OAUTH_CLIENT_ID matches VITE_APPLE_CLIENT_ID."
+                "Apple token was issued for an unsupported client ID. "
+                "Check APPLE_OAUTH_CLIENT_ID and APPLE_IOS_CLIENT_ID."
             ),
         ) from exc
     except jwt.InvalidIssuerError as exc:
@@ -769,20 +775,40 @@ def login_with_apple_token(
     set_rls_context(db, None, "admin")
     token_data = _verify_apple_id_token(payload.id_token)
 
+    return _login_with_apple_claims(token_data, payload, request, db)
+
+
+def _login_with_apple_claims(
+    token_data: dict[str, object],
+    payload: AppleTokenLoginRequest,
+    request: Request,
+    db: Session,
+):
+    subject = str(token_data.get("sub") or "").strip()
+    if not subject:
+        raise HTTPException(status_code=401, detail="Invalid Apple token subject")
+
     email = str(token_data.get("email") or "").strip().lower()
     email_verified_claim = token_data.get("email_verified")
     email_verified = email_verified_claim in {True, "true", "1", 1}
 
-    if not email:
+    user = db.query(User).filter(User.apple_subject == subject).first()
+
+    if user is None and not email:
         raise HTTPException(
             status_code=400,
-            detail="Apple account email is required. Share email on first Apple sign-in.",
+            detail="Apple account email is required on first sign-in.",
         )
 
-    if not email_verified:
+    if user is None and not email_verified:
         raise HTTPException(status_code=401, detail="Apple account email is missing or unverified")
 
-    user = db.query(User).filter(User.email == email).first()
+    if user is None:
+        user = db.query(User).filter(User.email == email).first()
+        if user is not None:
+            if user.apple_subject and user.apple_subject != subject:
+                raise HTTPException(status_code=409, detail="Apple account is linked to another user")
+            user.apple_subject = subject
 
     if user is None:
         if payload.subscriber_type is None:
@@ -803,6 +829,7 @@ def login_with_apple_token(
         user = User(
             username=unique_username,
             email=email,
+            apple_subject=subject,
             password_hash=hash_password(f"apple_oauth_{uuid4().hex}"),
             role=role_name,
             is_active=True,
@@ -820,12 +847,16 @@ def login_with_apple_token(
         db.refresh(user)
         notify_admins_of_new_user(user, db)
 
+    if email and user.email.lower() != email:
+        raise HTTPException(status_code=409, detail="Apple identity does not match this user")
+
     _enforce_login_access_policy(user, db)
 
     if not user.email_verified:
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
+    db.commit()
     return _build_login_payload(user, request, db)
 
 

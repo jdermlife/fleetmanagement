@@ -1,6 +1,11 @@
+import { Capacitor } from '@capacitor/core'
+import { SocialLogin } from '@capgo/capacitor-social-login'
+
 export interface AppleSignInResult {
   idToken: string
 }
+
+let nativeInitializationRequest: Promise<void> | null = null
 
 type AppleAuthInitConfig = {
   clientId: string
@@ -33,7 +38,34 @@ declare global {
 }
 
 export function isAppleSignInReady(): boolean {
-  return Boolean(window.AppleID?.auth)
+  return Capacitor.isNativePlatform() || Boolean(window.AppleID?.auth)
+}
+
+export function isNativeAppleSignIn(): boolean {
+  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+}
+
+async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSignInResult> {
+  if (!nativeInitializationRequest) {
+    nativeInitializationRequest = SocialLogin.initialize({
+      apple: { clientId },
+    }).catch((error) => {
+      nativeInitializationRequest = null
+      throw error
+    })
+  }
+
+  await nativeInitializationRequest
+  const response = await SocialLogin.login({
+    provider: 'apple',
+    options: { scopes: ['email', 'name'] },
+  })
+
+  if (response.provider !== 'apple' || !response.result.idToken) {
+    throw new Error('Apple Sign-In did not return an identity token.')
+  }
+
+  return { idToken: response.result.idToken }
 }
 
 function createAppleAuthState(): string {
@@ -47,8 +79,13 @@ function createAppleAuthState(): string {
 
 export async function requestAppleSignInToken(params: {
   clientId: string
+  iosClientId?: string
   redirectURI?: string
 }): Promise<AppleSignInResult> {
+  if (isNativeAppleSignIn()) {
+    return requestNativeAppleSignInToken(params.iosClientId || params.clientId)
+  }
+
   const appleAuth = window.AppleID?.auth
   if (!appleAuth) {
     throw new Error('Apple Sign-In is not available right now.')

@@ -8,6 +8,7 @@ const assetRoots = [
   join(process.cwd(), 'android', 'app', 'src', 'main', 'assets', 'public'),
   join(process.cwd(), 'ios', 'App', 'App', 'public'),
 ].filter(existsSync)
+const iosProjectRoot = join(process.cwd(), 'ios', 'App')
 
 if (!expectedApiUrl) {
   throw new Error('VITE_API_URL is required before verifying native assets.')
@@ -36,4 +37,21 @@ for (const assetRoot of assetRoots) {
     throw new Error(`Synchronized assets at ${assetRoot} contain the malformed Render hostname.`)
   }
   console.log(`Native bundle API verified: ${assetRoot}`)
+}
+
+if (existsSync(iosProjectRoot)) {
+  const capacitorConfig = readFileSync(join(iosProjectRoot, 'App', 'capacitor.config.json'), 'utf8')
+  const entitlements = readFileSync(join(iosProjectRoot, 'App', 'App.entitlements'), 'utf8')
+  const xcodeProject = readFileSync(join(iosProjectRoot, 'App.xcodeproj', 'project.pbxproj'), 'utf8')
+
+  if (!capacitorConfig.includes('"apple": true')) {
+    throw new Error('Synchronized iOS configuration does not enable the Apple provider.')
+  }
+  if (!entitlements.includes('com.apple.developer.applesignin')) {
+    throw new Error('The iOS target is missing the Sign in with Apple entitlement.')
+  }
+  if (!xcodeProject.includes('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')) {
+    throw new Error('The Xcode target is not configured to sign with App.entitlements.')
+  }
+  console.log('Native Apple capability verified: ios/App')
 }

@@ -3,6 +3,7 @@ import { loadEnv } from 'vite'
 const expectedApiUrl = process.env.MOBILE_API_URL || 'https://fleetmanagement-dq9t.onrender.com'
 const environment = loadEnv('production', process.cwd(), '')
 const configuredApiUrl = environment.VITE_API_URL?.trim().replace(/\/$/, '')
+const configuredAppleIosClientId = environment.VITE_APPLE_IOS_CLIENT_ID?.trim()
 
 if (!configuredApiUrl) {
   throw new Error('VITE_API_URL is required for native production builds. Configure it in frontend/.env.production or the build environment.')
@@ -27,5 +28,9 @@ if (parsedUrl.username || parsedUrl.password || parsedUrl.search || parsedUrl.ha
 if (configuredApiUrl !== expectedApiUrl) {
   throw new Error(`Native production API mismatch. Expected ${expectedApiUrl}, received ${configuredApiUrl}.`)
 }
+if (configuredAppleIosClientId !== 'com.fms.mobile') {
+  throw new Error('VITE_APPLE_IOS_CLIENT_ID must match the iOS bundle ID com.fms.mobile.')
+}
 
 console.log(`Native API configuration verified: ${configuredApiUrl}`)
+console.log(`Native Apple client verified: ${configuredAppleIosClientId}`)

@@ -147,6 +147,7 @@ export default function LoginPage() {
   const googleClientId = APP_CONFIG.googleClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
+  const appleIosClientId = APP_CONFIG.appleIosClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
   const isGoogleConfigured = googleClientId.length > 0
   const isGoogleEnabled = isGoogleConfigured
@@ -277,6 +278,7 @@ export default function LoginPage() {
     try {
       const appleTokenResult = await requestAppleSignInToken({
         clientId: appleClientId,
+        iosClientId: appleIosClientId,
         redirectURI: appleRedirectUri,
       })
 

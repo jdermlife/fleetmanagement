@@ -518,7 +518,39 @@ def test_apple_id_token_verifier_reports_service_id_mismatch(monkeypatch):
         security_routes._verify_apple_id_token(identity_token)
 
     assert error.value.status_code == 401
-    assert "different Service ID" in error.value.detail
+    assert "unsupported client ID" in error.value.detail
+
+
+def test_apple_id_token_verifier_accepts_native_ios_audience(monkeypatch):
+    from cryptography.hazmat.primitives.asymmetric import rsa
+
+    private_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
+    key_id = "apple-native-test-key"
+    public_jwk = security_routes.jwt.algorithms.RSAAlgorithm.to_jwk(
+        private_key.public_key(),
+        as_dict=True,
+    )
+    public_jwk["kid"] = key_id
+    now = datetime.now(timezone.utc)
+    identity_token = security_routes.jwt.encode(
+        {
+            "iss": security_routes.APPLE_OAUTH_ISSUER,
+            "aud": "com.fms.mobile",
+            "sub": "native-apple-user-123",
+            "iat": now,
+            "exp": now + timedelta(minutes=5),
+        },
+        private_key,
+        algorithm="RS256",
+        headers={"kid": key_id},
+    )
+
+    monkeypatch.setattr(security_routes, "_load_apple_sign_in_keys", lambda: [public_jwk])
+    monkeypatch.setattr(security_routes, "APPLE_IOS_CLIENT_ID", "com.fms.mobile")
+
+    claims = security_routes._verify_apple_id_token(identity_token)
+
+    assert claims["sub"] == "native-apple-user-123"
 
 
 def test_delete_account_endpoint_disables_authenticated_user(app_client):
@@ -612,7 +644,7 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
         },
     )
     monkeypatch.setattr(
-        apple_auth_module,
+        security_routes,
         "_build_login_payload",
         lambda user, _request, _db: {
             "access_token": "test-access-token",
@@ -639,7 +671,22 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
     users = fake_db.rows_by_model.get(User, [])
     assert len(users) == 1
     assert users[0].email == "new-apple-user@example.com"
+    assert users[0].apple_subject == "apple-sub-123"
     assert users[0].role == "subscriber_borrower"
+
+    monkeypatch.setattr(
+        apple_auth_module,
+        "_verify_apple_id_token",
+        lambda _token: {"sub": "apple-sub-123"},
+    )
+    repeat_response = client.post(
+        "/auth/apple-token",
+        json={"identity_token": "repeat-apple-token-value"},
+    )
+
+    assert repeat_response.status_code == 200
+    assert repeat_response.json()["user"]["email"] == "new-apple-user@example.com"
+    assert len(fake_db.rows_by_model.get(User, [])) == 1
 
 
 def test_apple_token_endpoint_requires_identity_token(apple_auth_client):
