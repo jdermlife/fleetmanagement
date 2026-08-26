@@ -4,7 +4,7 @@ const config: CapacitorConfig = {
   appId: 'com.quantech.filscore',
   appName: 'Financial Vitality',
   webDir: 'dist',
-  bundledWebRuntime: false,
+ 
   server: {
     androidScheme: 'https',
   },
