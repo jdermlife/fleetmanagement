@@ -114,6 +114,24 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(profileLine).getByText('750k')).toBeTruthy()
   })
 
+  it('places profile product recommendations between summary metrics and health indicators', () => {
+    render(<FinancialHealthSummaryPage />)
+
+    const computationSources = screen.getByRole('region', { name: 'Computation Sources' })
+    const recommendedProducts = within(computationSources).getByRole('region', {
+      name: 'Recommended Products for this Profile',
+    })
+    expect(within(recommendedProducts).getByText('Investment Readiness Plan')).toBeTruthy()
+    expect(within(recommendedProducts).getByText('Protection Gap Review')).toBeTruthy()
+    expect(within(recommendedProducts).getByText('Wealth Builder')).toBeTruthy()
+    expect(within(recommendedProducts).getByText('71/100')).toBeTruthy()
+
+    const summaryMetrics = within(computationSources).getByText('Summary metrics')
+    const healthIndicators = within(computationSources).getByText('Health indicators')
+    expect(summaryMetrics.compareDocumentPosition(recommendedProducts) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(recommendedProducts.compareDocumentPosition(healthIndicators) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('shows the score, band, indicators, and transparent formula', () => {
     render(<FinancialHealthSummaryPage />)
 

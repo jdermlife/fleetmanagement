@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.quantech.filscore',
-  appName: 'FMS Mobile',
+  appName: 'Financial Vitality',
   webDir: 'dist',
   bundledWebRuntime: false,
   server: {

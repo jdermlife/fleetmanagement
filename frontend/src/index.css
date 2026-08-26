@@ -12235,6 +12235,97 @@ th { color: var(--dark-gold); }
   white-space: normal;
 }
 
+.financial-health-product-recommendations {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid rgba(15, 118, 110, 0.24);
+  border-radius: 8px;
+  background: linear-gradient(135deg, #f0fdfa 0%, #ffffff 48%, #fff7ed 100%);
+}
+
+.financial-health-product-recommendations-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.financial-health-product-recommendations-header div {
+  display: grid;
+  gap: 3px;
+}
+
+.financial-health-product-recommendations-header span {
+  color: #0f766e;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.financial-health-product-recommendations-header h3 {
+  margin: 0;
+  color: var(--financial-health-ink);
+  font-size: 1rem;
+}
+
+.financial-health-product-recommendations-header small {
+  max-width: 430px;
+  color: var(--financial-health-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+  text-align: right;
+}
+
+.financial-health-product-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.financial-health-product-grid article {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.financial-health-product-grid article > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.financial-health-product-grid article > div span,
+.financial-health-product-grid article > small {
+  color: var(--financial-health-muted);
+  font-size: 0.75rem;
+  line-height: 1.4;
+}
+
+.financial-health-product-grid article > div strong {
+  color: #b45309;
+  font-size: 0.8rem;
+}
+
+.financial-health-product-grid h4 {
+  margin: 0;
+  color: var(--financial-health-ink);
+  font-size: 0.9rem;
+}
+
+.financial-health-product-grid p {
+  margin: 0;
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.5;
+}
+
 .financial-health-source-table {
   margin: 0;
 }
@@ -13104,8 +13195,19 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 760px) {
-  .financial-health-source-grid {
+  .financial-health-source-grid,
+  .financial-health-product-grid {
     grid-template-columns: 1fr;
+  }
+
+  .financial-health-product-recommendations-header {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .financial-health-product-recommendations-header small {
+    max-width: none;
+    text-align: left;
   }
 
   .financial-health-summary-grid,

@@ -99,6 +99,11 @@ type VitalGuidance = {
   recommendation: string
 }
 
+type RecommendedProduct = {
+  name: string
+  outcome: string
+}
+
 type FinancialHealthTrendPoint = {
   period: string
   healthScore: number
@@ -154,6 +159,41 @@ const VITAL_GUIDANCE: Record<string, VitalGuidance> = {
     positive: 'Your projected progress is on track for your saved financial goal.',
     negative: 'Your current pace may not reach the saved goal by its target date.',
     recommendation: 'Increase the monthly goal contribution, extend the timeline, or revise the target to a realistic amount.',
+  },
+}
+
+const RECOMMENDED_PRODUCTS: Record<string, RecommendedProduct> = {
+  credit: {
+    name: 'Credit Health Builder',
+    outcome: 'Strengthen credit readiness and improve access to suitable financing options.',
+  },
+  'cash-flow': {
+    name: 'Cash Flow Planner',
+    outcome: 'Create more room for savings and recurring goal contributions.',
+  },
+  wealth: {
+    name: 'Wealth Builder',
+    outcome: 'Grow net worth through a balanced assets, savings, and liabilities plan.',
+  },
+  budget: {
+    name: 'Budget & Expense Tracker',
+    outcome: 'Align monthly spending with savings and investment targets.',
+  },
+  payment: {
+    name: 'Debt Optimization',
+    outcome: 'Prioritize costly balances and improve payment capacity.',
+  },
+  protection: {
+    name: 'Protection Gap Review',
+    outcome: 'Identify insurance gaps that could put financial goals at risk.',
+  },
+  investment: {
+    name: 'Investment Readiness Plan',
+    outcome: 'Build consistent, risk-aligned contributions toward long-term goals.',
+  },
+  goal: {
+    name: 'Goal Achievement Plan',
+    outcome: 'Set a realistic target, contribution amount, and completion timeline.',
   },
 }
 
@@ -895,6 +935,14 @@ export default function FinancialHealthSummaryPage() {
     }
   }, [budgetHealthScore, lendingLeafScores, netWorthBuildingScore])
   const financialHealthIndicators = publishedSummary.indicators
+  const recommendedProducts = [...financialHealthIndicators]
+    .sort((left, right) => left.score - right.score)
+    .slice(0, 3)
+    .map((indicator) => ({
+      ...RECOMMENDED_PRODUCTS[indicator.id],
+      indicatorLabel: indicator.label,
+      score: indicator.score,
+    }))
   const groupRings = useMemo(
     () => buildFinancialHealthGroupRings(financialHealthIndicators),
     [financialHealthIndicators],
@@ -1336,7 +1384,7 @@ export default function FinancialHealthSummaryPage() {
 
       <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
         <div>
-          <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health model displayed'}</strong>
+          <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health displayed. Please refresh to compute the latest financial health.'}</strong>
           <span>
             {summaryComputedAt
               ? `Computed ${summaryComputedAt.toLocaleString()}`
@@ -1360,7 +1408,7 @@ export default function FinancialHealthSummaryPage() {
           onClick={computeLatestFinancialHealth}
           disabled={!summaryInputsLoaded}
         >
-          Compute Latest Financial Health
+          Refresh and Compute Latest Financial Health
         </button>
       </section>
 
@@ -1592,6 +1640,32 @@ export default function FinancialHealthSummaryPage() {
             </article>
           ))}
         </div>
+
+        <section
+          className="financial-health-product-recommendations"
+          aria-labelledby="financial-health-recommended-products-title"
+        >
+          <div className="financial-health-product-recommendations-header">
+            <div>
+              <span>Profile priorities</span>
+              <h3 id="financial-health-recommended-products-title">Recommended Products for this Profile</h3>
+            </div>
+            <small>Based on the three health indicators with the most room to reach the 80-point goal.</small>
+          </div>
+          <div className="financial-health-product-grid">
+            {recommendedProducts.map((product) => (
+              <article key={product.indicatorLabel}>
+                <div>
+                  <span>{product.indicatorLabel}</span>
+                  <strong>{product.score}/100</strong>
+                </div>
+                <h4>{product.name}</h4>
+                <p>{product.outcome}</p>
+                <small>Goal: raise {product.indicatorLabel} to 80 or above.</small>
+              </article>
+            ))}
+          </div>
+        </section>
 
         <h3 className="financial-health-source-subtitle">Health indicators</h3>
         <div className="calculation-reference-table-wrap">
