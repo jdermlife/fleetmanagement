@@ -1389,7 +1389,7 @@ export default function FinancialHealthSummaryPage() {
             {summaryComputedAt
               ? `Computed ${summaryComputedAt.toLocaleString()}`
               : summaryInputsLoaded
-                ? 'Saved inputs are ready for review.Please refresh to compute the latest financial health.'
+                ? 'Please refresh to compute the latest financial health.'
                 : 'Checking saved inputs...'}
           </span>
         </div>
