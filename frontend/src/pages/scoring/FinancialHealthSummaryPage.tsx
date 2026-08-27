@@ -1384,12 +1384,12 @@ export default function FinancialHealthSummaryPage() {
 
       <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
         <div>
-          <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health displayed. Please refresh to compute the latest financial health.'}</strong>
+          <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health displayed. '}</strong>
           <span>
             {summaryComputedAt
               ? `Computed ${summaryComputedAt.toLocaleString()}`
               : summaryInputsLoaded
-                ? 'Saved inputs are ready for review.'
+                ? 'Saved inputs are ready for review.Please refresh to compute the latest financial health.'
                 : 'Checking saved inputs...'}
           </span>
         </div>
