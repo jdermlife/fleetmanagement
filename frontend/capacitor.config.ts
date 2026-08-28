@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.quantech.filscore',
-  appName: 'Financial Vitality',
+  appName: 'Financial Health FS',
   webDir: 'dist',
  
   server: {
