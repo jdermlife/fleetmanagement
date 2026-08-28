@@ -47,25 +47,47 @@ export function isNativeAppleSignIn(): boolean {
 
 async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSignInResult> {
   if (!nativeInitializationRequest) {
+    console.log('[AppleAuth] Initializing native Apple Sign-In')
+    console.log('[AppleAuth] Native Apple provider initialization requested')
+
     nativeInitializationRequest = SocialLogin.initialize({
-      apple: { clientId },
-    }).catch((error) => {
-      nativeInitializationRequest = null
-      throw error
+      apple: {
+        clientId,
+      },
     })
+      .then(() => {
+        console.log('[AppleAuth] Native Apple initialization succeeded')
+      })
+      .catch((error) => {
+        console.error('[AppleAuth] Native Apple initialization FAILED:', error)
+        nativeInitializationRequest = null
+        throw error
+      })
   }
 
   await nativeInitializationRequest
+
+  console.log('[AppleAuth] Calling native Apple Sign-In')
+
   const response = await SocialLogin.login({
     provider: 'apple',
-    options: { scopes: ['email', 'name'] },
+    options: {
+      scopes: ['email', 'name'],
+    },
   })
 
+  console.log('[AppleAuth] Native Apple Sign-In returned')
+
   if (response.provider !== 'apple' || !response.result.idToken) {
+    console.error('[AppleAuth] No Apple identity token returned:', response)
     throw new Error('Apple Sign-In did not return an identity token.')
   }
 
-  return { idToken: response.result.idToken }
+  console.log('[AppleAuth] Apple identity token received')
+
+  return {
+    idToken: response.result.idToken,
+  }
 }
 
 function createAppleAuthState(): string {
