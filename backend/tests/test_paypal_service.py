@@ -25,7 +25,7 @@ class FakeResponse:
 def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypatch):
     monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
     monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
-    monkeypatch.setenv("PAYPAL_API_BASE_URL", "https://api-m.paypal.com":)
+    monkeypatch.setenv("PAYPAL_API_BASE_URL", "https://api-m.paypal.com")
 
     captured: dict[str, object] = {}
 
@@ -64,7 +64,7 @@ def test_create_order_uses_server_credentials_and_returns_approval_url(monkeypat
     assert captured["headers"]["PayPal-Request-Id"] == "PP-TEST-001"
     assert captured["json"]["purchase_units"][0]["amount"]["value"] == "999.00"
     assert result["order_id"] == "ORDER-TEST-123"
-    assert result["approval_url"].startswith("https://https://api-m.paypal.com/")
+    assert result["approval_url"].startswith("https://api-m.paypal.com/")
 
 
 def test_capture_order_returns_completed_amount(monkeypatch):
