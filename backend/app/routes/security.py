@@ -180,6 +180,7 @@ class AssignPermissionsRequest(BaseModel):
 REFRESH_TOKEN_EXPIRY_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRY_DAYS", "30"))
 MFA_ISSUER = os.getenv("MFA_ISSUER", "QuantEdge")
 GOOGLE_OAUTH_CLIENT_ID = os.getenv("GOOGLE_OAUTH_CLIENT_ID", "").strip()
+GOOGLE_IOS_CLIENT_ID = os.getenv("GOOGLE_IOS_CLIENT_ID", "").strip()
 APPLE_OAUTH_CLIENT_ID = (
     os.getenv("APPLE_OAUTH_CLIENT_ID", "").strip()
     or "com.quantech.filscore.web"
@@ -704,11 +705,21 @@ def login_with_google_token(
     if not GOOGLE_OAUTH_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Google Sign-In is not configured")
 
+try:
+    token_data = google_id_token.verify_oauth2_token(
+        payload.id_token,
+        google_requests.Request(),
+        GOOGLE_OAUTH_CLIENT_ID,
+    )
+except Exception:
+    if not GOOGLE_IOS_CLIENT_ID:
+        raise HTTPException(status_code=401, detail="Invalid Google token")
+
     try:
         token_data = google_id_token.verify_oauth2_token(
             payload.id_token,
             google_requests.Request(),
-            GOOGLE_OAUTH_CLIENT_ID,
+            GOOGLE_IOS_CLIENT_ID,
         )
     except Exception as exc:  # noqa: BLE001
         raise HTTPException(status_code=401, detail="Invalid Google token") from exc
