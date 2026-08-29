@@ -726,6 +726,18 @@ def login_with_google_token(
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
+
+    print("GOOGLE TOKEN CLAIMS:")
+    print("iss:", token_data.get("iss"))
+    print("aud:", token_data.get("aud"))
+    print("azp:", token_data.get("azp"))
+    print("sub:", token_data.get("sub"))
+    print("email:", token_data.get("email"))
+    print("email_verified:", token_data.get("email_verified"))
+    print("GOOGLE_OAUTH_CLIENT_ID:", GOOGLE_OAUTH_CLIENT_ID)
+    print("GOOGLE_IOS_CLIENT_ID:", GOOGLE_IOS_CLIENT_ID)
+
+
     if not email or not email_verified:
         raise HTTPException(status_code=401, detail="Google account email is missing or unverified")
 
