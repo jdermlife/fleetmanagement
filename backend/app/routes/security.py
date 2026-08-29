@@ -705,24 +705,24 @@ def login_with_google_token(
     if not GOOGLE_OAUTH_CLIENT_ID:
         raise HTTPException(status_code=503, detail="Google Sign-In is not configured")
 
-try:
-    token_data = google_id_token.verify_oauth2_token(
-        payload.id_token,
-        google_requests.Request(),
-        GOOGLE_OAUTH_CLIENT_ID,
-    )
-except Exception:
-    if not GOOGLE_IOS_CLIENT_ID:
-        raise HTTPException(status_code=401, detail="Invalid Google token")
-
     try:
         token_data = google_id_token.verify_oauth2_token(
             payload.id_token,
             google_requests.Request(),
-            GOOGLE_IOS_CLIENT_ID,
+            GOOGLE_OAUTH_CLIENT_ID,
         )
-    except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=401, detail="Invalid Google token") from exc
+    except Exception:
+        if not GOOGLE_IOS_CLIENT_ID:
+            raise HTTPException(status_code=401, detail="Invalid Google token")
+
+        try:
+            token_data = google_id_token.verify_oauth2_token(
+                payload.id_token,
+                google_requests.Request(),
+                GOOGLE_IOS_CLIENT_ID,
+            )
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=401, detail="Invalid Google token") from exc
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
