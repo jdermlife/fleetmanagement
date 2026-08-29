@@ -35,11 +35,16 @@ const setupNativeMobileRuntime = async () => {
 void setupNativeMobileRuntime()
 
 const googleClientId = APP_CONFIG.googleClientId
-
+const googleIosClientId = APP_CONFIG.googleIosClientId
 if (isNativeMobileApp && googleClientId) {
-  void initializeNativeGoogleSignIn(googleClientId).catch(() => {
+  void initializeNativeGoogleSignIn(
+  googleClientId,
+  googleIosClientId,
+).catch((error) => {
+  console.error('[GoogleAuth] Native initialization failed:', error)
+})
     // The button retries initialization and presents any error to the user.
-  })
+
 }
 
 const appNode = (

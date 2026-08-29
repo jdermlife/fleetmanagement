@@ -62,6 +62,9 @@ export const APP_CONFIG = {
   get googleClientId() {
     return resolveGoogleClientId(import.meta.env.VITE_GOOGLE_CLIENT_ID)
   },
+  get googleIosClientId() {
+  return import.meta.env.VITE_GOOGLE_IOS_CLIENT_ID?.trim() || ''
+},
   get googleRedirect() {
     return `${getCurrentOrigin()}/auth/google/callback`
   },
