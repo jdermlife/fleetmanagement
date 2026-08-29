@@ -711,7 +711,9 @@ def login_with_google_token(
             google_requests.Request(),
             GOOGLE_OAUTH_CLIENT_ID,
         )
-    except Exception:
+    except Exception as web_exc:
+        print("GOOGLE WEB TOKEN VERIFICATION FAILED:", repr(web_exc))
+
         if not GOOGLE_IOS_CLIENT_ID:
             raise HTTPException(status_code=401, detail="Invalid Google token")
 
@@ -721,8 +723,9 @@ def login_with_google_token(
                 google_requests.Request(),
                 GOOGLE_IOS_CLIENT_ID,
             )
-        except Exception as exc:  # noqa: BLE001
-            raise HTTPException(status_code=401, detail="Invalid Google token") from exc
+        except Exception as ios_exc:  # noqa: BLE001
+            print("GOOGLE IOS TOKEN VERIFICATION FAILED:", repr(ios_exc))
+            raise HTTPException(status_code=401, detail="Invalid Google token") from ios_exc
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
