@@ -458,7 +458,7 @@ export default function RegisterPage() {
           {isGoogleEnabled && !useNativeGoogleSignIn ? (
             <div className="register-google-button-wrap">
               <GoogleLogin
-                onSuccess={handleGoogleSuccess}
+                onSuccess={(response) => handleGoogleSuccess(response, 'web')}
                 onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
                 text="signup_with"
                 size="large"
