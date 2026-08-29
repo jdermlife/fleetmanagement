@@ -83,6 +83,7 @@ class RegisterRequest(BaseModel):
 
 class GoogleTokenLoginRequest(BaseModel):
     id_token: str = Field(min_length=10)
+    platform: Literal["web", "ios"] = "web"
     subscriber_type: Literal["borrower", "lender"] | None = None
     lender_data_sharing_consent: bool | None = None
 
@@ -702,20 +703,12 @@ def login_with_google_token(
     set_rls_context(db, None, "admin")
     google_requests, google_id_token = _load_google_auth_dependencies()
 
-    if not GOOGLE_OAUTH_CLIENT_ID:
-        raise HTTPException(status_code=503, detail="Google Sign-In is not configured")
-
-    try:
-        token_data = google_id_token.verify_oauth2_token(
-            payload.id_token,
-            google_requests.Request(),
-            GOOGLE_OAUTH_CLIENT_ID,
-        )
-    except Exception as web_exc:
-        print("GOOGLE WEB TOKEN VERIFICATION FAILED:", repr(web_exc))
-
+    if payload.platform == "ios":
         if not GOOGLE_IOS_CLIENT_ID:
-            raise HTTPException(status_code=401, detail="Invalid Google token")
+            raise HTTPException(
+                status_code=503,
+                detail="Google iOS Sign-In is not configured",
+            )
 
         try:
             token_data = google_id_token.verify_oauth2_token(
@@ -723,20 +716,36 @@ def login_with_google_token(
                 google_requests.Request(),
                 GOOGLE_IOS_CLIENT_ID,
             )
-        except Exception as ios_exc:  # noqa: BLE001
-            print("GOOGLE IOS TOKEN VERIFICATION FAILED:", repr(ios_exc))
-            raise HTTPException(status_code=401, detail="Invalid Google token") from ios_exc
+        except Exception as exc:  # noqa: BLE001
+            print("GOOGLE IOS TOKEN VERIFICATION FAILED:", repr(exc))
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Google iOS token",
+            ) from exc
+
+    else:
+        if not GOOGLE_OAUTH_CLIENT_ID:
+            raise HTTPException(
+                status_code=503,
+                detail="Google Web Sign-In is not configured",
+            )
+
+        try:
+            token_data = google_id_token.verify_oauth2_token(
+                payload.id_token,
+                google_requests.Request(),
+                GOOGLE_OAUTH_CLIENT_ID,
+            )
+        except Exception as exc:  # noqa: BLE001
+            print("GOOGLE WEB TOKEN VERIFICATION FAILED:", repr(exc))
+            raise HTTPException(
+                status_code=401,
+                detail="Invalid Google web token",
+            ) from exc
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
 
-    print("GOOGLE TOKEN CLAIMS:")
-    print("iss:", token_data.get("iss"))
-    print("aud:", token_data.get("aud"))
-    print("azp:", token_data.get("azp"))
-    print("sub:", token_data.get("sub"))
-    print("email:", token_data.get("email"))
-    print("email_verified:", token_data.get("email_verified"))
     print("GOOGLE_OAUTH_CLIENT_ID:", GOOGLE_OAUTH_CLIENT_ID)
     print("GOOGLE_IOS_CLIENT_ID:", GOOGLE_IOS_CLIENT_ID)
 

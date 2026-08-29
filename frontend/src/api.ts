@@ -372,6 +372,7 @@ export interface LoginRequest {
 
 export interface GoogleLoginRequest {
   idToken: string
+  platform: 'web' | 'ios'
   subscriberType?: 'borrower' | 'lender'
   lenderDataSharingConsent?: boolean
 }
@@ -505,6 +506,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
+    platform: payload.platform,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
   })

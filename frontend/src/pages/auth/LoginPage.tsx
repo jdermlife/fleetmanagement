@@ -145,6 +145,7 @@ function GoogleMark() {
 export default function LoginPage() {
   const navigate = useNavigate()
   const googleClientId = APP_CONFIG.googleClientId
+  const googleIosClientId = APP_CONFIG.googleIosClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
   const appleIosClientId = APP_CONFIG.appleIosClientId
@@ -214,7 +215,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleSuccess = async (response: CredentialResponse) => {
+  const handleGoogleSuccess = async (response: CredentialResponse, platform: 'web' | 'ios' = 'web') => {
     const idToken = response.credential
     if (!idToken) {
       setMessage('Google sign-in did not return a valid credential.')
@@ -226,6 +227,7 @@ export default function LoginPage() {
     try {
       await loginWithGoogle({
         idToken,
+        platform,
       })
       openFinancialHealthJourney()
     } catch (error) {
@@ -257,8 +259,11 @@ export default function LoginPage() {
     setIsSaving(true)
     setMessage('')
     try {
-      const idToken = await requestGoogleSignInToken(googleClientId)
-      await handleGoogleSuccess({ credential: idToken })
+      const idToken = await requestGoogleSignInToken(
+        googleClientId,
+        googleIosClientId,
+      )
+      await handleGoogleSuccess({ credential: idToken }, 'ios')
     } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Google right now.'))
     } finally {

@@ -106,6 +106,7 @@ export default function RegisterPage() {
   const location = useLocation()
   const registrationState = location.state as RegistrationNavigationState | null
   const googleClientId = APP_CONFIG.googleClientId
+  const googleIosClientId = APP_CONFIG.googleIosClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
   const appleClientId = APP_CONFIG.appleClientId
   const appleIosClientId = APP_CONFIG.appleIosClientId
@@ -197,7 +198,7 @@ export default function RegisterPage() {
     }
   }
 
-  const handleGoogleSuccess = async (response: CredentialResponse) => {
+  const handleGoogleSuccess = async (response: CredentialResponse, platform: 'web' | 'ios' = 'web') => {
     const idToken = response.credential
     if (!idToken) {
       setMessage('Google sign-up did not return a valid credential.')
@@ -219,6 +220,7 @@ export default function RegisterPage() {
     try {
       const loginResponse = await loginWithGoogle({
         idToken,
+        platform,
         subscriberType,
         lenderDataSharingConsent: marketingConsent,
       })
@@ -245,8 +247,11 @@ export default function RegisterPage() {
     setIsSaving(true)
     setMessage('')
     try {
-      const idToken = await requestGoogleSignInToken(googleClientId)
-      await handleGoogleSuccess({ credential: idToken })
+      const idToken = await requestGoogleSignInToken(
+        googleClientId,
+        googleIosClientId,
+      )
+      await handleGoogleSuccess({ credential: idToken }, 'ios')
     } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {
