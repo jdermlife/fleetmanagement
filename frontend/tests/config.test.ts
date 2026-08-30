@@ -4,6 +4,7 @@ import {
   DEFAULT_GOOGLE_CLIENT_ID,
   DEFAULT_OLLAMA_FALLBACK_URL,
   resolveApiBase,
+  resolveAppleRedirect,
   resolveGoogleClientId,
   resolveOllamaFallbackUrl,
   validateConfiguredApiBase,
@@ -38,6 +39,28 @@ describe('resolveApiBase', () => {
     expect(() => validateConfiguredApiBase('http://fleetmanagement-dq9t.onrender.com')).toThrow(
       'must use HTTPS',
     )
+  })
+})
+
+describe('resolveAppleRedirect', () => {
+  it('uses the configured HTTPS callback in native Android', () => {
+    expect(
+      resolveAppleRedirect(
+        ' https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback ',
+        'https://localhost',
+        true,
+      ),
+    ).toBe('https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback')
+  })
+
+  it('preserves the current browser callback outside native Android', () => {
+    expect(
+      resolveAppleRedirect(
+        'https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback',
+        'https://fleetmanagement-flame.vercel.app',
+        false,
+      ),
+    ).toBe('https://fleetmanagement-flame.vercel.app/auth/apple/callback')
   })
 })
 

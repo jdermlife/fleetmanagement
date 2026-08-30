@@ -1,3 +1,5 @@
+import { Capacitor } from '@capacitor/core'
+
 function getCurrentOrigin(): string {
   return typeof window === 'undefined' ? '' : window.location.origin
 }
@@ -42,6 +44,18 @@ export function resolveGoogleClientId(configuredClientId: string | undefined): s
   return configuredClientId?.trim() || DEFAULT_GOOGLE_CLIENT_ID
 }
 
+export function resolveAppleRedirect(
+  configuredRedirect: string | undefined,
+  currentOrigin: string,
+  isNativeAndroid: boolean,
+): string {
+  if (isNativeAndroid && configuredRedirect?.trim()) {
+    return configuredRedirect.trim()
+  }
+
+  return `${currentOrigin}/auth/apple/callback`
+}
+
 export function resolveOllamaFallbackUrl(configuredUrl: string | undefined): string {
   return configuredUrl?.trim().replace(/\/$/, '') || DEFAULT_OLLAMA_FALLBACK_URL
 }
@@ -57,7 +71,12 @@ export const APP_CONFIG = {
     return import.meta.env.VITE_APPLE_IOS_CLIENT_ID?.trim() || 'com.quantech.filscore'
   },
   get appleRedirect() {
-    return `${getCurrentOrigin()}/auth/apple/callback`
+    const isNativeAndroid = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+    return resolveAppleRedirect(
+      import.meta.env.VITE_APPLE_REDIRECT_URI,
+      getCurrentOrigin(),
+      isNativeAndroid,
+    )
   },
   get googleClientId() {
     return resolveGoogleClientId(import.meta.env.VITE_GOOGLE_CLIENT_ID)
