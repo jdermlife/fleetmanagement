@@ -264,15 +264,15 @@ function trendSeriesPath(series: FinancialHealthTrendSeries): string {
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   {
     id: 'createProfile',
-    label: 'Create/Update Profile',
-    launchLabel: 'Create Profile',
+    label: '1.Personalize Your Experience',
+    launchLabel: 'Create / Update Profile',
     route: '/build-profile',
     description:
       'Create your financial profile first so each health score and recommendation can use your information.',
   },
   {
     id: 'creditHealth',
-    label: 'Credit Health',
+    label: '2.  Can your credit opens opportunity ?',
     launchLabel: 'Launch Credit Health',
     route: '/lending-scorecard',
     description:
@@ -280,7 +280,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'wealthBuilder',
-    label: 'Composite Wealth Score',
+    label: '3. Are you managing your wealth well?',
     launchLabel: 'Launch Wealth Builder',
     route: '/net-worth-positioning',
     description:
@@ -288,23 +288,23 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'budgetTargets',
-    label: 'Budget & Expense Tracker',
-    launchLabel: 'Arrange My Targets',
+    label: '4. Can you keep your budget on track?',
+    launchLabel: 'Budget & Expense Tracker',
     route: '/budget-expense-tracker',
     description:
       'Set monthly income, spending limits, savings goals, and investment targets to track progress accurately.',
   },
   {
     id: 'billsLoans',
-    label: 'Resources Performance Oversight',
-    launchLabel: 'Optimize Loan',
+    label: '5. Are you making the most of your resources',
+    launchLabel: 'Resource Optimizer',
     route: '/loan-monitoring',
     description:
       'Enter loans and credit obligations to get optimization recommendations.',
   },
   {
     id: 'billManager',
-    label: 'Bill Manager',
+    label: '6. Ready to simplify your payments?',
     launchLabel: 'Manage Bills',
     route: '/bill-reminder',
     description:
@@ -1215,7 +1215,7 @@ export default function FinancialHealthSummaryPage() {
               onClick={minimizeJourney}
               aria-label="Minimize Financial Health Journey"
             >
-              Minimize
+              Start Now
             </button>
 
             <div className="financial-health-journey-progress" aria-live="polite">
@@ -1410,6 +1410,7 @@ export default function FinancialHealthSummaryPage() {
         >
           Refresh and Compute Latest Financial Health
         </button>
+        
       </section>
 
       <section className="financial-health-profile-line" aria-label="Selected financial health profile">
