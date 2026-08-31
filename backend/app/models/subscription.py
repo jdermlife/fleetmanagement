@@ -129,6 +129,7 @@ class PaymentProvider(Base):
     subscriptions = relationship("Subscription", back_populates="payment_provider", lazy="selectin")
     payments = relationship("SubscriptionPayment", back_populates="provider", lazy="selectin")
     webhooks = relationship("PaymentWebhook", back_populates="provider", lazy="selectin")
+    billing_agreements = relationship("SubscriptionBillingAgreement", back_populates="provider", lazy="selectin")
 
 
 class Subscription(Base):
@@ -187,6 +188,47 @@ class Subscription(Base):
     invoices = relationship("SubscriptionInvoice", back_populates="subscription", cascade="all, delete-orphan")
     usage_entries = relationship("SubscriptionUsage", back_populates="subscription", cascade="all, delete-orphan")
     events = relationship("SubscriptionEvent", back_populates="subscription", cascade="all, delete-orphan")
+    billing_agreements = relationship(
+        "SubscriptionBillingAgreement",
+        back_populates="subscription",
+        cascade="all, delete-orphan",
+    )
+
+
+class SubscriptionBillingAgreement(Base):
+    __tablename__ = "subscription_billing_agreements"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), nullable=False, index=True)
+    provider_id = Column(BigInteger, ForeignKey("payment_providers.id"), nullable=False, index=True)
+    provider_customer_id = Column(String(255))
+    provider_plan_id = Column(String(255), nullable=False)
+    provider_agreement_id = Column(String(255), nullable=False)
+    provider_payment_method_id = Column(String(255))
+    status = Column(String(30), nullable=False, default="PENDING")
+    authorized_at = Column(DateTime(timezone=True))
+    first_charge_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    next_charge_at = Column(DateTime(timezone=True), index=True)
+    cancelled_at = Column(DateTime(timezone=True))
+    consecutive_failures = Column(Integer, nullable=False, default=0)
+    last_error_code = Column(String(100))
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('PENDING','APPROVAL_PENDING','AUTHORIZED','ACTIVE','PAST_DUE','SUSPENDED','CANCELLED','EXPIRED','FAILED')",
+            name="ck_subscription_billing_agreements_status",
+        ),
+        UniqueConstraint(
+            "provider_id",
+            "provider_agreement_id",
+            name="uq_subscription_billing_agreements_provider_agreement",
+        ),
+    )
+
+    subscription = relationship("Subscription", back_populates="billing_agreements", lazy="selectin")
+    provider = relationship("PaymentProvider", back_populates="billing_agreements", lazy="selectin")
 
 
 class SubscriptionPayment(Base):
@@ -202,6 +244,9 @@ class SubscriptionPayment(Base):
     payment_method = Column(String(50))
     payment_status = Column(String(30))
     provider_transaction_id = Column(String(255))
+    idempotency_key = Column(String(255))
+    billing_period_start = Column(Date)
+    billing_period_end = Column(Date)
     paid_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
@@ -216,6 +261,7 @@ class SubscriptionPayment(Base):
             "provider_transaction_id",
             unique=True,
         ),
+        UniqueConstraint("provider_id", "idempotency_key", name="uq_subscription_payments_provider_idempotency"),
     )
 
     subscription = relationship("Subscription", back_populates="payments", lazy="selectin")

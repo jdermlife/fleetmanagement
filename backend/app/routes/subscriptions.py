@@ -20,6 +20,7 @@ from app.models.subscription import (
     PaymentWebhook,
     PlanFeature,
     Subscription,
+    SubscriptionBillingAgreement,
     SubscriptionEvent,
     SubscriptionInvoice,
     SubscriptionPayment,
@@ -39,6 +40,7 @@ from app.schemas.subscription_schema import (
     PublicTrialPaymentRequest,
     PublicTrialPayPalCaptureOrderRequest,
     PublicTrialPayPalCreateOrderRequest,
+    RecurringBillingStartRequest,
     PayMongoCheckoutCreate,
     PaymentWebhookCreate,
     PlanFeatureAssignRequest,
@@ -62,6 +64,9 @@ from app.services.paymongo import (
     PayMongoConfigurationError,
     PayMongoSignatureError,
     create_checkout_session,
+    attach_subscription_payment_method as attach_paymongo_subscription_payment_method_api,
+    create_customer as create_paymongo_customer_api,
+    create_subscription as create_paymongo_subscription_api,
     verify_webhook_signature,
 )
 from app.services.paypal import (
@@ -70,6 +75,7 @@ from app.services.paypal import (
     PayPalSignatureError,
     capture_order as capture_paypal_order_api,
     create_order as create_paypal_order_api,
+    create_subscription as create_paypal_subscription_api,
     verify_webhook_signature as verify_paypal_webhook_signature,
 )
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
@@ -355,6 +361,134 @@ def _subscription_checkout_amount(plan: SubscriptionPlan) -> Decimal:
     if amount <= 0:
         amount = minimum_fee
     return amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP)
+
+
+def _recurring_plan_id(provider_code: str, plan: SubscriptionPlan) -> str:
+    environment_name = f"{provider_code}_PLAN_ID_{plan.plan_code.upper()}"
+    plan_id = os.getenv(environment_name, "").strip()
+    if not plan_id:
+        raise HTTPException(status_code=503, detail=f"{environment_name} is not configured")
+    return plan_id
+
+
+def _start_recurring_billing_for_user(
+    payload: RecurringBillingStartRequest,
+    user: CurrentUser,
+    provider_code: str,
+):
+    db = _session_with_rls(user)
+    try:
+        subscription = db.query(Subscription).filter(Subscription.id == payload.subscription_id).first()
+        if subscription is None:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if not _is_admin(user) and subscription.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot bill another user's subscription")
+
+        provider = db.query(PaymentProvider).filter(PaymentProvider.provider_code == provider_code).first()
+        if provider is None or provider.is_active is False:
+            raise HTTPException(status_code=503, detail=f"{provider_code} payment provider is not active")
+
+        existing = (
+            db.query(SubscriptionBillingAgreement)
+            .filter(SubscriptionBillingAgreement.subscription_id == subscription.id)
+            .filter(SubscriptionBillingAgreement.provider_id == provider.id)
+            .filter(SubscriptionBillingAgreement.status.in_(["PENDING", "APPROVAL_PENDING", "AUTHORIZED", "ACTIVE"]))
+            .first()
+        )
+        if existing is not None:
+            return {
+                "agreement_id": existing.provider_agreement_id,
+                "status": existing.status,
+                "approval_url": None,
+                "first_charge_at": existing.first_charge_at,
+                "subscription": _serialize_subscription(subscription),
+                "reused": True,
+            }
+
+        plan = getattr(subscription, "plan", None)
+        if plan is None:
+            plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
+        if plan is None:
+            raise HTTPException(status_code=422, detail="Subscription plan is unavailable")
+        provider_plan_id = _recurring_plan_id(provider_code, plan)
+        owning_user = db.query(User).filter(User.id == subscription.user_id).first()
+        if owning_user is None or not owning_user.email:
+            raise HTTPException(status_code=422, detail="Subscriber email is required for recurring billing")
+
+        now = datetime.now(timezone.utc)
+        first_charge_at = now + timedelta(days=2) if provider_code == "PAYPAL" else now
+        try:
+            if provider_code == "PAYPAL":
+                result = create_paypal_subscription_api(
+                    plan_id=provider_plan_id,
+                    custom_id=subscription.subscription_no,
+                    start_time=first_charge_at,
+                    subscriber_email=owning_user.email,
+                    request_id=payload.request_id,
+                )
+                provider_customer_id = None
+                agreement_status = "APPROVAL_PENDING"
+            else:
+                if not payload.payment_method_id:
+                    raise HTTPException(status_code=422, detail="PayMongo card authorization is required")
+                name_parts = (owning_user.username or "FILSCORE Subscriber").split(maxsplit=1)
+                provider_customer_id = create_paymongo_customer_api(
+                    first_name=name_parts[0],
+                    last_name=name_parts[1] if len(name_parts) > 1 else "Subscriber",
+                    email=owning_user.email,
+                )
+                result = create_paymongo_subscription_api(
+                    customer_id=provider_customer_id,
+                    plan_id=provider_plan_id,
+                )
+                payment_intent_id = result.get("payment_intent_id")
+                if not payment_intent_id:
+                    raise PayMongoAPIError("PayMongo did not return the first invoice payment intent")
+                authorization = attach_paymongo_subscription_payment_method_api(
+                    payment_intent_id=payment_intent_id,
+                    payment_method_id=payload.payment_method_id,
+                )
+                result["approval_url"] = authorization.get("approval_url")
+                result["payment_method_id"] = payload.payment_method_id
+                agreement_status = "ACTIVE" if result["status"] == "active" else "PENDING"
+        except (PayPalConfigurationError, PayMongoConfigurationError) as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (PayPalAPIError, PayMongoAPIError) as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        agreement = SubscriptionBillingAgreement(
+            subscription_id=subscription.id,
+            provider_id=provider.id,
+            provider_customer_id=provider_customer_id,
+            provider_plan_id=provider_plan_id,
+            provider_agreement_id=result["agreement_id"],
+            provider_payment_method_id=result.get("payment_method_id"),
+            status=agreement_status,
+            first_charge_at=first_charge_at,
+            next_charge_at=None,
+        )
+        subscription.payment_provider_id = provider.id
+        subscription.auto_renew = True
+        subscription.status = "TRIAL" if provider_code == "PAYPAL" else "PENDING"
+        subscription.subscription_type = "PAID"
+        subscription.trial_start = now.date()
+        subscription.trial_end = first_charge_at.date()
+        subscription.next_billing_date = first_charge_at.date()
+        db.add(agreement)
+        db.commit()
+        db.refresh(agreement)
+        return {
+            "agreement_id": agreement.provider_agreement_id,
+            "status": agreement.status,
+            "approval_url": result.get("approval_url"),
+            "payment_intent_id": result.get("payment_intent_id"),
+            "invoice_id": result.get("invoice_id"),
+            "first_charge_at": agreement.first_charge_at,
+            "subscription": _serialize_subscription(subscription),
+            "reused": False,
+        }
+    finally:
+        db.close()
 
 
 def _resolve_public_trial_plan(db, plan_key: str) -> SubscriptionPlan:
@@ -964,6 +1098,159 @@ def _commit_paypal_webhook(db, webhook: PaymentWebhook) -> PaymentWebhook | None
     return None
 
 
+def _process_recurring_webhook(
+    db,
+    *,
+    provider: PaymentProvider,
+    provider_code: str,
+    event_id: str,
+    event_type: str,
+    resource: dict,
+    payload: dict,
+) -> bool:
+    resource_attributes = resource.get("attributes") or {}
+    agreement_id = str(resource.get("id") or "")
+    if provider_code == "PAYPAL" and event_type.startswith("PAYMENT.SALE."):
+        agreement_id = str(resource.get("billing_agreement_id") or "")
+    if provider_code == "PAYMONGO" and event_type.startswith("subscription.invoice."):
+        agreement_id = str(resource_attributes.get("resource_id") or "")
+
+    recurring_event = event_type.startswith("BILLING.SUBSCRIPTION.") or event_type.startswith("PAYMENT.SALE.")
+    recurring_event = recurring_event or event_type.startswith("subscription.")
+    if not recurring_event or not agreement_id:
+        return False
+
+    agreement = (
+        db.query(SubscriptionBillingAgreement)
+        .filter(SubscriptionBillingAgreement.provider_id == provider.id)
+        .filter(SubscriptionBillingAgreement.provider_agreement_id == agreement_id)
+        .first()
+    )
+    if agreement is None:
+        return False
+    subscription = db.query(Subscription).filter(Subscription.id == agreement.subscription_id).first()
+    if subscription is None:
+        raise HTTPException(status_code=404, detail="Subscription not found for recurring agreement")
+
+    processed_at = datetime.now(timezone.utc)
+    success_event = event_type in {"PAYMENT.SALE.COMPLETED", "subscription.invoice.paid"}
+    failure_event = event_type in {"BILLING.SUBSCRIPTION.PAYMENT.FAILED", "subscription.invoice.payment_failed"}
+    if success_event:
+        if provider_code == "PAYPAL":
+            amount = Decimal(str((resource.get("amount") or {}).get("total") or "0"))
+            currency = str((resource.get("amount") or {}).get("currency") or "PHP").upper()
+            transaction_id = str(resource.get("id") or event_id)
+        else:
+            amount = Decimal(str(resource_attributes.get("amount") or 0)) / 100
+            currency = str(resource_attributes.get("currency") or "PHP").upper()
+            transaction_id = str(resource.get("id") or event_id)
+        payment = (
+            db.query(SubscriptionPayment)
+            .filter(SubscriptionPayment.provider_id == provider.id)
+            .filter(SubscriptionPayment.provider_transaction_id == transaction_id)
+            .first()
+        )
+        if payment is None:
+            plan = getattr(subscription, "plan", None)
+            if plan is None:
+                plan = db.query(SubscriptionPlan).filter(SubscriptionPlan.id == subscription.plan_id).first()
+            billing_period_start = processed_at.date()
+            next_billing_date = _calculate_next_billing_date(plan, billing_period_start)
+            payment = SubscriptionPayment(
+                payment_reference=f"REC-{event_id}"[:100],
+                subscription_id=subscription.id,
+                provider_id=provider.id,
+                invoice_no=f"INV-{event_id}"[:50],
+                amount=amount,
+                currency=currency,
+                payment_method=f"{provider_code} Recurring",
+                payment_status="PENDING",
+                provider_transaction_id=transaction_id,
+                idempotency_key=event_id,
+                billing_period_start=billing_period_start,
+                billing_period_end=(next_billing_date - timedelta(days=1)) if next_billing_date else None,
+            )
+            db.add(payment)
+        _mark_payment_success(
+            db,
+            payment=payment,
+            provider=provider,
+            payment_method=f"{provider_code} Recurring",
+            processed_at=processed_at,
+        )
+        agreement.status = "ACTIVE"
+        agreement.authorized_at = agreement.authorized_at or processed_at
+        agreement.consecutive_failures = 0
+        agreement.last_error_code = None
+        if subscription.next_billing_date:
+            agreement.next_charge_at = datetime.combine(
+                subscription.next_billing_date,
+                datetime.min.time(),
+                tzinfo=timezone.utc,
+            )
+    elif failure_event:
+        agreement.status = "PAST_DUE"
+        agreement.consecutive_failures += 1
+        agreement.last_error_code = event_type[:100]
+        subscription.grace_period_end = (processed_at + timedelta(days=3)).date()
+    elif event_type in {"BILLING.SUBSCRIPTION.ACTIVATED", "subscription.activated"}:
+        agreement.status = "AUTHORIZED"
+        agreement.authorized_at = processed_at
+    elif event_type in {"BILLING.SUBSCRIPTION.SUSPENDED", "subscription.unpaid"}:
+        agreement.status = "SUSPENDED"
+        subscription.status = "SUSPENDED"
+    elif event_type in {"BILLING.SUBSCRIPTION.CANCELLED", "subscription.cancelled"}:
+        agreement.status = "CANCELLED"
+        agreement.cancelled_at = processed_at
+        subscription.status = "CANCELLED"
+        subscription.auto_renew = False
+        subscription.cancelled_at = processed_at
+    elif event_type == "BILLING.SUBSCRIPTION.EXPIRED":
+        agreement.status = "EXPIRED"
+        subscription.status = "EXPIRED"
+        subscription.auto_renew = False
+    elif event_type in {"PAYMENT.SALE.REFUNDED", "PAYMENT.SALE.REVERSED"}:
+        agreement.status = "PAST_DUE"
+        agreement.last_error_code = event_type[:100]
+        subscription.status = "SUSPENDED"
+    elif event_type in {"subscription.past_due", "subscription.updated", "BILLING.SUBSCRIPTION.UPDATED"}:
+        provider_status = str(resource_attributes.get("status") or resource.get("status") or "").lower()
+        if provider_status == "active":
+            agreement.status = "ACTIVE"
+        elif provider_status == "past_due":
+            agreement.status = "PAST_DUE"
+        elif provider_status in {"unpaid", "suspended"}:
+            agreement.status = "SUSPENDED"
+            subscription.status = "SUSPENDED"
+        elif provider_status in {"cancelled", "canceled"}:
+            agreement.status = "CANCELLED"
+            agreement.cancelled_at = processed_at
+            subscription.status = "CANCELLED"
+            subscription.auto_renew = False
+            subscription.cancelled_at = processed_at
+
+    next_billing = resource_attributes.get("next_billing_schedule")
+    if next_billing:
+        try:
+            agreement.next_charge_at = datetime.fromisoformat(str(next_billing)).replace(tzinfo=timezone.utc)
+            subscription.next_billing_date = agreement.next_charge_at.date()
+        except ValueError:
+            pass
+
+    duplicate = _commit_paypal_webhook(
+        db,
+        PaymentWebhook(
+            provider_id=provider.id,
+            provider_event_id=event_id,
+            event_type=event_type,
+            payload=payload,
+            processed=True,
+            processed_at=processed_at,
+        ),
+    )
+    return duplicate is None or bool(duplicate.processed)
+
+
 @router.get("/plans")
 def list_plans(
     user: CurrentUser = Depends(require_roles("Admin")),
@@ -1355,6 +1642,14 @@ def create_paymongo_checkout(
     return _create_paymongo_checkout_for_user(payload=payload, user=user)
 
 
+@router.post("/payments/paymongo/subscription")
+def create_paymongo_recurring_subscription(
+    payload: RecurringBillingStartRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+):
+    return _start_recurring_billing_for_user(payload, user, "PAYMONGO")
+
+
 @router.post("/public/payments/paymongo/checkout")
 def create_public_trial_paymongo_checkout(payload: PublicTrialPaymentRequest):
     db = SessionLocal()
@@ -1417,10 +1712,32 @@ async def receive_paymongo_webhook(
         if provider is None or provider.is_active is False:
             raise HTTPException(status_code=503, detail="PayMongo payment provider is not active")
 
+        existing_webhook = (
+            db.query(PaymentWebhook)
+            .filter(PaymentWebhook.provider_id == provider.id)
+            .filter(PaymentWebhook.provider_event_id == event_id)
+            .first()
+        )
+        if existing_webhook is not None:
+            return {"received": True, "processed": bool(existing_webhook.processed), "duplicate": True}
+
+        event_resource = event_attributes.get("data") or {}
+        if _process_recurring_webhook(
+            db,
+            provider=provider,
+            provider_code="PAYMONGO",
+            event_id=event_id,
+            event_type=event_type,
+            resource=event_resource,
+            payload=payload,
+        ):
+            return {"received": True, "processed": True}
+
         if event_type != "checkout_session.payment.paid":
             db.add(
                 PaymentWebhook(
                     provider_id=provider.id,
+                    provider_event_id=event_id,
                     event_type=event_type,
                     payload=payload,
                     processed=False,
@@ -1857,6 +2174,17 @@ async def _receive_paypal_webhook(request: Request):
                 "processed": bool(existing_webhook.processed),
                 "duplicate": True,
             }
+
+        if _process_recurring_webhook(
+            db,
+            provider=provider,
+            provider_code="PAYPAL",
+            event_id=event_id,
+            event_type=event_type,
+            resource=resource,
+            payload=payload,
+        ):
+            return {"received": True, "processed": True}
 
         if event_type != "PAYMENT.CAPTURE.COMPLETED":
             duplicate = _commit_paypal_webhook(

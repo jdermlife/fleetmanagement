@@ -1,7 +1,8 @@
 export interface PayPalButtonsOptions {
   style?: Record<string, unknown>
-  createOrder: () => Promise<string>
-  onApprove: (data: { orderID?: string | null }) => Promise<void>
+  createOrder?: () => Promise<string>
+  createSubscription?: () => Promise<string>
+  onApprove: (data: { orderID?: string | null; subscriptionID?: string | null }) => Promise<void>
   onCancel?: () => void
   onError?: (error: unknown) => void
 }
@@ -29,17 +30,25 @@ let paypalSdkLoadCache: {
   cancel: () => void
 } | null = null
 
-function buildPayPalSdkUrl(clientId: string, currency: string): string {
+function buildPayPalSdkUrl(clientId: string, currency: string, mode: 'order' | 'subscription'): string {
   const params = new URLSearchParams({
     'client-id': clientId,
     components: 'buttons',
-    currency: currency.toUpperCase(),
-    intent: 'capture',
+    intent: mode === 'subscription' ? 'subscription' : 'capture',
   })
+  if (mode === 'subscription') {
+    params.set('vault', 'true')
+  } else {
+    params.set('currency', currency.toUpperCase())
+  }
   return `https://www.paypal.com/sdk/js?${params.toString()}`
 }
 
-export function loadPayPalSdk(clientId: string, currency: string): Promise<PayPalNamespace> {
+export function loadPayPalSdk(
+  clientId: string,
+  currency: string,
+  mode: 'order' | 'subscription' = 'order',
+): Promise<PayPalNamespace> {
   if (typeof window === 'undefined') {
     return Promise.reject(new Error('PayPal SDK can only load in a browser.'))
   }
@@ -50,7 +59,7 @@ export function loadPayPalSdk(clientId: string, currency: string): Promise<PayPa
     return Promise.reject(new Error('PayPal client id and currency are required.'))
   }
 
-  const sdkUrl = buildPayPalSdkUrl(normalizedClientId, normalizedCurrency)
+  const sdkUrl = buildPayPalSdkUrl(normalizedClientId, normalizedCurrency, mode)
   const existingScript = document.getElementById(PAYPAL_SDK_SCRIPT_ID) as HTMLScriptElement | null
   const existingScriptUrl = existingScript?.getAttribute('src') ?? ''
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import date
+from decimal import Decimal
 import hashlib
 import hmac
 import json
@@ -13,6 +14,8 @@ from app.models.subscription import (
     PaymentProvider,
     PaymentWebhook,
     Subscription,
+    SubscriptionBillingAgreement,
+    SubscriptionInvoice,
     SubscriptionPayment,
     SubscriptionPlan,
 )
@@ -194,6 +197,100 @@ def test_verified_paymongo_webhook_activates_subscription(monkeypatch):
     )
     assert duplicate_response.status_code == 200
     assert payment.payment_status == "SUCCESS"
+
+
+def test_paymongo_recurring_invoice_renews_access_once(monkeypatch):
+    fake_db = FakeSession()
+    provider = PaymentProvider(id=5, provider_code="PAYMONGO", provider_name="PayMongo", is_active=True)
+    plan = SubscriptionPlan(id=1, plan_code="PRO", plan_name="Pro", billing_cycle="MONTHLY")
+    subscription = Subscription(
+        id=10,
+        subscription_no="SUB-PM-RECURRING",
+        user_id=42,
+        plan_id=1,
+        status="PENDING",
+        subscription_type="PAID",
+        subscription_start=date.today(),
+        auto_renew=True,
+    )
+    subscription.plan = plan
+    agreement = SubscriptionBillingAgreement(
+        id=30,
+        subscription_id=10,
+        provider_id=5,
+        provider_plan_id="plan_pro",
+        provider_agreement_id="subs_recurring",
+        status="PENDING",
+        first_charge_at=date.today(),
+        consecutive_failures=0,
+    )
+    user = User(
+        id=42,
+        username="subscriber",
+        email="subscriber@example.com",
+        password_hash="hash",
+        role="subscriber",
+    )
+    fake_db.rows_by_model = {
+        PaymentProvider: [provider],
+        SubscriptionPlan: [plan],
+        Subscription: [subscription],
+        SubscriptionBillingAgreement: [agreement],
+        User: [user],
+    }
+    monkeypatch.setattr(subscription_routes, "SessionLocal", lambda: fake_db)
+    monkeypatch.setenv("PAYMONGO_WEBHOOK_SECRET", "webhook-test-secret")
+    app = FastAPI()
+    app.include_router(subscriptions_router, prefix="/api")
+    client = TestClient(app)
+    payload = {
+        "data": {
+            "id": "evt_invoice_paid",
+            "type": "event",
+            "attributes": {
+                "type": "subscription.invoice.paid",
+                "livemode": False,
+                "data": {
+                    "id": "inv_recurring_1",
+                    "type": "invoice",
+                    "attributes": {
+                        "amount": 10_000,
+                        "currency": "PHP",
+                        "resource_id": "subs_recurring",
+                        "status": "paid",
+                    },
+                },
+            },
+        }
+    }
+    timestamp = int(time.time())
+    raw_payload, signature = _signed_payload(payload, "webhook-test-secret", timestamp)
+    headers = {"Content-Type": "application/json", "Paymongo-Signature": signature}
+
+    response = client.post(
+        "/api/subscriptions/payments/paymongo/webhook",
+        content=raw_payload,
+        headers=headers,
+    )
+    duplicate = client.post(
+        "/api/subscriptions/payments/paymongo/webhook",
+        content=raw_payload,
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert duplicate.json()["duplicate"] is True
+    assert agreement.status == "ACTIVE"
+    assert subscription.status == "ACTIVE"
+    assert user.subscription_id == subscription.id
+    payments = fake_db.rows_by_model[SubscriptionPayment]
+    assert len(payments) == 1
+    assert payments[0].amount == Decimal("100.00")
+    assert payments[0].provider_transaction_id == "inv_recurring_1"
+    assert payments[0].billing_period_start is not None
+    assert payments[0].billing_period_end > payments[0].billing_period_start
+    assert agreement.next_charge_at.date() == subscription.next_billing_date
+    assert len(fake_db.rows_by_model[SubscriptionInvoice]) == 1
 
 
 def test_paymongo_webhook_rejects_invalid_signature(monkeypatch):

@@ -1180,6 +1180,17 @@ export interface PayPalCaptureResult {
   payment: SubscriptionPayment
 }
 
+export interface RecurringBillingSession {
+  agreement_id: string
+  status: string
+  approval_url: string | null
+  payment_intent_id?: string | null
+  invoice_id?: string | null
+  first_charge_at: string
+  subscription: SubscriptionRecord
+  reused?: boolean
+}
+
 export type NativeStorePlatform = 'ANDROID' | 'IOS'
 
 export interface StoreProductMapping {
@@ -1521,6 +1532,18 @@ export async function createPayMongoCheckout(payload: {
   return response.data
 }
 
+export async function createPayMongoSubscription(payload: {
+  subscription_id: number
+  request_id: string
+  payment_method_id: string
+}): Promise<RecurringBillingSession> {
+  const response = await api.post<RecurringBillingSession>(
+    '/api/subscriptions/payments/paymongo/subscription',
+    payload,
+  )
+  return response.data
+}
+
 export async function createPublicTrialPayMongoCheckout(payload: {
   account_identifier: string
   plan: 'single' | 'multiple'
@@ -1538,6 +1561,14 @@ export async function createPayPalOrder(payload: {
   request_id?: string
 }): Promise<PayPalOrderSession> {
   const response = await api.post<PayPalOrderSession>('/api/paypal/create-order', payload)
+  return response.data
+}
+
+export async function createPayPalSubscription(payload: {
+  subscription_id: number
+  request_id: string
+}): Promise<RecurringBillingSession> {
+  const response = await api.post<RecurringBillingSession>('/api/paypal/create-subscription', payload)
   return response.data
 }
 

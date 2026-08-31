@@ -3,6 +3,7 @@ from __future__ import annotations
 import hashlib
 import json
 import os
+from datetime import datetime
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 from urllib.parse import urlparse
@@ -188,6 +189,71 @@ def create_order(
         "status": status,
         "approval_url": approval_url,
         "raw": order_payload,
+    }
+
+
+def create_subscription(
+    *,
+    plan_id: str,
+    custom_id: str,
+    start_time: datetime,
+    subscriber_email: str | None = None,
+    request_id: str,
+) -> dict[str, Any]:
+    normalized_plan_id = plan_id.strip()
+    if not normalized_plan_id:
+        raise PayPalConfigurationError("PayPal recurring plan ID is not configured")
+
+    token, api_base_url = _get_access_token()
+    payload: dict[str, Any] = {
+        "plan_id": normalized_plan_id,
+        "custom_id": custom_id[:127],
+        "start_time": start_time.astimezone().isoformat(timespec="seconds"),
+        "application_context": {
+            "brand_name": os.getenv("PAYPAL_BRAND_NAME", "FILSCORE")[:127],
+            "user_action": "SUBSCRIBE_NOW",
+            "shipping_preference": "NO_SHIPPING",
+        },
+    }
+    if subscriber_email:
+        payload["subscriber"] = {"email_address": subscriber_email}
+
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/billing/subscriptions",
+            json=payload,
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+                "PayPal-Request-Id": _paypal_request_id(request_id),
+            },
+            timeout=_timeout_seconds(),
+        )
+    except requests.RequestException as exc:
+        raise PayPalAPIError("PayPal recurring subscription is temporarily unavailable") from exc
+
+    if not response.ok:
+        raise PayPalAPIError("PayPal rejected the recurring subscription request")
+
+    try:
+        body = response.json()
+        subscription_id = str(body["id"])
+        status = str(body.get("status") or "APPROVAL_PENDING")
+        approval_url = next(
+            str(item["href"])
+            for item in body.get("links", [])
+            if item.get("rel") == "approve" and item.get("href")
+        )
+    except (KeyError, StopIteration, TypeError, ValueError) as exc:
+        raise PayPalAPIError("PayPal returned an invalid recurring subscription response") from exc
+
+    if not subscription_id.startswith("I-"):
+        raise PayPalAPIError("PayPal returned an invalid subscription identifier")
+    return {
+        "agreement_id": subscription_id,
+        "status": status,
+        "approval_url": approval_url,
+        "raw": body,
     }
 
 

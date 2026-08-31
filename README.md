@@ -55,6 +55,7 @@ Note: Python 3.13+ is not currently supported for the FastAPI smoke-test stack i
 
 For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first.
 Before deploying the hardened PayPal flow, run `python migrate_paypal_payment_integrity.py` from `backend`.
+Before enabling recurring PayPal or PayMongo billing, run `python migrate_recurring_billing.py` from `backend`.
 The backend performs an idempotent startup preflight for application-specific FILSCORE Wealth columns. The same check can be run manually with `python migrate_overall_scores_wealth_fields.py` from `backend` before deployment.
 
 ### Frontend
@@ -220,6 +221,12 @@ docker compose -f docker-compose.yml.txt up -d backend prometheus grafana
 | PAYPAL_WEBHOOK_ID | PayPal webhook ID used for signature verification | Required for PayPal webhooks |
 | PAYPAL_API_BASE_URL | PayPal REST API base URL; sandbox or live must match the credentials | https://api-m.sandbox.paypal.com |
 | PAYPAL_TIMEOUT_SECONDS | PayPal REST API request timeout | 15 |
+| PAYPAL_PLAN_ID_{PLAN_CODE} | PayPal recurring plan ID for each active paid plan code | Required for recurring PayPal billing |
+| VITE_PAYMONGO_PUBLIC_KEY | PayMongo public key used only for browser card tokenization | Required for recurring PayMongo billing |
+| PAYMONGO_SECRET_KEY | PayMongo secret key; backend only | Required for PayMongo payments |
+| PAYMONGO_WEBHOOK_SECRET | PayMongo webhook signing secret | Required for PayMongo webhooks |
+| PAYMONGO_RECURRING_RETURN_URL | HTTPS return URL after PayMongo card authentication | Required for recurring PayMongo billing |
+| PAYMONGO_PLAN_ID_{PLAN_CODE} | PayMongo recurring plan ID for each active paid plan code | Required for recurring PayMongo billing |
 | SENTRY_DSN | Sentry DSN for error monitoring | empty (disabled) |
 | SENTRY_ENVIRONMENT | Sentry environment name | development |
 | SENTRY_RELEASE | Sentry release identifier | empty |

@@ -1474,7 +1474,7 @@ export default function FinancialHealthSummaryPage() {
           <button
             type="button"
             className="financial-health-journey-main-fab"
-            onClick={openJourney}
+            onClick={() => window.location.assign('/build-profile')}
           >
             Create / Update Profile
           </button>

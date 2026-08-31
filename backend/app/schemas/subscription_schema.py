@@ -208,6 +208,18 @@ class PayPalCaptureOrderRequest(BaseModel):
     subscription_id: int | None = None
 
 
+class RecurringBillingStartRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    subscription_id: int
+    request_id: str = Field(
+        min_length=8,
+        max_length=38,
+        pattern=r"^[A-Za-z0-9._-]+$",
+    )
+    payment_method_id: str | None = Field(default=None, min_length=6, max_length=255)
+
+
 class PublicTrialPaymentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

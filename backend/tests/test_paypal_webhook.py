@@ -11,6 +11,7 @@ from app.models.subscription import (
     PaymentProvider,
     PaymentWebhook,
     Subscription,
+    SubscriptionBillingAgreement,
     SubscriptionInvoice,
     SubscriptionPayment,
     SubscriptionPlan,
@@ -198,6 +199,86 @@ def test_verified_paypal_webhook_activates_subscription(monkeypatch):
         "duplicate": True,
     }
     assert len(fake_db.rows_by_model[PaymentWebhook]) == 1
+    assert len(fake_db.rows_by_model[SubscriptionInvoice]) == 1
+
+
+def test_paypal_recurring_sale_renews_access_once(monkeypatch):
+    fake_db = FakeSession()
+    provider = PaymentProvider(id=7, provider_code="PAYPAL", provider_name="PayPal", is_active=True)
+    plan = SubscriptionPlan(id=1, plan_code="PRO", plan_name="Pro", billing_cycle="MONTHLY")
+    subscription = Subscription(
+        id=10,
+        subscription_no="SUB-RECURRING",
+        user_id=42,
+        plan_id=1,
+        status="TRIAL",
+        subscription_type="PAID",
+        subscription_start=date.today(),
+        auto_renew=True,
+    )
+    subscription.plan = plan
+    agreement = SubscriptionBillingAgreement(
+        id=30,
+        subscription_id=10,
+        provider_id=7,
+        provider_plan_id="P-PRO",
+        provider_agreement_id="I-RECURRING",
+        status="AUTHORIZED",
+        first_charge_at=date.today(),
+        consecutive_failures=1,
+    )
+    user = User(
+        id=42,
+        username="subscriber",
+        email="subscriber@example.com",
+        password_hash="hash",
+        role="subscriber",
+    )
+    fake_db.rows_by_model = {
+        PaymentProvider: [provider],
+        SubscriptionPlan: [plan],
+        Subscription: [subscription],
+        SubscriptionBillingAgreement: [agreement],
+        User: [user],
+    }
+    monkeypatch.setattr(subscription_routes, "SessionLocal", lambda: fake_db)
+    monkeypatch.setattr(subscription_routes, "verify_paypal_webhook_signature", lambda *_args: None)
+    app = FastAPI()
+    app.include_router(paypal_router, prefix="/api")
+    client = TestClient(app)
+    payload = {
+        "id": "WH-RENEWAL-1",
+        "event_type": "PAYMENT.SALE.COMPLETED",
+        "resource": {
+            "id": "SALE-RENEWAL-1",
+            "billing_agreement_id": "I-RECURRING",
+            "amount": {"total": "100.00", "currency": "PHP"},
+        },
+    }
+    headers = {
+        "PayPal-Auth-Algo": "SHA256withRSA",
+        "PayPal-Cert-Url": "https://api-m.paypal.com/certs/test.pem",
+        "PayPal-Transmission-Id": "trans-renewal",
+        "PayPal-Transmission-Sig": "sig",
+        "PayPal-Transmission-Time": "2026-07-15T12:00:00Z",
+    }
+
+    response = client.post("/api/paypal/webhook", content=json.dumps(payload), headers=headers)
+    duplicate = client.post("/api/paypal/webhook", content=json.dumps(payload), headers=headers)
+
+    assert response.status_code == 200
+    assert duplicate.json()["duplicate"] is True
+    assert agreement.status == "ACTIVE"
+    assert agreement.consecutive_failures == 0
+    assert subscription.status == "ACTIVE"
+    assert user.subscription_id == subscription.id
+    payments = fake_db.rows_by_model[SubscriptionPayment]
+    assert len(payments) == 1
+    assert payments[0].provider_transaction_id == "SALE-RENEWAL-1"
+    assert payments[0].payment_status == "SUCCESS"
+    assert payments[0].billing_period_start is not None
+    assert payments[0].billing_period_end > payments[0].billing_period_start
+    assert agreement.next_charge_at.date() == subscription.next_billing_date
     assert len(fake_db.rows_by_model[SubscriptionInvoice]) == 1
 
 

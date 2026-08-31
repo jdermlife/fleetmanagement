@@ -79,3 +79,43 @@ def test_checkout_session_rejects_untrusted_redirect_host(monkeypatch):
             item_name="Test",
             reference_number="PM-UNSAFE",
         )
+
+
+def test_attach_subscription_payment_method_uses_secret_and_return_url(monkeypatch):
+    monkeypatch.setenv("PAYMONGO_SECRET_KEY", "sk_test_server_secret")
+    monkeypatch.setenv("PAYMONGO_RECURRING_RETURN_URL", "https://example.com/subscription-payment?checkout=success")
+    captured: dict[str, object] = {}
+
+    class AttachedResponse(FakeResponse):
+        @staticmethod
+        def json():
+            return {
+                "data": {
+                    "attributes": {
+                        "status": "awaiting_next_action",
+                        "next_action": {"redirect": {"url": "https://pm.link/authorize"}},
+                    }
+                }
+            }
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+        return AttachedResponse()
+
+    monkeypatch.setattr(paymongo.requests, "post", fake_post)
+    result = paymongo.attach_subscription_payment_method(
+        payment_intent_id="pi_first_invoice",
+        payment_method_id="pm_browser_token",
+    )
+
+    assert captured["url"].endswith("/v1/payment_intents/pi_first_invoice/attach")
+    assert captured["auth"] == ("sk_test_server_secret", "")
+    assert captured["json"]["data"]["attributes"] == {
+        "payment_method": "pm_browser_token",
+        "return_url": "https://example.com/subscription-payment?checkout=success",
+    }
+    assert result == {
+        "status": "awaiting_next_action",
+        "approval_url": "https://pm.link/authorize",
+    }

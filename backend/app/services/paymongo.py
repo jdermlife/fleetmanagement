@@ -154,6 +154,130 @@ def create_checkout_session(
     return {"checkout_id": checkout_id, "checkout_url": checkout_url}
 
 
+def _api_settings() -> tuple[str, str, float]:
+    secret_key = _required_environment_value("PAYMONGO_SECRET_KEY")
+    api_base_url = os.getenv("PAYMONGO_API_BASE_URL", "https://api.paymongo.com").rstrip("/")
+    parsed_api_url = urlparse(api_base_url)
+    if parsed_api_url.scheme != "https" or not parsed_api_url.hostname:
+        raise PayMongoConfigurationError("PAYMONGO_API_BASE_URL must be an absolute HTTPS URL")
+    if os.getenv("ENVIRONMENT", "development").lower() == "production" and parsed_api_url.hostname != "api.paymongo.com":
+        raise PayMongoConfigurationError("PAYMONGO_API_BASE_URL must use api.paymongo.com in production")
+    return secret_key, api_base_url, float(os.getenv("PAYMONGO_TIMEOUT_SECONDS", "15"))
+
+
+def create_customer(*, first_name: str, last_name: str, email: str) -> str:
+    secret_key, api_base_url, timeout_seconds = _api_settings()
+    payload = {
+        "data": {
+            "attributes": {
+                "first_name": first_name[:255] or "FILSCORE",
+                "last_name": last_name[:255] or "Subscriber",
+                "email": email[:255],
+                "default_device": "email",
+            }
+        }
+    }
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/customers",
+            auth=(secret_key, ""),
+            json=payload,
+            timeout=timeout_seconds,
+        )
+    except requests.RequestException as exc:
+        raise PayMongoAPIError("PayMongo customer setup is temporarily unavailable") from exc
+    if not response.ok:
+        raise PayMongoAPIError("PayMongo rejected the customer setup request")
+    try:
+        customer_id = str(response.json()["data"]["id"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PayMongoAPIError("PayMongo returned an invalid customer response") from exc
+    if not customer_id.startswith("cus_"):
+        raise PayMongoAPIError("PayMongo returned an invalid customer identifier")
+    return customer_id
+
+
+def create_subscription(*, customer_id: str, plan_id: str) -> dict[str, Any]:
+    secret_key, api_base_url, timeout_seconds = _api_settings()
+    payload = {
+        "data": {
+            "attributes": {
+                "customer_id": customer_id,
+                "plan_id": plan_id,
+            }
+        }
+    }
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/subscriptions",
+            auth=(secret_key, ""),
+            json=payload,
+            timeout=timeout_seconds,
+        )
+    except requests.RequestException as exc:
+        raise PayMongoAPIError("PayMongo recurring subscription is temporarily unavailable") from exc
+    if not response.ok:
+        raise PayMongoAPIError("PayMongo rejected the recurring subscription request")
+    try:
+        resource = response.json()["data"]
+        attributes = resource["attributes"]
+        agreement_id = str(resource["id"])
+        status = str(attributes.get("status") or "incomplete")
+        setup_intent = attributes.get("setup_intent") or {}
+        latest_invoice = attributes.get("latest_invoice") or {}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PayMongoAPIError("PayMongo returned an invalid recurring subscription response") from exc
+    if not agreement_id.startswith("subs_"):
+        raise PayMongoAPIError("PayMongo returned an invalid subscription identifier")
+    return {
+        "agreement_id": agreement_id,
+        "status": status,
+        "approval_url": setup_intent.get("next_action_url"),
+        "payment_intent_id": (latest_invoice.get("payment_intent") or {}).get("id"),
+        "invoice_id": latest_invoice.get("id"),
+        "next_billing_date": attributes.get("next_billing_schedule"),
+        "payment_method_id": attributes.get("default_customer_payment_method_id"),
+        "raw": resource,
+    }
+
+
+def attach_subscription_payment_method(*, payment_intent_id: str, payment_method_id: str) -> dict[str, Any]:
+    secret_key, api_base_url, timeout_seconds = _api_settings()
+    return_url = _validate_return_url(
+        _required_environment_value("PAYMONGO_RECURRING_RETURN_URL"),
+        "PAYMONGO_RECURRING_RETURN_URL",
+    )
+    payload = {
+        "data": {
+            "attributes": {
+                "payment_method": payment_method_id,
+                "return_url": return_url,
+            }
+        }
+    }
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/payment_intents/{payment_intent_id}/attach",
+            auth=(secret_key, ""),
+            json=payload,
+            timeout=timeout_seconds,
+        )
+    except requests.RequestException as exc:
+        raise PayMongoAPIError("PayMongo payment authorization is temporarily unavailable") from exc
+    if not response.ok:
+        raise PayMongoAPIError("PayMongo rejected the recurring payment authorization")
+    try:
+        attributes = response.json()["data"]["attributes"]
+        status = str(attributes["status"])
+        next_action = attributes.get("next_action") or {}
+    except (KeyError, TypeError, ValueError) as exc:
+        raise PayMongoAPIError("PayMongo returned an invalid payment authorization response") from exc
+    return {
+        "status": status,
+        "approval_url": next_action.get("redirect", {}).get("url"),
+    }
+
+
 def verify_webhook_signature(
     raw_payload: bytes,
     signature_header: str,

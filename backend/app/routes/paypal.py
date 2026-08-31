@@ -7,10 +7,12 @@ from app.routes.subscriptions import (
     _capture_paypal_order_for_user,
     _create_paypal_order_for_user,
     _receive_paypal_webhook,
+    _start_recurring_billing_for_user,
 )
 from app.schemas.subscription_schema import (
     PayPalCaptureOrderRequest,
     PayPalCreateOrderRequest,
+    RecurringBillingStartRequest,
 )
 
 router = APIRouter(prefix="/paypal", tags=["paypal"])
@@ -34,6 +36,16 @@ def paypal_capture_order(
     ),
 ):
     return _capture_paypal_order_for_user(payload=payload, user=user)
+
+
+@router.post("/create-subscription")
+def paypal_create_subscription(
+    payload: RecurringBillingStartRequest,
+    user: CurrentUser = Depends(
+        require_roles("Admin", "Subscriber", "subscriber_borrower", "subscriber_lender")
+    ),
+):
+    return _start_recurring_billing_for_user(payload, user, "PAYPAL")
 
 
 @router.post("/webhook")
