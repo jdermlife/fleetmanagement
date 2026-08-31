@@ -1399,8 +1399,21 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-            Open Financial Health Journey
+            Open Financial Health Journey 
           </button>
+          
+          
+        ) : null}
+                {isJourneyMinimized && !isJourneyDismissed ? (
+          <button
+            type="button"
+            className="financial-health-journey-fab"
+            onClick={openJourney}
+          >
+            Open Financial Health Journey 
+          </button>
+          
+          
         ) : null}
         <button
           type="button"
