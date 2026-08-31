@@ -175,7 +175,7 @@ const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: strin
 
 const STEP_FIELDS: Record<Exclude<ProfileStep, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>, FieldDefinition[]> = {
   1: [
-    { key: 'fullName', label: 'Full Name' },
+    { key: 'fullName', label: 'Full Name (*Dummy Data Acceptable)' },
     { key: 'email', label: 'Email Address', type: 'email' },
     { key: 'mobileNumber', label: 'Mobile Number', type: 'tel' },
     { key: 'dateOfBirth', label: 'Date of Birth', type: 'date' },
