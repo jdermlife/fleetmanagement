@@ -1578,7 +1578,7 @@ export default function FinancialHealthSummaryPage() {
           onClick={computeLatestFinancialHealth}
           disabled={!summaryInputsLoaded}
         >
-          Refresh  Financial Health
+          Refresh
         </button>
 
         <div className="financial-health-snapshot-save">
@@ -1618,7 +1618,7 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-main-fab"
             onClick={openJourney}
           >
-             Financial Journey Guide
+             Financial Guide
           </button>
           
           
