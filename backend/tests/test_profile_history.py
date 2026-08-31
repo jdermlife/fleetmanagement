@@ -118,6 +118,38 @@ def test_history_rejects_unknown_category_and_cross_profile_access(history_clien
     assert client.get("/api/profiles/PRO-LOCAL/history").status_code == 404
 
 
+def test_financial_health_history_allows_one_snapshot_per_month(history_client):
+    client, _active_user = history_client
+    first = client.post(
+        "/api/profiles/APP-001/history",
+        json={
+            "category": "financial_health_score",
+            "observed_at": "2026-08-31T23:59:59Z",
+            "payload": {"score": 842},
+        },
+    )
+    duplicate = client.post(
+        "/api/profiles/APP-001/history",
+        json={
+            "category": "financial_health_score",
+            "observed_at": "2026-08-01T00:00:00Z",
+            "payload": {"score": 850},
+        },
+    )
+    future = client.post(
+        "/api/profiles/APP-001/history",
+        json={
+            "category": "financial_health_score",
+            "observed_at": "2099-01-31T23:59:59Z",
+            "payload": {"score": 900},
+        },
+    )
+
+    assert first.status_code == 201
+    assert duplicate.status_code == 409
+    assert future.status_code == 422
+
+
 def test_migration_seeds_retention_and_cleanup_respects_category_months(monkeypatch):
     import migrate_profile_history as migration
 

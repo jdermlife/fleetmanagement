@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen, within } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
@@ -7,12 +7,27 @@ const { fetchAutosaveDraft } = vi.hoisted(() => ({
 const { authorization } = vi.hoisted(() => ({
   authorization: { isAdmin: true },
 }))
+const historyApi = vi.hoisted(() => ({
+  createProfileHistory: vi.fn(),
+  listProfileHistory: vi.fn(),
+}))
 
 vi.mock('../src/autosave/draftApi', () => ({
   fetchAutosaveDraft,
 }))
 vi.mock('../src/hooks/useAuthorization', () => ({
   useAuthorization: () => authorization,
+}))
+vi.mock('../src/api', () => ({
+  ...historyApi,
+  getErrorMessage: (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback,
+}))
+vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
+  useSelectedAnalysisEntity: () => ({
+    selectedApplicationNo: 'APP-001',
+    entityKey: 'APP-001',
+    isIdentityReady: true,
+  }),
 }))
 
 import FinancialHealthSummaryPage from '../src/pages/scoring/FinancialHealthSummaryPage'
@@ -26,6 +41,9 @@ describe('FinancialHealthSummaryPage', () => {
     authorization.isAdmin = true
     fetchAutosaveDraft.mockReset()
     fetchAutosaveDraft.mockResolvedValue(null)
+    historyApi.createProfileHistory.mockReset()
+    historyApi.listProfileHistory.mockReset()
+    historyApi.listProfileHistory.mockResolvedValue({ items: [], total: 0 })
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       clear: () => values.clear(),
@@ -44,9 +62,9 @@ describe('FinancialHealthSummaryPage', () => {
     const journeyItems = within(checklist).getAllByRole('listitem')
 
     expect(within(checklist).getByText('Financial Health', { selector: '.financial-health-journey-hub span' })).toBeTruthy()
-    expect(within(journeyItems[0]).getByRole('heading', { name: 'Create/Update Profile' })).toBeTruthy()
-    expect(within(journeyItems[0]).getByRole('button', { name: 'Create Profile' })).toBeTruthy()
-    expect(within(journeyItems[1]).getByRole('heading', { name: 'Credit Health' })).toBeTruthy()
+    expect(within(journeyItems[0]).getByRole('heading', { name: '1.Personalize' })).toBeTruthy()
+    expect(within(journeyItems[0]).getByRole('button', { name: 'Create / Update Profile' })).toBeTruthy()
+    expect(within(journeyItems[1]).getByRole('heading', { name: '2. Loan & Wealth Ready?' })).toBeTruthy()
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 
@@ -76,12 +94,12 @@ describe('FinancialHealthSummaryPage', () => {
     render(<FinancialHealthSummaryPage />)
 
     const computeBar = screen.getByRole('region', { name: 'Financial Health computation controls' })
-    const modelNote = within(computeBar).getByText('Default Financial Health model displayed')
-    const journeyButton = within(computeBar).getByRole('button', { name: 'Open Financial Health Journey' })
-    const computeButton = within(computeBar).getByRole('button', { name: 'Compute Latest Financial Health' })
+    const modelNote = within(computeBar).getByText(/Default Financial Health displayed/)
+    const journeyButton = within(computeBar).getByRole('button', { name: 'Financial Journey Guide' })
+    const computeButton = within(computeBar).getByRole('button', { name: 'Refresh Financial Health' })
 
     expect(modelNote.compareDocumentPosition(journeyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(journeyButton.compareDocumentPosition(computeButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(computeButton.compareDocumentPosition(journeyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
   it('shows APP identity and Step 8 financial amounts in thousands', async () => {
@@ -193,17 +211,16 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getAllByText('Excellent').length).toBeGreaterThan(0)
     expect(screen.getByText('84.2 × 10 = 842')).toBeTruthy()
-    expect(screen.getAllByRole('heading', { name: 'Credit Health' })).toHaveLength(4)
+    expect(screen.getAllByRole('heading', { name: 'Credit Health' })).toHaveLength(3)
     expect(screen.getByText('Awaiting a saved loan application draft to paint the leaf with live lending scores.')).toBeTruthy()
     const trendGraph = screen.getByRole('img', {
-      name: 'Five-period sample trend for Financial Health Score, Credit Health, and Wealth Building Score',
+      name: 'Monthly snapshot trend for Financial Health Score, Credit Health, and Wealth Building Score',
     })
     const trendPanel = screen.getByRole('heading', { name: 'Monthly Financial Health Trend' }).closest('article')
     expect(trendPanel).toBeTruthy()
-    expect(within(trendPanel as HTMLElement).getByText('Sample data')).toBeTruthy()
-    expect(trendGraph.querySelectorAll('[data-trend-series]')).toHaveLength(3)
-    expect(trendGraph.querySelectorAll('[data-trend-point]')).toHaveLength(15)
-    expect(within(trendGraph).getAllByText(/^(Apr|May|Jun|Jul|Aug)$/)).toHaveLength(5)
+    expect(within(trendPanel as HTMLElement).getByText('Saved snapshots')).toBeTruthy()
+    expect(trendGraph.querySelectorAll('[data-trend-series]')).toHaveLength(0)
+    expect(within(trendGraph).getByText('Save a monthly snapshot to begin the trend.')).toBeTruthy()
     expect(within(trendGraph).getByText('Financial Health Score')).toBeTruthy()
     expect(within(trendGraph).getByText('Credit Health')).toBeTruthy()
     expect(within(trendGraph).getByText('Wealth Building Score')).toBeTruthy()
@@ -258,10 +275,11 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Wealth Foundation Score' })).toBeNull()
     expect(screen.getAllByRole('progressbar')).toHaveLength(19)
 
-    const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
+    const insights = screen.getByRole('region', { name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities' })
     expect(within(insights).getByText('1. Financial Health Change')).toBeTruthy()
-    expect(within(insights).getByText('+0')).toBeTruthy()
-    expect(within(insights).getByText('No change in your financial health yet.')).toBeTruthy()
+    expect(within(insights).getAllByText('Pending').length).toBeGreaterThanOrEqual(2)
+    expect(within(insights).getByText('Save at least two monthly snapshots to compare financial health.')).toBeTruthy()
+    expect(within(insights).getByText('2. Financial Outcome')).toBeTruthy()
     expect(within(insights).queryByText(/PSA Household Income Classification/)).toBeNull()
     expect(within(insights).getByText('World Inequality Database Result: Bottom 60%', { selector: 'strong' })).toBeTruthy()
     expect(within(insights).getByText('Your household income is currently in the Bottom 50% in the Philippines.')).toBeTruthy()
@@ -269,14 +287,10 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText('Add your emergency fund and monthly expenses to check your resilience.')).toBeTruthy()
     expect(within(insights).getByText(/Wealth Health, Protection Health, Investment Health are below the 80-point target/)).toBeTruthy()
     expect(within(insights).getByText(/Focus on rebuilding Investment Health, Protection Health/)).toBeTruthy()
-    const benchmarkTable = screen.getByRole('region', { name: '2024 Pre-Tax Income Distribution Benchmark' })
-    expect(within(benchmarkTable).getAllByRole('row')).toHaveLength(8)
-    expect(within(benchmarkTable).getByRole('row', { name: /5 Philippines 14.35% 45.40% 16.62% 2024 1.0/ })).toBeTruthy()
-    expect(within(benchmarkTable).getByText(/Personal income or wealth percentiles require monetary threshold/)).toBeTruthy()
-    expect(within(insights).getByText('3. Financial Momentum')).toBeTruthy()
-    expect(within(insights).getByText('4. Financial Resilience')).toBeTruthy()
-    expect(within(insights).getByText('5. Risk Alerts')).toBeTruthy()
-    expect(within(insights).getByText('6. Opportunities')).toBeTruthy()
+    expect(within(insights).getByText('4. Financial Momentum')).toBeTruthy()
+    expect(within(insights).getByText('5. Financial Resilience')).toBeTruthy()
+    expect(within(insights).getByText('6. Risk Alerts')).toBeTruthy()
+    expect(within(insights).getByText('7. Opportunities')).toBeTruthy()
   })
 
   it('derives Philippine household benchmarks from Build Profile actuals', async () => {
@@ -300,7 +314,7 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    const insights = await screen.findByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
+    const insights = await screen.findByRole('region', { name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities' })
   expect(within(insights).queryByText(/PSA Household Income Classification/)).toBeNull()
   expect(await within(insights).findByText('World Inequality Database Result: Top 20%', { selector: 'strong' })).toBeTruthy()
     expect(within(insights).getByText('Your household income is currently in the Top 10% in the Philippines.')).toBeTruthy()
@@ -326,7 +340,7 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    const riskAlerts = (await screen.findByText('5. Risk Alerts')).closest('article')!
+    const riskAlerts = (await screen.findByText('6. Risk Alerts')).closest('article')!
     expect(within(riskAlerts).getByText(/Growth Equity Fund is outside your Conservative risk appetite/)).toBeTruthy()
     expect(within(riskAlerts).queryByText(/Treasury Bond is outside/)).toBeNull()
   })
@@ -347,7 +361,7 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    const riskAlerts = (await screen.findByText('5. Risk Alerts')).closest('article')!
+    const riskAlerts = (await screen.findByText('6. Risk Alerts')).closest('article')!
     expect(within(riskAlerts).getByText('All recorded investments are within your Aggressive risk appetite based on the Step 11 Suitability Assessment.')).toBeTruthy()
   })
 
@@ -451,11 +465,11 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    expect(await screen.findByText('Saved inputs are ready for review.')).toBeTruthy()
+    expect(await screen.findByText('Please refresh to compute the latest financial health.')).toBeTruthy()
     expect(screen.getByText('842', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getByText('91.0', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
 
-    fireEvent.click(screen.getByRole('button', { name: 'Compute Latest Financial Health' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Refresh Financial Health' }))
 
     expect(await screen.findByText('962', { selector: '.financial-health-ring-score strong' })).toBeTruthy()
     expect(screen.getByText('96.9', { selector: '.financial-health-summary-tile strong' })).toBeTruthy()
@@ -466,12 +480,99 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.queryByRole('heading', { name: 'Financial Health Summary Engine' })).toBeNull()
     expect(screen.queryByText('Wealth Foundation Engine')).toBeNull()
 
-    const insights = screen.getByRole('region', { name: 'Financial Health change, benchmarking, momentum, resilience, risks, and opportunities' })
-    expect(within(insights).getByText('+120')).toBeTruthy()
-    expect(within(insights).getByText(/Your financial health improved. The biggest gains came from/)).toBeTruthy()
+    const insights = screen.getByRole('region', { name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities' })
+    expect(within(insights).getByText('Save at least two monthly snapshots to compare financial health.')).toBeTruthy()
     expect(within(insights).getByText('Improving')).toBeTruthy()
     expect(within(insights).getByText('Improving for the last 12 months. Keep it up.')).toBeTruthy()
     expect(within(insights).getByText('17.6 months')).toBeTruthy()
     expect(within(insights).getByText('Your emergency fund can cover 17.6 months of expenses. You are in a resilient position.')).toBeTruthy()
+  })
+
+  it('compares persisted monthly snapshots and plots their actual values', async () => {
+    const snapshot = (id: number, reportingMonth: string, score: number, credit: number, wealth: number, netWorth: number) => ({
+      id,
+      application_no: 'APP-001',
+      category: 'financial_health_score',
+      observed_at: `${reportingMonth}-28T23:59:59Z`,
+      created_at: `${reportingMonth}-28T23:59:59Z`,
+      payload: {
+        schemaVersion: 1,
+        modelVersion: 'financial-health-v1',
+        reportingMonth,
+        score,
+        index: score / 10,
+        indicators: [
+          { id: 'credit', label: 'Credit Health', score: credit, weight: 15 },
+          { id: 'wealth', label: 'Wealth Health', score: wealth, weight: 13 },
+        ],
+        amounts: {
+          netWorth,
+          netIncome: reportingMonth === '2026-09' ? 110000 : 100000,
+          monthlyCashFlow: reportingMonth === '2026-09' ? 35000 : 25000,
+          totalAssets: netWorth + 200000,
+          totalLiabilities: 200000,
+        },
+      },
+    })
+    historyApi.listProfileHistory.mockResolvedValue({
+      items: [
+        snapshot(2, '2026-09', 880, 90, 84, 1300000),
+        snapshot(1, '2026-08', 840, 82, 78, 1200000),
+      ],
+      total: 2,
+    })
+
+    render(<FinancialHealthSummaryPage />)
+
+    const insights = await screen.findByRole('region', {
+      name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities',
+    })
+    expect(within(insights).getByText('+40')).toBeTruthy()
+    expect(within(insights).getByText('September 2026 vs August 2026')).toBeTruthy()
+    expect(within(insights).getByText('+₱100,000')).toBeTruthy()
+    expect(within(insights).getByText(/Net income \+₱10,000 · Monthly cash flow \+₱10,000/)).toBeTruthy()
+
+    const trend = screen.getByRole('img', {
+      name: 'Monthly snapshot trend for Financial Health Score, Credit Health, and Wealth Building Score',
+    })
+    await waitFor(() => expect(trend.querySelectorAll('[data-trend-series]')).toHaveLength(3))
+    expect(trend.querySelectorAll('[data-trend-point]')).toHaveLength(6)
+    expect(within(trend).getByText('Aug 26')).toBeTruthy()
+    expect(within(trend).getByText('Sep 26')).toBeTruthy()
+  })
+
+  it('saves the computed result as a typed monthly snapshot', async () => {
+    historyApi.createProfileHistory.mockImplementation(async (_applicationNo, request) => ({
+      id: 10,
+      application_no: 'APP-001',
+      category: request.category,
+      observed_at: request.observed_at,
+      payload: request.payload,
+      created_at: '2026-08-31T12:00:00Z',
+    }))
+    render(<FinancialHealthSummaryPage />)
+
+    const refresh = screen.getByRole('button', { name: 'Refresh Financial Health' })
+    await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
+    fireEvent.click(refresh)
+    const save = screen.getByRole('button', { name: 'Save Snapshot' })
+    expect((save as HTMLButtonElement).disabled).toBe(false)
+    fireEvent.click(save)
+
+    await waitFor(() => expect(historyApi.createProfileHistory).toHaveBeenCalledTimes(1))
+    expect(historyApi.createProfileHistory).toHaveBeenCalledWith(
+      'APP-001',
+      expect.objectContaining({
+        category: 'financial_health_score',
+        observed_at: '2026-08-31T23:59:59.999Z',
+        payload: expect.objectContaining({
+          schemaVersion: 1,
+          modelVersion: 'financial-health-v1',
+          reportingMonth: '2026-08',
+          score: 842,
+        }),
+      }),
+    )
+    expect(await screen.findByText('Snapshot saved as of August 2026.')).toBeTruthy()
   })
 })

@@ -1,6 +1,11 @@
 import type { CSSProperties } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
+import {
+  createProfileHistory,
+  getErrorMessage,
+  listProfileHistory,
+} from '../../api'
 import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
@@ -36,6 +41,14 @@ import {
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
 import { computePhilippineIncomeBenchmark, countryCodeFromCitizenship } from './widBenchmarkEngine'
+import {
+  buildFinancialHealthSnapshotPayload,
+  currentReportingMonth,
+  formatReportingMonth,
+  parseFinancialHealthSnapshot,
+  reportingMonthEnd,
+  type FinancialHealthSnapshot,
+} from './financialHealthSnapshots'
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -206,14 +219,6 @@ const RECOMMENDED_PRODUCTS: Record<string, RecommendedProduct> = {
   },
 }
 
-const SAMPLE_FINANCIAL_HEALTH_TREND: readonly FinancialHealthTrendPoint[] = [
-  { period: 'Apr', healthScore: 768, creditHealth: 79, wealthBuilding: 67 },
-  { period: 'May', healthScore: 784, creditHealth: 81, wealthBuilding: 70 },
-  { period: 'Jun', healthScore: 803, creditHealth: 84, wealthBuilding: 73 },
-  { period: 'Jul', healthScore: 821, creditHealth: 87, wealthBuilding: 76 },
-  { period: 'Aug', healthScore: 842, creditHealth: 91, wealthBuilding: 79 },
-]
-
 const FINANCIAL_HEALTH_TREND_SERIES: readonly FinancialHealthTrendSeries[] = [
   {
     id: 'healthScore',
@@ -263,10 +268,10 @@ function trendChartY(value: number): number {
   return TREND_CHART_BOTTOM - (clampScore(value) / 100) * (TREND_CHART_BOTTOM - TREND_CHART_TOP)
 }
 
-function trendSeriesPath(series: FinancialHealthTrendSeries): string {
-  return SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => {
+function trendSeriesPath(series: FinancialHealthTrendSeries, points: readonly FinancialHealthTrendPoint[]): string {
+  return points.map((point, index) => {
     const command = index === 0 ? 'M' : 'L'
-    return `${command}${trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)} ${trendChartY(series.plotValue(point))}`
+    return `${command}${trendChartX(index, points.length)} ${trendChartY(series.plotValue(point))}`
   }).join(' ')
 }
 
@@ -774,6 +779,12 @@ export default function FinancialHealthSummaryPage() {
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
+  const [snapshotMonth, setSnapshotMonth] = useState(() => currentReportingMonth())
+  const [financialHealthSnapshots, setFinancialHealthSnapshots] = useState<FinancialHealthSnapshot[]>([])
+  const [currentComparisonMonth, setCurrentComparisonMonth] = useState('')
+  const [baselineComparisonMonth, setBaselineComparisonMonth] = useState('')
+  const [snapshotMessage, setSnapshotMessage] = useState('')
+  const [isSavingSnapshot, setIsSavingSnapshot] = useState(false)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
   const [activePositionRingId, setActivePositionRingId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
@@ -930,6 +941,38 @@ export default function FinancialHealthSummaryPage() {
     }
   }, [entityKey, isIdentityReady, selectedApplicationNo])
 
+  useEffect(() => {
+    let disposed = false
+    if (!selectedApplicationNo) {
+      setFinancialHealthSnapshots([])
+      setCurrentComparisonMonth('')
+      setBaselineComparisonMonth('')
+      return
+    }
+
+    void listProfileHistory(selectedApplicationNo, 'financial_health_score', 100)
+      .then((history) => {
+        if (disposed) return
+        const snapshots = history.items
+          .map(parseFinancialHealthSnapshot)
+          .filter((snapshot): snapshot is FinancialHealthSnapshot => snapshot !== null)
+          .sort((left, right) => left.payload.reportingMonth.localeCompare(right.payload.reportingMonth))
+          .slice(-12)
+        setFinancialHealthSnapshots(snapshots)
+        const latest = snapshots[snapshots.length - 1]?.payload.reportingMonth ?? ''
+        const previous = snapshots[snapshots.length - 2]?.payload.reportingMonth ?? ''
+        setCurrentComparisonMonth(latest)
+        setBaselineComparisonMonth(previous)
+      })
+      .catch((error) => {
+        if (!disposed) setSnapshotMessage(getErrorMessage(error, 'Unable to load financial health snapshots.'))
+      })
+
+    return () => {
+      disposed = true
+    }
+  }, [selectedApplicationNo])
+
   const completedJourneyCount = useMemo(
     () => Object.values(journeyStepCompletion).filter(Boolean).length,
     [journeyStepCompletion],
@@ -976,6 +1019,40 @@ export default function FinancialHealthSummaryPage() {
     setSummaryComputedAt(new Date())
   }
 
+  const saveFinancialHealthSnapshot = async () => {
+    if (!selectedApplicationNo || !summaryComputedAt) return
+    setIsSavingSnapshot(true)
+    setSnapshotMessage('')
+    try {
+      const netWorthMetrics = netWorthBuildingScore?.metrics
+      const record = await createProfileHistory(selectedApplicationNo, {
+        category: 'financial_health_score',
+        observed_at: reportingMonthEnd(snapshotMonth),
+        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, publishedSummary, {
+          netWorth: netWorthMetrics?.netWorth ?? step8ProfileMetrics.actualNetWorth,
+          netIncome: step8ProfileMetrics.netIncome,
+          monthlyCashFlow: netWorthMetrics?.monthlyCashFlow ?? 0,
+          totalAssets: netWorthMetrics?.totalAssets ?? 0,
+          totalLiabilities: netWorthMetrics?.totalLiabilities ?? 0,
+        }),
+      })
+      const saved = parseFinancialHealthSnapshot(record)
+      if (saved) {
+        const snapshots = [...financialHealthSnapshots, saved]
+          .sort((left, right) => left.payload.reportingMonth.localeCompare(right.payload.reportingMonth))
+          .slice(-12)
+        setFinancialHealthSnapshots(snapshots)
+        setCurrentComparisonMonth(saved.payload.reportingMonth)
+        setBaselineComparisonMonth(snapshots[snapshots.length - 2]?.payload.reportingMonth ?? '')
+      }
+      setSnapshotMessage(`Snapshot saved as of ${formatReportingMonth(snapshotMonth)}.`)
+    } catch (error) {
+      setSnapshotMessage(getErrorMessage(error, 'Unable to save this financial health snapshot.'))
+    } finally {
+      setIsSavingSnapshot(false)
+    }
+  }
+
   const minimizeJourney = () => {
     if (doNotShowJourneyAgain) {
       safeStorageSet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY, '1')
@@ -1005,7 +1082,19 @@ export default function FinancialHealthSummaryPage() {
 
   const score = publishedSummary.score
   const band = getFinancialHealthBand(score)
-  const financialHealthChange = score - DEFAULT_FINANCIAL_HEALTH_SUMMARY.score
+  const currentComparisonSnapshot = financialHealthSnapshots.find(
+    (snapshot) => snapshot.payload.reportingMonth === currentComparisonMonth,
+  ) ?? null
+  const baselineComparisonSnapshot = financialHealthSnapshots.find(
+    (snapshot) => snapshot.payload.reportingMonth === baselineComparisonMonth,
+  ) ?? null
+  const hasDistinctComparisonPeriods = currentComparisonMonth !== baselineComparisonMonth
+  const snapshotMonthExists = financialHealthSnapshots.some(
+    (snapshot) => snapshot.payload.reportingMonth === snapshotMonth,
+  )
+  const financialHealthChange = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
+    ? currentComparisonSnapshot.payload.score - baselineComparisonSnapshot.payload.score
+    : null
   const philippineIncomeBenchmark = computePhilippineIncomeBenchmark(benchmarkContext.monthlyIncome * 12)
   const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
   const momentumLabel = !budgetHealthScore
@@ -1019,21 +1108,43 @@ export default function FinancialHealthSummaryPage() {
     ?? netWorthBuildingScore?.metrics.emergencyFundMonths
     ?? null
   const riskIndicators = financialHealthIndicators.filter((indicator) => indicator.score < 80)
-  const defaultIndicatorById = new Map(DEFAULT_FINANCIAL_HEALTH_SUMMARY.indicators.map((indicator) => [indicator.id, indicator]))
-  const changeContributors = financialHealthIndicators
+  const baselineIndicatorById = new Map(
+    baselineComparisonSnapshot?.payload.indicators.map((indicator) => [indicator.id, indicator]) ?? [],
+  )
+  const currentComparisonIndicators = currentComparisonSnapshot?.payload.indicators ?? []
+  const changeContributors = currentComparisonIndicators
     .map((indicator) => ({
       label: indicator.label,
-      change: indicator.score - (defaultIndicatorById.get(indicator.id)?.score ?? indicator.score),
-      weightedImpact: (indicator.score - (defaultIndicatorById.get(indicator.id)?.score ?? indicator.score)) * indicator.weight,
+      change: indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? indicator.score),
+      weightedImpact: (indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? indicator.score)) * indicator.weight,
     }))
-    .filter((indicator) => financialHealthChange > 0 ? indicator.change > 0 : indicator.change < 0)
+    .filter((indicator) => (financialHealthChange ?? 0) > 0 ? indicator.change > 0 : indicator.change < 0)
     .sort((left, right) => Math.abs(right.weightedImpact) - Math.abs(left.weightedImpact))
     .slice(0, 3)
-  const changeNarration = financialHealthChange === 0
+  const comparisonLabel = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
+    ? `${formatReportingMonth(currentComparisonSnapshot.payload.reportingMonth)} vs ${formatReportingMonth(baselineComparisonSnapshot.payload.reportingMonth)}`
+    : ''
+  const changeNarration = financialHealthChange === null
+    ? 'Save at least two monthly snapshots to compare financial health.'
+    : financialHealthChange === 0
     ? 'No change in your financial health yet.'
     : financialHealthChange > 0
       ? `Your financial health improved. The biggest gains came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
       : `Your financial health declined. The biggest decreases came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
+  const financialOutcome = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
+    ? {
+        netWorth: currentComparisonSnapshot.payload.amounts.netWorth - baselineComparisonSnapshot.payload.amounts.netWorth,
+        netIncome: currentComparisonSnapshot.payload.amounts.netIncome - baselineComparisonSnapshot.payload.amounts.netIncome,
+        monthlyCashFlow: currentComparisonSnapshot.payload.amounts.monthlyCashFlow - baselineComparisonSnapshot.payload.amounts.monthlyCashFlow,
+      }
+    : null
+  const financialHealthTrend = financialHealthSnapshots.map((snapshot) => ({
+    period: new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' })
+      .format(new Date(`${snapshot.payload.reportingMonth}-01T00:00:00Z`)),
+    healthScore: snapshot.payload.score,
+    creditHealth: snapshot.payload.indicators.find((indicator) => indicator.id === 'credit')?.score ?? 0,
+    wealthBuilding: snapshot.payload.indicators.find((indicator) => indicator.id === 'wealth')?.score ?? 0,
+  }))
   const momentumNarration = !budgetHealthScore
     ? 'Add your monthly budget activity to see your financial momentum.'
     : momentumLabel === 'Improving'
@@ -1470,6 +1581,26 @@ export default function FinancialHealthSummaryPage() {
           Refresh  Financial Health
         </button>
 
+        <div className="financial-health-snapshot-save">
+          <label htmlFor="financial-health-snapshot-month">Snapshot as of</label>
+          <input
+            id="financial-health-snapshot-month"
+            type="month"
+            value={snapshotMonth}
+            max={currentReportingMonth()}
+            onChange={(event) => setSnapshotMonth(event.target.value)}
+          />
+          <button
+            type="button"
+            className="financial-health-journey-main-fab"
+            onClick={() => void saveFinancialHealthSnapshot()}
+            disabled={!summaryComputedAt || !selectedApplicationNo || isSavingSnapshot || !snapshotMonth || snapshotMonthExists}
+          >
+            {isSavingSnapshot ? 'Saving...' : 'Save Snapshot'}
+          </button>
+          {snapshotMonthExists ? <span>A snapshot already exists for this month.</span> : null}
+        </div>
+
         {isJourneyMinimized && !isJourneyDismissed ? (
           <button
             type="button"
@@ -1496,6 +1627,8 @@ export default function FinancialHealthSummaryPage() {
         
       </section>
 
+      {snapshotMessage ? <p className="status-message" role="status">{snapshotMessage}</p> : null}
+
       <section className="financial-health-profile-line" aria-label="Selected financial health profile">
         <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" />
         <article className="financial-health-summary-tile">
@@ -1515,36 +1648,70 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
-      <section className="financial-health-insight-grid" aria-label="Financial Health change, benchmarking, momentum, resilience, risks, and opportunities">
+      <section className="financial-health-comparison-controls" aria-label="Financial Health comparison periods">
+        <strong>Compare monthly snapshots</strong>
+        <label>
+          Current period
+          <select value={currentComparisonMonth} onChange={(event) => setCurrentComparisonMonth(event.target.value)}>
+            <option value="">Select month</option>
+            {[...financialHealthSnapshots].reverse().map((snapshot) => (
+              <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === baselineComparisonMonth}>
+                {formatReportingMonth(snapshot.payload.reportingMonth)}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Compare with
+          <select value={baselineComparisonMonth} onChange={(event) => setBaselineComparisonMonth(event.target.value)}>
+            <option value="">Select month</option>
+            {[...financialHealthSnapshots].reverse().map((snapshot) => (
+              <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === currentComparisonMonth}>
+                {formatReportingMonth(snapshot.payload.reportingMonth)}
+              </option>
+            ))}
+          </select>
+        </label>
+      </section>
+
+      <section className="financial-health-insight-grid" aria-label="Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities">
         <article className="financial-health-insight-card">
           <span>1. Financial Health Change</span>
-          <strong>{financialHealthChange >= 0 ? '+' : ''}{financialHealthChange}</strong>
+          <strong>{financialHealthChange === null ? 'Pending' : `${financialHealthChange >= 0 ? '+' : ''}${financialHealthChange}`}</strong>
+          {comparisonLabel ? <small>{comparisonLabel}</small> : null}
           <small>{changeNarration}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>2. Benchmarking</span>
+          <span>2. Financial Outcome</span>
+          <strong>{financialOutcome ? `${financialOutcome.netWorth >= 0 ? '+' : ''}${formatCurrency(financialOutcome.netWorth, benchmarkContext.currency)}` : 'Pending'}</strong>
+          <small>{financialOutcome
+            ? `Net income ${financialOutcome.netIncome >= 0 ? '+' : ''}${formatCurrency(financialOutcome.netIncome, benchmarkContext.currency)} · Monthly cash flow ${financialOutcome.monthlyCashFlow >= 0 ? '+' : ''}${formatCurrency(financialOutcome.monthlyCashFlow, benchmarkContext.currency)}`
+            : 'Save at least two monthly snapshots to compare financial outcomes.'}</small>
+        </article>
+        <article className="financial-health-insight-card">
+          <span>3. Benchmarking</span>
           <strong>World Inequality Database Result: {philippineIncomeBenchmark.globalRank}</strong>
           <small hidden>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
           <small>{philippineIncomeBenchmark.interpretation} · Monthly household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.monthlyIncome)} · Annual household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.annualIncome)} · Dependents {benchmarkContext.dependents} · Net worth {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(benchmarkContext.netWorth)}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>3. Financial Momentum</span>
+          <span>4. Financial Momentum</span>
           <strong>{momentumLabel}</strong>
           <small>{momentumNarration}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>4. Financial Resilience</span>
+          <span>5. Financial Resilience</span>
           <strong>{resilienceMonths === null ? 'Pending' : `${resilienceMonths.toFixed(1)} months`}</strong>
           <small>{resilienceNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-alert">
-          <span>5. Risk Alerts</span>
+          <span>6. Risk Alerts</span>
           <strong>{riskIndicators.length + investmentRiskAlertCount}</strong>
           <small>{riskNarration}</small>
           <small>{investmentRiskNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-opportunity">
-          <span>6. Opportunities</span>
+          <span>7. Opportunities</span>
           <strong>{opportunityIndicators.length}</strong>
           <small>{opportunityNarration}</small>
         </article>
@@ -1815,21 +1982,24 @@ export default function FinancialHealthSummaryPage() {
           <article className="psychometric-panel financial-health-trend-panel" aria-labelledby="financial-health-trend-title">
             <div className="psychometric-panel-header">
               <div>
-                <span className="psychometric-panel-kicker">Five-period trend</span>
+                <span className="psychometric-panel-kicker">Up to 12 monthly snapshots</span>
                 <h2 id="financial-health-trend-title">Monthly Financial Health Trend</h2>
                 <p className="financial-health-panel-intro">
-                  Sample monthly history for overall health, credit health, and wealth building.
+                  Published monthly history for overall health, credit health, and wealth building.
                 </p>
               </div>
-              <span className="financial-health-sample-chip">Sample data</span>
+              <span className="financial-health-sample-chip">Saved snapshots</span>
             </div>
 
             <figure
               className="financial-health-trend-figure"
               role="img"
-              aria-label="Five-period sample trend for Financial Health Score, Credit Health, and Wealth Building Score"
+              aria-label="Monthly snapshot trend for Financial Health Score, Credit Health, and Wealth Building Score"
             >
               <div className="financial-health-trend-scroll">
+                {financialHealthTrend.length === 0 ? (
+                  <p className="status-message">Save a monthly snapshot to begin the trend.</p>
+                ) : (
                 <svg viewBox={`0 0 ${TREND_CHART_WIDTH} ${TREND_CHART_HEIGHT}`} aria-hidden="true">
                   {[0, 20, 40, 60, 80, 100].map((tick) => {
                     const y = trendChartY(tick)
@@ -1851,22 +2021,22 @@ export default function FinancialHealthSummaryPage() {
                     <g key={series.id} data-trend-series={series.id}>
                       <path
                         className="financial-health-trend-line"
-                        d={trendSeriesPath(series)}
+                        d={trendSeriesPath(series, financialHealthTrend)}
                         stroke={series.color}
                       />
-                      {SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => (
+                      {financialHealthTrend.map((point, index) => (
                         <g key={point.period}>
                           <circle
                             className="financial-health-trend-point"
                             data-trend-point={point.period}
-                            cx={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                            cx={trendChartX(index, financialHealthTrend.length)}
                             cy={trendChartY(series.plotValue(point))}
                             r="5"
                             stroke={series.color}
                           />
                           <text
                             className="financial-health-trend-value"
-                            x={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                            x={trendChartX(index, financialHealthTrend.length)}
                             y={trendChartY(series.plotValue(point)) - 10}
                             textAnchor="middle"
                             fill={series.color}
@@ -1878,11 +2048,11 @@ export default function FinancialHealthSummaryPage() {
                     </g>
                   ))}
 
-                  {SAMPLE_FINANCIAL_HEALTH_TREND.map((point, index) => (
+                  {financialHealthTrend.map((point, index) => (
                     <text
                       key={point.period}
                       className="financial-health-trend-period"
-                      x={trendChartX(index, SAMPLE_FINANCIAL_HEALTH_TREND.length)}
+                      x={trendChartX(index, financialHealthTrend.length)}
                       y="270"
                       textAnchor="middle"
                     >
@@ -1890,6 +2060,7 @@ export default function FinancialHealthSummaryPage() {
                     </text>
                   ))}
                 </svg>
+                )}
               </div>
 
               <figcaption className="financial-health-trend-legend">

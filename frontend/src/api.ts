@@ -33,6 +33,60 @@ export const api = axios.create({
   },
 })
 
+export type ProfileHistoryCategory =
+  | 'budget_snapshot'
+  | 'net_worth_snapshot'
+  | 'wealth_building_score'
+  | 'financial_health_score'
+  | 'credit_health_score'
+  | 'bill_payment'
+  | 'loan_monitoring'
+  | 'goal_tracking'
+  | 'ai_recommendation'
+  | 'certification'
+  | 'risk_assessment'
+
+export interface ProfileHistoryRecord {
+  id: number
+  application_no: string
+  category: ProfileHistoryCategory
+  observed_at: string
+  payload: unknown
+  created_at: string
+}
+
+export interface ProfileHistoryList {
+  items: ProfileHistoryRecord[]
+  total: number
+}
+
+export async function listProfileHistory(
+  applicationNo: string,
+  category?: ProfileHistoryCategory,
+  limit = 100,
+): Promise<ProfileHistoryList> {
+  const response = await api.get<ProfileHistoryList>(
+    `/api/profiles/${encodeURIComponent(applicationNo)}/history`,
+    { params: { category, limit } },
+  )
+  return response.data
+}
+
+export async function createProfileHistory(
+  applicationNo: string,
+  payload: {
+    category: ProfileHistoryCategory
+    observed_at: string
+    payload: unknown
+  },
+): Promise<ProfileHistoryRecord> {
+  const response = await api.post<ProfileHistoryRecord>(
+    `/api/profiles/${encodeURIComponent(applicationNo)}/history`,
+    payload,
+  )
+  return response.data
+}
+
 function setActiveApiBaseUrl(url: string): void {
   if (activeApiBaseUrl === url) {
     apiBaseUrlResolved = true

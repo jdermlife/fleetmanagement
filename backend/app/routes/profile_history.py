@@ -24,6 +24,12 @@ def _normalize_datetime(value: datetime) -> datetime:
     return value
 
 
+def _next_month(value: datetime) -> datetime:
+    if value.month == 12:
+        return value.replace(year=value.year + 1, month=1, day=1)
+    return value.replace(month=value.month + 1, day=1)
+
+
 def _response(snapshot: ProfileHistory, application_no: str) -> ProfileHistoryResponse:
     return ProfileHistoryResponse(
         id=snapshot.id,
@@ -62,11 +68,41 @@ def create_profile_history(
             detail="Profile does not have an owner",
         )
 
+    observed_at = _normalize_datetime(payload.observed_at)
+    if payload.category == HistoryCategory.FINANCIAL_HEALTH_SCORE:
+        month_start = observed_at.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+        current_month_start = datetime.now(timezone.utc).replace(
+            day=1,
+            hour=0,
+            minute=0,
+            second=0,
+            microsecond=0,
+        )
+        if month_start > current_month_start:
+            raise HTTPException(
+                status_code=422,
+                detail="Financial health snapshot month cannot be in the future",
+            )
+        existing = _profile_query(
+            db,
+            application_id=application.id,
+            owner_id=owner_id,
+        ).filter(
+            ProfileHistory.category == HistoryCategory.FINANCIAL_HEALTH_SCORE.value,
+            ProfileHistory.observed_at >= month_start,
+            ProfileHistory.observed_at < _next_month(month_start),
+        ).first()
+        if existing is not None:
+            raise HTTPException(
+                status_code=status.HTTP_409_CONFLICT,
+                detail="A financial health snapshot already exists for this month",
+            )
+
     snapshot = ProfileHistory(
         owner_id=owner_id,
         loan_application_id=application.id,
         category=payload.category.value,
-        observed_at=_normalize_datetime(payload.observed_at),
+        observed_at=observed_at,
         payload=payload.payload,
         created_by=user.id,
     )

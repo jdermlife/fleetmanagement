@@ -94,8 +94,18 @@ export const financialHealthMetricSources: readonly FinancialHealthMetricSource[
   },
   {
     label: 'Financial Health Change',
-    source: 'Current published score and default model score',
-    formula: 'current Financial Health score - default score (842)',
+    source: 'Two selected published monthly financial health snapshots',
+    formula: 'current-period Financial Health score - comparison-period Financial Health score',
+  },
+  {
+    label: 'Financial Outcome',
+    source: 'Financial amounts stored with the two selected monthly snapshots',
+    formula: 'current-period amount - comparison-period amount for net worth, net income, and monthly cash flow',
+  },
+  {
+    label: 'Monthly Financial Health Trend',
+    source: 'Up to 12 published monthly financial health snapshots',
+    formula: 'plot each saved overall, credit, and wealth score in reporting-month order',
   },
   {
     label: 'Benchmarking',
