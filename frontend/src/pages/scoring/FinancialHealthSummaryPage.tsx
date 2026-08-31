@@ -264,7 +264,7 @@ function trendSeriesPath(series: FinancialHealthTrendSeries): string {
 const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   {
     id: 'createProfile',
-    label: '1.Personalize Your Experience',
+    label: '1.Personalize',
     launchLabel: 'Create / Update Profile',
     route: '/build-profile',
     description:
@@ -272,7 +272,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'creditHealth',
-    label: '2.  Can your credit opens opportunity ?',
+    label: '2.  Loan & Wealth Ready?',
     launchLabel: 'Launch Credit Health',
     route: '/lending-scorecard',
     description:
@@ -280,7 +280,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'wealthBuilder',
-    label: '3. Are you managing your wealth well?',
+    label: '3. Growth Ready?',
     launchLabel: 'Launch Wealth Builder',
     route: '/net-worth-positioning',
     description:
@@ -288,7 +288,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'budgetTargets',
-    label: '4. Can you keep your budget on track?',
+    label: '4. Budget Ready?',
     launchLabel: 'Budget & Expense Tracker',
     route: '/budget-expense-tracker',
     description:
@@ -296,7 +296,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billsLoans',
-    label: '5. Are you making the most of your resources',
+    label: '5. Resource Ready?',
     launchLabel: 'Resource Optimizer',
     route: '/loan-monitoring',
     description:
@@ -304,7 +304,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
   {
     id: 'billManager',
-    label: '6. Ready to simplify your payments?',
+    label: '6. Bill Managed Ready?',
     launchLabel: 'Manage Bills',
     route: '/bill-reminder',
     description:
@@ -1397,11 +1397,11 @@ export default function FinancialHealthSummaryPage() {
         
         <button
           type="button"
-          className="psychometric-reset-button financial-health-compute-button"
+          className="financial-health-journey-fab"
           onClick={computeLatestFinancialHealth}
           disabled={!summaryInputsLoaded}
         >
-          Refresh and Compute Latest Financial Health
+          Refresh  Financial Health
         </button>
 
         {isJourneyMinimized && !isJourneyDismissed ? (
@@ -1410,7 +1410,7 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-            Open / Update Profile
+            Create / Update Profile
           </button>
           
           
@@ -1421,7 +1421,7 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-             Open Guide
+             Financial Journey Guide
           </button>
           
           
@@ -1976,23 +1976,7 @@ export default function FinancialHealthSummaryPage() {
         </div>
 
         <aside className="financial-health-side-stack">
-          <article className="psychometric-panel financial-health-formula-panel">
-            <span className="psychometric-panel-kicker">Health Score Formula</span>
-            <h2>Transparent weighted index</h2>
-            <p>
-              Give more influence to recurring liquidity, payment behavior, and goal progress while
-              keeping every financial vital represented.
-            </p>
-            <div className="financial-health-equation">
-              <span>Σ (indicator score × weight)</span>
-              <strong>{index.toFixed(1)} × 10 = {score}</strong>
-              <small>Weights total 100%</small>
-            </div>
-            <p className="financial-health-method-note">
-              Recommended as a transparent wellness index. Calibrate weights against real outcomes
-              before using it for credit decisions. Model FHI v1.0 does not reweight missing data.
-            </p>
-          </article>
+
 
           <article className="psychometric-panel financial-health-band-panel">
             <span className="psychometric-panel-kicker">Interpretation</span>
@@ -2034,6 +2018,27 @@ export default function FinancialHealthSummaryPage() {
               <li><strong>Trend lines</strong> once three or more reporting periods exist.</li>
             </ul>
           </article>
+
+          <article className="psychometric-panel financial-health-formula-panel">
+            <span className="psychometric-panel-kicker">Health Score Formula</span>
+            <h2>Transparent weighted index</h2>
+            <p>
+              Give more influence to recurring liquidity, payment behavior, and goal progress while
+              keeping every financial vital represented.
+            </p>
+            <div className="financial-health-equation">
+              <span>Σ (indicator score × weight)</span>
+              <strong>{index.toFixed(1)} × 10 = {score}</strong>
+              <small>Weights total 100%</small>
+            </div>
+            <p className="financial-health-method-note">
+              Recommended as a transparent wellness index. Calibrate weights against real outcomes
+              before using it for credit decisions. Algo is intended for guidance only.
+            </p>
+          </article>
+
+
+
         </aside>
       </section>
 
