@@ -1421,19 +1421,12 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-             Open Financial Health Journey Guide
+             Open Guide
           </button>
           
           
         ) : null}
-        <button
-          type="button"
-          className="psychometric-reset-button financial-health-compute-button"
-          onClick={computeLatestFinancialHealth}
-          disabled={!summaryInputsLoaded}
-        >
-          Refresh and Compute Latest Financial Health
-        </button>
+     
         
       </section>
 
