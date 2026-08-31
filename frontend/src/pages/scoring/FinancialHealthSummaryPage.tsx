@@ -1393,13 +1393,24 @@ export default function FinancialHealthSummaryPage() {
                 : 'Checking saved inputs...'}
           </span>
         </div>
+
+        
+        <button
+          type="button"
+          className="psychometric-reset-button financial-health-compute-button"
+          onClick={computeLatestFinancialHealth}
+          disabled={!summaryInputsLoaded}
+        >
+          Refresh and Compute Latest Financial Health
+        </button>
+
         {isJourneyMinimized && !isJourneyDismissed ? (
           <button
             type="button"
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-            Open Financial Health Journey 
+            Open / Update Profile
           </button>
           
           
@@ -1410,7 +1421,7 @@ export default function FinancialHealthSummaryPage() {
             className="financial-health-journey-fab"
             onClick={openJourney}
           >
-            Open Financial Health Journey 
+             Open Financial Health Journey Guide
           </button>
           
           
