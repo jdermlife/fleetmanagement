@@ -114,6 +114,60 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(profileLine).getByText('750k')).toBeTruthy()
   })
 
+  it('shows saved-data recommendations for each Financial Position ring', async () => {
+    fetchAutosaveDraft.mockImplementation((scope: string) => Promise.resolve(
+      scope === 'net-worth-positioning'
+        ? {
+            payload: {
+              amounts: {
+                'asset-savings-account': 500000,
+                'liability-personal-loan': 100000,
+                'income-salary': 100000,
+                'expense-housing': 60000,
+              },
+              selectedFinancialGoal: 'Grow net worth',
+              targetAmount: 1000000,
+              targetMonths: 12,
+            },
+          }
+        : scope === 'loan-application'
+          ? {
+              payload: {
+                formData: {
+                  borrower: { govId: 'ID-123' },
+                  employment: { monthlyIncome: 100000, debtObligations: 5000 },
+                  loan: { amount: 120000, interestRate: 0, termMonths: 12 },
+                  documents: [{ status: 'Parsed' }, { status: 'Pending' }],
+                },
+              },
+            }
+          : null,
+    ))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const rings = await screen.findByRole('region', { name: 'Financial Position Rings' })
+    const cashFlowRing = within(rings).getByRole('progressbar', { name: /Cash Flow Position Ring/ })
+    fireEvent.mouseEnter(cashFlowRing)
+    expect(screen.getByRole('tooltip').textContent).toContain('saved monthly surplus is ₱40,000')
+    expect(screen.getByRole('tooltip').textContent).toContain('40.0% of income')
+    fireEvent.mouseLeave(cashFlowRing)
+
+    const creditRing = within(rings).getByRole('progressbar', { name: /Credit Health Ring/ })
+    fireEvent.focus(creditRing)
+    expect(screen.getByRole('tooltip').textContent).toContain('₱100,000 in monthly income')
+    expect(screen.getByRole('tooltip').textContent).toContain('₱15,000 in monthly debt commitments')
+    expect(screen.getByRole('tooltip').textContent).toContain('Complete verification for 1 outstanding document')
+    fireEvent.blur(creditRing)
+
+    const netWorthRing = within(rings).getByRole('progressbar', { name: /Net Worth Growth Ring/ })
+    fireEvent.mouseEnter(netWorthRing)
+    const recommendation = screen.getByRole('tooltip')
+    expect(recommendation.textContent).toContain('saved net worth is ₱400,000')
+    expect(recommendation.textContent).toContain('projected goal-date net worth of ₱880,000')
+    expect(recommendation.textContent).not.toMatch(/formula|threshold|weight|scoring rule/i)
+  })
+
   it('places profile product recommendations between summary metrics and health indicators', () => {
     render(<FinancialHealthSummaryPage />)
 

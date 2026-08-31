@@ -12463,6 +12463,7 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-position-ring-card {
+  position: relative;
   container-type: inline-size;
   min-width: 0;
   display: flex;
@@ -12482,6 +12483,56 @@ th { color: var(--dark-gold); }
   height: auto;
   aspect-ratio: 1;
   flex: 0 1 104px;
+}
+
+.financial-health-position-ring-trigger {
+  border-radius: 50%;
+  cursor: help;
+  outline: none;
+}
+
+.financial-health-position-ring-trigger:focus-visible {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--health-accent) 28%, transparent);
+}
+
+.financial-health-position-popover {
+  position: absolute;
+  z-index: 20;
+  left: 12px;
+  bottom: calc(100% + 10px);
+  width: min(340px, calc(100vw - 48px));
+  padding: 13px 14px;
+  border: 1px solid rgba(15, 23, 42, 0.14);
+  border-top: 3px solid var(--health-accent);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 14px 32px rgba(15, 23, 42, 0.16);
+  color: var(--financial-health-ink);
+}
+
+.financial-health-position-popover::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50px;
+  border: 7px solid transparent;
+  border-top-color: #ffffff;
+}
+
+.financial-health-position-popover > strong,
+.financial-health-position-popover > b {
+  font-size: 0.82rem;
+}
+
+.financial-health-position-popover p,
+.financial-health-position-popover ul {
+  margin: 7px 0 0;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.financial-health-position-popover ul {
+  padding-left: 18px;
 }
 
 .financial-health-position-ring svg {

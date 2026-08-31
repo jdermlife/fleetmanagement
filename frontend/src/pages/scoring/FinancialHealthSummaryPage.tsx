@@ -47,6 +47,15 @@ type LendingLeafScores = {
   psychometricScore: number | null
   socialScore: number | null
   nonStarterScore: number | null
+  monthlyIncome: number
+  monthlyDebtCommitments: number
+  parsedDocumentCount: number
+  totalDocumentCount: number
+}
+
+type PositionRingRecommendation = {
+  summary: string
+  actions: string[]
 }
 
 type LendingLeafSegment = {
@@ -679,6 +688,10 @@ function deriveLendingLeafScores(payload: unknown): LendingLeafScores | null {
     psychometricScore,
     socialScore,
     nonStarterScore,
+    monthlyIncome: totalIncome,
+    monthlyDebtCommitments: totalExistingDebt + monthlyPayment,
+    parsedDocumentCount: parsedDocsCount,
+    totalDocumentCount: documents.length,
   }
 }
 
@@ -699,6 +712,14 @@ function resolveStep8ProfileMetrics(values: Record<string, string>): Step8Profil
 
 function formatThousands(value: number): string {
   return `${new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value / 1000)}k`
+}
+
+function formatCurrency(value: number, currency: string): string {
+  return new Intl.NumberFormat('en-PH', {
+    style: 'currency',
+    currency,
+    maximumFractionDigits: 0,
+  }).format(value)
 }
 
 function resolveInvestmentSuitabilityRisk(
@@ -754,6 +775,7 @@ export default function FinancialHealthSummaryPage() {
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
+  const [activePositionRingId, setActivePositionRingId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
   const [activeJourneyDetailId, setActiveJourneyDetailId] = useState<JourneyDetailId | null>(null)
   const [benchmarkContext, setBenchmarkContext] = useState<BenchmarkContext>({
@@ -1050,6 +1072,49 @@ export default function FinancialHealthSummaryPage() {
   const priorityIndicator = financialHealthIndicators.reduce((priority, indicator) =>
     indicator.score < priority.score ? indicator : priority,
   )
+  const netWorthMetrics = netWorthBuildingScore?.metrics
+  const positionRecommendations: Record<string, PositionRingRecommendation> = {
+    'cash-flow': netWorthMetrics
+      ? {
+          summary: netWorthMetrics.monthlyCashFlow >= 0
+            ? `Your saved monthly surplus is ${formatCurrency(netWorthMetrics.monthlyCashFlow, benchmarkContext.currency)}, or ${netWorthMetrics.savingsRatePercent.toFixed(1)}% of income.`
+            : `Your saved monthly expenses exceed income by ${formatCurrency(Math.abs(netWorthMetrics.monthlyCashFlow), benchmarkContext.currency)}.`,
+          actions: netWorthMetrics.monthlyIncome <= 0
+            ? ['Add your recurring income and expense records.', 'Review these amounts monthly so the guidance stays current.']
+            : netWorthMetrics.monthlyCashFlow <= 0
+              ? ['Reduce recurring expenses until monthly cash flow is positive.', 'Direct new or irregular income toward a dependable monthly reserve.']
+              : ['Increase the amount retained each month by trimming recurring costs or growing reliable income.', 'Automate transfers from each income payment into savings and investments.'],
+        }
+      : {
+          summary: 'No saved cash-flow details are available yet.',
+          actions: ['Add recurring income and expenses in Net Worth Positioning.', 'Refresh Financial Health after saving your information.'],
+        },
+    credit: lendingLeafScores
+      ? {
+          summary: `Your saved profile shows ${formatCurrency(lendingLeafScores.monthlyIncome, benchmarkContext.currency)} in monthly income and ${formatCurrency(lendingLeafScores.monthlyDebtCommitments, benchmarkContext.currency)} in monthly debt commitments.`,
+          actions: [
+            'Pay every obligation on time and reduce revolving or high-cost balances.',
+            lendingLeafScores.totalDocumentCount > 0 && lendingLeafScores.parsedDocumentCount < lendingLeafScores.totalDocumentCount
+              ? `Complete verification for ${lendingLeafScores.totalDocumentCount - lendingLeafScores.parsedDocumentCount} outstanding document${lendingLeafScores.totalDocumentCount - lendingLeafScores.parsedDocumentCount === 1 ? '' : 's'}.`
+              : 'Keep identification, address, employment, income, and banking records current.',
+          ],
+        }
+      : {
+          summary: 'No saved credit application details are available yet.',
+          actions: ['Complete your loan and credit profile.', 'Add current income, debt, identity, address, employment, and supporting documents.'],
+        },
+    goal: netWorthMetrics
+      ? {
+          summary: `Your saved net worth is ${formatCurrency(netWorthMetrics.netWorth, benchmarkContext.currency)}, with projected goal-date net worth of ${formatCurrency(netWorthMetrics.projectedNetWorthAtGoalDate, benchmarkContext.currency)}.`,
+          actions: netWorthMetrics.goalProgressPercent > 0
+            ? ['Increase monthly contributions toward your saved net-worth goal.', 'Reduce liabilities and add consistently to assets that support long-term growth.']
+            : ['Add a target amount and target date to your saved net-worth goal.', 'Build monthly surplus, reduce liabilities, and contribute consistently to long-term assets.'],
+        }
+      : {
+          summary: 'No saved net-worth goal details are available yet.',
+          actions: ['Record your assets and liabilities.', 'Add a net-worth target, target date, and regular contribution plan.'],
+        },
+  }
   const positionRings = [
     {
       id: 'cash-flow',
@@ -1075,6 +1140,7 @@ export default function FinancialHealthSummaryPage() {
   ].map((ring) => ({
     ...ring,
     score: financialHealthIndicators.find((indicator) => indicator.id === ring.id)?.score ?? 0,
+    recommendation: positionRecommendations[ring.id],
   }))
   const leafSegments: LendingLeafSegment[] = [
     {
@@ -1458,7 +1524,7 @@ export default function FinancialHealthSummaryPage() {
         <article className="financial-health-insight-card">
           <span>2. Benchmarking</span>
           <strong>World Inequality Database Result: {philippineIncomeBenchmark.globalRank}</strong>
-          <small>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
+          <small hidden>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
           <small>{philippineIncomeBenchmark.interpretation} · Monthly household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.monthlyIncome)} · Annual household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.annualIncome)} · Dependents {benchmarkContext.dependents} · Net worth {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(benchmarkContext.netWorth)}</small>
         </article>
         <article className="financial-health-insight-card">
@@ -1528,12 +1594,18 @@ export default function FinancialHealthSummaryPage() {
               style={indicatorStyle(ring.accent, ring.softAccent)}
             >
               <div
-                className="financial-health-position-ring"
+                className="financial-health-position-ring financial-health-position-ring-trigger"
                 role="progressbar"
+                tabIndex={0}
                 aria-label={`${ring.label} Ring: ${ring.score} out of 100`}
+                aria-describedby={activePositionRingId === ring.id ? `financial-position-${ring.id}-recommendation` : undefined}
                 aria-valuemin={0}
                 aria-valuemax={100}
                 aria-valuenow={ring.score}
+                onMouseEnter={() => setActivePositionRingId(ring.id)}
+                onMouseLeave={() => setActivePositionRingId(null)}
+                onFocus={() => setActivePositionRingId(ring.id)}
+                onBlur={() => setActivePositionRingId(null)}
               >
                 <svg viewBox="0 0 100 100" aria-hidden="true">
                   <circle className="financial-health-mini-track" cx="50" cy="50" r="42" pathLength="100" />
@@ -1549,6 +1621,20 @@ export default function FinancialHealthSummaryPage() {
                 <strong>{ring.score}</strong>
                 <span>/ 100</span>
               </div>
+              {activePositionRingId === ring.id ? (
+                <aside
+                  id={`financial-position-${ring.id}-recommendation`}
+                  className="financial-health-position-popover"
+                  role="tooltip"
+                >
+                  <strong>{ring.label}: {ring.score}/100</strong>
+                  <p>{ring.recommendation.summary}</p>
+                  <b>To move toward 100/100:</b>
+                  <ul>
+                    {ring.recommendation.actions.map((action) => <li key={action}>{action}</li>)}
+                  </ul>
+                </aside>
+              ) : null}
               <div className="financial-health-position-ring-copy">
                 <h3>{ring.label}</h3>
                 <p>{ring.description}</p>
