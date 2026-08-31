@@ -11142,6 +11142,23 @@ th { color: var(--dark-gold); }
   cursor: pointer;
 }
 
+.financial-health-journey-main-fab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(184, 134, 11, 0.7);
+  background: #fde68a;
+  color: #008000;
+  border-radius: 999px;
+  min-height: 42px;
+  padding: 10px 16px;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.24);
+  cursor: pointer;
+}
+
+
 .credit-health-journey-modal {
   width: min(100%, 1040px);
 }

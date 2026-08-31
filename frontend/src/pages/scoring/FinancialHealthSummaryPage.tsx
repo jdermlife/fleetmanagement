@@ -1397,7 +1397,7 @@ export default function FinancialHealthSummaryPage() {
         
         <button
           type="button"
-          className="financial-health-journey-fab"
+          className="financial-health-journey-main-fab"
           onClick={computeLatestFinancialHealth}
           disabled={!summaryInputsLoaded}
         >
@@ -1407,7 +1407,7 @@ export default function FinancialHealthSummaryPage() {
         {isJourneyMinimized && !isJourneyDismissed ? (
           <button
             type="button"
-            className="financial-health-journey-fab"
+            className="financial-health-journey-main-fab"
             onClick={openJourney}
           >
             Create / Update Profile
@@ -1418,7 +1418,7 @@ export default function FinancialHealthSummaryPage() {
                 {isJourneyMinimized && !isJourneyDismissed ? (
           <button
             type="button"
-            className="financial-health-journey-fab"
+            className="financial-health-journey-main-fab"
             onClick={openJourney}
           >
              Financial Journey Guide
