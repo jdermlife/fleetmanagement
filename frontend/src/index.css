@@ -11148,8 +11148,8 @@ th { color: var(--dark-gold); }
   align-items: center;
   justify-content: center;
   border: 1px solid rgba(184, 134, 11, 0.7);
-  background: Black;
-  color: white;
+  background: #0C848D;
+  color: black;
   border-radius: 999px;
   min-height: 42px;
   padding: 10px 16px;
