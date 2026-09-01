@@ -111,10 +111,10 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     vi.resetModules()
   })
 
-  it('creates and approves the exact recurring subscription', async () => {
+  it('creates and captures the exact one-time PayPal order', async () => {
     let buttonOptions: {
-      createSubscription: () => Promise<string>
-      onApprove: (data: { subscriptionID?: string | null }) => Promise<void>
+      createOrder: () => Promise<string>
+      onApprove: (data: { orderID?: string | null }) => Promise<void>
     } | null = null
     const close = vi.fn()
     const buttons = vi.fn((options) => {
@@ -134,41 +134,45 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
 
-    let agreementId = ''
+    let orderId = ''
     await act(async () => {
-      agreementId = await buttonOptions!.createSubscription()
+      orderId = await buttonOptions!.createOrder()
     })
 
-    expect(agreementId).toBe('I-SUBSCRIPTION-123')
+    expect(orderId).toBe('ORDER-123')
     expect(apiMocks.createSubscription).toHaveBeenCalledTimes(1)
-    expect(apiMocks.createPayPalSubscription).toHaveBeenNthCalledWith(1, {
+    expect(apiMocks.createPayPalOrder).toHaveBeenNthCalledWith(1, {
       subscription_id: 99,
+      invoice_no: 'SUB-PRO-99',
       request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
     })
 
     await act(async () => {
-      await buttonOptions!.createSubscription()
+      await buttonOptions!.createOrder()
     })
-    expect(apiMocks.createPayPalSubscription.mock.calls[1][0].request_id).toBe(
-      apiMocks.createPayPalSubscription.mock.calls[0][0].request_id,
+    expect(apiMocks.createPayPalOrder.mock.calls[1][0].request_id).toBe(
+      apiMocks.createPayPalOrder.mock.calls[0][0].request_id,
     )
 
     await act(async () => {
-      await buttonOptions!.onApprove({ subscriptionID: agreementId })
+      await buttonOptions!.onApprove({ orderID: orderId })
     })
 
-    expect(apiMocks.capturePayPalOrder).not.toHaveBeenCalled()
-    expect(mockNavigate).toHaveBeenCalledWith('/payment-success?provider=paypal&recurring=true', { replace: true })
+    expect(apiMocks.capturePayPalOrder).toHaveBeenCalledWith({
+      order_id: 'ORDER-123',
+      subscription_id: 99,
+    })
+    expect(mockNavigate).toHaveBeenCalledWith('/payment-success?provider=paypal', { replace: true })
     expect(buttons).toHaveBeenCalledTimes(1)
 
     view.unmount()
     expect(close).toHaveBeenCalledTimes(1)
   })
 
-  it('rejects an approval callback for a different recurring subscription', async () => {
+  it('rejects an approval callback for a different PayPal order', async () => {
     let buttonOptions: {
-      createSubscription: () => Promise<string>
-      onApprove: (data: { subscriptionID?: string | null }) => Promise<void>
+      createOrder: () => Promise<string>
+      onApprove: (data: { orderID?: string | null }) => Promise<void>
     } | null = null
     window.paypal = {
       Buttons: vi.fn((options) => {
@@ -188,11 +192,11 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
 
     await waitFor(() => expect(buttonOptions).not.toBeNull())
     await act(async () => {
-      await buttonOptions!.createSubscription()
+      await buttonOptions!.createOrder()
     })
 
-    await expect(buttonOptions!.onApprove({ subscriptionID: 'I-DIFFERENT' })).rejects.toThrow(
-      'PayPal returned an unexpected subscription id',
+    await expect(buttonOptions!.onApprove({ orderID: 'ORDER-DIFFERENT' })).rejects.toThrow(
+      'PayPal returned an unexpected order id',
     )
     expect(apiMocks.capturePayPalOrder).not.toHaveBeenCalled()
   })

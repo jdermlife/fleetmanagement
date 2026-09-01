@@ -2,11 +2,12 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
+  capturePayPalOrder,
   capturePublicTrialPayPalOrder,
   createPublicTrialPayMongoCheckout,
   createPublicTrialPayPalOrder,
   createPayMongoSubscription,
-  createPayPalSubscription,
+  createPayPalOrder,
   createFreeSubscription,
   createSubscription,
   fetchCurrentUser,
@@ -175,7 +176,6 @@ export default function SubscriptionPaymentPage() {
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
-  const paypalRecurringContextRef = useRef<{ agreementId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
   const paypalStageRef = useRef<'create' | 'capture'>('create')
   const [guestAccountIdentifier, setGuestAccountIdentifier] = useState('')
@@ -364,7 +364,7 @@ export default function SubscriptionPaymentPage() {
 
     const renderPayPalButtons = async () => {
       try {
-        const paypal = await loadPayPalSdk(PAYPAL_CLIENT_ID, paypalCurrency, 'subscription')
+        const paypal = await loadPayPalSdk(PAYPAL_CLIENT_ID, paypalCurrency, 'order')
 
         if (cancelled || !paypalButtonContainerRef.current) {
           return
@@ -378,10 +378,10 @@ export default function SubscriptionPaymentPage() {
             label: 'paypal',
             tagline: false,
           },
-          createSubscription: async () => {
+          createOrder: async () => {
             paypalStageRef.current = 'create'
-            paypalRecurringContextRef.current = null
-            setPaymentMessage('Preparing your PayPal subscription...')
+            paypalCheckoutContextRef.current = null
+            setPaymentMessage('Creating a secure PayPal order...')
 
             const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
             if (!subscriptionForPayment) {
@@ -397,40 +397,45 @@ export default function SubscriptionPaymentPage() {
               subscriptionId: subscriptionForPayment.id,
             }
 
-            const recurring = await createPayPalSubscription({
+            const order = await createPayPalOrder({
               subscription_id: subscriptionForPayment.id,
+              invoice_no: subscriptionForPayment.subscription_no,
               request_id: requestId,
             })
 
-            paypalRecurringContextRef.current = {
-              agreementId: recurring.agreement_id,
+            paypalCheckoutContextRef.current = {
+              orderId: order.order_id,
               subscriptionId: subscriptionForPayment.id,
             }
-            return recurring.agreement_id
+            return order.order_id
           },
           onApprove: async (data) => {
             paypalStageRef.current = 'capture'
-            const agreementId = data.subscriptionID?.trim() ?? ''
-            if (!agreementId) {
-              throw new Error('PayPal did not return a subscription id.')
+            const orderId = data.orderID?.trim() ?? ''
+            if (!orderId) {
+              throw new Error('PayPal did not return an order id.')
             }
 
-            const recurringContext = paypalRecurringContextRef.current
-            if (!recurringContext || recurringContext.agreementId !== agreementId) {
-              throw new Error('PayPal returned an unexpected subscription id. Restart approval and try again.')
+            const checkoutContext = paypalCheckoutContextRef.current
+            if (!checkoutContext || checkoutContext.orderId !== orderId) {
+              throw new Error('PayPal returned an unexpected order id. Restart approval and try again.')
             }
 
-            setPaymentMessage('PayPal subscription approved. Your first charge is scheduled after the two-day trial.')
-            paypalRecurringContextRef.current = null
+            setPaymentMessage('PayPal approved the order. Finalizing payment...')
+            await capturePayPalOrder({
+              order_id: orderId,
+              subscription_id: checkoutContext.subscriptionId,
+            })
+            paypalCheckoutContextRef.current = null
             paypalRequestContextRef.current = null
-            navigate('/payment-success?provider=paypal&recurring=true', { replace: true })
+            navigate('/payment-success?provider=paypal', { replace: true })
           },
           onCancel: () => {
-            paypalRecurringContextRef.current = null
-            setPaymentMessage('PayPal subscription approval was cancelled. You can start again anytime.')
+            paypalCheckoutContextRef.current = null
+            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
           },
           onError: (error) => {
-            paypalRecurringContextRef.current = null
+            paypalCheckoutContextRef.current = null
             const fallback = error instanceof Error ? error.message : 'Unable to process PayPal checkout right now.'
             setPaymentMessage(formatPayPalGatewayError(fallback, paypalStageRef.current))
           },
@@ -451,7 +456,7 @@ export default function SubscriptionPaymentPage() {
 
     return () => {
       cancelled = true
-      paypalRecurringContextRef.current = null
+      paypalCheckoutContextRef.current = null
       void Promise.resolve(buttons?.close?.()).catch(() => undefined)
       container.replaceChildren()
     }
