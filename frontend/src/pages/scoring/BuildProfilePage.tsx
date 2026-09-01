@@ -175,27 +175,27 @@ const WORKFLOW_STEPS: Array<{ id: ProfileStep; label: string; description: strin
 
 const STEP_FIELDS: Record<Exclude<ProfileStep, 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12>, FieldDefinition[]> = {
   1: [
-    { key: 'fullName', label: 'Full Name (*Dummy Data Acceptable)' },
-    { key: 'email', label: 'Email Address*', type: 'email' },
-    { key: 'mobileNumber', label: 'Mobile Number*', type: 'tel' },
-    { key: 'dateOfBirth', label: 'Date of Birth (*Dummy Data Acceptable)', type: 'date' },
+    { key: 'fullName', label: 'Full Name' },
+    { key: 'email', label: 'Email Address', type: 'email' },
+    { key: 'mobileNumber', label: 'Mobile Number', type: 'tel' },
+    { key: 'dateOfBirth', label: 'Date of Birth (Optional)', type: 'date' },
     { key: 'age', label: 'Age', type: 'number', readOnly: true },
-    { key: 'governmentId', label: 'Government ID Number*' },
-    { key: 'placeOfBirth', label: 'Place of Birth*' },
+    { key: 'governmentId', label: 'Government ID Number (Optional)' },
+    { key: 'placeOfBirth', label: 'Place of Birth (Optional)' },
     { key: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Prefer not to say'] },
     { key: 'dependents', label: 'Number of Dependents', type: 'number' },
     { key: 'citizenship', label: 'Citizenship', type: 'select', options: ['Filipino', 'American', 'Australian', 'British', 'Canadian', 'Chinese', 'Indian', 'Indonesian', 'Japanese', 'Korean', 'Malaysian', 'Singaporean', 'Thai', 'Vietnamese', 'Dual Citizen', 'Other'] },
     { key: 'civilStatus', label: 'Civil Status', type: 'select', options: ['Single', 'Married', 'Divorced', 'Legally Separated'] },
-    { key: 'homePhoneNumber', label: 'Home Phone Number*', type: 'tel' },
-    { key: 'tin', label: 'TIN Number*' },
-    { key: 'sssGsis', label: 'SSS / GSIS Number*' },
-    { key: 'otherGovernmentId', label: 'Other Government ID Type*' },
-    { key: 'otherGovernmentIdNumber', label: 'Other Government ID Number*' },
-    { key: 'idIssueDate', label: 'ID Issue Date*', type: 'date' },
-    { key: 'idExpiryDate', label: 'ID Expiry Date', type: 'date' },
-    { key: 'address', label: 'Present Address', wide: true },
-    { key: 'permanentAddress', label: 'Permanent Address', wide: true },
-    { key: 'mailingAddress', label: 'Mailing Address(Semi-Dummy Data Acceptable)', wide: true },
+    { key: 'homePhoneNumber', label: 'Home Phone Number (Optional)', type: 'tel' },
+    { key: 'tin', label: 'TIN Number(Optional)' },
+    { key: 'sssGsis', label: 'SSS / GSIS Number (Optional)' },
+    { key: 'otherGovernmentId', label: 'Other Government ID Type (Optional)' },
+    { key: 'otherGovernmentIdNumber', label: 'Other Government ID Number (Optional)' },
+    { key: 'idIssueDate', label: 'ID Issue Date (Optional)', type: 'date' },
+    { key: 'idExpiryDate', label: 'ID Expiry Date (Optional)', type: 'date' },
+    { key: 'address', label: 'Present Address (Optional)', wide: true },
+    { key: 'permanentAddress', label: 'Permanent Address (Optional)', wide: true },
+    { key: 'mailingAddress', label: 'Mailing Address(Optional)', wide: true },
     { key: 'lengthOfStay', label: 'Length of Stay at Present Address' },
     { key: 'homeOwnership', label: 'Home Ownership', type: 'select', options: ['Own', 'Mortgaged', 'Renting', 'Living with Relative'] },
     { key: 'education', label: 'Educational Attainment', type: 'select', options: ['PHD', 'PostGraduate', 'College Degree', 'HighSchool'] },
@@ -2557,7 +2557,7 @@ export default function BuildProfilePage() {
 
   return <div className="psychometric-page lending-psychometric-page build-profile-page">
     <section className="psychometric-hero lending-psychometric-hero">
-      <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1>Create Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
+      <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1> Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
       <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}>
         <div className="build-profile-incomplete-activities">
           <span>Incomplete Activities</span>
