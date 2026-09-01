@@ -813,7 +813,8 @@ export default function FinancialHealthSummaryPage() {
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
-  const [snapshotMonth, setSnapshotMonth] = useState(() => currentReportingMonth())
+  const maxAllowedMonth = currentReportingMonth().slice(0, 7)
+  const [snapshotMonth, setSnapshotMonth] = useState(() => maxAllowedMonth)
   const [financialHealthSnapshots, setFinancialHealthSnapshots] = useState<FinancialHealthSnapshot[]>([])
   const [currentComparisonMonth, setCurrentComparisonMonth] = useState('')
   const [baselineComparisonMonth, setBaselineComparisonMonth] = useState('')
@@ -1073,10 +1074,17 @@ export default function FinancialHealthSummaryPage() {
     setSummaryComputedAt(new Date())
   }
 
-  const saveFinancialHealthSnapshot = async () => {
-    if (!selectedApplicationNo || !summaryComputedAt) return
-    setIsSavingSnapshot(true)
-    setSnapshotMessage('')
+ const saveFinancialHealthSnapshot = async () => {
+  if (!selectedApplicationNo || !summaryComputedAt) return
+  
+  // Guard against saving future months
+  if (snapshotMonth > maxAllowedMonth) {
+    setSnapshotMessage('Cannot save a snapshot for a future month.')
+    return
+  }
+
+  setIsSavingSnapshot(true)
+  setSnapshotMessage('')
     try {
       if (!monthlySnapshotDrafts?.netWorth) {
         throw new Error('Complete and save Net Worth Positioning before saving a monthly profile snapshot.')
@@ -1099,15 +1107,9 @@ export default function FinancialHealthSummaryPage() {
         ? Math.round((completedActualEntries / actualEntries.length) * 100)
         : 0
 
-      const monthlyProfile = await calculateAndSaveMonthlyProfile({
+      await calculateAndSaveMonthlyProfile({
         snapshotMonth,
-        profileData: {
-          buildProfile: monthlySnapshotDrafts.profileData,
-          netWorth: monthlySnapshotDrafts.netWorth,
-          budget: monthlySnapshotDrafts.budget,
-          billReminder: monthlySnapshotDrafts.billReminder,
-          loanMonitoring: monthlySnapshotDrafts.loanMonitoring,
-        },
+        profileData: monthlySnapshotDrafts.profileData,
         sourceProfileId: monthlySnapshotDrafts.profileId,
         sourceApplicationNo: selectedApplicationNo,
         financialHealth: latestSummaryInputs,
@@ -1141,14 +1143,12 @@ export default function FinancialHealthSummaryPage() {
           currency: benchmarkContext.currency,
         },
       })
-      setPublishedSummary(monthlyProfile.calculations.financialHealth)
-      setSummaryComputedAt(new Date())
 
       const netWorthMetrics = netWorthBuildingScore?.metrics
       const record = await createProfileHistory(selectedApplicationNo, {
         category: 'financial_health_score',
         observed_at: reportingMonthEnd(snapshotMonth),
-        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, monthlyProfile.calculations.financialHealth, {
+        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, publishedSummary, {
           netWorth: netWorthMetrics?.netWorth ?? step8ProfileMetrics.actualNetWorth,
           netIncome: step8ProfileMetrics.netIncome,
           monthlyCashFlow: netWorthMetrics?.monthlyCashFlow ?? 0,
@@ -1416,7 +1416,7 @@ export default function FinancialHealthSummaryPage() {
   const activeJourneyDetail = activeJourneyDetailId
     ? FINANCIAL_HEALTH_JOURNEY_DETAILS[activeJourneyDetailId]
     : null
-
+   
   return (
     <div className="psychometric-page financial-health-page">
       {!isJourneyMinimized && !isJourneyDismissed ? (
@@ -1703,21 +1703,28 @@ export default function FinancialHealthSummaryPage() {
         </button>
 
         <div className="financial-health-snapshot-save">
-          <label htmlFor="financial-health-snapshot-month">Snapshot as of</label>
-          <input
-            id="financial-health-snapshot-month"
-            type="month"
-            value={snapshotMonth}
-            max={currentReportingMonth()}
-            onChange={(event) => setSnapshotMonth(event.target.value)}
-          />
-          <button
-            type="button"
-            className="financial-health-journey-main-fab"
-            aria-label="Save Snapshot"
-            onClick={() => void saveFinancialHealthSnapshot()}
-            disabled={!summaryComputedAt || !selectedApplicationNo || isSavingSnapshot || !snapshotMonth || snapshotMonthExists}
-          >
+       <label htmlFor="financial-health-snapshot-month">Snapshot as of</label>
+       <input
+         id="financial-health-snapshot-month"
+         type="month"
+         value={snapshotMonth}
+         max={maxAllowedMonth} // Use the normalized YYYY-MM variable
+         onChange={(event) => setSnapshotMonth(event.target.value)}
+       />
+       <button
+         type="button"
+         className="financial-health-journey-main-fab"
+         aria-label="Save Snapshot"
+         onClick={() => void saveFinancialHealthSnapshot()}
+         disabled={
+           !summaryComputedAt || 
+           !selectedApplicationNo || 
+           isSavingSnapshot || 
+           !snapshotMonth || 
+           snapshotMonthExists ||
+           snapshotMonth > maxAllowedMonth // Disable if a future month is selected
+         }
+       >
             {isSavingSnapshot ? 'Saving...' : 'Save Snapshot'}
           </button>
           {snapshotMonthExists ? <span>A snapshot already exists for this month.</span> : null}
@@ -1780,7 +1787,7 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
-      <section className="financial-health-comparison-controls" aria-label="Financial Health comparison periods">
+      <section className="financial-health-comparison-controls" aria-label="Financial Health comparison periods" hidden>
         <div className="financial-health-comparison-heading">
           <strong>Compare Monthly Snapshots</strong>
           <span>Select Months</span>
