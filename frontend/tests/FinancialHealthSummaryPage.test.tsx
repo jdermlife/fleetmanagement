@@ -291,6 +291,13 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText('5. Financial Resilience')).toBeTruthy()
     expect(within(insights).getByText('6. Risk Alerts')).toBeTruthy()
     expect(within(insights).getByText('7. Opportunities')).toBeTruthy()
+
+    const improvementTable = screen.getByRole('region', { name: 'Risk Alerts, Opportunities and Typical Market Products' })
+    expect(insights.compareDocumentPosition(improvementTable) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(within(improvementTable).getByText('Investment Health')).toBeTruthy()
+    expect(within(improvementTable).getByText('71/100 · Watch')).toBeTruthy()
+    expect(within(improvementTable).getByText('Low-cost diversified fund or regulated retirement plan')).toBeTruthy()
+    expect(within(improvementTable).getByText(/examples only/)).toBeTruthy()
   })
 
   it('derives Philippine household benchmarks from Build Profile actuals', async () => {
@@ -524,6 +531,12 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
+    const comparisonControls = await screen.findByRole('region', { name: 'Financial Health comparison periods' })
+    expect(within(comparisonControls).getByText('Compare Monthly Snapshots')).toBeTruthy()
+    expect(within(comparisonControls).getByText('Select Months')).toBeTruthy()
+    expect((within(comparisonControls).getByRole('combobox', { name: 'Current Month' }) as HTMLSelectElement).value).toBe('2026-09')
+    expect((within(comparisonControls).getByRole('combobox', { name: 'Comparison Month' }) as HTMLSelectElement).value).toBe('2026-08')
+
     const insights = await screen.findByRole('region', {
       name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities',
     })
@@ -555,6 +568,7 @@ describe('FinancialHealthSummaryPage', () => {
     const refresh = screen.getByRole('button', { name: 'Refresh Financial Health' })
     await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(refresh)
+    fireEvent.change(screen.getByLabelText('Snapshot as of'), { target: { value: '2026-08' } })
     const save = screen.getByRole('button', { name: 'Save Snapshot' })
     expect((save as HTMLButtonElement).disabled).toBe(false)
     fireEvent.click(save)
@@ -573,6 +587,8 @@ describe('FinancialHealthSummaryPage', () => {
         }),
       }),
     )
-    expect(await screen.findByText('Snapshot saved as of August 2026.')).toBeTruthy()
+    const notice = await screen.findByRole('status')
+    expect(within(notice).getByText('Snapshot saved')).toBeTruthy()
+    expect(within(notice).getByText('Snapshot saved as of August 2026.')).toBeTruthy()
   })
 })

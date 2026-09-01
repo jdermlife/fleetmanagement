@@ -124,6 +124,7 @@ type VitalGuidance = {
 type RecommendedProduct = {
   name: string
   outcome: string
+  marketExamples: string
 }
 
 type FinancialHealthTrendPoint = {
@@ -188,35 +189,49 @@ const RECOMMENDED_PRODUCTS: Record<string, RecommendedProduct> = {
   credit: {
     name: 'Credit Health Builder',
     outcome: 'Strengthen credit readiness and improve access to suitable financing options.',
+    marketExamples: 'Secured credit card or credit-builder loan',
   },
   'cash-flow': {
     name: 'Cash Flow Planner',
     outcome: 'Create more room for savings and recurring goal contributions.',
+    marketExamples: 'High-yield savings account with automatic transfers',
   },
   wealth: {
     name: 'Wealth Builder',
     outcome: 'Grow net worth through a balanced assets, savings, and liabilities plan.',
+    marketExamples: 'Low-cost diversified index fund or retirement account',
   },
   budget: {
     name: 'Budget & Expense Tracker',
     outcome: 'Align monthly spending with savings and investment targets.',
+    marketExamples: 'Budgeting app or account with spending controls',
   },
   payment: {
     name: 'Debt Optimization',
     outcome: 'Prioritize costly balances and improve payment capacity.',
+    marketExamples: 'Debt-consolidation loan or balance-transfer card',
   },
   protection: {
     name: 'Protection Gap Review',
     outcome: 'Identify insurance gaps that could put financial goals at risk.',
+    marketExamples: 'Term life, health, disability, property, or vehicle insurance',
   },
   investment: {
     name: 'Investment Readiness Plan',
     outcome: 'Build consistent, risk-aligned contributions toward long-term goals.',
+    marketExamples: 'Low-cost diversified fund or regulated retirement plan',
   },
   goal: {
     name: 'Goal Achievement Plan',
     outcome: 'Set a realistic target, contribution amount, and completion timeline.',
+    marketExamples: 'High-yield savings account, time deposit, or target-date fund',
   },
+}
+
+function indicatorRating(score: number): { label: string; explanation: string } {
+  if (score >= 80) return { label: 'Strong', explanation: 'At or above the current 80-point health target.' }
+  if (score >= 60) return { label: 'Watch', explanation: 'Below target; steady improvement can reduce this risk.' }
+  return { label: 'Priority', explanation: 'Materially below target and should be reviewed first.' }
 }
 
 const FINANCIAL_HEALTH_TREND_SERIES: readonly FinancialHealthTrendSeries[] = [
@@ -973,6 +988,12 @@ export default function FinancialHealthSummaryPage() {
     }
   }, [selectedApplicationNo])
 
+  useEffect(() => {
+    if (!snapshotMessage.startsWith('Snapshot saved')) return
+    const timeoutId = window.setTimeout(() => setSnapshotMessage(''), 5000)
+    return () => window.clearTimeout(timeoutId)
+  }, [snapshotMessage])
+
   const completedJourneyCount = useMemo(
     () => Object.values(journeyStepCompletion).filter(Boolean).length,
     [journeyStepCompletion],
@@ -1005,6 +1026,7 @@ export default function FinancialHealthSummaryPage() {
     .slice(0, 3)
     .map((indicator) => ({
       ...RECOMMENDED_PRODUCTS[indicator.id],
+      indicatorId: indicator.id,
       indicatorLabel: indicator.label,
       score: indicator.score,
     }))
@@ -1575,6 +1597,7 @@ export default function FinancialHealthSummaryPage() {
         <button
           type="button"
           className="financial-health-journey-main-fab"
+          aria-label="Refresh Financial Health"
           onClick={computeLatestFinancialHealth}
           disabled={!summaryInputsLoaded}
         >
@@ -1593,6 +1616,7 @@ export default function FinancialHealthSummaryPage() {
           <button
             type="button"
             className="financial-health-journey-main-fab"
+            aria-label="Save Snapshot"
             onClick={() => void saveFinancialHealthSnapshot()}
             disabled={!summaryComputedAt || !selectedApplicationNo || isSavingSnapshot || !snapshotMonth || snapshotMonthExists}
           >
@@ -1616,6 +1640,7 @@ export default function FinancialHealthSummaryPage() {
           <button
             type="button"
             className="financial-health-journey-main-fab"
+            aria-label="Financial Journey Guide"
             onClick={openJourney}
           >
              Financial Guide
@@ -1627,7 +1652,16 @@ export default function FinancialHealthSummaryPage() {
         
       </section>
 
-      {snapshotMessage ? <p className="status-message" role="status">{snapshotMessage}</p> : null}
+      {snapshotMessage ? (
+        <div
+          className={`financial-health-snapshot-notice ${snapshotMessage.startsWith('Snapshot saved') ? 'is-success' : 'is-error'}`}
+          role={snapshotMessage.startsWith('Snapshot saved') ? 'status' : 'alert'}
+          aria-live="polite"
+        >
+          <strong>{snapshotMessage.startsWith('Snapshot saved') ? 'Snapshot saved' : 'Snapshot notice'}</strong>
+          <span>{snapshotMessage}</span>
+        </div>
+      ) : null}
 
       <section className="financial-health-profile-line" aria-label="Selected financial health profile">
         <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" />
@@ -1649,10 +1683,13 @@ export default function FinancialHealthSummaryPage() {
       </section>
 
       <section className="financial-health-comparison-controls" aria-label="Financial Health comparison periods">
-        <strong>Compare monthly snapshots</strong>
-        <label>
-          Current period
-          <select value={currentComparisonMonth} onChange={(event) => setCurrentComparisonMonth(event.target.value)}>
+        <div className="financial-health-comparison-heading">
+          <strong>Compare Monthly Snapshots</strong>
+          <span>Select Months</span>
+        </div>
+        <label htmlFor="financial-health-current-month">
+          Current Month
+          <select id="financial-health-current-month" value={currentComparisonMonth} onChange={(event) => setCurrentComparisonMonth(event.target.value)}>
             <option value="">Select month</option>
             {[...financialHealthSnapshots].reverse().map((snapshot) => (
               <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === baselineComparisonMonth}>
@@ -1661,9 +1698,9 @@ export default function FinancialHealthSummaryPage() {
             ))}
           </select>
         </label>
-        <label>
-          Compare with
-          <select value={baselineComparisonMonth} onChange={(event) => setBaselineComparisonMonth(event.target.value)}>
+        <label htmlFor="financial-health-baseline-month">
+          Comparison Month
+          <select id="financial-health-baseline-month" value={baselineComparisonMonth} onChange={(event) => setBaselineComparisonMonth(event.target.value)}>
             <option value="">Select month</option>
             {[...financialHealthSnapshots].reverse().map((snapshot) => (
               <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === currentComparisonMonth}>
@@ -1715,6 +1752,44 @@ export default function FinancialHealthSummaryPage() {
           <strong>{opportunityIndicators.length}</strong>
           <small>{opportunityNarration}</small>
         </article>
+      </section>
+
+      <section className="financial-health-improvement-comparison" aria-labelledby="financial-health-improvement-title">
+        <div className="financial-health-improvement-header">
+          <div>
+            <span>Improvement guide</span>
+            <h2 id="financial-health-improvement-title">Risk Alerts, Opportunities and Typical Market Products</h2>
+          </div>
+          <p>Generic product categories are examples only. Compare eligibility, fees, rates, risks, and regulated providers before choosing a product.</p>
+        </div>
+        <div className="financial-health-improvement-table-wrap">
+          <table className="financial-health-improvement-table">
+            <thead>
+              <tr>
+                <th scope="col">Health Area</th>
+                <th scope="col">Rating Explanation</th>
+                <th scope="col">Risk Alert</th>
+                <th scope="col">Opportunity</th>
+                <th scope="col">Typical Generic Products</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recommendedProducts.map((product) => {
+                const guidance = VITAL_GUIDANCE[product.indicatorId]
+                const rating = indicatorRating(product.score)
+                return (
+                  <tr key={product.indicatorLabel}>
+                    <th scope="row">{product.indicatorLabel}<strong>{product.score}/100 · {rating.label}</strong></th>
+                    <td>{rating.explanation}</td>
+                    <td>{product.score < 80 ? guidance?.negative : 'No current alert; maintain healthy habits.'}</td>
+                    <td>{guidance?.recommendation ?? product.outcome}</td>
+                    <td><strong>{product.marketExamples}</strong><span>{product.outcome}</span></td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </section>
 
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 
 from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
 
-from app.database import SessionLocal
+from app.database import SessionLocal, get_db
 from app.fastapi_auth import CurrentUser, require_authenticated_user
 from app.schemas.ai_governance_schema import PageAssistantRequest, PageAssistantResponse
 from app.services.ai_governance_service import (
@@ -15,6 +16,7 @@ from app.services.ai_governance_service import (
 from app.services.page_assistant_service import (
     AI_DISCLAIMER,
     answer_page_assistant,
+    get_user_financial_snapshot,
 )
 from app.services.ai_provider import OpenAIQuotaExhaustedError
 
@@ -22,7 +24,11 @@ from app.services.ai_provider import OpenAIQuotaExhaustedError
 router = APIRouter()
 
 
-def _answer(payload: PageAssistantRequest, current_user: CurrentUser | None) -> PageAssistantResponse:
+def _answer(
+    payload: PageAssistantRequest,
+    current_user: CurrentUser | None,
+    financial_snapshot: dict | None = None,
+) -> PageAssistantResponse:
     authenticated = current_user is not None
     governance_db = None
     request_log = None
@@ -34,6 +40,7 @@ def _answer(payload: PageAssistantRequest, current_user: CurrentUser | None) -> 
             history=payload.history,
             authenticated=authenticated,
             role=current_user.role if current_user else None,
+            financial_snapshot=financial_snapshot,
         )
 
         governance_logging_enabled = os.getenv("AI_GOVERNANCE_LOGGING_ENABLED", "true").lower() == "true"
@@ -106,5 +113,7 @@ async def public_page_assistant(payload: PageAssistantRequest):
 async def authenticated_page_assistant(
     payload: PageAssistantRequest,
     current_user: CurrentUser = Depends(require_authenticated_user),
+    db: Session = Depends(get_db),
 ):
-    return _answer(payload, current_user)
+    financial_snapshot = get_user_financial_snapshot(db, user_id=current_user.id)
+    return _answer(payload, current_user, financial_snapshot)
