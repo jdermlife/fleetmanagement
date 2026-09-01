@@ -1787,38 +1787,6 @@ export default function FinancialHealthSummaryPage() {
         </article>
       </section>
 
-      <section className="financial-health-comparison-controls" aria-label="Financial Health comparison periods" hidden>
-        <div className="financial-health-comparison-heading">
-          <strong>Compare Monthly Snapshots</strong>
-          <span>Select Months</span>
-        </div>
-        <label htmlFor="financial-health-current-month">
-          Current Month
-          <select id="financial-health-current-month" value={currentComparisonMonth} onChange={(event) => setCurrentComparisonMonth(event.target.value)}>
-            <option value="">Select month</option>
-            {[...financialHealthSnapshots].reverse().map((snapshot) => (
-              <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === baselineComparisonMonth}>
-                {formatReportingMonth(snapshot.payload.reportingMonth)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label htmlFor="financial-health-baseline-month">
-          Comparison Month
-          <select id="financial-health-baseline-month" value={baselineComparisonMonth} onChange={(event) => setBaselineComparisonMonth(event.target.value)}>
-            <option value="">Select month</option>
-            {[...financialHealthSnapshots].reverse().map((snapshot) => (
-              <option key={snapshot.id} value={snapshot.payload.reportingMonth} disabled={snapshot.payload.reportingMonth === currentComparisonMonth}>
-                {formatReportingMonth(snapshot.payload.reportingMonth)}
-              </option>
-            ))}
-          </select>
-        </label>
-        <p className="financial-health-comparison-selection" aria-live="polite">
-          <span>Months being compared</span>
-          <strong>{comparisonLabel || 'None - please save snapshot'}</strong>
-        </p>
-      </section>
 
       <section className="financial-health-insight-grid" aria-label="Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities">
         <article className="financial-health-insight-card">
