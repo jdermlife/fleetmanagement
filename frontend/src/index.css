@@ -12081,6 +12081,25 @@ th { color: var(--dark-gold); }
   font-weight: 700;
 }
 
+.financial-health-comparison-selection {
+  min-width: 210px;
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 8px 0;
+}
+
+.financial-health-comparison-selection span {
+  color: var(--financial-health-muted);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.financial-health-comparison-selection strong {
+  color: var(--financial-health-ink);
+  font-size: 0.86rem;
+}
+
 .financial-health-snapshot-notice {
   position: fixed;
   z-index: 1000;

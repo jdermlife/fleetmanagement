@@ -292,6 +292,10 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(insights).getByText('6. Risk Alerts')).toBeTruthy()
     expect(within(insights).getByText('7. Opportunities')).toBeTruthy()
 
+    const comparisonControls = screen.getByRole('region', { name: 'Financial Health comparison periods' })
+    expect(within(comparisonControls).getByText('Months being compared')).toBeTruthy()
+    expect(within(comparisonControls).getByText('None - please save snapshot')).toBeTruthy()
+
     const improvementTable = screen.getByRole('region', { name: 'Risk Alerts, Opportunities and Typical Market Products' })
     expect(insights.compareDocumentPosition(improvementTable) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(within(improvementTable).getByText('Investment Health')).toBeTruthy()
@@ -536,6 +540,8 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(comparisonControls).getByText('Select Months')).toBeTruthy()
     expect((within(comparisonControls).getByRole('combobox', { name: 'Current Month' }) as HTMLSelectElement).value).toBe('2026-09')
     expect((within(comparisonControls).getByRole('combobox', { name: 'Comparison Month' }) as HTMLSelectElement).value).toBe('2026-08')
+    expect(within(comparisonControls).getByText('Months being compared')).toBeTruthy()
+    expect(within(comparisonControls).getByText('September 2026 vs August 2026')).toBeTruthy()
 
     const insights = await screen.findByRole('region', {
       name: 'Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities',

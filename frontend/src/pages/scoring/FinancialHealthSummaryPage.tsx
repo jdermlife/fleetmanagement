@@ -1709,6 +1709,10 @@ export default function FinancialHealthSummaryPage() {
             ))}
           </select>
         </label>
+        <p className="financial-health-comparison-selection" aria-live="polite">
+          <span>Months being compared</span>
+          <strong>{comparisonLabel || 'None - please save snapshot'}</strong>
+        </p>
       </section>
 
       <section className="financial-health-insight-grid" aria-label="Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities">
