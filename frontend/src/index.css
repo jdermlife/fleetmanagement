@@ -11149,7 +11149,7 @@ th { color: var(--dark-gold); }
   justify-content: center;
   border: 1px solid rgba(184, 134, 11, 0.7);
   background: #20a48e;
-  color: black;
+  color: white;
   border-radius: 999px;
   min-height: 42px;
   padding: 10px 16px;

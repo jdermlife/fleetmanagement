@@ -1251,13 +1251,6 @@ export default function FinancialHealthSummaryPage() {
     : financialHealthChange > 0
       ? `Your financial health improved. The biggest gains came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
       : `Your financial health declined. The biggest decreases came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
-  const financialOutcome = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
-    ? {
-        netWorth: currentComparisonSnapshot.payload.amounts.netWorth - baselineComparisonSnapshot.payload.amounts.netWorth,
-        netIncome: currentComparisonSnapshot.payload.amounts.netIncome - baselineComparisonSnapshot.payload.amounts.netIncome,
-        monthlyCashFlow: currentComparisonSnapshot.payload.amounts.monthlyCashFlow - baselineComparisonSnapshot.payload.amounts.monthlyCashFlow,
-      }
-    : null
   const financialHealthTrend = financialHealthSnapshots.map((snapshot) => ({
     period: new Intl.DateTimeFormat('en', { month: 'short', year: '2-digit', timeZone: 'UTC' })
       .format(new Date(`${snapshot.payload.reportingMonth}-01T00:00:00Z`)),
@@ -1788,7 +1781,7 @@ export default function FinancialHealthSummaryPage() {
       </section>
 
 
-      <section className="financial-health-insight-grid" aria-label="Financial Health change, financial outcome, benchmarking, momentum, resilience, risks, and opportunities">
+      <section className="financial-health-insight-grid" aria-label="Financial Health change, benchmarking, momentum, resilience, risks, and opportunities">
         <article className="financial-health-insight-card">
           <span>1. Financial Health Change</span>
           <strong>{financialHealthChange === null ? 'Pending' : `${financialHealthChange >= 0 ? '+' : ''}${financialHealthChange}`}</strong>
@@ -1796,36 +1789,29 @@ export default function FinancialHealthSummaryPage() {
           <small>{changeNarration}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>2. Financial Outcome</span>
-          <strong>{financialOutcome ? `${financialOutcome.netWorth >= 0 ? '+' : ''}${formatCurrency(financialOutcome.netWorth, benchmarkContext.currency)}` : 'Pending'}</strong>
-          <small>{financialOutcome
-            ? `Net income ${financialOutcome.netIncome >= 0 ? '+' : ''}${formatCurrency(financialOutcome.netIncome, benchmarkContext.currency)} · Monthly cash flow ${financialOutcome.monthlyCashFlow >= 0 ? '+' : ''}${formatCurrency(financialOutcome.monthlyCashFlow, benchmarkContext.currency)}`
-            : 'Save at least two monthly snapshots to compare financial outcomes.'}</small>
-        </article>
-        <article className="financial-health-insight-card">
-          <span>3. Benchmarking</span>
+          <span>2. Benchmarking</span>
           <strong>World Inequality Database Result: {philippineIncomeBenchmark.globalRank}</strong>
           <small hidden>Your household income is currently in the {philippineIncomeBenchmark.nationalRank} in the Philippines.</small>
           <small>{philippineIncomeBenchmark.interpretation} · Monthly household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.monthlyIncome)} · Annual household income {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(philippineIncomeBenchmark.annualIncome)} · Dependents {benchmarkContext.dependents} · Net worth {new Intl.NumberFormat('en-PH', { style: 'currency', currency: benchmarkContext.currency, maximumFractionDigits: 0 }).format(benchmarkContext.netWorth)}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>4. Financial Momentum</span>
+          <span>3. Financial Momentum</span>
           <strong>{momentumLabel}</strong>
           <small>{momentumNarration}</small>
         </article>
         <article className="financial-health-insight-card">
-          <span>5. Financial Resilience</span>
+          <span>4. Financial Resilience</span>
           <strong>{resilienceMonths === null ? 'Pending' : `${resilienceMonths.toFixed(1)} months`}</strong>
           <small>{resilienceNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-alert">
-          <span>6. Risk Alerts</span>
+          <span>5. Risk Alerts</span>
           <strong>{riskIndicators.length + investmentRiskAlertCount}</strong>
           <small>{riskNarration}</small>
           <small>{investmentRiskNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-opportunity">
-          <span>7. Opportunities</span>
+          <span>6. Opportunities</span>
           <strong>{opportunityIndicators.length}</strong>
           <small>{opportunityNarration}</small>
         </article>
