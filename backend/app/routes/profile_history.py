@@ -102,6 +102,7 @@ def create_profile_history(
         owner_id=owner_id,
         loan_application_id=application.id,
         category=payload.category.value,
+        snapshot_month=observed_at.date().replace(day=1),
         observed_at=observed_at,
         payload=payload.payload,
         created_by=user.id,

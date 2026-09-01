@@ -5,6 +5,7 @@ from sqlalchemy import select
 from app.database import engine
 from app.models.loan_application import LoanApplication  # noqa: F401
 from app.models.profile_history import HistoryConfiguration, ProfileHistory
+from app.models.profile_monthly_snapshot import ProfileMonthlySnapshot
 from app.models.users import User  # noqa: F401
 from app.schemas.profile_history_schema import HistoryCategory
 
@@ -16,6 +17,7 @@ def run_migration() -> None:
     with engine.begin() as connection:
         HistoryConfiguration.__table__.create(bind=connection, checkfirst=True)
         ProfileHistory.__table__.create(bind=connection, checkfirst=True)
+        ProfileMonthlySnapshot.__table__.create(bind=connection, checkfirst=True)
 
         existing_categories = set(
             connection.execute(select(HistoryConfiguration.module_name)).scalars()

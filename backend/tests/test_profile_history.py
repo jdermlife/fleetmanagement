@@ -158,7 +158,11 @@ def test_migration_seeds_retention_and_cleanup_respects_category_months(monkeypa
     migration.run_migration()
 
     inspector = inspect(engine)
-    assert {"history_configuration", "profile_history"}.issubset(inspector.get_table_names())
+    assert {
+        "history_configuration",
+        "profile_history",
+        "profile_monthly_snapshots",
+    }.issubset(inspector.get_table_names())
 
     testing_session = sessionmaker(bind=engine)
     with testing_session() as db:

@@ -61,6 +61,7 @@ from app.routes.apple_auth import router as apple_auth_router
 from app.routes.fleet_operations import router as fleet_operations_router
 from app.routes.autosave_drafts import router as autosave_drafts_router
 from app.routes.profile_history import router as profile_history_router
+from app.routes.profile_monthly_snapshots import router as profile_monthly_snapshots_router
 from app.observability import setup_observability
 from app.services.audit_log_service import create_immutable_audit_constraints, write_audit_log
 from app.services.autosave_audit import (
@@ -527,6 +528,7 @@ app.include_router(security_router, prefix="/api")
 app.include_router(security_admin_router, prefix="/api")
 app.include_router(autosave_drafts_router, prefix="/api")
 app.include_router(profile_history_router, prefix="/api")
+app.include_router(profile_monthly_snapshots_router, prefix="/api")
 
 
 app.include_router(

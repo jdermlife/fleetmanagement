@@ -10,6 +10,7 @@ import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
+import { calculateAndSaveMonthlyProfile } from '../../services/profilemonthlysnapshotcalculator'
 
 import {
   buildFinancialHealthGroupRings,
@@ -40,6 +41,8 @@ import {
   type BudgetHealthDraftInput,
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
+import type { BillPaymentHealthBiller } from './billPaymentHealthEngine'
+import type { LoanMonitoringScoreResult } from './loanMonitoringScoreEngine'
 import { computePhilippineIncomeBenchmark, countryCodeFromCitizenship } from './widBenchmarkEngine'
 import {
   buildFinancialHealthSnapshotPayload,
@@ -108,6 +111,22 @@ type Step8ProfileMetrics = {
   actualNetWorth: number
   netIncome: number
   protectionLevelAmount: number
+}
+
+type MonthlySnapshotDrafts = {
+  profileData: Record<string, unknown>
+  profileId?: string
+  netWorth: (NetWorthBuildingDraftInput & {
+    suitabilityAnswers?: Record<string, number>
+    actualEntries?: Record<string, string | number | undefined>
+  }) | null
+  budget: BudgetHealthDraftInput
+  billReminder: {
+    draftBillers?: BillPaymentHealthBiller[]
+    savedSetup?: BillPaymentHealthBiller[]
+    paymentEntries?: Record<string, Array<{ datePaid?: string; amountPaid?: string | number }>>
+  } | null
+  loanMonitoring: { publishedScore?: LoanMonitoringScoreResult } | null
 }
 
 type InvestmentSuitabilityRisk = {
@@ -800,6 +819,7 @@ export default function FinancialHealthSummaryPage() {
   const [baselineComparisonMonth, setBaselineComparisonMonth] = useState('')
   const [snapshotMessage, setSnapshotMessage] = useState('')
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false)
+  const [monthlySnapshotDrafts, setMonthlySnapshotDrafts] = useState<MonthlySnapshotDrafts | null>(null)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
   const [activePositionRingId, setActivePositionRingId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
@@ -854,12 +874,14 @@ export default function FinancialHealthSummaryPage() {
           budgetDraft,
           billReminderDraft,
           creditHealthDraft,
+          loanMonitoringDraft,
         ] = await Promise.all([
           fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
           fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
           fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', analysisEntityKey),
           fetchAutosaveDraft<unknown>('bill-reminder', analysisEntityKey),
           fetchAutosaveDraft<unknown>('credit-scoring', creditEntityKey),
+          fetchAutosaveDraft<{ publishedScore?: LoanMonitoringScoreResult }>('loan-monitoring', analysisEntityKey),
         ])
 
         if (disposed || !netWorthDraft?.payload) {
@@ -877,6 +899,15 @@ export default function FinancialHealthSummaryPage() {
           const creditPayload = creditHealthDraft?.payload
           const wealthPayload = netWorthDraft?.payload
           const buildProfileDraft = readReplicatedBuildProfile()
+
+          setMonthlySnapshotDrafts({
+            profileData: buildProfileDraft ? { ...buildProfileDraft } : {},
+            profileId: buildProfileDraft?.profileId,
+            netWorth: netWorthDraft?.payload ?? null,
+            budget: budgetPayload as BudgetHealthDraftInput ?? {},
+            billReminder: billPayload as MonthlySnapshotDrafts['billReminder'],
+            loanMonitoring: loanMonitoringDraft?.payload ?? null,
+          })
 
           setStep8ProfileMetrics(resolveStep8ProfileMetrics(buildProfileDraft?.values ?? {}))
           setInvestmentSuitabilityRisk(resolveInvestmentSuitabilityRisk(
@@ -937,6 +968,7 @@ export default function FinancialHealthSummaryPage() {
           setWealthFoundationScore(null)
           setBudgetHealthScore(null)
           setLendingLeafScores(null)
+          setMonthlySnapshotDrafts(null)
           setJourneyStepCompletion((current) => ({
             ...current,
             billManager: false,
@@ -1046,11 +1078,77 @@ export default function FinancialHealthSummaryPage() {
     setIsSavingSnapshot(true)
     setSnapshotMessage('')
     try {
+      if (!monthlySnapshotDrafts?.netWorth) {
+        throw new Error('Complete and save Net Worth Positioning before saving a monthly profile snapshot.')
+      }
+      if (!monthlySnapshotDrafts.loanMonitoring?.publishedScore) {
+        throw new Error('Open Loan Monitoring once to calculate and save its current score before saving the monthly snapshot.')
+      }
+
+      const billReminder = monthlySnapshotDrafts.billReminder
+      const scoreBillers = billReminder?.savedSetup?.length
+        ? billReminder.savedSetup
+        : billReminder?.draftBillers ?? []
+      const suitabilityValues = Object.values(monthlySnapshotDrafts.netWorth.suitabilityAnswers ?? {})
+      const wealthBehaviourScore = suitabilityValues.length > 0
+        ? Math.round((averageScore(suitabilityValues) / 4) * 100)
+        : 0
+      const actualEntries = Object.values(monthlySnapshotDrafts.netWorth.actualEntries ?? {})
+      const completedActualEntries = actualEntries.filter((value) => String(value ?? '').trim() !== '').length
+      const wealthAuthenticityScore = actualEntries.length > 0
+        ? Math.round((completedActualEntries / actualEntries.length) * 100)
+        : 0
+
+      const monthlyProfile = await calculateAndSaveMonthlyProfile({
+        snapshotMonth,
+        profileData: {
+          buildProfile: monthlySnapshotDrafts.profileData,
+          netWorth: monthlySnapshotDrafts.netWorth,
+          budget: monthlySnapshotDrafts.budget,
+          billReminder: monthlySnapshotDrafts.billReminder,
+          loanMonitoring: monthlySnapshotDrafts.loanMonitoring,
+        },
+        sourceProfileId: monthlySnapshotDrafts.profileId,
+        sourceApplicationNo: selectedApplicationNo,
+        financialHealth: latestSummaryInputs,
+        creditHealth: lendingLeafScores
+          ? {
+              score: averageScore([
+                lendingLeafScores.creditScore,
+                lendingLeafScores.psychometricScore,
+                lendingLeafScores.socialScore,
+                lendingLeafScores.nonStarterScore,
+              ]),
+              summary: { ...lendingLeafScores },
+            }
+          : undefined,
+        netWorth: monthlySnapshotDrafts.netWorth,
+        budget: monthlySnapshotDrafts.budget,
+        loanMonitoring: monthlySnapshotDrafts.loanMonitoring.publishedScore,
+        billPayment: {
+          monthlyIncome: lendingLeafScores?.monthlyIncome ?? 0,
+          referenceDate: reportingMonthEnd(snapshotMonth).slice(0, 10),
+          billers: scoreBillers.map((biller) => ({
+            ...biller,
+            payments: billReminder?.paymentEntries?.[biller.id] ?? [],
+          })),
+        },
+        wealthComposite: { wealthBehaviourScore, wealthAuthenticityScore },
+        widBenchmark: {
+          netWorth: benchmarkContext.netWorth,
+          annualIncome: benchmarkContext.monthlyIncome * 12,
+          countryCode: benchmarkContext.countryCode,
+          currency: benchmarkContext.currency,
+        },
+      })
+      setPublishedSummary(monthlyProfile.calculations.financialHealth)
+      setSummaryComputedAt(new Date())
+
       const netWorthMetrics = netWorthBuildingScore?.metrics
       const record = await createProfileHistory(selectedApplicationNo, {
         category: 'financial_health_score',
         observed_at: reportingMonthEnd(snapshotMonth),
-        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, publishedSummary, {
+        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, monthlyProfile.calculations.financialHealth, {
           netWorth: netWorthMetrics?.netWorth ?? step8ProfileMetrics.actualNetWorth,
           netIncome: step8ProfileMetrics.netIncome,
           monthlyCashFlow: netWorthMetrics?.monthlyCashFlow ?? 0,
@@ -1067,7 +1165,7 @@ export default function FinancialHealthSummaryPage() {
         setCurrentComparisonMonth(saved.payload.reportingMonth)
         setBaselineComparisonMonth(snapshots[snapshots.length - 2]?.payload.reportingMonth ?? '')
       }
-      setSnapshotMessage(`Snapshot saved as of ${formatReportingMonth(snapshotMonth)}.`)
+      setSnapshotMessage(`Snapshot saved as of ${formatReportingMonth(snapshotMonth)}. Monthly profile and Financial Health history were saved.`)
     } catch (error) {
       setSnapshotMessage(getErrorMessage(error, 'Unable to save this financial health snapshot.'))
     } finally {
