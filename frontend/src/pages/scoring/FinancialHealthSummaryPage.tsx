@@ -2439,6 +2439,24 @@ export default function FinancialHealthSummaryPage() {
           </article>
 
           <article className="psychometric-panel financial-health-formula-panel">
+            <span className="psychometric-panel-kicker">Health Score Formula</span>
+            <h2>Transparent weighted index</h2>
+            <p>
+              Give more influence to recurring liquidity, payment behavior, and goal progress while
+              keeping every financial vital represented.
+            </p>
+            <div className="financial-health-equation">
+              <span>Σ (indicator score × weight)</span>
+              <strong>{index.toFixed(1)} × 10 = {score}</strong>
+              <small>Weights total 100%</small>
+            </div>
+            <p className="financial-health-method-note">
+              Recommended as a transparent wellness index. Calibrate weights against real outcomes
+              before using it for credit decisions. Algo is intended for guidance only.
+            </p>
+          </article>
+
+          <article className="psychometric-panel financial-health-formula-panel">
             <span className="psychometric-panel-kicker">In a Glance</span>
             <h2>Summary Score</h2>
             <p>
