@@ -1824,7 +1824,7 @@ export default function FinancialHealthSummaryPage() {
             <span>Improvement guide</span>
             <h2 id="financial-health-improvement-title">Risk Alerts, Opportunities and Recommended Tools</h2>
           </div>
-          <p>Use the matched FILSCORE tools first. Generic product categories are examples only; compare eligibility, fees, rates, risks, and regulated providers before choosing a product.</p>
+          <p></p>
         </div>
         <div className="financial-health-improvement-table-wrap">
           <table className="financial-health-improvement-table">
