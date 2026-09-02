@@ -14545,6 +14545,230 @@ html.native-mobile-app body {
   line-height: 1.1;
 }
 
+/* Financial Health uses a strict single-column layout in the installed app. */
+.native-mobile-app .financial-health-page,
+.native-mobile-app .financial-health-page > *,
+.native-mobile-app .financial-health-compute-bar > *,
+.native-mobile-app .financial-health-snapshot-save,
+.native-mobile-app .financial-health-improvement-comparison,
+.native-mobile-app .financial-health-improvement-table-wrap {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app .financial-health-page {
+  overflow-x: clip;
+}
+
+.native-mobile-app .financial-health-hero {
+  align-items: stretch;
+  padding: 16px;
+}
+
+.native-mobile-app .financial-health-ring-figure {
+  min-height: 0;
+  padding: 12px;
+}
+
+.native-mobile-app .financial-health-ring-visual {
+  width: min(240px, 100%);
+  flex: none;
+  aspect-ratio: 1;
+}
+
+.native-mobile-app .financial-health-ring-visual svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.native-mobile-app .financial-health-compute-bar,
+.native-mobile-app .financial-health-snapshot-save,
+.native-mobile-app .financial-health-comparison-controls {
+  display: flex !important;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px !important;
+}
+
+.native-mobile-app .financial-health-compute-bar .financial-health-journey-main-fab,
+.native-mobile-app .financial-health-snapshot-save input,
+.native-mobile-app .financial-health-comparison-controls select {
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app .financial-health-journey-main-fab {
+  min-height: 46px;
+  padding: 10px 14px;
+  color: #ffffff;
+  font-size: 0.88rem;
+  line-height: 1.25;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  text-align: center;
+}
+
+.native-mobile-app .financial-health-summary-tile,
+.native-mobile-app .financial-health-insight-card,
+.native-mobile-app .financial-health-position-ring-card,
+.native-mobile-app .financial-health-vital-card,
+.native-mobile-app .financial-health-engine-card,
+.native-mobile-app .financial-health-source-grid article {
+  overflow: visible;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app .financial-health-page :is(h1, h2, h3, strong, small, span, p, code, td, th) {
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.native-mobile-app .financial-health-position-ring-card,
+.native-mobile-app .financial-health-vital-card {
+  flex-wrap: wrap;
+}
+
+.native-mobile-app .financial-health-position-popover,
+.native-mobile-app .financial-health-vital-popover,
+.native-mobile-app .financial-health-chart-popover {
+  position: static;
+  width: 100%;
+  max-width: 100%;
+  transform: none;
+}
+
+.native-mobile-app :is(
+  .financial-health-position-popover,
+  .financial-health-vital-popover,
+  .financial-health-chart-popover
+)::after {
+  display: none;
+}
+
+.native-mobile-app .financial-health-improvement-table-wrap {
+  overflow: visible;
+  border: 0;
+}
+
+.native-mobile-app .financial-health-improvement-table,
+.native-mobile-app .financial-health-improvement-table tbody,
+.native-mobile-app .financial-health-improvement-table tr,
+.native-mobile-app .financial-health-improvement-table th,
+.native-mobile-app .financial-health-improvement-table td {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+
+.native-mobile-app .financial-health-improvement-table {
+  min-width: 0;
+  background: transparent;
+}
+
+.native-mobile-app .financial-health-improvement-table thead {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}
+
+.native-mobile-app .financial-health-improvement-table tbody {
+  display: grid;
+  gap: 12px;
+}
+
+.native-mobile-app .financial-health-improvement-table tbody tr {
+  overflow: hidden;
+  border: 1px solid rgba(148, 163, 184, 0.32);
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.native-mobile-app .financial-health-improvement-table tbody th,
+.native-mobile-app .financial-health-improvement-table tbody td {
+  padding: 12px;
+}
+
+.native-mobile-app .financial-health-improvement-table tbody th::before,
+.native-mobile-app .financial-health-improvement-table tbody td::before {
+  content: attr(data-label);
+  display: block;
+  margin-bottom: 5px;
+  color: var(--financial-health-muted);
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.native-mobile-app .financial-health-tool-recommendations {
+  min-width: 0;
+}
+
+.native-mobile-app .financial-health-journey-cycle {
+  width: 100%;
+  height: auto;
+  display: grid;
+  gap: 10px;
+  aspect-ratio: auto;
+}
+
+.native-mobile-app .financial-health-journey-cycle::before,
+.native-mobile-app .financial-health-journey-arrow {
+  display: none;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step,
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step:nth-child(n),
+.native-mobile-app .financial-health-journey-hub,
+.native-mobile-app .financial-health-journey-detail {
+  position: static;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: auto;
+  transform: none;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-step {
+  grid-template-columns: minmax(0, 1fr) auto;
+  padding: 12px;
+  border-radius: 8px;
+  text-align: left;
+}
+
+.native-mobile-app .financial-health-journey-cycle .financial-health-journey-action {
+  width: auto;
+  min-width: 72px;
+  min-height: 36px;
+  padding: 6px 8px;
+  font-size: 0.68rem;
+}
+
+.native-mobile-app .financial-health-journey-hub {
+  order: -1;
+  min-height: 62px;
+  border-radius: 8px;
+}
+
+.native-mobile-app .financial-health-journey-hub span {
+  width: auto;
+  aspect-ratio: auto;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.native-mobile-app .financial-health-journey-detail {
+  max-height: none;
+  overflow: visible;
+}
+
 .native-mobile-app .credit-health-certificate {
   padding: clamp(14px, 5cqi, 40px) !important;
   overflow: hidden;
