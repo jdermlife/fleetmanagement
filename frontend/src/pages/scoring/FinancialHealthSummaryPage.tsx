@@ -2456,6 +2456,30 @@ export default function FinancialHealthSummaryPage() {
             </p>
           </article>
 
+          <article className="psychometric-panel financial-health-formula-panel">
+            <span className="psychometric-panel-kicker">In a Glance</span>
+            <h2>Summary Score</h2>
+            <p>
+              The Scores can be saved as of {new Date().toLocaleDateString()} and covering monthly period. 
+            </p>
+            <div className="financial-health-equation">
+              <span>Σ (indicator score × weight)</span>
+              Credit: lending credit score
+              Cash flow: cash-flow strength
+              Wealth: normalized net-worth score
+              Budget: budget-health score
+              Payment: leverage-control score
+              Protection: protection-coverage score
+              Investment: average of investment, retirement, and financial-independence readiness
+              Goal: goal-momentum score
+              <small>Weights total 100%</small>
+            </div>
+            <p className="financial-health-method-note">
+              Recommended as a transparent wellness index. Calibrate weights against real outcomes
+              before using it for credit decisions. Algo is intended for guidance only.
+            </p>
+          </article>
+
 
 
         </aside>
