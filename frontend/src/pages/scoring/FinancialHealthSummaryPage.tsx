@@ -1845,11 +1845,11 @@ export default function FinancialHealthSummaryPage() {
                 const tools = FINANCIAL_HEALTH_TOOL_RECOMMENDATIONS[product.indicatorId] ?? []
                 return (
                   <tr key={product.indicatorLabel}>
-                    <th scope="row">{product.indicatorLabel}<strong>{product.score}/100 · {rating.label}</strong></th>
-                    <td>{rating.explanation}</td>
-                    <td>{product.score < 80 ? guidance?.negative : 'No current alert; maintain healthy habits.'}</td>
-                    <td>{guidance?.recommendation ?? product.outcome}</td>
-                    <td>
+                    <th scope="row" data-label="Health Area">{product.indicatorLabel}<strong>{product.score}/100 · {rating.label}</strong></th>
+                    <td data-label="Rating Explanation">{rating.explanation}</td>
+                    <td data-label="Risk Alert">{product.score < 80 ? guidance?.negative : 'No current alert; maintain healthy habits.'}</td>
+                    <td data-label="Opportunity">{guidance?.recommendation ?? product.outcome}</td>
+                    <td data-label="FILSCORE Tools">
                       <div className="financial-health-tool-recommendations">
                         {tools.map((tool) => {
                           const hasActivity = journeyStepCompletion[tool.statusKey]
@@ -1870,7 +1870,7 @@ export default function FinancialHealthSummaryPage() {
                         })}
                       </div>
                     </td>
-                    <td><strong>{product.marketExamples}</strong><span>{product.outcome}</span></td>
+                    <td data-label="Generic Products"><strong>{product.marketExamples}</strong><span>{product.outcome}</span></td>
                   </tr>
                 )
               })}

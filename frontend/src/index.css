@@ -13562,6 +13562,12 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 640px) {
+  .financial-health-page {
+    width: 100%;
+    min-width: 0;
+    overflow-x: clip;
+  }
+
   .financial-health-hero {
     padding: 18px;
   }
@@ -13573,8 +13579,17 @@ th { color: var(--dark-gold); }
 
   .financial-health-snapshot-save,
   .financial-health-comparison-controls {
+    width: 100%;
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .financial-health-compute-bar > .financial-health-journey-main-fab,
+  .financial-health-snapshot-save .financial-health-journey-main-fab,
+  .financial-health-snapshot-save input,
+  .financial-health-comparison-controls select {
+    width: 100%;
+    min-width: 0;
   }
 
   .financial-health-comparison-heading {
@@ -13634,6 +13649,173 @@ th { color: var(--dark-gold); }
 
   .financial-health-chart-label {
     font-size: 0.8rem;
+  }
+
+  .financial-health-position-ring-card,
+  .financial-health-vital-card {
+    flex-wrap: wrap;
+  }
+
+  .financial-health-position-popover,
+  .financial-health-vital-popover {
+    position: static;
+    order: 3;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .financial-health-position-popover::after,
+  .financial-health-vital-popover::after {
+    display: none;
+  }
+}
+
+@media (max-width: 420px) {
+  .financial-health-journey-overlay {
+    padding: 58px 8px 8px;
+  }
+
+  .financial-health-journey-modal {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .financial-health-journey-cycle {
+    height: auto;
+    display: grid;
+    gap: 10px;
+    margin: 4px 0;
+  }
+
+  .financial-health-journey-cycle::before,
+  .financial-health-journey-arrow {
+    display: none;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step,
+  .financial-health-journey-cycle .financial-health-journey-step:nth-child(n),
+  .financial-health-journey-hub,
+  .financial-health-journey-detail {
+    position: static;
+    width: 100%;
+    min-height: 0;
+    aspect-ratio: auto;
+    transform: none;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step {
+    grid-template-columns: minmax(0, 1fr) auto;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: left;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-step-copy h3 {
+    font-size: 0.82rem;
+  }
+
+  .financial-health-journey-cycle .financial-health-journey-action {
+    width: auto;
+    min-width: 72px;
+    margin: 0;
+    padding: 6px 8px;
+    font-size: 0.68rem;
+  }
+
+  .financial-health-journey-hub {
+    order: -1;
+    min-height: 62px;
+    border-radius: 8px;
+  }
+
+  .financial-health-journey-hub span {
+    width: auto;
+    aspect-ratio: auto;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .financial-health-journey-detail {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .financial-health-status-row {
+    width: 100%;
+    flex-wrap: wrap;
+    border-radius: 8px;
+  }
+
+  .financial-health-ring-visual {
+    width: min(100%, 240px);
+    flex-basis: auto;
+  }
+
+  .financial-health-chart-row {
+    grid-template-columns: minmax(0, 1fr) 40px 44px 50px;
+  }
+
+  .financial-health-improvement-table-wrap {
+    overflow: visible;
+    border: 0;
+  }
+
+  .financial-health-improvement-table,
+  .financial-health-improvement-table tbody,
+  .financial-health-improvement-table tr,
+  .financial-health-improvement-table th,
+  .financial-health-improvement-table td {
+    display: block;
+    width: 100%;
+    min-width: 0;
+  }
+
+  .financial-health-improvement-table {
+    min-width: 0;
+    background: transparent;
+  }
+
+  .financial-health-improvement-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+  }
+
+  .financial-health-improvement-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  .financial-health-improvement-table tbody tr {
+    overflow: hidden;
+    border: 1px solid rgba(148, 163, 184, 0.32);
+    border-radius: 8px;
+    background: #ffffff;
+  }
+
+  .financial-health-improvement-table tbody th,
+  .financial-health-improvement-table tbody td {
+    padding: 12px;
+    overflow-wrap: anywhere;
+  }
+
+  .financial-health-improvement-table tbody th::before,
+  .financial-health-improvement-table tbody td::before {
+    content: attr(data-label);
+    display: block;
+    margin-bottom: 5px;
+    color: var(--financial-health-muted);
+    font-size: 0.66rem;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  .financial-health-tool-recommendations {
+    min-width: 0;
   }
 }
 
