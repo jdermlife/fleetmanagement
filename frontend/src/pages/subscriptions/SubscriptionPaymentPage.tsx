@@ -6,7 +6,7 @@ import {
   capturePublicTrialPayPalOrder,
   createPublicTrialPayMongoCheckout,
   createPublicTrialPayPalOrder,
-  createPayMongoSubscription,
+  createPayMongoCheckout,
   createPayPalOrder,
   createFreeSubscription,
   createSubscription,
@@ -56,45 +56,6 @@ function buildPayPalRequestId(): string {
 }
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
-const PAYMONGO_PUBLIC_KEY = import.meta.env.VITE_PAYMONGO_PUBLIC_KEY?.trim() || ''
-
-async function createPayMongoCardPaymentMethod(card: {
-  number: string
-  expiry: string
-  cvc: string
-  name: string
-  email: string
-}): Promise<string> {
-  const [expMonth, expYear] = card.expiry.split('/').map((value) => Number(value.trim()))
-  const normalizedYear = expYear < 100 ? 2000 + expYear : expYear
-  const response = await fetch('https://api.paymongo.com/v1/payment_methods', {
-    method: 'POST',
-    headers: {
-      Authorization: `Basic ${btoa(`${PAYMONGO_PUBLIC_KEY}:`)}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      data: {
-        attributes: {
-          type: 'card',
-          details: {
-            card_number: card.number.replace(/\s/g, ''),
-            exp_month: expMonth,
-            exp_year: normalizedYear,
-            cvc: card.cvc,
-          },
-          billing: { name: card.name, email: card.email },
-        },
-      },
-    }),
-  })
-  const body = await response.json().catch(() => ({}))
-  const paymentMethodId = body?.data?.id
-  if (!response.ok || typeof paymentMethodId !== 'string') {
-    throw new Error(body?.errors?.[0]?.detail || 'PayMongo could not authorize this card.')
-  }
-  return paymentMethodId
-}
 
 
 function formatPayPalGatewayError(message: string, action: 'create' | 'capture'): string {
@@ -179,7 +140,6 @@ export default function SubscriptionPaymentPage() {
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
   const paypalStageRef = useRef<'create' | 'capture'>('create')
   const [guestAccountIdentifier, setGuestAccountIdentifier] = useState('')
-  const [payMongoCard, setPayMongoCard] = useState({ number: '', expiry: '', cvc: '', name: '' })
 
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
@@ -555,36 +515,21 @@ export default function SubscriptionPaymentPage() {
     }
   }, [canRenderGuestPayPalButtons, guestAccountIdentifier, guestTrialPlan, navigate])
 
-  const handleStartCheckout = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault()
+  const handleStartCheckout = async () => {
     setIsStartingCheckout(true)
     setPaymentMessage('')
 
     try {
-      if (!PAYMONGO_PUBLIC_KEY) {
-        throw new Error('PayMongo card payments are unavailable because the public key is not configured.')
-      }
       const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
       if (!subscriptionForPayment) {
         throw new Error('Please select a valid subscription plan before starting checkout.')
       }
-      const currentUser = await fetchCurrentUser()
-      setPaymentMessage('Securely authorizing your card with PayMongo...')
-      const paymentMethodId = await createPayMongoCardPaymentMethod({
-        ...payMongoCard,
-        email: currentUser.email,
-      })
-      setPayMongoCard({ number: '', expiry: '', cvc: '', name: '' })
-      const recurring = await createPayMongoSubscription({
+      setPaymentMessage('Opening secure PayMongo checkout...')
+      const checkout = await createPayMongoCheckout({
         subscription_id: subscriptionForPayment.id,
-        request_id: buildPayPalRequestId(),
-        payment_method_id: paymentMethodId,
+        invoice_no: subscriptionForPayment.subscription_no,
       })
-      if (recurring.approval_url) {
-        window.location.href = recurring.approval_url
-        return
-      }
-      navigate('/payment-success?provider=paymongo&recurring=true', { replace: true })
+      window.location.href = checkout.checkout_url
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
     } finally {
@@ -889,35 +834,20 @@ export default function SubscriptionPaymentPage() {
             <div className="trial-expired-payment-buttons">
               <div className="trial-expired-payment-option register-social-option">
                 <h3>PayMongo</h3>
-                <p>Your card is charged immediately, then billed automatically each cycle.</p>
-                <form onSubmit={(event) => void handleStartCheckout(event)}>
-                  <label>
-                    Name on card
-                    <input autoComplete="cc-name" value={payMongoCard.name} onChange={(event) => setPayMongoCard((card) => ({ ...card, name: event.target.value }))} required />
-                  </label>
-                  <label>
-                    Card number
-                    <input inputMode="numeric" autoComplete="cc-number" value={payMongoCard.number} onChange={(event) => setPayMongoCard((card) => ({ ...card, number: event.target.value }))} required />
-                  </label>
-                  <div className="form-row">
-                    <label>
-                      Expiry (MM/YY)
-                      <input inputMode="numeric" autoComplete="cc-exp" placeholder="MM/YY" pattern="(0[1-9]|1[0-2])/[0-9]{2,4}" value={payMongoCard.expiry} onChange={(event) => setPayMongoCard((card) => ({ ...card, expiry: event.target.value }))} required />
-                    </label>
-                    <label>
-                      CVC
-                      <input type="password" inputMode="numeric" autoComplete="cc-csc" pattern="[0-9]{3,4}" value={payMongoCard.cvc} onChange={(event) => setPayMongoCard((card) => ({ ...card, cvc: event.target.value }))} required />
-                    </label>
-                  </div>
-                  <button type="submit" className="auth-link-button auth-apple-button" disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}>
-                    {isStartingCheckout ? 'Authorizing card...' : 'Subscribe with PayMongo'}
-                  </button>
-                </form>
+                <p>Make a one-time payment by card, wallet, or another enabled checkout option.</p>
+                <button
+                  type="button"
+                  className="auth-link-button auth-apple-button"
+                  onClick={() => void handleStartCheckout()}
+                  disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
+                >
+                  {isStartingCheckout ? 'Opening secure checkout...' : 'Pay once with PayMongo'}
+                </button>
               </div>
 
               <div className="trial-expired-payment-option register-social-option">
                 <h3>PayPal</h3>
-                <p>Approve recurring billing now. Your first charge starts after the two-day trial.</p>
+                <p>Approve and complete a one-time payment securely with PayPal.</p>
                 {PAYPAL_CLIENT_ID ? (
                   <div
                     ref={paypalButtonContainerRef}

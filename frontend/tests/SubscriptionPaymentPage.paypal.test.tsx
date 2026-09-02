@@ -6,7 +6,7 @@ const apiMocks = vi.hoisted(() => ({
   capturePayPalOrder: vi.fn(),
   createPayPalOrder: vi.fn(),
   createPayPalSubscription: vi.fn(),
-  createPayMongoSubscription: vi.fn(),
+  createPayMongoCheckout: vi.fn(),
   createFreeSubscription: vi.fn(),
   createSubscription: vi.fn(),
   createSubscriptionCheckout: vi.fn(),
@@ -80,6 +80,11 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     apiMocks.listPublicSubscriptionPlans.mockResolvedValue([plan])
     apiMocks.getMySubscription.mockResolvedValue(null)
     apiMocks.createSubscription.mockResolvedValue(subscription)
+    apiMocks.createPayMongoCheckout.mockResolvedValue({
+      checkout_id: 'cs_test_123',
+      checkout_url: '#paymongo-checkout',
+      payment: { ...payment, payment_method: 'PayMongo Checkout', payment_status: 'PENDING' },
+    })
     apiMocks.createPayPalOrder.mockResolvedValue({
       order_id: 'ORDER-123',
       status: 'CREATED',
@@ -167,6 +172,27 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
 
     view.unmount()
     expect(close).toHaveBeenCalledTimes(1)
+  })
+
+  it('starts the existing one-time PayMongo checkout', async () => {
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const payOnceButton = await screen.findByRole('button', { name: 'Pay once with PayMongo' })
+    await act(async () => payOnceButton.click())
+
+    expect(apiMocks.createSubscription).toHaveBeenCalledTimes(1)
+    expect(apiMocks.createPayMongoCheckout).toHaveBeenCalledWith({
+      subscription_id: 99,
+      invoice_no: 'SUB-PRO-99',
+    })
+    expect(window.location.hash).toBe('#paymongo-checkout')
   })
 
   it('rejects an approval callback for a different PayPal order', async () => {
