@@ -25,6 +25,7 @@ import {
   financialHealthIndicatorSources,
   financialHealthMetricSources,
 } from './financialHealthComputationSources'
+import { FINANCIAL_HEALTH_TOOL_RECOMMENDATIONS } from './financialHealthToolRecommendations'
 import { toFilscore } from './filscoreScale'
 import {
   computeNetWorthBuildingScore,
@@ -1821,9 +1822,9 @@ export default function FinancialHealthSummaryPage() {
         <div className="financial-health-improvement-header">
           <div>
             <span>Improvement guide</span>
-            <h2 id="financial-health-improvement-title">Risk Alerts, Opportunities and Typical Market Products</h2>
+            <h2 id="financial-health-improvement-title">Risk Alerts, Opportunities and Recommended Tools</h2>
           </div>
-          <p>Generic product categories are examples only. Compare eligibility, fees, rates, risks, and regulated providers before choosing a product.</p>
+          <p>Use the matched FILSCORE tools first. Generic product categories are examples only; compare eligibility, fees, rates, risks, and regulated providers before choosing a product.</p>
         </div>
         <div className="financial-health-improvement-table-wrap">
           <table className="financial-health-improvement-table">
@@ -1833,19 +1834,42 @@ export default function FinancialHealthSummaryPage() {
                 <th scope="col">Rating Explanation</th>
                 <th scope="col">Risk Alert</th>
                 <th scope="col">Opportunity</th>
-                <th scope="col">Typical Generic Products</th>
+                <th scope="col">FILSCORE Tools</th>
+                <th scope="col">Generic Products</th>
               </tr>
             </thead>
             <tbody>
               {recommendedProducts.map((product) => {
                 const guidance = VITAL_GUIDANCE[product.indicatorId]
                 const rating = indicatorRating(product.score)
+                const tools = FINANCIAL_HEALTH_TOOL_RECOMMENDATIONS[product.indicatorId] ?? []
                 return (
                   <tr key={product.indicatorLabel}>
                     <th scope="row">{product.indicatorLabel}<strong>{product.score}/100 · {rating.label}</strong></th>
                     <td>{rating.explanation}</td>
                     <td>{product.score < 80 ? guidance?.negative : 'No current alert; maintain healthy habits.'}</td>
                     <td>{guidance?.recommendation ?? product.outcome}</td>
+                    <td>
+                      <div className="financial-health-tool-recommendations">
+                        {tools.map((tool) => {
+                          const hasActivity = journeyStepCompletion[tool.statusKey]
+                          const status = !hasActivity ? 'Not started' : product.score < 80 ? 'In progress' : 'Updated'
+                          const selectedQuery = selectedApplicationNo
+                            ? `?applicationNo=${encodeURIComponent(selectedApplicationNo)}`
+                            : ''
+                          return (
+                            <div className="financial-health-tool-recommendation" key={tool.route}>
+                              <strong>{tool.name}</strong>
+                              <span>{tool.reason}</span>
+                              <div>
+                                <span className={`financial-health-tool-status is-${status.toLowerCase().replace(' ', '-')}`}>{status}</span>
+                                <a href={`${tool.route}${selectedQuery}`}>Open tool</a>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    </td>
                     <td><strong>{product.marketExamples}</strong><span>{product.outcome}</span></td>
                   </tr>
                 )
