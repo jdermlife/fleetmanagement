@@ -208,6 +208,13 @@ class PayPalCaptureOrderRequest(BaseModel):
     subscription_id: int | None = None
 
 
+class PaymentCancellationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    provider_code: str = Field(min_length=3, max_length=50)
+    provider_transaction_id: str = Field(min_length=3, max_length=255)
+
+
 class RecurringBillingStartRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -238,6 +245,10 @@ class PublicTrialPayPalCreateOrderRequest(PublicTrialPaymentRequest):
 
 class PublicTrialPayPalCaptureOrderRequest(PublicTrialPaymentRequest):
     order_id: str = Field(min_length=3, max_length=120)
+
+
+class PublicPaymentCancellationRequest(PublicTrialPaymentRequest, PaymentCancellationRequest):
+    pass
 
 
 class FreeSubscriptionCreateRequest(BaseModel):

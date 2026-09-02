@@ -36,7 +36,9 @@ from app.schemas.subscription_schema import (
     FreeSubscriptionCreateRequest,
     PayPalCaptureOrderRequest,
     PayPalCreateOrderRequest,
+    PaymentCancellationRequest,
     PaymentProviderCreate,
+    PublicPaymentCancellationRequest,
     PublicTrialPaymentRequest,
     PublicTrialPayPalCaptureOrderRequest,
     PublicTrialPayPalCreateOrderRequest,
@@ -782,6 +784,46 @@ def _mark_payment_success(
     except Exception:
         # Email or invoice rendering issues should not fail payment activation.
         pass
+
+
+def _cancel_pending_payment(
+    db,
+    *,
+    provider_code: str,
+    provider_transaction_id: str,
+    user_id: int,
+    plan_id: int | None = None,
+) -> SubscriptionPayment:
+    provider = (
+        db.query(PaymentProvider)
+        .filter(PaymentProvider.provider_code == provider_code.strip().upper())
+        .first()
+    )
+    if provider is None:
+        raise HTTPException(status_code=404, detail="Payment provider not found")
+
+    payment = (
+        db.query(SubscriptionPayment)
+        .filter(SubscriptionPayment.provider_id == provider.id)
+        .filter(SubscriptionPayment.provider_transaction_id == provider_transaction_id.strip())
+        .with_for_update()
+        .first()
+    )
+    if payment is None:
+        raise HTTPException(status_code=404, detail="Pending payment not found")
+
+    subscription = db.query(Subscription).filter(Subscription.id == payment.subscription_id).first()
+    if subscription is None or subscription.user_id != user_id:
+        raise HTTPException(status_code=403, detail="Cannot cancel another user's payment")
+    if plan_id is not None and subscription.plan_id != plan_id:
+        raise HTTPException(status_code=409, detail="Payment does not match the selected plan")
+    if payment.payment_status == "SUCCESS":
+        raise HTTPException(status_code=409, detail="A successful payment cannot be cancelled")
+    if payment.payment_status == "PENDING":
+        payment.payment_status = "FAILED"
+        db.commit()
+        db.refresh(payment)
+    return payment
 
 
 @router.get("/store-products")
@@ -1630,6 +1672,42 @@ def list_subscription_payments(
             query = query.filter(Subscription.user_id == user.id)
         rows = query.order_by(SubscriptionPayment.created_at.desc()).all()
         return [_serialize_subscription_payment(item) for item in rows]
+    finally:
+        db.close()
+
+
+@router.post("/payments/cancel")
+def cancel_subscription_payment(
+    payload: PaymentCancellationRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+):
+    db = _session_with_rls(user)
+    try:
+        payment = _cancel_pending_payment(
+            db,
+            provider_code=payload.provider_code,
+            provider_transaction_id=payload.provider_transaction_id,
+            user_id=user.id,
+        )
+        return _serialize_subscription_payment(payment)
+    finally:
+        db.close()
+
+
+@router.post("/public/payments/cancel")
+def cancel_public_trial_payment(payload: PublicPaymentCancellationRequest):
+    db = SessionLocal()
+    try:
+        user = _resolve_trial_payment_user(db, payload.account_identifier)
+        plan = _resolve_public_trial_plan(db, payload.plan)
+        payment = _cancel_pending_payment(
+            db,
+            provider_code=payload.provider_code,
+            provider_transaction_id=payload.provider_transaction_id,
+            user_id=user.id,
+            plan_id=plan.id,
+        )
+        return _serialize_subscription_payment(payment)
     finally:
         db.close()
 

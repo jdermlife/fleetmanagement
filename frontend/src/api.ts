@@ -1586,6 +1586,24 @@ export async function createPayMongoCheckout(payload: {
   return response.data
 }
 
+export async function cancelSubscriptionPayment(payload: {
+  provider_code: 'PAYMONGO' | 'PAYPAL'
+  provider_transaction_id: string
+}): Promise<SubscriptionPayment> {
+  const response = await api.post<SubscriptionPayment>('/api/subscriptions/payments/cancel', payload)
+  return response.data
+}
+
+export async function cancelPublicTrialPayment(payload: {
+  account_identifier: string
+  plan: 'single' | 'multiple'
+  provider_code: 'PAYMONGO' | 'PAYPAL'
+  provider_transaction_id: string
+}): Promise<SubscriptionPayment> {
+  const response = await api.post<SubscriptionPayment>('/api/subscriptions/public/payments/cancel', payload)
+  return response.data
+}
+
 export async function createPayMongoSubscription(payload: {
   subscription_id: number
   request_id: string

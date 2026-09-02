@@ -1,9 +1,12 @@
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiMocks = vi.hoisted(() => ({
+  cancelPublicTrialPayment: vi.fn(),
+  cancelSubscriptionPayment: vi.fn(),
   capturePayPalOrder: vi.fn(),
+  createPayMongoSubscription: vi.fn(),
   createPayPalOrder: vi.fn(),
   createPayPalSubscription: vi.fn(),
   createPayMongoCheckout: vi.fn(),
@@ -100,6 +103,18 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       first_charge_at: '2026-07-19T00:00:00Z',
       subscription,
     })
+    apiMocks.createPayMongoSubscription.mockResolvedValue({
+      agreement_id: 'PM-SUBSCRIPTION-123',
+      status: 'ACTIVE',
+      approval_url: null,
+      first_charge_at: '2026-07-19T00:00:00Z',
+      subscription,
+    })
+    apiMocks.cancelSubscriptionPayment.mockResolvedValue({
+      ...payment,
+      payment_method: 'PayMongo Checkout',
+      payment_status: 'FAILED',
+    })
     apiMocks.capturePayPalOrder.mockResolvedValue({
       captured: true,
       order_id: 'ORDER-123',
@@ -195,6 +210,49 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(window.location.hash).toBe('#paymongo-checkout')
   })
 
+  it('starts a recurring PayMongo subscription with the card authorization', async () => {
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const authorizationInput = await screen.findByLabelText('Card Authorization ID')
+    fireEvent.change(authorizationInput, { target: { value: 'pm_test_123' } })
+    const subscribeButton = screen.getByRole('button', { name: 'Subscribe with PayMongo' })
+    await act(async () => subscribeButton.click())
+
+    expect(apiMocks.createPayMongoSubscription).toHaveBeenCalledWith({
+      subscription_id: 99,
+      request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
+      payment_method_id: 'pm_test_123',
+    })
+    expect(await screen.findByText('PayMongo recurring subscription is active.')).toBeTruthy()
+  })
+
+  it('starts a recurring PayPal subscription', async () => {
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const subscribeButton = await screen.findByRole('button', { name: 'Subscribe with PayPal' })
+    await act(async () => subscribeButton.click())
+
+    expect(apiMocks.createPayPalSubscription).toHaveBeenCalledWith({
+      subscription_id: 99,
+      request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
+    })
+    expect(await screen.findByText('PayPal recurring subscription is approval_pending.')).toBeTruthy()
+  })
+
   it('rejects an approval callback for a different PayPal order', async () => {
     let buttonOptions: {
       createOrder: () => Promise<string>
@@ -225,6 +283,42 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       'PayPal returned an unexpected order id',
     )
     expect(apiMocks.capturePayPalOrder).not.toHaveBeenCalled()
+  })
+
+  it('marks a cancelled PayPal order failed and displays Payment Cancelled', async () => {
+    let buttonOptions: {
+      createOrder: () => Promise<string>
+      onCancel?: () => void
+    } | null = null
+    window.paypal = {
+      Buttons: vi.fn((options) => {
+        buttonOptions = options
+        return { render: vi.fn() }
+      }),
+    }
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(buttonOptions).not.toBeNull())
+    await act(async () => {
+      await buttonOptions!.createOrder()
+      buttonOptions!.onCancel?.()
+    })
+
+    expect(await screen.findByText(/Payment Cancelled\. PayPal checkout was cancelled/)).toBeTruthy()
+    await waitFor(() => {
+      expect(apiMocks.cancelSubscriptionPayment).toHaveBeenCalledWith({
+        provider_code: 'PAYPAL',
+        provider_transaction_id: 'ORDER-123',
+      })
+    })
   })
 
   it('activates a zero-value free trial without invoking PayPal or PayMongo', async () => {
@@ -324,5 +418,29 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
         replace: true,
       })
     })
+  })
+
+  it('shows a cancelled PayMongo return and marks its pending payment failed', async () => {
+    window.sessionStorage.setItem('fms:payment-cancellation-context', JSON.stringify({
+      providerCode: 'PAYMONGO',
+      providerTransactionId: 'cs_test_cancelled',
+    }))
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?checkout=cancelled']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Payment Cancelled' })).toBeTruthy()
+    await waitFor(() => {
+      expect(apiMocks.cancelSubscriptionPayment).toHaveBeenCalledWith({
+        provider_code: 'PAYMONGO',
+        provider_transaction_id: 'cs_test_cancelled',
+      })
+    })
+    expect(window.sessionStorage.getItem('fms:payment-cancellation-context')).toBeNull()
   })
 })

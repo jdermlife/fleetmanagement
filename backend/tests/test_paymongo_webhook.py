@@ -43,6 +43,9 @@ class FakeQuery:
     def first(self):
         return self._rows[0] if self._rows else None
 
+    def with_for_update(self):
+        return self
+
 
 class FakeSession:
     def __init__(self):
@@ -58,6 +61,9 @@ class FakeSession:
         bucket.append(row)
 
     def commit(self):
+        return None
+
+    def refresh(self, _row):
         return None
 
     def close(self):
@@ -104,6 +110,34 @@ def _paid_checkout_payload() -> dict:
             },
         }
     }
+
+
+def test_cancel_pending_payment_marks_owned_payment_failed():
+    fake_db = FakeSession()
+    provider = PaymentProvider(id=5, provider_code="PAYMONGO", provider_name="PayMongo")
+    subscription = Subscription(id=10, user_id=42, plan_id=1)
+    payment = SubscriptionPayment(
+        id=20,
+        subscription_id=10,
+        provider_id=5,
+        provider_transaction_id="cs_cancelled",
+        payment_status="PENDING",
+    )
+    fake_db.rows_by_model = {
+        PaymentProvider: [provider],
+        Subscription: [subscription],
+        SubscriptionPayment: [payment],
+    }
+
+    result = subscription_routes._cancel_pending_payment(
+        fake_db,
+        provider_code="PAYMONGO",
+        provider_transaction_id="cs_cancelled",
+        user_id=42,
+    )
+
+    assert result is payment
+    assert payment.payment_status == "FAILED"
 
 
 def test_verified_paymongo_webhook_activates_subscription(monkeypatch):

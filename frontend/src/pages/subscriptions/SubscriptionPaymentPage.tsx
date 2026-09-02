@@ -2,12 +2,16 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
+  cancelPublicTrialPayment,
+  cancelSubscriptionPayment,
   capturePayPalOrder,
   capturePublicTrialPayPalOrder,
   createPublicTrialPayMongoCheckout,
   createPublicTrialPayPalOrder,
   createPayMongoCheckout,
+  createPayMongoSubscription,
   createPayPalOrder,
+  createPayPalSubscription,
   createFreeSubscription,
   createSubscription,
   fetchCurrentUser,
@@ -56,6 +60,33 @@ function buildPayPalRequestId(): string {
 }
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
+const PAYMENT_CANCELLATION_CONTEXT_KEY = 'fms:payment-cancellation-context'
+
+type PaymentCancellationContext = {
+  providerCode: 'PAYMONGO' | 'PAYPAL'
+  providerTransactionId: string
+  accountIdentifier?: string
+  plan?: 'single' | 'multiple'
+}
+
+function savePaymentCancellationContext(context: PaymentCancellationContext): void {
+  try {
+    window.sessionStorage.setItem(PAYMENT_CANCELLATION_CONTEXT_KEY, JSON.stringify(context))
+  } catch {
+    // Cancellation can still be displayed when browser storage is unavailable.
+  }
+}
+
+function takePaymentCancellationContext(): PaymentCancellationContext | null {
+  try {
+    const value = window.sessionStorage.getItem(PAYMENT_CANCELLATION_CONTEXT_KEY)
+    window.sessionStorage.removeItem(PAYMENT_CANCELLATION_CONTEXT_KEY)
+    if (!value) return null
+    return JSON.parse(value) as PaymentCancellationContext
+  } catch {
+    return null
+  }
+}
 
 
 function formatPayPalGatewayError(message: string, action: 'create' | 'capture'): string {
@@ -132,6 +163,8 @@ export default function SubscriptionPaymentPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
+  const [recurringProvider, setRecurringProvider] = useState<'PAYMONGO' | 'PAYPAL' | null>(null)
+  const [payMongoPaymentMethodId, setPayMongoPaymentMethodId] = useState('')
   const [isStartingFreeTrial, setIsStartingFreeTrial] = useState(false)
   const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
@@ -155,7 +188,28 @@ export default function SubscriptionPaymentPage() {
 
   useEffect(() => {
     if (checkoutStatus === 'success') {
+      takePaymentCancellationContext()
       navigate('/payment-success?provider=paymongo', { replace: true })
+      return
+    }
+    if (checkoutStatus === 'cancelled') {
+      setPaymentMessage('Payment Cancelled. No charge was completed and your access was not changed.')
+      const context = takePaymentCancellationContext()
+      if (!context) return
+      const cancellation = context.accountIdentifier && context.plan
+        ? cancelPublicTrialPayment({
+            account_identifier: context.accountIdentifier,
+            plan: context.plan,
+            provider_code: context.providerCode,
+            provider_transaction_id: context.providerTransactionId,
+          })
+        : cancelSubscriptionPayment({
+            provider_code: context.providerCode,
+            provider_transaction_id: context.providerTransactionId,
+          })
+      void cancellation.catch((error) => {
+        setPaymentMessage(`Payment Cancelled. ${getErrorMessage(error, 'The payment record could not be updated.')}`)
+      })
     }
   }, [checkoutStatus, navigate])
 
@@ -391,8 +445,17 @@ export default function SubscriptionPaymentPage() {
             navigate('/payment-success?provider=paypal', { replace: true })
           },
           onCancel: () => {
+            const checkoutContext = paypalCheckoutContextRef.current
             paypalCheckoutContextRef.current = null
-            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
+            setPaymentMessage('Payment Cancelled. PayPal checkout was cancelled and no access change was made.')
+            if (checkoutContext) {
+              void cancelSubscriptionPayment({
+                provider_code: 'PAYPAL',
+                provider_transaction_id: checkoutContext.orderId,
+              }).catch((error) => {
+                setPaymentMessage(`Payment Cancelled. ${getErrorMessage(error, 'The payment record could not be updated.')}`)
+              })
+            }
           },
           onError: (error) => {
             paypalCheckoutContextRef.current = null
@@ -486,7 +549,19 @@ export default function SubscriptionPaymentPage() {
             navigate('/payment-success?provider=paypal', { replace: true })
           },
           onCancel: () => {
-            setPaymentMessage('PayPal checkout was cancelled. You can start again anytime.')
+            const checkoutContext = paypalCheckoutContextRef.current
+            paypalCheckoutContextRef.current = null
+            setPaymentMessage('Payment Cancelled. PayPal checkout was cancelled and no access change was made.')
+            if (checkoutContext) {
+              void cancelPublicTrialPayment({
+                account_identifier: guestAccountIdentifier.trim(),
+                plan: guestTrialPlan.id,
+                provider_code: 'PAYPAL',
+                provider_transaction_id: checkoutContext.orderId,
+              }).catch((error) => {
+                setPaymentMessage(`Payment Cancelled. ${getErrorMessage(error, 'The payment record could not be updated.')}`)
+              })
+            }
           },
           onError: (error) => {
             const fallback = error instanceof Error ? error.message : 'Unable to process PayPal checkout right now.'
@@ -529,11 +604,70 @@ export default function SubscriptionPaymentPage() {
         subscription_id: subscriptionForPayment.id,
         invoice_no: subscriptionForPayment.subscription_no,
       })
+      savePaymentCancellationContext({
+        providerCode: 'PAYMONGO',
+        providerTransactionId: checkout.checkout_id,
+      })
       window.location.href = checkout.checkout_url
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
     } finally {
       setIsStartingCheckout(false)
+    }
+  }
+
+  const handleStartPayMongoRecurring = async () => {
+    const paymentMethodId = payMongoPaymentMethodId.trim()
+    if (paymentMethodId.length < 6) {
+      setPaymentMessage('Enter the PayMongo card authorization ID before starting recurring billing.')
+      return
+    }
+
+    setRecurringProvider('PAYMONGO')
+    setPaymentMessage('Starting recurring billing with PayMongo...')
+    try {
+      const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
+      if (!subscriptionForPayment) {
+        throw new Error('Please select a valid subscription plan before starting recurring billing.')
+      }
+      const result = await createPayMongoSubscription({
+        subscription_id: subscriptionForPayment.id,
+        request_id: buildPayPalRequestId(),
+        payment_method_id: paymentMethodId,
+      })
+      if (result.approval_url) {
+        window.location.href = result.approval_url
+        return
+      }
+      setPaymentMessage(`PayMongo recurring subscription is ${result.status.toLowerCase()}.`)
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start PayMongo recurring billing.'))
+    } finally {
+      setRecurringProvider(null)
+    }
+  }
+
+  const handleStartPayPalRecurring = async () => {
+    setRecurringProvider('PAYPAL')
+    setPaymentMessage('Opening PayPal recurring subscription approval...')
+    try {
+      const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
+      if (!subscriptionForPayment) {
+        throw new Error('Please select a valid subscription plan before starting recurring billing.')
+      }
+      const result = await createPayPalSubscription({
+        subscription_id: subscriptionForPayment.id,
+        request_id: buildPayPalRequestId(),
+      })
+      if (result.approval_url) {
+        window.location.href = result.approval_url
+        return
+      }
+      setPaymentMessage(`PayPal recurring subscription is ${result.status.toLowerCase()}.`)
+    } catch (error) {
+      setPaymentMessage(getErrorMessage(error, 'Unable to start PayPal recurring billing.'))
+    } finally {
+      setRecurringProvider(null)
     }
   }
 
@@ -621,6 +755,12 @@ export default function SubscriptionPaymentPage() {
         account_identifier: guestAccountIdentifier.trim(),
         plan: guestTrialPlan.id,
       })
+      savePaymentCancellationContext({
+        providerCode: 'PAYMONGO',
+        providerTransactionId: checkout.checkout_id,
+        accountIdentifier: guestAccountIdentifier.trim(),
+        plan: guestTrialPlan.id,
+      })
       window.location.href = checkout.checkout_url
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start secure checkout right now.'))
@@ -637,6 +777,21 @@ export default function SubscriptionPaymentPage() {
         <div className="form-actions">
           <Link className="auth-link-button" to="/login">Back to Login</Link>
         </div>
+      </div>
+    )
+  }
+
+  if (checkoutStatus === 'cancelled') {
+    return (
+      <div className="standalone-card auth-screen trial-expired-page subscription-payment-guest-page">
+        <section className="stack-panel auth-panel" role="alert" aria-labelledby="payment-cancelled-title">
+          <h1 id="payment-cancelled-title">Payment Cancelled</h1>
+          <p className="status-message">{paymentMessage || 'No charge was completed and your access was not changed.'}</p>
+          <div className="form-actions">
+            <Link className="auth-link-button" to="/trial-expired">Choose a Payment Option</Link>
+            <Link className="auth-link-button" to="/account">View Account</Link>
+          </div>
+        </section>
       </div>
     )
   }
@@ -827,9 +982,10 @@ export default function SubscriptionPaymentPage() {
             </div>
           </section>
           ) : (
+          <>
           <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Payment channels">
             <h2>Choose Payment Channel</h2>
-            <p>Select PayMongo or PayPal below.</p>
+            <p>Select PayMongo or PayPal for a one-time payment.</p>
 
             <div className="trial-expired-payment-buttons">
               <div className="trial-expired-payment-option register-social-option">
@@ -867,10 +1023,61 @@ export default function SubscriptionPaymentPage() {
               </div>
             </div>
           </section>
+
+          <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="Recurring subscription channels">
+            <h2>Recurring Subscription</h2>
+            <p>Authorize automatic renewals through your preferred payment provider.</p>
+
+            <div className="trial-expired-payment-buttons">
+              <div className="trial-expired-payment-option register-social-option">
+                <h3>PayMongo Recurring</h3>
+                <p>Use a PayMongo card authorization to enable automatic subscription renewals.</p>
+                <label>
+                  Card Authorization ID
+                  <input
+                    value={payMongoPaymentMethodId}
+                    onChange={(event) => setPayMongoPaymentMethodId(event.target.value)}
+                    placeholder="pm_..."
+                    autoComplete="off"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="auth-link-button auth-apple-button"
+                  onClick={() => void handleStartPayMongoRecurring()}
+                  disabled={recurringProvider !== null || (!paymentSubscription && !selectedPlan)}
+                >
+                  {recurringProvider === 'PAYMONGO' ? 'Starting recurring billing...' : 'Subscribe with PayMongo'}
+                </button>
+              </div>
+
+              <div className="trial-expired-payment-option register-social-option">
+                <h3>PayPal Recurring</h3>
+                <p>Approve automatic subscription renewals securely in PayPal.</p>
+                <button
+                  type="button"
+                  className="auth-link-button auth-apple-button"
+                  onClick={() => void handleStartPayPalRecurring()}
+                  disabled={recurringProvider !== null || (!paymentSubscription && !selectedPlan)}
+                >
+                  {recurringProvider === 'PAYPAL' ? 'Opening PayPal approval...' : 'Subscribe with PayPal'}
+                </button>
+              </div>
+            </div>
+          </section>
+          </>
           )
+          
           )}
         </>
       ) : null}
+
+
+
+
+
+
+
 
       {!isLoading && !selectedSubscription && !selectedPlan ? (
         <section className="stack-panel auth-panel">
