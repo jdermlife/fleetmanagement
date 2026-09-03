@@ -822,6 +822,7 @@ export default function FinancialHealthSummaryPage() {
   const [snapshotMessage, setSnapshotMessage] = useState('')
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false)
   const [monthlySnapshotDrafts, setMonthlySnapshotDrafts] = useState<MonthlySnapshotDrafts | null>(null)
+  const [monthlyProfileResult, setMonthlyProfileResult] = useState<Awaited<ReturnType<typeof calculateAndSaveMonthlyProfile>> | null>(null)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
   const [activePositionRingId, setActivePositionRingId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
@@ -865,6 +866,8 @@ export default function FinancialHealthSummaryPage() {
 
     const loadNetWorthDraft = async () => {
       if (!isIdentityReady) return
+
+      setMonthlyProfileResult(null)
 
       const analysisEntityKey = entityKey || 'identity-pending'
       const lendingEntityKey = selectedApplicationNo || 'new'
@@ -1108,7 +1111,7 @@ export default function FinancialHealthSummaryPage() {
         ? Math.round((completedActualEntries / actualEntries.length) * 100)
         : 0
 
-      await calculateAndSaveMonthlyProfile({
+      const monthlyResult = await calculateAndSaveMonthlyProfile({
         snapshotMonth,
         profileData: monthlySnapshotDrafts.profileData,
         sourceProfileId: monthlySnapshotDrafts.profileId,
@@ -1144,6 +1147,7 @@ export default function FinancialHealthSummaryPage() {
           currency: benchmarkContext.currency,
         },
       })
+      setMonthlyProfileResult(monthlyResult)
 
       const netWorthMetrics = netWorthBuildingScore?.metrics
       const record = await createProfileHistory(selectedApplicationNo, {
@@ -2458,25 +2462,26 @@ export default function FinancialHealthSummaryPage() {
 
           <article className="psychometric-panel financial-health-formula-panel">
             <span className="psychometric-panel-kicker">In a Glance</span>
-            <h2>Summary Score</h2>
+            <h2>Monthly Profile Scores</h2>
             <p>
-              The Scores can be saved as of {new Date().toLocaleDateString()} and covering monthly period. 
+              {monthlyProfileResult
+                ? `Calculated and saved for ${formatReportingMonth(monthlyProfileResult.snapshot.snapshot_month.slice(0, 7))}.`
+                : 'Save a monthly snapshot to calculate and display the monthly profile scores.'}
             </p>
             <div className="financial-health-equation">
-              <ul className="financial-health-score-summary" aria-label="Financial Health score sources">
-                <li><strong>Credit:</strong><span>lending credit score</span></li>
-                <li><strong>Cash flow:</strong><span>cash-flow strength</span></li>
-                <li><strong>Wealth:</strong><span>normalized net-worth score</span></li>
-                <li><strong>Budget:</strong><span>budget-health score</span></li>
-                <li><strong>Payment:</strong><span>leverage-control score</span></li>
-                <li><strong>Protection:</strong><span>protection-coverage score</span></li>
-                <li>
-                  <strong>Investment:</strong>
-                  <span>average of investment, retirement, and financial-independence readiness</span>
-                </li>
-                <li><strong>Goal:</strong><span>goal-momentum score</span></li>
-              </ul>
-              <small>Weights total 100%</small>
+              {monthlyProfileResult ? (
+                <ul className="financial-health-score-summary" aria-label="Saved monthly profile scores">
+                  <li><strong>Financial Health:</strong><span>{monthlyProfileResult.snapshot.financial_health_score ?? 'Pending'} / 1000</span></li>
+                  <li><strong>Credit Health:</strong><span>{monthlyProfileResult.snapshot.credit_health_score ?? 'Pending'} / 100</span></li>
+                  <li><strong>Net Worth:</strong><span>{monthlyProfileResult.snapshot.net_worth_positioning_score ?? 'Pending'} / 100</span></li>
+                  <li><strong>Budget Tracking:</strong><span>{monthlyProfileResult.snapshot.budget_tracking_score ?? 'Pending'} / 100</span></li>
+                  <li><strong>Loan Monitoring:</strong><span>{monthlyProfileResult.snapshot.loan_monitoring_score ?? 'Pending'} / 100</span></li>
+                  <li><strong>Bill Reminder:</strong><span>{monthlyProfileResult.snapshot.bill_reminder_score ?? 'Pending'} / 100</span></li>
+                </ul>
+              ) : (
+                <span>No monthly profile result is available yet.</span>
+              )}
+              <small>Financial Health uses a 1000-point scale; component scores use a 100-point scale.</small>
             </div>
             <p className="financial-health-method-note">
               Recommended as a transparent wellness index. Calibrate weights against real outcomes
