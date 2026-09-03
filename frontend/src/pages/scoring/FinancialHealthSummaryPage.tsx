@@ -1830,9 +1830,7 @@ export default function FinancialHealthSummaryPage() {
           </div>
           <p></p>
         </div>
-        <div className="financial-health-improvement-actions" aria-label="Recommended financial health actions">
-          <div className="financial-health-improvement-action">
-         
+        
         <div className="financial-health-improvement-table-wrap">
           <table className="financial-health-improvement-table">
             <thead>
