@@ -13364,6 +13364,27 @@ th { color: var(--dark-gold); }
   font-size: 1.2rem;
 }
 
+.financial-health-score-summary {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.financial-health-score-summary li {
+  display: grid;
+  grid-template-columns: minmax(76px, auto) minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.financial-health-score-summary strong {
+  font-size: 0.82rem;
+}
+
 .financial-health-method-note {
   font-size: 0.84rem;
 }

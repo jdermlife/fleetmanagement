@@ -68,6 +68,33 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(journeyItems[1]).getByRole('button', { name: 'Launch Credit Health' })).toBeTruthy()
   })
 
+  it('summarizes all eight Financial Health score sources at a glance', () => {
+    render(<FinancialHealthSummaryPage />)
+
+    const summary = screen.getByRole('heading', { name: 'Summary Score' }).closest('article')
+    expect(summary).toBeTruthy()
+
+    const sources = within(summary as HTMLElement).getByRole('list', { name: 'Financial Health score sources' })
+    expect(within(sources).getAllByRole('listitem')).toHaveLength(8)
+    expect(within(sources).getByText('Credit:')).toBeTruthy()
+    expect(within(sources).getByText('lending credit score')).toBeTruthy()
+    expect(within(sources).getByText('Cash flow:')).toBeTruthy()
+    expect(within(sources).getByText('cash-flow strength')).toBeTruthy()
+    expect(within(sources).getByText('Wealth:')).toBeTruthy()
+    expect(within(sources).getByText('normalized net-worth score')).toBeTruthy()
+    expect(within(sources).getByText('Budget:')).toBeTruthy()
+    expect(within(sources).getByText('budget-health score')).toBeTruthy()
+    expect(within(sources).getByText('Payment:')).toBeTruthy()
+    expect(within(sources).getByText('leverage-control score')).toBeTruthy()
+    expect(within(sources).getByText('Protection:')).toBeTruthy()
+    expect(within(sources).getByText('protection-coverage score')).toBeTruthy()
+    expect(within(sources).getByText('Investment:')).toBeTruthy()
+    expect(within(sources).getByText('average of investment, retirement, and financial-independence readiness')).toBeTruthy()
+    expect(within(sources).getByText('Goal:')).toBeTruthy()
+    expect(within(sources).getByText('goal-momentum score')).toBeTruthy()
+    expect(within(summary as HTMLElement).getByText('Weights total 100%')).toBeTruthy()
+  })
+
   it('reveals journey guidance when outer and central circles are hovered or focused', () => {
     render(<FinancialHealthSummaryPage />)
 

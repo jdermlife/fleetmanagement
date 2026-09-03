@@ -2463,15 +2463,19 @@ export default function FinancialHealthSummaryPage() {
               The Scores can be saved as of {new Date().toLocaleDateString()} and covering monthly period. 
             </p>
             <div className="financial-health-equation">
-              <span>Σ (indicator score × weight)</span>
-              Credit: lending credit score
-              Cash flow: cash-flow strength
-              Wealth: normalized net-worth score
-              Budget: budget-health score
-              Payment: leverage-control score
-              Protection: protection-coverage score
-              Investment: average of investment, retirement, and financial-independence readiness
-              Goal: goal-momentum score
+              <ul className="financial-health-score-summary" aria-label="Financial Health score sources">
+                <li><strong>Credit:</strong><span>lending credit score</span></li>
+                <li><strong>Cash flow:</strong><span>cash-flow strength</span></li>
+                <li><strong>Wealth:</strong><span>normalized net-worth score</span></li>
+                <li><strong>Budget:</strong><span>budget-health score</span></li>
+                <li><strong>Payment:</strong><span>leverage-control score</span></li>
+                <li><strong>Protection:</strong><span>protection-coverage score</span></li>
+                <li>
+                  <strong>Investment:</strong>
+                  <span>average of investment, retirement, and financial-independence readiness</span>
+                </li>
+                <li><strong>Goal:</strong><span>goal-momentum score</span></li>
+              </ul>
               <small>Weights total 100%</small>
             </div>
             <p className="financial-health-method-note">
