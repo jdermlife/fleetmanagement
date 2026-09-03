@@ -1910,8 +1910,38 @@ export default function FinancialHealthSummaryPage() {
             </tbody>
           </table>
         </div>
-      </section>
 
+
+      </section>
+  <div className="financial-health-improvement-actions" aria-label="Recommended financial health actions">
+          <div className="financial-health-improvement-action">
+            <div>
+              <strong>Improve Resource Optimization</strong>
+              <span>Review loan balances, repayment performance, and options for extra payments or refinancing.</span>
+            </div>
+            <a href={`/loan-monitoring${selectedApplicationNo ? `?applicationNo=${encodeURIComponent(selectedApplicationNo)}` : ''}`}>
+              Open Loan Monitoring
+            </a>
+          </div>
+          <div className="financial-health-improvement-action">
+            <div>
+              <strong>Strengthen Budget and Expense Control</strong>
+              <span>Compare planned and actual spending, address overruns, and improve monthly cash flow.</span>
+            </div>
+            <a href={`/budget-expense-tracker${selectedApplicationNo ? `?applicationNo=${encodeURIComponent(selectedApplicationNo)}` : ''}`}>
+              Open Budget and Expense Tracker
+            </a>
+          </div>
+          <div className="financial-health-improvement-action">
+            <div>
+              <strong>Improve Bill Payment Consistency</strong>
+              <span>Track due dates and recurring obligations to reduce missed or late payments.</span>
+            </div>
+            <a href={`/bill-reminder${selectedApplicationNo ? `?applicationNo=${encodeURIComponent(selectedApplicationNo)}` : ''}`}>
+              Open Bill Reminder
+            </a>
+          </div>
+        </div>
 
 
       <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
