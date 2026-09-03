@@ -162,17 +162,12 @@ def enforce_loan_permission(user: CurrentUser, permission: RBACPermission, detai
 
 
 def enforce_loan_status_transition_permission(user: CurrentUser, status: str) -> None:
-    if status == "Approved":
-        enforce_loan_permission(
-            user,
-            RBACPermission.APPROVE_LOANS,
-            "You do not have permission to approve loan applications",
-        )
-    elif status == "Released":
-        enforce_loan_permission(
-            user,
-            RBACPermission.FINAL_APPROVE_LOANS,
-            "You do not have permission to release loan applications",
+    if status in {"Approved", "Released"} and not is_admin_user(user):
+        raise HTTPException(
+            status_code=http_status.HTTP_403_FORBIDDEN,
+            detail=(
+                "Only administrators can approve or release loan applications"
+            ),
         )
 
 
@@ -643,6 +638,7 @@ def create_loan_application(
 
     try:
         scored_data, quant_scores = build_scored_loan_application(data)
+        enforce_loan_status_transition_permission(user, scored_data.status)
         existing_record = (
             db.query(LoanApplication)
             .filter(LoanApplication.application_no == scored_data.application_no)
@@ -723,6 +719,9 @@ def compute_quant_scores(
 
         if record is not None:
             enforce_loan_application_access(user, record)
+
+        if previous_status != scored_data.status:
+            enforce_loan_status_transition_permission(user, scored_data.status)
 
         if record is None:
             entitlement = evaluate_loan_record_create_entitlement(db, user)
@@ -1247,6 +1246,9 @@ def update_loan_application(
         record = get_loan_application_or_404(db, application_no)
         enforce_loan_application_access(user, record)
         previous_status = record.status
+
+        if previous_status != scored_data.status:
+            enforce_loan_status_transition_permission(user, scored_data.status)
 
         if (
             scored_data.application_no != application_no

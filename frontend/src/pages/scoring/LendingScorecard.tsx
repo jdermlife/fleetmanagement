@@ -2086,7 +2086,7 @@ export default function LendingScorecard() {
   const releasedAccountsPath = isBorrowerSubscriber
     ? '/loan-certification'
     : '/loan-repository?status=Released';
-  const maxVisibleStep = 10;
+  const maxVisibleStep = isAdmin ? 10 : 8;
 
   const getApplicationQuery = () => {
     const applicationNo = formData.id || requestedApplicationNo;
@@ -4359,7 +4359,7 @@ export default function LendingScorecard() {
     'Approval',
     'Release & Booking',
   ];
-  const visibleStepLabels = allStepLabels.slice(7);
+  const visibleStepLabels = allStepLabels.slice(7, maxVisibleStep);
   const currentStepLabel = allStepLabels[Math.max(0, step - 1)] ?? 'FILSCORE Report';
   const completionPercent = informationProvidedPercent;
   const reportHasRating = hasSufficientInformationForRating && displayedQuantSummary !== null;
@@ -5764,9 +5764,9 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {step === 9 && (
+          {isAdmin && step === 9 && (
             <div className="space-y-4">
-              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 9: Approval Workflow</h3>
+              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 9: Probability Approval Workflow</h3>
               <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
                 <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Origination Profitability
@@ -5812,7 +5812,7 @@ export default function LendingScorecard() {
             </div>
           )}
 
-          {step === 10 && (
+          {isAdmin && step === 10 && (
             <div className="space-y-4">
               <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
               <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">

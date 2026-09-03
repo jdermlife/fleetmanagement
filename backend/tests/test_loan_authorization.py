@@ -70,20 +70,20 @@ def test_subscriber_lender_can_export_loans():
     )
 
 
-def test_subscriber_lender_cannot_transition_to_approved_without_permission():
-    lender = CurrentUser(id=8, username="lender", role="SUBSCRIBER_LENDER")
+def test_non_admin_cannot_transition_to_approved():
+    approver = CurrentUser(id=8, username="approver", role="APPROVER")
 
     with pytest.raises(HTTPException) as exc_info:
-        enforce_loan_status_transition_permission(lender, "Approved")
+        enforce_loan_status_transition_permission(approver, "Approved")
 
     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
 
 
-def test_subscriber_borrower_cannot_transition_to_released_without_permission():
-    borrower = CurrentUser(id=7, username="borrower", role="SUBSCRIBER_BORROWER")
+def test_non_admin_cannot_transition_to_released():
+    credit_manager = CurrentUser(id=7, username="manager", role="CREDIT_MANAGER")
 
     with pytest.raises(HTTPException) as exc_info:
-        enforce_loan_status_transition_permission(borrower, "Released")
+        enforce_loan_status_transition_permission(credit_manager, "Released")
 
     assert exc_info.value.status_code == status.HTTP_403_FORBIDDEN
 
