@@ -11,6 +11,7 @@ import {
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
+import { useAuthorization } from '../../hooks/useAuthorization'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAiAdvisories } from './aiAdvisoryEngine'
@@ -751,6 +752,7 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
 export default function BuildProfilePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
+  const { isAdmin } = useAuthorization()
   const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || ''
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
@@ -2687,8 +2689,12 @@ export default function BuildProfilePage() {
                 }}>Create New Record</button>
                 <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=All&origin=build-profile')}>Review Record</button>
                 <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/lending-scorecard', { state: { scorecardAction: 'open-filscore' } })}>Open FILSCORE Page</button>
-                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>
-                <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Released')}>Released Accounts</button>
+                {isAdmin ? (
+                  <>
+                    <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Credit%20Review')}>Approval Queue</button>
+                    <button type="button" className="build-profile-workflow-action" onClick={() => navigate('/loan-repository?status=Released')}>Released Accounts</button>
+                  </>
+                ) : null}
               </div>
             </div>
           </div>

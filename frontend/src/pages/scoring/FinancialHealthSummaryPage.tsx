@@ -363,7 +363,7 @@ const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
 
 const FINANCIAL_HEALTH_JOURNEY_DETAILS: Record<JourneyDetailId, JourneyDetail> = {
   createProfile: {
-    title: 'Create / Update Profile',
+    title: 'Profile',
     points: [
       'Complete the 12-step workflow form to establish your Financial Health Summary.',
       'Enter zero, none, or not applicable where relevant.',
