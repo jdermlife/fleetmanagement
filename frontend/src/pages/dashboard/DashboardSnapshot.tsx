@@ -271,7 +271,29 @@ export default function DashboardSnapshot() {
       }
     };
 
+    const loadInitialDetails = async () => {
+      setDetailsLoading(true);
+
+      try {
+        const rangeRecords = await fetchAllLoanApplications({
+          maxRecords: COVERAGE_MIN_RECORDS,
+        });
+        setApplications(rangeRecords);
+        setDetailsLoaded(true);
+      } catch (error) {
+        setMessage(
+          getErrorMessage(
+            error,
+            "Failed to load dashboard analytics. Please try again.",
+          ),
+        );
+      } finally {
+        setDetailsLoading(false);
+      }
+    };
+
     void loadSummary();
+    void loadInitialDetails();
   }, []);
 
   const handleGenerateReport = async () => {
@@ -670,6 +692,12 @@ export default function DashboardSnapshot() {
               </div>
             </div>
 
+            <PsychometricsSectionTable
+              applications={applications}
+              loading={detailsLoading}
+              purposeCounts={dashboard.purposeCounts}
+            />
+
             {detailsLoaded ? (
               <>
                 <SectionGrid>
@@ -701,13 +729,6 @@ export default function DashboardSnapshot() {
                     <PieChart data={dashboard.purposeSlices} />
                   </Panel>
                 </SectionGrid>
-
-                <Panel
-                  subtitle="Application volume grouped by the stated purpose of each submitted loan."
-                  title="Count of Applications by Loan Purpose"
-                >
-                  <PurposeBarChart data={dashboard.purposeCounts} />
-                </Panel>
 
                 <SectionGrid>
                   <Panel
@@ -964,6 +985,111 @@ function InfoTile({
       </div>
       <div className="dashboard-info-note" style={{ color: "#64748b", fontSize: "0.82rem", marginTop: "4px" }}>{note}</div>
     </div>
+  );
+}
+
+function PsychometricsSectionTable({
+  applications,
+  loading,
+  purposeCounts,
+}: {
+  applications: LoanApplicationRecord[];
+  loading: boolean;
+  purposeCounts: TrendPoint[];
+}) {
+  const assessedRecords = applications.filter(
+    (record) => typeof record.psychometric_scores?.overall_psychometric_score === "number",
+  );
+  const averagePsychometricScore = average(
+    assessedRecords.map(
+      (record) => record.psychometric_scores?.overall_psychometric_score as number,
+    ),
+  );
+  const flaggedRecords = assessedRecords.filter((record) => {
+    const riskLevel = record.psychometric_scores?.psychometric_risk_level?.toLowerCase() ?? "";
+    return riskLevel.includes("high") || riskLevel.includes("critical");
+  }).length;
+
+  return (
+    <section style={{ ...panelStyle, marginTop: "18px", overflow: "hidden", padding: 0 }}>
+      <div style={{ borderBottom: "1px solid rgba(218,165,32,0.18)", padding: "16px" }}>
+        <h2 style={{ ...sectionTitleStyle, fontSize: "1rem" }}>Psychometrics Section</h2>
+        <p style={{ ...subtleTextStyle, fontSize: "0.8rem", marginTop: "5px" }}>
+          Behavioral assessment coverage with application-purpose context.
+        </p>
+      </div>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", minWidth: "680px", width: "100%" }}>
+          <thead>
+            <tr style={{ background: "#f8fafc" }}>
+              <th style={psychometricsTableHeaderStyle}>Metric</th>
+              <th style={psychometricsTableHeaderStyle}>Value</th>
+              <th style={psychometricsTableHeaderStyle}>Interpretation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <PsychometricsMetricRow
+              interpretation="Loan applications containing a calculated psychometric score."
+              label="Applications Assessed"
+              value={loading ? "Loading..." : assessedRecords.length.toLocaleString()}
+            />
+            <PsychometricsMetricRow
+              interpretation="Average normalized behavioral score across assessed applications."
+              label="Average Psychometric Score"
+              value={loading || assessedRecords.length === 0 ? "N/A" : averagePsychometricScore.toFixed(1)}
+            />
+            <PsychometricsMetricRow
+              interpretation="Applications explicitly classified as high or critical behavioral risk."
+              label="High/Critical Risk Classifications"
+              value={loading ? "Loading..." : flaggedRecords.toLocaleString()}
+            />
+            <tr>
+              <td colSpan={3} style={{ padding: "18px 16px 10px" }}>
+                <div style={{ color: "#0f172a", fontSize: "0.9rem", fontWeight: 700, marginBottom: "4px" }}>
+                  Count of Applications by Loan Purpose
+                </div>
+                <div style={{ color: "#64748b", fontSize: "0.78rem", marginBottom: "12px" }}>
+                  Application volume grouped by stated loan purpose.
+                </div>
+                {loading ? (
+                  <EmptyState message="Loading loan-purpose analytics..." />
+                ) : (
+                  <PurposeBarChart data={purposeCounts} />
+                )}
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
+const psychometricsTableHeaderStyle: React.CSSProperties = {
+  borderBottom: "1px solid #e2e8f0",
+  color: "#475569",
+  fontSize: "0.72rem",
+  fontWeight: 700,
+  padding: "11px 16px",
+  textAlign: "left",
+  textTransform: "uppercase",
+};
+
+function PsychometricsMetricRow({
+  interpretation,
+  label,
+  value,
+}: {
+  interpretation: string;
+  label: string;
+  value: string;
+}) {
+  return (
+    <tr>
+      <td style={{ borderBottom: "1px solid #eef2f7", color: "#334155", fontWeight: 600, padding: "12px 16px" }}>{label}</td>
+      <td style={{ borderBottom: "1px solid #eef2f7", color: "#0f172a", fontWeight: 700, padding: "12px 16px" }}>{value}</td>
+      <td style={{ borderBottom: "1px solid #eef2f7", color: "#64748b", padding: "12px 16px" }}>{interpretation}</td>
+    </tr>
   );
 }
 
