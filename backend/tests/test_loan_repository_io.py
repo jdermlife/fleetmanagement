@@ -8,7 +8,12 @@ from zipfile import ZipFile
 import pytest
 from app.models.loan_application import LoanApplication
 from app.services import loan_repository_io
-from app.services.loan_repository_io import EXPORT_FIELDS, UPSERT_FIELDS, generate_csv_bytes
+from app.services.loan_repository_io import (
+    EXPORT_FIELDS,
+    UPSERT_FIELDS,
+    generate_csv_bytes,
+    generate_xlsx_bytes,
+)
 
 
 def test_xlsx_xml_parser_rejects_dtd_declarations() -> None:
@@ -87,6 +92,31 @@ def test_generate_csv_bytes_includes_all_loan_application_columns() -> None:
     assert parsed_rows[0]["application_no"] == "APP-CSV-001"
     assert parsed_rows[0]["updated_at"] == "2026-06-21T09:45:00+00:00"
     assert parsed_rows[0]["requirements"] == '{"validGovernmentId": true}'
+
+
+def test_export_generators_include_reflected_physical_columns() -> None:
+    fields = ["id", "application_no", "created_by_username", "asset_details"]
+    records = [
+        {
+            "id": 42,
+            "application_no": "APP-PHYSICAL-001",
+            "created_by_username": "loan.officer",
+            "asset_details": {"cash": 125000},
+        }
+    ]
+
+    csv_content = generate_csv_bytes(records, fields).decode("utf-8")
+    csv_rows = list(csv.DictReader(io.StringIO(csv_content)))
+    assert list(csv_rows[0]) == fields
+    assert csv_rows[0]["created_by_username"] == "loan.officer"
+    assert csv_rows[0]["asset_details"] == '{"cash": 125000}'
+
+    xlsx_content = generate_xlsx_bytes(records, fields)
+    with ZipFile(io.BytesIO(xlsx_content)) as archive:
+        shared_strings = archive.read("xl/sharedStrings.xml").decode("utf-8")
+    assert "created_by_username" in shared_strings
+    assert "loan.officer" in shared_strings
+    assert "asset_details" in shared_strings
 
 
 class FakeDatabaseSession:

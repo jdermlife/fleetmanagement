@@ -6,6 +6,7 @@ import json
 import secrets
 import string
 from datetime import date, datetime, time, timedelta, timezone
+from collections.abc import Mapping
 from typing import Any
 from zipfile import ZIP_DEFLATED, ZipFile
 import xml.etree.ElementTree as ET
@@ -489,30 +490,43 @@ def upsert_loan_applications(
 def normalize_export_value(field: str, value: Any) -> str:
     if value is None:
         return ""
-    if field == "requirements":
+    if isinstance(value, (dict, list)):
         return json.dumps(value, ensure_ascii=True)
     if isinstance(value, datetime):
         return value.isoformat()
     return str(value)
 
 
-def build_export_rows(records: list[LoanApplication]) -> list[dict[str, str]]:
+def build_export_rows(
+    records: list[LoanApplication] | list[Mapping[str, Any]],
+    fields: list[str] | None = None,
+) -> list[dict[str, str]]:
+    export_fields = fields or EXPORT_FIELDS
     rows: list[dict[str, str]] = []
     for record in records:
+        def record_value(field: str) -> Any:
+            if isinstance(record, Mapping):
+                return record.get(field, "")
+            return getattr(record, field, "")
+
         rows.append(
             {
-                field: normalize_export_value(field, getattr(record, field, ""))
-                for field in EXPORT_FIELDS
+                field: normalize_export_value(field, record_value(field))
+                for field in export_fields
             }
         )
     return rows
 
 
-def generate_csv_bytes(records: list[LoanApplication]) -> bytes:
+def generate_csv_bytes(
+    records: list[LoanApplication] | list[Mapping[str, Any]],
+    fields: list[str] | None = None,
+) -> bytes:
+    export_fields = fields or EXPORT_FIELDS
     output = io.StringIO()
-    writer = csv.DictWriter(output, fieldnames=EXPORT_FIELDS)
+    writer = csv.DictWriter(output, fieldnames=export_fields)
     writer.writeheader()
-    for row in build_export_rows(records):
+    for row in build_export_rows(records, export_fields):
         writer.writerow(row)
     return output.getvalue().encode("utf-8")
 
@@ -529,10 +543,14 @@ def build_shared_strings(values: list[str]) -> tuple[dict[str, int], list[str]]:
     return string_to_index, ordered_strings
 
 
-def generate_xlsx_bytes(records: list[LoanApplication]) -> bytes:
-    rows = build_export_rows(records)
-    matrix: list[list[str]] = [EXPORT_FIELDS]
-    matrix.extend([[row.get(field, "") for field in EXPORT_FIELDS] for row in rows])
+def generate_xlsx_bytes(
+    records: list[LoanApplication] | list[Mapping[str, Any]],
+    fields: list[str] | None = None,
+) -> bytes:
+    export_fields = fields or EXPORT_FIELDS
+    rows = build_export_rows(records, export_fields)
+    matrix: list[list[str]] = [export_fields]
+    matrix.extend([[row.get(field, "") for field in export_fields] for row in rows])
 
     all_strings = [value for row in matrix for value in row]
     shared_string_map, ordered_strings = build_shared_strings(all_strings)

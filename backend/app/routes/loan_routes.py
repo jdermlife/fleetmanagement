@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import csv
 import os
 from datetime import datetime, timezone
-from io import BytesIO, StringIO
+from io import BytesIO
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
 from fastapi.responses import StreamingResponse
-from sqlalchemy import text
+from sqlalchemy import MetaData, Table, select, text
 from sqlalchemy.orm import selectinload
 
 
@@ -39,10 +38,10 @@ from app.schemas.loan_schema import (
 from app.routes.dashboard import invalidate_dashboard_statistics_cache
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
 from app.services.loan_repository_io import (
-    EXPORT_FIELDS,
     apply_repository_filters,
+    chunk_values,
+    generate_csv_bytes,
     generate_xlsx_bytes,
-    normalize_export_value,
     parse_upload_rows,
     upsert_loan_applications,
 )
@@ -200,31 +199,6 @@ def latest_record(records: list[Any]) -> Any:
             item.id or 0,
         ),
     )
-
-
-def stream_loan_csv_export(records) -> Any:
-    def row_iterator():
-        buffer = StringIO()
-        writer = csv.DictWriter(buffer, fieldnames=EXPORT_FIELDS)
-        writer.writeheader()
-        yield buffer.getvalue().encode("utf-8")
-        buffer.seek(0)
-        buffer.truncate(0)
-
-        for record in records:
-            writer.writerow(
-                {
-                    field: normalize_export_value(field, getattr(record, field, ""))
-                    for field in EXPORT_FIELDS
-                }
-            )
-            chunk = buffer.getvalue()
-            if chunk:
-                yield chunk.encode("utf-8")
-                buffer.seek(0)
-                buffer.truncate(0)
-
-    return row_iterator()
 
 
 def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]:
@@ -1124,13 +1098,27 @@ def export_loan_applications(
                 ),
             )
 
-        if normalized_format == "xlsx":
-            records = (
-                query.order_by(LoanApplication.created_at.desc())
+        record_ids = [
+            record_id
+            for record_id, in (
+                query.with_entities(LoanApplication.id)
+                .order_by(LoanApplication.created_at.desc())
                 .limit(MAX_LOAN_EXPORT_RECORDS)
                 .all()
             )
-            content = generate_xlsx_bytes(records)
+        ]
+        loan_table = Table("loan_applications", MetaData(), autoload_with=db.get_bind())
+        export_fields = [column.name for column in loan_table.columns]
+        records_by_id: dict[int, dict[str, Any]] = {}
+        for id_chunk in chunk_values(record_ids, 500):
+            for row in db.execute(
+                select(loan_table).where(loan_table.c.id.in_(id_chunk))
+            ).mappings():
+                records_by_id[row["id"]] = dict(row)
+        records = [records_by_id[record_id] for record_id in record_ids if record_id in records_by_id]
+
+        if normalized_format == "xlsx":
+            content = generate_xlsx_bytes(records, export_fields)
             media_type = (
                 "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
             )
@@ -1147,12 +1135,9 @@ def export_loan_applications(
         else:
             media_type = "text/csv"
             extension = "csv"
-            records = (
-                query.order_by(LoanApplication.created_at.desc())
-                .yield_per(250)
-            )
+            content = generate_csv_bytes(records, export_fields)
             return StreamingResponse(
-                stream_loan_csv_export(records),
+                BytesIO(content),
                 media_type=media_type,
                 headers={
                     "Content-Disposition": (
