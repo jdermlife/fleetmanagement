@@ -108,6 +108,70 @@ function getStatusTransitionErrorMessage(error: unknown, status: WorkflowStatus)
 const DEFAULT_STATUS_FILTER: "All" | WorkflowStatus = "Draft";
 const PAGE_SIZE = 10;
 
+function RepositoryDatePicker({
+  label,
+  max,
+  min,
+  onChange,
+  value,
+}: {
+  label: string;
+  max?: string;
+  min?: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
+  const inputRef = useRef<HTMLInputElement | null>(null);
+  const inputId = `loan-repository-${label.toLowerCase().replace(/\s+/g, "-")}`;
+
+  const openCalendar = () => {
+    const input = inputRef.current;
+    if (!input) {
+      return;
+    }
+
+    if (typeof input.showPicker === "function") {
+      input.showPicker();
+      return;
+    }
+
+    input.focus();
+    input.click();
+  };
+
+  return (
+    <div className="block">
+      <label
+        className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500"
+        htmlFor={inputId}
+      >
+        {label}
+      </label>
+      <div className="flex overflow-hidden rounded-xl border border-slate-300 bg-white shadow-sm transition focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-100">
+        <input
+          ref={inputRef}
+          id={inputId}
+          type="date"
+          value={value}
+          min={min}
+          max={max}
+          onChange={(event) => onChange(event.target.value)}
+          className="min-w-0 flex-1 border-0 bg-white px-3 py-3 text-sm text-slate-800 outline-none"
+        />
+        <button
+          type="button"
+          aria-label={`Open ${label.toLowerCase()} calendar`}
+          title={`Open ${label.toLowerCase()} calendar`}
+          onClick={openCalendar}
+          className="border-l border-slate-200 bg-slate-50 px-3 text-xs font-semibold text-blue-700 transition hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500"
+        >
+          Calendar
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function LoanRepository() {
   const navigate = useNavigate();
   const { hasRole, hasPermission } = useAuthorization();
@@ -456,33 +520,19 @@ export default function LoanRepository() {
                   </select>
                 </label>
 
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Date From
-                  </span>
-                  <input
-                    type="date"
-                    value={dateFrom}
-                    onChange={(event) => {
-                      setDateFrom(event.target.value);
-                    }}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-                </label>
+                <RepositoryDatePicker
+                  label="Date From"
+                  value={dateFrom}
+                  max={dateTo || undefined}
+                  onChange={setDateFrom}
+                />
 
-                <label className="block">
-                  <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-slate-500">
-                    Date To
-                  </span>
-                  <input
-                    type="date"
-                    value={dateTo}
-                    onChange={(event) => {
-                      setDateTo(event.target.value);
-                    }}
-                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 shadow-sm outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-100"
-                  />
-                </label>
+                <RepositoryDatePicker
+                  label="Date To"
+                  value={dateTo}
+                  min={dateFrom || undefined}
+                  onChange={setDateTo}
+                />
               </div>
 
               <div className="mt-5 flex flex-col gap-3 border-t border-slate-200 pt-5 xl:flex-row xl:items-center xl:justify-between">
