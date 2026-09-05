@@ -74,6 +74,7 @@ type DashboardData = {
   kpis: MetricCardData[];
   processingCoverage: number;
   processingTrend: TrendPoint[];
+  purposeCounts: TrendPoint[];
   purposeSlices: PurposeSlice[];
   quarterVolume: TrendPoint[];
   riskByLoanType: RiskProfilePoint[];
@@ -701,6 +702,13 @@ export default function DashboardSnapshot() {
                   </Panel>
                 </SectionGrid>
 
+                <Panel
+                  subtitle="Application volume grouped by the stated purpose of each submitted loan."
+                  title="Count of Applications by Loan Purpose"
+                >
+                  <PurposeBarChart data={dashboard.purposeCounts} />
+                </Panel>
+
                 <SectionGrid>
                   <Panel
                     subtitle="Stacked outcome view comparing approved and rejected flows across time."
@@ -1101,6 +1109,89 @@ function VerticalBars({ accent, data }: { accent: string; data: TrendPoint[] }) 
         </div>
       ))}
     </ResponsiveGrid>
+  );
+}
+
+function PurposeBarChart({ data }: { data: TrendPoint[] }) {
+  if (data.length === 0) {
+    return <EmptyState message="No loan-purpose records are available for this chart." />;
+  }
+
+  const palette = ["#443983", "#3b528b", "#31688e", "#287c8e", "#21918c", "#35b779", "#73d055", "#b8de29"];
+  const maxValue = Math.max(...data.map((item) => item.value), 1);
+  const chartHeight = 280;
+  const chartWidth = Math.max(760, data.length * 112);
+  const plotTop = 18;
+  const plotBottom = 188;
+  const plotHeight = plotBottom - plotTop;
+  const leftAxis = 52;
+  const rightPadding = 18;
+  const usableWidth = chartWidth - leftAxis - rightPadding;
+  const step = usableWidth / data.length;
+  const barWidth = Math.min(76, step * 0.72);
+  const tickCount = 5;
+
+  return (
+    <div style={{ overflowX: "auto", paddingBottom: "4px", width: "100%" }}>
+      <svg
+        aria-label="Count of applications by loan purpose"
+        role="img"
+        style={{ display: "block", height: `${chartHeight}px`, minWidth: `${chartWidth}px`, width: "100%" }}
+        viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+      >
+        {Array.from({ length: tickCount + 1 }, (_, index) => {
+          const ratio = index / tickCount;
+          const y = plotBottom - ratio * plotHeight;
+          const value = Math.round(maxValue * ratio);
+          return (
+            <g key={index}>
+              <line x1={leftAxis} x2={chartWidth - rightPadding} y1={y} y2={y} stroke="#e2e8f0" />
+              <text x={leftAxis - 10} y={y + 4} textAnchor="end" style={{ fill: "#64748b", fontSize: "11px" }}>
+                {value}
+              </text>
+            </g>
+          );
+        })}
+        <line x1={leftAxis} x2={leftAxis} y1={plotTop} y2={plotBottom} stroke="#94a3b8" />
+        <line x1={leftAxis} x2={chartWidth - rightPadding} y1={plotBottom} y2={plotBottom} stroke="#94a3b8" />
+        <text
+          x="14"
+          y={(plotTop + plotBottom) / 2}
+          textAnchor="middle"
+          transform={`rotate(-90 14 ${(plotTop + plotBottom) / 2})`}
+          style={{ fill: "#475569", fontSize: "12px", fontWeight: 600 }}
+        >
+          Number of Applications
+        </text>
+        {data.map((item, index) => {
+          const barHeight = (item.value / maxValue) * plotHeight;
+          const x = leftAxis + index * step + (step - barWidth) / 2;
+          const y = plotBottom - barHeight;
+          const labelX = leftAxis + index * step + step / 2;
+          return (
+            <g key={item.label}>
+              <title>{`${item.label}: ${item.value.toLocaleString()} applications`}</title>
+              <rect x={x} y={y} width={barWidth} height={barHeight} rx="3" fill={palette[index % palette.length]} />
+              <text x={labelX} y={Math.max(y - 7, 12)} textAnchor="middle" style={{ fill: "#334155", fontSize: "11px", fontWeight: 700 }}>
+                {item.value.toLocaleString()}
+              </text>
+              <text
+                x={labelX + 2}
+                y={plotBottom + 17}
+                textAnchor="end"
+                transform={`rotate(-38 ${labelX + 2} ${plotBottom + 17})`}
+                style={{ fill: "#475569", fontSize: "11px", fontWeight: 600 }}
+              >
+                {item.label}
+              </text>
+            </g>
+          );
+        })}
+        <text x={(leftAxis + chartWidth - rightPadding) / 2} y={chartHeight - 8} textAnchor="middle" style={{ fill: "#475569", fontSize: "12px", fontWeight: 600 }}>
+          Loan Purpose
+        </text>
+      </svg>
+    </div>
   );
 }
 
@@ -1647,7 +1738,8 @@ function buildDashboardData(applications: LoanApplicationRecord[]): DashboardDat
   const quarterVolume = toQuarterTrend(submitted);
   const approvalOutcomes = buildApprovalOutcomes(submitted);
   const amountHistogram = buildHistogram(submitted.map((record) => record.loan_amount).filter(isFiniteNumber));
-  const purposeSlices = buildPurposeSlices(submitted);
+  const purposeCounts = buildPurposeCounts(enriched);
+  const purposeSlices = buildPurposeSlices(buildPurposeCounts(submitted));
   const processingTrend = toOrderedTrendMap(
     submitted.filter((record) => record.processingDays !== null),
     (record) => record.createdDate,
@@ -1681,6 +1773,7 @@ function buildDashboardData(applications: LoanApplicationRecord[]): DashboardDat
     kpis,
     processingCoverage,
     processingTrend,
+    purposeCounts,
     purposeSlices,
     quarterVolume,
     riskByLoanType,
@@ -1744,9 +1837,8 @@ function buildHistogram(values: number[]): TrendPoint[] {
   return buckets;
 }
 
-function buildPurposeSlices(records: EnrichedLoan[]): PurposeSlice[] {
+function buildPurposeCounts(records: EnrichedLoan[]): TrendPoint[] {
   const counts = new Map<string, number>();
-  const palette = ["#0f766e", "#2563eb", "#d97706", "#7c3aed", "#dc2626", "#475569"];
 
   for (const record of records) {
     const label = normalizeText(record.purpose, "Unspecified");
@@ -1755,8 +1847,15 @@ function buildPurposeSlices(records: EnrichedLoan[]): PurposeSlice[] {
 
   return Array.from(counts.entries())
     .sort((left, right) => right[1] - left[1])
+    .map(([label, value]) => ({ label, value }));
+}
+
+function buildPurposeSlices(purposeCounts: TrendPoint[]): PurposeSlice[] {
+  const palette = ["#0f766e", "#2563eb", "#d97706", "#7c3aed", "#dc2626", "#475569"];
+
+  return purposeCounts
     .slice(0, 6)
-    .map(([label, value], index) => ({
+    .map(({ label, value }, index) => ({
       color: palette[index % palette.length],
       label,
       value,
