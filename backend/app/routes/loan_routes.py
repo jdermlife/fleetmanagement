@@ -659,7 +659,8 @@ def create_loan_application(
             )
         record = LoanApplication(
             application_no=scored_data.application_no,
-            created_by=user.id
+            created_by=user.id,
+            created_by_user_id=user.id,
         )
         apply_loan_application_fields(record, scored_data)
         db.add(record)
@@ -734,6 +735,7 @@ def compute_quant_scores(
             record = LoanApplication(
                 application_no=scored_data.application_no,
                 created_by=user.id,
+                created_by_user_id=user.id,
             )
             db.add(record)
             db.flush()
@@ -1055,15 +1057,17 @@ def get_loan_applications(
 
 @router.post(
     "/loan-applications/import",
-    dependencies=[Depends(require_roles("Admin"))],
 )
-async def import_loan_applications(file: UploadFile = File(...)):
+async def import_loan_applications(
+    file: UploadFile = File(...),
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
     db = SessionLocal()
 
     try:
         file_bytes = await file.read()
         rows = parse_upload_rows(file.filename or "upload.csv", file_bytes)
-        result = upsert_loan_applications(db, rows)
+        result = upsert_loan_applications(db, rows, creator_user_id=user.id)
         if result.get("inserted", 0) > 0 or result.get("updated", 0) > 0:
             invalidate_dashboard_statistics_cache()
 

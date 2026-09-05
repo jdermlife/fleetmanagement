@@ -28,6 +28,12 @@ class LoanApplication(Base):
     ForeignKey("users.id")
     )
 
+    created_by_user_id = Column(
+    Integer,
+    ForeignKey("users.id"),
+    index=True,
+    )
+
     updated_by = Column(
     Integer,
     ForeignKey("users.id")

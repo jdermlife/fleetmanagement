@@ -432,6 +432,7 @@ def parse_upload_rows(filename: str, file_bytes: bytes) -> list[dict[str, Any]]:
 def upsert_loan_applications(
     db,
     rows: list[dict[str, Any]],
+    creator_user_id: int | None = None,
 ) -> dict[str, int]:
     payloads = [row_to_application_payload(raw_row) for raw_row in rows]
 
@@ -455,7 +456,11 @@ def upsert_loan_applications(
         record = existing_records.get(application_no)
 
         if record is None:
-            record = LoanApplication(application_no=application_no)
+            record = LoanApplication(
+                application_no=application_no,
+                created_by=creator_user_id,
+                created_by_user_id=creator_user_id,
+            )
             db.add(record)
             existing_records[application_no] = record
             inserted += 1

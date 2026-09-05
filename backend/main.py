@@ -86,6 +86,7 @@ from app.routes.loan_routes import router as loan_router
 from app.routes.paymongo import router as paymongo_router
 from app.routes.paypal import router as paypal_router
 from app.routes.subscriptions import router as subscriptions_router
+from migrate_loan_application_owner import add_loan_application_owner_column
 from migrate_overall_scores_wealth_fields import ensure_wealth_score_columns
 from migrate_profile_history import run_migration as migrate_profile_history
 
@@ -138,6 +139,7 @@ def _ensure_loan_application_schema() -> None:
         return
 
     Base.metadata.create_all(bind=engine)
+    add_loan_application_owner_column()
 
     with engine.begin() as connection:
         connection.execute(

@@ -37,6 +37,7 @@ def test_upsert_fields_exclude_export_only_columns() -> None:
     assert set(EXPORT_FIELDS) - set(UPSERT_FIELDS) == {
         "id",
         "created_by",
+        "created_by_user_id",
         "updated_by",
         "reviewed_by",
         "approved_by",
@@ -107,6 +108,8 @@ def test_upsert_loan_applications_uses_prefetched_records(monkeypatch) -> None:
     existing_record = LoanApplication(
         application_no="APP-EXISTING-001",
         borrower_name="Existing Borrower",
+        created_by=11,
+        created_by_user_id=11,
     )
     existing_record.status = "Draft"
 
@@ -131,13 +134,18 @@ def test_upsert_loan_applications_uses_prefetched_records(monkeypatch) -> None:
                 "borrower_name": "New Borrower",
             },
         ],
+        creator_user_id=42,
     )
 
     assert result == {"inserted": 1, "updated": 1, "skipped": 0}
     assert db.commit_called is True
     assert len(db.added_records) == 1
     assert db.added_records[0].application_no == "APP-NEW-001"
+    assert db.added_records[0].created_by == 42
+    assert db.added_records[0].created_by_user_id == 42
     assert existing_record.borrower_name == "Updated Existing Borrower"
+    assert existing_record.created_by == 11
+    assert existing_record.created_by_user_id == 11
 
 
 def test_upsert_loan_applications_reuses_new_record_for_duplicate_rows(monkeypatch) -> None:
@@ -162,11 +170,14 @@ def test_upsert_loan_applications_reuses_new_record_for_duplicate_rows(monkeypat
                 "borrower_name": "Second Value",
             },
         ],
+        creator_user_id=7,
     )
 
     assert result == {"inserted": 1, "updated": 1, "skipped": 0}
     assert db.commit_called is True
     assert len(db.added_records) == 1
     assert db.added_records[0].application_no == "APP-DUPE-001"
+    assert db.added_records[0].created_by == 7
+    assert db.added_records[0].created_by_user_id == 7
     assert db.added_records[0].borrower_name == "Second Value"
     assert db.added_records[0].status == "Approved"

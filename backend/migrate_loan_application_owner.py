@@ -30,6 +30,16 @@ def add_loan_application_owner_column() -> None:
                 """
             )
         )
+        connection.execute(
+            text(
+                """
+                UPDATE loan_applications
+                SET created_by_user_id = created_by
+                WHERE created_by_user_id IS NULL
+                  AND created_by IS NOT NULL;
+                """
+            )
+        )
 
 
 if __name__ == "__main__":
