@@ -9064,6 +9064,36 @@ th { color: var(--dark-gold); }
   box-shadow: none;
 }
 
+.login-art-remember {
+  align-items: center;
+  color: #fff7d7;
+  cursor: pointer;
+  display: flex;
+  gap: 10px;
+  padding: 2px 4px;
+}
+
+.login-art-remember input {
+  accent-color: #f5c451;
+  height: 18px;
+  margin: 0;
+  width: 18px;
+}
+
+.login-art-remember span {
+  display: grid;
+  gap: 2px;
+}
+
+.login-art-remember strong {
+  font-size: 0.84rem;
+}
+
+.login-art-remember small {
+  color: rgba(255, 231, 142, 0.78);
+  font-size: 0.72rem;
+}
+
 .login-art-visibility-toggle {
   border: none;
   background: transparent;

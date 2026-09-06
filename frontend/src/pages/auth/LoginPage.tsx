@@ -158,6 +158,7 @@ export default function LoginPage() {
   const [message, setMessage] = useState('')
   const [isSaving, setIsSaving] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [rememberMe, setRememberMe] = useState(false)
   const [showEmailLogin, setShowEmailLogin] = useState(false)
   const [showFees, setShowFees] = useState(false)
   const feesDialogRef = useRef<HTMLDialogElement>(null)
@@ -187,7 +188,7 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      await login({ username, password })
+      await login({ username, password, rememberMe })
       openFinancialHealthJourney()
     } catch (error) {
       const { status } = getBackendErrorPayload(error)
@@ -228,6 +229,7 @@ export default function LoginPage() {
       await loginWithGoogle({
         idToken,
         platform,
+        rememberMe,
       })
       openFinancialHealthJourney()
     } catch (error) {
@@ -289,6 +291,7 @@ export default function LoginPage() {
 
       await loginWithApple({
         idToken: appleTokenResult.idToken,
+        rememberMe,
       })
       openFinancialHealthJourney()
     } catch (error) {
@@ -449,6 +452,18 @@ export default function LoginPage() {
                   >
                     <EyeIcon open={showPassword} />
                   </button>
+                </label>
+
+                <label className="login-art-remember">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(event) => setRememberMe(event.target.checked)}
+                  />
+                  <span>
+                    <strong>Remember me</strong>
+                    <small>Keep me signed in on this device.</small>
+                  </span>
                 </label>
 
                 <button type="submit" className="login-art-submit" disabled={isSaving}>

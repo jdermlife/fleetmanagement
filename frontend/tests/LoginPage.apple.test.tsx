@@ -116,6 +116,7 @@ describe('LoginPage Apple sign-in', () => {
 
     expect(screen.getByPlaceholderText('Email or username')).toBeTruthy()
     expect(screen.getByPlaceholderText('Password')).toBeTruthy()
+    expect(screen.getByRole('checkbox', { name: /remember me/i })).toBeTruthy()
     expect(screen.getByRole('button', { name: 'Log In' })).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Log In' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
@@ -161,12 +162,14 @@ describe('LoginPage Apple sign-in', () => {
     await user.click(screen.getByRole('button', { name: 'Other Email' }))
     await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
     await user.type(screen.getByPlaceholderText('Password'), 'password123')
+    await user.click(screen.getByRole('checkbox', { name: /remember me/i }))
     await user.click(screen.getByRole('button', { name: 'Log In' }))
 
     await waitFor(() => {
       expect(mockLogin).toHaveBeenCalledWith({
         username: 'email-user@example.com',
         password: 'password123',
+        rememberMe: true,
       })
       expect(window.localStorage.getItem('fms:journey:minimized')).toBeNull()
       expect(window.localStorage.getItem('fms:journey:do-not-show')).toBeNull()
@@ -267,12 +270,14 @@ describe('LoginPage Apple sign-in', () => {
     await waitFor(() => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledWith({
         clientId: 'com.quantech.filscore.web',
+        iosClientId: 'com.quantech.filscore',
         redirectURI: `${window.location.origin}/auth/apple/callback`,
       })
     })
 
     expect(mockLoginWithApple).toHaveBeenCalledWith({
       idToken: 'apple-identity-token-123',
+      rememberMe: false,
     })
 
     await waitFor(() => {
@@ -306,6 +311,7 @@ describe('LoginPage Apple sign-in', () => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledTimes(1)
       expect(mockLoginWithApple).toHaveBeenCalledWith({
         idToken: 'apple-identity-token-123',
+        rememberMe: false,
       })
     })
 
@@ -339,6 +345,8 @@ describe('LoginPage Apple sign-in', () => {
     await waitFor(() => {
       expect(mockLoginWithGoogle).toHaveBeenCalledWith({
         idToken: 'google-identity-token-123',
+        platform: 'web',
+        rememberMe: false,
       })
       expect(mockNavigate).toHaveBeenCalledWith('/register', {
         replace: true,

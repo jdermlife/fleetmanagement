@@ -113,7 +113,11 @@ describe('loginWithApple', () => {
       },
     })
 
-    await apiModule.login({ username: 'mobile-user', password: 'not-a-real-password' })
+    await apiModule.login({
+      username: 'mobile-user',
+      password: 'not-a-real-password',
+      rememberMe: true,
+    })
 
     expect(window.localStorage.getItem('auth_token')).toBe('login-access-token')
     expect(window.localStorage.getItem('refresh_token')).toBe('login-refresh-token')
@@ -124,6 +128,37 @@ describe('loginWithApple', () => {
     expect(reloadedApiModule.getAuthToken()).toBe('login-access-token')
     expect(reloadedApiModule.getRefreshToken()).toBe('login-refresh-token')
     expect(clients.at(-1)?.defaults.headers.common.Authorization).toBe('Bearer login-access-token')
+  })
+
+  it('keeps login tokens in session storage when remember me is not selected', async () => {
+    const apiModule = await import('../src/api')
+    const authClient = clients[1]
+
+    authClient.post.mockResolvedValue({
+      data: {
+        access_token: 'session-access-token',
+        refresh_token: 'session-refresh-token',
+        user: {
+          id: 10,
+          username: 'session-user',
+          email: 'session@example.com',
+          role: 'subscriber_borrower',
+          roles: ['subscriber_borrower'],
+          permissions: [],
+          is_active: true,
+          created_at: '2026-08-23T00:00:00Z',
+          updated_at: '2026-08-23T00:00:00Z',
+          last_login_at: null,
+        },
+      },
+    })
+
+    await apiModule.login({ username: 'session-user', password: 'not-a-real-password' })
+
+    expect(window.sessionStorage.getItem('auth_token')).toBe('session-access-token')
+    expect(window.sessionStorage.getItem('refresh_token')).toBe('session-refresh-token')
+    expect(window.localStorage.getItem('auth_token')).toBeNull()
+    expect(window.localStorage.getItem('refresh_token')).toBeNull()
   })
 
   it('posts identity_token to apple-token endpoint and stores session tokens', async () => {
@@ -154,6 +189,7 @@ describe('loginWithApple', () => {
 
     const response = await apiModule.loginWithApple({
       idToken: 'apple-jwt-token',
+      rememberMe: true,
     })
 
     expect(authClient.post).toHaveBeenCalledWith('/api/auth/apple-token', {

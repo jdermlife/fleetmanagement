@@ -7,6 +7,8 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 
+type AuthStorageMode = 'persistent' | 'session'
+
 const isDevelopment = import.meta.env.DEV
 const apiBaseUrlCandidates = [APP_CONFIG.apiBase]
 
@@ -146,6 +148,7 @@ let refreshToken: string | null = null
 let currentUserCache: AuthUser | null = null
 let currentUserRequest: Promise<AuthUser> | null = null
 let refreshTokenRequest: Promise<string> | null = null
+let authStorageMode: AuthStorageMode = 'persistent'
 
 function clearCachedAuthState() {
   currentUserCache = null
@@ -205,9 +208,14 @@ function isBrowserReload(): boolean {
     .some((entry) => (entry as PerformanceNavigationTiming).type === 'reload')
 }
 
-function syncStoredSession(nextAccessToken: string | null, nextRefreshToken: string | null) {
+function syncStoredSession(
+  nextAccessToken: string | null,
+  nextRefreshToken: string | null,
+  storageMode: AuthStorageMode = authStorageMode,
+) {
   authToken = nextAccessToken
   refreshToken = nextRefreshToken
+  authStorageMode = storageMode
 
   if (nextAccessToken) {
     api.defaults.headers.common['Authorization'] = `Bearer ${nextAccessToken}`
@@ -217,16 +225,18 @@ function syncStoredSession(nextAccessToken: string | null, nextRefreshToken: str
   }
 
   if (typeof window !== 'undefined') {
+    localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+    localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+    sessionStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+    sessionStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+
+    const storage = storageMode === 'persistent' ? localStorage : sessionStorage
     if (nextAccessToken) {
-      localStorage.setItem(AUTH_TOKEN_STORAGE_KEY, nextAccessToken)
-    } else {
-      localStorage.removeItem(AUTH_TOKEN_STORAGE_KEY)
+      storage.setItem(AUTH_TOKEN_STORAGE_KEY, nextAccessToken)
     }
 
     if (nextRefreshToken) {
-      localStorage.setItem(REFRESH_TOKEN_STORAGE_KEY, nextRefreshToken)
-    } else {
-      localStorage.removeItem(REFRESH_TOKEN_STORAGE_KEY)
+      storage.setItem(REFRESH_TOKEN_STORAGE_KEY, nextRefreshToken)
     }
   }
 }
@@ -237,24 +247,30 @@ export function setAuthToken(token: string | null) {
 
 export function getAuthToken(): string | null {
   if (typeof window !== 'undefined' && !authToken) {
-    authToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+    authToken = sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY) ?? localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
   }
   return authToken
 }
 
 export function getRefreshToken(): string | null {
   if (typeof window !== 'undefined' && !refreshToken) {
-    refreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+    refreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY) ?? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   }
   return refreshToken
 }
 
 // Initialize token from storage on load
 if (typeof window !== 'undefined' && typeof localStorage?.getItem === 'function') {
-  const storedAuthToken = localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
-  const storedRefreshToken = localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  const sessionAuthToken = sessionStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const sessionRefreshToken = sessionStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
+  const storedAuthToken = sessionAuthToken ?? localStorage.getItem(AUTH_TOKEN_STORAGE_KEY)
+  const storedRefreshToken = sessionRefreshToken ?? localStorage.getItem(REFRESH_TOKEN_STORAGE_KEY)
   if (storedAuthToken || storedRefreshToken) {
-    syncStoredSession(storedAuthToken, storedRefreshToken)
+    syncStoredSession(
+      storedAuthToken,
+      storedRefreshToken,
+      sessionAuthToken || sessionRefreshToken ? 'session' : 'persistent',
+    )
     if (storedAuthToken && !isBrowserReload()) {
       restoreCurrentUserFromSession(storedAuthToken)
     } else {
@@ -422,17 +438,20 @@ export function getApiBaseUrl(): string {
 export interface LoginRequest {
   username: string
   password: string
+  rememberMe?: boolean
 }
 
 export interface GoogleLoginRequest {
   idToken: string
   platform: 'web' | 'ios'
+  rememberMe?: boolean
   subscriberType?: 'borrower' | 'lender'
   lenderDataSharingConsent?: boolean
 }
 
 export interface AppleLoginRequest {
   idToken: string
+  rememberMe?: boolean
   subscriberType?: 'borrower' | 'lender'
   lenderDataSharingConsent?: boolean
 }
@@ -518,7 +537,10 @@ function extractSessionTokens(responseData: Record<string, unknown>): {
   }
 }
 
-function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
+function syncSessionFromAuthResponse(
+  responseData: Record<string, unknown>,
+  storageMode: AuthStorageMode = authStorageMode,
+): {
   accessToken: string
   refreshToken: string
 } {
@@ -528,7 +550,7 @@ function syncSessionFromAuthResponse(responseData: Record<string, unknown>): {
     throw new Error('Unexpected authentication tokens received from the backend.')
   }
 
-  syncStoredSession(tokens.accessToken, tokens.refreshToken)
+  syncStoredSession(tokens.accessToken, tokens.refreshToken, storageMode)
   return {
     accessToken: tokens.accessToken,
     refreshToken: tokens.refreshToken,
@@ -547,7 +569,10 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
     throw new Error('Unexpected login response received from the backend.')
   }
 
-  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(
+    responseData,
+    credentials.rememberMe ? 'persistent' : 'session',
+  )
   const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
   return {
@@ -571,7 +596,10 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
     throw new Error('Unexpected Google login response received from the backend.')
   }
 
-  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(
+    responseData,
+    payload.rememberMe ? 'persistent' : 'session',
+  )
   const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
 
@@ -596,7 +624,10 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
     throw new Error('Unexpected Apple login response received from the backend.')
   }
 
-  const { accessToken, refreshToken } = syncSessionFromAuthResponse(responseData)
+  const { accessToken, refreshToken } = syncSessionFromAuthResponse(
+    responseData,
+    payload.rememberMe ? 'persistent' : 'session',
+  )
   const currentUser = storeCurrentUser(normalizeAuthUser(user))
   currentUserRequest = null
 
