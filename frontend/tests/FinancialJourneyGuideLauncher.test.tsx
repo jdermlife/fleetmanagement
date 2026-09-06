@@ -17,6 +17,7 @@ describe('FinancialJourneyGuideLauncher', () => {
     const dialog = screen.getByRole('dialog', { name: 'Welcome to Your Financial Health Journey!' })
     expect(dialog).toBeTruthy()
     expect(screen.getByRole('listitem', { current: 'step' }).textContent).toContain('Loan & Wealth Ready?')
+    expect(screen.getByRole('link', { name: 'Financial Health' }).getAttribute('href')).toBe('/financial-health-summary')
 
     await userEvent.click(screen.getByRole('button', { name: 'Minimize Financial Health Journey' }))
     expect(screen.queryByRole('dialog', { name: 'Welcome to Your Financial Health Journey!' })).toBeNull()

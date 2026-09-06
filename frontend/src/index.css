@@ -10836,6 +10836,8 @@ th { color: var(--dark-gold); }
   font-weight: 700;
   line-height: 1.2;
   text-align: center;
+  text-decoration: none;
+  cursor: pointer;
   transform: translate(-50%, -50%);
 }
 

@@ -229,9 +229,9 @@ export default function FinancialJourneyGuide({
             )
           })}
 
-          <div
+          <a
             className="financial-health-journey-hub"
-            tabIndex={0}
+            href="/financial-health-summary"
             aria-describedby={activeDetailId === 'financialHealth' ? 'financial-health-journey-detail' : undefined}
             onMouseEnter={() => setActiveDetailId('financialHealth')}
             onMouseLeave={() => setActiveDetailId(null)}
@@ -239,7 +239,7 @@ export default function FinancialJourneyGuide({
             onBlur={() => setActiveDetailId(null)}
           >
             <span>Financial Health</span>
-          </div>
+          </a>
 
           {activeDetail ? (
             <aside id="financial-health-journey-detail" className="financial-health-journey-detail" role="tooltip">
