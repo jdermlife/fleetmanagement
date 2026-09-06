@@ -64,6 +64,7 @@ describe('BuildProfilePage', () => {
       setItem: (key: string, value: string) => values.set(key, value),
     })
     window.localStorage.clear()
+    window.localStorage.setItem('fms:journey:do-not-show', '1')
   })
 
   afterEach(() => {
@@ -88,6 +89,19 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('button', { name: 'Voice Guided Entry' }).getAttribute('aria-pressed')).toBe('false')
     expect(screen.queryByRole('region', { name: 'Voice-guided profile entry' })).toBeNull()
     expect(screen.getByRole('heading', { name: 'Step 1: Tell Us About Yourself' })).toBeTruthy()
+  })
+
+  it('shows, minimizes, and reopens the Financial Journey guide', async () => {
+    window.localStorage.removeItem('fms:journey:do-not-show')
+    render(<BuildProfilePage />)
+
+    expect(screen.getByRole('dialog', { name: 'Welcome to Your Financial Health Journey!' })).toBeTruthy()
+    await userEvent.click(screen.getByRole('button', { name: 'Minimize Financial Health Journey' }))
+    expect(screen.queryByRole('dialog', { name: 'Welcome to Your Financial Health Journey!' })).toBeNull()
+    expect(window.localStorage.getItem('fms:journey:minimized')).toBe('1')
+
+    await userEvent.click(screen.getByRole('button', { name: 'Financial Journey Guide' }))
+    expect(screen.getByRole('dialog', { name: 'Welcome to Your Financial Health Journey!' })).toBeTruthy()
   })
 
   it('applies an accepted voice response through the Build Profile autosave flow', async () => {

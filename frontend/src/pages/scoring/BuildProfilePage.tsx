@@ -9,6 +9,15 @@ import {
   type LoanApplicationRecord,
 } from '../../api/loan'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
+import FinancialJourneyGuide, {
+  JOURNEY_DO_NOT_SHOW_STORAGE_KEY,
+  JOURNEY_MINIMIZED_STORAGE_KEY,
+  safeJourneyStorageGet,
+  safeJourneyStorageRemove,
+  safeJourneyStorageSet,
+  type JourneyStep,
+  type JourneyStepId,
+} from '../../components/financial-health/FinancialJourneyGuide'
 import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
@@ -772,6 +781,9 @@ export default function BuildProfilePage() {
   const [varianceCategoryFilter, setVarianceCategoryFilter] = useState('all')
   const [varianceLineSearch, setVarianceLineSearch] = useState('')
   const [profileEntryMode, setProfileEntryMode] = useState<'manual' | 'voice'>('manual')
+  const [isJourneyMinimized, setIsJourneyMinimized] = useState(() => safeJourneyStorageGet(JOURNEY_MINIMIZED_STORAGE_KEY) === '1')
+  const [doNotShowJourneyAgain, setDoNotShowJourneyAgain] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
+  const [isJourneyDismissed, setIsJourneyDismissed] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
   const scoreApplicationNo = profile.selectedApplicationNo?.trim()
     || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
@@ -918,6 +930,57 @@ export default function BuildProfilePage() {
   }, [profile])
 
   const completionPercent = Math.round(Object.values(stepCompletion).reduce((sum, percent) => sum + percent, 0) / WORKFLOW_STEPS.length)
+  const journeyStepCompletion: Record<JourneyStepId, boolean> = {
+    createProfile: completionPercent === 100,
+    creditHealth: false,
+    wealthBuilder: false,
+    budgetTargets: false,
+    billsLoans: false,
+    billManager: false,
+  }
+
+  const minimizeJourney = () => {
+    if (doNotShowJourneyAgain) {
+      safeJourneyStorageSet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY, '1')
+      safeJourneyStorageRemove(JOURNEY_MINIMIZED_STORAGE_KEY)
+      setIsJourneyDismissed(true)
+    } else {
+      safeJourneyStorageSet(JOURNEY_MINIMIZED_STORAGE_KEY, '1')
+    }
+    setIsJourneyMinimized(true)
+  }
+
+  const openJourney = () => {
+    setIsJourneyDismissed(false)
+    setIsJourneyMinimized(false)
+    safeJourneyStorageRemove(JOURNEY_MINIMIZED_STORAGE_KEY)
+  }
+
+  const startProfileJourney = () => {
+    minimizeJourney()
+    window.requestAnimationFrame(() => {
+      document.querySelector('.build-profile-form-panel')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }
+
+  const launchJourneyStep = (step: JourneyStep) => {
+    if (step.id === 'createProfile') {
+      startProfileJourney()
+      return
+    }
+    const applicationQuery = scoreApplicationNo ? `?applicationNo=${encodeURIComponent(scoreApplicationNo)}` : ''
+    navigate(`${step.route}${applicationQuery}`)
+  }
+
+  const changeJourneyPreference = (shouldHide: boolean) => {
+    setDoNotShowJourneyAgain(shouldHide)
+    if (shouldHide) {
+      safeJourneyStorageSet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY, '1')
+    } else {
+      safeJourneyStorageRemove(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
+      setIsJourneyDismissed(false)
+    }
+  }
   const incompleteActivities = WORKFLOW_STEPS.filter(({ id }) => stepCompletion[id] < 100)
   const profileStatus = completionPercent === 100 ? 'Complete' : completionPercent > 0 ? 'In Progress' : 'Getting Started'
   const updateValue = (key: string, value: string) => setProfile((current) => ({
@@ -2616,34 +2679,6 @@ export default function BuildProfilePage() {
       </div>
     </section>
       
-              <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
-       
-        {isJourneyMinimized && !isJourneyDismissed ? (
-          <button
-            type="button"
-            className="financial-health-journey-main-fab"
-            onClick={() => window.location.assign('/build-profile')}
-          >
-            Update Profile
-          </button>
-          
-          
-        ) : null}
-                {isJourneyMinimized && !isJourneyDismissed ? (
-          <button
-            type="button"
-            className="financial-health-journey-main-fab"
-            aria-label="Financial Journey Guide"
-            onClick={openJourney}
-          >
-             User Guide
-          </button>
-          
-          
-        ) : null}
-     
-        
-      </section>  
 
 
 
@@ -2660,6 +2695,30 @@ export default function BuildProfilePage() {
       </article>
       <article className="psychometric-summary-card"><span>Profile Status</span><strong>{profileStatus}</strong><small>Based on information provided</small></article>
       <article className="psychometric-summary-card"><span>Current Step</span><strong>{profile.step} / 12</strong><small>{currentStep.label}</small></article>
+    </section>
+
+    <FinancialJourneyGuide
+      completion={journeyStepCompletion}
+      currentStep="createProfile"
+      doNotShowAgain={doNotShowJourneyAgain}
+      isOpen={!isJourneyMinimized && !isJourneyDismissed}
+      onDoNotShowAgainChange={changeJourneyPreference}
+      onLaunchStep={launchJourneyStep}
+      onMinimize={minimizeJourney}
+      onStart={startProfileJourney}
+    />
+
+    <section className="financial-health-compute-bar" aria-label="Profile journey controls">
+      <div>
+        <strong>Financial Health Journey</strong>
+        <span>Review the guided steps or return to your Financial Health summary.</span>
+      </div>
+      <button type="button" className="financial-health-journey-main-fab" onClick={() => navigate('/financial-health-summary')}>
+        Financial Health
+      </button>
+      <button type="button" className="financial-health-journey-main-fab" aria-label="Financial Journey Guide" onClick={openJourney}>
+        User Guide
+      </button>
     </section>
 
     <section className="build-profile-layout">
