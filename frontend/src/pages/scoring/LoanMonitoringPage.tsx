@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useAutosaveDraft } from '../../autosave';
 import { fetchAutosaveDraft } from '../../autosave/draftApi';
 import { saveLoanApplicationMonitoring, updateLoanApplication } from '../../api/loan';
+import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -1231,6 +1232,8 @@ export default function LoanMonitoringPage() {
         </div>
         <LoanOptimizationTachometer input={loanOptimizationInput} />
       </section>
+
+      <FinancialJourneyGuideLauncher applicationNo={selectedApplicationNo} currentStep="billsLoans" />
 
       <section className="psychometric-summary-grid" style={{ marginBottom: '12px' }}>
         <small>{`Step ${step}/${workflowSteps.length}: ${currentStepLabel}`}</small>

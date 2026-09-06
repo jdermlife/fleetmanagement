@@ -8,6 +8,7 @@ import {
   saveAutosaveDraftRemote,
 } from '../../autosave/draftApi';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
+import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useAuthorization } from '../../hooks/useAuthorization';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -1810,6 +1811,8 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
           wealthAuthenticity={wealthAuthenticityScore}
         />
       </section>
+
+      <FinancialJourneyGuideLauncher applicationNo={applicationNo} currentStep="wealthBuilder" />
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary networth-report-summary" aria-label="Net worth summary">
         <SelectedProfileIdCard compactId label="Record ID" name={wealthClientName} />

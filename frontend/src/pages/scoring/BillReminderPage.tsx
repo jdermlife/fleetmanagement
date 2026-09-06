@@ -3,6 +3,7 @@ import { NumericFormat } from 'react-number-format';
 
 import { useAutosaveDraft } from '../../autosave';
 import { saveLoanApplicationBillReminders } from '../../api/loan';
+import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -1050,6 +1051,8 @@ export default function BillReminderPage() {
 
         <BillDueDateHeatMap bills={savedSetup.length > 0 ? savedSetup : draftBillers} />
       </section>
+
+      <FinancialJourneyGuideLauncher applicationNo={selectedApplicationNo} currentStep="billManager" />
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">
         <SelectedProfileIdCard compactId label="Record ID" />

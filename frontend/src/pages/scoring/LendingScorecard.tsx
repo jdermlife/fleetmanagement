@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
+import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import {
   api,
   checkCreditCardRiskWithAi,
@@ -4474,6 +4475,11 @@ export default function LendingScorecard() {
         </div>
 
       </section>
+
+      <FinancialJourneyGuideLauncher
+        applicationNo={formData.id || requestedApplicationNo}
+        currentStep="creditHealth"
+      />
 
       <nav className="lending-report-tabs" aria-label="Credit Health workflow">
         {visibleStepLabels.map((label, index) => {
