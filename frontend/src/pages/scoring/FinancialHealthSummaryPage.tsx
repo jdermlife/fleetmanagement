@@ -1746,7 +1746,7 @@ export default function FinancialHealthSummaryPage() {
             aria-label="Financial Journey Guide"
             onClick={openJourney}
           >
-             Financial Guide
+              User Guide
           </button>
           
           

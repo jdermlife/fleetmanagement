@@ -2562,7 +2562,7 @@ export default function BuildProfilePage() {
       <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1> Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
       <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}>
         <div className="build-profile-incomplete-activities">
-          <span>Incomplete Activities</span>
+          <span>Form Status</span>
           {incompleteActivities.length > 0 ? (
             <ul>
               {incompleteActivities.map((activity) => (
@@ -2615,6 +2615,38 @@ export default function BuildProfilePage() {
         </div>
       </div>
     </section>
+      
+              <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
+       
+        {isJourneyMinimized && !isJourneyDismissed ? (
+          <button
+            type="button"
+            className="financial-health-journey-main-fab"
+            onClick={() => window.location.assign('/build-profile')}
+          >
+            Update Profile
+          </button>
+          
+          
+        ) : null}
+                {isJourneyMinimized && !isJourneyDismissed ? (
+          <button
+            type="button"
+            className="financial-health-journey-main-fab"
+            aria-label="Financial Journey Guide"
+            onClick={openJourney}
+          >
+             User Guide
+          </button>
+          
+          
+        ) : null}
+     
+        
+      </section>  
+
+
+
 
     <section className="psychometric-summary-grid lending-psychometric-summary-grid">
       <SelectedProfileIdCard compactId label="Record ID" profileId={profile.profileId} name={profile.values.fullName} />
