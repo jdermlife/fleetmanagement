@@ -621,8 +621,8 @@ function resolveStep8ProfileMetrics(values: Record<string, string>): Step8Profil
   }
 }
 
-function formatThousands(value: number): string {
-  return `${new Intl.NumberFormat('en', { maximumFractionDigits: 1 }).format(value / 1000)}k`
+function formatAbsoluteAmount(value: number): string {
+  return new Intl.NumberFormat('en-PH', { maximumFractionDigits: 0 }).format(value)
 }
 
 function formatCurrency(value: number, currency: string): string {
@@ -1501,17 +1501,17 @@ export default function FinancialHealthSummaryPage() {
         <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" />
         <article className="financial-health-summary-tile">
           <span>Actual Net Worth</span>
-          <strong>{formatThousands(step8ProfileMetrics.actualNetWorth)}</strong>
+          <strong>{formatAbsoluteAmount(step8ProfileMetrics.actualNetWorth)}</strong>
           <small>Build Profile Step 8 current net worth</small>
         </article>
         <article className="financial-health-summary-tile">
           <span>Net Income</span>
-          <strong>{formatThousands(step8ProfileMetrics.netIncome)}</strong>
+          <strong>{formatAbsoluteAmount(step8ProfileMetrics.netIncome)}</strong>
           <small>Build Profile Step 8 monthly net income</small>
         </article>
         <article className="financial-health-summary-tile">
           <span>Protection Level Amount</span>
-          <strong>{formatThousands(step8ProfileMetrics.protectionLevelAmount)}</strong>
+          <strong>{formatAbsoluteAmount(step8ProfileMetrics.protectionLevelAmount)}</strong>
           <small>Build Profile Step 8 insurance protection</small>
         </article>
       </section>

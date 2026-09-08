@@ -143,7 +143,7 @@ describe('FinancialHealthSummaryPage', () => {
     expect(await screen.findByText(/Computed/)).toBeTruthy()
   })
 
-  it('shows APP identity and Step 8 financial amounts in thousands', async () => {
+  it('shows APP identity and full Step 8 financial amounts', async () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-USER',
       values: {
@@ -168,9 +168,9 @@ describe('FinancialHealthSummaryPage', () => {
     const profileLine = screen.getByRole('region', { name: 'Selected financial health profile' })
     expect(within(profileLine).getByText('Record ID')).toBeTruthy()
     expect(within(profileLine).getByText('Jane Doe')).toBeTruthy()
-    expect(await within(profileLine).findByText('1,250k')).toBeTruthy()
-    expect(within(profileLine).getByText('100k')).toBeTruthy()
-    expect(within(profileLine).getByText('750k')).toBeTruthy()
+    expect(await within(profileLine).findByText('1,250,000')).toBeTruthy()
+    expect(within(profileLine).getByText('100,000')).toBeTruthy()
+    expect(within(profileLine).getByText('750,000')).toBeTruthy()
   })
 
   it('shows saved-data recommendations for each Financial Position ring', async () => {
