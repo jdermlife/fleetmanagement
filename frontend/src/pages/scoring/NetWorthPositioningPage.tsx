@@ -532,6 +532,48 @@ export function resolveActualNetWorthPosition(
   }, 0);
 }
 
+export function deriveBuildProfileNetWorthMetrics(
+  actualValues: Record<string, string>,
+  targetValues: Record<string, string>,
+  targetMonths: number,
+) {
+  const totalForSection = (values: Record<string, string>, section: StatementSection) =>
+    NET_WORTH_STATEMENT_ENTRIES
+      .filter((entry) => entry.section === section)
+      .reduce((total, entry) => total + toSafeNumber(values[entry.id]), 0);
+
+  const actualAssets = totalForSection(actualValues, 'assets');
+  const actualLiabilities = totalForSection(actualValues, 'liabilities');
+  const targetAssets = totalForSection(targetValues, 'assets');
+  const targetLiabilities = totalForSection(targetValues, 'liabilities');
+  const monthlyIncome = totalForSection(actualValues, 'monthly-income');
+  const monthlyExpenses = totalForSection(actualValues, 'monthly-expenses');
+  const actualNetWorth = actualAssets - actualLiabilities;
+  const targetNetWorth = targetAssets - targetLiabilities;
+  const netMonthlyIncome = monthlyIncome - monthlyExpenses;
+  const projectedCapacity = actualNetWorth + (Math.max(netMonthlyIncome, 0) * Math.max(0, targetMonths));
+  const goalAttainmentPercent = targetNetWorth > 0
+    ? Math.max(0, (actualNetWorth / targetNetWorth) * 100)
+    : 0;
+  const achievementProbabilityPercent = targetNetWorth > 0
+    ? Math.max(0, Math.min(100, (projectedCapacity / targetNetWorth) * 100))
+    : 0;
+
+  return {
+    actualAssets,
+    actualLiabilities,
+    actualNetWorth,
+    targetAssets,
+    targetLiabilities,
+    targetNetWorth,
+    projectedNetWorth: targetNetWorth,
+    netMonthlyIncome,
+    projectedCapacity,
+    goalAttainmentPercent,
+    achievementProbabilityPercent,
+  };
+}
+
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -1319,6 +1361,11 @@ export default function NetWorthPositioningPage() {
     [actualEntries, setupNetWorth],
   );
 
+  const profileLinkedMetrics = useMemo(
+    () => deriveBuildProfileNetWorthMetrics(amounts, actualEntries, targetMonths),
+    [actualEntries, amounts, targetMonths],
+  );
+
   const goalForecast = useMemo(() => {
     const likelyAchievableThreshold = 1.1;
     const atRiskThreshold = 0.8;
@@ -1785,10 +1832,10 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
       hasWealthDataForCertification,
     ].filter(Boolean).length / 5) * 100,
   );
-  const yearsToTargetNetWorth = targetAmount > 0
-    ? estimateYearsToTargetNetWorth(actualNetWorth, targetAmount, netWorthBuildingScore.metrics.monthlyIncome)
+  const yearsToTargetNetWorth = profileLinkedMetrics.targetNetWorth > 0
+    ? estimateYearsToTargetNetWorth(profileLinkedMetrics.actualNetWorth, profileLinkedMetrics.targetNetWorth, profileLinkedMetrics.netMonthlyIncome)
     : null;
-  const yearsToTargetLabel = targetAmount <= 0
+  const yearsToTargetLabel = profileLinkedMetrics.targetNetWorth <= 0
     ? 'Not set'
     : yearsToTargetNetWorth === 0
       ? 'Achieved'
@@ -1933,8 +1980,8 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
               <h2>Current Score, Net Worth and Financial Position</h2>
               <div className="networth-decision-grid">
                 <article><span>Composite Wealth Score</span><strong>{wealthCompositeScore.score}</strong><small>{wealthCompositeScore.grade} - {wealthCompositeScore.rating}</small></article>
-                <article><span>Actual Net Worth</span><strong>{formatSignedCurrency(actualNetWorth)}</strong><small>Actual assets less actual liabilities</small></article>
-                <article><span>Financial Position</span><strong style={{ color: positionStatement.color }}>{positionStatement.title}</strong><small>{positionStatement.conclusion}</small></article>
+                <article><span>Actual Net Worth</span><strong>{formatSignedCurrency(profileLinkedMetrics.actualNetWorth)}</strong><small>Build Profile actual assets less actual liabilities</small></article>
+                <article><span>Financial Position</span><strong>{formatCurrency(profileLinkedMetrics.actualAssets)}</strong><small>Total actual assets from Build Profile</small></article>
               </div>
             </section>
 
@@ -1952,9 +1999,9 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
               <span className="psychometric-panel-kicker">3. Where I Am Going</span>
               <h2>Forecast, Projections, Goal Attainment and Risk Outlook</h2>
               <div className="networth-decision-grid">
-                <article><span>Projected Net Worth</span><strong>{formatSignedCurrency(goalForecast.projectedNetWorthAtDeadline)}</strong><small>At the declared target deadline</small></article>
-                <article><span>Goal Attainment</span><strong>{goalForecast.possibilityPercent}%</strong><small>{yearsToTargetLabel} based on declared income</small></article>
-                <article><span>Risk Outlook</span><strong style={{ color: goalForecast.statusColor }}>{goalForecast.status}</strong><small>Target: {formatCurrency(goalForecast.effectiveTargetAmount)}</small></article>
+                <article><span>Projected Net Worth</span><strong>{formatSignedCurrency(profileLinkedMetrics.projectedNetWorth)}</strong><small>Build Profile target assets less target liabilities</small></article>
+                <article><span>Goal Attainment</span><strong>{profileLinkedMetrics.goalAttainmentPercent.toFixed(1)}%</strong><small>Actual net worth divided by target net worth</small></article>
+                <article><span>Risk Outlook</span><strong style={{ color: profileLinkedMetrics.achievementProbabilityPercent >= 100 ? '#047857' : profileLinkedMetrics.achievementProbabilityPercent >= 80 ? '#b45309' : '#b91c1c' }}>{profileLinkedMetrics.achievementProbabilityPercent.toFixed(1)}% probability</strong><small>Target: {formatCurrency(profileLinkedMetrics.targetNetWorth)} · {yearsToTargetLabel}</small></article>
               </div>
             </section>
 

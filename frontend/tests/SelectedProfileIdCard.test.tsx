@@ -7,6 +7,7 @@ import SelectedProfileIdCard, {
 } from '../src/components/profile/SelectedProfileIdCard'
 import { resolveSelectedApplicationNo } from '../src/hooks/useSelectedAnalysisEntity'
 import {
+  deriveBuildProfileNetWorthMetrics,
   estimateYearsToTargetNetWorth,
   resolveActualNetWorthPosition,
 } from '../src/pages/scoring/NetWorthPositioningPage'
@@ -95,6 +96,29 @@ describe('selected profile identity', () => {
 })
 
 describe('net worth target estimate', () => {
+  it('derives actual, target, attainment, and risk metrics from Build Profile values', () => {
+    const metrics = deriveBuildProfileNetWorthMetrics({
+      'asset-cash-on-hand': '500000',
+      'liability-personal-loan': '100000',
+      'income-salary': '60000',
+      'expense-housing': '40000',
+    }, {
+      'asset-cash-on-hand': '500000',
+      'asset-savings-account': '400000',
+      'liability-personal-loan': '200000',
+    }, 12)
+
+    expect(metrics.actualAssets).toBe(500000)
+    expect(metrics.actualLiabilities).toBe(100000)
+    expect(metrics.actualNetWorth).toBe(400000)
+    expect(metrics.targetNetWorth).toBe(700000)
+    expect(metrics.projectedNetWorth).toBe(700000)
+    expect(metrics.netMonthlyIncome).toBe(20000)
+    expect(metrics.projectedCapacity).toBe(640000)
+    expect(metrics.goalAttainmentPercent).toBeCloseTo(57.14, 2)
+    expect(metrics.achievementProbabilityPercent).toBeCloseTo(91.43, 2)
+  })
+
   it('converts the remaining target gap into years of declared income', () => {
     expect(estimateYearsToTargetNetWorth(400_000, 1_000_000, 50_000)).toBe(1)
   })

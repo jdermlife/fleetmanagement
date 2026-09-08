@@ -142,6 +142,8 @@ type FieldDefinition = {
   wide?: boolean
 }
 
+const isOptionalField = (field: { label: string }): boolean => /\boptional\b/i.test(field.label)
+
 const STORAGE_KEY = BUILD_PROFILE_STORAGE_KEY
 const profileApplicationRequests = new Map<string, Promise<LoanApplicationRecord>>()
 const BUILD_PROFILE_AMOUNT_KEYS = new Set([
@@ -854,7 +856,7 @@ export default function BuildProfilePage() {
         result[id] = openedLinks * 50
       }
       else if (id === 3) {
-        const completionFields = STEP_3_FIELDS.filter((field) => field.countsTowardCompletion !== false)
+        const completionFields = STEP_3_FIELDS.filter((field) => field.countsTowardCompletion !== false && !isOptionalField(field))
         const completedFields = completionFields.filter((field) => {
           if (field.key === 'grossMonthlyIncome') return Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0) > 0
           if (field.yesNoChoice) return profile.values[field.key] === 'true' || profile.values[field.key] === 'false'
@@ -869,19 +871,21 @@ export default function BuildProfilePage() {
         const coBorrowerApplicable = profile.values.hasCoBorrower === 'true'
         const guarantorApplicable = profile.values.hasGuarantor === 'true'
         const applicableChecks = [
-          ...(spouseApplicable ? SPOUSE_EMPLOYMENT_FIELDS.map((field) => Boolean(profile.values[field.key]?.trim())) : []),
+          profile.values.hasCoBorrower === 'true' || profile.values.hasCoBorrower === 'false',
+          profile.values.hasGuarantor === 'true' || profile.values.hasGuarantor === 'false',
+          ...(spouseApplicable ? SPOUSE_EMPLOYMENT_FIELDS.filter((field) => !isOptionalField(field)).map((field) => Boolean(profile.values[field.key]?.trim())) : []),
           ...(coBorrowerApplicable
             ? profile.coBorrowers.length > 0
-              ? profile.coBorrowers.flatMap((item) => CO_BORROWER_FIELDS.map((field) => Boolean(item[field.key as keyof CoBorrower]?.trim())))
-              : CO_BORROWER_FIELDS.map(() => false)
+              ? profile.coBorrowers.flatMap((item) => CO_BORROWER_FIELDS.filter((field) => !isOptionalField(field)).map((field) => Boolean(item[field.key as keyof CoBorrower]?.trim())))
+              : CO_BORROWER_FIELDS.filter((field) => !isOptionalField(field)).map(() => false)
             : []),
           ...(guarantorApplicable
             ? profile.guarantors.length > 0
-              ? profile.guarantors.flatMap((item) => GUARANTOR_FIELDS.map((field) => Boolean(item[field.key as keyof Guarantor]?.trim())))
-              : GUARANTOR_FIELDS.map(() => false)
+              ? profile.guarantors.flatMap((item) => GUARANTOR_FIELDS.filter((field) => !isOptionalField(field)).map((field) => Boolean(item[field.key as keyof Guarantor]?.trim())))
+              : GUARANTOR_FIELDS.filter((field) => !isOptionalField(field)).map(() => false)
             : []),
         ]
-        result[id] = applicableChecks.length === 0 ? 0 : Math.round((applicableChecks.filter(Boolean).length / applicableChecks.length) * 100)
+        result[id] = Math.round((applicableChecks.filter(Boolean).length / applicableChecks.length) * 100)
       }
       else if (id === 5) {
         const completedFields = BANKING_RELATIONSHIP_FIELDS.filter((field) => field.type === 'calculated'
@@ -917,13 +921,16 @@ export default function BuildProfilePage() {
         if (id === 2) {
           const spouseApplicable = profile.values.civilStatus === 'Married'
           const checks = [
-            ...(spouseApplicable ? SPOUSE_FIELDS.map((field) => Boolean(profile.values[field.key]?.trim())) : []),
+            ...(spouseApplicable ? SPOUSE_FIELDS.filter((field) => !isOptionalField(field)).map((field) => Boolean(profile.values[field.key]?.trim())) : []),
             ...profile.dependents.flatMap((dependent) => [Boolean(dependent.name.trim()), Boolean(dependent.dateOfBirth.trim())]),
           ]
           result[id] = checks.length === 0
             ? profile.values.civilStatus && profile.values.dependents !== undefined ? 100 : 0
             : Math.round((checks.filter(Boolean).length / checks.length) * 100)
-        } else result[id] = Math.round((fields.filter((field) => isCompletedFieldValue(profile.values[field.key], field.type)).length / fields.length) * 100)
+        } else {
+          const requiredFields = fields.filter((field) => !isOptionalField(field) && !field.readOnly)
+          result[id] = Math.round((requiredFields.filter((field) => isCompletedFieldValue(profile.values[field.key], field.type)).length / requiredFields.length) * 100)
+        }
       }
     })
     return result
@@ -1210,38 +1217,45 @@ export default function BuildProfilePage() {
     value: string,
     onChange: (value: string) => void,
     labelPrefix: string,
-  ) => <label key={field.key}>
+  ) => {
+    const optional = isOptionalField(field)
+    return <label key={field.key}>
     {labelPrefix}{field.label}
     {field.type === 'select' ? (
-      <select aria-invalid={!value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
+      <select aria-invalid={optional ? false : !value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
         <option value="">Select...</option>
         {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     ) : field.type === 'number' ? (
-      <NumericFormat aria-invalid={!value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
+      <NumericFormat aria-invalid={optional ? false : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
     ) : (
-      <input aria-invalid={!value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input aria-invalid={optional ? false : !value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />
     )}
   </label>
+  }
 
-  const renderField = (field: FieldDefinition) => (
+  const renderField = (field: FieldDefinition) => {
+    const required = !isOptionalField(field) && !field.readOnly
+    return (
     <label key={field.key} className={field.wide ? 'build-profile-field-wide' : undefined}>
       {field.label}
       {field.type === 'select' ? (
-        <select aria-invalid={!isCompletedFieldValue(profile.values[field.key], field.type)} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select aria-invalid={required ? !isCompletedFieldValue(profile.values[field.key], field.type) : false} value={profile.values[field.key] ?? ''} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select {field.label.toLowerCase()}</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : (
-        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} readOnly={field.readOnly} aria-readonly={field.readOnly || undefined} aria-invalid={!isCompletedFieldValue(profile.values[field.key], field.type)} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={profile.values[field.key] ?? ''} readOnly={field.readOnly} aria-readonly={field.readOnly || undefined} aria-invalid={required ? !isCompletedFieldValue(profile.values[field.key], field.type) : false} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
-  )
+    )
+  }
 
   const renderStep3Field = (field: Step3Field) => {
     const value = field.key === 'grossMonthlyIncome'
       ? String(Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0))
       : profile.values[field.key] ?? ''
+    const optional = isOptionalField(field) || field.countsTowardCompletion === false
 
     if (field.key === 'additionalPropertyDeclarations') {
       return <div key={field.key} className="build-profile-declaration-box build-profile-field-wide">
@@ -1290,7 +1304,7 @@ export default function BuildProfilePage() {
 
     if (field.type === 'checkbox') {
       if (field.yesNoChoice) {
-        return <fieldset key={field.key} className="build-profile-yes-no-field" aria-invalid={field.countsTowardCompletion === false ? false : value !== 'true' && value !== 'false'}>
+        return <fieldset key={field.key} className="build-profile-yes-no-field" aria-invalid={optional ? false : value !== 'true' && value !== 'false'}>
           <legend>{field.label}</legend>
           <div>
             {(['true', 'false'] as const).map((option) => {
@@ -1305,7 +1319,7 @@ export default function BuildProfilePage() {
       }
       const className = `build-profile-checkbox-field${field.mustBeChecked ? ' build-profile-checkbox-field-required' : ''}`
       return <label key={field.key} className={className}>
-        <input aria-invalid={field.mustBeChecked ? value !== 'true' : field.countsTowardCompletion === false ? false : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
+        <input aria-invalid={optional ? false : field.mustBeChecked ? value !== 'true' : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
         <span>{field.label}</span>
       </label>
     }
@@ -1313,16 +1327,16 @@ export default function BuildProfilePage() {
     return <label key={field.key}>
       {field.label}
       {field.type === 'select' ? (
-        <select aria-invalid={!value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select aria-invalid={optional ? false : !value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select...</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <textarea aria-invalid={optional ? false : !value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       ) : field.type === 'number' && BUILD_PROFILE_AMOUNT_KEYS.has(field.key) ? (
-        <NumericFormat aria-invalid={field.countsTowardCompletion === false ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} readOnly={field.readOnly} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
+        <NumericFormat aria-invalid={optional ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} readOnly={field.readOnly} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
       ) : (
-        <input aria-invalid={field.countsTowardCompletion === false ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input aria-invalid={optional ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }
@@ -1491,6 +1505,8 @@ export default function BuildProfilePage() {
 
     if (profile.step === 4) {
       const spouseApplicable = profile.values.civilStatus === 'Married'
+      const coBorrowerSelection = profile.values.hasCoBorrower ?? ''
+      const guarantorSelection = profile.values.hasGuarantor ?? ''
       const coBorrowerApplicable = profile.values.hasCoBorrower === 'true'
       const guarantorApplicable = profile.values.hasGuarantor === 'true'
       const addCoBorrower = () => setProfile((current) => ({
@@ -1514,21 +1530,33 @@ export default function BuildProfilePage() {
           <h4>Applicability</h4>
           <div className="build-profile-form-grid">
             <label>Co-Borrower
-              <select value={coBorrowerApplicable ? 'true' : 'false'} onChange={(event) => {
+              <select value={coBorrowerSelection} onChange={(event) => {
                 const enabled = event.target.value === 'true'
-                updateValue('hasCoBorrower', String(enabled))
-                if (enabled && profile.coBorrowers.length === 0) setProfile((current) => ({ ...current, values: { ...current.values, hasCoBorrower: 'true' }, coBorrowers: [createCoBorrower()] }))
+                setProfile((current) => ({
+                  ...current,
+                  values: { ...current.values, hasCoBorrower: String(enabled) },
+                  coBorrowers: enabled
+                    ? current.coBorrowers.length > 0 ? current.coBorrowers : [createCoBorrower()]
+                    : [],
+                }))
               }}>
+                <option value="">Select applicability</option>
                 <option value="false">No Co-Borrower</option>
                 <option value="true">With Co-Borrower - Fill out details below</option>
               </select>
             </label>
             <label>Guarantor
-              <select value={guarantorApplicable ? 'true' : 'false'} onChange={(event) => {
+              <select value={guarantorSelection} onChange={(event) => {
                 const enabled = event.target.value === 'true'
-                updateValue('hasGuarantor', String(enabled))
-                if (enabled && profile.guarantors.length === 0) setProfile((current) => ({ ...current, values: { ...current.values, hasGuarantor: 'true' }, guarantors: [createGuarantor()] }))
+                setProfile((current) => ({
+                  ...current,
+                  values: { ...current.values, hasGuarantor: String(enabled) },
+                  guarantors: enabled
+                    ? current.guarantors.length > 0 ? current.guarantors : [createGuarantor()]
+                    : [],
+                }))
               }}>
+                <option value="">Select applicability</option>
                 <option value="false">No Guarantor</option>
                 <option value="true">With Guarantor - Fill out details below</option>
               </select>
@@ -1539,7 +1567,7 @@ export default function BuildProfilePage() {
         <section className="build-profile-detail-section">
           <div className="build-profile-section-heading">
             <h4>Co-Borrower Information</h4>
-            <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={addCoBorrower}>+ Add a Co-Borrower</button>
+            {coBorrowerApplicable ? <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={addCoBorrower}>+ Add a Co-Borrower</button> : null}
           </div>
           {coBorrowerApplicable && profile.coBorrowers.length > 0 ? <div className="build-profile-related-party-list">
             {profile.coBorrowers.map((item, index) => <article key={item.id}>
@@ -1549,12 +1577,12 @@ export default function BuildProfilePage() {
               })}>Remove</button></div>
               <div className="build-profile-form-grid">{CO_BORROWER_FIELDS.map((field) => renderRelatedPartyField(field, item[field.key as keyof CoBorrower], (value) => updateRelatedParty<CoBorrower>('coBorrowers', item.id, field.key as keyof CoBorrower, value), `Co-Borrower ${index + 1} `))}</div>
             </article>)}
-          </div> : <p className="build-profile-applicability-note">No co-borrower has been added. Select “+ Add a Co-Borrower” to include one.</p>}
+          </div> : <p className="build-profile-applicability-note">{coBorrowerSelection === 'false' ? 'N/A - No Co-Borrower selected. This section is not required.' : coBorrowerApplicable ? 'No co-borrower has been added. Select “+ Add a Co-Borrower” to include one.' : 'Select Co-Borrower applicability above.'}</p>}
         </section>
 
         <section className="build-profile-detail-section">
-          <div className="build-profile-section-heading"><h4>Guarantor Information</h4><button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, values: { ...current.values, hasGuarantor: 'true' }, guarantors: [...current.guarantors, createGuarantor()] }))}>Add Guarantor</button></div>
-          {profile.guarantors.length > 0 ? <div className="build-profile-related-party-list">
+          <div className="build-profile-section-heading"><h4>Guarantor Information</h4>{guarantorApplicable ? <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setProfile((current) => ({ ...current, values: { ...current.values, hasGuarantor: 'true' }, guarantors: [...current.guarantors, createGuarantor()] }))}>Add Guarantor</button> : null}</div>
+          {guarantorApplicable && profile.guarantors.length > 0 ? <div className="build-profile-related-party-list">
             {profile.guarantors.map((item, index) => <article key={item.id}>
               <div className="build-profile-section-heading"><h5>Guarantor #{index + 1}</h5><button type="button" className="loan-footer-button" onClick={() => setProfile((current) => {
                 const guarantors = current.guarantors.filter((record) => record.id !== item.id)
@@ -1562,7 +1590,7 @@ export default function BuildProfilePage() {
               })}>Remove</button></div>
               <div className="build-profile-form-grid">{GUARANTOR_FIELDS.map((field) => renderRelatedPartyField(field, item[field.key as keyof Guarantor], (value) => updateRelatedParty<Guarantor>('guarantors', item.id, field.key as keyof Guarantor, value), `Guarantor ${index + 1} `))}</div>
             </article>)}
-          </div> : <p className="build-profile-applicability-note">No guarantor has been added. Select “Add Guarantor” to include one.</p>}
+          </div> : <p className="build-profile-applicability-note">{guarantorSelection === 'false' ? 'N/A - No Guarantor selected. This section is not required.' : guarantorApplicable ? 'No guarantor has been added. Select “Add Guarantor” to include one.' : 'Select Guarantor applicability above.'}</p>}
         </section>
       </div>
     }
