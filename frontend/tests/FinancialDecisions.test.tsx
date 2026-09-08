@@ -45,4 +45,19 @@ describe('FinancialDecisions', () => {
     expect(within(result).getByText('Not recommended')).toBeTruthy()
     expect(screen.getAllByText('Action required').length).toBeGreaterThan(0)
   })
+
+  it('shows item 3 savings optimization and recalculates the goal timeline', async () => {
+    render(<FinancialDecisions />)
+
+    await userEvent.click(screen.getByText('When can I reach my savings goal?'))
+    const result = screen.getByRole('region', { name: 'Savings optimization result' })
+
+    expect(within(result).getByText('₱33,333')).toBeTruthy()
+    expect(within(result).getByText('20 months')).toBeTruthy()
+
+    fireEvent.change(screen.getByLabelText('Current Monthly Savings'), { target: { value: '40000' } })
+
+    expect(within(result).getByText('10 months')).toBeTruthy()
+    expect(within(result).getByText('On track')).toBeTruthy()
+  })
 })

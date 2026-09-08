@@ -4,6 +4,10 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import { readReplicatedBuildProfile } from './buildProfileReplication'
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAffordability, type AffordabilityInputs } from './affordabilityEngine'
+import {
+  computeSavingsGoalOptimization,
+  type SavingsGoalInputs,
+} from './savingsGoalOptimizationEngine'
 
 const HYPOTHETICAL_INPUTS: AffordabilityInputs = {
   netMonthlyIncome: 120000,
@@ -26,6 +30,23 @@ const HYPOTHETICAL_INPUTS: AffordabilityInputs = {
   goalImpactPercent: 15,
 }
 
+const HYPOTHETICAL_SAVINGS_INPUTS: SavingsGoalInputs = {
+  targetSavingsGoal: 500000,
+  actualSavings: 100000,
+  currentMonthlySavings: 20000,
+  targetMonths: 12,
+  annualReturnRate: 0,
+}
+
+const SAVINGS_ASSET_KEYS = [
+  'asset-cash-on-hand',
+  'asset-savings-account',
+  'asset-time-deposit',
+  'asset-foreign-currency-account',
+  'asset-digital-wallet',
+  'asset-emergency-fund',
+]
+
 const ESSENTIAL_EXPENSE_KEYS = [
   'expense-housing', 'expense-utilities', 'expense-groceries', 'expense-transportation',
   'expense-communications', 'expense-internet', 'expense-education', 'expense-childcare',
@@ -36,7 +57,7 @@ const ESSENTIAL_EXPENSE_KEYS = [
 const FAQ_ITEMS = [
   { question: 'Am I spending too much?', feature: 'Spending Intelligence', answer: 'Compare category trends against your own three-month baseline. FIN Health can flag increases, recurring subscriptions, and lower-impact cuts without treating every expense as equally discretionary.' },
   { question: 'How much should I save?', feature: 'Smart Savings Planner', answer: 'Start with required reserves and essential obligations, then divide the remaining capacity among emergency savings and dated goals. The appropriate amount depends on your income stability, dependents, debt, and target dates.' },
-  { question: 'When can I become financially independent?', feature: 'Financial Independence / Retirement Simulator', answer: 'Project current assets, monthly investments, inflation, expected returns, and retirement spending. Test lower-income and higher-inflation scenarios before relying on a target retirement date.' },
+  { question: 'When can I reach my savings goal?', feature: 'Savings and Goal Optimization Engine', answer: 'Compare the savings target, actual savings, current monthly contribution, and deadline to quantify the required monthly amount and expected completion date.' },
   { question: 'Should I pay off debt or invest?', feature: 'Debt vs. Investment Optimizer', answer: 'Prioritize overdue and high-interest debt, preserve minimum emergency reserves, then compare guaranteed interest savings with realistic risk-adjusted investment returns.' },
   { question: 'How much debt can I safely handle?', feature: 'Debt Capacity Advisor', answer: 'Evaluate total monthly debt payments against net income, post-payment cash flow, emergency reserves, and rate stress. A technically approvable loan may still be financially unsafe.' },
   { question: 'Where should I put my money?', feature: 'Personal Asset Allocation Advisor', answer: 'Allocate cash among near-term reserves, debt reduction, dated goals, and investments according to liquidity needs, risk appetite, and time horizon.' },
@@ -47,7 +68,7 @@ const FAQ_ITEMS = [
   { question: 'What is my net worth?', feature: 'Net Worth Intelligence', answer: 'Track assets less liabilities, explain period-over-period changes, identify productive and declining assets, and project possible five-, ten-, and twenty-year outcomes.' },
   { question: 'What bills are coming?', feature: 'Financial Obligation Radar', answer: 'Combine recurring bills, subscriptions, loans, cards, insurance, taxes, tuition, and irregular expenses to forecast upcoming obligations and low-balance dates.' },
   { question: 'What subscriptions am I paying for?', feature: 'Subscription Intelligence', answer: 'Identify recurring merchants, monthly equivalents, price increases, and potentially unused services, then rank cancellation opportunities by likely lifestyle impact.' },
-  { question: 'Can I reach my financial goal?', feature: 'Personalized Financial Action Plans', answer: 'Compare the target, current balance, monthly contribution, and timeline. Recalculate the projected date whenever income, spending, or contributions change.' },
+  { question: 'When can I become financially independent?', feature: 'Financial Independence / Retirement Simulator', answer: 'Project current assets, monthly investments, inflation, expected returns, and retirement spending. Test lower-income and higher-inflation scenarios before relying on a target retirement date.' },
   { question: 'How much should I have in an emergency fund?', feature: 'Emergency Reserve Planner', answer: 'Base the target on actual essential expenses, debt payments, dependents, insurance exposure, and income stability rather than a generic rule alone.' },
   { question: 'Am I on track?', feature: 'Financial Trajectory Check', answer: 'Evaluate the chain from income and cash flow through debt, savings, investments, net worth, goals, and retirement, highlighting where progress has slowed.' },
   { question: 'What should I prioritize?', feature: 'Top Financial Actions', answer: 'Rank three actions by urgency, financial impact, effort, and time to benefit, with quantified savings or progress wherever the underlying data supports it.' },
@@ -134,11 +155,48 @@ function profileInputs(): { inputs: AffordabilityInputs; usesHypotheticalData: b
   }
 }
 
+function profileSavingsInputs(): { inputs: SavingsGoalInputs; usesHypotheticalData: boolean; goalName: string } {
+  const profile = readReplicatedBuildProfile()
+  if (!profile) return { inputs: HYPOTHETICAL_SAVINGS_INPUTS, usesHypotheticalData: true, goalName: 'Savings goal' }
+
+  const values = profile.values
+  const amount = (key: string) => Math.max(0, Number(values[key] || 0))
+  const targetSavingsGoal = amount('targetAmount')
+  const actualSavings = SAVINGS_ASSET_KEYS.reduce((total, key) => total + amount(key), 0)
+  const currentMonthlySavings = Object.keys(values)
+    .filter((key) => !key.includes('.') && key.startsWith('goal-'))
+    .reduce((total, key) => total + amount(key), 0)
+    + amount('expense-investments')
+    + amount('expense-retirement-savings')
+  const hasSavingsData = targetSavingsGoal > 0 || actualSavings > 0 || currentMonthlySavings > 0
+
+  if (!hasSavingsData) {
+    return { inputs: HYPOTHETICAL_SAVINGS_INPUTS, usesHypotheticalData: true, goalName: 'Savings goal' }
+  }
+
+  return {
+    usesHypotheticalData: false,
+    goalName: values.financialGoal?.trim() || 'Savings goal',
+    inputs: {
+      targetSavingsGoal,
+      actualSavings,
+      currentMonthlySavings,
+      targetMonths: Math.max(1, Math.round(amount('targetMonths') || 12)),
+      annualReturnRate: 0,
+    },
+  }
+}
+
 export default function FinancialDecisions() {
   const initial = useMemo(profileInputs, [])
+  const initialSavings = useMemo(profileSavingsInputs, [])
   const [inputs, setInputs] = useState(initial.inputs)
   const [usesHypotheticalData, setUsesHypotheticalData] = useState(initial.usesHypotheticalData)
+  const [savingsInputs, setSavingsInputs] = useState(initialSavings.inputs)
+  const [usesHypotheticalSavings, setUsesHypotheticalSavings] = useState(initialSavings.usesHypotheticalData)
+  const [savingsGoalName, setSavingsGoalName] = useState(initialSavings.goalName)
   const result = useMemo(() => computeAffordability(inputs), [inputs])
+  const savingsResult = useMemo(() => computeSavingsGoalOptimization(savingsInputs), [savingsInputs])
 
   const updateInput = (key: keyof AffordabilityInputs, value: string) => {
     setUsesHypotheticalData(false)
@@ -147,8 +205,17 @@ export default function FinancialDecisions() {
 
   const refreshFromProfile = () => {
     const refreshed = profileInputs()
+    const refreshedSavings = profileSavingsInputs()
     setInputs(refreshed.inputs)
     setUsesHypotheticalData(refreshed.usesHypotheticalData)
+    setSavingsInputs(refreshedSavings.inputs)
+    setUsesHypotheticalSavings(refreshedSavings.usesHypotheticalData)
+    setSavingsGoalName(refreshedSavings.goalName)
+  }
+
+  const updateSavingsInput = (key: keyof SavingsGoalInputs, value: string) => {
+    setUsesHypotheticalSavings(false)
+    setSavingsInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
   }
 
   return (
@@ -237,12 +304,54 @@ export default function FinancialDecisions() {
           </div>
         </details>
 
-        {FAQ_ITEMS.map((item, index) => (
-          <details key={item.question} className="affordability-question">
-            <summary><span>{index + 2}</span><strong>{item.question}</strong><small>{item.feature}</small></summary>
-            <div className="affordability-answer affordability-compact-answer"><h3>{item.feature}</h3><p>{item.answer}</p></div>
-          </details>
-        ))}
+        {FAQ_ITEMS.map((item, index) => {
+          const itemNumber = index + 2
+          if (itemNumber === 3) {
+            return (
+              <details key={item.question} className="affordability-question affordability-question-savings">
+                <summary><span>{itemNumber}</span><strong>{item.question}</strong><small>{item.feature}</small></summary>
+                <div className="affordability-answer">
+                  <div className={`affordability-data-notice ${usesHypotheticalSavings ? 'is-hypothetical' : 'is-profile'}`} role="status">
+                    <strong>{usesHypotheticalSavings ? 'Hypothetical savings data in use' : 'Savings profile data loaded'}</strong>
+                    <span>{usesHypotheticalSavings ? 'Enter your target and actual savings, or refresh after completing Build Profile.' : `${savingsGoalName} values were loaded from Build Profile and remain editable here.`}</span>
+                    <button type="button" className="financial-health-journey-main-fab" onClick={refreshFromProfile}>Refresh from Profile</button>
+                  </div>
+
+                  <div className="savings-optimizer-layout">
+                    <fieldset className="affordability-input-group savings-optimizer-inputs">
+                      <legend>Savings Calculator</legend>
+                      <label><span>Target Savings Goal</span><div><input aria-label="Target Savings Goal" type="number" min="0" step="any" value={savingsInputs.targetSavingsGoal} onChange={(event) => updateSavingsInput('targetSavingsGoal', event.target.value)} /></div></label>
+                      <label><span>Actual Savings</span><div><input aria-label="Actual Savings" type="number" min="0" step="any" value={savingsInputs.actualSavings} onChange={(event) => updateSavingsInput('actualSavings', event.target.value)} /></div></label>
+                      <label><span>Current Monthly Savings</span><div><input aria-label="Current Monthly Savings" type="number" min="0" step="any" value={savingsInputs.currentMonthlySavings} onChange={(event) => updateSavingsInput('currentMonthlySavings', event.target.value)} /></div></label>
+                      <label><span>Target Timeline</span><div><input aria-label="Target Timeline" type="number" min="1" step="1" value={savingsInputs.targetMonths} onChange={(event) => updateSavingsInput('targetMonths', event.target.value)} /><small>months</small></div></label>
+                      <label><span>Expected Annual Return</span><div><input aria-label="Expected Annual Return" type="number" min="0" step="0.1" value={savingsInputs.annualReturnRate} onChange={(event) => updateSavingsInput('annualReturnRate', event.target.value)} /><small>%</small></div></label>
+                    </fieldset>
+
+                    <section className="savings-optimizer-results" aria-label="Savings optimization result">
+                      <div className="savings-optimizer-status"><span>{savingsGoalName}</span><strong>{savingsResult.status}</strong><progress max="100" value={savingsResult.progressPercent}>{savingsResult.progressPercent}</progress><small>{percent.format(savingsResult.progressPercent)}% funded</small></div>
+                      <dl className="affordability-capacity-flow">
+                        <div><dt>Remaining savings gap</dt><dd>{currency.format(savingsResult.savingsGap)}</dd></div>
+                        <div><dt>Monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAmountNeeded)}</dd></div>
+                        <div><dt>Months required at current pace</dt><dd>{savingsResult.monthsRequired === null ? 'Not reachable' : `${savingsResult.monthsRequired} months`}</dd></div>
+                        <div><dt>Projected savings at deadline</dt><dd>{currency.format(savingsResult.projectedSavingsAtTarget)}</dd></div>
+                        <div><dt>Additional monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAdjustment)}</dd></div>
+                      </dl>
+                      <div className="savings-optimizer-recommendations"><h3>Optimization Actions</h3><ul>{savingsResult.recommendations.map((recommendation) => <li key={recommendation}>{recommendation}</li>)}</ul></div>
+                    </section>
+                  </div>
+                  <p className="affordability-disclaimer">Projections assume contributions are made monthly and any entered return remains constant. Actual returns and timing may differ.</p>
+                </div>
+              </details>
+            )
+          }
+
+          return (
+            <details key={item.question} className="affordability-question">
+              <summary><span>{itemNumber}</span><strong>{item.question}</strong><small>{item.feature}</small></summary>
+              <div className="affordability-answer affordability-compact-answer"><h3>{item.feature}</h3><p>{item.answer}</p></div>
+            </details>
+          )
+        })}
       </section>
     </div>
   )

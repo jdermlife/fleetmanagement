@@ -11144,6 +11144,68 @@ th { color: var(--dark-gold); }
   accent-color: var(--affordability-teal);
 }
 
+.affordability-question-savings > summary {
+  border-left: 5px solid var(--affordability-teal);
+}
+
+.savings-optimizer-layout {
+  display: grid;
+  grid-template-columns: minmax(240px, 0.75fr) minmax(0, 1.5fr);
+  gap: 14px;
+}
+
+.savings-optimizer-results {
+  display: grid;
+  gap: 14px;
+}
+
+.savings-optimizer-status {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px 16px;
+  align-items: center;
+  padding: 16px;
+  border-radius: 6px;
+  background: #eaf7f3;
+  color: var(--affordability-ink);
+}
+
+.savings-optimizer-status strong {
+  color: var(--affordability-teal);
+  font-size: 1.2rem;
+}
+
+.savings-optimizer-status progress {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--affordability-teal);
+}
+
+.savings-optimizer-status small {
+  grid-column: 1 / -1;
+  color: #4b6472;
+}
+
+.savings-optimizer-results .affordability-capacity-flow {
+  padding: 14px 16px;
+}
+
+.savings-optimizer-recommendations {
+  padding: 14px 16px;
+  border-left: 4px solid var(--affordability-gold);
+  background: #fff9e8;
+}
+
+.savings-optimizer-recommendations h3,
+.savings-optimizer-recommendations ul {
+  margin: 0;
+}
+
+.savings-optimizer-recommendations ul {
+  margin-top: 8px;
+  padding-left: 20px;
+}
+
 .affordability-stress-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -11216,7 +11278,8 @@ th { color: var(--dark-gold); }
 
 @media (max-width: 900px) {
   .affordability-input-groups,
-  .affordability-stress-grid {
+  .affordability-stress-grid,
+  .savings-optimizer-layout {
     grid-template-columns: 1fr;
   }
 
