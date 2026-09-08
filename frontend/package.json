@@ -34,6 +34,7 @@
     "@neondatabase/serverless": "^1.1.0",
     "@react-oauth/google": "^0.13.5",
     "axios": "^1.16.1",
+    "lucide-react": "^1.42.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-number-format": "^5.4.5",

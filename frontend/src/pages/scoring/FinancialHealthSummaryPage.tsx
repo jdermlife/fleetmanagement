@@ -685,6 +685,8 @@ export default function FinancialHealthSummaryPage() {
   const [publishedSummary, setPublishedSummary] = useState(DEFAULT_FINANCIAL_HEALTH_SUMMARY)
   const [summaryInputsLoaded, setSummaryInputsLoaded] = useState(false)
   const [summaryComputedAt, setSummaryComputedAt] = useState<Date | null>(null)
+  const [refreshRequestVersion, setRefreshRequestVersion] = useState(0)
+  const [isRefreshingSummary, setIsRefreshingSummary] = useState(false)
   const maxAllowedMonth = currentReportingMonth().slice(0, 7)
   const [snapshotMonth, setSnapshotMonth] = useState(() => maxAllowedMonth)
   const [financialHealthSnapshots, setFinancialHealthSnapshots] = useState<FinancialHealthSnapshot[]>([])
@@ -861,7 +863,7 @@ export default function FinancialHealthSummaryPage() {
     return () => {
       disposed = true
     }
-  }, [entityKey, isIdentityReady, selectedApplicationNo])
+  }, [entityKey, isIdentityReady, refreshRequestVersion, selectedApplicationNo])
 
   useEffect(() => {
     let disposed = false
@@ -937,9 +939,18 @@ export default function FinancialHealthSummaryPage() {
   )
   const index = publishedSummary.index
 
-  const computeLatestFinancialHealth = () => {
+  useEffect(() => {
+    if (!isRefreshingSummary || !summaryInputsLoaded) return
+
     setPublishedSummary(computeFinancialHealthSummary(latestSummaryInputs))
     setSummaryComputedAt(new Date())
+    setIsRefreshingSummary(false)
+  }, [isRefreshingSummary, latestSummaryInputs, summaryInputsLoaded])
+
+  const refreshFinancialHealth = () => {
+    setIsRefreshingSummary(true)
+    setSummaryInputsLoaded(false)
+    setRefreshRequestVersion((version) => version + 1)
   }
 
  const saveFinancialHealthSnapshot = async () => {
@@ -1414,10 +1425,10 @@ export default function FinancialHealthSummaryPage() {
           type="button"
           className="financial-health-journey-main-fab"
           aria-label="Refresh Financial Health"
-          onClick={computeLatestFinancialHealth}
-          disabled={!summaryInputsLoaded}
+          onClick={refreshFinancialHealth}
+          disabled={!summaryInputsLoaded || isRefreshingSummary}
         >
-          Refresh
+          {isRefreshingSummary ? 'Refreshing...' : 'Refresh'}
         </button>
 
         <div className="financial-health-snapshot-save">

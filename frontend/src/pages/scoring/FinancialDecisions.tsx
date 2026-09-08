@@ -1,4 +1,20 @@
 import { useMemo, useState } from 'react'
+import {
+  Activity,
+  BadgeDollarSign,
+  ChevronRight,
+  CircleDollarSign,
+  Gauge,
+  HeartPulse,
+  PiggyBank,
+  RefreshCw,
+  Search,
+  ShieldCheck,
+  Sparkles,
+  TrendingUp,
+  WalletCards,
+  type LucideIcon,
+} from 'lucide-react'
 
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { readReplicatedBuildProfile } from './buildProfileReplication'
@@ -54,25 +70,26 @@ const ESSENTIAL_EXPENSE_KEYS = [
   'expense-taxes',
 ]
 
-const FAQ_ITEMS = [
-  { question: 'Am I spending too much?', feature: 'Spending Intelligence', answer: 'Compare category trends against your own three-month baseline. FIN Health can flag increases, recurring subscriptions, and lower-impact cuts without treating every expense as equally discretionary.' },
-  { question: 'How much should I save?', feature: 'Smart Savings Planner', answer: 'Start with required reserves and essential obligations, then divide the remaining capacity among emergency savings and dated goals. The appropriate amount depends on your income stability, dependents, debt, and target dates.' },
-  { question: 'When can I reach my savings goal?', feature: 'Savings and Goal Optimization Engine', answer: 'Compare the savings target, actual savings, current monthly contribution, and deadline to quantify the required monthly amount and expected completion date.' },
-  { question: 'Should I pay off debt or invest?', feature: 'Debt vs. Investment Optimizer', answer: 'Prioritize overdue and high-interest debt, preserve minimum emergency reserves, then compare guaranteed interest savings with realistic risk-adjusted investment returns.' },
-  { question: 'How much debt can I safely handle?', feature: 'Debt Capacity Advisor', answer: 'Evaluate total monthly debt payments against net income, post-payment cash flow, emergency reserves, and rate stress. A technically approvable loan may still be financially unsafe.' },
-  { question: 'Where should I put my money?', feature: 'Personal Asset Allocation Advisor', answer: 'Allocate cash among near-term reserves, debt reduction, dated goals, and investments according to liquidity needs, risk appetite, and time horizon.' },
-  { question: 'Am I financially healthy?', feature: 'Financial Health Intelligence', answer: 'Explain the score through cash flow, savings, debt, emergency funds, investments, retirement readiness, spending discipline, and resilience, then show which actions can improve it.' },
-  { question: 'What should I do with my extra money?', feature: 'Surplus Allocation Coach', answer: 'Protect essential reserves first, reduce expensive debt second, then fund priority goals and investments. Keep a reasonable lifestyle allocation so the plan remains sustainable.' },
-  { question: 'What happens if...?', feature: 'Financial What-If Simulator', answer: 'Test job loss, income changes, purchases, family changes, inflation, retirement dates, extra debt payments, and investment pauses against cash flow, resilience, and goals.' },
-  { question: 'Why am I not getting ahead financially?', feature: 'Financial Progress Diagnosis', answer: 'Trace income growth through spending, debt, savings, investments, and net-worth change to identify where additional earnings are being absorbed.' },
-  { question: 'What is my net worth?', feature: 'Net Worth Intelligence', answer: 'Track assets less liabilities, explain period-over-period changes, identify productive and declining assets, and project possible five-, ten-, and twenty-year outcomes.' },
-  { question: 'What bills are coming?', feature: 'Financial Obligation Radar', answer: 'Combine recurring bills, subscriptions, loans, cards, insurance, taxes, tuition, and irregular expenses to forecast upcoming obligations and low-balance dates.' },
-  { question: 'What subscriptions am I paying for?', feature: 'Subscription Intelligence', answer: 'Identify recurring merchants, monthly equivalents, price increases, and potentially unused services, then rank cancellation opportunities by likely lifestyle impact.' },
-  { question: 'When can I become financially independent?', feature: 'Financial Independence / Retirement Simulator', answer: 'Project current assets, monthly investments, inflation, expected returns, and retirement spending. Test lower-income and higher-inflation scenarios before relying on a target retirement date.' },
-  { question: 'How much should I have in an emergency fund?', feature: 'Emergency Reserve Planner', answer: 'Base the target on actual essential expenses, debt payments, dependents, insurance exposure, and income stability rather than a generic rule alone.' },
-  { question: 'Am I on track?', feature: 'Financial Trajectory Check', answer: 'Evaluate the chain from income and cash flow through debt, savings, investments, net worth, goals, and retirement, highlighting where progress has slowed.' },
-  { question: 'What should I prioritize?', feature: 'Top Financial Actions', answer: 'Rank three actions by urgency, financial impact, effort, and time to benefit, with quantified savings or progress wherever the underlying data supports it.' },
-] as const
+type DecisionId = 'affordability' | 'savings' | 'debt' | 'investing' | 'emergency' | 'health' | 'what-if'
+
+type DecisionCard = {
+  id: DecisionId
+  eyebrow: string
+  title: string
+  description: string
+  icon: LucideIcon
+  tone: string
+}
+
+const DECISION_CARDS: DecisionCard[] = [
+  { id: 'affordability', eyebrow: 'Purchase decision', title: 'Can I afford this?', description: 'Test the full monthly cost against cash flow, debt load, and resilience.', icon: BadgeDollarSign, tone: 'cyan' },
+  { id: 'savings', eyebrow: 'Goal planning', title: 'How much should I save?', description: 'Quantify the monthly amount and time required to fund your next goal.', icon: PiggyBank, tone: 'teal' },
+  { id: 'debt', eyebrow: 'Debt strategy', title: 'Pay debt or invest?', description: 'Compare guaranteed interest savings with your realistic investment return.', icon: WalletCards, tone: 'amber' },
+  { id: 'investing', eyebrow: 'Capital allocation', title: 'Where should I invest?', description: 'Balance liquidity, time horizon, and risk before allocating surplus cash.', icon: TrendingUp, tone: 'blue' },
+  { id: 'emergency', eyebrow: 'Financial resilience', title: 'Emergency fund', description: 'Measure how many months of essential obligations your reserves can cover.', icon: ShieldCheck, tone: 'green' },
+  { id: 'health', eyebrow: 'Financial health', title: 'Am I financially healthy?', description: 'Review cash flow, debt capacity, reserves, and progress in one view.', icon: HeartPulse, tone: 'coral' },
+  { id: 'what-if', eyebrow: 'Scenario simulator', title: 'What if...?', description: 'Stress-test a change in income, expenses, rates, or purchase cost.', icon: Activity, tone: 'violet' },
+]
 
 const FIELD_GROUPS: Array<{ title: string; fields: Array<{ key: keyof AffordabilityInputs; label: string; suffix?: string }> }> = [
   {
@@ -195,8 +212,19 @@ export default function FinancialDecisions() {
   const [savingsInputs, setSavingsInputs] = useState(initialSavings.inputs)
   const [usesHypotheticalSavings, setUsesHypotheticalSavings] = useState(initialSavings.usesHypotheticalData)
   const [savingsGoalName, setSavingsGoalName] = useState(initialSavings.goalName)
+  const [activeDecision, setActiveDecision] = useState<DecisionId>('affordability')
+  const [question, setQuestion] = useState('')
   const result = useMemo(() => computeAffordability(inputs), [inputs])
   const savingsResult = useMemo(() => computeSavingsGoalOptimization(savingsInputs), [savingsInputs])
+  const emergencyFundMonths = inputs.essentialLivingExpenses + inputs.existingDebtPayments > 0
+    ? inputs.emergencyFundBalance / (inputs.essentialLivingExpenses + inputs.existingDebtPayments)
+    : 0
+  const savingsRate = inputs.netMonthlyIncome > 0
+    ? ((inputs.minimumSavingsRequirement + inputs.existingGoalContributions) / inputs.netMonthlyIncome) * 100
+    : 0
+  const debtRatio = inputs.netMonthlyIncome > 0
+    ? (inputs.existingDebtPayments / inputs.netMonthlyIncome) * 100
+    : 0
 
   const updateInput = (key: keyof AffordabilityInputs, value: string) => {
     setUsesHypotheticalData(false)
@@ -218,37 +246,98 @@ export default function FinancialDecisions() {
     setSavingsInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
   }
 
+  const openDecision = (decision: DecisionId) => {
+    setActiveDecision(decision)
+    window.setTimeout(() => {
+      const workspace = document.getElementById('financial-decision-workspace')
+      if (typeof workspace?.scrollIntoView === 'function') {
+        workspace.scrollIntoView({ behavior: 'smooth', block: 'start' })
+      }
+    }, 0)
+  }
+
+  const askFin = () => {
+    const normalized = question.toLowerCase()
+    const decision: DecisionId = /sav|goal/.test(normalized)
+      ? 'savings'
+      : /debt|loan|credit/.test(normalized)
+        ? 'debt'
+        : /invest|portfolio|asset/.test(normalized)
+          ? 'investing'
+          : /emergency|reserve/.test(normalized)
+            ? 'emergency'
+            : /health|score|track/.test(normalized)
+              ? 'health'
+              : /what if|scenario|change/.test(normalized)
+                ? 'what-if'
+                : 'affordability'
+    openDecision(decision)
+  }
+
+  const activeCard = DECISION_CARDS.find((card) => card.id === activeDecision) ?? DECISION_CARDS[0]
+  const ActiveIcon = activeCard.icon
+
   return (
-    <div className="psychometric-page affordability-page">
-      <section className="psychometric-hero affordability-hero">
-        <div className="psychometric-hero-copy">
-          <span className="psychometric-eyebrow">FIN Health Decision Intelligence</span>
-          <h1>Ask FIN</h1>
-          <p>Open a question to explore the financial engine, assumptions, and practical next actions behind the answer.</p>
+    <main className="financial-decisions-page">
+      <header className="financial-decisions-header">
+        <div>
+          <span className="financial-decisions-brand"><Sparkles size={16} aria-hidden="true" /> FIN HEALTH DECISION INTELLIGENCE</span>
+          <h1>Financial Decisions</h1>
+          <p>Make confident choices with data-driven insights from your financial profile.</p>
         </div>
-        <div className="affordability-hero-score" aria-label={`Affordability score ${result.score} out of 100`}>
-          <span>Affordability</span>
-          <strong>{result.score}</strong>
-          <small>{result.recommendation}</small>
+        <button type="button" className="financial-decisions-profile-button" onClick={refreshFromProfile}>
+          <RefreshCw size={16} aria-hidden="true" /> Refresh Profile
+        </button>
+      </header>
+
+      <section className="financial-snapshot" aria-labelledby="financial-snapshot-title">
+        <div className="financial-snapshot-heading">
+          <div><span>Live profile</span><h2 id="financial-snapshot-title">Your Financial Snapshot</h2></div>
+          <small>{usesHypotheticalData ? 'Illustrative data' : 'Profile data'} · Updated just now</small>
+        </div>
+        <div className="financial-snapshot-grid">
+          <div className="financial-snapshot-record"><span>Selected profile</span><SelectedProfileIdCard compactId label="Record ID" /></div>
+          <article><span>Monthly Income</span><strong>{currency.format(inputs.netMonthlyIncome)}</strong><small>Net available income</small></article>
+          <article><span>Savings Rate</span><strong>{percent.format(savingsRate)}%</strong><div className="financial-metric-track"><i style={{ width: `${Math.min(100, savingsRate)}%` }} /></div><small>{savingsRate >= 20 ? 'Healthy savings pace' : 'Below the 20% target'}</small></article>
+          <article><span>Emergency Fund</span><strong>{percent.format(emergencyFundMonths)} months</strong><div className="financial-metric-track"><i style={{ width: `${Math.min(100, emergencyFundMonths / 6 * 100)}%` }} /></div><small>{emergencyFundMonths >= 6 ? 'Fully resilient' : 'Target: 6 months'}</small></article>
+          <article><span>Debt-to-Income</span><strong>{percent.format(debtRatio)}%</strong><div className="financial-metric-track is-amber"><i style={{ width: `${Math.min(100, debtRatio / 50 * 100)}%` }} /></div><small>{debtRatio <= 30 ? 'Within a healthy range' : 'Requires attention'}</small></article>
+          <article><span>Financial Health</span><strong>{Math.round(inputs.financialHealthScore)} / 100</strong><div className="financial-metric-track"><i style={{ width: `${inputs.financialHealthScore}%` }} /></div><small>{inputs.financialHealthScore >= 80 ? 'Strong' : inputs.financialHealthScore >= 60 ? 'Stable' : 'Priority'}</small></article>
         </div>
       </section>
 
-      <section className="financial-health-profile-line" aria-label="Affordability profile context">
-        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" />
-        <article className="financial-health-summary-tile"><span>Available Capacity</span><strong>{currency.format(result.availableFinancialCapacity)}</strong><small>Before the proposed purchase</small></article>
-        <article className="financial-health-summary-tile"><span>Net New Payment</span><strong>{currency.format(result.netMonthlyPayment)}</strong><small>Ownership costs less quantified benefit</small></article>
-        <article className="financial-health-summary-tile"><span>Payment Burden</span><strong>{percent.format(result.paymentBurdenPercent)}%</strong><small>Existing debt plus new payment / income</small></article>
+      <section className="decision-centre" aria-labelledby="decision-centre-title">
+        <div className="decision-centre-heading"><span>Decision centre</span><h2 id="decision-centre-title">What are you deciding today?</h2><p>Select a topic to open a focused calculator and recommendation workspace.</p></div>
+        <div className="decision-card-grid">
+          {DECISION_CARDS.map((card) => {
+            const Icon = card.icon
+            return (
+              <button key={card.id} type="button" className={`decision-card is-${card.tone} ${activeDecision === card.id ? 'is-active' : ''}`} onClick={() => openDecision(card.id)} aria-pressed={activeDecision === card.id}>
+                <span className="decision-card-icon"><Icon size={24} strokeWidth={1.8} aria-hidden="true" /></span>
+                <span className="decision-card-copy"><small>{card.eyebrow}</small><strong>{card.title}</strong><span>{card.description}</span></span>
+                <ChevronRight className="decision-card-arrow" size={20} aria-hidden="true" />
+              </button>
+            )
+          })}
+        </div>
       </section>
 
-      <section className="affordability-faq" aria-labelledby="ask-fin-questions">
-        <div className="affordability-faq-heading">
-          <div><span>Frequently Asked Questions</span><h2 id="ask-fin-questions">What would you like to know about your finances?</h2></div>
-          <p>Answers remain hidden until you open a question.</p>
-        </div>
+      <section className="ask-fin-panel" aria-labelledby="ask-fin-title">
+        <div><span><CircleDollarSign size={18} aria-hidden="true" /> Ask FIN</span><h2 id="ask-fin-title">Have a specific question?</h2><p>Describe the decision in plain language and FIN will route you to the right analysis.</p></div>
+        <form onSubmit={(event) => { event.preventDefault(); askFin() }}>
+          <Search size={19} aria-hidden="true" />
+          <input value={question} onChange={(event) => setQuestion(event.target.value)} placeholder="e.g. Can I afford a ₱50,000 purchase?" aria-label="Ask FIN a financial question" />
+          <button type="submit"><Sparkles size={17} aria-hidden="true" /> Ask FIN</button>
+        </form>
+      </section>
 
-        <details className="affordability-question affordability-question-primary">
-          <summary><span>1</span><strong>Can I afford this?</strong><small>Affordability Engine and AI Recommendations</small></summary>
-          <div className="affordability-answer">
+      <section id="financial-decision-workspace" className="decision-workspace" aria-labelledby="decision-workspace-title">
+        <header className="decision-workspace-header">
+          <span className={`decision-card-icon is-${activeCard.tone}`}><ActiveIcon size={24} aria-hidden="true" /></span>
+          <div><small>{activeCard.eyebrow}</small><h2 id="decision-workspace-title">{activeCard.title}</h2><p>{activeCard.description}</p></div>
+        </header>
+
+        {activeDecision === 'affordability' ? (
+          <div className="decision-tool-body">
             <div className={`affordability-data-notice ${usesHypotheticalData ? 'is-hypothetical' : 'is-profile'}`} role="status">
               <strong>{usesHypotheticalData ? 'Hypothetical data in use' : 'Profile data loaded'}</strong>
               <span>{usesHypotheticalData ? 'Replace these assumptions with your actual figures for a personal result.' : 'Review and adjust any values before relying on the result.'}</span>
@@ -302,57 +391,44 @@ export default function FinancialDecisions() {
             </section>
             <p className="affordability-disclaimer">Decision support only. Results depend on the accuracy of the inputs and are not a lending approval or financial guarantee.</p>
           </div>
-        </details>
-
-        {FAQ_ITEMS.map((item, index) => {
-          const itemNumber = index + 2
-          if (itemNumber === 3) {
-            return (
-              <details key={item.question} className="affordability-question affordability-question-savings">
-                <summary><span>{itemNumber}</span><strong>{item.question}</strong><small>{item.feature}</small></summary>
-                <div className="affordability-answer">
-                  <div className={`affordability-data-notice ${usesHypotheticalSavings ? 'is-hypothetical' : 'is-profile'}`} role="status">
-                    <strong>{usesHypotheticalSavings ? 'Hypothetical savings data in use' : 'Savings profile data loaded'}</strong>
-                    <span>{usesHypotheticalSavings ? 'Enter your target and actual savings, or refresh after completing Build Profile.' : `${savingsGoalName} values were loaded from Build Profile and remain editable here.`}</span>
-                    <button type="button" className="financial-health-journey-main-fab" onClick={refreshFromProfile}>Refresh from Profile</button>
-                  </div>
-
-                  <div className="savings-optimizer-layout">
-                    <fieldset className="affordability-input-group savings-optimizer-inputs">
-                      <legend>Savings Calculator</legend>
-                      <label><span>Target Savings Goal</span><div><input aria-label="Target Savings Goal" type="number" min="0" step="any" value={savingsInputs.targetSavingsGoal} onChange={(event) => updateSavingsInput('targetSavingsGoal', event.target.value)} /></div></label>
-                      <label><span>Actual Savings</span><div><input aria-label="Actual Savings" type="number" min="0" step="any" value={savingsInputs.actualSavings} onChange={(event) => updateSavingsInput('actualSavings', event.target.value)} /></div></label>
-                      <label><span>Current Monthly Savings</span><div><input aria-label="Current Monthly Savings" type="number" min="0" step="any" value={savingsInputs.currentMonthlySavings} onChange={(event) => updateSavingsInput('currentMonthlySavings', event.target.value)} /></div></label>
-                      <label><span>Target Timeline</span><div><input aria-label="Target Timeline" type="number" min="1" step="1" value={savingsInputs.targetMonths} onChange={(event) => updateSavingsInput('targetMonths', event.target.value)} /><small>months</small></div></label>
-                      <label><span>Expected Annual Return</span><div><input aria-label="Expected Annual Return" type="number" min="0" step="0.1" value={savingsInputs.annualReturnRate} onChange={(event) => updateSavingsInput('annualReturnRate', event.target.value)} /><small>%</small></div></label>
-                    </fieldset>
-
-                    <section className="savings-optimizer-results" aria-label="Savings optimization result">
-                      <div className="savings-optimizer-status"><span>{savingsGoalName}</span><strong>{savingsResult.status}</strong><progress max="100" value={savingsResult.progressPercent}>{savingsResult.progressPercent}</progress><small>{percent.format(savingsResult.progressPercent)}% funded</small></div>
-                      <dl className="affordability-capacity-flow">
-                        <div><dt>Remaining savings gap</dt><dd>{currency.format(savingsResult.savingsGap)}</dd></div>
-                        <div><dt>Monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAmountNeeded)}</dd></div>
-                        <div><dt>Months required at current pace</dt><dd>{savingsResult.monthsRequired === null ? 'Not reachable' : `${savingsResult.monthsRequired} months`}</dd></div>
-                        <div><dt>Projected savings at deadline</dt><dd>{currency.format(savingsResult.projectedSavingsAtTarget)}</dd></div>
-                        <div><dt>Additional monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAdjustment)}</dd></div>
-                      </dl>
-                      <div className="savings-optimizer-recommendations"><h3>Optimization Actions</h3><ul>{savingsResult.recommendations.map((recommendation) => <li key={recommendation}>{recommendation}</li>)}</ul></div>
-                    </section>
-                  </div>
-                  <p className="affordability-disclaimer">Projections assume contributions are made monthly and any entered return remains constant. Actual returns and timing may differ.</p>
-                </div>
-              </details>
-            )
-          }
-
-          return (
-            <details key={item.question} className="affordability-question">
-              <summary><span>{itemNumber}</span><strong>{item.question}</strong><small>{item.feature}</small></summary>
-              <div className="affordability-answer affordability-compact-answer"><h3>{item.feature}</h3><p>{item.answer}</p></div>
-            </details>
-          )
-        })}
+        ) : activeDecision === 'savings' ? (
+          <div className="decision-tool-body">
+            <div className={`affordability-data-notice ${usesHypotheticalSavings ? 'is-hypothetical' : 'is-profile'}`} role="status">
+              <strong>{usesHypotheticalSavings ? 'Hypothetical savings data in use' : 'Savings profile data loaded'}</strong>
+              <span>{usesHypotheticalSavings ? 'Enter your target and actual savings, or refresh after completing Build Profile.' : `${savingsGoalName} values were loaded from Build Profile and remain editable here.`}</span>
+              <button type="button" className="financial-health-journey-main-fab" onClick={refreshFromProfile}><RefreshCw size={15} aria-hidden="true" /> Refresh from Profile</button>
+            </div>
+            <div className="savings-optimizer-layout">
+              <fieldset className="affordability-input-group savings-optimizer-inputs">
+                <legend>Savings Calculator</legend>
+                <label><span>Target Savings Goal</span><div><input aria-label="Target Savings Goal" type="number" min="0" step="any" value={savingsInputs.targetSavingsGoal} onChange={(event) => updateSavingsInput('targetSavingsGoal', event.target.value)} /></div></label>
+                <label><span>Actual Savings</span><div><input aria-label="Actual Savings" type="number" min="0" step="any" value={savingsInputs.actualSavings} onChange={(event) => updateSavingsInput('actualSavings', event.target.value)} /></div></label>
+                <label><span>Current Monthly Savings</span><div><input aria-label="Current Monthly Savings" type="number" min="0" step="any" value={savingsInputs.currentMonthlySavings} onChange={(event) => updateSavingsInput('currentMonthlySavings', event.target.value)} /></div></label>
+                <label><span>Target Timeline</span><div><input aria-label="Target Timeline" type="number" min="1" step="1" value={savingsInputs.targetMonths} onChange={(event) => updateSavingsInput('targetMonths', event.target.value)} /><small>months</small></div></label>
+                <label><span>Expected Annual Return</span><div><input aria-label="Expected Annual Return" type="number" min="0" step="0.1" value={savingsInputs.annualReturnRate} onChange={(event) => updateSavingsInput('annualReturnRate', event.target.value)} /><small>%</small></div></label>
+              </fieldset>
+              <section className="savings-optimizer-results" aria-label="Savings optimization result">
+                <div className="savings-optimizer-status"><span>{savingsGoalName}</span><strong>{savingsResult.status}</strong><progress max="100" value={savingsResult.progressPercent}>{savingsResult.progressPercent}</progress><small>{percent.format(savingsResult.progressPercent)}% funded</small></div>
+                <dl className="affordability-capacity-flow">
+                  <div><dt>Remaining savings gap</dt><dd>{currency.format(savingsResult.savingsGap)}</dd></div>
+                  <div><dt>Monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAmountNeeded)}</dd></div>
+                  <div><dt>Months required at current pace</dt><dd>{savingsResult.monthsRequired === null ? 'Not reachable' : `${savingsResult.monthsRequired} months`}</dd></div>
+                  <div><dt>Projected savings at deadline</dt><dd>{currency.format(savingsResult.projectedSavingsAtTarget)}</dd></div>
+                  <div><dt>Additional monthly amount needed</dt><dd>{currency.format(savingsResult.monthlyAdjustment)}</dd></div>
+                </dl>
+                <div className="savings-optimizer-recommendations"><h3>Optimization Actions</h3><ul>{savingsResult.recommendations.map((recommendation) => <li key={recommendation}>{recommendation}</li>)}</ul></div>
+              </section>
+            </div>
+            <p className="affordability-disclaimer">Projections assume contributions are made monthly and any entered return remains constant. Actual returns and timing may differ.</p>
+          </div>
+        ) : (
+          <div className="decision-guidance-grid">
+            <article><Gauge size={22} aria-hidden="true" /><span>Current signal</span><strong>{activeDecision === 'debt' ? `${percent.format(debtRatio)}% debt-to-income` : activeDecision === 'emergency' ? `${percent.format(emergencyFundMonths)} months covered` : `${Math.round(inputs.financialHealthScore)} / 100 health score`}</strong><p>Your profile data is used as the baseline for this decision.</p></article>
+            <article><TrendingUp size={22} aria-hidden="true" /><span>Recommended approach</span><strong>{activeDecision === 'investing' ? 'Protect liquidity first' : activeDecision === 'what-if' ? 'Change one variable at a time' : 'Address the highest-impact gap'}</strong><p>Compare the result against your savings goals and essential obligations before acting.</p></article>
+            <article><WalletCards size={22} aria-hidden="true" /><span>Next action</span><strong>Review your profile assumptions</strong><p>Refresh the profile, verify each figure, then use the affordability or savings calculator for a quantified decision.</p></article>
+          </div>
+        )}
       </section>
-    </div>
+    </main>
   )
 }

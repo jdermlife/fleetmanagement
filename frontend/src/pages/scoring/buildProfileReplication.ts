@@ -91,9 +91,15 @@ export function getSelectedBuildProfileApplicationNo(
 }
 
 export function getCurrentBuildProfileOwner(): string {
-  const storage = typeof window === 'undefined' ? null : window.localStorage as Partial<Storage>
-  const token = storage && typeof storage.getItem === 'function'
-    ? storage.getItem('auth_token')
+  if (typeof window === 'undefined') return resolveAutosaveOwner(null)
+
+  const sessionStorage = window.sessionStorage as Partial<Storage> | undefined
+  const localStorage = window.localStorage as Partial<Storage> | undefined
+  const sessionToken = sessionStorage && typeof sessionStorage.getItem === 'function'
+    ? sessionStorage.getItem('auth_token')
     : null
+  const token = sessionToken || (localStorage && typeof localStorage.getItem === 'function'
+    ? localStorage.getItem('auth_token')
+    : null)
   return resolveAutosaveOwner(token)
 }

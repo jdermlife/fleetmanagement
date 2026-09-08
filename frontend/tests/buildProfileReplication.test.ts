@@ -32,9 +32,14 @@ const profile: ReplicatedBuildProfile = {
 describe('build profile replication', () => {
   beforeEach(() => {
     const values = new Map<string, string>()
+    const sessionValues = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
       setItem: (key: string, value: string) => values.set(key, value),
+    })
+    vi.stubGlobal('sessionStorage', {
+      getItem: (key: string) => sessionValues.get(key) ?? null,
+      setItem: (key: string, value: string) => sessionValues.set(key, value),
     })
   })
 
@@ -70,6 +75,17 @@ describe('build profile replication', () => {
 
     expect(readReplicatedBuildProfile()).toBeNull()
     expect(getSelectedBuildProfileApplicationNo()).toBe('')
+  })
+
+  it('reads the current user profile when authentication is session-only', () => {
+    const token = `header.${btoa(JSON.stringify({ sub: 'session-user' }))}.signature`
+    window.sessionStorage.setItem('auth_token', token)
+    window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+      ...profile,
+      ownerKey: 'session-user',
+    }))
+
+    expect(readReplicatedBuildProfile()?.profileId).toBe('PRO-1')
   })
 
   it('maps Build Profile wealth inputs into the Net Worth draft model', () => {

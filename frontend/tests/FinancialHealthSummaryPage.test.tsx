@@ -129,6 +129,20 @@ describe('FinancialHealthSummaryPage', () => {
     expect(computeButton.compareDocumentPosition(journeyButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
   })
 
+  it('reloads all financial sources before publishing a refreshed score', async () => {
+    render(<FinancialHealthSummaryPage />)
+
+    const refresh = screen.getByRole('button', { name: 'Refresh Financial Health' })
+    await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
+    expect(fetchAutosaveDraft).toHaveBeenCalledTimes(6)
+
+    fireEvent.click(refresh)
+
+    expect(screen.getByRole('button', { name: 'Refresh Financial Health' }).textContent).toBe('Refreshing...')
+    await waitFor(() => expect(fetchAutosaveDraft).toHaveBeenCalledTimes(12))
+    expect(await screen.findByText(/Computed/)).toBeTruthy()
+  })
+
   it('shows APP identity and Step 8 financial amounts in thousands', async () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-USER',
@@ -601,6 +615,7 @@ describe('FinancialHealthSummaryPage', () => {
     const refresh = screen.getByRole('button', { name: 'Refresh Financial Health' })
     await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
     fireEvent.click(refresh)
+    await waitFor(() => expect((refresh as HTMLButtonElement).disabled).toBe(false))
     fireEvent.change(screen.getByLabelText('Snapshot as of'), { target: { value: '2026-08' } })
     const save = screen.getByRole('button', { name: 'Save Snapshot' })
     expect((save as HTMLButtonElement).disabled).toBe(false)
