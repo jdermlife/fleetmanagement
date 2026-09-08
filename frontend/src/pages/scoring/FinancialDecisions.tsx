@@ -591,7 +591,7 @@ export default function FinancialDecisions() {
         <header className="retirement-model-header">
           <div className="retirement-model-title">
             <span><ShieldCheck size={18} aria-hidden="true" /> Long-term planning</span>
-            <h2 id="retirement-model-title">Retirement Model Engine</h2>
+            <h2 id="retirement-model-title">FS Retirement Model </h2>
             <p>Connect today&apos;s spending and investments to your retirement income, financial independence date, and plan resilience.</p>
           </div>
           <div className={`retirement-model-source ${usesHypotheticalRetirement ? 'is-hypothetical' : 'is-profile'}`} role="status">
@@ -626,32 +626,32 @@ export default function FinancialDecisions() {
 
         <div className="retirement-model-results" aria-label="Retirement model results">
           <article>
-            <span>Retirement Needs Engine</span><h3>How much will I need?</h3>
+            <span>Retirement Needs </span><h3>How much will I need?</h3>
             <strong>{currency.format(retirementResult.retirementNeeds.monthlyExpensesAtRetirement)} / month</strong>
             <p>{currency.format(retirementResult.retirementNeeds.lifetimeSpending)} estimated spending across {retirementResult.retirementYears} retirement years.</p>
           </article>
           <article>
-            <span>Inflation Engine</span><h3>What will that cost in the future?</h3>
+            <span>Inflation</span><h3>What will that cost in the future?</h3>
             <strong>{currency.format(retirementResult.inflation.futureCostOfCurrentMonthlyExpenses)} / month</strong>
             <p>Current expenses rise {percent.format(retirementResult.inflation.cumulativeIncreasePercent)}% by age {retirementInputs.retirementAge}.</p>
           </article>
           <article>
-            <span>Retirement Income Engine</span><h3>How much income will I have?</h3>
+            <span>Retirement Income </span><h3>How much income will I have?</h3>
             <strong>{currency.format(retirementResult.retirementIncome.totalAnnualIncome)} / year</strong>
             <p>Includes portfolio withdrawals and {currency.format(retirementResult.retirementIncome.annualPensionIncome)} annual pension income.</p>
           </article>
           <article>
-            <span>Investment Projection Engine</span><h3>How much can my portfolio grow?</h3>
+            <span>Investment Projection </span><h3>How much can my portfolio grow?</h3>
             <strong>{currency.format(retirementResult.investmentProjection.projectedPortfolioAtRetirement)}</strong>
             <p>{currency.format(retirementResult.investmentProjection.investmentGrowth)} is projected investment growth by retirement.</p>
           </article>
           <article>
-            <span>Retirement Corpus Engine</span><h3>How much capital do I need?</h3>
+            <span>Retirement Corpus </span><h3>How much capital do I need?</h3>
             <strong>{currency.format(retirementResult.retirementCorpus.requiredCorpus)}</strong>
             <p>{percent.format(retirementResult.retirementCorpus.fundingRatioPercent)}% funded with a {currency.format(retirementResult.retirementCorpus.fundingGap)} remaining gap.</p>
           </article>
           <article>
-            <span>FI Date Engine</span><h3>When can I become financially independent?</h3>
+            <span>FI Date </span><h3>When can I become financially independent?</h3>
             <strong>{retirementResult.financialIndependence.age === null ? 'Beyond current projection' : `Age ${percent.format(retirementResult.financialIndependence.age)}`}</strong>
             <p>{retirementResult.financialIndependence.yearsFromNow === null ? 'Increase contributions or adjust the plan.' : `${percent.format(retirementResult.financialIndependence.yearsFromNow)} years from now at the current trajectory.`}</p>
           </article>
@@ -661,7 +661,7 @@ export default function FinancialDecisions() {
             <p>{retirementResult.contributionOptimizer.monthlyContributionGap > 0 ? `${currency.format(retirementResult.contributionOptimizer.monthlyContributionGap)} more than your current monthly amount.` : 'Your current monthly amount meets the base projection.'}</p>
           </article>
           <article className="retirement-scenario-result">
-            <span>Scenario Engine</span><h3>What happens if things change?</h3>
+            <span>Scenario </span><h3>What happens if things change?</h3>
             <div>{retirementResult.scenarios.map((scenario) => <p key={scenario.id}><b>{scenario.label}</b><strong>{currency.format(scenario.projectedPortfolio)}</strong><small>{percent.format(scenario.fundingRatioPercent)}% funded</small></p>)}</div>
           </article>
           <article className="retirement-monte-carlo-result">
