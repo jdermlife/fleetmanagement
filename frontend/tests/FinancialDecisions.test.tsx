@@ -92,4 +92,37 @@ describe('FinancialDecisions', () => {
 
     expect(corpusPanel?.querySelector(':scope > strong')?.textContent).not.toBe(initialCorpus)
   })
+
+  it('links retirement fields from Build Profile and marks their boxes', () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-LINKED',
+      values: {
+        dateOfBirth: '1990-01-01',
+        'expense-housing': '18000',
+        'expense-groceries': '12000',
+        'asset-retirement-fund': '600000',
+        'asset-provident-fund': '400000',
+        'expense-retirement-savings': '15000',
+      },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+    }))
+
+    render(<FinancialDecisions />)
+
+    const linkedInputs = [
+      screen.getByLabelText('Current Age'),
+      screen.getByLabelText('Current Monthly Expenses'),
+      screen.getByLabelText('Current Retirement Savings'),
+      screen.getByLabelText('Monthly Investment'),
+    ]
+    expect(linkedInputs.map((input) => (input as HTMLInputElement).value)).toEqual(['36', '45000', '1000000', '15000'])
+    linkedInputs.forEach((input) => expect(input.parentElement?.classList.contains('is-profile-linked')).toBe(true))
+
+    fireEvent.change(linkedInputs[3], { target: { value: '20000' } })
+    expect(linkedInputs[3].parentElement?.classList.contains('is-profile-linked')).toBe(false)
+  })
 })

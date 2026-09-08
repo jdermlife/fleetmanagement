@@ -11858,6 +11858,17 @@ th { color: var(--dark-gold); }
   background: #f9fcfc;
 }
 
+.retirement-model-inputs label > div.is-profile-linked {
+  border: 2px solid #14532d;
+  background: #f3faf5;
+  box-shadow: inset 4px 0 0 #14532d;
+}
+
+.retirement-model-inputs label > div.is-profile-linked:focus-within {
+  border-color: #0b3d20;
+  box-shadow: 0 0 0 3px rgba(20, 83, 45, 0.16), inset 4px 0 0 #14532d;
+}
+
 .retirement-model-inputs input {
   min-width: 0;
   padding: 9px 10px;

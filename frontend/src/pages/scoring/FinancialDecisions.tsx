@@ -99,6 +99,7 @@ const ESSENTIAL_EXPENSE_KEYS = [
 ]
 
 type DecisionId = 'affordability' | 'savings' | 'debt' | 'investing' | 'emergency' | 'health' | 'what-if'
+type RetirementLinkedField = 'currentAge' | 'currentMonthlyExpenses' | 'currentRetirementSavings' | 'monthlyContribution'
 
 type DecisionCard = {
   id: DecisionId
@@ -273,27 +274,37 @@ function ageFromDateOfBirth(dateOfBirth: string): number {
   return Math.max(0, age)
 }
 
-function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypotheticalData: boolean } {
+function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypotheticalData: boolean; linkedFields: RetirementLinkedField[] } {
   const profile = readReplicatedBuildProfile()
-  if (!profile) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true }
+  if (!profile) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true, linkedFields: [] }
 
   const values = profile.values
-  const amount = (key: string) => Math.max(0, Number(values[key] || 0))
+  const sourceValue = (key: string) => values[`wealthActual.${key}`] ?? values[key]
+  const amount = (key: string) => Math.max(0, Number(sourceValue(key) || 0))
+  const hasValue = (key: string) => sourceValue(key) !== undefined && sourceValue(key) !== ''
   const currentAge = amount('age') || ageFromDateOfBirth(values.dateOfBirth || '')
-  const currentMonthlyExpenses = Object.keys(values)
+  const expenseKeys = Object.keys(values)
     .filter((key) => !key.includes('.') && key.startsWith('expense-'))
+  const currentMonthlyExpenses = expenseKeys
     .reduce((total, key) => total + amount(key), 0)
   const currentRetirementSavings = RETIREMENT_ASSET_KEYS.reduce((total, key) => total + amount(key), 0)
   const monthlyContribution = amount('expense-retirement-savings')
   const hasRetirementData = currentAge > 0 || currentMonthlyExpenses > 0 || currentRetirementSavings > 0 || monthlyContribution > 0
-  if (!hasRetirementData) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true }
+  if (!hasRetirementData) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true, linkedFields: [] }
+
+  const linkedFields: RetirementLinkedField[] = []
+  if (hasValue('age') || Boolean(values.dateOfBirth)) linkedFields.push('currentAge')
+  if (expenseKeys.some(hasValue) || hasValue('monthlyExpenses')) linkedFields.push('currentMonthlyExpenses')
+  if (RETIREMENT_ASSET_KEYS.some(hasValue)) linkedFields.push('currentRetirementSavings')
+  if (hasValue('expense-retirement-savings')) linkedFields.push('monthlyContribution')
 
   return {
     usesHypotheticalData: false,
+    linkedFields,
     inputs: {
       ...HYPOTHETICAL_RETIREMENT_INPUTS,
       currentAge: currentAge || HYPOTHETICAL_RETIREMENT_INPUTS.currentAge,
-      currentMonthlyExpenses: currentMonthlyExpenses || HYPOTHETICAL_RETIREMENT_INPUTS.currentMonthlyExpenses,
+      currentMonthlyExpenses: currentMonthlyExpenses || amount('monthlyExpenses') || HYPOTHETICAL_RETIREMENT_INPUTS.currentMonthlyExpenses,
       currentRetirementSavings,
       monthlyContribution,
       annualPensionIncome: amount('income-pension') * 12,
@@ -312,6 +323,7 @@ export default function FinancialDecisions() {
   const [savingsGoalName, setSavingsGoalName] = useState(initialSavings.goalName)
   const [retirementInputs, setRetirementInputs] = useState(initialRetirement.inputs)
   const [usesHypotheticalRetirement, setUsesHypotheticalRetirement] = useState(initialRetirement.usesHypotheticalData)
+  const [linkedRetirementFields, setLinkedRetirementFields] = useState(initialRetirement.linkedFields)
   const [activeDecision, setActiveDecision] = useState<DecisionId>('affordability')
   const [question, setQuestion] = useState('')
   const result = useMemo(() => computeAffordability(inputs), [inputs])
@@ -326,7 +338,6 @@ export default function FinancialDecisions() {
   const debtRatio = inputs.netMonthlyIncome > 0
     ? (inputs.existingDebtPayments / inputs.netMonthlyIncome) * 100
     : 0
-
   const updateInput = (key: keyof AffordabilityInputs, value: string) => {
     setUsesHypotheticalData(false)
     setInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
@@ -343,6 +354,7 @@ export default function FinancialDecisions() {
     setSavingsGoalName(refreshedSavings.goalName)
     setRetirementInputs(refreshedRetirement.inputs)
     setUsesHypotheticalRetirement(refreshedRetirement.usesHypotheticalData)
+    setLinkedRetirementFields(refreshedRetirement.linkedFields)
   }
 
   const updateSavingsInput = (key: keyof SavingsGoalInputs, value: string) => {
@@ -352,6 +364,7 @@ export default function FinancialDecisions() {
 
   const updateRetirementInput = (key: keyof RetirementModelInputs, value: string) => {
     setUsesHypotheticalRetirement(false)
+    setLinkedRetirementFields((current) => current.filter((field) => field !== key))
     setRetirementInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
   }
 
@@ -563,7 +576,7 @@ export default function FinancialDecisions() {
               {group.fields.map((field) => (
                 <label key={field.key}>
                   <span>{field.label}</span>
-                  <div>
+                  <div className={linkedRetirementFields.includes(field.key as RetirementLinkedField) ? 'is-profile-linked' : undefined}>
                     <input
                       aria-label={field.label}
                       type="number"
