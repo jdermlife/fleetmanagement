@@ -11600,8 +11600,8 @@ th { color: var(--dark-gold); }
   transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
 }
 
-.has-debt-popout:hover .debt-strategy-popout,
-.has-debt-popout:focus-within .debt-strategy-popout {
+.has-decision-popout:hover .debt-strategy-popout,
+.has-decision-popout:focus-within .debt-strategy-popout {
   visibility: visible;
   opacity: 1;
   pointer-events: auto;
@@ -11629,6 +11629,13 @@ th { color: var(--dark-gold); }
   gap: 14px;
   margin: 0;
   padding-left: 22px;
+}
+
+.capital-allocation-popout ul {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 20px;
 }
 
 .debt-strategy-popout li {
@@ -11659,6 +11666,26 @@ th { color: var(--dark-gold); }
 .debt-strategy-popout > section > strong {
   color: #14532d;
   font-size: 0.85rem;
+}
+
+.capital-allocation-popout {
+  right: auto;
+  left: 0;
+  border-color: #87b5d5;
+  border-top-color: #4387bd;
+  background: #f8fbfe;
+}
+
+.capital-allocation-popout h3 {
+  color: #245f8c;
+}
+
+.capital-allocation-popout li {
+  color: #4387bd;
+  padding-left: 4px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.5;
 }
 
 .decision-card-icon {

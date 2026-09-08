@@ -436,9 +436,14 @@ export default function FinancialDecisions() {
         <div className="decision-card-grid">
           {DECISION_CARDS.map((card) => {
             const Icon = card.icon
+            const popoutId = card.id === 'debt'
+              ? 'debt-strategy-popout'
+              : card.id === 'investing'
+                ? 'capital-allocation-popout'
+                : undefined
             return (
-              <div key={card.id} className={`decision-card-container ${card.id === 'debt' ? 'has-debt-popout' : ''}`}>
-                <button type="button" className={`decision-card is-${card.tone} ${activeDecision === card.id ? 'is-active' : ''}`} onClick={() => openDecision(card.id)} aria-pressed={activeDecision === card.id} aria-describedby={card.id === 'debt' ? 'debt-strategy-popout' : undefined}>
+              <div key={card.id} className={`decision-card-container ${popoutId ? 'has-decision-popout' : ''}`}>
+                <button type="button" className={`decision-card is-${card.tone} ${activeDecision === card.id ? 'is-active' : ''}`} onClick={() => openDecision(card.id)} aria-pressed={activeDecision === card.id} aria-describedby={popoutId}>
                   <span className="decision-card-icon"><Icon size={24} strokeWidth={1.8} aria-hidden="true" /></span>
                   <span className="decision-card-copy"><small>{card.eyebrow}</small><strong>{card.title}</strong><span>{card.description}</span></span>
                   <ChevronRight className="decision-card-arrow" size={20} aria-hidden="true" />
@@ -453,6 +458,18 @@ export default function FinancialDecisions() {
                       <li><b>Employer Retirement Match</b><p>Always capture this first. It is essentially a 100% return on contributions.</p></li>
                     </ol>
                     <section><h3>Balanced Strategy</h3><p>Recommended splitting:</p><strong>Extra cash: 70% debt payoff, 30% investing.</strong><p>Adjust the ratio as debt shrinks and income grows.</p></section>
+                  </aside>
+                ) : null}
+                {card.id === 'investing' ? (
+                  <aside id="capital-allocation-popout" className="debt-strategy-popout capital-allocation-popout" aria-label="Capital allocation practical starter strategy">
+                    <h3>✅ Practical Starter Strategy</h3>
+                    <ul>
+                      <li>Emergency fund first (cash savings).</li>
+                      <li>Employer retirement match (if available) - always capture free money.</li>
+                      <li>Low-cost index funds or ETFs - broad diversification.</li>
+                      <li>Gradual diversification into bonds, REITs, or dividend stocks.</li>
+                      <li>Avoid speculative bets until your portfolio is stable.</li>
+                    </ul>
                   </aside>
                 ) : null}
               </div>

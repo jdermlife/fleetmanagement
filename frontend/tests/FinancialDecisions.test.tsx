@@ -72,6 +72,19 @@ describe('FinancialDecisions', () => {
     expect(within(guide).getByText('Extra cash: 70% debt payoff, 30% investing.')).toBeTruthy()
   })
 
+  it('links the Capital Allocation card to its starter strategy popout', () => {
+    render(<FinancialDecisions />)
+
+    const capitalCard = screen.getByRole('button', { name: /Where should I invest?/ })
+    const guide = screen.getByLabelText('Capital allocation practical starter strategy')
+
+    expect(capitalCard.getAttribute('aria-describedby')).toBe('capital-allocation-popout')
+    expect(within(guide).getByText('✅ Practical Starter Strategy')).toBeTruthy()
+    expect(within(guide).getByText('Emergency fund first (cash savings).')).toBeTruthy()
+    expect(within(guide).getByText(/Low-cost index funds or ETFs/)).toBeTruthy()
+    expect(within(guide).getByText('Avoid speculative bets until your portfolio is stable.')).toBeTruthy()
+  })
+
   it('routes a plain-language question to the matching decision workspace', async () => {
     render(<FinancialDecisions />)
 
