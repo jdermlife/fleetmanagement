@@ -46,6 +46,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
 
 
 const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
+const FinancialDecisions = lazyWithRetry(() => import('./pages/scoring/FinancialDecisions'))
 const BuildProfilePage = lazyWithRetry(() => import('./pages/scoring/BuildProfilePage'))
 const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
 const LeaseScorecardPage = lazy(() => import('./pages/scoring/LeaseScorecardPage'))
@@ -127,6 +128,7 @@ const menuLinks: MenuLink[] = [
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
   { id: 'loan-monitoring', label: 'Resource Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
+  { id: 'financial-decisions', label: 'Financial Decisions' },
   { id: 'dashboard', label: 'Multiple Accounts' },
 
   /* AI MENU */
@@ -272,6 +274,7 @@ const subscriberHiddenMenus = [
 const subscriberAlwaysVisibleMenus = [
   'build-profile',
   'financial-health-summary',
+  'financial-decisions',
   'lending-scorecard',
   'budget-expense-tracker',
   'loan-monitoring',
@@ -283,6 +286,7 @@ const subscriberAlwaysVisibleMenus = [
 const borrowerVisibleMenus = [
   'build-profile',
   'financial-health-summary',
+  'financial-decisions',
   'lending-scorecard',
   'budget-expense-tracker',
   'loan-monitoring',
@@ -1369,6 +1373,17 @@ const isSignedIn = authReady && Boolean(currentUser)
                 </ProtectedRoute>
               }
             />
+
+            <Route
+              path="/financial-decisions"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <FinancialDecisions />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route path="/affordability-advisor" element={<Navigate to="/financial-decisions" replace />} />
 
             <Route
               path="/calculation"
