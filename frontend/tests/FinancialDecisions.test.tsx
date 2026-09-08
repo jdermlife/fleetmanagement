@@ -69,4 +69,27 @@ describe('FinancialDecisions', () => {
     expect(screen.getByRole('heading', { name: 'Emergency fund' })).toBeTruthy()
     expect(screen.getByText(/months covered/)).toBeTruthy()
   })
+
+  it('renders all retirement engines and recalculates the required corpus', () => {
+    render(<FinancialDecisions />)
+
+    expect(screen.getByRole('heading', { name: 'Retirement Model Engine' })).toBeTruthy()
+    for (const engine of [
+      'Retirement Needs Engine',
+      'Inflation Engine',
+      'Retirement Income Engine',
+      'Investment Projection Engine',
+      'Retirement Corpus Engine',
+      'FI Date Engine',
+      'Contribution Optimizer',
+      'Scenario Engine',
+      'Stress / Monte Carlo Engine',
+    ]) expect(screen.getByText(engine)).toBeTruthy()
+
+    const corpusPanel = screen.getByText('Retirement Corpus Engine').closest('article')
+    const initialCorpus = corpusPanel?.querySelector(':scope > strong')?.textContent
+    fireEvent.change(screen.getByLabelText('Annual Inflation'), { target: { value: '6' } })
+
+    expect(corpusPanel?.querySelector(':scope > strong')?.textContent).not.toBe(initialCorpus)
+  })
 })

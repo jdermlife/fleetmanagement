@@ -24,6 +24,10 @@ import {
   computeSavingsGoalOptimization,
   type SavingsGoalInputs,
 } from './savingsGoalOptimizationEngine'
+import {
+  computeRetirementModel,
+  type RetirementModelInputs,
+} from './retirementModelEngine'
 
 const HYPOTHETICAL_INPUTS: AffordabilityInputs = {
   netMonthlyIncome: 120000,
@@ -53,6 +57,30 @@ const HYPOTHETICAL_SAVINGS_INPUTS: SavingsGoalInputs = {
   targetMonths: 12,
   annualReturnRate: 0,
 }
+
+const HYPOTHETICAL_RETIREMENT_INPUTS: RetirementModelInputs = {
+  currentAge: 35,
+  retirementAge: 60,
+  lifeExpectancy: 85,
+  currentMonthlyExpenses: 50000,
+  retirementSpendingPercent: 80,
+  currentRetirementSavings: 1000000,
+  monthlyContribution: 20000,
+  annualPreRetirementReturn: 7,
+  annualPostRetirementReturn: 5,
+  annualReturnVolatility: 10,
+  inflationRate: 3,
+  annualPensionIncome: 120000,
+  withdrawalRate: 4,
+  annualContributionIncrease: 3,
+}
+
+const RETIREMENT_ASSET_KEYS = [
+  'asset-retirement-fund',
+  'asset-pension-benefits',
+  'asset-provident-fund',
+  'asset-employer-retirement-plan',
+]
 
 const SAVINGS_ASSET_KEYS = [
   'asset-cash-on-hand',
@@ -123,6 +151,38 @@ const FIELD_GROUPS: Array<{ title: string; fields: Array<{ key: keyof Affordabil
       { key: 'financialHealthScore', label: 'Financial Health', suffix: '/ 100' },
       { key: 'spendingStabilityScore', label: 'Spending Stability', suffix: '/ 100' },
       { key: 'goalImpactPercent', label: 'Goal Impact', suffix: '%' },
+    ],
+  },
+]
+
+const RETIREMENT_FIELD_GROUPS: Array<{ title: string; fields: Array<{ key: keyof RetirementModelInputs; label: string; suffix?: string }> }> = [
+  {
+    title: 'Timeline and Lifestyle',
+    fields: [
+      { key: 'currentAge', label: 'Current Age', suffix: 'years' },
+      { key: 'retirementAge', label: 'Target Retirement Age', suffix: 'years' },
+      { key: 'lifeExpectancy', label: 'Planning Life Expectancy', suffix: 'years' },
+      { key: 'currentMonthlyExpenses', label: 'Current Monthly Expenses' },
+      { key: 'retirementSpendingPercent', label: 'Retirement Spending Need', suffix: '% of current' },
+    ],
+  },
+  {
+    title: 'Savings and Income',
+    fields: [
+      { key: 'currentRetirementSavings', label: 'Current Retirement Savings' },
+      { key: 'monthlyContribution', label: 'Monthly Investment' },
+      { key: 'annualPensionIncome', label: 'Annual Pension at Retirement' },
+      { key: 'annualContributionIncrease', label: 'Annual Contribution Increase', suffix: '%' },
+    ],
+  },
+  {
+    title: 'Planning Assumptions',
+    fields: [
+      { key: 'inflationRate', label: 'Annual Inflation', suffix: '%' },
+      { key: 'annualPreRetirementReturn', label: 'Return Before Retirement', suffix: '%' },
+      { key: 'annualPostRetirementReturn', label: 'Return During Retirement', suffix: '%' },
+      { key: 'annualReturnVolatility', label: 'Expected Volatility', suffix: '%' },
+      { key: 'withdrawalRate', label: 'Sustainable Withdrawal Rate', suffix: '%' },
     ],
   },
 ]
@@ -204,18 +264,59 @@ function profileSavingsInputs(): { inputs: SavingsGoalInputs; usesHypotheticalDa
   }
 }
 
+function ageFromDateOfBirth(dateOfBirth: string): number {
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`)
+  if (Number.isNaN(birthDate.getTime())) return 0
+  const today = new Date()
+  let age = today.getFullYear() - birthDate.getFullYear()
+  if (today.getMonth() < birthDate.getMonth() || (today.getMonth() === birthDate.getMonth() && today.getDate() < birthDate.getDate())) age -= 1
+  return Math.max(0, age)
+}
+
+function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypotheticalData: boolean } {
+  const profile = readReplicatedBuildProfile()
+  if (!profile) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true }
+
+  const values = profile.values
+  const amount = (key: string) => Math.max(0, Number(values[key] || 0))
+  const currentAge = amount('age') || ageFromDateOfBirth(values.dateOfBirth || '')
+  const currentMonthlyExpenses = Object.keys(values)
+    .filter((key) => !key.includes('.') && key.startsWith('expense-'))
+    .reduce((total, key) => total + amount(key), 0)
+  const currentRetirementSavings = RETIREMENT_ASSET_KEYS.reduce((total, key) => total + amount(key), 0)
+  const monthlyContribution = amount('expense-retirement-savings')
+  const hasRetirementData = currentAge > 0 || currentMonthlyExpenses > 0 || currentRetirementSavings > 0 || monthlyContribution > 0
+  if (!hasRetirementData) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true }
+
+  return {
+    usesHypotheticalData: false,
+    inputs: {
+      ...HYPOTHETICAL_RETIREMENT_INPUTS,
+      currentAge: currentAge || HYPOTHETICAL_RETIREMENT_INPUTS.currentAge,
+      currentMonthlyExpenses: currentMonthlyExpenses || HYPOTHETICAL_RETIREMENT_INPUTS.currentMonthlyExpenses,
+      currentRetirementSavings,
+      monthlyContribution,
+      annualPensionIncome: amount('income-pension') * 12,
+    },
+  }
+}
+
 export default function FinancialDecisions() {
   const initial = useMemo(profileInputs, [])
   const initialSavings = useMemo(profileSavingsInputs, [])
+  const initialRetirement = useMemo(profileRetirementInputs, [])
   const [inputs, setInputs] = useState(initial.inputs)
   const [usesHypotheticalData, setUsesHypotheticalData] = useState(initial.usesHypotheticalData)
   const [savingsInputs, setSavingsInputs] = useState(initialSavings.inputs)
   const [usesHypotheticalSavings, setUsesHypotheticalSavings] = useState(initialSavings.usesHypotheticalData)
   const [savingsGoalName, setSavingsGoalName] = useState(initialSavings.goalName)
+  const [retirementInputs, setRetirementInputs] = useState(initialRetirement.inputs)
+  const [usesHypotheticalRetirement, setUsesHypotheticalRetirement] = useState(initialRetirement.usesHypotheticalData)
   const [activeDecision, setActiveDecision] = useState<DecisionId>('affordability')
   const [question, setQuestion] = useState('')
   const result = useMemo(() => computeAffordability(inputs), [inputs])
   const savingsResult = useMemo(() => computeSavingsGoalOptimization(savingsInputs), [savingsInputs])
+  const retirementResult = useMemo(() => computeRetirementModel(retirementInputs), [retirementInputs])
   const emergencyFundMonths = inputs.essentialLivingExpenses + inputs.existingDebtPayments > 0
     ? inputs.emergencyFundBalance / (inputs.essentialLivingExpenses + inputs.existingDebtPayments)
     : 0
@@ -234,16 +335,24 @@ export default function FinancialDecisions() {
   const refreshFromProfile = () => {
     const refreshed = profileInputs()
     const refreshedSavings = profileSavingsInputs()
+    const refreshedRetirement = profileRetirementInputs()
     setInputs(refreshed.inputs)
     setUsesHypotheticalData(refreshed.usesHypotheticalData)
     setSavingsInputs(refreshedSavings.inputs)
     setUsesHypotheticalSavings(refreshedSavings.usesHypotheticalData)
     setSavingsGoalName(refreshedSavings.goalName)
+    setRetirementInputs(refreshedRetirement.inputs)
+    setUsesHypotheticalRetirement(refreshedRetirement.usesHypotheticalData)
   }
 
   const updateSavingsInput = (key: keyof SavingsGoalInputs, value: string) => {
     setUsesHypotheticalSavings(false)
     setSavingsInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
+  }
+
+  const updateRetirementInput = (key: keyof RetirementModelInputs, value: string) => {
+    setUsesHypotheticalRetirement(false)
+    setRetirementInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
   }
 
   const openDecision = (decision: DecisionId) => {
@@ -258,6 +367,10 @@ export default function FinancialDecisions() {
 
   const askFin = () => {
     const normalized = question.toLowerCase()
+    if (/retir|financially independent|financial independence/.test(normalized)) {
+      window.setTimeout(() => document.getElementById('retirement-model')?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 0)
+      return
+    }
     const decision: DecisionId = /sav|goal/.test(normalized)
       ? 'savings'
       : /debt|loan|credit/.test(normalized)
@@ -428,6 +541,93 @@ export default function FinancialDecisions() {
             <article><WalletCards size={22} aria-hidden="true" /><span>Next action</span><strong>Review your profile assumptions</strong><p>Refresh the profile, verify each figure, then use the affordability or savings calculator for a quantified decision.</p></article>
           </div>
         )}
+      </section>
+
+      <section id="retirement-model" className="retirement-model" aria-labelledby="retirement-model-title">
+        <header className="retirement-model-header">
+          <div className="retirement-model-title">
+            <span><ShieldCheck size={18} aria-hidden="true" /> Long-term planning</span>
+            <h2 id="retirement-model-title">Retirement Model Engine</h2>
+            <p>Connect today&apos;s spending and investments to your retirement income, financial independence date, and plan resilience.</p>
+          </div>
+          <div className={`retirement-model-source ${usesHypotheticalRetirement ? 'is-hypothetical' : 'is-profile'}`} role="status">
+            <strong>{usesHypotheticalRetirement ? 'Planning assumptions in use' : 'Build Profile data loaded'}</strong>
+            <button type="button" onClick={refreshFromProfile}><RefreshCw size={15} aria-hidden="true" /> Refresh from Profile</button>
+          </div>
+        </header>
+
+        <div className="retirement-model-inputs">
+          {RETIREMENT_FIELD_GROUPS.map((group) => (
+            <fieldset key={group.title}>
+              <legend>{group.title}</legend>
+              {group.fields.map((field) => (
+                <label key={field.key}>
+                  <span>{field.label}</span>
+                  <div>
+                    <input
+                      aria-label={field.label}
+                      type="number"
+                      min="0"
+                      step={field.key.includes('Age') ? '1' : 'any'}
+                      value={retirementInputs[field.key]}
+                      onChange={(event) => updateRetirementInput(field.key, event.target.value)}
+                    />
+                    {field.suffix ? <small>{field.suffix}</small> : null}
+                  </div>
+                </label>
+              ))}
+            </fieldset>
+          ))}
+        </div>
+
+        <div className="retirement-model-results" aria-label="Retirement model results">
+          <article>
+            <span>Retirement Needs Engine</span><h3>How much will I need?</h3>
+            <strong>{currency.format(retirementResult.retirementNeeds.monthlyExpensesAtRetirement)} / month</strong>
+            <p>{currency.format(retirementResult.retirementNeeds.lifetimeSpending)} estimated spending across {retirementResult.retirementYears} retirement years.</p>
+          </article>
+          <article>
+            <span>Inflation Engine</span><h3>What will that cost in the future?</h3>
+            <strong>{currency.format(retirementResult.inflation.futureCostOfCurrentMonthlyExpenses)} / month</strong>
+            <p>Current expenses rise {percent.format(retirementResult.inflation.cumulativeIncreasePercent)}% by age {retirementInputs.retirementAge}.</p>
+          </article>
+          <article>
+            <span>Retirement Income Engine</span><h3>How much income will I have?</h3>
+            <strong>{currency.format(retirementResult.retirementIncome.totalAnnualIncome)} / year</strong>
+            <p>Includes portfolio withdrawals and {currency.format(retirementResult.retirementIncome.annualPensionIncome)} annual pension income.</p>
+          </article>
+          <article>
+            <span>Investment Projection Engine</span><h3>How much can my portfolio grow?</h3>
+            <strong>{currency.format(retirementResult.investmentProjection.projectedPortfolioAtRetirement)}</strong>
+            <p>{currency.format(retirementResult.investmentProjection.investmentGrowth)} is projected investment growth by retirement.</p>
+          </article>
+          <article>
+            <span>Retirement Corpus Engine</span><h3>How much capital do I need?</h3>
+            <strong>{currency.format(retirementResult.retirementCorpus.requiredCorpus)}</strong>
+            <p>{percent.format(retirementResult.retirementCorpus.fundingRatioPercent)}% funded with a {currency.format(retirementResult.retirementCorpus.fundingGap)} remaining gap.</p>
+          </article>
+          <article>
+            <span>FI Date Engine</span><h3>When can I become financially independent?</h3>
+            <strong>{retirementResult.financialIndependence.age === null ? 'Beyond current projection' : `Age ${percent.format(retirementResult.financialIndependence.age)}`}</strong>
+            <p>{retirementResult.financialIndependence.yearsFromNow === null ? 'Increase contributions or adjust the plan.' : `${percent.format(retirementResult.financialIndependence.yearsFromNow)} years from now at the current trajectory.`}</p>
+          </article>
+          <article>
+            <span>Contribution Optimizer</span><h3>How much should I invest monthly?</h3>
+            <strong>{currency.format(retirementResult.contributionOptimizer.requiredMonthlyContribution)}</strong>
+            <p>{retirementResult.contributionOptimizer.monthlyContributionGap > 0 ? `${currency.format(retirementResult.contributionOptimizer.monthlyContributionGap)} more than your current monthly amount.` : 'Your current monthly amount meets the base projection.'}</p>
+          </article>
+          <article className="retirement-scenario-result">
+            <span>Scenario Engine</span><h3>What happens if things change?</h3>
+            <div>{retirementResult.scenarios.map((scenario) => <p key={scenario.id}><b>{scenario.label}</b><strong>{currency.format(scenario.projectedPortfolio)}</strong><small>{percent.format(scenario.fundingRatioPercent)}% funded</small></p>)}</div>
+          </article>
+          <article className="retirement-monte-carlo-result">
+            <span>Stress / Monte Carlo Engine</span><h3>How resilient is my plan?</h3>
+            <strong>{percent.format(retirementResult.monteCarlo.successProbabilityPercent)}% · {retirementResult.monteCarlo.resilience}</strong>
+            <p>{retirementResult.monteCarlo.trials} market paths. Median ending balance: {currency.format(retirementResult.monteCarlo.medianEndingBalance)}.</p>
+            <small>10th to 90th percentile: {currency.format(retirementResult.monteCarlo.percentile10EndingBalance)} to {currency.format(retirementResult.monteCarlo.percentile90EndingBalance)}</small>
+          </article>
+        </div>
+        <p className="retirement-model-disclaimer">Planning projection only. Returns, inflation, pension income, longevity, taxes, and withdrawal needs can differ materially from these assumptions.</p>
       </section>
     </main>
   )
