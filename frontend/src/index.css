@@ -11522,6 +11522,11 @@ th { color: var(--dark-gold); }
   gap: 14px;
 }
 
+.decision-card-container {
+  position: relative;
+  min-width: 0;
+}
+
 .decision-card {
   --decision-accent: #28aeb9;
   --decision-tint: #e9f8f9;
@@ -11542,6 +11547,11 @@ th { color: var(--dark-gold); }
   text-align: left;
   cursor: pointer;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+.decision-card-container > .decision-card {
+  width: 100%;
+  height: 100%;
 }
 
 .decision-card:hover,
@@ -11565,6 +11575,91 @@ th { color: var(--dark-gold); }
 .decision-card.is-green { --decision-accent: #4d9a62; --decision-tint: #eaf6ed; }
 .decision-card.is-coral { --decision-accent: #d46b5b; --decision-tint: #fff0ed; }
 .decision-card.is-violet { --decision-accent: #7c78ad; --decision-tint: #f0eff8; }
+
+.debt-strategy-popout {
+  position: absolute;
+  top: calc(100% - 2px);
+  right: 0;
+  z-index: 20;
+  width: min(580px, calc(100vw - 44px));
+  max-height: min(620px, 72vh);
+  overflow-y: auto;
+  visibility: hidden;
+  display: grid;
+  gap: 13px;
+  padding: 22px;
+  border: 1px solid #c79742;
+  border-top: 4px solid #9d6d1e;
+  border-radius: 6px;
+  background: #fffdf8;
+  box-shadow: 0 20px 44px rgba(16, 43, 63, 0.22);
+  color: var(--fd-navy);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(8px);
+  transition: opacity 150ms ease, transform 150ms ease, visibility 150ms ease;
+}
+
+.has-debt-popout:hover .debt-strategy-popout,
+.has-debt-popout:focus-within .debt-strategy-popout {
+  visibility: visible;
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+.debt-strategy-popout > strong {
+  padding-right: 12px;
+  color: #704b12;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05rem;
+  line-height: 1.45;
+}
+
+.debt-strategy-popout h3 {
+  margin: 0;
+  color: #14532d;
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 0.98rem;
+  letter-spacing: 0;
+}
+
+.debt-strategy-popout ol {
+  display: grid;
+  gap: 14px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.debt-strategy-popout li {
+  padding-left: 4px;
+  color: #9d6d1e;
+}
+
+.debt-strategy-popout li b {
+  color: var(--fd-navy);
+  font-size: 0.82rem;
+}
+
+.debt-strategy-popout p {
+  margin: 5px 0 0;
+  color: #526a74;
+  font-size: 0.76rem;
+  line-height: 1.5;
+}
+
+.debt-strategy-popout > section {
+  display: grid;
+  gap: 6px;
+  padding: 15px;
+  border-left: 4px solid #14532d;
+  background: #edf7f0;
+}
+
+.debt-strategy-popout > section > strong {
+  color: #14532d;
+  font-size: 0.85rem;
+}
 
 .decision-card-icon {
   width: 46px;
@@ -12071,6 +12166,13 @@ th { color: var(--dark-gold); }
 
   .decision-card {
     min-height: 126px;
+  }
+
+  .debt-strategy-popout {
+    right: 0;
+    width: 100%;
+    max-height: 68vh;
+    padding: 18px;
   }
 
   .ask-fin-panel form {

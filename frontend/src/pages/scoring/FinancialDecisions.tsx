@@ -437,11 +437,25 @@ export default function FinancialDecisions() {
           {DECISION_CARDS.map((card) => {
             const Icon = card.icon
             return (
-              <button key={card.id} type="button" className={`decision-card is-${card.tone} ${activeDecision === card.id ? 'is-active' : ''}`} onClick={() => openDecision(card.id)} aria-pressed={activeDecision === card.id}>
-                <span className="decision-card-icon"><Icon size={24} strokeWidth={1.8} aria-hidden="true" /></span>
-                <span className="decision-card-copy"><small>{card.eyebrow}</small><strong>{card.title}</strong><span>{card.description}</span></span>
-                <ChevronRight className="decision-card-arrow" size={20} aria-hidden="true" />
-              </button>
+              <div key={card.id} className={`decision-card-container ${card.id === 'debt' ? 'has-debt-popout' : ''}`}>
+                <button type="button" className={`decision-card is-${card.tone} ${activeDecision === card.id ? 'is-active' : ''}`} onClick={() => openDecision(card.id)} aria-pressed={activeDecision === card.id} aria-describedby={card.id === 'debt' ? 'debt-strategy-popout' : undefined}>
+                  <span className="decision-card-icon"><Icon size={24} strokeWidth={1.8} aria-hidden="true" /></span>
+                  <span className="decision-card-copy"><small>{card.eyebrow}</small><strong>{card.title}</strong><span>{card.description}</span></span>
+                  <ChevronRight className="decision-card-arrow" size={20} aria-hidden="true" />
+                </button>
+                {card.id === 'debt' ? (
+                  <aside id="debt-strategy-popout" className="debt-strategy-popout" aria-label="Debt strategy practical guidelines">
+                    <strong>Rule of thumb: Kill expensive debt first, invest early when debt is cheap.</strong>
+                    <h3>📌 Practical Guidelines</h3>
+                    <ol>
+                      <li><b>High-Interest Debt (Credit Cards, Payday Loans)</b><p>Paying off is almost always better.</p><p>Example: A 20% APR credit card means every peso paid off is a guaranteed 20% return.</p></li>
+                      <li><b>Low-Interest Debt (Mortgages, Student Loans)</b><p>Investing can make sense if expected returns, such as 7-10% in equities, exceed debt cost.</p><p>Keep minimum payments current, but do not rush payoff if it sacrifices compounding.</p></li>
+                      <li><b>Employer Retirement Match</b><p>Always capture this first. It is essentially a 100% return on contributions.</p></li>
+                    </ol>
+                    <section><h3>Balanced Strategy</h3><p>Recommended splitting:</p><strong>Extra cash: 70% debt payoff, 30% investing.</strong><p>Adjust the ratio as debt shrinks and income grows.</p></section>
+                  </aside>
+                ) : null}
+              </div>
             )
           })}
         </div>

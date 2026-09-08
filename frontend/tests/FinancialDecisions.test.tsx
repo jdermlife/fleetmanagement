@@ -60,6 +60,18 @@ describe('FinancialDecisions', () => {
     expect(within(result).getByText('On track')).toBeTruthy()
   })
 
+  it('links the Debt Strategy card to its hover and focus guidance', () => {
+    render(<FinancialDecisions />)
+
+    const debtCard = screen.getByRole('button', { name: /Pay debt or invest?/ })
+    const guide = screen.getByLabelText('Debt strategy practical guidelines')
+
+    expect(debtCard.getAttribute('aria-describedby')).toBe('debt-strategy-popout')
+    expect(within(guide).getByText('Rule of thumb: Kill expensive debt first, invest early when debt is cheap.')).toBeTruthy()
+    expect(within(guide).getByText(/20% APR credit card/)).toBeTruthy()
+    expect(within(guide).getByText('Extra cash: 70% debt payoff, 30% investing.')).toBeTruthy()
+  })
+
   it('routes a plain-language question to the matching decision workspace', async () => {
     render(<FinancialDecisions />)
 
