@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 import {
   cancelPublicTrialPayment,
+  cancelRecurringSubscription,
   cancelSubscriptionPayment,
   capturePayPalOrder,
   capturePublicTrialPayPalOrder,
@@ -60,6 +61,16 @@ function buildPayPalRequestId(): string {
 }
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
+const PAYPAL_SUBSCRIPTION_OPTIONS: Record<string, { planId: string; shape: 'pill' | 'rect' }> = {
+  SINGLE_PROFILE: {
+    planId: import.meta.env.VITE_PAYPAL_PLAN_ID_SINGLE_PROFILE?.trim() || 'P-22H97304EW2909622NKQYBJQ',
+    shape: 'pill',
+  },
+  MULTIPLE_PROFILE: {
+    planId: import.meta.env.VITE_PAYPAL_PLAN_ID_MULTIPLE_PROFILE?.trim() || 'P-9BU104216F9185333NKQYJNA',
+    shape: 'rect',
+  },
+}
 const PAYMENT_CANCELLATION_CONTEXT_KEY = 'fms:payment-cancellation-context'
 
 type PaymentCancellationContext = {
@@ -169,7 +180,9 @@ export default function SubscriptionPaymentPage() {
   const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
+  const paypalSubscriptionButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
+  const paypalSubscriptionContextRef = useRef<{ agreementId: string; subscriptionId: number } | null>(null)
   const paypalRequestContextRef = useRef<{ requestId: string; subscriptionId: number } | null>(null)
   const paypalStageRef = useRef<'create' | 'capture'>('create')
   const [guestAccountIdentifier, setGuestAccountIdentifier] = useState('')
@@ -289,6 +302,10 @@ export default function SubscriptionPaymentPage() {
     () => plans.find((plan) => plan.id === paymentSubscription?.plan_id) ?? selectedPlan,
     [plans, paymentSubscription?.plan_id, selectedPlan],
   )
+
+  const paypalSubscriptionOption = selectedSubscriptionPlan
+    ? PAYPAL_SUBSCRIPTION_OPTIONS[selectedSubscriptionPlan.plan_code]
+    : undefined
 
   const selectedNativeProduct = useMemo(
     () => nativeProducts.find((product) => product.mapping.plan_id === selectedSubscriptionPlan?.id) ?? null,
@@ -486,6 +503,103 @@ export default function SubscriptionPaymentPage() {
   }, [canRenderPayPalButtons, navigate, paypalCurrency])
 
   useEffect(() => {
+    if (!canRenderPayPalButtons || !PAYPAL_CLIENT_ID || !paypalSubscriptionOption) {
+      return
+    }
+
+    const container = paypalSubscriptionButtonContainerRef.current
+    if (!container) {
+      return
+    }
+    container.replaceChildren()
+
+    let cancelled = false
+    let buttons: PayPalButtonsInstance | null = null
+
+    const renderPayPalSubscriptionButton = async () => {
+      try {
+        const paypal = await loadPayPalSdk(PAYPAL_CLIENT_ID, paypalCurrency, 'subscription')
+        if (cancelled || !paypalSubscriptionButtonContainerRef.current) {
+          return
+        }
+
+        buttons = paypal.Buttons({
+          style: {
+            shape: paypalSubscriptionOption.shape,
+            color: 'gold',
+            layout: 'vertical',
+            label: 'subscribe',
+          },
+          createSubscription: async () => {
+            paypalSubscriptionContextRef.current = null
+            setRecurringProvider('PAYPAL')
+            setPaymentMessage('Creating your PayPal recurring subscription...')
+
+            const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
+            if (!subscriptionForPayment) {
+              throw new Error('Please select a valid subscription plan before starting recurring billing.')
+            }
+            const result = await createPayPalSubscription({
+              subscription_id: subscriptionForPayment.id,
+              request_id: buildPayPalRequestId(),
+            })
+            paypalSubscriptionContextRef.current = {
+              agreementId: result.agreement_id,
+              subscriptionId: subscriptionForPayment.id,
+            }
+            return result.agreement_id
+          },
+          onApprove: async (data) => {
+            const agreementId = data.subscriptionID?.trim() ?? ''
+            const context = paypalSubscriptionContextRef.current
+            if (!agreementId || !context || context.agreementId !== agreementId) {
+              throw new Error('PayPal returned an unexpected subscription id. Restart approval and try again.')
+            }
+            paypalSubscriptionContextRef.current = null
+            setRecurringProvider(null)
+            navigate('/payment-success?provider=paypal', { replace: true })
+          },
+          onCancel: () => {
+            const context = paypalSubscriptionContextRef.current
+            paypalSubscriptionContextRef.current = null
+            setRecurringProvider(null)
+            setPaymentMessage('Subscription Cancelled. PayPal recurring approval was not completed.')
+            if (context) {
+              void cancelRecurringSubscription(context.subscriptionId, {
+                cancellation_reason: 'other',
+                reason_details: 'PayPal approval was cancelled',
+              }).catch((error) => {
+                setPaymentMessage(`Subscription Cancelled. ${getErrorMessage(error, 'The pending agreement could not be cancelled.')}`)
+              })
+            }
+          },
+          onError: (error) => {
+            paypalSubscriptionContextRef.current = null
+            setRecurringProvider(null)
+            setPaymentMessage(getErrorMessage(error, 'Unable to start PayPal recurring billing.'))
+          },
+        })
+
+        await Promise.resolve(buttons.render(container))
+      } catch (error) {
+        if (!cancelled) {
+          setRecurringProvider(null)
+          setPaymentMessage(getErrorMessage(error, 'Unable to load PayPal subscription options.'))
+        }
+      }
+    }
+
+    void renderPayPalSubscriptionButton()
+
+    return () => {
+      cancelled = true
+      paypalSubscriptionContextRef.current = null
+      void Promise.resolve(buttons?.close?.()).catch(() => undefined)
+      container.replaceChildren()
+    }
+  }, [canRenderPayPalButtons, navigate, paypalCurrency, paypalSubscriptionOption])
+
+  useEffect(() => {
     if (!canRenderGuestPayPalButtons || !guestTrialPlan) {
       return
     }
@@ -642,30 +756,6 @@ export default function SubscriptionPaymentPage() {
       setPaymentMessage(`PayMongo recurring subscription is ${result.status.toLowerCase()}.`)
     } catch (error) {
       setPaymentMessage(getErrorMessage(error, 'Unable to start PayMongo recurring billing.'))
-    } finally {
-      setRecurringProvider(null)
-    }
-  }
-
-  const handleStartPayPalRecurring = async () => {
-    setRecurringProvider('PAYPAL')
-    setPaymentMessage('Opening PayPal recurring subscription approval...')
-    try {
-      const subscriptionForPayment = await ensureSubscriptionForPaymentRef.current()
-      if (!subscriptionForPayment) {
-        throw new Error('Please select a valid subscription plan before starting recurring billing.')
-      }
-      const result = await createPayPalSubscription({
-        subscription_id: subscriptionForPayment.id,
-        request_id: buildPayPalRequestId(),
-      })
-      if (result.approval_url) {
-        window.location.href = result.approval_url
-        return
-      }
-      setPaymentMessage(`PayPal recurring subscription is ${result.status.toLowerCase()}.`)
-    } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to start PayPal recurring billing.'))
     } finally {
       setRecurringProvider(null)
     }
@@ -1054,14 +1144,18 @@ export default function SubscriptionPaymentPage() {
               <div className="trial-expired-payment-option register-social-option">
                 <h3>PayPal Recurring</h3>
                 <p>Approve automatic subscription renewals securely in PayPal.</p>
-                <button
-                  type="button"
-                  className="auth-link-button auth-apple-button"
-                  onClick={() => void handleStartPayPalRecurring()}
-                  disabled={recurringProvider !== null || (!paymentSubscription && !selectedPlan)}
-                >
-                  {recurringProvider === 'PAYPAL' ? 'Opening PayPal approval...' : 'Subscribe with PayPal'}
-                </button>
+                {PAYPAL_CLIENT_ID && paypalSubscriptionOption ? (
+                  <div
+                    ref={paypalSubscriptionButtonContainerRef}
+                    id={`paypal-button-container-${paypalSubscriptionOption.planId}`}
+                    className="trial-expired-paypal-container register-google-button-wrap"
+                    style={{ minHeight: '56px' }}
+                  />
+                ) : (
+                  <button type="button" className="auth-link-button auth-apple-button" disabled>
+                    {PAYPAL_CLIENT_ID ? 'PayPal plan unavailable' : 'Subscribe with PayPal'}
+                  </button>
+                )}
               </div>
             </div>
           </section>

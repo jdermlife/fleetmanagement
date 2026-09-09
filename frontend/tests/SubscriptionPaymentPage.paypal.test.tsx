@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const apiMocks = vi.hoisted(() => ({
   cancelPublicTrialPayment: vi.fn(),
+  cancelRecurringSubscription: vi.fn(),
   cancelSubscriptionPayment: vi.fn(),
   capturePayPalOrder: vi.fn(),
   createPayMongoSubscription: vi.fn(),
@@ -42,8 +43,8 @@ vi.mock('../src/api', () => ({
 
 const plan = {
   id: 7,
-  plan_code: 'PRO',
-  plan_name: 'Professional',
+  plan_code: 'MULTIPLE_PROFILE',
+  plan_name: 'Subscriber Multiple Profile Plan',
   billing_cycle: 'MONTHLY',
   monthly_price: 100,
   yearly_price: 1200,
@@ -126,7 +127,9 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
   afterEach(() => {
     cleanup()
     delete window.paypal
+    delete window.paypalSubscription
     document.getElementById('paypal-js-sdk')?.remove()
+    document.getElementById('paypal-subscription-js-sdk')?.remove()
     vi.unstubAllEnvs()
     vi.resetModules()
   })
@@ -233,7 +236,17 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(await screen.findByText('PayMongo recurring subscription is active.')).toBeTruthy()
   })
 
-  it('starts a recurring PayPal subscription', async () => {
+  it('creates a tracked subscription from the PayPal subscribe button', async () => {
+    let subscriptionButtonOptions: {
+      createSubscription: () => Promise<string>
+      onApprove: (data: { subscriptionID?: string | null }) => Promise<void>
+    } | null = null
+    const subscriptionButtons = vi.fn((options) => {
+      subscriptionButtonOptions = options
+      return { render: vi.fn() }
+    })
+    window.paypalSubscription = { Buttons: subscriptionButtons }
+
     const { default: SubscriptionPaymentPage } = await import(
       '../src/pages/subscriptions/SubscriptionPaymentPage'
     )
@@ -243,14 +256,53 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       </MemoryRouter>,
     )
 
-    const subscribeButton = await screen.findByRole('button', { name: 'Subscribe with PayPal' })
-    await act(async () => subscribeButton.click())
+    await waitFor(() => expect(subscriptionButtons).toHaveBeenCalledTimes(1))
+    expect(subscriptionButtons.mock.calls[0][0].style).toMatchObject({
+      shape: 'rect',
+      color: 'gold',
+      layout: 'vertical',
+      label: 'subscribe',
+    })
+    expect(document.getElementById('paypal-button-container-P-9BU104216F9185333NKQYJNA')).toBeTruthy()
+
+    let agreementId = ''
+    await act(async () => {
+      agreementId = await subscriptionButtonOptions!.createSubscription()
+    })
 
     expect(apiMocks.createPayPalSubscription).toHaveBeenCalledWith({
       subscription_id: 99,
       request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
     })
-    expect(await screen.findByText('PayPal recurring subscription is approval_pending.')).toBeTruthy()
+    expect(agreementId).toBe('I-SUBSCRIPTION-123')
+
+    await act(async () => {
+      await subscriptionButtonOptions!.onApprove({ subscriptionID: agreementId })
+    })
+    expect(mockNavigate).toHaveBeenCalledWith('/payment-success?provider=paypal', { replace: true })
+  })
+
+  it('renders the single-profile PayPal subscription option independently', async () => {
+    apiMocks.listPublicSubscriptionPlans.mockResolvedValue([{
+      ...plan,
+      plan_code: 'SINGLE_PROFILE',
+      plan_name: 'Subscriber Single Profile Plan',
+    }])
+    const subscriptionButtons = vi.fn((options) => ({ render: vi.fn(), options }))
+    window.paypalSubscription = { Buttons: subscriptionButtons }
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(subscriptionButtons).toHaveBeenCalledTimes(1))
+    expect(subscriptionButtons.mock.calls[0][0].style.shape).toBe('pill')
+    expect(document.getElementById('paypal-button-container-P-22H97304EW2909622NKQYBJQ')).toBeTruthy()
   })
 
   it('rejects an approval callback for a different PayPal order', async () => {

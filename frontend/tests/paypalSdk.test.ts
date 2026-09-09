@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 describe('loadPayPalSdk', () => {
   afterEach(() => {
     document.getElementById('paypal-js-sdk')?.remove()
+    document.getElementById('paypal-subscription-js-sdk')?.remove()
     delete window.paypal
+    delete window.paypalSubscription
     vi.restoreAllMocks()
     vi.resetModules()
   })
@@ -35,5 +37,27 @@ describe('loadPayPalSdk', () => {
     expect(oldScript.isConnected).toBe(false)
     expect(activeScript.src).toContain('currency=PHP')
     expect(paypal.Buttons).toBe(replacementButtons)
+  })
+
+  it('loads subscription mode in an isolated namespace', async () => {
+    const subscriptionButtons = vi.fn(() => ({ render: vi.fn() }))
+    const appendChild = document.body.appendChild.bind(document.body)
+    vi.spyOn(document.body, 'appendChild').mockImplementation((node) => {
+      const appendedNode = appendChild(node)
+      if (node instanceof HTMLScriptElement && node.id === 'paypal-subscription-js-sdk') {
+        window.paypalSubscription = { Buttons: subscriptionButtons }
+        node.onload?.(new Event('load'))
+      }
+      return appendedNode
+    })
+
+    const { loadPayPalSdk } = await import('../src/paypalSdk')
+    const paypal = await loadPayPalSdk('test-client', 'PHP', 'subscription')
+    const script = document.getElementById('paypal-subscription-js-sdk') as HTMLScriptElement
+
+    expect(script.src).toContain('intent=subscription')
+    expect(script.src).toContain('vault=true')
+    expect(script.dataset.namespace).toBe('paypalSubscription')
+    expect(paypal.Buttons).toBe(subscriptionButtons)
   })
 })

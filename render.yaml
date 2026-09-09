@@ -22,5 +22,9 @@ services:
         sync: false
       - key: PAYPAL_WEBHOOK_ID
         sync: false
+      - key: PAYPAL_PLAN_ID_SINGLE_PROFILE
+        sync: false
+      - key: PAYPAL_PLAN_ID_MULTIPLE_PROFILE
+        sync: false
       - key: ACCOUNT_PAID_VALIDITY_DAYS
         value: "31"

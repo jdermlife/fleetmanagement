@@ -1675,6 +1675,16 @@ export async function createPayPalSubscription(payload: {
   return response.data
 }
 
+export async function cancelRecurringSubscription(
+  subscriptionId: number,
+  payload: {
+    cancellation_reason: 'too_expensive' | 'missing_features' | 'switched_service' | 'unused' | 'other'
+    reason_details?: string
+  },
+): Promise<void> {
+  await api.post(`/api/subscriptions/${subscriptionId}/recurring/cancel`, payload)
+}
+
 export async function createPublicTrialPayPalOrder(payload: {
   account_identifier: string
   plan: 'single' | 'multiple'
