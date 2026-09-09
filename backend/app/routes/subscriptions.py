@@ -42,6 +42,7 @@ from app.schemas.subscription_schema import (
     PublicTrialPaymentRequest,
     PublicTrialPayPalCaptureOrderRequest,
     PublicTrialPayPalCreateOrderRequest,
+    RecurringBillingCancellationRequest,
     RecurringBillingStartRequest,
     PayMongoCheckoutCreate,
     PaymentWebhookCreate,
@@ -65,6 +66,7 @@ from app.services.paymongo import (
     PayMongoAPIError,
     PayMongoConfigurationError,
     PayMongoSignatureError,
+    cancel_subscription as cancel_paymongo_subscription_api,
     create_checkout_session,
     attach_subscription_payment_method as attach_paymongo_subscription_payment_method_api,
     create_customer as create_paymongo_customer_api,
@@ -75,6 +77,7 @@ from app.services.paypal import (
     PayPalAPIError,
     PayPalConfigurationError,
     PayPalSignatureError,
+    cancel_subscription as cancel_paypal_subscription_api,
     capture_order as capture_paypal_order_api,
     create_order as create_paypal_order_api,
     create_subscription as create_paypal_subscription_api,
@@ -486,6 +489,83 @@ def _start_recurring_billing_for_user(
             "payment_intent_id": result.get("payment_intent_id"),
             "invoice_id": result.get("invoice_id"),
             "first_charge_at": agreement.first_charge_at,
+            "subscription": _serialize_subscription(subscription),
+            "reused": False,
+        }
+    finally:
+        db.close()
+
+
+def _cancel_recurring_billing_for_user(
+    subscription_id: int,
+    payload: RecurringBillingCancellationRequest,
+    user: CurrentUser,
+):
+    db = _session_with_rls(user)
+    try:
+        subscription = db.query(Subscription).filter(Subscription.id == subscription_id).first()
+        if subscription is None:
+            raise HTTPException(status_code=404, detail="Subscription not found")
+        if not _is_admin(user) and subscription.user_id != user.id:
+            raise HTTPException(status_code=403, detail="Cannot cancel another user's subscription")
+
+        agreement = (
+            db.query(SubscriptionBillingAgreement)
+            .filter(SubscriptionBillingAgreement.subscription_id == subscription.id)
+            .order_by(SubscriptionBillingAgreement.id.desc())
+            .first()
+        )
+        if agreement is None:
+            raise HTTPException(status_code=404, detail="Recurring billing agreement not found")
+
+        provider = db.query(PaymentProvider).filter(PaymentProvider.id == agreement.provider_id).first()
+        if provider is None:
+            raise HTTPException(status_code=422, detail="Billing agreement provider is unavailable")
+
+        provider_code = (provider.provider_code or "").upper()
+        if provider_code not in {"PAYPAL", "PAYMONGO"}:
+            raise HTTPException(status_code=422, detail="Provider cancellation is not supported")
+
+        if agreement.status == "CANCELLED":
+            return {
+                "agreement_id": agreement.provider_agreement_id,
+                "provider_code": provider_code,
+                "status": agreement.status,
+                "subscription": _serialize_subscription(subscription),
+                "reused": True,
+            }
+
+        reason = payload.reason_details or payload.cancellation_reason.replace("_", " ")
+        try:
+            if provider_code == "PAYPAL":
+                cancel_paypal_subscription_api(
+                    subscription_id=agreement.provider_agreement_id,
+                    reason=reason,
+                )
+            else:
+                cancel_paymongo_subscription_api(
+                    subscription_id=agreement.provider_agreement_id,
+                    cancellation_reason=payload.cancellation_reason,
+                )
+        except (PayPalConfigurationError, PayMongoConfigurationError) as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (PayPalAPIError, PayMongoAPIError) as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+        cancelled_at = datetime.now(timezone.utc)
+        agreement.status = "CANCELLED"
+        agreement.cancelled_at = cancelled_at
+        subscription.status = "CANCELLED"
+        subscription.auto_renew = False
+        subscription.cancellation_reason = reason
+        subscription.cancelled_at = cancelled_at
+        subscription.cancelled_by = user.id
+        db.commit()
+        db.refresh(agreement)
+        return {
+            "agreement_id": agreement.provider_agreement_id,
+            "provider_code": provider_code,
+            "status": agreement.status,
             "subscription": _serialize_subscription(subscription),
             "reused": False,
         }
@@ -1726,6 +1806,15 @@ def create_paymongo_recurring_subscription(
     user: CurrentUser = Depends(require_authenticated_user),
 ):
     return _start_recurring_billing_for_user(payload, user, "PAYMONGO")
+
+
+@router.post("/{subscription_id}/recurring/cancel")
+def cancel_recurring_subscription(
+    subscription_id: int,
+    payload: RecurringBillingCancellationRequest,
+    user: CurrentUser = Depends(require_authenticated_user),
+):
+    return _cancel_recurring_billing_for_user(subscription_id, payload, user)
 
 
 @router.post("/public/payments/paymongo/checkout")

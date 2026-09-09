@@ -7,13 +7,20 @@ import pytest
 from fastapi import HTTPException
 
 from app.fastapi_auth import CurrentUser
-from app.models.subscription import PaymentProvider, Subscription, SubscriptionPayment, SubscriptionPlan
+from app.models.subscription import (
+    PaymentProvider,
+    Subscription,
+    SubscriptionBillingAgreement,
+    SubscriptionPayment,
+    SubscriptionPlan,
+)
 from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.schemas.subscription_schema import (
     PayMongoCheckoutCreate,
     PayPalCaptureOrderRequest,
     PayPalCreateOrderRequest,
+    RecurringBillingCancellationRequest,
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionPaymentCreate,
@@ -188,6 +195,156 @@ def test_subscriber_cannot_start_checkout_for_foreign_subscription(fake_db):
         )
 
     assert exc_info.value.status_code == 403
+
+
+def test_subscriber_cannot_cancel_foreign_recurring_subscription(fake_db, monkeypatch):
+    subscription = Subscription(
+        id=19,
+        subscription_no="SUB-FOREIGN-RECURRING",
+        user_id=500,
+        plan_id=1,
+        status="ACTIVE",
+        subscription_start=date.today(),
+    )
+    agreement = SubscriptionBillingAgreement(
+        id=1,
+        subscription_id=subscription.id,
+        provider_id=6,
+        provider_plan_id="P-PLAN",
+        provider_agreement_id="I-FOREIGN",
+        status="ACTIVE",
+        first_charge_at=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[SubscriptionBillingAgreement] = [agreement]
+    monkeypatch.setattr(
+        subscription_routes,
+        "cancel_paypal_subscription_api",
+        lambda **_kwargs: pytest.fail("foreign agreement must not be cancelled"),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.cancel_recurring_subscription(
+            subscription_id=subscription.id,
+            payload=RecurringBillingCancellationRequest(cancellation_reason="unused"),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 403
+
+
+@pytest.mark.parametrize(
+    ("provider_code", "agreement_id", "cancel_api_name"),
+    [
+        ("PAYPAL", "I-OWNED", "cancel_paypal_subscription_api"),
+        ("PAYMONGO", "subs_owned", "cancel_paymongo_subscription_api"),
+    ],
+)
+def test_subscriber_cancels_owned_provider_agreement(
+    fake_db,
+    monkeypatch,
+    provider_code,
+    agreement_id,
+    cancel_api_name,
+):
+    subscription = Subscription(
+        id=20,
+        subscription_no="SUB-OWNED-RECURRING",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        auto_renew=True,
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code=provider_code,
+        provider_name=provider_code.title(),
+        is_active=True,
+    )
+    agreement = SubscriptionBillingAgreement(
+        id=1,
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        provider_plan_id="PROVIDER-PLAN",
+        provider_agreement_id=agreement_id,
+        status="ACTIVE",
+        first_charge_at=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionBillingAgreement] = [agreement]
+    captured: dict[str, object] = {}
+    monkeypatch.setattr(
+        subscription_routes,
+        cancel_api_name,
+        lambda **kwargs: captured.update(kwargs),
+    )
+
+    result = subscription_routes.cancel_recurring_subscription(
+        subscription_id=subscription.id,
+        payload=RecurringBillingCancellationRequest(
+            cancellation_reason="other",
+            reason_details="No longer needed",
+        ),
+        user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+    )
+
+    assert captured["subscription_id"] == agreement_id
+    assert result["status"] == "CANCELLED"
+    assert result["provider_code"] == provider_code
+    assert agreement.status == "CANCELLED"
+    assert subscription.status == "CANCELLED"
+    assert subscription.auto_renew is False
+    assert subscription.cancellation_reason == "No longer needed"
+    assert subscription.cancelled_by == 42
+
+
+def test_provider_failure_does_not_cancel_local_subscription(fake_db, monkeypatch):
+    subscription = Subscription(
+        id=22,
+        subscription_no="SUB-CANCEL-FAILURE",
+        user_id=42,
+        plan_id=1,
+        status="ACTIVE",
+        auto_renew=True,
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    agreement = SubscriptionBillingAgreement(
+        id=1,
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        provider_plan_id="P-PLAN",
+        provider_agreement_id="I-CANCEL-FAILURE",
+        status="ACTIVE",
+        first_charge_at=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionBillingAgreement] = [agreement]
+    monkeypatch.setattr(
+        subscription_routes,
+        "cancel_paypal_subscription_api",
+        lambda **_kwargs: (_ for _ in ()).throw(subscription_routes.PayPalAPIError("provider unavailable")),
+    )
+
+    with pytest.raises(HTTPException) as exc_info:
+        subscription_routes.cancel_recurring_subscription(
+            subscription_id=subscription.id,
+            payload=RecurringBillingCancellationRequest(cancellation_reason="unused"),
+            user=CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        )
+
+    assert exc_info.value.status_code == 502
+    assert agreement.status == "ACTIVE"
+    assert subscription.status == "ACTIVE"
+    assert subscription.auto_renew is True
 
 
 def test_subscriber_payment_creation_is_forced_to_pending(fake_db):

@@ -257,6 +257,29 @@ def create_subscription(
     }
 
 
+def cancel_subscription(*, subscription_id: str, reason: str) -> None:
+    normalized_subscription_id = subscription_id.strip()
+    if not normalized_subscription_id.startswith("I-"):
+        raise ValueError("A valid PayPal subscription ID is required")
+
+    token, api_base_url = _get_access_token()
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/billing/subscriptions/{normalized_subscription_id}/cancel",
+            json={"reason": reason[:128]},
+            headers={
+                "Authorization": f"Bearer {token}",
+                "Content-Type": "application/json",
+            },
+            timeout=_timeout_seconds(),
+        )
+    except requests.RequestException as exc:
+        raise PayPalAPIError("PayPal subscription cancellation is temporarily unavailable") from exc
+
+    if not response.ok:
+        raise PayPalAPIError("PayPal rejected the subscription cancellation")
+
+
 
 def capture_order(order_id: str, *, request_id: str | None = None) -> dict[str, Any]:
     if not order_id or len(order_id.strip()) < 3:

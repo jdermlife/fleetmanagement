@@ -22,6 +22,15 @@ class PayMongoSignatureError(ValueError):
     pass
 
 
+PAYMONGO_CANCELLATION_REASONS = {
+    "too_expensive",
+    "missing_features",
+    "switched_service",
+    "unused",
+    "other",
+}
+
+
 def _required_environment_value(name: str) -> str:
     value = os.getenv(name, "").strip()
     if not value:
@@ -239,6 +248,34 @@ def create_subscription(*, customer_id: str, plan_id: str) -> dict[str, Any]:
         "payment_method_id": attributes.get("default_customer_payment_method_id"),
         "raw": resource,
     }
+
+
+def cancel_subscription(*, subscription_id: str, cancellation_reason: str) -> None:
+    normalized_subscription_id = subscription_id.strip()
+    if not normalized_subscription_id.startswith("subs_"):
+        raise ValueError("A valid PayMongo subscription ID is required")
+    if cancellation_reason not in PAYMONGO_CANCELLATION_REASONS:
+        raise ValueError("Invalid PayMongo cancellation reason")
+
+    secret_key, api_base_url, timeout_seconds = _api_settings()
+    try:
+        response = requests.post(
+            f"{api_base_url}/v1/subscriptions/{normalized_subscription_id}/cancel",
+            auth=(secret_key, ""),
+            json={
+                "data": {
+                    "attributes": {
+                        "cancellation_reason": cancellation_reason,
+                    }
+                }
+            },
+            timeout=timeout_seconds,
+        )
+    except requests.RequestException as exc:
+        raise PayMongoAPIError("PayMongo subscription cancellation is temporarily unavailable") from exc
+
+    if not response.ok:
+        raise PayMongoAPIError("PayMongo rejected the subscription cancellation")
 
 
 def attach_subscription_payment_method(*, payment_intent_id: str, payment_method_id: str) -> dict[str, Any]:

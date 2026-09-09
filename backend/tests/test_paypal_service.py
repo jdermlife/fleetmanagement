@@ -120,6 +120,39 @@ def test_capture_order_returns_completed_amount(monkeypatch):
     assert captured["headers"]["PayPal-Request-Id"] == "capture-ORDER-TEST-123"
 
 
+def test_cancel_subscription_posts_reason_to_paypal(monkeypatch):
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
+    captured: dict[str, object] = {}
+
+    def fake_post(url, **kwargs):
+        if url.endswith("/v1/oauth2/token"):
+            class TokenResponse:
+                ok = True
+
+                @staticmethod
+                def json():
+                    return {"access_token": "ACCESS_TOKEN"}
+
+            return TokenResponse()
+
+        captured["url"] = url
+        captured.update(kwargs)
+
+        class CancelResponse:
+            ok = True
+
+        return CancelResponse()
+
+    monkeypatch.setattr(paypal.requests, "post", fake_post)
+
+    paypal.cancel_subscription(subscription_id="I-SUBSCRIPTION-123", reason="Service no longer needed")
+
+    assert captured["url"].endswith("/v1/billing/subscriptions/I-SUBSCRIPTION-123/cancel")
+    assert captured["json"] == {"reason": "Service no longer needed"}
+    assert captured["headers"]["Authorization"] == "Bearer ACCESS_TOKEN"
+
+
 def test_verify_webhook_signature_calls_paypal_verification(monkeypatch):
     monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
     monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")

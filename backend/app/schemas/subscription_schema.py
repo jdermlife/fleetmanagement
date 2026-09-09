@@ -227,6 +227,19 @@ class RecurringBillingStartRequest(BaseModel):
     payment_method_id: str | None = Field(default=None, min_length=6, max_length=255)
 
 
+class RecurringBillingCancellationRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    cancellation_reason: Literal[
+        "too_expensive",
+        "missing_features",
+        "switched_service",
+        "unused",
+        "other",
+    ]
+    reason_details: str | None = Field(default=None, min_length=3, max_length=500)
+
+
 class PublicTrialPaymentRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 

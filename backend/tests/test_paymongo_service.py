@@ -119,3 +119,30 @@ def test_attach_subscription_payment_method_uses_secret_and_return_url(monkeypat
         "status": "awaiting_next_action",
         "approval_url": "https://pm.link/authorize",
     }
+
+
+def test_cancel_subscription_posts_documented_reason(monkeypatch):
+    monkeypatch.setenv("PAYMONGO_SECRET_KEY", "sk_test_server_secret")
+    captured: dict[str, object] = {}
+
+    def fake_post(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+
+        class CancelResponse:
+            ok = True
+
+        return CancelResponse()
+
+    monkeypatch.setattr(paymongo.requests, "post", fake_post)
+
+    paymongo.cancel_subscription(
+        subscription_id="subs_test_subscription",
+        cancellation_reason="unused",
+    )
+
+    assert captured["url"].endswith("/v1/subscriptions/subs_test_subscription/cancel")
+    assert captured["auth"] == ("sk_test_server_secret", "")
+    assert captured["json"] == {
+        "data": {"attributes": {"cancellation_reason": "unused"}}
+    }
