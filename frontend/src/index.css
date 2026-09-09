@@ -15058,7 +15058,17 @@ th { color: var(--dark-gold); }
   .financial-health-page {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
     overflow-x: clip;
+  }
+
+  .financial-health-page .psychometric-panel,
+  .financial-health-page .financial-health-summary-tile,
+  .financial-health-page .financial-health-insight-card,
+  .financial-health-page .financial-health-position-ring-card,
+  .financial-health-page .financial-health-vital-card {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .financial-health-hero {
@@ -15083,6 +15093,13 @@ th { color: var(--dark-gold); }
   .financial-health-comparison-controls select {
     width: 100%;
     min-width: 0;
+    max-width: 100%;
+  }
+
+  .financial-health-journey-main-fab {
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: center;
   }
 
   .financial-health-comparison-heading {
@@ -15173,6 +15190,24 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 420px) {
+  .financial-health-hero,
+  .financial-health-page .psychometric-panel {
+    padding: 14px;
+    border-radius: 8px;
+  }
+
+  .financial-health-hero-copy h1 {
+    font-size: 1.75rem;
+  }
+
+  .financial-health-summary-tile,
+  .financial-health-insight-card,
+  .financial-health-position-ring-card,
+  .financial-health-vital-card {
+    padding: 12px;
+    border-radius: 8px;
+  }
+
   .financial-health-journey-overlay {
     padding: 58px 8px 8px;
   }
@@ -15256,7 +15291,25 @@ th { color: var(--dark-gold); }
   }
 
   .financial-health-chart-row {
-    grid-template-columns: minmax(0, 1fr) 40px 44px 50px;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-areas:
+      "label label label"
+      "bar bar bar"
+      "score weight points";
+  }
+
+  .financial-health-chart-value,
+  .financial-health-chart-weight,
+  .financial-health-chart-points {
+    text-align: left;
+  }
+
+  .financial-health-chart-weight {
+    text-align: center;
+  }
+
+  .financial-health-chart-points {
+    text-align: right;
   }
 
   .financial-health-improvement-table-wrap {
