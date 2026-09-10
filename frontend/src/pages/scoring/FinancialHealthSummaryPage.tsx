@@ -1,5 +1,6 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
+import { ChevronDown } from 'lucide-react'
 
 import {
   createProfileHistory,
@@ -147,6 +148,41 @@ type FinancialHealthTrendSeries = {
   color: string
   value: (point: FinancialHealthTrendPoint) => number
   plotValue: (point: FinancialHealthTrendPoint) => number
+}
+
+type CollapsibleSidebarPanelProps = {
+  children: ReactNode
+  className: string
+  id: string
+  kicker: string
+  title: ReactNode
+}
+
+function CollapsibleSidebarPanel({ children, className, id, kicker, title }: CollapsibleSidebarPanelProps) {
+  const [isExpanded, setIsExpanded] = useState(true)
+
+  return (
+    <article className={`psychometric-panel ${className}`}>
+      <div className="financial-health-side-panel-header">
+        <div>
+          <span className="psychometric-panel-kicker">{kicker}</span>
+          <h2>{title}</h2>
+        </div>
+        <button
+          type="button"
+          aria-expanded={isExpanded}
+          aria-controls={id}
+          aria-label={`${isExpanded ? 'Minimize' : 'Show'} ${kicker}`}
+          onClick={() => setIsExpanded((expanded) => !expanded)}
+        >
+          <ChevronDown aria-hidden="true" />
+        </button>
+      </div>
+      <div id={id} className="financial-health-side-panel-content" hidden={!isExpanded}>
+        {children}
+      </div>
+    </article>
+  )
 }
 
 const VITAL_GUIDANCE: Record<string, VitalGuidance> = {
@@ -2163,9 +2199,12 @@ export default function FinancialHealthSummaryPage() {
         <aside className="financial-health-side-stack">
 
 
-          <article className="psychometric-panel financial-health-band-panel">
-            <span className="psychometric-panel-kicker">Interpretation</span>
-            <h2>Health bands</h2>
+          <CollapsibleSidebarPanel
+            className="financial-health-band-panel"
+            id="financial-health-interpretation-content"
+            kicker="Interpretation"
+            title="Health bands"
+          >
             <ul className="financial-health-band-list">
               {healthBands.map((healthBand) => (
                 <li
@@ -2178,11 +2217,14 @@ export default function FinancialHealthSummaryPage() {
                 </li>
               ))}
             </ul>
-          </article>
+          </CollapsibleSidebarPanel>
 
-          <article className="psychometric-panel financial-health-focus-panel">
-            <span className="psychometric-panel-kicker">Focus next</span>
-            <h2>{priorityIndicator.label}</h2>
+          <CollapsibleSidebarPanel
+            className="financial-health-focus-panel"
+            id="financial-health-focus-content"
+            kicker="Focus next"
+            title={priorityIndicator.label}
+          >
             <div className="financial-health-focus-score">
               <strong>{priorityIndicator.score}</strong>
               <span>/ 100</span>
@@ -2191,22 +2233,28 @@ export default function FinancialHealthSummaryPage() {
               Build investment consistency first, then strengthen Protection Health at 76. These are
               the clearest opportunities to lift Future Progress and resilience.
             </p>
-          </article>
+          </CollapsibleSidebarPanel>
 
-          <article className="psychometric-panel financial-health-graph-guide">
-            <span className="psychometric-panel-kicker">Health Monitoring Style</span>
-            <h2>Financial Health Ring system</h2>
+          <CollapsibleSidebarPanel
+            className="financial-health-graph-guide"
+            id="financial-health-monitoring-content"
+            kicker="Health Monitoring Style"
+            title="Financial Health Ring system"
+          >
             <ul>
               <li><strong>Activity rings</strong> for the overall glance.</li>
               <li><strong>Vital cards</strong> for the eight current readings.</li>
               <li><strong>Horizontal bars</strong> for accurate comparison and weights.</li>
               <li><strong>Trend lines</strong> once three or more reporting periods exist.</li>
             </ul>
-          </article>
+          </CollapsibleSidebarPanel>
 
-          <article className="psychometric-panel financial-health-formula-panel">
-            <span className="psychometric-panel-kicker">Health Score Formula</span>
-            <h2>Transparent weighted index</h2>
+          <CollapsibleSidebarPanel
+            className="financial-health-formula-panel"
+            id="financial-health-formula-content"
+            kicker="Health Score Formula"
+            title="Transparent weighted index"
+          >
             <p>
               Give more influence to recurring liquidity, payment behavior, and goal progress while
               keeping every financial vital represented.
@@ -2220,11 +2268,14 @@ export default function FinancialHealthSummaryPage() {
               Recommended as a transparent wellness index. Calibrate weights against real outcomes
               before using it for credit decisions. Algo is intended for guidance only.
             </p>
-          </article>
+          </CollapsibleSidebarPanel>
 
-          <article className="psychometric-panel financial-health-formula-panel">
-            <span className="psychometric-panel-kicker">In a Glance</span>
-            <h2>Monthly Profile Scores</h2>
+          <CollapsibleSidebarPanel
+            className="financial-health-formula-panel"
+            id="financial-health-glance-content"
+            kicker="In a Glance"
+            title="Monthly Profile Scores"
+          >
             <p>
               {monthlyProfileResult
                 ? `Calculated and saved for ${formatReportingMonth(monthlyProfileResult.snapshot.snapshot_month.slice(0, 7))}.`
@@ -2249,7 +2300,7 @@ export default function FinancialHealthSummaryPage() {
               Recommended as a transparent wellness index. Calibrate weights against real outcomes
               before using it for credit decisions. Algo is intended for guidance only.
             </p>
-          </article>
+          </CollapsibleSidebarPanel>
 
 
 
