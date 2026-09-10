@@ -1842,6 +1842,19 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
       : yearsToTargetNetWorth === null
         ? 'Income needed'
         : `${yearsToTargetNetWorth.toFixed(1)} years`;
+  const wealthMetrics = netWorthBuildingScore.metrics;
+  const hasAssetBase = wealthMetrics.totalAssets > 0;
+  const investmentAssets = wealthMetrics.totalAssets * (wealthMetrics.investmentReadinessPercent / 100);
+  const investmentAllocationGap = Math.max((wealthMetrics.totalAssets * 0.35) - investmentAssets, 0);
+  const protectionCategoryCount = Math.round((wealthMetrics.protectionCoveragePercent / 100) * 9);
+  const missingProtectionCategories = Math.max(9 - protectionCategoryCount, 0);
+  const wealthHealthPercent = hasAssetBase
+    ? (wealthMetrics.netWorth / wealthMetrics.totalAssets) * 100
+    : 0;
+  const liabilityReductionForBestScore = Math.max(
+    wealthMetrics.totalLiabilities - (wealthMetrics.totalAssets * 0.15),
+    0,
+  );
 
   return (
     <div className="psychometric-page networth-dashboard-page networth-report-page">
@@ -1982,6 +1995,34 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
                 <article><span>Composite Wealth Score</span><strong>{wealthCompositeScore.score}</strong><small>{wealthCompositeScore.grade} - {wealthCompositeScore.rating}</small></article>
                 <article><span>Actual Net Worth</span><strong>{formatSignedCurrency(profileLinkedMetrics.actualNetWorth)}</strong><small>Build Profile actual assets less actual liabilities</small></article>
                 <article><span>Financial Position</span><strong>{formatCurrency(profileLinkedMetrics.actualAssets)}</strong><small>Total actual assets from Build Profile</small></article>
+                <article>
+                  <span>Investment Health</span>
+                  <strong>{hasAssetBase ? `${wealthMetrics.investmentReadinessPercent.toFixed(1)}%` : 'Pending'} · {netWorthBuildingScore.componentScores.investmentReadiness.toFixed(0)}/100</strong>
+                  <small><b>Computation:</b> Investment and retirement assets ÷ total assets × 100.</small>
+                  <small><b>Action for best score:</b> {hasAssetBase
+                    ? investmentAllocationGap > 0
+                      ? `Reallocate at least ${formatCurrency(investmentAllocationGap)} of current assets to investment or retirement accounts to reach 35%.`
+                      : 'Maintain at least 35% of total assets in investment and retirement accounts.'
+                    : 'Record total assets and investment or retirement balances, then build the allocation to at least 35%.'}</small>
+                </article>
+                <article>
+                  <span>Protection Health</span>
+                  <strong>{wealthMetrics.protectionCoveragePercent.toFixed(1)}% · {netWorthBuildingScore.componentScores.protectionCoverage.toFixed(0)}/100</strong>
+                  <small><b>Computation:</b> {protectionCategoryCount} covered categories ÷ 9 tracked categories × 100.</small>
+                  <small><b>Action for best score:</b> {missingProtectionCategories > 0
+                    ? `Add or record coverage for the remaining ${missingProtectionCategories} categor${missingProtectionCategories === 1 ? 'y' : 'ies'} to reach 100%.`
+                    : 'Maintain active coverage across all 9 tracked protection categories.'}</small>
+                </article>
+                <article>
+                  <span>Wealth Health</span>
+                  <strong>{hasAssetBase ? `${wealthHealthPercent.toFixed(1)}%` : 'Pending'} · {netWorthBuildingScore.componentScores.netWorthStrength.toFixed(0)}/100</strong>
+                  <small><b>Computation:</b> Net worth ÷ total assets × 100, where net worth is assets less liabilities.</small>
+                  <small><b>Action for best score:</b> {hasAssetBase
+                    ? liabilityReductionForBestScore > 0
+                      ? `Reduce liabilities by at least ${formatCurrency(liabilityReductionForBestScore)}, or grow assets without adding debt, to reach an 85% net-worth ratio.`
+                      : 'Keep liabilities at or below 15% of total assets to maintain the best score.'
+                    : 'Record asset and liability balances, then build net worth to at least 85% of total assets.'}</small>
+                </article>
               </div>
             </section>
 
