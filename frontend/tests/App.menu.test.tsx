@@ -2,15 +2,18 @@ import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockLogout, mockPrepareAutosavesForLogout } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockGetAuthToken, mockLogout, mockPrepareAutosavesForLogout } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
+  mockGetAuthToken: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
 }))
 
 vi.mock('../src/api', () => ({
   fetchCurrentUser: mockFetchCurrentUser,
-  getAuthToken: () => 'access-token',
+  getErrorMessage: (_error: unknown, fallback: string) => fallback,
+  getAuthToken: mockGetAuthToken,
+  listPublicSubscriptionPlans: vi.fn().mockResolvedValue([]),
   logout: mockLogout,
 }))
 
@@ -39,6 +42,7 @@ function createStorageMock(): Storage {
 
 describe('App account menu accordions', () => {
   beforeEach(() => {
+    mockGetAuthToken.mockReturnValue('access-token')
     mockFetchCurrentUser.mockResolvedValue({
       id: 1,
       username: 'admin-user',
@@ -91,5 +95,17 @@ describe('App account menu accordions', () => {
     expect(screen.queryByRole('link', { name: 'Billing' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Support' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeTruthy()
+  })
+
+  it('renders the fees disclosure without authentication', async () => {
+    mockGetAuthToken.mockReturnValue(null)
+
+    render(
+      <MemoryRouter initialEntries={['/fees']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Subscription Fees Disclosure' })).toBeTruthy()
   })
 })

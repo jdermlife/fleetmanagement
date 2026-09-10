@@ -21,7 +21,7 @@ type ChatMessage = PageAssistantHistoryItem & {
 function getPageTitle(pathname: string): string {
   if (/^\/(?:login)?$/.test(pathname)) return 'Sign in'
   if (pathname === '/register') return 'Create account'
-  if (/^\/(?:privacy|terms|return-refund-policy|customer-service|dispute-resolution|subscription-fees)$/.test(pathname)) return 'Policies and support'
+  if (/^\/(?:privacy|terms|return-refund-policy|customer-service|dispute-resolution|fees|subscription-fees)$/.test(pathname)) return 'Policies and support'
   if (/^\/(?:dashboard|snapshot|financial-health-summary)$/.test(pathname)) return 'Financial health overview'
   if (/^\/(?:build-profile|borrower-profile|account|settings)$/.test(pathname)) return 'Profile and account'
   if (/^\/(?:lending-scorecard(?:\/filscore)?|credit-scoring|calculation|aml-kyc-scoring|credit-health-multi-product)$/.test(pathname)) return 'Assessment results'

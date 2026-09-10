@@ -1,6 +1,6 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import type { FormEvent } from 'react'
-import { useEffect, useRef, useState } from 'react'
+import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
@@ -8,7 +8,6 @@ import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
 import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
-import SubscriptionPlansDisclosure from '../legal/SubscriptionPlansDisclosure'
 
 const FINANCIAL_HEALTH_PATH = '/financial-health-summary'
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
@@ -160,22 +159,6 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [showEmailLogin, setShowEmailLogin] = useState(false)
-  const [showFees, setShowFees] = useState(false)
-  const feesDialogRef = useRef<HTMLDialogElement>(null)
-
-  useEffect(() => {
-    const dialog = feesDialogRef.current
-    if (!dialog) {
-      return
-    }
-
-    if (showFees && !dialog.open) {
-      dialog.showModal()
-    } else if (!showFees && dialog.open) {
-      dialog.close()
-    }
-  }, [showFees])
-
   const openFinancialHealthJourney = () => {
     window.localStorage.removeItem(JOURNEY_MINIMIZED_STORAGE_KEY)
     window.localStorage.removeItem(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
@@ -483,7 +466,7 @@ export default function LoginPage() {
 
           <div className="login-art-support-links">
             <Link to="/account">Account Settings</Link>
-            <button type="button" onClick={() => setShowFees(true)}>Fees</button>
+            <Link to="/fees">Fees</Link>
             <Link to="/privacy">Privacy</Link>
             <Link to="/terms">Terms</Link>
             <Link to="/about-filscore">About</Link>
@@ -505,35 +488,6 @@ export default function LoginPage() {
         />
       ) : null}
 
-      <dialog
-        ref={feesDialogRef}
-        className="login-fees-dialog"
-        aria-labelledby="login-fees-title"
-        onCancel={() => setShowFees(false)}
-        onClose={() => setShowFees(false)}
-        onKeyDown={(event) => {
-          if (event.key === 'Escape') {
-            setShowFees(false)
-          }
-        }}
-        onClick={(event) => {
-          if (event.target === event.currentTarget) {
-            setShowFees(false)
-          }
-        }}
-      >
-        <div className="login-fees-dialog-header">
-          <div>
-            <p>Plans and fees</p>
-            <h2 id="login-fees-title">Subscription options</h2>
-          </div>
-          <button type="button" onClick={() => setShowFees(false)}>Close</button>
-        </div>
-        <p className="login-fees-dialog-intro">
-          Review the latest published plans and billing amounts before signing in.
-        </p>
-        {showFees ? <SubscriptionPlansDisclosure /> : null}
-      </dialog>
     </div>
   )
 }

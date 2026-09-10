@@ -129,6 +129,7 @@ describe('LoginPage Apple sign-in', () => {
       </MemoryRouter>
     )
 
+    expect(screen.getByRole('link', { name: 'Fees' }).getAttribute('href')).toBe('/fees')
     expect(screen.getByRole('link', { name: 'Returns & Refunds' }).getAttribute('href')).toBe('/return-refund-policy')
     expect(screen.getByRole('link', { name: 'Customer Service' }).getAttribute('href')).toBe('/customer-service')
     expect(screen.getByRole('link', { name: 'Dispute Resolution' }).getAttribute('href')).toBe('/dispute-resolution')
