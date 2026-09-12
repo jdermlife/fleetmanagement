@@ -205,6 +205,8 @@ describe('RegisterPage Apple sign-up', () => {
     const otherEmailButton = screen.getByRole('button', { name: /other email/i })
 
     expect(appleLabel.compareDocumentPosition(googleLabel) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(googleLabel.parentElement?.querySelector('.register-google-button-preview')).toBeTruthy()
+    expect(otherEmailButton.classList.contains('register-provider-button')).toBe(true)
     expect(screen.queryByLabelText('Username')).toBeNull()
     expect(screen.queryByLabelText('Email')).toBeNull()
     expect(screen.queryByLabelText('Cellphone Number')).toBeNull()

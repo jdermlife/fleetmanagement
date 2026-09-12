@@ -112,7 +112,9 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.queryByPlaceholderText('Password')).toBeNull()
     expect(screen.queryByRole('button', { name: 'Log In' })).toBeNull()
 
-    await userEvent.click(screen.getByRole('button', { name: 'Other Email' }))
+    const otherEmailButton = screen.getByRole('button', { name: 'Other Email' })
+    expect(otherEmailButton.classList.contains('login-art-provider-button')).toBe(true)
+    await userEvent.click(otherEmailButton)
 
     expect(screen.getByPlaceholderText('Email or username')).toBeTruthy()
     expect(screen.getByPlaceholderText('Password')).toBeTruthy()

@@ -348,7 +348,7 @@ export default function LoginPage() {
               {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
-                  className="login-art-social-button"
+                  className="login-art-social-button login-art-provider-button"
                   onClick={() => void handleNativeGoogleSignIn()}
                   disabled={isSaving}
                 >
@@ -381,7 +381,7 @@ export default function LoginPage() {
             {!showEmailLogin ? (
               <button
                 type="button"
-                className="login-art-social-button login-art-social-button-email"
+                className="login-art-social-button login-art-social-button-email login-art-provider-button"
                 onClick={() => setShowEmailLogin(true)}
                 aria-controls="login-email-form"
                 aria-expanded="false"

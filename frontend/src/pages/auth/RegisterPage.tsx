@@ -30,6 +30,17 @@ type RegistrationNavigationState = {
 const APPLE_SIGN_UP_BUTTON_URL =
   'https://appleid.cdn-apple.com/appleid/button?color=black&border_radius=5&height=62&scale=2&type=sign-up&width=375'
 
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path fill="#EA4335" d="M12.24 10.29v3.95h5.49c-.24 1.27-.96 2.35-2.05 3.08l3.31 2.57c1.93-1.78 3.05-4.39 3.05-7.49 0-.71-.06-1.4-.18-2.06h-9.62Z" />
+      <path fill="#34A853" d="M12 22c2.76 0 5.07-.91 6.76-2.46l-3.31-2.57c-.92.62-2.1.99-3.45.99-2.65 0-4.89-1.79-5.69-4.19l-3.42 2.64A10 10 0 0 0 12 22Z" />
+      <path fill="#4A90E2" d="M6.31 13.77A5.99 5.99 0 0 1 6 12c0-.61.11-1.2.31-1.77L2.89 7.59A10 10 0 0 0 2 12c0 1.62.39 3.16 1.09 4.41l3.22-2.64Z" />
+      <path fill="#FBBC05" d="M12 6.04c1.5 0 2.84.52 3.89 1.53l2.91-2.91C17.06 3.05 14.75 2 12 2a10 10 0 0 0-8.91 5.59l3.42 2.64C7.11 7.83 9.35 6.04 12 6.04Z" />
+    </svg>
+  )
+}
+
 function extractBackendErrorMessage(error: unknown): string | null {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
     return null
@@ -452,24 +463,31 @@ export default function RegisterPage() {
           {isGoogleEnabled && useNativeGoogleSignIn ? (
             <button
               type="button"
-              className="auth-link-button"
+              className="auth-link-button register-provider-button"
               onClick={() => void handleNativeGoogleSignUp()}
               disabled={isSaving}
             >
+              <span className="register-provider-icon"><GoogleMark /></span>
               {isSaving ? 'Continuing with Google...' : 'Sign up with Google'}
             </button>
           ) : null}
           {isGoogleEnabled && !useNativeGoogleSignIn ? (
             <div className="register-google-button-wrap">
-              <GoogleLogin
-                onSuccess={(response) => handleGoogleSuccess(response, 'web')}
-                onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
-                text="signup_with"
-                size="large"
-                theme="outline"
-                shape="rectangular"
-                width={420}
-              />
+              <div className="register-google-button-preview" aria-hidden="true">
+                <span className="register-provider-icon"><GoogleMark /></span>
+                <span>Sign up with Google</span>
+              </div>
+              <div className="register-google-button-live">
+                <GoogleLogin
+                  onSuccess={(response) => handleGoogleSuccess(response, 'web')}
+                  onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+                  text="signup_with"
+                  size="large"
+                  theme="outline"
+                  shape="rectangular"
+                  width={375}
+                />
+              </div>
             </div>
           ) : null}
           {!isGoogleEnabled ? (
@@ -482,7 +500,7 @@ export default function RegisterPage() {
         {!showEmailRegistration ? (
           <button
             type="button"
-            className="auth-link-button register-other-email-button"
+            className="auth-link-button register-other-email-button register-provider-button"
             onClick={() => setShowEmailRegistration(true)}
             aria-controls="register-email-form"
             aria-expanded="false"
