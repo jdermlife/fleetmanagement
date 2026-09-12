@@ -323,6 +323,7 @@ export default function LoginPage() {
             <button
               type="button"
               className="login-art-social-button login-art-social-button-apple"
+              aria-label="Continue with Apple"
               onClick={() => {
                 void handleAppleSignIn()
               }}

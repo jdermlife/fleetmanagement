@@ -8911,6 +8911,25 @@ th { color: var(--dark-gold); }
   background: linear-gradient(90deg, rgba(124, 76, 5, 0.94), rgba(98, 58, 3, 0.96));
 }
 
+.login-art-social-button-apple,
+.login-art-social-button-apple:hover {
+  min-width: 140px;
+  min-height: 62px;
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 1.625rem;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+.login-art-social-button-apple:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
 .login-art-social-button:disabled {
   opacity: 0.72;
   cursor: not-allowed;
@@ -9990,6 +10009,11 @@ th { color: var(--dark-gold); }
     min-height: 56px;
   }
 
+  .login-art-social-button-apple {
+    min-height: 56px;
+    font-size: 1.5rem;
+  }
+
   .login-art-social-button,
   .login-art-google-preview {
     gap: 12px;
@@ -10227,6 +10251,11 @@ th { color: var(--dark-gold); }
   .login-art-google-wrap,
   .login-art-field {
     min-height: 50px;
+  }
+
+  .login-art-social-button-apple {
+    min-height: 50px;
+    font-size: 1.3125rem;
   }
 
   .login-art-social-button,
