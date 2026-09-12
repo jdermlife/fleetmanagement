@@ -52,6 +52,24 @@ describe('selected profile identity', () => {
     expect(screen.getByText('Jane Doe')).toBeTruthy()
   })
 
+  it('renders the name above the record reference when requested', () => {
+    const card = render(
+      <SelectedProfileIdCard
+        compactId
+        label="Record ID"
+        name="Jane Doe"
+        nameFirst
+        profileId="PRO-123"
+      />,
+    )
+
+    const name = card.container.querySelector('.selected-profile-name-primary')
+    const recordId = card.container.querySelector('.selected-profile-reference b')
+    expect(name?.textContent).toBe('Jane Doe')
+    expect(recordId?.textContent).toBe('PRO-123')
+    expect(name!.compareDocumentPosition(recordId!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+  })
+
   it('uses the replicated Build Profile name for the matching selected record', () => {
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-LOCAL',

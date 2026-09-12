@@ -13500,6 +13500,31 @@ th { color: var(--dark-gold); }
   padding: 14px 16px;
 }
 
+.financial-health-profile-line .selected-profile-name-primary {
+  font-size: clamp(1.2rem, 2vw, 1.65rem);
+  font-weight: 800;
+  line-height: 1.15;
+  overflow-wrap: anywhere;
+}
+
+.financial-health-profile-line .selected-profile-reference {
+  display: grid;
+  gap: 2px;
+}
+
+.financial-health-profile-line .selected-profile-reference > span {
+  font-size: 0.68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.financial-health-profile-line .selected-profile-reference > b {
+  color: #475569;
+  font-size: 0.78rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
 .financial-health-insight-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

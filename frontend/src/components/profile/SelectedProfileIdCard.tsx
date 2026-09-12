@@ -30,6 +30,7 @@ type SelectedProfileIdCardProps = {
   description?: string
   label?: string
   name?: string
+  nameFirst?: boolean
   profileId?: string
 }
 
@@ -39,6 +40,7 @@ export default function SelectedProfileIdCard({
   description = 'Selected personal profile reference',
   label = 'Profile ID',
   name,
+  nameFirst = false,
   profileId: providedProfileId,
 }: SelectedProfileIdCardProps) {
   const searchParams = new URLSearchParams(
@@ -46,6 +48,21 @@ export default function SelectedProfileIdCard({
   )
   const profileId = providedProfileId?.trim() || resolveSelectedProfileId(searchParams)
   const resolvedName = name?.trim() || resolveSelectedProfileName(searchParams)
+
+  if (nameFirst) {
+    return (
+      <article className={className}>
+        <span>Name</span>
+        <strong className="selected-profile-name-primary">{resolvedName || 'Name not available'}</strong>
+        <small className="selected-profile-reference">
+          <span>{label}</span>
+          <b className={compactId ? 'selected-profile-id-compact' : undefined}>
+            {profileId || 'Not selected'}
+          </b>
+        </small>
+      </article>
+    )
+  }
 
   return (
     <article className={className}>

@@ -1534,7 +1534,7 @@ export default function FinancialHealthSummaryPage() {
       ) : null}
 
       <section className="financial-health-profile-line" aria-label="Selected financial health profile">
-        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" />
+        <SelectedProfileIdCard className="financial-health-summary-tile financial-health-summary-tile-primary" compactId label="Record ID" nameFirst />
         <article className="financial-health-summary-tile">
           <span>Actual Net Worth</span>
           <strong>{formatAbsoluteAmount(step8ProfileMetrics.actualNetWorth)}</strong>
