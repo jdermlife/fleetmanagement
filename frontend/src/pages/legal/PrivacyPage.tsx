@@ -63,6 +63,10 @@ const privacySections = [
       'Account, workflow, document, and audit data may be retained for operational, legal, security, and compliance purposes for as long as necessary to support the service and related recordkeeping obligations.',
       'Users can request account removal through the in-app account settings flow where available. Additional deletion requests and privacy inquiries can be sent to the contact address below.',
       'Operational backups and recovery copies may persist for a limited period after deletion requests, subject to backup rotation and disaster-recovery controls.',
+      'Users may request deletion of their FIN Health account through the Account Settings page.',
+      'When an account deletion request is completed, FIN Health removes personal and temporary account data that is no longer required. Account information that must remain in the system for technical, legal, regulatory, security, accounting, or other legitimate purposes is anonymized or otherwise de-identified where appropriate.',
+      'The original account is disabled and can no longer be used to access FIN Health. Personal identifiers such as the user\'s name, contact information, profile information, and social-login identifiers are removed or anonymized where applicable.',
+      'Information that is required to be retained by applicable law or regulatory requirements will be retained only for the period and purpose required.',
     ],
   },
   {
