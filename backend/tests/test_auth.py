@@ -12,7 +12,7 @@ from app.fastapi_auth import CurrentUser
 from app.models.roles import Role
 from app.models.autosave_draft import AutosaveDraft
 from app.models.subscription import Subscription, SubscriptionPlan
-from app.models.users import User
+from app.models.users import AuthSession, User
 from app.routes import apple_auth as apple_auth_routes
 from app.routes import subscriptions as subscriptions_routes
 from app.routes import security as security_routes
@@ -171,6 +171,44 @@ def test_register_endpoint_exists(app_client):
     assert response.json()["refresh_token"]
     assert response.json()["user"]["account_access_expires_at"] is not None
     assert len(fake_db.rows_by_model[User]) == 1
+    registered_user = fake_db.rows_by_model[User][0]
+    assert registered_user.lender_data_sharing_consent is False
+    assert registered_user.lender_data_sharing_consent_recorded_at is not None
+    assert registered_user.lender_data_sharing_consent_purpose == "lender_financing_eligibility_assessment"
+    assert registered_user.lender_data_sharing_consent_version == "2026-09-12"
+    assert registered_user.lender_data_sharing_consent_withdrawn_at is None
+
+
+def test_withdrawing_lender_data_sharing_consent_records_withdrawal(app_client):
+    client, auth_module, fake_db = app_client
+    user = User(
+        id=13,
+        username="consent-user",
+        email="consent@example.com",
+        password_hash=auth_module.hash_password("password123"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        lender_data_sharing_consent=True,
+        lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
+        lender_data_sharing_consent_purpose="lender_financing_eligibility_assessment",
+        lender_data_sharing_consent_version="2026-09-12",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+    token = auth_module.create_token(13, "consent-user", "subscriber_borrower", expires_in_hours=1)
+
+    response = client.patch(
+        "/api/auth/preferences",
+        json={"lender_data_sharing_consent": False},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert user.lender_data_sharing_consent is False
+    assert user.lender_data_sharing_consent_withdrawn_at is not None
+    assert response.json()["user"]["lender_data_sharing_consent_version"] == "2026-09-12"
 
 
 def test_register_requires_turnstile_when_configured(app_client, monkeypatch):
@@ -644,6 +682,80 @@ def test_delete_account_endpoint_allows_google_account_without_reauthentication(
     assert response.status_code == 200, response.text
     assert user.is_active is False
     assert user.is_deleted is True
+
+
+def test_disconnect_google_revokes_provider_session_and_access_token(app_client):
+    client, auth_module, fake_db = app_client
+    user = User(
+        id=14,
+        username="google-disconnect-user",
+        email="google-disconnect@example.com",
+        password_hash=auth_module.hash_password("unknown-generated-password"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    session = AuthSession(
+        id=1,
+        user_id=14,
+        refresh_token_hash="google-refresh-hash",
+        jti="google-refresh-jti",
+        auth_provider="google",
+        expires_at=datetime.now(timezone.utc) + timedelta(days=1),
+    )
+    fake_db.rows_by_model[User] = [user]
+    fake_db.rows_by_model[AuthSession] = [session]
+    token = auth_module.create_token(
+        14,
+        "google-disconnect-user",
+        "subscriber_borrower",
+        expires_in_hours=1,
+        auth_provider="google",
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    response = client.delete("/api/auth/providers/google", headers=headers)
+
+    assert response.status_code == 200, response.text
+    assert response.json()["sign_out_required"] is True
+    assert session.revoked_at is not None
+    assert user.google_sign_in_disconnected_at is not None
+    assert client.get("/api/auth/me", headers=headers).status_code == 401
+
+
+def test_disconnect_apple_removes_local_sign_in_link(app_client):
+    client, auth_module, fake_db = app_client
+    user = User(
+        id=15,
+        username="apple-disconnect-user",
+        email="apple-disconnect@example.com",
+        apple_subject="apple-subject-to-disconnect",
+        password_hash=auth_module.hash_password("unknown-generated-password"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+    token = auth_module.create_token(
+        15,
+        "apple-disconnect-user",
+        "subscriber_borrower",
+        expires_in_hours=1,
+        auth_provider="apple",
+    )
+
+    response = client.delete(
+        "/api/auth/providers/apple",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert user.apple_subject is None
+    assert user.apple_sign_in_disconnected_at is not None
 
 
 def test_delete_account_endpoint_requires_password_for_password_account(app_client):

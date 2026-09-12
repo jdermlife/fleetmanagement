@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const {
   mockFetchCurrentUser,
   mockDeleteAccount,
+  mockDisconnectSignInProvider,
   mockListPublicSubscriptionPlans,
   mockListSubscriptionPayments,
   mockLogout,
@@ -12,6 +13,7 @@ const {
 } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockDeleteAccount: vi.fn(),
+  mockDisconnectSignInProvider: vi.fn(),
   mockListPublicSubscriptionPlans: vi.fn(),
   mockListSubscriptionPayments: vi.fn(),
   mockLogout: vi.fn(),
@@ -21,6 +23,7 @@ const {
 vi.mock('../src/api', () => ({
   changePassword: vi.fn(),
   deleteAccount: mockDeleteAccount,
+  disconnectSignInProvider: mockDisconnectSignInProvider,
   fetchCurrentUser: mockFetchCurrentUser,
   getAuthToken: () => 'access-token',
   getErrorMessage: (error: unknown, fallback: string) =>
@@ -65,6 +68,7 @@ describe('AccountSettingsPage', () => {
   beforeEach(() => {
     mockFetchCurrentUser.mockReset()
     mockDeleteAccount.mockReset()
+    mockDisconnectSignInProvider.mockReset()
     mockListPublicSubscriptionPlans.mockReset()
     mockListSubscriptionPayments.mockReset()
     mockLogout.mockReset()
@@ -87,6 +91,10 @@ describe('AccountSettingsPage', () => {
     mockLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
     mockDeleteAccount.mockResolvedValue({ message: 'Associated account data deleted successfully' })
+    mockDisconnectSignInProvider.mockResolvedValue({
+      message: 'Google Sign-In disconnected',
+      signOutRequired: true,
+    })
 
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -270,6 +278,35 @@ describe('AccountSettingsPage', () => {
     }))
     expect(mockLogout).not.toHaveBeenCalled()
     expect(mockPrepareAutosavesForLogout).not.toHaveBeenCalled()
+  })
+
+  it('disconnects Google Sign-In and clears the current session', async () => {
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 42,
+      username: 'google-user',
+      email: 'google-user@example.com',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower'],
+      permissions: [],
+      isActive: true,
+      subscriptionId: 7,
+      createdAt: '2026-07-01T00:00:00Z',
+      updatedAt: '2026-07-01T00:00:00Z',
+      lastLoginAt: null,
+      hasGoogleSignIn: true,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/account']}>
+        <AccountSettingsPage />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Disconnect Google Sign-In' }))
+
+    await waitFor(() => expect(mockDisconnectSignInProvider).toHaveBeenCalledWith('google'))
+    await waitFor(() => expect(mockPrepareAutosavesForLogout).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1))
   })
 
   it.each([

@@ -63,6 +63,7 @@ class TokenPayload:
     username: str
     role: str
     exp: float
+    iat: float
     auth_provider: str | None = None
 
 
@@ -101,6 +102,7 @@ def decode_token(token: str) -> TokenPayload:
             username=data["username"],
             role=data["role"],
             exp=data["exp"],
+            iat=data["iat"],
             auth_provider=data.get("auth_provider"),
         )
     except jwt.ExpiredSignatureError:

@@ -6,6 +6,8 @@ from app.database import engine
 
 
 ALTER_STATEMENTS = [
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS apple_sign_in_disconnected_at TIMESTAMPTZ",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sign_in_disconnected_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role_id INTEGER",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_id BIGINT",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id BIGINT",
@@ -38,6 +40,9 @@ ALTER_STATEMENTS = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_access_expires_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent BOOLEAN DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_recorded_at TIMESTAMPTZ",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_purpose VARCHAR(100)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_version VARCHAR(30)",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_withdrawn_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_ip VARCHAR(100)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS last_login_device TEXT",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_enabled BOOLEAN DEFAULT FALSE",
@@ -117,6 +122,7 @@ CONSTRAINT_STATEMENTS = [
 
 
 INDEX_STATEMENTS = [
+    "CREATE INDEX IF NOT EXISTS ix_auth_sessions_auth_provider ON auth_sessions(auth_provider)",
     "CREATE INDEX IF NOT EXISTS ix_users_role_id ON users(role_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_subscription_id ON users(subscription_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_tenant_id ON users(tenant_id)",
@@ -124,8 +130,15 @@ INDEX_STATEMENTS = [
 ]
 
 
+AUTH_SESSION_ALTER_STATEMENTS = [
+    "ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20)",
+]
+
+
 def run_migration() -> None:
     with engine.begin() as connection:
+        for statement in AUTH_SESSION_ALTER_STATEMENTS:
+            connection.execute(text(statement))
         for statement in ALTER_STATEMENTS:
             connection.execute(text(statement))
         for statement in CONSTRAINT_STATEMENTS:

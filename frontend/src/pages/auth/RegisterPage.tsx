@@ -136,7 +136,7 @@ export default function RegisterPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [subscriberType, setSubscriberType] = useState<RegisterSubscriberType>('borrower')
   const [subscriptionPlan, setSubscriptionPlan] = useState<RegisterSubscriptionPlan>('FREE_TRIAL')
-  const [marketingConsent, setMarketingConsent] = useState(false)
+  const [lenderDataSharingConsent, setLenderDataSharingConsent] = useState(false)
   const [acceptedTerms, setAcceptedTerms] = useState(false)
   const [acceptedPrivacy, setAcceptedPrivacy] = useState(false)
   const [message, setMessage] = useState('')
@@ -197,7 +197,7 @@ export default function RegisterPage() {
         email,
         password,
         subscriberType,
-        lenderDataSharingConsent: marketingConsent,
+        lenderDataSharingConsent,
         turnstileToken: turnstileToken || undefined,
       })
       await continueAfterRegistration(loginResponse.user.id)
@@ -236,7 +236,7 @@ export default function RegisterPage() {
         idToken,
         platform,
         subscriberType,
-        lenderDataSharingConsent: marketingConsent,
+        lenderDataSharingConsent,
       })
       await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
@@ -296,7 +296,7 @@ export default function RegisterPage() {
       const loginResponse = await loginWithApple({
         idToken: appleTokenResult.idToken,
         subscriberType,
-        lenderDataSharingConsent: marketingConsent,
+        lenderDataSharingConsent,
       })
       await continueAfterRegistration(loginResponse.user.id)
     } catch (error) {
@@ -347,11 +347,13 @@ export default function RegisterPage() {
         <label className="checkbox-label">
           <input
             type="checkbox"
-            checked={marketingConsent}
-            onChange={(event) => setMarketingConsent(event.target.checked)}
+            checked={lenderDataSharingConsent}
+            onChange={(event) => setLenderDataSharingConsent(event.target.checked)}
           />
           <span>
-            I agree to receive marketing materials, notices, and related products and services updates.
+            I consent to FILSCORE sharing my financial profile, loan application information,
+            supporting documents, and credit scores with participating lenders solely to assess
+            financing eligibility. This is optional, and I can withdraw consent in Account Settings.
           </span>
         </label>
 

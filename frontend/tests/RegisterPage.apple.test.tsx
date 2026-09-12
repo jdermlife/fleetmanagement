@@ -62,7 +62,7 @@ async function completeAppleRegistrationChoices() {
   await user.click(consentBoxes[0])
   await user.click(consentBoxes[1])
   await user.click(screen.getByRole('radio', { name: /subscriber single profile/i }))
-  await user.click(screen.getByRole('checkbox', { name: /i agree to receive marketing materials/i }))
+  await user.click(screen.getByRole('checkbox', { name: /i consent to filscore sharing my financial profile/i }))
 
   return user
 }

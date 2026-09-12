@@ -51,6 +51,8 @@ const privacySections = [
     ],
     bullets: [
       'Google Sign-In and Apple Sign-In flows when the user chooses those login options.',
+      'Account Settings identifies connected sign-in providers and allows users to disconnect them. FILSCORE revokes its provider-linked sign-in sessions and does not retain Google or Apple access tokens for ongoing access to provider data. Signing in with that provider again reconnects it.',
+      'Participating lenders when a user separately consents to sharing their financial profile, loan application information, supporting documents, and credit scores for financing eligibility assessment. This consent is optional and can be withdrawn in Account Settings.',
       'OpenAI-backed AI processing for features such as audio transcription, meeting-minute generation, and document parsing when authorized users invoke those features.',
       'SMTP email delivery when email-related features or password-reset notifications are configured on the backend.',
       'Infrastructure, database, and operational service providers that host, route, or store application data on behalf of the service operator.',
@@ -102,7 +104,7 @@ export default function PrivacyPage() {
     <div className="standalone-card auth-screen">
       <h1>Privacy Disclosures</h1>
       <p className="intro">
-        Effective Date: July 6, 2026
+        Effective Date: September 12, 2026
         <br />
         Application: FILSCORE / FMS Mobile
         <br />

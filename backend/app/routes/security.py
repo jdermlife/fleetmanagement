@@ -198,6 +198,8 @@ REGISTERABLE_SUBSCRIBER_ROLES = {
 }
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRY_MINUTES", "30"))
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
+LENDER_DATA_SHARING_CONSENT_PURPOSE = "lender_financing_eligibility_assessment"
+LENDER_DATA_SHARING_CONSENT_VERSION = "2026-09-12"
 
 
 def get_db():
@@ -206,6 +208,16 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def _record_lender_data_sharing_choice(user: User, consent: bool) -> None:
+    now = datetime.now(timezone.utc)
+    was_consented = bool(user.lender_data_sharing_consent)
+    user.lender_data_sharing_consent = consent
+    user.lender_data_sharing_consent_recorded_at = now
+    user.lender_data_sharing_consent_purpose = LENDER_DATA_SHARING_CONSENT_PURPOSE
+    user.lender_data_sharing_consent_version = LENDER_DATA_SHARING_CONSENT_VERSION
+    user.lender_data_sharing_consent_withdrawn_at = now if was_consented and not consent else None
 
 
 def _verify_turnstile_token(token: str | None, remote_ip: str | None) -> None:
@@ -302,6 +314,16 @@ def _user_permissions(user: User, db: Session) -> list[str]:
     return sorted(set(db_permissions) | set(fallback_permissions))
 
 
+def _has_active_provider_session(user: User, provider: str) -> bool:
+    now = datetime.now(timezone.utc)
+    return any(
+        session.auth_provider == provider
+        and session.revoked_at is None
+        and session.expires_at > now
+        for session in user.sessions
+    )
+
+
 def _serialize_user(
     user: User,
     db: Session,
@@ -329,12 +351,17 @@ def _serialize_user(
         "api_access": user.api_access,
         "email_verified": user.email_verified,
         "has_apple_sign_in": bool(user.apple_subject),
-        "has_google_sign_in": auth_provider == "google",
+        "has_google_sign_in": (
+            auth_provider == "google" or _has_active_provider_session(user, "google")
+        ),
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
         "lender_data_sharing_consent": user.lender_data_sharing_consent,
         "lender_data_sharing_consent_recorded_at": user.lender_data_sharing_consent_recorded_at,
+        "lender_data_sharing_consent_purpose": user.lender_data_sharing_consent_purpose,
+        "lender_data_sharing_consent_version": user.lender_data_sharing_consent_version,
+        "lender_data_sharing_consent_withdrawn_at": user.lender_data_sharing_consent_withdrawn_at,
         "last_login_ip": user.last_login_ip,
         "last_login_device": user.last_login_device,
         "total_login_count": user.total_login_count,
@@ -480,6 +507,7 @@ def _build_login_payload(
         user_id=user.id,
         refresh_token_hash=refresh_hash,
         jti=refresh_jti,
+        auth_provider=auth_provider,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent"),
         expires_at=refresh_exp,
@@ -648,9 +676,8 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
         is_active=True,
         account_status="ACTIVE",
         email_verified=False,
-        lender_data_sharing_consent=payload.lender_data_sharing_consent,
-        lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
     )
+    _record_lender_data_sharing_choice(user, payload.lender_data_sharing_consent)
     configure_new_account_access(user)
     db.add(user)
     db.flush()
@@ -667,7 +694,7 @@ def register(payload: RegisterRequest, request: Request, db: Session = Depends(g
     db.commit()
     db.refresh(user)
     notify_admins_of_new_user(user, db)
-    return _build_login_payload(user, request, db)
+    return _build_login_payload(user, request, db, auth_provider="apple")
 
 
 @router.post("/login")
@@ -803,9 +830,8 @@ def login_with_google_token(
             account_status="ACTIVE",
             email_verified=True,
             email_verified_at=datetime.now(timezone.utc),
-            lender_data_sharing_consent=payload.lender_data_sharing_consent,
-            lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
         )
+        _record_lender_data_sharing_choice(user, payload.lender_data_sharing_consent)
         configure_new_account_access(user)
         db.add(user)
         db.flush()
@@ -819,6 +845,8 @@ def login_with_google_token(
     if not user.email_verified:
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
+
+    user.google_sign_in_disconnected_at = None
 
     return _build_login_payload(user, request, db, auth_provider="google")
 
@@ -893,9 +921,8 @@ def _login_with_apple_claims(
             account_status="ACTIVE",
             email_verified=True,
             email_verified_at=datetime.now(timezone.utc),
-            lender_data_sharing_consent=payload.lender_data_sharing_consent,
-            lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
         )
+        _record_lender_data_sharing_choice(user, payload.lender_data_sharing_consent)
         configure_new_account_access(user)
         db.add(user)
         db.flush()
@@ -913,6 +940,7 @@ def _login_with_apple_claims(
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
+    user.apple_sign_in_disconnected_at = None
     db.commit()
     return _build_login_payload(user, request, db)
 
@@ -1030,6 +1058,7 @@ def refresh_tokens(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
             user_id=user.id,
             refresh_token_hash=new_hash,
             jti=new_jti,
+            auth_provider=auth_provider,
             ip_address=session.ip_address,
             user_agent=session.user_agent,
             expires_at=new_exp,
@@ -1078,8 +1107,7 @@ def update_preferences(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    db_user.lender_data_sharing_consent = payload.lender_data_sharing_consent
-    db_user.lender_data_sharing_consent_recorded_at = datetime.now(timezone.utc)
+    _record_lender_data_sharing_choice(db_user, payload.lender_data_sharing_consent)
     db.commit()
     db.refresh(db_user)
 
@@ -1253,6 +1281,9 @@ def delete_account(
         db_user.profile_photo = None
         db_user.lender_data_sharing_consent = False
         db_user.lender_data_sharing_consent_recorded_at = None
+        db_user.lender_data_sharing_consent_purpose = None
+        db_user.lender_data_sharing_consent_version = None
+        db_user.lender_data_sharing_consent_withdrawn_at = None
         db.commit()
         return {"message": "Associated account data deleted successfully"}
 
@@ -1351,6 +1382,7 @@ def list_sessions(
         "sessions": [
             {
                 "id": session.id,
+                "auth_provider": session.auth_provider,
                 "ip_address": session.ip_address,
                 "user_agent": session.user_agent,
                 "created_at": session.created_at,
@@ -1380,6 +1412,53 @@ def revoke_session(
     session.revoked_at = datetime.now(timezone.utc)
     db.commit()
     return {"message": "Session revoked"}
+
+
+@router.delete("/providers/{provider}")
+def disconnect_sign_in_provider(
+    provider: Literal["apple", "google"],
+    user: CurrentUser = Depends(require_authenticated_user),
+    db: Session = Depends(get_db),
+):
+    db_user = db.query(User).filter(User.id == user.id).first()
+    if db_user is None:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if (
+        provider == "google"
+        and user.auth_provider != "google"
+        and not _has_active_provider_session(db_user, "google")
+    ):
+        raise HTTPException(status_code=409, detail="No Google Sign-In connection is active")
+    if provider == "apple" and not db_user.apple_subject:
+        raise HTTPException(status_code=409, detail="No Apple Sign-In connection is active")
+
+    now = datetime.now(timezone.utc)
+    provider_sessions = (
+        db.query(AuthSession)
+        .filter(
+            and_(
+                AuthSession.user_id == db_user.id,
+                AuthSession.auth_provider == provider,
+                AuthSession.revoked_at.is_(None),
+            )
+        )
+        .all()
+    )
+    for provider_session in provider_sessions:
+        provider_session.revoked_at = now
+
+    if provider == "apple":
+        db_user.apple_subject = None
+        db_user.apple_sign_in_disconnected_at = now
+    else:
+        db_user.google_sign_in_disconnected_at = now
+
+    db.commit()
+    return {
+        "message": f"{provider.title()} Sign-In disconnected",
+        "sign_out_required": user.auth_provider == provider,
+    }
 
 
 @admin_router.get("/users")

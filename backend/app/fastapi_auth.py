@@ -1,5 +1,6 @@
 import os
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
@@ -21,6 +22,7 @@ class CurrentUser:
     id: int
     username: str
     role: str
+    issued_at: float = 0
     auth_provider: str | None = None
 
 
@@ -58,6 +60,7 @@ def get_current_user(
         id=payload.sub,
         username=payload.username,
         role=resolved_role,
+        issued_at=payload.iat,
         auth_provider=payload.auth_provider,
     )
 
@@ -78,6 +81,18 @@ def require_authenticated_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account is unavailable",
         )
+    disconnected_at = getattr(
+        db_user,
+        f"{user.auth_provider}_sign_in_disconnected_at",
+        None,
+    )
+    if disconnected_at is not None and user.issued_at:
+        issued_at = datetime.fromtimestamp(user.issued_at, timezone.utc)
+        if issued_at <= disconnected_at:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Sign-in provider has been disconnected",
+            )
     if deactivate_if_access_expired(db_user):
         db.commit()
     if not db_user.is_active:

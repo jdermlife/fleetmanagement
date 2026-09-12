@@ -5,6 +5,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import {
   changePassword,
   deleteAccount,
+  disconnectSignInProvider,
   fetchCurrentUser,
   getAuthToken,
   getErrorMessage,
@@ -59,6 +60,8 @@ export default function AccountSettingsPage() {
   const [isChangingPassword, setIsChangingPassword] = useState(false)
   const [isDeletingAccount, setIsDeletingAccount] = useState(false)
   const [isUpdatingPreferences, setIsUpdatingPreferences] = useState(false)
+  const [disconnectingProvider, setDisconnectingProvider] = useState<'apple' | 'google' | null>(null)
+  const [providerMessage, setProviderMessage] = useState('')
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [latestPayment, setLatestPayment] = useState<SubscriptionPayment | null>(null)
   const [lenderDataSharingChoice, setLenderDataSharingChoice] = useState<'share' | 'do_not_share'>(
@@ -256,6 +259,30 @@ export default function AccountSettingsPage() {
     }
   }
 
+  const handleDisconnectProvider = async (provider: 'apple' | 'google') => {
+    setDisconnectingProvider(provider)
+    setProviderMessage('')
+    try {
+      const response = await disconnectSignInProvider(provider)
+      if (response.signOutRequired) {
+        await prepareAutosavesForLogout()
+        await logout()
+        navigate('/login')
+        return
+      }
+      setUser((current) => current ? {
+        ...current,
+        hasAppleSignIn: provider === 'apple' ? false : current.hasAppleSignIn,
+        hasGoogleSignIn: provider === 'google' ? false : current.hasGoogleSignIn,
+      } : current)
+      setProviderMessage(response.message)
+    } catch (error) {
+      setProviderMessage(getErrorMessage(error, `Unable to disconnect ${provider} Sign-In right now.`))
+    } finally {
+      setDisconnectingProvider(null)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="standalone-card auth-screen">
@@ -349,6 +376,44 @@ export default function AccountSettingsPage() {
       </div>
 
       <div className="card auth-helper-card">
+        <h3>Connected Sign-In Providers</h3>
+        <p className="intro">
+          FILSCORE uses Apple or Google identity only for sign-in and does not retain provider
+          access tokens for ongoing access to provider data. Disconnecting your current sign-in
+          provider signs you out. Signing in with that provider again reconnects it.
+        </p>
+        <div className="auth-profile-grid">
+          <div>
+            <span>Apple Sign-In</span>
+            <strong>{user.hasAppleSignIn ? 'Connected' : 'Not connected'}</strong>
+            {user.hasAppleSignIn ? (
+              <button
+                type="button"
+                onClick={() => void handleDisconnectProvider('apple')}
+                disabled={disconnectingProvider !== null}
+              >
+                {disconnectingProvider === 'apple' ? 'Disconnecting...' : 'Disconnect Apple Sign-In'}
+              </button>
+            ) : null}
+          </div>
+          <div>
+            <span>Google Sign-In</span>
+            <strong>{user.hasGoogleSignIn ? 'Connected' : 'Not connected'}</strong>
+            {user.hasGoogleSignIn ? (
+              <button
+                type="button"
+                onClick={() => void handleDisconnectProvider('google')}
+                disabled={disconnectingProvider !== null}
+              >
+                {disconnectingProvider === 'google' ? 'Disconnecting...' : 'Disconnect Google Sign-In'}
+              </button>
+            ) : null}
+          </div>
+        </div>
+        {providerMessage ? <p className="status-message">{providerMessage}</p> : null}
+      </div>
+
+      <div className="card auth-helper-card">
         <h3>Subscription Plan</h3>
         <p className="intro">
           Review your current subscription and use the upgrade link when you are ready to move to a higher plan.
@@ -385,9 +450,10 @@ export default function AccountSettingsPage() {
       </div>
 
       <div className="card auth-helper-card">
-        <h3>Lender Offer Preference</h3>
+        <h3>Lender Data Sharing</h3>
         <p className="intro">
-          Choose whether lenders may view your information and score to send offers.
+          Choose whether participating lenders may receive your financial profile, loan application
+          information, supporting documents, and credit scores solely to assess financing eligibility.
         </p>
 
         <fieldset className="auth-role-fieldset">
@@ -402,8 +468,8 @@ export default function AccountSettingsPage() {
                 onChange={() => setLenderDataSharingChoice('share')}
               />
               <span>
-                <strong>Okay to share information and score for lender offers</strong>
-                <small>Lenders can use your profile and score to send relevant offers.</small>
+                <strong>Consent to sharing for financing assessment</strong>
+                <small>Participating lenders may use the listed information only to assess financing eligibility.</small>
               </span>
             </label>
             <label className="auth-role-option">
@@ -415,20 +481,27 @@ export default function AccountSettingsPage() {
                 onChange={() => setLenderDataSharingChoice('do_not_share')}
               />
               <span>
-                <strong>Do not share information and score for lender offers</strong>
-                <small>Your information is excluded from lender offer matching.</small>
+                <strong>Do not share with participating lenders</strong>
+                <small>Your information is excluded from lender financing assessment. You may change this choice at any time.</small>
               </span>
             </label>
           </div>
         </fieldset>
 
         <p className="status-message">
-          Last recorded:{' '}
+          Current status: <strong>{user.lenderDataSharingConsent ? 'Consented' : 'Not consented'}</strong>
+          {' '}| Last recorded:{' '}
           <strong>
             {user.lenderDataSharingConsentRecordedAt
               ? new Date(user.lenderDataSharingConsentRecordedAt).toLocaleString()
               : 'Not recorded'}
           </strong>
+          {user.lenderDataSharingConsentVersion
+            ? <> | Disclosure version: <strong>{user.lenderDataSharingConsentVersion}</strong></>
+            : null}
+          {user.lenderDataSharingConsentWithdrawnAt
+            ? <> | Withdrawn: <strong>{new Date(user.lenderDataSharingConsentWithdrawnAt).toLocaleString()}</strong></>
+            : null}
         </p>
 
         <div className="form-actions">

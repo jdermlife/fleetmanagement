@@ -479,6 +479,9 @@ export interface AuthUser {
   mfaEnabled?: boolean
   lenderDataSharingConsent?: boolean
   lenderDataSharingConsentRecordedAt?: string | null
+  lenderDataSharingConsentPurpose?: string | null
+  lenderDataSharingConsentVersion?: string | null
+  lenderDataSharingConsentWithdrawnAt?: string | null
 }
 
 function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
@@ -514,6 +517,15 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     ),
     lenderDataSharingConsentRecordedAt: (
       raw.lenderDataSharingConsentRecordedAt ?? raw.lender_data_sharing_consent_recorded_at ?? null
+    ) as string | null,
+    lenderDataSharingConsentPurpose: (
+      raw.lenderDataSharingConsentPurpose ?? raw.lender_data_sharing_consent_purpose ?? null
+    ) as string | null,
+    lenderDataSharingConsentVersion: (
+      raw.lenderDataSharingConsentVersion ?? raw.lender_data_sharing_consent_version ?? null
+    ) as string | null,
+    lenderDataSharingConsentWithdrawnAt: (
+      raw.lenderDataSharingConsentWithdrawnAt ?? raw.lender_data_sharing_consent_withdrawn_at ?? null
     ) as string | null,
   }
 }
@@ -747,6 +759,20 @@ export async function updateAccountPreferences(payload: {
   return {
     message: response.data.message,
     user: normalizedUser,
+  }
+}
+
+export async function disconnectSignInProvider(
+  provider: 'apple' | 'google',
+): Promise<{ message: string; signOutRequired: boolean }> {
+  const response = await api.delete<{
+    message: string
+    sign_out_required: boolean
+  }>(`/api/auth/providers/${provider}`)
+
+  return {
+    message: response.data.message,
+    signOutRequired: response.data.sign_out_required,
   }
 }
 
