@@ -109,7 +109,7 @@ describe('RegisterPage Apple sign-up', () => {
       </MemoryRouter>
     )
 
-    const appleButton = screen.getByRole('button', { name: /(continue with apple|sign with apple)/i })
+    const appleButton = screen.getByRole('button', { name: 'Sign up with Apple' })
     await userEvent.click(appleButton)
 
     const alert = await screen.findByRole('alert')
@@ -185,7 +185,7 @@ describe('RegisterPage Apple sign-up', () => {
 
     const user = await completeAppleRegistrationChoices()
     await user.click(screen.getByRole('radio', { name: /starter\s*php 160\.00 per month/i }))
-    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/subscription-payment?planId=2', { replace: true })
@@ -272,7 +272,7 @@ describe('RegisterPage Apple sign-up', () => {
     )
 
     const user = await completeAppleRegistrationChoices()
-    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
 
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/trial-expired?source=register-apple')
@@ -297,11 +297,12 @@ describe('RegisterPage Apple sign-up', () => {
     )
 
     const user = await completeAppleRegistrationChoices()
-    await user.click(screen.getByRole('button', { name: /(continue with apple|sign with apple)/i }))
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
 
     await waitFor(() => {
       expect(mockRequestAppleSignInToken).toHaveBeenCalledWith({
         clientId: 'com.quantech.filscore.web',
+        iosClientId: 'com.quantech.filscore',
         redirectURI: `${window.location.origin}/auth/apple/callback`,
       })
     })

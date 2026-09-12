@@ -100,7 +100,8 @@ class ChangePasswordRequest(BaseModel):
 
 
 class DeleteAccountRequest(BaseModel):
-    current_password: str
+    current_password: str | None = None
+    apple_identity_token: str | None = Field(default=None, min_length=10)
     deletion_mode: Literal["account_and_data", "data_only"] = "account_and_data"
 
 
@@ -324,6 +325,7 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "subscription_id": user.subscription_id,
         "api_access": user.api_access,
         "email_verified": user.email_verified,
+        "has_apple_sign_in": bool(user.apple_subject),
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
@@ -1192,7 +1194,13 @@ def delete_account(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if not verify_password(payload.current_password, db_user.password_hash):
+    if payload.apple_identity_token:
+        if not db_user.apple_subject:
+            raise HTTPException(status_code=401, detail="Apple Sign-In is not linked to this account")
+        apple_claims = _verify_apple_id_token(payload.apple_identity_token)
+        if str(apple_claims.get("sub") or "").strip() != db_user.apple_subject:
+            raise HTTPException(status_code=401, detail="Apple account verification did not match this account")
+    elif not payload.current_password or not verify_password(payload.current_password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     owned_records = (

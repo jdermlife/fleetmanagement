@@ -6566,12 +6566,35 @@ th { color: var(--dark-gold); }
 }
 
 .auth-apple-button {
-  gap: 8px;
-  width: min(100%, 420px);
+  display: block;
+  width: min(100%, 375px);
+  min-width: min(100%, 140px);
+  min-height: 30px;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  border-radius: 5px;
+  background: #000000;
+  line-height: 0;
+}
+
+.auth-apple-button:hover {
+  background: #000000;
+}
+
+.auth-apple-button:focus-visible {
+  outline: 3px solid #000000;
+  outline-offset: 3px;
+}
+
+.auth-apple-button-image {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .register-other-email-button {
-  width: min(100%, 420px);
+  width: min(100%, 375px);
   justify-self: center;
 }
 
@@ -6582,7 +6605,7 @@ th { color: var(--dark-gold); }
 }
 
 .register-google-button-wrap > div {
-  width: min(100%, 420px) !important;
+  width: min(100%, 375px) !important;
 }
 
 .register-google-button-wrap iframe {
