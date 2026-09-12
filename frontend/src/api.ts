@@ -475,6 +475,7 @@ export interface AuthUser {
   updatedAt: string
   lastLoginAt: string | null
   hasAppleSignIn?: boolean
+  hasGoogleSignIn?: boolean
   mfaEnabled?: boolean
   lenderDataSharingConsent?: boolean
   lenderDataSharingConsentRecordedAt?: string | null
@@ -506,6 +507,7 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
     lastLoginAt: (raw.lastLoginAt ?? raw.last_login_at ?? null) as string | null,
     hasAppleSignIn: Boolean(raw.hasAppleSignIn ?? raw.has_apple_sign_in ?? false),
+    hasGoogleSignIn: Boolean(raw.hasGoogleSignIn ?? raw.has_google_sign_in ?? false),
     mfaEnabled: Boolean(raw.mfaEnabled ?? raw.mfa_enabled ?? false),
     lenderDataSharingConsent: Boolean(
       raw.lenderDataSharingConsent ?? raw.lender_data_sharing_consent ?? false,
@@ -919,12 +921,10 @@ export async function changePassword(
 
 export async function deleteAccount(payload: {
   currentPassword?: string
-  appleIdentityToken?: string
   deletionMode?: 'account_and_data' | 'data_only'
 }): Promise<{ message: string }> {
   const response = await api.post<{ message: string }>('/api/auth/delete-account', {
     current_password: payload.currentPassword,
-    apple_identity_token: payload.appleIdentityToken,
     deletion_mode: payload.deletionMode ?? 'account_and_data',
   })
   return response.data

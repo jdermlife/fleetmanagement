@@ -101,7 +101,6 @@ class ChangePasswordRequest(BaseModel):
 
 class DeleteAccountRequest(BaseModel):
     current_password: str | None = None
-    apple_identity_token: str | None = Field(default=None, min_length=10)
     deletion_mode: Literal["account_and_data", "data_only"] = "account_and_data"
 
 
@@ -326,6 +325,7 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "api_access": user.api_access,
         "email_verified": user.email_verified,
         "has_apple_sign_in": bool(user.apple_subject),
+        "has_google_sign_in": bool(user.google_subject),
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
@@ -747,15 +747,25 @@ def login_with_google_token(
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
+    google_subject = str(token_data.get("sub") or "").strip()
 
     print("GOOGLE_OAUTH_CLIENT_ID:", GOOGLE_OAUTH_CLIENT_ID)
     print("GOOGLE_IOS_CLIENT_ID:", GOOGLE_IOS_CLIENT_ID)
 
 
+    if not google_subject:
+        raise HTTPException(status_code=401, detail="Google account identifier is missing")
+
     if not email or not email_verified:
         raise HTTPException(status_code=401, detail="Google account email is missing or unverified")
 
-    user = db.query(User).filter(User.email == email).first()
+    user = db.query(User).filter(User.google_subject == google_subject).first()
+    if user is None:
+        user = db.query(User).filter(User.email == email).first()
+        if user is not None:
+            if user.google_subject and user.google_subject != google_subject:
+                raise HTTPException(status_code=409, detail="Google account is linked to another user")
+            user.google_subject = google_subject
 
     if user is None:
         if payload.subscriber_type is None:
@@ -777,6 +787,7 @@ def login_with_google_token(
         user = User(
             username=unique_username,
             email=email,
+            google_subject=google_subject,
             password_hash=hash_password(f"google_oauth_{uuid4().hex}"),
             role=role_name,
             is_active=True,
@@ -1194,13 +1205,10 @@ def delete_account(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if payload.apple_identity_token:
-        if not db_user.apple_subject:
-            raise HTTPException(status_code=401, detail="Apple Sign-In is not linked to this account")
-        apple_claims = _verify_apple_id_token(payload.apple_identity_token)
-        if str(apple_claims.get("sub") or "").strip() != db_user.apple_subject:
-            raise HTTPException(status_code=401, detail="Apple account verification did not match this account")
-    elif not payload.current_password or not verify_password(payload.current_password, db_user.password_hash):
+    is_social_account = bool(db_user.apple_subject or db_user.google_subject)
+    if not is_social_account and (
+        not payload.current_password or not verify_password(payload.current_password, db_user.password_hash)
+    ):
         raise HTTPException(status_code=401, detail="Current password is incorrect")
 
     owned_records = (

@@ -9,7 +9,6 @@ const {
   mockListSubscriptionPayments,
   mockLogout,
   mockPrepareAutosavesForLogout,
-  mockRequestAppleSignInToken,
 } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockDeleteAccount: vi.fn(),
@@ -17,7 +16,6 @@ const {
   mockListSubscriptionPayments: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
-  mockRequestAppleSignInToken: vi.fn(),
 }))
 
 vi.mock('../src/api', () => ({
@@ -35,10 +33,6 @@ vi.mock('../src/api', () => ({
 
 vi.mock('../src/autosave/useAutosaveDraft', () => ({
   prepareAutosavesForLogout: mockPrepareAutosavesForLogout,
-}))
-
-vi.mock('../src/appleAuth', () => ({
-  requestAppleSignInToken: mockRequestAppleSignInToken,
 }))
 
 import AccountSettingsPage from '../src/pages/auth/AccountSettingsPage'
@@ -75,7 +69,6 @@ describe('AccountSettingsPage', () => {
     mockListSubscriptionPayments.mockReset()
     mockLogout.mockReset()
     mockPrepareAutosavesForLogout.mockReset()
-    mockRequestAppleSignInToken.mockReset()
     mockFetchCurrentUser.mockResolvedValue({
       id: 42,
       username: 'signed-in-user',
@@ -94,7 +87,6 @@ describe('AccountSettingsPage', () => {
     mockLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
     mockDeleteAccount.mockResolvedValue({ message: 'Associated account data deleted successfully' })
-    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'fresh-apple-identity-token' })
 
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -274,14 +266,16 @@ describe('AccountSettingsPage', () => {
 
     await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalledWith({
       currentPassword: 'password123',
-      appleIdentityToken: undefined,
       deletionMode: 'data_only',
     }))
     expect(mockLogout).not.toHaveBeenCalled()
     expect(mockPrepareAutosavesForLogout).not.toHaveBeenCalled()
   })
 
-  it('reauthenticates an Apple-linked user before deleting the account', async () => {
+  it.each([
+    ['Apple', { hasAppleSignIn: true }],
+    ['Google', { hasGoogleSignIn: true }],
+  ])('deletes a %s-linked account without reauthentication', async (_provider, providerFlags) => {
     mockFetchCurrentUser.mockResolvedValue({
       id: 42,
       username: 'apple-user',
@@ -294,7 +288,7 @@ describe('AccountSettingsPage', () => {
       createdAt: '2026-07-01T00:00:00Z',
       updatedAt: '2026-07-01T00:00:00Z',
       lastLoginAt: null,
-      hasAppleSignIn: true,
+      ...providerFlags,
     })
 
     render(
@@ -306,14 +300,13 @@ describe('AccountSettingsPage', () => {
     const deletionForm = (await screen.findByRole('heading', { name: 'Deletion Options' })).closest('form')
     const deletionControls = within(deletionForm as HTMLFormElement)
     expect(deletionControls.queryByLabelText('Current password')).toBeNull()
+    expect(deletionControls.getByText('Your signed-in session will authorize this deletion.')).toBeTruthy()
     fireEvent.change(deletionControls.getByLabelText('Confirmation text'), { target: { value: 'DELETE' } })
-    fireEvent.click(deletionControls.getByRole('button', { name: 'Verify with Apple and Delete Account' }))
+    fireEvent.click(deletionControls.getByRole('button', { name: 'Delete Account and Data' }))
 
-    await waitFor(() => expect(mockRequestAppleSignInToken).toHaveBeenCalledTimes(1))
-    expect(mockDeleteAccount).toHaveBeenCalledWith({
+    await waitFor(() => expect(mockDeleteAccount).toHaveBeenCalledWith({
       currentPassword: undefined,
-      appleIdentityToken: 'fresh-apple-identity-token',
       deletionMode: 'account_and_data',
-    })
+    }))
   })
 })

@@ -19,6 +19,7 @@ class User(Base):
 	username = Column(String(100), nullable=False, unique=True, index=True)
 	email = Column(String(255), nullable=False, unique=True, index=True)
 	apple_subject = Column(String(255), unique=True, index=True)
+	google_subject = Column(String(255), unique=True, index=True)
 	password_hash = Column(Text, nullable=False)
 	role = Column(String(100), nullable=False, default="viewer")
 	role_id = Column(Integer, ForeignKey("roles.id"), index=True)

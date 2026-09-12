@@ -583,7 +583,7 @@ def test_delete_account_endpoint_disables_authenticated_user(app_client):
     assert user.is_deleted is True
 
 
-def test_delete_account_endpoint_accepts_matching_apple_reauthentication(app_client, monkeypatch):
+def test_delete_account_endpoint_allows_apple_account_without_reauthentication(app_client):
     client, auth_module, fake_db = app_client
 
     user = User(
@@ -599,16 +599,11 @@ def test_delete_account_endpoint_accepts_matching_apple_reauthentication(app_cli
         mfa_enabled=False,
     )
     fake_db.rows_by_model[User] = [user]
-    monkeypatch.setattr(
-        security_routes,
-        "_verify_apple_id_token",
-        lambda _token: {"sub": "apple-sub-delete-123"},
-    )
     token = auth_module.create_token(9, "appledeleteuser", "subscriber_borrower", expires_in_hours=1)
 
     response = client.post(
         "/api/auth/delete-account",
-        json={"apple_identity_token": "fresh-apple-identity-token"},
+        json={},
         headers={"Authorization": f"Bearer {token}"},
     )
 
@@ -617,14 +612,14 @@ def test_delete_account_endpoint_accepts_matching_apple_reauthentication(app_cli
     assert user.is_deleted is True
 
 
-def test_delete_account_endpoint_rejects_different_apple_account(app_client, monkeypatch):
+def test_delete_account_endpoint_allows_google_account_without_reauthentication(app_client):
     client, auth_module, fake_db = app_client
 
     user = User(
         id=10,
-        username="appledeleteuser",
-        email="apple-delete@example.com",
-        apple_subject="expected-apple-subject",
+        username="googledeleteuser",
+        email="google-delete@example.com",
+        google_subject="google-sub-delete-123",
         password_hash=auth_module.hash_password("unknown-generated-password"),
         role="subscriber_borrower",
         is_active=True,
@@ -633,22 +628,83 @@ def test_delete_account_endpoint_rejects_different_apple_account(app_client, mon
         mfa_enabled=False,
     )
     fake_db.rows_by_model[User] = [user]
-    monkeypatch.setattr(
-        security_routes,
-        "_verify_apple_id_token",
-        lambda _token: {"sub": "different-apple-subject"},
-    )
-    token = auth_module.create_token(10, "appledeleteuser", "subscriber_borrower", expires_in_hours=1)
+    token = auth_module.create_token(10, "googledeleteuser", "subscriber_borrower", expires_in_hours=1)
 
     response = client.post(
         "/api/auth/delete-account",
-        json={"apple_identity_token": "fresh-apple-identity-token"},
+        json={},
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 200, response.text
+    assert user.is_active is False
+    assert user.is_deleted is True
+
+
+def test_delete_account_endpoint_requires_password_for_password_account(app_client):
+    client, auth_module, fake_db = app_client
+
+    user = User(
+        id=11,
+        username="passworddeleteuser",
+        email="password-delete@example.com",
+        password_hash=auth_module.hash_password("password123"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+    token = auth_module.create_token(11, "passworddeleteuser", "subscriber_borrower", expires_in_hours=1)
+
+    response = client.post(
+        "/api/auth/delete-account",
+        json={},
         headers={"Authorization": f"Bearer {token}"},
     )
 
     assert response.status_code == 401
     assert user.is_active is True
     assert user.is_deleted is False
+
+
+def test_google_token_login_persists_verified_subject(app_client, monkeypatch):
+    client, _auth_module, fake_db = app_client
+
+    class FakeGoogleRequests:
+        class Request:
+            pass
+
+    class FakeGoogleIdToken:
+        @staticmethod
+        def verify_oauth2_token(_token, _request, _audience):
+            return {
+                "sub": "google-subject-123",
+                "email": "new-google-user@example.com",
+                "email_verified": True,
+            }
+
+    monkeypatch.setattr(security_routes, "GOOGLE_OAUTH_CLIENT_ID", "google-web-client-id")
+    monkeypatch.setattr(
+        security_routes,
+        "_load_google_auth_dependencies",
+        lambda: (FakeGoogleRequests, FakeGoogleIdToken),
+    )
+
+    response = client.post(
+        "/api/auth/google-token",
+        json={
+            "id_token": "verified-google-id-token",
+            "subscriber_type": "borrower",
+            "lender_data_sharing_consent": False,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    users = fake_db.rows_by_model.get(User, [])
+    assert len(users) == 1
+    assert users[0].google_subject == "google-subject-123"
 
 
 def test_delete_account_endpoint_removes_data_but_retains_account(app_client):

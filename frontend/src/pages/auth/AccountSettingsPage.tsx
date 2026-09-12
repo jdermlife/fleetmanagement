@@ -16,10 +16,8 @@ import {
   type SubscriptionPayment,
   type SubscriptionPlan,
 } from '../../api'
-import { requestAppleSignInToken } from '../../appleAuth'
 import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
-import { APP_CONFIG } from '../../config'
 
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
@@ -74,6 +72,7 @@ export default function AccountSettingsPage() {
     const savedTheme = window.localStorage.getItem(THEME_STORAGE_KEY)
     return isThemeId(savedTheme) ? savedTheme : 'classic'
   })
+  const isSocialAccount = Boolean(user?.hasAppleSignIn || user?.hasGoogleSignIn)
 
   useEffect(() => {
     const token = getAuthToken()
@@ -176,19 +175,11 @@ export default function AccountSettingsPage() {
     setDeleteMessage('')
 
     try {
-      const appleIdentityToken = user?.hasAppleSignIn
-        ? (await requestAppleSignInToken({
-            clientId: APP_CONFIG.appleClientId,
-            iosClientId: APP_CONFIG.appleIosClientId,
-            redirectURI: APP_CONFIG.appleRedirect,
-          })).idToken
-        : undefined
       if (deletionMode === 'account_and_data') {
         await prepareAutosavesForLogout()
       }
       const response = await deleteAccount({
-        currentPassword: appleIdentityToken ? undefined : deletePassword,
-        appleIdentityToken,
+        currentPassword: isSocialAccount ? undefined : deletePassword,
         deletionMode,
       })
       setDeleteMessage(response.message)
@@ -562,9 +553,9 @@ export default function AccountSettingsPage() {
           Delete data associated with this account but, account is retained.
         </label>
 
-        {user?.hasAppleSignIn ? (
+        {isSocialAccount ? (
           <p className="status-message">
-            You will verify with Apple before deletion begins.
+            Your signed-in session will authorize this deletion.
           </p>
         ) : (
           <label>
@@ -592,12 +583,8 @@ export default function AccountSettingsPage() {
         <div className="form-actions">
           <button className="button-danger" type="submit" disabled={isDeletingAccount}>
             {isDeletingAccount
-              ? user?.hasAppleSignIn ? 'Verifying...' : 'Deleting...'
-              : user?.hasAppleSignIn
-                ? deletionMode === 'account_and_data'
-                  ? 'Verify with Apple and Delete Account'
-                  : 'Verify with Apple and Delete Data'
-                : deletionMode === 'account_and_data'
+              ? 'Deleting...'
+              : deletionMode === 'account_and_data'
                 ? 'Delete Account and Data'
                 : 'Delete Associated Data'}
           </button>
