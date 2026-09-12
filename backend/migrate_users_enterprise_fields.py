@@ -6,7 +6,6 @@ from app.database import engine
 
 
 ALTER_STATEMENTS = [
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_subject VARCHAR(255)",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role_id INTEGER",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_id BIGINT",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id BIGINT",
@@ -118,7 +117,6 @@ CONSTRAINT_STATEMENTS = [
 
 
 INDEX_STATEMENTS = [
-    "CREATE UNIQUE INDEX IF NOT EXISTS ix_users_google_subject ON users(google_subject) WHERE google_subject IS NOT NULL",
     "CREATE INDEX IF NOT EXISTS ix_users_role_id ON users(role_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_subscription_id ON users(subscription_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_tenant_id ON users(tenant_id)",

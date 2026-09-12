@@ -21,6 +21,7 @@ class CurrentUser:
     id: int
     username: str
     role: str
+    auth_provider: str | None = None
 
 
 def is_admin_username_override(username: str | None) -> bool:
@@ -57,6 +58,7 @@ def get_current_user(
         id=payload.sub,
         username=payload.username,
         role=resolved_role,
+        auth_provider=payload.auth_provider,
     )
 
 

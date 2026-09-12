@@ -103,7 +103,7 @@ Configure Apple Sign-In in Apple Developer Console and mirror those values in ba
    - Frontend: `VITE_APPLE_REDIRECT_URI=https://fleetmanagement-flame.vercel.app/backend/api/auth/apple/callback`
 5. Keep each backend client ID aligned with its corresponding frontend web or iOS client ID.
 
-Before deploying authentication updates, run `python migrate_apple_subject.py` and `python migrate_google_subject.py` from `backend`.
+Before deploying Apple authentication updates, run `python migrate_apple_subject.py` from `backend`.
 
 For first-time Apple sign-in, the API requires subscriber type and lender data-sharing preference before creating the account.
 

@@ -619,7 +619,6 @@ def test_delete_account_endpoint_allows_google_account_without_reauthentication(
         id=10,
         username="googledeleteuser",
         email="google-delete@example.com",
-        google_subject="google-sub-delete-123",
         password_hash=auth_module.hash_password("unknown-generated-password"),
         role="subscriber_borrower",
         is_active=True,
@@ -628,7 +627,13 @@ def test_delete_account_endpoint_allows_google_account_without_reauthentication(
         mfa_enabled=False,
     )
     fake_db.rows_by_model[User] = [user]
-    token = auth_module.create_token(10, "googledeleteuser", "subscriber_borrower", expires_in_hours=1)
+    token = auth_module.create_token(
+        10,
+        "googledeleteuser",
+        "subscriber_borrower",
+        expires_in_hours=1,
+        auth_provider="google",
+    )
 
     response = client.post(
         "/api/auth/delete-account",
@@ -669,8 +674,8 @@ def test_delete_account_endpoint_requires_password_for_password_account(app_clie
     assert user.is_deleted is False
 
 
-def test_google_token_login_persists_verified_subject(app_client, monkeypatch):
-    client, _auth_module, fake_db = app_client
+def test_google_token_login_creates_google_authenticated_session(app_client, monkeypatch):
+    client, auth_module, fake_db = app_client
 
     class FakeGoogleRequests:
         class Request:
@@ -680,7 +685,6 @@ def test_google_token_login_persists_verified_subject(app_client, monkeypatch):
         @staticmethod
         def verify_oauth2_token(_token, _request, _audience):
             return {
-                "sub": "google-subject-123",
                 "email": "new-google-user@example.com",
                 "email_verified": True,
             }
@@ -704,7 +708,26 @@ def test_google_token_login_persists_verified_subject(app_client, monkeypatch):
     assert response.status_code == 200, response.text
     users = fake_db.rows_by_model.get(User, [])
     assert len(users) == 1
-    assert users[0].google_subject == "google-subject-123"
+    assert response.json()["user"]["has_google_sign_in"] is True
+    token_payload = auth_module.decode_token(response.json()["access_token"])
+    assert token_payload.auth_provider == "google"
+
+    refresh_response = client.post(
+        "/api/auth/refresh",
+        json={"refresh_token": response.json()["refresh_token"]},
+    )
+
+    assert refresh_response.status_code == 200, refresh_response.text
+    refreshed_access_token = refresh_response.json()["access_token"]
+    assert auth_module.decode_token(refreshed_access_token).auth_provider == "google"
+
+    me_response = client.get(
+        "/api/auth/me",
+        headers={"Authorization": f"Bearer {refreshed_access_token}"},
+    )
+
+    assert me_response.status_code == 200, me_response.text
+    assert me_response.json()["user"]["has_google_sign_in"] is True
 
 
 def test_delete_account_endpoint_removes_data_but_retains_account(app_client):

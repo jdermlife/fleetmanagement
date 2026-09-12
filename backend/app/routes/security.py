@@ -302,7 +302,11 @@ def _user_permissions(user: User, db: Session) -> list[str]:
     return sorted(set(db_permissions) | set(fallback_permissions))
 
 
-def _serialize_user(user: User, db: Session) -> dict[str, object]:
+def _serialize_user(
+    user: User,
+    db: Session,
+    auth_provider: str | None = None,
+) -> dict[str, object]:
     role_names = _resolved_role_names(user)
     if is_admin_username_override(user.username):
         role_names = sorted(set(role_names) | {"admin"})
@@ -325,7 +329,7 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
         "api_access": user.api_access,
         "email_verified": user.email_verified,
         "has_apple_sign_in": bool(user.apple_subject),
-        "has_google_sign_in": bool(user.google_subject),
+        "has_google_sign_in": auth_provider == "google",
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
@@ -343,7 +347,10 @@ def _serialize_user(user: User, db: Session) -> dict[str, object]:
     }
 
 
-def _create_refresh_token(user: User) -> tuple[str, str, datetime, str]:
+def _create_refresh_token(
+    user: User,
+    auth_provider: str | None = None,
+) -> tuple[str, str, datetime, str]:
     if jwt is None:
         raise RuntimeError("PyJWT is required for refresh token creation")
 
@@ -351,7 +358,7 @@ def _create_refresh_token(user: User) -> tuple[str, str, datetime, str]:
     expires_at = now + timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS)
     jti = uuid4().hex
     payload = {
-        "sub": user.id,
+        "sub": str(user.id),
         "username": user.username,
         "role": user.role,
         "token_type": "refresh",
@@ -359,6 +366,8 @@ def _create_refresh_token(user: User) -> tuple[str, str, datetime, str]:
         "exp": expires_at,
         "jti": jti,
     }
+    if auth_provider:
+        payload["auth_provider"] = auth_provider
     token = jwt.encode(payload, SECRET_KEY, algorithm="HS256")
     hashed_token = hashlib.sha256(token.encode("utf-8")).hexdigest()
     return token, hashed_token, expires_at, jti
@@ -450,9 +459,22 @@ def _enforce_login_access_policy(user: User, db: Session) -> None:
         raise HTTPException(status_code=423, detail="Account is locked")
 
 
-def _build_login_payload(user: User, request: Request, db: Session) -> dict[str, object]:
-    access_token = create_token(user.id, user.username, user.role)
-    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(user)
+def _build_login_payload(
+    user: User,
+    request: Request,
+    db: Session,
+    auth_provider: str | None = None,
+) -> dict[str, object]:
+    access_token = create_token(
+        user.id,
+        user.username,
+        user.role,
+        auth_provider=auth_provider,
+    )
+    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(
+        user,
+        auth_provider=auth_provider,
+    )
 
     session = AuthSession(
         user_id=user.id,
@@ -477,7 +499,7 @@ def _build_login_payload(user: User, request: Request, db: Session) -> dict[str,
         "access_token": access_token,
         "refresh_token": refresh_token,
         "token_type": "bearer",
-        "user": _serialize_user(user, db),
+        "user": _serialize_user(user, db, auth_provider),
     }
 
 
@@ -747,25 +769,13 @@ def login_with_google_token(
 
     email = str(token_data.get("email") or "").strip().lower()
     email_verified = bool(token_data.get("email_verified"))
-    google_subject = str(token_data.get("sub") or "").strip()
-
     print("GOOGLE_OAUTH_CLIENT_ID:", GOOGLE_OAUTH_CLIENT_ID)
     print("GOOGLE_IOS_CLIENT_ID:", GOOGLE_IOS_CLIENT_ID)
-
-
-    if not google_subject:
-        raise HTTPException(status_code=401, detail="Google account identifier is missing")
 
     if not email or not email_verified:
         raise HTTPException(status_code=401, detail="Google account email is missing or unverified")
 
-    user = db.query(User).filter(User.google_subject == google_subject).first()
-    if user is None:
-        user = db.query(User).filter(User.email == email).first()
-        if user is not None:
-            if user.google_subject and user.google_subject != google_subject:
-                raise HTTPException(status_code=409, detail="Google account is linked to another user")
-            user.google_subject = google_subject
+    user = db.query(User).filter(User.email == email).first()
 
     if user is None:
         if payload.subscriber_type is None:
@@ -787,7 +797,6 @@ def login_with_google_token(
         user = User(
             username=unique_username,
             email=email,
-            google_subject=google_subject,
             password_hash=hash_password(f"google_oauth_{uuid4().hex}"),
             role=role_name,
             is_active=True,
@@ -811,7 +820,7 @@ def login_with_google_token(
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
-    return _build_login_payload(user, request, db)
+    return _build_login_payload(user, request, db, auth_provider="google")
 
 
 @router.post("/apple-token")
@@ -1003,8 +1012,19 @@ def refresh_tokens(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
 
     session.revoked_at = datetime.now(timezone.utc)
 
-    access_token = create_token(user.id, user.username, user.role)
-    refresh_token, new_hash, new_exp, new_jti = _create_refresh_token(user)
+    auth_provider = token_payload.get("auth_provider")
+    if auth_provider not in {"apple", "google"}:
+        auth_provider = None
+    access_token = create_token(
+        user.id,
+        user.username,
+        user.role,
+        auth_provider=auth_provider,
+    )
+    refresh_token, new_hash, new_exp, new_jti = _create_refresh_token(
+        user,
+        auth_provider=auth_provider,
+    )
     db.add(
         AuthSession(
             user_id=user.id,
@@ -1044,7 +1064,7 @@ def get_me(user: CurrentUser = Depends(require_authenticated_user), db: Session 
     db_user = db.query(User).filter(User.id == user.id).first()
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
-    return {"user": _serialize_user(db_user, db)}
+    return {"user": _serialize_user(db_user, db, user.auth_provider)}
 
 
 @router.patch("/preferences")
@@ -1205,7 +1225,7 @@ def delete_account(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    is_social_account = bool(db_user.apple_subject or db_user.google_subject)
+    is_social_account = bool(db_user.apple_subject or user.auth_provider == "google")
     if not is_social_account and (
         not payload.current_password or not verify_password(payload.current_password, db_user.password_hash)
     ):

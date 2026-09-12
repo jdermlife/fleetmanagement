@@ -63,9 +63,16 @@ class TokenPayload:
     username: str
     role: str
     exp: float
+    auth_provider: str | None = None
 
 
-def create_token(user_id: int, username: str, role: str, expires_in_hours: int = TOKEN_EXPIRY_HOURS) -> str:
+def create_token(
+    user_id: int,
+    username: str,
+    role: str,
+    expires_in_hours: int = TOKEN_EXPIRY_HOURS,
+    auth_provider: str | None = None,
+) -> str:
     if jwt is None:
         raise RuntimeError("PyJWT is required for token creation. Install with: pip install PyJWT")
     
@@ -78,6 +85,8 @@ def create_token(user_id: int, username: str, role: str, expires_in_hours: int =
         "exp": now + timedelta(hours=expires_in_hours),
         "jti": os.urandom(16).hex(),
     }
+    if auth_provider:
+        payload["auth_provider"] = auth_provider
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
@@ -92,6 +101,7 @@ def decode_token(token: str) -> TokenPayload:
             username=data["username"],
             role=data["role"],
             exp=data["exp"],
+            auth_provider=data.get("auth_provider"),
         )
     except jwt.ExpiredSignatureError:
         raise TokenError("Token has expired")
