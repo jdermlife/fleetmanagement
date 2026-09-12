@@ -6,8 +6,6 @@ from app.database import engine
 
 
 ALTER_STATEMENTS = [
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS apple_sign_in_disconnected_at TIMESTAMPTZ",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sign_in_disconnected_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS role_id INTEGER",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS subscription_id BIGINT",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS tenant_id BIGINT",
@@ -122,7 +120,6 @@ CONSTRAINT_STATEMENTS = [
 
 
 INDEX_STATEMENTS = [
-    "CREATE INDEX IF NOT EXISTS ix_auth_sessions_auth_provider ON auth_sessions(auth_provider)",
     "CREATE INDEX IF NOT EXISTS ix_users_role_id ON users(role_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_subscription_id ON users(subscription_id)",
     "CREATE INDEX IF NOT EXISTS ix_users_tenant_id ON users(tenant_id)",
@@ -130,15 +127,8 @@ INDEX_STATEMENTS = [
 ]
 
 
-AUTH_SESSION_ALTER_STATEMENTS = [
-    "ALTER TABLE auth_sessions ADD COLUMN IF NOT EXISTS auth_provider VARCHAR(20)",
-]
-
-
 def run_migration() -> None:
     with engine.begin() as connection:
-        for statement in AUTH_SESSION_ALTER_STATEMENTS:
-            connection.execute(text(statement))
         for statement in ALTER_STATEMENTS:
             connection.execute(text(statement))
         for statement in CONSTRAINT_STATEMENTS:

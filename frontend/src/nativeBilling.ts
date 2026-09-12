@@ -3,6 +3,8 @@ import {
   NativePurchases,
   PURCHASE_TYPE,
   type Product,
+  type SKProductDiscount,
+  type SubscriptionPeriod,
   type Transaction,
 } from '@capgo/native-purchases'
 
@@ -21,6 +23,8 @@ export interface NativeStoreProduct {
   price: number
   priceString: string
   currencyCode: string
+  subscriptionPeriod: SubscriptionPeriod
+  introductoryPrice: SKProductDiscount | null
 }
 
 function currentStorePlatform(): NativeStorePlatform | null {
@@ -118,6 +122,8 @@ export async function loadNativeStoreProducts(): Promise<NativeStoreProduct[]> {
       price: product.price,
       priceString: product.priceString,
       currencyCode: product.currencyCode,
+      subscriptionPeriod: product.subscriptionPeriod,
+      introductoryPrice: product.introductoryPrice,
     }] : []
   })
 }

@@ -5,7 +5,7 @@ export default function ReturnRefundPolicyPage() {
     <div className="standalone-card auth-screen">
       <h1>Return and Refund Policy</h1>
       <p className="intro">
-        Effective Date: August 5, 2026
+        Effective Date: September 12, 2026
         <br />
         Service: FILSCORE / FMS Mobile
         <br />
@@ -104,7 +104,29 @@ export default function ReturnRefundPolicyPage() {
         </section>
 
         <section className="card auth-helper-card">
-          <h3>7. Related Policies</h3>
+          <h3>7. Apple App Store Purchases</h3>
+          <p>
+            Apple processes payments, billing disputes, and refund decisions for subscriptions
+            purchased through the Apple App Store. FILSCORE cannot approve or issue refunds for
+            Apple-managed purchases.
+          </p>
+          <p>
+            To request an App Store refund, sign in to Apple&apos;s{' '}
+            <a href="https://reportaproblem.apple.com" target="_blank" rel="noreferrer">
+              Report a Problem
+            </a>{' '}
+            service and follow Apple&apos;s instructions. To prevent a future renewal, open your Apple
+            Account subscription settings or use Manage Subscription in FILSCORE. Cancelling stops
+            future renewal but does not itself guarantee a refund.
+          </p>
+          <p>
+            FILSCORE support can assist with account access or service issues, but Apple determines
+            refund eligibility and timing for App Store transactions.
+          </p>
+        </section>
+
+        <section className="card auth-helper-card">
+          <h3>8. Related Policies</h3>
           <div className="form-actions">
             <Link className="auth-link-button" to="/customer-service">Customer Service</Link>
             <Link className="auth-link-button" to="/dispute-resolution">Dispute Resolution</Link>

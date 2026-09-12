@@ -314,16 +314,6 @@ def _user_permissions(user: User, db: Session) -> list[str]:
     return sorted(set(db_permissions) | set(fallback_permissions))
 
 
-def _has_active_provider_session(user: User, provider: str) -> bool:
-    now = datetime.now(timezone.utc)
-    return any(
-        session.auth_provider == provider
-        and session.revoked_at is None
-        and session.expires_at > now
-        for session in user.sessions
-    )
-
-
 def _serialize_user(
     user: User,
     db: Session,
@@ -351,9 +341,7 @@ def _serialize_user(
         "api_access": user.api_access,
         "email_verified": user.email_verified,
         "has_apple_sign_in": bool(user.apple_subject),
-        "has_google_sign_in": (
-            auth_provider == "google" or _has_active_provider_session(user, "google")
-        ),
+        "has_google_sign_in": auth_provider == "google",
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
@@ -492,22 +480,22 @@ def _build_login_payload(
     db: Session,
     auth_provider: str | None = None,
 ) -> dict[str, object]:
+    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(
+        user,
+        auth_provider=auth_provider,
+    )
     access_token = create_token(
         user.id,
         user.username,
         user.role,
         auth_provider=auth_provider,
-    )
-    refresh_token, refresh_hash, refresh_exp, refresh_jti = _create_refresh_token(
-        user,
-        auth_provider=auth_provider,
+        session_jti=refresh_jti,
     )
 
     session = AuthSession(
         user_id=user.id,
         refresh_token_hash=refresh_hash,
         jti=refresh_jti,
-        auth_provider=auth_provider,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent"),
         expires_at=refresh_exp,
@@ -846,8 +834,6 @@ def login_with_google_token(
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
-    user.google_sign_in_disconnected_at = None
-
     return _build_login_payload(user, request, db, auth_provider="google")
 
 
@@ -940,9 +926,8 @@ def _login_with_apple_claims(
         user.email_verified = True
         user.email_verified_at = user.email_verified_at or datetime.now(timezone.utc)
 
-    user.apple_sign_in_disconnected_at = None
     db.commit()
-    return _build_login_payload(user, request, db)
+    return _build_login_payload(user, request, db, auth_provider="apple")
 
 
 def _apple_callback_page(message: str) -> HTMLResponse:
@@ -1043,22 +1028,22 @@ def refresh_tokens(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
     auth_provider = token_payload.get("auth_provider")
     if auth_provider not in {"apple", "google"}:
         auth_provider = None
+    refresh_token, new_hash, new_exp, new_jti = _create_refresh_token(
+        user,
+        auth_provider=auth_provider,
+    )
     access_token = create_token(
         user.id,
         user.username,
         user.role,
         auth_provider=auth_provider,
-    )
-    refresh_token, new_hash, new_exp, new_jti = _create_refresh_token(
-        user,
-        auth_provider=auth_provider,
+        session_jti=new_jti,
     )
     db.add(
         AuthSession(
             user_id=user.id,
             refresh_token_hash=new_hash,
             jti=new_jti,
-            auth_provider=auth_provider,
             ip_address=session.ip_address,
             user_agent=session.user_agent,
             expires_at=new_exp,
@@ -1424,40 +1409,33 @@ def disconnect_sign_in_provider(
     if db_user is None:
         raise HTTPException(status_code=404, detail="User not found")
 
-    if (
-        provider == "google"
-        and user.auth_provider != "google"
-        and not _has_active_provider_session(db_user, "google")
-    ):
-        raise HTTPException(status_code=409, detail="No Google Sign-In connection is active")
-    if provider == "apple" and not db_user.apple_subject:
-        raise HTTPException(status_code=409, detail="No Apple Sign-In connection is active")
+    if user.auth_provider != provider:
+        raise HTTPException(
+            status_code=409,
+            detail=f"This session is not signed in with {provider.title()}",
+        )
 
     now = datetime.now(timezone.utc)
-    provider_sessions = (
+    sessions = (
         db.query(AuthSession)
         .filter(
             and_(
                 AuthSession.user_id == db_user.id,
-                AuthSession.auth_provider == provider,
                 AuthSession.revoked_at.is_(None),
             )
         )
         .all()
     )
-    for provider_session in provider_sessions:
-        provider_session.revoked_at = now
+    for session in sessions:
+        session.revoked_at = now
 
     if provider == "apple":
         db_user.apple_subject = None
-        db_user.apple_sign_in_disconnected_at = now
-    else:
-        db_user.google_sign_in_disconnected_at = now
 
     db.commit()
     return {
         "message": f"{provider.title()} Sign-In disconnected",
-        "sign_out_required": user.auth_provider == provider,
+        "sign_out_required": True,
     }
 
 

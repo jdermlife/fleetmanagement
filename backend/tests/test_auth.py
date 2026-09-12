@@ -702,7 +702,6 @@ def test_disconnect_google_revokes_provider_session_and_access_token(app_client)
         user_id=14,
         refresh_token_hash="google-refresh-hash",
         jti="google-refresh-jti",
-        auth_provider="google",
         expires_at=datetime.now(timezone.utc) + timedelta(days=1),
     )
     fake_db.rows_by_model[User] = [user]
@@ -713,6 +712,7 @@ def test_disconnect_google_revokes_provider_session_and_access_token(app_client)
         "subscriber_borrower",
         expires_in_hours=1,
         auth_provider="google",
+        session_jti="google-refresh-jti",
     )
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -721,7 +721,6 @@ def test_disconnect_google_revokes_provider_session_and_access_token(app_client)
     assert response.status_code == 200, response.text
     assert response.json()["sign_out_required"] is True
     assert session.revoked_at is not None
-    assert user.google_sign_in_disconnected_at is not None
     assert client.get("/api/auth/me", headers=headers).status_code == 401
 
 
@@ -755,7 +754,39 @@ def test_disconnect_apple_removes_local_sign_in_link(app_client):
 
     assert response.status_code == 200, response.text
     assert user.apple_subject is None
-    assert user.apple_sign_in_disconnected_at is not None
+
+
+def test_disconnect_rejects_provider_other_than_current_session(app_client):
+    client, auth_module, fake_db = app_client
+    user = User(
+        id=16,
+        username="provider-mismatch-user",
+        email="provider-mismatch@example.com",
+        apple_subject="linked-apple-subject",
+        password_hash=auth_module.hash_password("unknown-generated-password"),
+        role="subscriber_borrower",
+        is_active=True,
+        is_deleted=False,
+        account_status="ACTIVE",
+        mfa_enabled=False,
+    )
+    fake_db.rows_by_model[User] = [user]
+    token = auth_module.create_token(
+        16,
+        "provider-mismatch-user",
+        "subscriber_borrower",
+        expires_in_hours=1,
+        auth_provider="google",
+    )
+
+    response = client.delete(
+        "/api/auth/providers/apple",
+        headers={"Authorization": f"Bearer {token}"},
+    )
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "This session is not signed in with Apple"
+    assert user.apple_subject == "linked-apple-subject"
 
 
 def test_delete_account_endpoint_requires_password_for_password_account(app_client):
@@ -905,7 +936,7 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
     monkeypatch.setattr(
         security_routes,
         "_build_login_payload",
-        lambda user, _request, _db: {
+        lambda user, _request, _db, auth_provider=None: {
             "access_token": "test-access-token",
             "refresh_token": "test-refresh-token",
             "token_type": "bearer",

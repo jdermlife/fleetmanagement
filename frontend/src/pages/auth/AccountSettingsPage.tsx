@@ -379,8 +379,9 @@ export default function AccountSettingsPage() {
         <h3>Connected Sign-In Providers</h3>
         <p className="intro">
           FILSCORE uses Apple or Google identity only for sign-in and does not retain provider
-          access tokens for ongoing access to provider data. Disconnecting your current sign-in
-          provider signs you out. Signing in with that provider again reconnects it.
+          access tokens for ongoing access to provider data. Disconnecting does not ask you to
+          authenticate with Apple or Google again. It signs you out of all FILSCORE sessions;
+          signing in with that provider later reconnects it.
         </p>
         <div className="auth-profile-grid">
           <div>

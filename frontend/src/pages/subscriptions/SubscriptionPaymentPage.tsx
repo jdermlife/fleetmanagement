@@ -49,6 +49,27 @@ function billingAmount(plan: SubscriptionPlan): number {
   return monthlyPrice || minimumFee
 }
 
+function nativeSubscriptionPeriod(billingCycle: string | undefined): { duration: string; priceUnit: string } {
+  if (billingCycle === 'YEARLY') {
+    return { duration: 'one year', priceUnit: 'year' }
+  }
+  if (billingCycle === 'QUARTERLY') {
+    return { duration: 'three months', priceUnit: 'three months' }
+  }
+  return { duration: 'one month', priceUnit: 'month' }
+}
+
+function storePeriod(numberOfUnits: number, unitString: string | undefined): { duration: string; priceUnit: string } | null {
+  if (!unitString || unitString === 'unknown' || numberOfUnits < 1) {
+    return null
+  }
+  const unit = numberOfUnits === 1 ? unitString : `${unitString}s`
+  return {
+    duration: numberOfUnits === 1 ? `one ${unitString}` : `${numberOfUnits} ${unit}`,
+    priceUnit: numberOfUnits === 1 ? unitString : `${numberOfUnits} ${unit}`,
+  }
+}
+
 function buildPendingSubscriptionNumber(plan: SubscriptionPlan): string {
   return `SUB-${plan.plan_code}-${Date.now().toString(36).toUpperCase()}`.slice(0, 50)
 }
@@ -311,6 +332,19 @@ export default function SubscriptionPaymentPage() {
     () => nativeProducts.find((product) => product.mapping.plan_id === selectedSubscriptionPlan?.id) ?? null,
     [nativeProducts, selectedSubscriptionPlan?.id],
   )
+  const nativePeriod = selectedNativeProduct
+    ? storePeriod(
+        selectedNativeProduct.subscriptionPeriod.numberOfUnits,
+        selectedNativeProduct.subscriptionPeriod.unitString,
+      ) ?? nativeSubscriptionPeriod(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle)
+    : nativeSubscriptionPeriod(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle)
+  const nativeIntroductoryPrice = selectedNativeProduct?.introductoryPrice ?? null
+  const nativeIntroductoryPeriod = nativeIntroductoryPrice
+    ? storePeriod(
+        nativeIntroductoryPrice.subscriptionPeriod.numberOfUnits * nativeIntroductoryPrice.numberOfPeriods,
+        nativeIntroductoryPrice.subscriptionPeriod.unitString,
+      )
+    : null
 
   const paypalCurrency = useMemo(
     () => (selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP').toUpperCase(),
@@ -1042,6 +1076,49 @@ export default function SubscriptionPaymentPage() {
             <p>{selectedNativeProduct?.description ?? 'This plan is not yet available from the app store.'}</p>
             {selectedNativeProduct ? (
               <p className="trial-expired-price">{selectedNativeProduct.priceString}</p>
+            ) : null}
+            {selectedNativeProduct?.mapping.platform === 'IOS' ? (
+              <section className="native-subscription-disclosure" aria-label="Apple subscription terms">
+                <h3>Apple Subscription Terms</h3>
+                <dl>
+                  <div>
+                    <dt>Subscription</dt>
+                    <dd>{selectedNativeProduct.title}</dd>
+                  </div>
+                  <div>
+                    <dt>Duration</dt>
+                    <dd>{nativePeriod.duration}</dd>
+                  </div>
+                  <div>
+                    <dt>Price</dt>
+                    <dd>{selectedNativeProduct.priceString} per {nativePeriod.priceUnit}</dd>
+                  </div>
+                </dl>
+                {nativeIntroductoryPrice && nativeIntroductoryPeriod ? (
+                  <p>
+                    Introductory offer: {nativeIntroductoryPrice.paymentMode === 0
+                      ? `free for ${nativeIntroductoryPeriod.duration}`
+                      : `${nativeIntroductoryPrice.priceString} for ${nativeIntroductoryPeriod.duration}`}
+                    , then {selectedNativeProduct.priceString} per {nativePeriod.priceUnit}.
+                    Available to eligible subscribers; Apple determines eligibility.
+                  </p>
+                ) : null}
+                <p>
+                  Payment will be charged to your Apple Account when you confirm the purchase.
+                  The subscription automatically renews unless cancelled at least 24 hours before
+                  the end of the current billing period. Your Apple Account will be charged for
+                  renewal within 24 hours before the current period ends.
+                </p>
+                <p>
+                  Manage or cancel renewal with <strong>Manage Subscription</strong> below. Apple
+                  handles App Store billing disputes and refund decisions; see the{' '}
+                  <Link to="/return-refund-policy">Return and Refund Policy</Link>.
+                </p>
+                <p>
+                  By subscribing, you agree to the <Link to="/terms">Terms of Use</Link> and{' '}
+                  <Link to="/privacy">Privacy Policy</Link>.
+                </p>
+              </section>
             ) : null}
             <div className="trial-expired-payment-buttons">
               <button

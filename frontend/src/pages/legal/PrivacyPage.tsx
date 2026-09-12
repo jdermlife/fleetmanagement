@@ -51,7 +51,7 @@ const privacySections = [
     ],
     bullets: [
       'Google Sign-In and Apple Sign-In flows when the user chooses those login options.',
-      'Account Settings identifies connected sign-in providers and allows users to disconnect them. FILSCORE revokes its provider-linked sign-in sessions and does not retain Google or Apple access tokens for ongoing access to provider data. Signing in with that provider again reconnects it.',
+      'Account Settings identifies the current Apple or Google sign-in connection and allows users to disconnect it without authenticating with the provider again. FILSCORE revokes all account sessions and does not retain Google or Apple access tokens for ongoing access to provider data. Signing in with that provider again reconnects it.',
       'Participating lenders when a user separately consents to sharing their financial profile, loan application information, supporting documents, and credit scores for financing eligibility assessment. This consent is optional and can be withdrawn in Account Settings.',
       'OpenAI-backed AI processing for features such as audio transcription, meeting-minute generation, and document parsing when authorized users invoke those features.',
       'SMTP email delivery when email-related features or password-reset notifications are configured on the backend.',

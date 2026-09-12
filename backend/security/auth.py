@@ -65,6 +65,7 @@ class TokenPayload:
     exp: float
     iat: float
     auth_provider: str | None = None
+    session_jti: str | None = None
 
 
 def create_token(
@@ -73,6 +74,7 @@ def create_token(
     role: str,
     expires_in_hours: int = TOKEN_EXPIRY_HOURS,
     auth_provider: str | None = None,
+    session_jti: str | None = None,
 ) -> str:
     if jwt is None:
         raise RuntimeError("PyJWT is required for token creation. Install with: pip install PyJWT")
@@ -88,6 +90,8 @@ def create_token(
     }
     if auth_provider:
         payload["auth_provider"] = auth_provider
+    if session_jti:
+        payload["session_jti"] = session_jti
     return jwt.encode(payload, SECRET_KEY, algorithm="HS256")
 
 
@@ -104,6 +108,7 @@ def decode_token(token: str) -> TokenPayload:
             exp=data["exp"],
             iat=data["iat"],
             auth_provider=data.get("auth_provider"),
+            session_jti=data.get("session_jti"),
         )
     except jwt.ExpiredSignatureError:
         raise TokenError("Token has expired")

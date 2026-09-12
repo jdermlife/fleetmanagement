@@ -6,7 +6,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from app.database import get_db
-from app.models.users import User
+from app.models.users import AuthSession, User
 from app.services.account_access_service import deactivate_if_access_expired
 import security.auth as token_auth
 
@@ -24,6 +24,7 @@ class CurrentUser:
     role: str
     issued_at: float = 0
     auth_provider: str | None = None
+    session_jti: str | None = None
 
 
 def is_admin_username_override(username: str | None) -> bool:
@@ -62,6 +63,7 @@ def get_current_user(
         role=resolved_role,
         issued_at=payload.iat,
         auth_provider=payload.auth_provider,
+        session_jti=payload.session_jti,
     )
 
 
@@ -81,17 +83,21 @@ def require_authenticated_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User account is unavailable",
         )
-    disconnected_at = getattr(
-        db_user,
-        f"{user.auth_provider}_sign_in_disconnected_at",
-        None,
-    )
-    if disconnected_at is not None and user.issued_at:
-        issued_at = datetime.fromtimestamp(user.issued_at, timezone.utc)
-        if issued_at <= disconnected_at:
+    if user.session_jti:
+        sessions = db.query(AuthSession).filter(AuthSession.jti == user.session_jti).all()
+        session = next(
+            (candidate for candidate in sessions if candidate.jti == user.session_jti),
+            None,
+        )
+        if (
+            session is None
+            or session.user_id != user.id
+            or session.revoked_at is not None
+            or session.expires_at <= datetime.now(timezone.utc)
+        ):
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Sign-in provider has been disconnected",
+                detail="Authentication session is invalid or revoked",
             )
     if deactivate_if_access_expired(db_user):
         db.commit()
