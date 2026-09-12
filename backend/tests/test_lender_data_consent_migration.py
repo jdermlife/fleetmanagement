@@ -3,17 +3,21 @@ from __future__ import annotations
 import migrate_users_enterprise_fields as migration
 
 
-def test_users_migration_includes_lender_consent_audit_fields():
-    required_columns = {
+def test_users_migration_excludes_removed_lender_consent_fields():
+    removed_columns = {
         "lender_data_sharing_consent_purpose",
         "lender_data_sharing_consent_version",
         "lender_data_sharing_consent_withdrawn_at",
     }
 
-    for column in required_columns:
-        assert any(
+    for column in removed_columns:
+        assert not any(
             f"ADD COLUMN IF NOT EXISTS {column}" in statement
             for statement in migration.ALTER_STATEMENTS
+        )
+        assert any(
+            f"DROP COLUMN IF EXISTS {column}" in statement
+            for statement in migration.DROP_STATEMENTS
         )
 
 

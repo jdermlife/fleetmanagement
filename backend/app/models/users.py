@@ -51,9 +51,6 @@ class User(Base):
 	force_password_change = Column(Boolean, nullable=False, default=False)
 	lender_data_sharing_consent = Column(Boolean, nullable=False, default=False)
 	lender_data_sharing_consent_recorded_at = Column(DateTime(timezone=True))
-	lender_data_sharing_consent_purpose = Column(String(100))
-	lender_data_sharing_consent_version = Column(String(30))
-	lender_data_sharing_consent_withdrawn_at = Column(DateTime(timezone=True))
 
 	last_login_at = Column(DateTime(timezone=True))
 	failed_login_attempts = Column(Integer, nullable=False, default=0)

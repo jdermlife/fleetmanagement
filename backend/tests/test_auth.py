@@ -174,12 +174,9 @@ def test_register_endpoint_exists(app_client):
     registered_user = fake_db.rows_by_model[User][0]
     assert registered_user.lender_data_sharing_consent is False
     assert registered_user.lender_data_sharing_consent_recorded_at is not None
-    assert registered_user.lender_data_sharing_consent_purpose == "lender_financing_eligibility_assessment"
-    assert registered_user.lender_data_sharing_consent_version == "2026-09-12"
-    assert registered_user.lender_data_sharing_consent_withdrawn_at is None
 
 
-def test_withdrawing_lender_data_sharing_consent_records_withdrawal(app_client):
+def test_withdrawing_lender_data_sharing_consent_updates_choice_timestamp(app_client):
     client, auth_module, fake_db = app_client
     user = User(
         id=13,
@@ -192,8 +189,6 @@ def test_withdrawing_lender_data_sharing_consent_records_withdrawal(app_client):
         account_status="ACTIVE",
         lender_data_sharing_consent=True,
         lender_data_sharing_consent_recorded_at=datetime.now(timezone.utc),
-        lender_data_sharing_consent_purpose="lender_financing_eligibility_assessment",
-        lender_data_sharing_consent_version="2026-09-12",
         mfa_enabled=False,
     )
     fake_db.rows_by_model[User] = [user]
@@ -207,8 +202,10 @@ def test_withdrawing_lender_data_sharing_consent_records_withdrawal(app_client):
 
     assert response.status_code == 200, response.text
     assert user.lender_data_sharing_consent is False
-    assert user.lender_data_sharing_consent_withdrawn_at is not None
-    assert response.json()["user"]["lender_data_sharing_consent_version"] == "2026-09-12"
+    assert user.lender_data_sharing_consent_recorded_at is not None
+    assert "lender_data_sharing_consent_purpose" not in response.json()["user"]
+    assert "lender_data_sharing_consent_version" not in response.json()["user"]
+    assert "lender_data_sharing_consent_withdrawn_at" not in response.json()["user"]
 
 
 def test_register_requires_turnstile_when_configured(app_client, monkeypatch):

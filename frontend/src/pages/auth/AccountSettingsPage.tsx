@@ -497,12 +497,6 @@ export default function AccountSettingsPage() {
               ? new Date(user.lenderDataSharingConsentRecordedAt).toLocaleString()
               : 'Not recorded'}
           </strong>
-          {user.lenderDataSharingConsentVersion
-            ? <> | Disclosure version: <strong>{user.lenderDataSharingConsentVersion}</strong></>
-            : null}
-          {user.lenderDataSharingConsentWithdrawnAt
-            ? <> | Withdrawn: <strong>{new Date(user.lenderDataSharingConsentWithdrawnAt).toLocaleString()}</strong></>
-            : null}
         </p>
 
         <div className="form-actions">

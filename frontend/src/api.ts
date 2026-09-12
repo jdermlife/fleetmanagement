@@ -479,9 +479,6 @@ export interface AuthUser {
   mfaEnabled?: boolean
   lenderDataSharingConsent?: boolean
   lenderDataSharingConsentRecordedAt?: string | null
-  lenderDataSharingConsentPurpose?: string | null
-  lenderDataSharingConsentVersion?: string | null
-  lenderDataSharingConsentWithdrawnAt?: string | null
 }
 
 function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
@@ -517,15 +514,6 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     ),
     lenderDataSharingConsentRecordedAt: (
       raw.lenderDataSharingConsentRecordedAt ?? raw.lender_data_sharing_consent_recorded_at ?? null
-    ) as string | null,
-    lenderDataSharingConsentPurpose: (
-      raw.lenderDataSharingConsentPurpose ?? raw.lender_data_sharing_consent_purpose ?? null
-    ) as string | null,
-    lenderDataSharingConsentVersion: (
-      raw.lenderDataSharingConsentVersion ?? raw.lender_data_sharing_consent_version ?? null
-    ) as string | null,
-    lenderDataSharingConsentWithdrawnAt: (
-      raw.lenderDataSharingConsentWithdrawnAt ?? raw.lender_data_sharing_consent_withdrawn_at ?? null
     ) as string | null,
   }
 }

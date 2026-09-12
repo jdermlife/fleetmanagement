@@ -8,14 +8,19 @@ from app.database import engine
 ALTER_STATEMENTS = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent BOOLEAN DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_recorded_at TIMESTAMPTZ",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_purpose VARCHAR(100)",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_version VARCHAR(30)",
-    "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_withdrawn_at TIMESTAMPTZ",
+]
+
+DROP_STATEMENTS = [
+    "ALTER TABLE users DROP COLUMN IF EXISTS lender_data_sharing_consent_purpose",
+    "ALTER TABLE users DROP COLUMN IF EXISTS lender_data_sharing_consent_version",
+    "ALTER TABLE users DROP COLUMN IF EXISTS lender_data_sharing_consent_withdrawn_at",
 ]
 
 
 def run_migration() -> None:
     with engine.begin() as connection:
+        for statement in DROP_STATEMENTS:
+            connection.execute(text(statement))
         for statement in ALTER_STATEMENTS:
             connection.execute(text(statement))
 

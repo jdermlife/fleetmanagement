@@ -198,8 +198,6 @@ REGISTERABLE_SUBSCRIBER_ROLES = {
 }
 PASSWORD_RESET_TOKEN_EXPIRY_MINUTES = int(os.getenv("PASSWORD_RESET_TOKEN_EXPIRY_MINUTES", "30"))
 TURNSTILE_VERIFY_URL = "https://challenges.cloudflare.com/turnstile/v0/siteverify"
-LENDER_DATA_SHARING_CONSENT_PURPOSE = "lender_financing_eligibility_assessment"
-LENDER_DATA_SHARING_CONSENT_VERSION = "2026-09-12"
 
 
 def get_db():
@@ -211,13 +209,8 @@ def get_db():
 
 
 def _record_lender_data_sharing_choice(user: User, consent: bool) -> None:
-    now = datetime.now(timezone.utc)
-    was_consented = bool(user.lender_data_sharing_consent)
     user.lender_data_sharing_consent = consent
-    user.lender_data_sharing_consent_recorded_at = now
-    user.lender_data_sharing_consent_purpose = LENDER_DATA_SHARING_CONSENT_PURPOSE
-    user.lender_data_sharing_consent_version = LENDER_DATA_SHARING_CONSENT_VERSION
-    user.lender_data_sharing_consent_withdrawn_at = now if was_consented and not consent else None
+    user.lender_data_sharing_consent_recorded_at = datetime.now(timezone.utc)
 
 
 def _verify_turnstile_token(token: str | None, remote_ip: str | None) -> None:
@@ -347,9 +340,6 @@ def _serialize_user(
         **access_state,
         "lender_data_sharing_consent": user.lender_data_sharing_consent,
         "lender_data_sharing_consent_recorded_at": user.lender_data_sharing_consent_recorded_at,
-        "lender_data_sharing_consent_purpose": user.lender_data_sharing_consent_purpose,
-        "lender_data_sharing_consent_version": user.lender_data_sharing_consent_version,
-        "lender_data_sharing_consent_withdrawn_at": user.lender_data_sharing_consent_withdrawn_at,
         "last_login_ip": user.last_login_ip,
         "last_login_device": user.last_login_device,
         "total_login_count": user.total_login_count,
@@ -1266,9 +1256,6 @@ def delete_account(
         db_user.profile_photo = None
         db_user.lender_data_sharing_consent = False
         db_user.lender_data_sharing_consent_recorded_at = None
-        db_user.lender_data_sharing_consent_purpose = None
-        db_user.lender_data_sharing_consent_version = None
-        db_user.lender_data_sharing_consent_withdrawn_at = None
         db.commit()
         return {"message": "Associated account data deleted successfully"}
 
