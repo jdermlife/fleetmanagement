@@ -1875,7 +1875,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
       <FinancialJourneyGuideLauncher applicationNo={applicationNo} currentStep="wealthBuilder" />
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary networth-report-summary" aria-label="Net worth summary">
-        <SelectedProfileIdCard compactId label="Record ID" name={wealthClientName} />
+        <SelectedProfileIdCard compactId label="Record ID" name={wealthClientName} nameFirst />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{reportInformationPercent}%</strong>

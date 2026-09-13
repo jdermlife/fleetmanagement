@@ -1240,7 +1240,7 @@ export default function LoanMonitoringPage() {
       </section>
 
       <section className="psychometric-summary-grid dashboard-five-card-summary loan-monitoring-summary-grid">
-        <SelectedProfileIdCard compactId label="Record ID" />
+        <SelectedProfileIdCard compactId label="Record ID" nameFirst />
 
         <article className="psychometric-summary-card">
           <span>Available Credit</span>

@@ -2712,7 +2712,7 @@ export default function BuildProfilePage() {
 
 
     <section className="psychometric-summary-grid lending-psychometric-summary-grid">
-      <SelectedProfileIdCard compactId label="Record ID" profileId={profile.profileId} name={profile.values.fullName} />
+      <SelectedProfileIdCard compactId label="Record ID" profileId={profile.profileId} name={profile.values.fullName} nameFirst />
       <article className="psychometric-summary-card build-profile-goal-summary">
         <label htmlFor="build-profile-summary-financial-goal">Financial Goal</label>
         <select id="build-profile-summary-financial-goal" aria-label="Profile Financial Goal" value={profile.values.financialGoal ?? ''} onChange={(event) => updateValue('financialGoal', event.target.value)}>

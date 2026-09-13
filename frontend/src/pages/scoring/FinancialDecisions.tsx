@@ -422,7 +422,7 @@ export default function FinancialDecisions() {
           <small>{usesHypotheticalData ? 'Illustrative data' : 'Profile data'} · Updated just now</small>
         </div>
         <div className="financial-snapshot-grid">
-          <div className="financial-snapshot-record"><span>Selected profile</span><SelectedProfileIdCard compactId label="Record ID" /></div>
+          <div className="financial-snapshot-record"><span>Selected profile</span><SelectedProfileIdCard compactId label="Record ID" nameFirst /></div>
           <article><span>Monthly Income</span><strong>{currency.format(inputs.netMonthlyIncome)}</strong><small>Net available income</small></article>
           <article><span>Savings Rate</span><strong>{percent.format(savingsRate)}%</strong><div className="financial-metric-track"><i style={{ width: `${Math.min(100, savingsRate)}%` }} /></div><small>{savingsRate >= 20 ? 'Healthy savings pace' : 'Below the 20% target'}</small></article>
           <article><span>Emergency Fund</span><strong>{percent.format(emergencyFundMonths)} months</strong><div className="financial-metric-track"><i style={{ width: `${Math.min(100, emergencyFundMonths / 6 * 100)}%` }} /></div><small>{emergencyFundMonths >= 6 ? 'Fully resilient' : 'Target: 6 months'}</small></article>

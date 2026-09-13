@@ -949,7 +949,7 @@ export default function BudgetExpenseTrackerPage() {
       <FinancialJourneyGuideLauncher applicationNo={selectedApplicationNo} currentStep="budgetTargets" />
 
       <section className="psychometric-summary-grid budget-dashboard-summary-grid dashboard-five-card-summary">
-        <SelectedProfileIdCard compactId label="Record ID" />
+        <SelectedProfileIdCard compactId label="Record ID" nameFirst />
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Progress</span>
           <strong>{completionPercent}%</strong>
