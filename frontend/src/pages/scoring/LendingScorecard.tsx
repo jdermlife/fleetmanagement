@@ -56,6 +56,7 @@ import {
   type InformationStepNumber,
 } from './applicationCompleteness';
 import CreditHealthScoreGraph from './CreditHealthScoreGraph';
+import { getCanonicalBorrowerName } from './borrowerName';
 import { getFilscoreBand, toFilscore } from './filscoreScale';
 import { buildLendingScoreTimeline, calculateAffordableLoan } from './lendingDecisionInsights';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
@@ -2882,7 +2883,10 @@ export default function LendingScorecard() {
       application_no: application.id,
       status: newStatus,
       product_type: application.loan.productType,
-      borrower_name: application.borrower.fullName,
+      borrower_name: getCanonicalBorrowerName(
+        application.borrower,
+        application.applicantPersonal,
+      ),
       email: canonicalEmail,
       phone: canonicalPhone,
       gov_id: application.borrower.govId,
@@ -4222,15 +4226,7 @@ export default function LendingScorecard() {
   const displayedQuantSummary = backendQuantSummary;
   const compositeInternalScore = displayedQuantSummary?.overall_score ?? null;
   const borrowerDisplayName =
-    formData.borrower.fullName.trim() ||
-    [
-      formData.applicantPersonal.firstName,
-      formData.applicantPersonal.middleName,
-      formData.applicantPersonal.lastName,
-    ]
-      .filter((value) => value.trim().length > 0)
-      .join(' ')
-      .trim() ||
+    getCanonicalBorrowerName(formData.borrower, formData.applicantPersonal) ||
     'Unnamed Applicant / Borrower';
 
   const handleOpenCertification = async () => {
