@@ -740,7 +740,7 @@ export default function LoanCertificationPage() {
               Product Being Applied For: <strong>{certification.productType || 'Not Specified'}</strong>
             </p>
 
-            <div className="loan-certification-name">{certification.borrowerName}</div>
+            <div className="loan-certification-name">{certification.productType || 'Not Specified'}</div>
 
             <p className="loan-certification-copy">
               This certifies that the above application completed the {APP_NAME} assessment workflow and
