@@ -4,11 +4,11 @@ import json
 import os
 import tempfile
 import time
-from datetime import datetime
+from datetime import datetime, timezone
 from io import StringIO
 from typing import Any
 
-from fastapi import APIRouter, Depends, UploadFile, File, Query
+from fastapi import APIRouter, Depends, UploadFile, File, Form, Query
 from fastapi import HTTPException
 from fastapi.responses import FileResponse
 from fastapi.responses import StreamingResponse
@@ -49,6 +49,28 @@ router = APIRouter()
 
 client: OpenAI | None = None
 UPLOAD_WRITE_CHUNK_SIZE = 1024 * 1024
+AI_PROCESSING_CONSENT_VERSION = "2026-09-13"
+
+
+def _require_ai_processing_consent(
+    ai_processing_consent: bool,
+    consent_version: str,
+) -> None:
+    if not ai_processing_consent or consent_version.strip() != AI_PROCESSING_CONSENT_VERSION:
+        raise HTTPException(
+            status_code=422,
+            detail="Current consent is required before content can be processed by OpenAI.",
+        )
+
+
+def _ai_consent_metadata(consent_version: str, purpose: str) -> dict[str, Any]:
+    return {
+        "ai_processing_consent": True,
+        "consent_version": consent_version,
+        "consent_timestamp": datetime.now(timezone.utc).isoformat(),
+        "provider": "OpenAI",
+        "purpose": purpose,
+    }
 
 
 def get_openai_client() -> OpenAI:
@@ -281,8 +303,11 @@ async def credit_card_risk_check(
 @router.post("/ai/transcribe", dependencies=[Depends(require_roles("Admin", "Manager"))])
 async def transcribe(
     audio: UploadFile = File(...),
+    ai_processing_consent: bool = Form(False),
+    consent_version: str = Form(""),
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
+    _require_ai_processing_consent(ai_processing_consent, consent_version)
 
     tmp_path = None
     governance_db = SessionLocal()
@@ -315,7 +340,11 @@ async def transcribe(
             endpoint="/ai/transcribe",
             prompt=f"Transcribe audio file: {audio.filename}",
             model=model_name,
-            request_metadata={"filename": audio.filename, "content_type": audio.content_type},
+            request_metadata={
+                "filename": audio.filename,
+                "content_type": audio.content_type,
+                **_ai_consent_metadata(consent_version, "audio transcription"),
+            },
         )
         request_log_id = request_log.id
 
@@ -367,6 +396,11 @@ async def meeting_minutes(
     data: dict,
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
+    consent_version = str(data.get("consent_version", ""))
+    _require_ai_processing_consent(
+        data.get("ai_processing_consent") is True,
+        consent_version,
+    )
 
     transcript = data.get("transcript", "")
     meeting_title = data.get("meeting_title", "Meeting")
@@ -400,7 +434,10 @@ Transcript:
         endpoint="/ai/minutes",
         prompt=prompt,
         model=model_name,
-        request_metadata={"meeting_title": meeting_title},
+        request_metadata={
+            "meeting_title": meeting_title,
+            **_ai_consent_metadata(consent_version, "meeting summarization"),
+        },
     )
 
     try:
@@ -609,8 +646,11 @@ async def send_minutes(data: dict):
 )
 async def parse_loan_document(
     file: UploadFile = File(...),
+    ai_processing_consent: bool = Form(False),
+    consent_version: str = Form(""),
     current_user: CurrentUser | None = Depends(get_current_user),
 ):
+    _require_ai_processing_consent(ai_processing_consent, consent_version)
     get_openai_client()
 
     if not file.content_type or not file.content_type.startswith("image/"):
@@ -746,6 +786,7 @@ Rules:
             "filename": file.filename,
             "content_type": file.content_type,
             "size_bytes": len(file_bytes),
+            **_ai_consent_metadata(consent_version, "loan document data extraction"),
         },
     )
 

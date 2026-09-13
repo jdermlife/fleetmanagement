@@ -3,6 +3,9 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
+import ThirdPartyAiConsent, {
+  AI_PROCESSING_CONSENT_VERSION,
+} from '../../components/ai/ThirdPartyAiConsent';
 import {
   api,
   checkCreditCardRiskWithAi,
@@ -2010,6 +2013,7 @@ export default function LendingScorecard() {
   const [step, setStep] = useState(8);
   const [formData, setFormData] = useState<LoanApplication>(() => replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
   const [isParsing, setIsParsing] = useState(false);
+  const [hasDocumentAiConsent, setHasDocumentAiConsent] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
   const [hasPersistedRecord, setHasPersistedRecord] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -2433,12 +2437,18 @@ export default function LendingScorecard() {
 
   const parseLoanDocument = useCallback(
     async (documentId: string, file: File, autoApplyToForm = false) => {
+      if (!hasDocumentAiConsent) {
+        setSaveMessage('Consent is required before this document can be processed by OpenAI.');
+        return;
+      }
       setIsParsing(true);
       setSaveMessage('');
 
       try {
         const formData = new FormData();
         formData.append('file', file);
+        formData.append('ai_processing_consent', 'true');
+        formData.append('consent_version', AI_PROCESSING_CONSENT_VERSION);
 
         const response = await api.post<DocumentParseReview>(
           '/ai/loan-documents/parse',
@@ -2481,9 +2491,10 @@ export default function LendingScorecard() {
         setSaveMessage(message);
       } finally {
         setIsParsing(false);
+        setHasDocumentAiConsent(false);
       }
     },
-    [mergeReviewIntoApplication, updateDocumentItem],
+    [hasDocumentAiConsent, mergeReviewIntoApplication, updateDocumentItem],
   );
 
   const updateDocumentReviewField = useCallback(
@@ -3081,6 +3092,11 @@ export default function LendingScorecard() {
   };
 
   const handleIdCapture = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!hasDocumentAiConsent) {
+      setSaveMessage('Consent is required before this ID can be processed by OpenAI.');
+      e.target.value = '';
+      return;
+    }
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const isSupportedImageFile =
@@ -3107,6 +3123,11 @@ export default function LendingScorecard() {
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!hasDocumentAiConsent) {
+      setSaveMessage('Consent is required before this document can be processed by OpenAI.');
+      e.target.value = '';
+      return;
+    }
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const isSupportedImageFile =
@@ -4716,6 +4737,11 @@ export default function LendingScorecard() {
                     <p className="text-sm text-slate-600">
                       Take a picture of a valid ID. AI will auto-fill applicant and ID details, then suggest requirement checks for review.
                     </p>
+                    <ThirdPartyAiConsent
+                      checked={hasDocumentAiConsent}
+                      disabled={isParsing}
+                      onChange={setHasDocumentAiConsent}
+                    />
                   </div>
                   <div className="shrink-0">
                     <div className="flex flex-wrap gap-3">
@@ -4726,6 +4752,7 @@ export default function LendingScorecard() {
                         onChange={(event) => void handleIdCapture(event)}
                         accept="image/*"
                         capture="environment"
+                        disabled={!hasDocumentAiConsent || isParsing}
                       />
                       <label
                         htmlFor="step1DocumentUpload"
@@ -5468,8 +5495,13 @@ export default function LendingScorecard() {
                 </div>
               </div>
               <div className="rounded-lg border border-slate-200 bg-white p-4">
+                <ThirdPartyAiConsent
+                  checked={hasDocumentAiConsent}
+                  disabled={isParsing}
+                  onChange={setHasDocumentAiConsent}
+                />
                 <div className="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center hover:bg-gray-50 transition">
-                  <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" />
+                  <input type="file" id="fileUpload" className="hidden" onChange={(event) => void handleFileUpload(event)} accept="image/*" capture="environment" disabled={!hasDocumentAiConsent || isParsing} />
                   <label htmlFor="fileUpload" className="cursor-pointer flex flex-col items-center">
                     <svg
                       className="mb-2 text-gray-400"

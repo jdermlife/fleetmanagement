@@ -6513,6 +6513,35 @@ label { display: block; margin-bottom: 12px; }
 .auth-role-option small { color: #64748b; line-height: 1.45; }
 .auth-role-option-disabled { opacity: 0.5; cursor: not-allowed; }
 .auth-role-option-disabled input { cursor: not-allowed; }
+
+.third-party-ai-consent {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+  padding: 14px;
+  border: 1px solid #f59e0b;
+  border-radius: 8px;
+  background: #fffbeb;
+}
+
+.third-party-ai-consent label {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: #334155;
+  line-height: 1.5;
+}
+
+.third-party-ai-consent input {
+  width: auto;
+  margin-top: 4px;
+  flex: 0 0 auto;
+}
+
+.third-party-ai-consent a {
+  width: fit-content;
+  font-weight: 700;
+}
 .vehicle-grid, .access-grid, .fuel-management .fuel-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
 .stack-panel { display: grid; gap: 20px; }
 .backup-code-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-top: 12px; }

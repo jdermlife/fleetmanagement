@@ -967,9 +967,14 @@ export interface MeetingMinutesResponse {
   message?: string
 }
 
-export async function transcribeMeetingAudio(audioFile: File): Promise<MeetingTranscriptResponse> {
+export async function transcribeMeetingAudio(
+  audioFile: File,
+  consentVersion: string,
+): Promise<MeetingTranscriptResponse> {
   const formData = new FormData()
   formData.append('audio', audioFile)
+  formData.append('ai_processing_consent', 'true')
+  formData.append('consent_version', consentVersion)
 
   const response = await api.post<MeetingTranscriptResponse>('/ai/transcribe', formData, {
     headers: {
@@ -983,11 +988,14 @@ export async function generateMeetingMinutes(payload: {
   meetingTitle: string
   meetingDate: string
   transcript: string
+  consentVersion: string
 }): Promise<MeetingMinutesResponse> {
   const response = await api.post<MeetingMinutesResponse>('/ai/minutes', {
     meeting_title: payload.meetingTitle,
     meeting_date: payload.meetingDate,
     transcript: payload.transcript,
+    ai_processing_consent: true,
+    consent_version: payload.consentVersion,
   })
   return response.data
 }

@@ -6,6 +6,9 @@ import {
   transcribeMeetingAudio,
 } from '../../api'
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
+import ThirdPartyAiConsent, {
+  AI_PROCESSING_CONSENT_VERSION,
+} from '../../components/ai/ThirdPartyAiConsent'
 
 export default function AttendMeeting(): JSX.Element {
   const [meetingTitle, setMeetingTitle] = useState('')
@@ -14,6 +17,7 @@ export default function AttendMeeting(): JSX.Element {
   const [minutes, setMinutes] = useState('')
   const [loading, setLoading] = useState(false)
   const [message, setMessage] = useState('')
+  const [hasAiProcessingConsent, setHasAiProcessingConsent] = useState(false)
   useAutosaveDraft({
     scope: 'attend-meeting',
     entityKey: 'default',
@@ -31,18 +35,26 @@ export default function AttendMeeting(): JSX.Element {
       setMessage('Please select an audio file.')
       return
     }
+    if (!hasAiProcessingConsent) {
+      setMessage('Consent is required before this recording can be processed by OpenAI.')
+      return
+    }
 
     try {
       setLoading(true)
       setMessage('')
 
-      const transcriptResponse = await transcribeMeetingAudio(audioFile)
+      const transcriptResponse = await transcribeMeetingAudio(
+        audioFile,
+        AI_PROCESSING_CONSENT_VERSION,
+      )
       setTranscript(transcriptResponse.transcript)
 
       const minutesResponse = await generateMeetingMinutes({
         meetingTitle: meetingTitle.trim() || 'Meeting',
         meetingDate: new Date().toISOString(),
         transcript: transcriptResponse.transcript,
+        consentVersion: AI_PROCESSING_CONSENT_VERSION,
       })
 
       setMinutes(minutesResponse.summary || '')
@@ -69,15 +81,25 @@ export default function AttendMeeting(): JSX.Element {
       </div>
 
       <div style={{ marginBottom: '20px' }}>
-        <label>Upload Recording</label>
+        <label htmlFor="meeting-audio-upload">Upload Recording</label>
         <input
+          id="meeting-audio-upload"
           type="file"
           accept="audio/*"
-          onChange={(event) => setAudioFile(event.target.files?.[0] || null)}
+          onChange={(event) => {
+            setAudioFile(event.target.files?.[0] || null)
+            setHasAiProcessingConsent(false)
+          }}
         />
       </div>
 
-      <button onClick={() => void generateMinutes()} disabled={loading}>
+      <ThirdPartyAiConsent
+        checked={hasAiProcessingConsent}
+        disabled={loading}
+        onChange={setHasAiProcessingConsent}
+      />
+
+      <button onClick={() => void generateMinutes()} disabled={loading || !hasAiProcessingConsent}>
         {loading ? 'Generating...' : 'Generate Minutes'}
       </button>
 
