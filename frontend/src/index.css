@@ -1196,9 +1196,14 @@ textarea {
 
 .loan-certification-frame {
   position: relative;
-  border: 18px solid #0038a8;
-  border-radius: 18px;
-  background: #ffffff;
+  padding: 26px;
+  border: 2px solid #061f52;
+  border-radius: 8px;
+  background:
+    repeating-radial-gradient(ellipse at center, transparent 0 5px, rgba(199, 218, 247, 0.46) 5.5px 6.5px, transparent 7px 10px) 0 0 / 54px 28px,
+    repeating-linear-gradient(45deg, transparent 0 6px, rgba(147, 178, 224, 0.36) 6px 7px, transparent 7px 13px),
+    repeating-linear-gradient(-45deg, transparent 0 6px, rgba(230, 239, 252, 0.2) 6px 7px, transparent 7px 13px),
+    linear-gradient(135deg, #061a43 0%, #123b7a 45%, #071f50 100%);
   box-shadow: 0 20px 48px rgba(15, 37, 71, 0.16);
   overflow: hidden;
 }
@@ -1206,20 +1211,55 @@ textarea {
 .loan-certification-frame::before {
   content: '';
   position: absolute;
-  inset: 16px;
-  border: 4px solid #fcd116;
-  border-radius: 8px;
+  inset: 7px;
+  z-index: 2;
+  border: 3px double #b8ccea;
+  border-radius: 3px;
+  box-shadow: inset 0 0 0 2px #0c2e66, inset 0 0 0 4px rgba(213, 227, 247, 0.5);
   pointer-events: none;
 }
 
 .loan-certification-frame::after {
   content: '';
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 16px;
-  background: linear-gradient(90deg, #0038a8 0%, #0b57d0 48%, #0f766e 100%);
+  inset: 18px;
+  z-index: 2;
+  border: 1px solid #dce8f8;
+  box-shadow: 0 0 0 2px #09275c;
+  pointer-events: none;
+}
+
+.loan-certification-ornaments {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.loan-certification-ornament {
+  position: absolute;
+  width: 48px;
+  height: 48px;
+  border: 2px solid #d8e6f8;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, #dce9fa 0 7%, #103a78 8% 17%, transparent 18%),
+    repeating-conic-gradient(from 11.25deg, #d6e5f8 0 4deg, #0a2a61 4deg 11deg),
+    #0a2a61;
+  box-shadow: 0 0 0 3px #0a2a61, 0 0 0 4px #8eabd4, inset 0 0 0 7px rgba(7, 30, 73, 0.68);
+}
+
+.loan-certification-ornament-top-left { top: 3px; left: 3px; }
+.loan-certification-ornament-top-right { top: 3px; right: 3px; }
+.loan-certification-ornament-bottom-left { bottom: 3px; left: 3px; }
+.loan-certification-ornament-bottom-right { right: 3px; bottom: 3px; }
+
+.loan-certification-ornament::after {
+  content: '';
+  position: absolute;
+  inset: 11px;
+  border: 1px solid #d8e6f8;
+  border-radius: 50%;
 }
 
 .loan-certification-inner {
@@ -2291,13 +2331,19 @@ button.loan-repository-action-release { background: #4f46e5; }
   }
 
   .loan-certification-frame {
-    border-width: 12px;
-    border-radius: 14px;
+    padding: 20px;
+    border-radius: 7px;
   }
 
   .loan-certification-frame::before {
-    inset: 10px;
+    inset: 6px;
   }
+
+  .loan-certification-frame::after { inset: 14px; }
+
+  .loan-certification-ornament { width: 38px; height: 38px; }
+
+  .loan-certification-ornament::after { inset: 8px; }
 
   .app-brand-lockup {
     align-items: flex-start;
@@ -2426,14 +2472,20 @@ button.loan-repository-action-release { background: #4f46e5; }
   }
 
   .loan-certification-frame {
-    border-width: 10px;
-    border-radius: 12px;
+    padding: 16px;
+    border-radius: 6px;
   }
 
   .loan-certification-frame::before {
-    inset: 8px;
-    border-width: 3px;
+    inset: 5px;
+    border-width: 2px;
   }
+
+  .loan-certification-frame::after { inset: 11px; }
+
+  .loan-certification-ornament { width: 30px; height: 30px; }
+
+  .loan-certification-ornament::after { inset: 6px; }
 
   .loan-certification-inner {
     padding: 14px;
@@ -2497,14 +2549,22 @@ button.loan-repository-action-release { background: #4f46e5; }
 
   .loan-certification-frame {
     box-shadow: none;
-    border-width: 8px;
+    padding: 12px;
     break-inside: avoid;
     page-break-inside: avoid;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .loan-certification-frame::before {
-    inset: 6px;
+    inset: 3px;
   }
+
+  .loan-certification-frame::after { inset: 8px; }
+
+  .loan-certification-ornament { width: 22px; height: 22px; border-width: 1px; }
+
+  .loan-certification-ornament::after { inset: 4px; }
 
   .loan-certification-inner {
     padding: 12px 12px 14px;

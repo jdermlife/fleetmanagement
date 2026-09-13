@@ -274,12 +274,18 @@ export default function LoanCertificationPage() {
       font-family: Arial, sans-serif;
     }
     .sheet {
+      box-sizing: border-box;
       width: 100%;
       max-width: 100%;
       margin: 0 auto;
-      background: #ffffff;
-      border: 6px solid #0038a8;
-      border-radius: 8px;
+      padding: 12px;
+      background:
+        repeating-radial-gradient(ellipse at center, transparent 0 3px, rgba(199, 218, 247, 0.48) 3.5px 4px, transparent 4.5px 7px) 0 0 / 34px 18px,
+        repeating-linear-gradient(45deg, transparent 0 4px, rgba(147, 178, 224, 0.4) 4px 5px, transparent 5px 9px),
+        repeating-linear-gradient(-45deg, transparent 0 4px, rgba(230, 239, 252, 0.22) 4px 5px, transparent 5px 9px),
+        linear-gradient(135deg, #061a43 0%, #123b7a 45%, #071f50 100%);
+      border: 1px solid #061f52;
+      border-radius: 5px;
       box-shadow: 0 8px 18px rgba(15, 37, 71, 0.08);
       position: relative;
       overflow: hidden;
@@ -289,15 +295,49 @@ export default function LoanCertificationPage() {
     .sheet::before {
       content: "";
       position: absolute;
-      inset: 6px;
-      border: 2px solid #f4d36a;
-      border-radius: 4px;
+      inset: 3px;
+      z-index: 2;
+      border: 2px double #b8ccea;
+      border-radius: 2px;
+      box-shadow: inset 0 0 0 1px #0c2e66, inset 0 0 0 2px rgba(213, 227, 247, 0.5);
       pointer-events: none;
     }
+    .sheet::after {
+      content: "";
+      position: absolute;
+      inset: 8px;
+      z-index: 2;
+      border: 1px solid #dce8f8;
+      box-shadow: 0 0 0 1px #09275c;
+      pointer-events: none;
+    }
+    .ornaments {
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      pointer-events: none;
+    }
+    .ornament {
+      position: absolute;
+      width: 22px;
+      height: 22px;
+      border: 1px solid #d8e6f8;
+      border-radius: 50%;
+      background:
+        radial-gradient(circle, #dce9fa 0 7%, #103a78 8% 17%, transparent 18%),
+        repeating-conic-gradient(from 11.25deg, #d6e5f8 0 4deg, #0a2a61 4deg 11deg),
+        #0a2a61;
+      box-shadow: 0 0 0 2px #0a2a61, 0 0 0 3px #8eabd4, inset 0 0 0 4px rgba(7, 30, 73, 0.68);
+    }
+    .ornament.tl { top: 1px; left: 1px; }
+    .ornament.tr { top: 1px; right: 1px; }
+    .ornament.bl { bottom: 1px; left: 1px; }
+    .ornament.br { right: 1px; bottom: 1px; }
     .content {
       padding: 12px 14px 14px;
       position: relative;
       z-index: 1;
+      background: #ffffff;
     }
     .brand-header {
       display: flex;
@@ -510,6 +550,8 @@ export default function LoanCertificationPage() {
         max-width: none;
         width: 100%;
         box-shadow: none;
+        print-color-adjust: exact;
+        -webkit-print-color-adjust: exact;
       }
       .brand-mark {
         width: 32px;
@@ -520,6 +562,12 @@ export default function LoanCertificationPage() {
 </head>
 <body>
   <section class="sheet">
+    <div class="ornaments" aria-hidden="true">
+      <span class="ornament tl"></span>
+      <span class="ornament tr"></span>
+      <span class="ornament bl"></span>
+      <span class="ornament br"></span>
+    </div>
     <div class="content">
       <div class="brand-header">
         <img class="brand-mark" src="${brandLogoDataUri}" alt="${APP_NAME} logo" />
@@ -667,6 +715,12 @@ export default function LoanCertificationPage() {
 
       <section className="loan-certification-shell">
         <div className="loan-certification-frame">
+          <div className="loan-certification-ornaments" aria-hidden="true">
+            <span className="loan-certification-ornament loan-certification-ornament-top-left" />
+            <span className="loan-certification-ornament loan-certification-ornament-top-right" />
+            <span className="loan-certification-ornament loan-certification-ornament-bottom-left" />
+            <span className="loan-certification-ornament loan-certification-ornament-bottom-right" />
+          </div>
           <div className="loan-certification-inner">
             <div className="loan-certification-brand">
               <img
