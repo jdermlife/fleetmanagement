@@ -344,7 +344,7 @@ export default function LoginPage() {
               {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
-                  className="login-art-social-button login-art-provider-button"
+                  className="login-art-social-button login-art-provider-button login-art-google-button"
                   onClick={() => void handleNativeGoogleSignIn()}
                   disabled={isSaving}
                 >
