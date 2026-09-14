@@ -141,6 +141,9 @@ function GoogleMark() {
   )
 }
 
+const APPLE_CONTINUE_BUTTON_URL =
+  'https://appleid.cdn-apple.com/appleid/button?color=black&border_radius=5&height=62&scale=2&type=continue&width=375'
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const googleClientId = APP_CONFIG.googleClientId
@@ -322,20 +325,19 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="login-art-social-button login-art-social-button-apple"
+              className="login-art-social-button auth-apple-button"
               aria-label="Continue with Apple"
               onClick={() => {
                 void handleAppleSignIn()
               }}
               disabled={isSaving || !isAppleConfigured}
             >
-              <svg className="login-art-social-icon" viewBox="0 0 16 16" aria-hidden="true" focusable="false">
-                <path
-                  fill="currentColor"
-                  d="M11.182.008c0 .99-.37 1.98-1.04 2.68-.7.73-1.84 1.29-2.84 1.21-.13-.98.34-2 1.02-2.7.74-.76 1.93-1.3 2.86-1.19zM14.6 11.32c-.1.22-.2.42-.32.62-.18.29-.36.58-.56.86-.28.4-.5.68-.69.86-.29.3-.6.45-.93.46-.24 0-.53-.07-.86-.2-.34-.13-.65-.2-.94-.2-.3 0-.62.07-.97.2-.35.13-.63.2-.85.21-.32.01-.64-.15-.94-.47-.2-.2-.43-.5-.72-.9-.31-.44-.57-.95-.77-1.52-.22-.61-.33-1.2-.33-1.76 0-.65.14-1.22.42-1.71.22-.39.52-.7.88-.93.37-.23.77-.35 1.2-.35.26 0 .6.08 1 .24.4.16.67.24.78.24.08 0 .37-.09.85-.28.46-.18.85-.26 1.17-.24.88.07 1.53.42 1.97 1.05-.79.47-1.18 1.12-1.17 1.95 0 .65.24 1.2.72 1.63.22.2.46.35.73.45-.06.2-.12.39-.2.57z"
-                />
-              </svg>
-              <span>Continue with Apple</span>
+              <img
+                className="auth-apple-button-image"
+                src={APPLE_CONTINUE_BUTTON_URL}
+                alt=""
+                aria-hidden="true"
+              />
             </button>
 
             <div className="login-art-google-wrap">
@@ -348,7 +350,7 @@ export default function LoginPage() {
               {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
-                  className="login-art-social-button login-art-provider-button"
+                  className="login-art-social-button auth-provider-choice login-art-provider-button"
                   onClick={() => void handleNativeGoogleSignIn()}
                   disabled={isSaving}
                 >
@@ -381,7 +383,7 @@ export default function LoginPage() {
             {!showEmailLogin ? (
               <button
                 type="button"
-                className="login-art-social-button login-art-social-button-email login-art-provider-button"
+                className="login-art-social-button auth-provider-choice login-art-social-button-email login-art-provider-button"
                 onClick={() => setShowEmailLogin(true)}
                 aria-controls="login-email-form"
                 aria-expanded="false"

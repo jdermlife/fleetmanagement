@@ -465,7 +465,7 @@ export default function RegisterPage() {
           {isGoogleEnabled && useNativeGoogleSignIn ? (
             <button
               type="button"
-              className="auth-link-button register-provider-button"
+              className="auth-link-button auth-provider-choice register-provider-button"
               onClick={() => void handleNativeGoogleSignUp()}
               disabled={isSaving}
             >
@@ -502,7 +502,7 @@ export default function RegisterPage() {
         {!showEmailRegistration ? (
           <button
             type="button"
-            className="auth-link-button register-other-email-button register-provider-button"
+            className="auth-link-button auth-provider-choice register-other-email-button register-provider-button"
             onClick={() => setShowEmailRegistration(true)}
             aria-controls="register-email-form"
             aria-expanded="false"
