@@ -160,7 +160,8 @@
 
             <meta-data
                 android:name="androidx.profileinstaller.ProfileInstallerInitializer"
-                android:value="androidx.profileinstaller.ProfileInstallerInitializer" />
+                android:value="androidx.profileinstaller.ProfileInstallerInitializer"
+                tools:replace="android:value" />
 
         </provider>
 
