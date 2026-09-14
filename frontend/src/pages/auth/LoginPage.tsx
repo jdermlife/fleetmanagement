@@ -199,7 +199,7 @@ export default function LoginPage() {
     }
   }
 
-  const handleGoogleSuccess = async (response: CredentialResponse, platform: 'web' | 'ios' = 'web') => {
+  const handleGoogleSuccess = async (response: CredentialResponse, platform: 'web' | 'ios' | 'android' = 'web') => {
     const idToken = response.credential
     if (!idToken) {
       setMessage('Google sign-in did not return a valid credential.')
@@ -248,7 +248,7 @@ export default function LoginPage() {
         googleClientId,
         googleIosClientId,
       )
-      await handleGoogleSuccess({ credential: idToken }, 'ios')
+      await handleGoogleSuccess({ credential: idToken }, 'android')
     } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Google right now.'))
     } finally {
@@ -492,3 +492,5 @@ export default function LoginPage() {
     </div>
   )
 }
+
+

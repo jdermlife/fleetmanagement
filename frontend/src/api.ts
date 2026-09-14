@@ -443,7 +443,7 @@ export interface LoginRequest {
 
 export interface GoogleLoginRequest {
   idToken: string
-  platform: 'web' | 'ios'
+  platform: 'web' | 'ios' | 'android'
   rememberMe?: boolean
   subscriberType?: 'borrower' | 'lender'
   lenderDataSharingConsent?: boolean
@@ -1854,3 +1854,4 @@ export async function assignPlanFeatures(planId: number, feature_ids: number[]):
   })
   return response.data
 }
+
