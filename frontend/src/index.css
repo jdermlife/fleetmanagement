@@ -9217,11 +9217,12 @@ th { color: var(--dark-gold); }
   justify-self: center;
 }
 
-.login-art-social-button-email,
-.login-art-social-button-email:hover {
-  border-color: #000000;
-  background: #000000;
+.login-art-social-button.login-art-social-button-email,
+.login-art-social-button.login-art-social-button-email:hover {
+  border-color: #c58a35;
+  background: linear-gradient(90deg, #8b5a22, #653b12);
   color: #ffffff;
+  font-size: 1rem;
   font-weight: 500;
 }
 
