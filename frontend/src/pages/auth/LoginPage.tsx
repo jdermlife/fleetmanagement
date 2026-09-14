@@ -7,7 +7,7 @@ import { requestAppleSignInToken } from '../../appleAuth'
 import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
-import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
+import { getNativeGooglePlatform, isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 const FINANCIAL_HEALTH_PATH = '/financial-health-summary'
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
@@ -251,7 +251,7 @@ export default function LoginPage() {
         googleClientId,
         googleIosClientId,
       )
-      await handleGoogleSuccess({ credential: idToken }, 'android')
+      await handleGoogleSuccess({ credential: idToken }, getNativeGooglePlatform())
     } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to sign in with Google right now.'))
     } finally {

@@ -61,9 +61,13 @@ async function requestNativeAppleSignInToken(
     nativeInitializationRequest = SocialLogin.initialize({
       apple: {
         clientId,
-        ...(redirectUrl ? { redirectUrl } : {}),
-        useProperTokenExchange: true,
-        useBroadcastChannel: true,
+        ...(redirectUrl
+          ? {
+              redirectUrl,
+              useProperTokenExchange: true,
+              useBroadcastChannel: true,
+            }
+          : {}),
       },
     })
       .then(() => {

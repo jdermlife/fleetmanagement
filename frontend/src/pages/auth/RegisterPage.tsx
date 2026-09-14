@@ -18,7 +18,7 @@ import {
   type RegisterSubscriberType,
 } from '../../authRoles'
 import { APP_CONFIG } from '../../config'
-import { isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
+import { getNativeGooglePlatform, isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
 
@@ -265,7 +265,7 @@ export default function RegisterPage() {
         googleClientId,
         googleIosClientId,
       )
-      await handleGoogleSuccess({ credential: idToken }, 'android')
+      await handleGoogleSuccess({ credential: idToken }, getNativeGooglePlatform())
     } catch (error) {
       setMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Google right now.'))
     } finally {

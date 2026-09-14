@@ -7,6 +7,14 @@ export function isNativeGoogleSignIn(): boolean {
   return Capacitor.isNativePlatform()
 }
 
+export function getNativeGooglePlatform(): 'ios' | 'android' {
+  const platform = Capacitor.getPlatform()
+  if (platform !== 'ios' && platform !== 'android') {
+    throw new Error('Native Google Sign-In is only available on iOS or Android.')
+  }
+  return platform
+}
+
 export async function initializeNativeGoogleSignIn(
   webClientId: string,
   iosClientId: string,
