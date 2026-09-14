@@ -8,11 +8,11 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-from urllib.parse import parse_qs
+from urllib.parse import parse_qs, urlencode
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 from pydantic import BaseModel, Field
 import requests
 from sqlalchemy import and_
@@ -187,6 +187,18 @@ APPLE_OAUTH_CLIENT_ID = (
     or "com.quantech.filscore.web"
 )
 APPLE_IOS_CLIENT_ID = os.getenv("APPLE_IOS_CLIENT_ID", "com.quantech.filscore").strip()
+APPLE_KEY_ID = os.getenv("APPLE_KEY_ID", "").strip()
+APPLE_TEAM_ID = os.getenv("APPLE_TEAM_ID", "").strip()
+APPLE_PRIVATE_KEY = os.getenv("APPLE_PRIVATE_KEY", "").strip()
+APPLE_REDIRECT_URI = os.getenv(
+    "APPLE_REDIRECT_URI",
+    "https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback",
+).strip()
+APPLE_ANDROID_REDIRECT_URI = os.getenv(
+    "APPLE_ANDROID_REDIRECT_URI",
+    "filscore://apple-callback",
+).strip()
+APPLE_TOKEN_URL = "https://appleid.apple.com/auth/token"
 APPLE_OAUTH_ISSUER = "https://appleid.apple.com"
 APPLE_JWKS_URL = "https://appleid.apple.com/auth/keys"
 APPLE_JWKS_CACHE_TTL_SECONDS = int(os.getenv("APPLE_JWKS_CACHE_TTL_SECONDS", "3600"))
@@ -943,18 +955,53 @@ def _apple_callback_page(message: str) -> HTMLResponse:
             "Pragma": "no-cache",
         },
     )
+def _create_apple_client_secret() -> str:
+    if not APPLE_KEY_ID or not APPLE_TEAM_ID or not APPLE_PRIVATE_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="Apple Sign-In server credentials are not configured",
+        )
 
+    private_key = APPLE_PRIVATE_KEY.replace("\\n", "\n")
+
+    now = datetime.now(timezone.utc)
+    payload = {
+        "iss": APPLE_TEAM_ID,
+        "iat": int(now.timestamp()),
+        "exp": int((now + timedelta(days=180)).timestamp()),
+        "aud": APPLE_OAUTH_ISSUER,
+        "sub": APPLE_OAUTH_CLIENT_ID,
+    }
+
+    try:
+        return jwt.encode(
+            payload,
+            private_key,
+            algorithm="ES256",
+            headers={
+                "kid": APPLE_KEY_ID,
+            },
+        )
+    except Exception as exc:
+        raise HTTPException(
+            status_code=500,
+            detail="Unable to create Apple client secret",
+        ) from exc
 
 @router.get("/apple/callback", response_class=HTMLResponse, include_in_schema=False)
 def apple_sign_in_callback_status() -> HTMLResponse:
     return _apple_callback_page("The Apple Sign-In callback is ready to receive Apple's response.")
 
 
-@router.post("/apple/callback", response_class=HTMLResponse, include_in_schema=False)
-async def apple_sign_in_callback(request: Request) -> HTMLResponse:
+@router.post("/apple/callback", include_in_schema=False)
+async def apple_sign_in_callback(request: Request):
     content_type = request.headers.get("content-type", "").split(";", 1)[0].strip().lower()
+
     if content_type != "application/x-www-form-urlencoded":
-        raise HTTPException(status_code=415, detail="Apple callback requires form-encoded data")
+        raise HTTPException(
+            status_code=415,
+            detail="Apple callback requires form-encoded data",
+        )
 
     content_length = request.headers.get("content-length")
     if (
@@ -962,26 +1009,117 @@ async def apple_sign_in_callback(request: Request) -> HTMLResponse:
         and content_length.isdigit()
         and int(content_length) > APPLE_CALLBACK_MAX_BODY_BYTES
     ):
-        raise HTTPException(status_code=413, detail="Apple callback payload is too large")
+        raise HTTPException(
+            status_code=413,
+            detail="Apple callback payload is too large",
+        )
 
     body = await request.body()
+
     if len(body) > APPLE_CALLBACK_MAX_BODY_BYTES:
-        raise HTTPException(status_code=413, detail="Apple callback payload is too large")
+        raise HTTPException(
+            status_code=413,
+            detail="Apple callback payload is too large",
+        )
 
     try:
-        fields = parse_qs(body.decode("utf-8"), keep_blank_values=True)
+        fields = parse_qs(
+            body.decode("utf-8"),
+            keep_blank_values=True,
+        )
     except UnicodeDecodeError as exc:
-        raise HTTPException(status_code=400, detail="Invalid Apple callback encoding") from exc
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid Apple callback encoding",
+        ) from exc
 
-    if fields.get("error", [""])[0]:
-        return _apple_callback_page("Apple Sign-In was cancelled or could not be completed.")
+    apple_error = fields.get("error", [""])[0]
+    if apple_error:
+        return RedirectResponse(
+            url=f"{APPLE_ANDROID_REDIRECT_URI}?success=false",
+            status_code=303,
+        )
 
-    if not fields.get("id_token", [""])[0] and not fields.get("code", [""])[0]:
-        raise HTTPException(status_code=400, detail="Apple callback response is missing authorization data")
+    code = fields.get("code", [""])[0]
 
-    # AppleID JS delivers the authorization result to the opener. This endpoint
-    # only completes Apple's form POST; token validation remains in /apple-token.
-    return _apple_callback_page("Authentication completed successfully.")
+    if not code:
+        raise HTTPException(
+            status_code=400,
+            detail="Apple callback response is missing authorization code",
+        )
+
+    client_secret = _create_apple_client_secret()
+
+    token_payload = {
+        "grant_type": "authorization_code",
+        "code": code,
+        "redirect_uri": APPLE_REDIRECT_URI,
+        "client_id": APPLE_OAUTH_CLIENT_ID,
+        "client_secret": client_secret,
+    }
+
+    try:
+        apple_response = requests.post(
+            APPLE_TOKEN_URL,
+            data=token_payload,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+            },
+            timeout=10,
+        )
+    except requests.RequestException as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Unable to contact Apple Sign-In",
+        ) from exc
+
+    if not apple_response.ok:
+        raise HTTPException(
+            status_code=401,
+            detail="Apple authorization code exchange failed",
+        )
+
+    try:
+        apple_data = apple_response.json()
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=502,
+            detail="Apple returned an invalid token response",
+        ) from exc
+
+    id_token = str(apple_data.get("id_token") or "").strip()
+    access_token = str(apple_data.get("access_token") or "").strip()
+    refresh_token = str(apple_data.get("refresh_token") or "").strip()
+
+    if not id_token:
+        raise HTTPException(
+            status_code=401,
+            detail="Apple did not return an identity token",
+        )
+
+    # Validate the Apple identity token before sending it back to the app.
+    _verify_apple_id_token(id_token)
+
+    redirect_params = {
+        "success": "true",
+        "id_token": id_token,
+    }
+
+    if access_token:
+        redirect_params["access_token"] = access_token
+
+    if refresh_token:
+        redirect_params["refresh_token"] = refresh_token
+
+    redirect_url = (
+        f"{APPLE_ANDROID_REDIRECT_URI}?"
+        + urlencode(redirect_params)
+    )
+
+    return RedirectResponse(
+        url=redirect_url,
+        status_code=303,
+    )
 
 
 @router.post("/refresh")
