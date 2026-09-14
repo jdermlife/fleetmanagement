@@ -7,10 +7,19 @@ export interface AppleSignInResult {
 
 let nativeInitializationRequest: Promise<void> | null = null
 
-const ANDROID_APPLE_CLIENT_ID = 'com.quantech.filscore.web'
+// =====================================================
+// Android Apple Sign-In configuration
+// =====================================================
+
+const ANDROID_APPLE_CLIENT_ID =
+  'com.quantech.filscore.web'
 
 const ANDROID_APPLE_REDIRECT =
   'https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback'
+
+// =====================================================
+// Apple JS types
+// =====================================================
 
 type AppleAuthInitConfig = {
   clientId: string
@@ -42,51 +51,87 @@ declare global {
   }
 }
 
+// =====================================================
+// Availability
+// =====================================================
+
 export function isAppleSignInReady(): boolean {
-  return Capacitor.isNativePlatform() || Boolean(window.AppleID?.auth)
+  return (
+    Capacitor.isNativePlatform() ||
+    Boolean(window.AppleID?.auth)
+  )
 }
+
+// =====================================================
+// Native Apple Sign-In
+//
+// IMPORTANT:
+// iOS remains native iOS.
+// Android uses the Android SocialLogin flow.
+// Web continues to use Apple JS.
+// =====================================================
 
 export function isNativeAppleSignIn(): boolean {
   return Capacitor.isNativePlatform()
 }
 
+// =====================================================
+// Native Apple Sign-In request
+// =====================================================
+
 async function requestNativeAppleSignInToken(
   clientId: string,
   redirectUrl?: string,
 ): Promise<AppleSignInResult> {
-
   if (!nativeInitializationRequest) {
-    console.log('[AppleAuth] Initializing Apple Sign-In')
+    console.log(
+      '[AppleAuth] Initializing Apple Sign-In',
+    )
 
-    nativeInitializationRequest = SocialLogin.initialize({
-      apple: {
-        clientId,
-        ...(redirectUrl
-          ? {
-              redirectUrl,
-              useProperTokenExchange: true,
-              useBroadcastChannel: false,
-            }
-          : {}),
-      },
-    })
-      .then(() => {
-        console.log('[AppleAuth] Apple initialization succeeded')
-      })
-      .catch((error) => {
-        console.error(
-          '[AppleAuth] Apple initialization FAILED:',
-          error,
-        )
+    const appleConfig: {
+      clientId: string
+      redirectUrl?: string
+      useProperTokenExchange?: boolean
+      useBroadcastChannel?: boolean
+    } = {
+      clientId,
+    }
 
-        nativeInitializationRequest = null
-        throw error
+    // Android requires the backend callback.
+    //
+    // iOS does NOT receive this Android redirectUrl.
+    if (redirectUrl) {
+      appleConfig.redirectUrl = redirectUrl
+      appleConfig.useProperTokenExchange = true
+      appleConfig.useBroadcastChannel = false
+    }
+
+    nativeInitializationRequest =
+      SocialLogin.initialize({
+        apple: appleConfig,
       })
+        .then(() => {
+          console.log(
+            '[AppleAuth] Apple initialization succeeded',
+          )
+        })
+        .catch((error) => {
+          console.error(
+            '[AppleAuth] Apple initialization FAILED:',
+            error,
+          )
+
+          nativeInitializationRequest = null
+
+          throw error
+        })
   }
 
   await nativeInitializationRequest
 
-  console.log('[AppleAuth] Calling Apple Sign-In')
+  console.log(
+    '[AppleAuth] Calling Apple Sign-In',
+  )
 
   const response = await SocialLogin.login({
     provider: 'apple',
@@ -112,16 +157,23 @@ async function requestNativeAppleSignInToken(
     )
   }
 
-  console.log('[AppleAuth] Apple identity token received')
+  console.log(
+    '[AppleAuth] Apple identity token received',
+  )
 
   return {
     idToken: response.result.idToken,
   }
 }
 
+// =====================================================
+// Apple JS state
+// =====================================================
+
 function createAppleAuthState(): string {
   if (
-    typeof globalThis.crypto.randomUUID === 'function'
+    typeof globalThis.crypto.randomUUID ===
+    'function'
   ) {
     return globalThis.crypto.randomUUID()
   }
@@ -138,38 +190,77 @@ function createAppleAuthState(): string {
   ).join('')
 }
 
-export async function requestAppleSignInToken(params: {
-  clientId: string
-  iosClientId?: string
-  redirectURI?: string
-}): Promise<AppleSignInResult> {
+// =====================================================
+// Main Apple Sign-In entry point
+// =====================================================
 
+export async function requestAppleSignInToken(
+  params: {
+    clientId: string
+    iosClientId?: string
+    redirectURI?: string
+  },
+): Promise<AppleSignInResult> {
   const platform = Capacitor.getPlatform()
 
-  // =====================================================
+  // ===================================================
   // iOS
-  // =====================================================
+  //
+  // KEEP EXISTING iOS BEHAVIOR
+  //
+  // iOS uses:
+  // com.quantech.filscore
+  // ===================================================
 
   if (platform === 'ios') {
+    console.log(
+      '[AppleAuth] Using native iOS Apple Sign-In',
+    )
+
     return requestNativeAppleSignInToken(
       params.iosClientId || params.clientId,
     )
   }
 
-  // =====================================================
+  // ===================================================
   // Android
-  // =====================================================
+  //
+  // Android uses:
+  // com.quantech.filscore.web
+  //
+  // Apple → Render callback → Android deep link
+  // ===================================================
 
   if (platform === 'android') {
+    console.log(
+      '[AppleAuth] Using native Android Apple Sign-In',
+    )
+
+    console.log(
+      '[AppleAuth] Android Apple client ID:',
+      ANDROID_APPLE_CLIENT_ID,
+    )
+
+    console.log(
+      '[AppleAuth] Android Apple redirect:',
+      ANDROID_APPLE_REDIRECT,
+    )
+
     return requestNativeAppleSignInToken(
       ANDROID_APPLE_CLIENT_ID,
       ANDROID_APPLE_REDIRECT,
     )
   }
 
-  // =====================================================
+  // ===================================================
   // Web
-  // =====================================================
+  //
+  // KEEP EXISTING WEB APPLE JS FLOW
+  // ===================================================
+
+  console.log(
+    '[AppleAuth] Using Apple JS web Sign-In',
+  )
 
   const appleAuth = window.AppleID?.auth
 
@@ -217,5 +308,7 @@ export async function requestAppleSignInToken(params: {
     )
   }
 
-  return { idToken }
+  return {
+    idToken,
+  }
 }

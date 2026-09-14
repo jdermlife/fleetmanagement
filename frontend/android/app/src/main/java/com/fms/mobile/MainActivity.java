@@ -21,7 +21,16 @@ public class MainActivity extends BridgeActivity
             int resultCode,
             Intent data) {
 
-        super.onActivityResult(requestCode, resultCode, data);
+        super.onActivityResult(
+                requestCode,
+                resultCode,
+                data);
+
+        // =====================================================
+        // GOOGLE LOGIN
+        //
+        // EXISTING CODE - DO NOT CHANGE
+        // =====================================================
 
         if (requestCode >= GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MIN
                 && requestCode < GoogleProvider.REQUEST_AUTHORIZE_GOOGLE_MAX) {
@@ -37,7 +46,8 @@ public class MainActivity extends BridgeActivity
                 return;
             }
 
-            Plugin plugin = pluginHandle.getInstance();
+            Plugin plugin =
+                    pluginHandle.getInstance();
 
             if (!(plugin instanceof SocialLoginPlugin)) {
                 Log.i(
@@ -48,9 +58,22 @@ public class MainActivity extends BridgeActivity
             }
 
             ((SocialLoginPlugin) plugin)
-                    .handleGoogleLoginIntent(requestCode, data);
+                    .handleGoogleLoginIntent(
+                            requestCode,
+                            data
+                    );
         }
     }
+
+    // =========================================================
+    // APPLE LOGIN - ANDROID CALLBACK
+    //
+    // Apple redirects to:
+    //
+    // filscore://apple-callback
+    //
+    // Android routes that URL back to MainActivity.
+    // =========================================================
 
     @Override
     protected void onNewIntent(Intent intent) {
@@ -77,7 +100,8 @@ public class MainActivity extends BridgeActivity
                 return;
             }
 
-            Plugin plugin = pluginHandle.getInstance();
+            Plugin plugin =
+                    pluginHandle.getInstance();
 
             if (!(plugin instanceof SocialLoginPlugin)) {
                 Log.i(
@@ -87,10 +111,19 @@ public class MainActivity extends BridgeActivity
                 return;
             }
 
+            Log.i(
+                    "Apple Login Intent",
+                    "Passing callback to SocialLoginPlugin"
+            );
+
             ((SocialLoginPlugin) plugin)
                     .handleAppleLoginIntent(intent);
         }
     }
+
+    // =========================================================
+    // REQUIRED BY CAPGO SOCIAL LOGIN
+    // =========================================================
 
     @Override
     public void IHaveModifiedTheMainActivityForTheUseWithSocialLoginPlugin() {
