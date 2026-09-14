@@ -9209,6 +9209,13 @@ th { color: var(--dark-gold); }
   justify-self: center;
 }
 
+.login-art-social-button-email,
+.login-art-social-button-email:hover {
+  border-color: #f2c66d;
+  background: linear-gradient(90deg, #b7791f, #8c5a16);
+  color: #ffffff;
+}
+
 .login-art-provider-button:focus-visible,
 .login-art-google-wrap:focus-within {
   outline: 3px solid #ffffff;
