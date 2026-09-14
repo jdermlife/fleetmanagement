@@ -142,7 +142,7 @@ function GoogleMark() {
 }
 
 const APPLE_CONTINUE_BUTTON_URL =
-  'https://appleid.cdn-apple.com/appleid/button?color=black&border_radius=5&height=62&scale=2&type=continue&width=375'
+  'https://appleid.cdn-apple.com/appleid/button?color=white&border_radius=31&height=62&scale=2&type=continue&width=375'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -325,7 +325,7 @@ export default function LoginPage() {
 
             <button
               type="button"
-              className="login-art-social-button auth-apple-button"
+              className="login-art-social-button login-art-official-apple-button"
               aria-label="Continue with Apple"
               onClick={() => {
                 void handleAppleSignIn()
@@ -333,7 +333,7 @@ export default function LoginPage() {
               disabled={isSaving || !isAppleConfigured}
             >
               <img
-                className="auth-apple-button-image"
+                className="login-art-official-apple-image"
                 src={APPLE_CONTINUE_BUTTON_URL}
                 alt=""
                 aria-hidden="true"
@@ -350,7 +350,7 @@ export default function LoginPage() {
               {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
-                  className="login-art-social-button auth-provider-choice login-art-provider-button"
+                  className="login-art-social-button login-art-provider-button"
                   onClick={() => void handleNativeGoogleSignIn()}
                   disabled={isSaving}
                 >
@@ -383,7 +383,7 @@ export default function LoginPage() {
             {!showEmailLogin ? (
               <button
                 type="button"
-                className="login-art-social-button auth-provider-choice login-art-social-button-email login-art-provider-button"
+                className="login-art-social-button login-art-social-button-email login-art-provider-button"
                 onClick={() => setShowEmailLogin(true)}
                 aria-controls="login-email-form"
                 aria-expanded="false"

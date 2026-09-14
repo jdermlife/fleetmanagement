@@ -9116,12 +9116,14 @@ th { color: var(--dark-gold); }
   position: relative;
   width: min(100%, 375px);
   aspect-ratio: 375 / 62;
-  min-height: 30px;
+  min-height: 62px;
   justify-self: center;
-  border-radius: 5px;
-  border: 0;
-  background: #000000;
-  box-shadow: none;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 218, 82, 0.98);
+  background: linear-gradient(90deg, rgba(135, 82, 6, 0.92), rgba(107, 63, 3, 0.94));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 239, 174, 0.9),
+    0 10px 22px rgba(72, 38, 0, 0.28);
 }
 
 .login-art-social-button {
@@ -9140,7 +9142,7 @@ th { color: var(--dark-gold); }
 }
 
 .login-art-social-button:hover {
-  background: #000000;
+  background: linear-gradient(90deg, rgba(124, 76, 5, 0.94), rgba(98, 58, 3, 0.96));
 }
 
 .login-art-social-button-apple,
@@ -9157,16 +9159,35 @@ th { color: var(--dark-gold); }
   text-shadow: none;
 }
 
-.login-art-social-button.auth-apple-button {
-  display: block;
-  width: min(100%, 375px);
-  aspect-ratio: 375 / 62;
-  padding: 0;
-}
-
 .login-art-social-button-apple:focus-visible {
   outline: 3px solid #ffffff;
   outline-offset: 3px;
+}
+
+.login-art-official-apple-button,
+.login-art-official-apple-button:hover {
+  display: block;
+  width: min(100%, 375px);
+  aspect-ratio: 375 / 62;
+  justify-self: center;
+  min-width: min(100%, 140px);
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: #ffffff;
+  box-shadow: none;
+  line-height: 0;
+}
+
+.login-art-official-apple-button:focus-visible {
+  outline: 3px solid #ffffff;
+  outline-offset: 3px;
+}
+
+.login-art-official-apple-image {
+  display: block;
+  width: 100%;
+  height: 100%;
 }
 
 .login-art-provider-button,
@@ -9176,16 +9197,16 @@ th { color: var(--dark-gold); }
   background: #000000;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
 }
 
-.login-art-provider-button.auth-provider-choice {
+.login-art-provider-button {
   width: min(100%, 375px);
   aspect-ratio: 375 / 62;
-  padding: 0 20px;
+  justify-self: center;
 }
 
 .login-art-provider-button:focus-visible,
@@ -9227,7 +9248,7 @@ th { color: var(--dark-gold); }
   padding: 12px 20px;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
@@ -10283,7 +10304,7 @@ th { color: var(--dark-gold); }
   .login-art-google-preview {
     gap: 12px;
     padding: 10px 16px;
-    font-size: 1.1875rem;
+    font-size: 0.92rem;
   }
 
   .login-art-google-live iframe,
@@ -10527,7 +10548,7 @@ th { color: var(--dark-gold); }
   .login-art-google-preview {
     gap: 10px;
     padding: 8px 14px;
-    font-size: 1.1875rem;
+    font-size: 0.86rem;
   }
 
   .login-art-field {
