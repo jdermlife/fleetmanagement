@@ -407,8 +407,23 @@ def test_login_deactivates_expired_unpaid_account(app_client):
     assert user.account_status == "SUSPENDED"
 
 
-def test_apple_callback_route_accepts_apples_form_post_without_exposing_tokens(app_client):
+def test_apple_callback_route_exchanges_code_and_redirects_to_android(app_client, monkeypatch):
     client, _auth_module, _fake_db = app_client
+
+    class AppleTokenResponse:
+        ok = True
+
+        @staticmethod
+        def json():
+            return {
+                "id_token": "apple-identity-token",
+                "access_token": "apple-access-token",
+                "refresh_token": "apple-refresh-token",
+            }
+
+    monkeypatch.setattr(security_routes, "_create_apple_client_secret", lambda: "client-secret")
+    monkeypatch.setattr(security_routes.requests, "post", lambda *args, **kwargs: AppleTokenResponse())
+    monkeypatch.setattr(security_routes, "_verify_apple_id_token", lambda token: {"sub": "apple-user"})
 
     response = client.post(
         "/api/auth/apple/callback",
@@ -417,12 +432,16 @@ def test_apple_callback_route_accepts_apples_form_post_without_exposing_tokens(a
             "id_token": "apple-identity-token",
             "state": "apple-state",
         },
+        follow_redirects=False,
     )
 
-    assert response.status_code == 200
-    assert "Authentication completed successfully" in response.text
-    assert "apple-identity-token" not in response.text
-    assert response.headers["cache-control"] == "no-store"
+    assert response.status_code == 303
+    assert response.headers["location"] == (
+        "filscore://apple-callback?success=true"
+        "&id_token=apple-identity-token"
+        "&access_token=apple-access-token"
+        "&refresh_token=apple-refresh-token"
+    )
 
 
 def test_apple_callback_route_has_a_readiness_page(app_client):
