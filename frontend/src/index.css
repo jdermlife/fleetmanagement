@@ -9118,7 +9118,7 @@ th { color: var(--dark-gold); }
   aspect-ratio: 375 / 62;
   min-height: 62px;
   justify-self: center;
-  border-radius: 999px;
+  border-radius: 5px;
   border: 2px solid rgba(255, 218, 82, 0.98);
   background: linear-gradient(90deg, rgba(135, 82, 6, 0.92), rgba(107, 63, 3, 0.94));
   box-shadow:
@@ -9174,7 +9174,8 @@ th { color: var(--dark-gold); }
   padding: 0;
   overflow: hidden;
   border: 0;
-  background: #ffffff;
+  border-radius: 5px;
+  background: #000000;
   box-shadow: none;
   line-height: 0;
 }
@@ -9194,7 +9195,7 @@ th { color: var(--dark-gold); }
 .login-art-google-wrap,
 .login-art-google-wrap:hover {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.625rem;
+  font-size: 1.1875rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
@@ -9204,9 +9205,9 @@ th { color: var(--dark-gold); }
 .login-art-google-button:hover,
 .login-art-google-wrap,
 .login-art-google-wrap:hover {
-  border-color: #ffffff;
-  background: #ffffff;
-  color: #1f1f1f;
+  border-color: #000000;
+  background: #000000;
+  color: #ffffff;
   box-shadow: none;
 }
 
@@ -9218,9 +9219,10 @@ th { color: var(--dark-gold); }
 
 .login-art-social-button-email,
 .login-art-social-button-email:hover {
-  border-color: #c58a35;
-  background: linear-gradient(90deg, #805019, #5f370f);
+  border-color: #000000;
+  background: #000000;
   color: #ffffff;
+  font-weight: 500;
 }
 
 .login-art-provider-button:focus-visible,
@@ -9293,7 +9295,7 @@ th { color: var(--dark-gold); }
   width: 100% !important;
   min-width: 100% !important;
   min-height: 62px !important;
-  border-radius: 999px !important;
+  border-radius: 5px !important;
 }
 
 .login-art-service-note,
@@ -13312,6 +13314,13 @@ th { color: var(--dark-gold); }
 
 .trial-expired-paypal-container {
   width: min(100%, 420px);
+}
+
+.trial-expired-paymongo-button,
+.trial-expired-paymongo-button:hover {
+  color: #ffffff;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .trial-expired-paypal-container > div,

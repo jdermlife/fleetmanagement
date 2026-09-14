@@ -958,7 +958,7 @@ export default function SubscriptionPaymentPage() {
               <p>Continue to PayMongo for card, wallet, or other enabled checkout options.</p>
               <button
                 type="button"
-                className="auth-link-button auth-apple-button"
+                className="auth-link-button auth-apple-button trial-expired-paymongo-button"
                 onClick={() => void handleStartGuestCheckout()}
                 disabled={isStartingCheckout || guestAccountIdentifier.trim().length < 3}
               >
@@ -972,7 +972,7 @@ export default function SubscriptionPaymentPage() {
               {canRenderGuestPayPalButtons ? (
                 <div
                   ref={paypalButtonContainerRef}
-                  className="trial-expired-paypal-container register-google-button-wrap"
+                  className="trial-expired-paypal-container"
                   style={{ minHeight: '56px' }}
                 />
               ) : (
@@ -1160,7 +1160,7 @@ export default function SubscriptionPaymentPage() {
                 <p>Make a one-time payment by card, wallet, or another enabled checkout option.</p>
                 <button
                   type="button"
-                  className="auth-link-button auth-apple-button"
+                  className="auth-link-button auth-apple-button trial-expired-paymongo-button"
                   onClick={() => void handleStartCheckout()}
                   disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
                 >
@@ -1174,7 +1174,7 @@ export default function SubscriptionPaymentPage() {
                 {PAYPAL_CLIENT_ID ? (
                   <div
                     ref={paypalButtonContainerRef}
-                    className="trial-expired-paypal-container register-google-button-wrap"
+                    className="trial-expired-paypal-container"
                     style={{ minHeight: '56px' }}
                   />
                 ) : (
@@ -1210,7 +1210,7 @@ export default function SubscriptionPaymentPage() {
                 </label>
                 <button
                   type="button"
-                  className="auth-link-button auth-apple-button"
+                  className="auth-link-button auth-apple-button trial-expired-paymongo-button"
                   onClick={() => void handleStartPayMongoRecurring()}
                   disabled={recurringProvider !== null || (!paymentSubscription && !selectedPlan)}
                 >
@@ -1225,7 +1225,7 @@ export default function SubscriptionPaymentPage() {
                   <div
                     ref={paypalSubscriptionButtonContainerRef}
                     id={`paypal-button-container-${paypalSubscriptionOption.planId}`}
-                    className="trial-expired-paypal-container register-google-button-wrap"
+                    className="trial-expired-paypal-container"
                     style={{ minHeight: '56px' }}
                   />
                 ) : (

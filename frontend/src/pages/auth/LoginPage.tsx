@@ -142,7 +142,7 @@ function GoogleMark() {
 }
 
 const APPLE_CONTINUE_BUTTON_URL =
-  'https://appleid.cdn-apple.com/appleid/button?color=white&border_radius=31&height=62&scale=2&type=continue&width=375'
+  'https://appleid.cdn-apple.com/appleid/button?color=black&border_radius=5&height=62&scale=2&type=continue&width=375'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -359,9 +359,9 @@ export default function LoginPage() {
                     onError={() => setMessage('Unable to load Google Sign-In right now. Please try again.')}
                     text="continue_with"
                     size="large"
-                    theme="outline"
-                    shape="pill"
-                    width="420"
+                    theme="filled_black"
+                    shape="rectangular"
+                    width="375"
                   />
                 </div>
               ) : null}
