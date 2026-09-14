@@ -341,12 +341,6 @@ export default function LoginPage() {
             </button>
 
             <div className="login-art-google-wrap">
-              <div className="login-art-google-preview" aria-hidden={isGoogleEnabled}>
-                <span className="login-art-social-icon login-art-google-icon">
-                  <GoogleMark />
-                </span>
-                <span>Continue with Google</span>
-              </div>
               {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
