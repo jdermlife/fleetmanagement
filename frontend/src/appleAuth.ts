@@ -7,6 +7,11 @@ export interface AppleSignInResult {
 
 let nativeInitializationRequest: Promise<void> | null = null
 
+const ANDROID_APPLE_CLIENT_ID = 'com.quantech.filscore.web'
+
+const ANDROID_APPLE_REDIRECT =
+  'https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback'
+
 type AppleAuthInitConfig = {
   clientId: string
   scope: string
@@ -42,24 +47,34 @@ export function isAppleSignInReady(): boolean {
 }
 
 export function isNativeAppleSignIn(): boolean {
-  return Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+  return Capacitor.isNativePlatform()
 }
 
-async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSignInResult> {
+async function requestNativeAppleSignInToken(
+  clientId: string,
+  redirectUrl?: string,
+): Promise<AppleSignInResult> {
+
   if (!nativeInitializationRequest) {
-    console.log('[AppleAuth] Initializing native Apple Sign-In')
-    console.log('[AppleAuth] Native Apple provider initialization requested')
+    console.log('[AppleAuth] Initializing Apple Sign-In')
 
     nativeInitializationRequest = SocialLogin.initialize({
       apple: {
         clientId,
+        ...(redirectUrl ? { redirectUrl } : {}),
+        useProperTokenExchange: true,
+        useBroadcastChannel: true,
       },
     })
       .then(() => {
-        console.log('[AppleAuth] Native Apple initialization succeeded')
+        console.log('[AppleAuth] Apple initialization succeeded')
       })
       .catch((error) => {
-        console.error('[AppleAuth] Native Apple initialization FAILED:', error)
+        console.error(
+          '[AppleAuth] Apple initialization FAILED:',
+          error,
+        )
+
         nativeInitializationRequest = null
         throw error
       })
@@ -67,7 +82,7 @@ async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSig
 
   await nativeInitializationRequest
 
-  console.log('[AppleAuth] Calling native Apple Sign-In')
+  console.log('[AppleAuth] Calling Apple Sign-In')
 
   const response = await SocialLogin.login({
     provider: 'apple',
@@ -76,11 +91,21 @@ async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSig
     },
   })
 
-  console.log('[AppleAuth] Native Apple Sign-In returned')
+  console.log(
+    '[AppleAuth] Apple Sign-In returned:',
+    response,
+  )
 
-  if (response.provider !== 'apple' || !response.result.idToken) {
-    console.error('[AppleAuth] No Apple identity token returned:', response)
-    throw new Error('Apple Sign-In did not return an identity token.')
+  if (response.provider !== 'apple') {
+    throw new Error(
+      'Apple Sign-In returned an unexpected provider.',
+    )
+  }
+
+  if (!response.result.idToken) {
+    throw new Error(
+      'Apple Sign-In did not return an identity token.',
+    )
   }
 
   console.log('[AppleAuth] Apple identity token received')
@@ -91,12 +116,22 @@ async function requestNativeAppleSignInToken(clientId: string): Promise<AppleSig
 }
 
 function createAppleAuthState(): string {
-  if (typeof globalThis.crypto.randomUUID === 'function') {
+  if (
+    typeof globalThis.crypto.randomUUID === 'function'
+  ) {
     return globalThis.crypto.randomUUID()
   }
 
-  const bytes = globalThis.crypto.getRandomValues(new Uint8Array(16))
-  return Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')
+  const bytes =
+    globalThis.crypto.getRandomValues(
+      new Uint8Array(16),
+    )
+
+  return Array.from(
+    bytes,
+    (value) =>
+      value.toString(16).padStart(2, '0'),
+  ).join('')
 }
 
 export async function requestAppleSignInToken(params: {
@@ -104,16 +139,44 @@ export async function requestAppleSignInToken(params: {
   iosClientId?: string
   redirectURI?: string
 }): Promise<AppleSignInResult> {
-  if (isNativeAppleSignIn()) {
-    return requestNativeAppleSignInToken(params.iosClientId || params.clientId)
+
+  const platform = Capacitor.getPlatform()
+
+  // =====================================================
+  // iOS
+  // =====================================================
+
+  if (platform === 'ios') {
+    return requestNativeAppleSignInToken(
+      params.iosClientId || params.clientId,
+    )
   }
 
+  // =====================================================
+  // Android
+  // =====================================================
+
+  if (platform === 'android') {
+    return requestNativeAppleSignInToken(
+      ANDROID_APPLE_CLIENT_ID,
+      ANDROID_APPLE_REDIRECT,
+    )
+  }
+
+  // =====================================================
+  // Web
+  // =====================================================
+
   const appleAuth = window.AppleID?.auth
+
   if (!appleAuth) {
-    throw new Error('Apple Sign-In is not available right now.')
+    throw new Error(
+      'Apple Sign-In is not available right now.',
+    )
   }
 
   const state = createAppleAuthState()
+
   appleAuth.init({
     clientId: params.clientId,
     scope: 'name email',
@@ -123,18 +186,31 @@ export async function requestAppleSignInToken(params: {
   })
 
   const result = await appleAuth.signIn()
+
   if (result.error) {
-    const description = result.error_description ? ` (${result.error_description})` : ''
-    throw new Error(`Apple Sign-In error: ${result.error}${description}`)
+    const description =
+      result.error_description
+        ? ` (${result.error_description})`
+        : ''
+
+    throw new Error(
+      `Apple Sign-In error: ${result.error}${description}`,
+    )
   }
 
   if (result.authorization?.state !== state) {
-    throw new Error('Apple sign-in returned an invalid authorization state. Please try again.')
+    throw new Error(
+      'Apple sign-in returned an invalid authorization state. Please try again.',
+    )
   }
 
-  const idToken = result.authorization?.id_token
+  const idToken =
+    result.authorization?.id_token
+
   if (!idToken) {
-    throw new Error('Apple sign-in did not return a valid token. Check Apple clientId/domain/redirectURI settings.')
+    throw new Error(
+      'Apple sign-in did not return a valid token. Check Apple clientId/domain/redirectURI settings.',
+    )
   }
 
   return { idToken }
