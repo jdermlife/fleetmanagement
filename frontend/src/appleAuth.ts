@@ -65,7 +65,7 @@ async function requestNativeAppleSignInToken(
           ? {
               redirectUrl,
               useProperTokenExchange: true,
-              useBroadcastChannel: true,
+              useBroadcastChannel: false,
             }
           : {}),
       },
