@@ -83,7 +83,7 @@ class RegisterRequest(BaseModel):
 
 class GoogleTokenLoginRequest(BaseModel):
     id_token: str = Field(min_length=10)
-    platform: Literal["web", "ios"] = "web"
+    platform: Literal["web", "ios","android"] = "web"
     subscriber_type: Literal["borrower", "lender"] | None = None
     lender_data_sharing_consent: bool | None = None
 
