@@ -354,6 +354,10 @@ export default function LoginPage() {
               ) : null}
               {isGoogleEnabled && !useNativeGoogleSignIn ? (
                 <div className="login-art-google-live">
+                  <div className="login-art-google-preview" aria-hidden="true">
+                    <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
+                    <span>Continue with Google</span>
+                  </div>
                   <GoogleLogin
                     onSuccess={(response) => handleGoogleSuccess(response, 'web')}
                     onError={() => setMessage('Unable to load Google Sign-In right now. Please try again.')}

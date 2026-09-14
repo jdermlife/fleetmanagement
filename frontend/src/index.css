@@ -9265,11 +9265,13 @@ th { color: var(--dark-gold); }
   padding: 12px 20px;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.625rem;
+  font-size: 1.1875rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
+  background: #000000;
   pointer-events: none;
+  z-index: 1;
 }
 
 .login-art-google-icon {
@@ -9291,12 +9293,19 @@ th { color: var(--dark-gold); }
   place-items: center;
 }
 
+.login-art-google-live > .login-art-google-preview {
+  display: flex;
+  flex-direction: row;
+  font-size: 1.1875rem;
+}
+
 .login-art-google-live iframe,
 .login-art-google-live div[role="button"] {
   width: 100% !important;
   min-width: 100% !important;
   min-height: 62px !important;
   border-radius: 5px !important;
+  opacity: 0.02;
 }
 
 .login-art-service-note,
