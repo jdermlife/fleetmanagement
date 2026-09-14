@@ -9195,7 +9195,7 @@ th { color: var(--dark-gold); }
 .login-art-google-wrap,
 .login-art-google-wrap:hover {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
@@ -9265,7 +9265,7 @@ th { color: var(--dark-gold); }
   padding: 12px 20px;
   color: #ffffff;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
   font-weight: 500;
   letter-spacing: 0;
   text-shadow: none;
@@ -9296,7 +9296,7 @@ th { color: var(--dark-gold); }
 .login-art-google-live > .login-art-google-preview {
   display: flex;
   flex-direction: row;
-  font-size: 1.1875rem;
+  font-size: 1.625rem;
 }
 
 .login-art-google-live iframe,
@@ -10320,7 +10320,10 @@ th { color: var(--dark-gold); }
     min-height: 56px;
   }
 
-  .login-art-social-button-apple {
+  .login-art-social-button-apple,
+  .login-art-provider-button,
+  .login-art-google-preview,
+  .login-art-google-live > .login-art-google-preview {
     min-height: 56px;
     font-size: 1.5rem;
   }
@@ -10564,7 +10567,10 @@ th { color: var(--dark-gold); }
     min-height: 50px;
   }
 
-  .login-art-social-button-apple {
+  .login-art-social-button-apple,
+  .login-art-provider-button,
+  .login-art-google-preview,
+  .login-art-google-live > .login-art-google-preview {
     min-height: 50px;
     font-size: 1.3125rem;
   }
