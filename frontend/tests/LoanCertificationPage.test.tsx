@@ -59,6 +59,7 @@ describe('LoanCertificationPage', () => {
       borrower_name: 'Jordan Santos',
       product_type: 'Auto Loan',
       status: 'CREDIT_REVIEW',
+      requirements: { buildProfile: { completionPercent: 84 } },
       credit_bureau_reports: {
         bureau_name: 'FILSCORE Credit Bureau Scorecard',
         bureau_score: 91,
@@ -108,6 +109,8 @@ describe('LoanCertificationPage', () => {
     expect(await screen.findAllByText('Jordan Santos')).toHaveLength(2)
     expect(mockRecomputeStoredScores).toHaveBeenCalledWith('APP-BUILD-12')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-BUILD-12')
+    expect(screen.getByText('84%')).toBeTruthy()
+    expect(screen.queryByText('100%')).toBeNull()
 
     const compositeCard = screen.getByText('Composite Score').closest('div')
     expect(compositeCard).toBeTruthy()

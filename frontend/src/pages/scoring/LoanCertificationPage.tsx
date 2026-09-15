@@ -18,6 +18,7 @@ import {
   calculateInformationProvidedPercent,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
 } from './applicationCompleteness'
+import { getBuildProfileCompletionPercent, type ReplicatedBuildProfile } from './buildProfileReplication'
 import { getFilscoreBand, toFilscore } from './filscoreScale'
 
 type CertificationSnapshot = {
@@ -79,7 +80,10 @@ const buildCertificationSnapshot = (
     borrowerName: record.borrower_name?.trim() || 'Unnamed Applicant / Borrower',
     productType: normalizeProductType(record.product_type),
     issuedAt: new Date().toISOString(),
-    informationProvidedPercent: calculateInformationProvidedPercent(record),
+    informationProvidedPercent: getBuildProfileCompletionPercent(
+      record.requirements?.buildProfile as ReplicatedBuildProfile | undefined,
+      calculateInformationProvidedPercent(record),
+    ),
     overallScore: record.overall_scores?.final_score ?? null,
     label: finalRating ? `${finalGrade} - ${finalRating}` : finalGrade,
     decision: finalDecision,

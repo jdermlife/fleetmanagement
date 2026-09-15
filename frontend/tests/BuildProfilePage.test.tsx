@@ -499,8 +499,10 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
 
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+    const displayedCompletion = Number(screen.getByRole('progressbar', { name: 'Profile completion' }).getAttribute('aria-valuenow'))
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)
+    expect(savedProfile.completionPercent).toBe(displayedCompletion)
   }, 10000)
 
   it('provides the requested Step 1 identity, address, and household fields', () => {
@@ -1111,6 +1113,10 @@ describe('BuildProfilePage', () => {
     render(<BuildProfilePage />)
 
     await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
+    expect(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }).getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByLabelText('Set Date As Of').getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByRole('heading', { name: 'Income' }).closest('section')?.getAttribute('aria-invalid')).toBe('true')
+    expect(screen.getByRole('heading', { name: 'Expenses' }).closest('section')?.getAttribute('aria-invalid')).toBe('true')
     await user.selectOptions(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }), 'Build Emergency Fund')
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-09-15')
     await user.click(screen.getByText('Statement Filters - Details of Net Worth and Income & Expenses', { selector: 'summary' }))
@@ -1118,15 +1124,20 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Salary setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')
     await user.type(screen.getByLabelText('Housing setup amount'), '20000')
+    await user.click(screen.getByText(/Actual \/ Current Personal Income and Expenses with Goals and Protection/, { selector: 'summary' }))
 
     expect(screen.getByLabelText('Housing remarks').getAttribute('placeholder')).toBe('Remarks (Optional)')
     expect(screen.getByLabelText('Housing remarks').getAttribute('aria-required')).toBe('false')
+    expect(screen.getByRole('combobox', { name: 'Long Term Financial Goal' }).getAttribute('aria-invalid')).toBe('false')
+    expect(screen.getByLabelText('Set Date As Of').getAttribute('aria-invalid')).toBe('false')
+    expect(screen.getByRole('heading', { name: 'Income' }).closest('section')?.getAttribute('aria-invalid')).toBe('false')
+    expect(screen.getByRole('heading', { name: 'Expenses' }).closest('section')?.getAttribute('aria-invalid')).toBe('false')
     expect(screen.getByRole('button', { name: /Step 8: Actual \/ Current Financial Position, 100% information provided/ })).toBeTruthy()
 
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(Object.keys(savedProfile.values).some((key) => key.startsWith('wealthRemark.'))).toBe(false)
-  })
+  }, 15000)
 
   it('captures actual financial statements in Step 9', async () => {
     const user = userEvent.setup()

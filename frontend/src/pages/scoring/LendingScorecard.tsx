@@ -60,7 +60,7 @@ import { getCanonicalBorrowerName } from './borrowerName';
 import { getFilscoreBand, toFilscore } from './filscoreScale';
 import { buildLendingScoreTimeline, calculateAffordableLoan } from './lendingDecisionInsights';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
-import { readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
+import { getBuildProfileCompletionPercent, readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
 
 // --- TypeScript Interfaces (PostgreSQL Schema Mapping) ---
 interface BorrowerInfo { fullName: string; email: string; phone: string; govId: string; address: string; }
@@ -2925,7 +2925,10 @@ export default function LendingScorecard() {
   const informationCompletion = calculateApplicationInformationCompletion(
     buildLoanPayload(formData.status),
   );
-  const informationProvidedPercent = informationCompletion.overallPercent;
+  const informationProvidedPercent = getBuildProfileCompletionPercent(
+    readReplicatedBuildProfile(replicationId || undefined),
+    informationCompletion.overallPercent,
+  );
   const hasSufficientInformationForRating =
     informationProvidedPercent >= CREDIT_RATING_MINIMUM_INFORMATION_PERCENT;
 

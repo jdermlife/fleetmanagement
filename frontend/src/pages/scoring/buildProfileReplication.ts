@@ -4,6 +4,7 @@ export const BUILD_PROFILE_STORAGE_KEY = 'fms:build-profile'
 
 export type ReplicatedBuildProfile = {
   profileId: string
+  completionPercent?: number
   selectedApplicationNo?: string
   ownerKey?: string
   updatedAt?: string
@@ -102,4 +103,14 @@ export function getCurrentBuildProfileOwner(): string {
     ? localStorage.getItem('auth_token')
     : null)
   return resolveAutosaveOwner(token)
+}
+
+export function getBuildProfileCompletionPercent(
+  profile: ReplicatedBuildProfile | null | undefined,
+  fallback: number,
+): number {
+  const completionPercent = profile?.completionPercent
+  return typeof completionPercent === 'number' && Number.isFinite(completionPercent)
+    ? Math.max(0, Math.min(100, Math.round(completionPercent)))
+    : fallback
 }

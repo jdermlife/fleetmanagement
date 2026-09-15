@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import {
   BUILD_PROFILE_STORAGE_KEY,
+  getBuildProfileCompletionPercent,
   readReplicatedBuildProfile,
   getSelectedBuildProfileApplicationNo,
   toNetWorthDraft,
@@ -47,6 +48,11 @@ describe('build profile replication', () => {
     window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify(profile))
     expect(readReplicatedBuildProfile('PRO-1')?.profileId).toBe('PRO-1')
     expect(readReplicatedBuildProfile('PRO-2')).toBeNull()
+  })
+
+  it('uses Base Setting completion with a legacy fallback', () => {
+    expect(getBuildProfileCompletionPercent({ ...profile, completionPercent: 64 }, 91)).toBe(64)
+    expect(getBuildProfileCompletionPercent(profile, 91)).toBe(91)
   })
 
   it('keeps an explicit selected application separate from generated profile IDs', () => {
