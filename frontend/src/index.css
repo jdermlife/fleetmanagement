@@ -14924,6 +14924,15 @@ th { color: var(--dark-gold); }
   gap: 20px;
 }
 
+.financial-health-statement-action,
+.financial-health-statement-action button {
+  width: 100%;
+}
+
+.financial-health-statement-action button {
+  justify-content: center;
+}
+
 .financial-health-side-panel-header {
   display: flex;
   align-items: flex-start;

@@ -37,12 +37,6 @@
 .admin-statement-toolbar button { display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; cursor: pointer; font-weight: 700; }
 .admin-statement-toolbar button svg { width: 16px; height: 16px; }
 
-.financial-health-statement-action {
-  display: flex;
-  justify-content: flex-end;
-  margin-top: -8px;
-}
-
 .admin-statement-sheet {
   --statement-font-size: 10pt;
   box-sizing: border-box;

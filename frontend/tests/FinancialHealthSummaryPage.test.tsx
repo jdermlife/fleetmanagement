@@ -95,7 +95,7 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(summary as HTMLElement).getByText('Weights total 100%')).toBeTruthy()
   })
 
-  it('opens the Build Profile financial statement for non-admin users below the comparative graph', () => {
+  it('opens the Build Profile financial statement for non-admin users between Interpretation and Focus Next', () => {
     authorization.isAdmin = false
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PROFILE-USER-1',
@@ -120,10 +120,13 @@ describe('FinancialHealthSummaryPage', () => {
 
     render(<FinancialHealthSummaryPage />)
 
-    const graph = screen.getByRole('heading', { name: 'Health profile and weighted contribution' }).closest('article')
     const openButton = screen.getByRole('button', { name: 'Open Statement of Assets and Liabilities' })
-    expect(graph).toBeTruthy()
-    expect(graph!.compareDocumentPosition(openButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    const interpretation = screen.getByText('Interpretation', { selector: '.psychometric-panel-kicker' }).closest('article')
+    const focusNext = screen.getByText('Focus next', { selector: '.psychometric-panel-kicker' }).closest('article')
+    expect(interpretation).toBeTruthy()
+    expect(focusNext).toBeTruthy()
+    expect(interpretation!.compareDocumentPosition(openButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(openButton.compareDocumentPosition(focusNext!) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
 
     fireEvent.click(openButton)
     const statement = screen.getByRole('dialog', { name: 'Statement of Assets and Liabilities' })
