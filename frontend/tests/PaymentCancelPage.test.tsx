@@ -25,7 +25,9 @@ describe('PaymentCancelPage', () => {
     )
 
     expect(screen.getByRole('heading', { name: 'Your payment was not completed' })).toBeTruthy()
-    expect(screen.getByRole('link', { name: /Choose a Payment Option/ }).getAttribute('href')).toBe('/trial-expired')
-    expect(screen.getByRole('link', { name: 'Back to Login' }).getAttribute('href')).toBe('/login')
+    expect(screen.getByRole('link', { name: /Choose a Payment Option/ }).getAttribute('href')).toBe(
+      '/subscription/payment?plan=single',
+    )
+    expect(screen.getByRole('link', { name: 'View Account' }).getAttribute('href')).toBe('/login')
   })
 })

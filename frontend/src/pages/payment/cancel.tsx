@@ -4,7 +4,6 @@ import { Link } from 'react-router-dom'
 import {
   cancelPublicTrialPayment,
   cancelSubscriptionPayment,
-  getAuthToken,
   getErrorMessage,
 } from '../../api'
 
@@ -29,20 +28,11 @@ function takePaymentCancellationContext(): PaymentCancellationContext | null {
 
 export default function PaymentCancelPage() {
   const [message, setMessage] = useState('No charge was completed and your access was not changed.')
-  const [retryPath, setRetryPath] = useState(getAuthToken() ? '/subscription-payment' : '/trial-expired')
 
   useEffect(() => {
     const context = takePaymentCancellationContext()
     if (!context) {
       return
-    }
-
-    if (context.accountIdentifier && context.plan) {
-      const search = new URLSearchParams({
-        plan: context.plan,
-        account: context.accountIdentifier,
-      })
-      setRetryPath(`/subscription/payment?${search.toString()}`)
     }
 
     const cancellation = context.accountIdentifier && context.plan
@@ -87,12 +77,12 @@ export default function PaymentCancelPage() {
         </div>
 
         <div className="payment-success-actions">
-          <Link className="payment-success-action" to={retryPath}>
+          <Link className="payment-success-action" to="/subscription/payment?plan=single">
             Choose a Payment Option
             <span aria-hidden="true">&gt;</span>
           </Link>
-          <Link className="payment-success-action payment-success-action-secondary" to={getAuthToken() ? '/account' : '/login'}>
-            {getAuthToken() ? 'View Account' : 'Back to Login'}
+          <Link className="payment-success-action payment-success-action-secondary" to="/login">
+            View Account
           </Link>
         </div>
       </section>
