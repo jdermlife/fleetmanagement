@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -24,7 +25,6 @@ import {
   type SubscriptionRecord,
 } from '../../api'
 import {
-  isNativeStoreBilling,
   loadNativeStoreProducts,
   manageNativeSubscriptions,
   purchaseNativeSubscription,
@@ -32,6 +32,16 @@ import {
   type NativeStoreProduct,
 } from '../../nativeBilling'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
+import payMongoLogo from '../../assets/paymongo-official.png'
+
+function PayMongoButtonContent({ label }: { label: string }) {
+  return (
+    <>
+      <img className="trial-expired-paymongo-logo" src={payMongoLogo} alt="" aria-hidden="true" />
+      <span>{label}</span>
+    </>
+  )
+}
 
 function billingAmount(plan: SubscriptionPlan): number {
   const monthlyPrice = plan.monthly_price && plan.monthly_price > 0 ? plan.monthly_price : 0
@@ -214,7 +224,7 @@ export default function SubscriptionPaymentPage() {
   const guestAccountQuery = searchParams.get('account')?.trim() || ''
   const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
-  const usesNativeStore = isNativeStoreBilling()
+  const usesNativeStore = Capacitor.getPlatform() === 'ios'
   const guestTrialPlan =
     !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
@@ -962,7 +972,9 @@ export default function SubscriptionPaymentPage() {
                 onClick={() => void handleStartGuestCheckout()}
                 disabled={isStartingCheckout || guestAccountIdentifier.trim().length < 3}
               >
-                {isStartingCheckout ? 'Starting secure checkout...' : 'Pay with PayMongo'}
+                <PayMongoButtonContent
+                  label={isStartingCheckout ? 'Starting secure checkout...' : 'Pay with PayMongo'}
+                />
               </button>
             </div>
 
@@ -1164,7 +1176,9 @@ export default function SubscriptionPaymentPage() {
                   onClick={() => void handleStartCheckout()}
                   disabled={isStartingCheckout || (!paymentSubscription && !selectedPlan)}
                 >
-                  {isStartingCheckout ? 'Opening secure checkout...' : 'Pay once with PayMongo'}
+                  <PayMongoButtonContent
+                    label={isStartingCheckout ? 'Opening secure checkout...' : 'Pay once with PayMongo'}
+                  />
                 </button>
               </div>
 
@@ -1214,7 +1228,9 @@ export default function SubscriptionPaymentPage() {
                   onClick={() => void handleStartPayMongoRecurring()}
                   disabled={recurringProvider !== null || (!paymentSubscription && !selectedPlan)}
                 >
-                  {recurringProvider === 'PAYMONGO' ? 'Starting recurring billing...' : 'Subscribe with PayMongo'}
+                  <PayMongoButtonContent
+                    label={recurringProvider === 'PAYMONGO' ? 'Starting recurring billing...' : 'Subscribe with PayMongo'}
+                  />
                 </button>
               </div>
 

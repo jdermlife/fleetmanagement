@@ -19,6 +19,14 @@ const apiMocks = vi.hoisted(() => ({
   listPublicSubscriptionPlans: vi.fn(),
 }))
 const mockNavigate = vi.hoisted(() => vi.fn())
+const platform = vi.hoisted(() => ({ value: 'web' }))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    getPlatform: () => platform.value,
+    isNativePlatform: () => platform.value !== 'web',
+  },
+}))
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
@@ -79,6 +87,7 @@ const payment = {
 
 describe('SubscriptionPaymentPage PayPal Buttons', () => {
   beforeEach(() => {
+    platform.value = 'web'
     mockNavigate.mockReset()
     vi.stubEnv('VITE_PAYPAL_CLIENT_ID', 'test-client')
     apiMocks.listPublicSubscriptionPlans.mockResolvedValue([plan])
@@ -132,6 +141,23 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     document.getElementById('paypal-subscription-js-sdk')?.remove()
     vi.unstubAllEnvs()
     vi.resetModules()
+  })
+
+  it('shows branded web payment providers in the Android app', async () => {
+    platform.value = 'android'
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const payMongoButton = await screen.findByRole('button', { name: 'Pay once with PayMongo' })
+    expect(payMongoButton.querySelector('img')?.getAttribute('src')).toContain('paymongo-official.png')
+    expect(screen.queryByRole('heading', { name: 'App Store Subscription' })).toBeNull()
   })
 
   it('creates and captures the exact one-time PayPal order', async () => {

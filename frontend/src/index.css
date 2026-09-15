@@ -13334,9 +13334,27 @@ th { color: var(--dark-gold); }
 
 .trial-expired-paymongo-button,
 .trial-expired-paymongo-button:hover {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  min-height: 48px;
+  border-color: #124b3f;
+  background: #124b3f;
   color: #ffffff;
   font-weight: 700;
   line-height: 1.2;
+}
+
+.trial-expired-paymongo-button:hover {
+  background: #0d3d34;
+}
+
+.trial-expired-paymongo-logo {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 5px;
 }
 
 .trial-expired-paypal-container > div,
