@@ -1695,7 +1695,7 @@ export default function BuildProfilePage() {
         </section>
 
         <section className="build-profile-detail-section">
-          <p>Take a picture of a valid ID for inclusion and fasten profile review.</p>
+          <p>Take a picture of a valid ID for inclusion and fasten profile review.(Optional)</p>
           <label className="build-profile-upload-zone">
             <input type="file" accept="image/*" capture="environment" onChange={(event) => {
               const file = event.target.files?.[0]
@@ -1927,7 +1927,7 @@ export default function BuildProfilePage() {
         </section>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth">
-          <summary><strong>Current Net Worth </strong></summary>
+          <summary><strong>Current Net Worth (Fill this up. Indicate zero if none) </strong></summary>
           <div className="build-profile-net-worth-meta"><span>Enter all applicable assets and liabilities</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns">
             {(['assets', 'liabilities'] as const).map((section) => {
@@ -1959,7 +1959,7 @@ export default function BuildProfilePage() {
         </details>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
-          <summary>Actual / Current Personal Income and Expenses with Goals and Protection</summary>
+          <summary>Actual / Current Personal Income and Expenses with Goals and Protection (Fill this up. Indicate zero if none)</summary>
           <div className="build-profile-net-worth-meta"><span>Actual personal income, expenses, goals, and protection statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
             {renderIncomeExpenseColumn('Income', incomeRows, 'income')}

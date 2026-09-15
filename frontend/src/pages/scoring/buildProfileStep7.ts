@@ -56,7 +56,7 @@ export const MOTORCYCLE_LOAN_FIELDS: CollateralField[] = [
 ]
 
 export const HOME_LOAN_FIELDS: CollateralField[] = [
-  { key: 'propertyAddress', label: 'Property Address' }, { key: 'registeredOwner', label: 'Registered Owner' },
+  { key: 'propertyAddress', label: 'Property Address' }, { key: 'registeredOwner', label: 'Registered Owner (Optional)' },
   { key: 'lotNumber', label: 'Lot Number' }, { key: 'blockNumber', label: 'Block Number' }, { key: 'tctCctNumber', label: 'TCT/CCT Number' },
   { key: 'propertyMarketabilityCategory', label: 'Marketability of the Property', type: 'select', options: ['Subdivision / Condominium (Class A,B,C)', 'Lowcost Subdivision / Condominium', 'Outside'] },
   { key: 'houseUnitModelCategory', label: 'House / Unit Model', type: 'select', options: ['Single detached', 'Single attached / Condominium', 'Townhouse', 'Row house'] },
