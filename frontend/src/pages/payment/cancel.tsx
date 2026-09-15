@@ -363,11 +363,6 @@ export default function SubscriptionManagementPage() {
 
       {statusMessage ? <p className="status-message">{statusMessage}</p> : null}
 
-      {!loading && hasBillingAccessDenied ? (
-        <div className="card" style={{ marginBottom: 16 }}>
-          <SubscriptionAccessDeniedCard onGoToAccount={() => navigate('/account')} />
-        </div>
-      ) : null}
 
       {!hasBillingAccessDenied ? (
         <div className="card" style={{ marginBottom: 16 }}>
