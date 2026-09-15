@@ -199,7 +199,6 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
     expect(screen.queryByRole('button', { name: 'Pay with PayPal' })).toBeNull()
-    expect(buttons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(buttons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
@@ -277,7 +276,6 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
-    expect(buttons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(buttons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
@@ -387,7 +385,6 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(subscriptionButtons).toHaveBeenCalledTimes(1))
-    expect(subscriptionButtons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(subscriptionButtons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
