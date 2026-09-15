@@ -13096,6 +13096,11 @@ th { color: var(--dark-gold); }
   text-align: center;
 }
 
+.payment-cancel-panel {
+  border-color: rgba(180, 83, 9, 0.32);
+  box-shadow: 0 24px 70px rgba(154, 52, 18, 0.1);
+}
+
 .payment-success-mark {
   width: 82px;
   aspect-ratio: 1;
@@ -13108,6 +13113,16 @@ th { color: var(--dark-gold); }
   font-size: 2.6rem;
   font-weight: 800;
   animation: payment-success-arrive 480ms ease-out both;
+}
+
+.payment-cancel-mark {
+  border-color: #ea580c;
+  background: #fff7ed;
+  color: #c2410c;
+}
+
+.payment-cancel-page .payment-success-kicker {
+  color: #c2410c;
 }
 
 .payment-success-kicker {

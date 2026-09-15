@@ -100,6 +100,7 @@ const AboutFilscoreMobilePage = lazy(() => import('./pages/admin/AboutFilscoreMo
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const PaymentSuccessPage = lazyWithRetry(() => import('./pages/subscriptions/PaymentSuccessPage'))
+const PaymentCancelPage = lazyWithRetry(() => import('./pages/payment/cancel'))
 const TrialExpiredReminderPage = lazy(() => import('./pages/subscriptions/TrialExpiredReminderPage'))
 const BillingPage = lazyWithRetry(() => import('./pages/subscriptions/BillingPage'))
 const RiskManagementPage = lazy(() => import('./pages/governance/RiskManagementPage'))
@@ -332,7 +333,7 @@ const adminMenuItems = isAdminUser
   : []
 
 const isLoginRoute = location.pathname === '/login'
-const isPaymentSuccessRoute = ['/payment-success', '/payment/success'].includes(location.pathname)
+const isPaymentSuccessRoute = ['/payment-success', '/payment/success', '/payment/cancel'].includes(location.pathname)
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/financial-health-summary', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
 
@@ -1202,6 +1203,11 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/payment/success"
               element={<PaymentSuccessPage />}
+            />
+
+            <Route
+              path="/payment/cancel"
+              element={<PaymentCancelPage />}
             />
 
             <Route
