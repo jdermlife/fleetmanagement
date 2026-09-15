@@ -1858,13 +1858,14 @@ export default function BuildProfilePage() {
             {rows.filter((entry) => entry.category === category).map((entry) => <label key={entry.id} className="build-profile-detailed-net-worth-line">
               <span>{entry.label}</span>
               <NumericFormat
-                value={profile.values[entry.id] ?? ''}
+                value={profile.values[entry.id] ?? '0'}
                 valueIsNumericString
                 thousandSeparator="," decimalScale={2} fixedDecimalScale
                 inputMode="decimal"
                 allowNegative={false}
                 placeholder=""
                 aria-label={`${entry.label} personal statement amount`}
+                onFocus={(event) => event.currentTarget.select()}
                 onValueChange={({ value }) => updateValue(entry.id, value)}
               />
             </label>)}
@@ -1927,7 +1928,7 @@ export default function BuildProfilePage() {
         </section>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth">
-          <summary><strong>Current Net Worth (Fill this up. Indicate zero if none) </strong></summary>
+          <summary><strong>Current Net Worth (Indicate zero if none) </strong></summary>
           <div className="build-profile-net-worth-meta"><span>Enter all applicable assets and liabilities</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns">
             {(['assets', 'liabilities'] as const).map((section) => {
@@ -1940,13 +1941,14 @@ export default function BuildProfilePage() {
                   {rows.filter((entry) => entry.category === category).map((entry) => <label key={entry.id} className="build-profile-detailed-net-worth-line">
                     <span>{entry.label}</span>
                     <NumericFormat
-                      value={profile.values[entry.id] ?? ''}
+                      value={profile.values[entry.id] ?? '0'}
                       valueIsNumericString
                       thousandSeparator="," decimalScale={2} fixedDecimalScale
                       inputMode="decimal"
                       allowNegative={false}
                       placeholder=""
                       aria-label={`${entry.label} detailed net worth amount`}
+                      onFocus={(event) => event.currentTarget.select()}
                       onValueChange={({ value }) => updateValue(entry.id, value)}
                     />
                   </label>)}
@@ -1959,7 +1961,7 @@ export default function BuildProfilePage() {
         </details>
 
         <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
-          <summary>Actual / Current Personal Income and Expenses with Goals and Protection (Fill this up. Indicate zero if none)</summary>
+          <summary>Actual / Current Personal Income and Expenses with Goals and Protection (Indicate zero if none)</summary>
           <div className="build-profile-net-worth-meta"><span>Actual personal income, expenses, goals, and protection statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
             {renderIncomeExpenseColumn('Income', incomeRows, 'income')}
@@ -2028,8 +2030,9 @@ export default function BuildProfilePage() {
                       className="build-profile-account-remark"
                       value={profile.values[`wealthRemark.${entry.id}`] ?? ''}
                       maxLength={160}
-                      placeholder="Remarks"
+                      placeholder="Remarks (Optional)"
                       aria-label={`${entry.label} remarks`}
+                      aria-required={false}
                       onChange={(event) => updateValue(`wealthRemark.${entry.id}`, event.target.value)}
                     /> : null}
                   </article>)}
@@ -2136,7 +2139,7 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-nine">
         <h3>Step 9: Desired / Target Financial Position</h3>
-        <p className="psychometric-section-note">Step 8 actual values are copied as a starting point. Adjust them to define your desired or target financial position for comparison in Step 10.</p>
+        <p className="psychometric-section-note"><strong>Step 8 actual values are copied as a starting point. Adjust them to define your desired or target financial position for comparison in Step 10.</strong></p>
 
         <section className="build-profile-detail-section">
           <h4>Desired / Target Summary</h4>
