@@ -4,7 +4,8 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
-import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from '../../brand'
+import { APP_NAME, APP_TAGLINE } from '../../brand'
+import loginLogo from '../../../ios/App/App/Assets.xcassets/AppIcon.appiconset/FILSCORE Logo Only.png'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
 import { getNativeGooglePlatform, isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
@@ -309,7 +310,7 @@ export default function LoginPage() {
     <div className="login-art-page">
       <div className="login-art-shell">
         <div className="login-art-brand">
-          <img className="login-art-logo" src={brandLogoDataUri} alt={APP_NAME} />
+          <img className="login-art-logo" src={loginLogo} alt={APP_NAME} />
           <div className="login-art-brand-copy">
             <p className="login-art-brand-name">{APP_NAME}</p>
             <p className="login-art-brand-tagline">{APP_TAGLINE}</p>
