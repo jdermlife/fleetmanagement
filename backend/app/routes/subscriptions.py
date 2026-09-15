@@ -81,6 +81,7 @@ from app.services.paypal import (
     capture_order as capture_paypal_order_api,
     create_order as create_paypal_order_api,
     create_subscription as create_paypal_subscription_api,
+    get_subscription_approval_url as get_paypal_subscription_approval_url,
     verify_webhook_signature as verify_paypal_webhook_signature,
 )
 from app.services.subscription_entitlement import evaluate_loan_record_create_entitlement
@@ -401,10 +402,16 @@ def _start_recurring_billing_for_user(
             .first()
         )
         if existing is not None:
+            approval_url = None
+            if provider_code == "PAYPAL" and existing.status == "APPROVAL_PENDING":
+                try:
+                    approval_url = get_paypal_subscription_approval_url(existing.provider_agreement_id)
+                except PayPalAPIError as exc:
+                    raise HTTPException(status_code=502, detail=str(exc)) from exc
             return {
                 "agreement_id": existing.provider_agreement_id,
                 "status": existing.status,
-                "approval_url": None,
+                "approval_url": approval_url,
                 "first_charge_at": existing.first_charge_at,
                 "subscription": _serialize_subscription(subscription),
                 "reused": True,

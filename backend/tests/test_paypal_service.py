@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 import json
 
@@ -120,6 +121,55 @@ def test_capture_order_returns_completed_amount(monkeypatch):
     assert captured["headers"]["PayPal-Request-Id"] == "capture-ORDER-TEST-123"
 
 
+def test_create_subscription_sets_hosted_approval_return_urls(monkeypatch):
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
+    monkeypatch.setenv("PAYPAL_SUBSCRIPTION_RETURN_URL", "https://example.com/payment/success?provider=paypal")
+    monkeypatch.setenv("PAYPAL_SUBSCRIPTION_CANCEL_URL", "https://example.com/payment/cancel")
+    captured: dict[str, object] = {}
+
+    def fake_post(url, **kwargs):
+        if url.endswith("/v1/oauth2/token"):
+            class TokenResponse:
+                ok = True
+
+                @staticmethod
+                def json():
+                    return {"access_token": "ACCESS_TOKEN"}
+
+            return TokenResponse()
+
+        captured.update(kwargs)
+
+        class SubscriptionResponse:
+            ok = True
+
+            @staticmethod
+            def json():
+                return {
+                    "id": "I-SUBSCRIPTION-123",
+                    "status": "APPROVAL_PENDING",
+                    "links": [{"rel": "approve", "href": "https://www.paypal.com/approve"}],
+                }
+
+        return SubscriptionResponse()
+
+    monkeypatch.setattr(paypal.requests, "post", fake_post)
+
+    result = paypal.create_subscription(
+        plan_id="P-SINGLE",
+        custom_id="SUB-123",
+        start_time=datetime.now(timezone.utc),
+        subscriber_email="subscriber@example.com",
+        request_id="request-123",
+    )
+
+    application_context = captured["json"]["application_context"]
+    assert application_context["return_url"] == "https://example.com/payment/success?provider=paypal"
+    assert application_context["cancel_url"] == "https://example.com/payment/cancel"
+    assert result["approval_url"] == "https://www.paypal.com/approve"
+
+
 def test_cancel_subscription_posts_reason_to_paypal(monkeypatch):
     monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
     monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
@@ -151,6 +201,51 @@ def test_cancel_subscription_posts_reason_to_paypal(monkeypatch):
     assert captured["url"].endswith("/v1/billing/subscriptions/I-SUBSCRIPTION-123/cancel")
     assert captured["json"] == {"reason": "Service no longer needed"}
     assert captured["headers"]["Authorization"] == "Bearer ACCESS_TOKEN"
+
+
+def test_get_subscription_approval_url_recovers_pending_approval(monkeypatch):
+    monkeypatch.setenv("PAYPAL_CLIENT_ID", "paypal_client_id")
+    monkeypatch.setenv("PAYPAL_CLIENT_SECRET", "paypal_secret")
+    captured: dict[str, object] = {}
+
+    def fake_post(url, **_kwargs):
+        class TokenResponse:
+            ok = True
+
+            @staticmethod
+            def json():
+                return {"access_token": "ACCESS_TOKEN"}
+
+        return TokenResponse()
+
+    def fake_get(url, **kwargs):
+        captured["url"] = url
+        captured.update(kwargs)
+
+        class SubscriptionResponse:
+            ok = True
+
+            @staticmethod
+            def json():
+                return {
+                    "links": [
+                        {
+                            "rel": "approve",
+                            "href": "https://www.paypal.com/webapps/billing/subscriptions?ba_token=I-SUBSCRIPTION-123",
+                        }
+                    ]
+                }
+
+        return SubscriptionResponse()
+
+    monkeypatch.setattr(paypal.requests, "post", fake_post)
+    monkeypatch.setattr(paypal.requests, "get", fake_get)
+
+    approval_url = paypal.get_subscription_approval_url("I-SUBSCRIPTION-123")
+
+    assert captured["url"].endswith("/v1/billing/subscriptions/I-SUBSCRIPTION-123")
+    assert captured["headers"]["Authorization"] == "Bearer ACCESS_TOKEN"
+    assert approval_url and approval_url.startswith("https://www.paypal.com/")
 
 
 def test_verify_webhook_signature_calls_paypal_verification(monkeypatch):

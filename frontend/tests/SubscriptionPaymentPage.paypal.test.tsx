@@ -128,7 +128,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     apiMocks.createPayPalSubscription.mockResolvedValue({
       agreement_id: 'I-SUBSCRIPTION-123',
       status: 'APPROVAL_PENDING',
-      approval_url: null,
+      approval_url: '#paypal-subscription-approval',
       first_charge_at: '2026-07-19T00:00:00Z',
       subscription,
     })
@@ -404,6 +404,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
     })
     expect(agreementId).toBe('I-SUBSCRIPTION-123')
+    expect(window.location.hash).toBe('#paypal-subscription-approval')
 
     await act(async () => {
       await subscriptionButtonOptions!.onApprove({ subscriptionID: agreementId })

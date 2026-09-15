@@ -590,6 +590,9 @@ export default function SubscriptionPaymentPage() {
               agreementId: result.agreement_id,
               subscriptionId: subscriptionForPayment.id,
             }
+            if (result.approval_url) {
+              window.location.href = result.approval_url
+            }
             return result.agreement_id
           },
           onApprove: async (data) => {

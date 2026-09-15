@@ -47,6 +47,16 @@ def _timeout_seconds() -> float:
     return float(os.getenv("PAYPAL_TIMEOUT_SECONDS", "15"))
 
 
+def _return_url(name: str) -> str:
+    value = _required_environment_value(name)
+    parsed = urlparse(value)
+    if parsed.scheme not in {"http", "https"} or not parsed.hostname:
+        raise PayPalConfigurationError(f"{name} must be an absolute HTTP(S) URL")
+    if os.getenv("ENVIRONMENT", "development").lower() == "production" and parsed.scheme != "https":
+        raise PayPalConfigurationError(f"{name} must use HTTPS in production")
+    return value
+
+
 def _amount_to_paypal_string(amount: Decimal) -> str:
     return str(amount.quantize(Decimal("0.01"), rounding=ROUND_HALF_UP))
 
@@ -211,6 +221,8 @@ def create_subscription(
         "start_time": start_time.astimezone().isoformat(timespec="seconds"),
         "application_context": {
             "brand_name": os.getenv("PAYPAL_BRAND_NAME", "FILSCORE")[:127],
+            "cancel_url": _return_url("PAYPAL_SUBSCRIPTION_CANCEL_URL"),
+            "return_url": _return_url("PAYPAL_SUBSCRIPTION_RETURN_URL"),
             "user_action": "SUBSCRIBE_NOW",
             "shipping_preference": "NO_SHIPPING",
         },
@@ -255,6 +267,35 @@ def create_subscription(
         "approval_url": approval_url,
         "raw": body,
     }
+
+
+def get_subscription_approval_url(subscription_id: str) -> str | None:
+    normalized_subscription_id = subscription_id.strip()
+    if not normalized_subscription_id.startswith("I-"):
+        raise ValueError("A valid PayPal subscription ID is required")
+
+    token, api_base_url = _get_access_token()
+    try:
+        response = requests.get(
+            f"{api_base_url}/v1/billing/subscriptions/{normalized_subscription_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=_timeout_seconds(),
+        )
+    except requests.RequestException as exc:
+        raise PayPalAPIError("PayPal recurring approval is temporarily unavailable") from exc
+
+    if not response.ok:
+        raise PayPalAPIError("PayPal rejected the recurring approval request")
+
+    try:
+        body = response.json()
+        return next(
+            str(item["href"])
+            for item in body.get("links", [])
+            if item.get("rel") == "approve" and item.get("href")
+        )
+    except (StopIteration, TypeError, ValueError):
+        return None
 
 
 def cancel_subscription(*, subscription_id: str, reason: str) -> None:

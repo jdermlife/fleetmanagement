@@ -26,5 +26,9 @@ services:
         sync: false
       - key: PAYPAL_PLAN_ID_MULTIPLE_PROFILE
         sync: false
+      - key: PAYPAL_SUBSCRIPTION_RETURN_URL
+        value: https://fleetmanagement-flame.vercel.app/payment/success?provider=paypal
+      - key: PAYPAL_SUBSCRIPTION_CANCEL_URL
+        value: https://fleetmanagement-flame.vercel.app/payment/cancel
       - key: ACCOUNT_PAID_VALIDITY_DAYS
         value: "31"

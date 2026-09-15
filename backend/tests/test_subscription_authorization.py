@@ -21,6 +21,7 @@ from app.schemas.subscription_schema import (
     PayPalCaptureOrderRequest,
     PayPalCreateOrderRequest,
     RecurringBillingCancellationRequest,
+    RecurringBillingStartRequest,
     SubscriptionCreate,
     SubscriptionEventCreate,
     SubscriptionPaymentCreate,
@@ -46,7 +47,10 @@ class FakeQuery:
             key, value = self._extract(criterion)
             if key is None:
                 continue
-            self._rows = [row for row in self._rows if getattr(row, key, None) == value]
+            if isinstance(value, (list, tuple, set)):
+                self._rows = [row for row in self._rows if getattr(row, key, None) in value]
+            else:
+                self._rows = [row for row in self._rows if getattr(row, key, None) == value]
         return self
 
     def order_by(self, *_args, **_kwargs):
@@ -231,6 +235,53 @@ def test_subscriber_cannot_cancel_foreign_recurring_subscription(fake_db, monkey
         )
 
     assert exc_info.value.status_code == 403
+
+
+def test_paypal_pending_agreement_returns_recovered_approval_url(fake_db, monkeypatch):
+    subscription = Subscription(
+        id=20,
+        subscription_no="SUB-PAYPAL-PENDING",
+        user_id=42,
+        plan_id=14,
+        status="TRIAL",
+        subscription_start=date.today(),
+    )
+    provider = PaymentProvider(
+        id=6,
+        provider_code="PAYPAL",
+        provider_name="PayPal",
+        is_active=True,
+    )
+    agreement = SubscriptionBillingAgreement(
+        id=2,
+        subscription_id=subscription.id,
+        provider_id=provider.id,
+        provider_plan_id="P-SINGLE",
+        provider_agreement_id="I-PENDING",
+        status="APPROVAL_PENDING",
+        first_charge_at=date.today(),
+    )
+    fake_db.rows_by_model[Subscription] = [subscription]
+    fake_db.rows_by_model[PaymentProvider] = [provider]
+    fake_db.rows_by_model[SubscriptionBillingAgreement] = [agreement]
+    monkeypatch.setattr(subscription_routes, "_session_with_rls", lambda _user: fake_db)
+    monkeypatch.setattr(
+        subscription_routes,
+        "get_paypal_subscription_approval_url",
+        lambda _agreement_id: "https://www.paypal.com/approve/I-PENDING",
+    )
+
+    result = subscription_routes._start_recurring_billing_for_user(
+        RecurringBillingStartRequest(
+            subscription_id=subscription.id,
+            request_id="paypal-retry-001",
+        ),
+        CurrentUser(id=42, username="subscriber", role="SUBSCRIBER"),
+        "PAYPAL",
+    )
+
+    assert result["reused"] is True
+    assert result["approval_url"] == "https://www.paypal.com/approve/I-PENDING"
 
 
 @pytest.mark.parametrize(
