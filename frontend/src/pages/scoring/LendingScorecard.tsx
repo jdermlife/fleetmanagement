@@ -1995,6 +1995,8 @@ export default function LendingScorecard() {
   const location = useLocation();
   const navigate = useNavigate();
   const forwardedActionHandledRef = useRef(false);
+  const automaticScoreAttemptRef = useRef('');
+  const handleStepChangeRef = useRef<(nextStep: number) => Promise<void>>(async () => undefined);
   const forwardedActionHandlersRef = useRef<{
     createNew: () => Promise<void>;
     openFilscore: () => Promise<void>;
@@ -2003,8 +2005,9 @@ export default function LendingScorecard() {
   const { isAdmin, user } = useAuthorization();
   const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin);
   const { selectedApplicationNo } = useSelectedAnalysisEntity();
-  const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || selectedApplicationNo;
   const requestedProfileId = searchParams.get('profileId')?.trim() || '';
+  const requestedApplicationNo = searchParams.get('applicationNo')?.trim()
+    || (requestedProfileId ? '' : selectedApplicationNo);
   const replicationId = requestedApplicationNo || requestedProfileId;
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
@@ -2021,6 +2024,7 @@ export default function LendingScorecard() {
   const [workflowActionState, setWorkflowActionState] = useState<'idle' | 'processing' | 'completed' | 'error'>('idle');
   const [completedWorkflowAction, setCompletedWorkflowAction] = useState<WorkflowStatus | null>(null);
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
+  const [isGeneratingScore, setIsGeneratingScore] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
   const [loanCreationEntitlement, setLoanCreationEntitlement] = useState<LoanCreationEntitlementResponse | null>(null);
   const [showLoanStatement, setShowLoanStatement] = useState(false);
@@ -2336,6 +2340,7 @@ export default function LendingScorecard() {
   }, [navigate, reviewApplicationsPath]);
 
   const invalidateBackendScoring = useCallback(() => {
+    automaticScoreAttemptRef.current = '';
     setBackendQuantSummary(null);
   }, []);
 
@@ -2959,9 +2964,15 @@ export default function LendingScorecard() {
     }
 
     try {
+      setIsGeneratingScore(true);
+      setSaveMessage('Generating FILSCORE rating...');
       const payload = buildLoanPayload(formData.status);
       const result = await computeQuantScores(payload);
-      setBackendQuantSummary(mapBackendQuantSummary(result.quant_scores));
+      const quantSummary = mapBackendQuantSummary(result.quant_scores);
+      if (!quantSummary) {
+        throw new Error('The scoring service returned no FILSCORE rating. Please retry.');
+      }
+      setBackendQuantSummary(quantSummary);
       if (result.application_no) {
         await lendingAutosave.clear();
         await loadApplication(result.application_no);
@@ -2979,9 +2990,11 @@ export default function LendingScorecard() {
     } catch (error) {
       setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
     } finally {
+      setIsGeneratingScore(false);
       setStep(boundedNextStep);
     }
   };
+  handleStepChangeRef.current = handleStepChange;
 
   useEffect(() => {
     if (step < 8 || step > maxVisibleStep) {
@@ -2994,6 +3007,37 @@ export default function LendingScorecard() {
       setStep(8);
     }
   }, [isFilscoreRoute, step]);
+
+  useEffect(() => {
+    if (
+      !isFilscoreRoute
+      || !hasSufficientInformationForRating
+      || backendQuantSummary
+      || isGeneratingScore
+      || isLoadingApplication
+      || (requestedApplicationNo && !hasPersistedRecord)
+    ) {
+      return;
+    }
+
+    const attemptKey = `${formData.id}:${informationProvidedPercent}`;
+    if (automaticScoreAttemptRef.current === attemptKey) {
+      return;
+    }
+
+    automaticScoreAttemptRef.current = attemptKey;
+    void handleStepChangeRef.current(8);
+  }, [
+    backendQuantSummary,
+    formData.id,
+    hasPersistedRecord,
+    hasSufficientInformationForRating,
+    informationProvidedPercent,
+    isFilscoreRoute,
+    isGeneratingScore,
+    isLoadingApplication,
+    requestedApplicationNo,
+  ]);
 
   const updateField = (section: EditableSection, field: string, value: FieldValue) => {
     invalidateBackendScoring();
@@ -4597,6 +4641,13 @@ export default function LendingScorecard() {
                     <div className="loan-certification-rating-unavailable" role="alert">
                       <strong>Rating Not Produced</strong>
                       <span>Please update Profile. Information provided is {informationProvidedPercent}%. At least {CREDIT_RATING_MINIMUM_INFORMATION_PERCENT}% is required to produce a rating.</span>
+                    </div>
+                  ) : null}
+
+                  {hasSufficientInformationForRating && !reportHasRating ? (
+                    <div className="loan-certification-rating-unavailable" role="status">
+                      <strong>{isGeneratingScore ? 'Generating FILSCORE Rating' : 'Rating Generation Pending'}</strong>
+                      <span>{isGeneratingScore ? 'Your information meets the requirement. FILSCORE is calculating the rating now.' : saveMessage || 'The profile is eligible, but no score result was returned. Reopen FILSCORE to retry.'}</span>
                     </div>
                   ) : null}
 
