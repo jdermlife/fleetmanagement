@@ -118,3 +118,28 @@ class FraudScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["overall_fraud_score"], 0.0)
         self.assertEqual(result["fraud_flags"]["override_action"], "Automatic Decline")
         self.assertIn("Automatic Decline", str(result["fraud_risk_level"]))
+
+    def test_fraud_engine_applies_worst_score_for_profile_hard_stops(self) -> None:
+        for hard_stop in (
+            "forgedPayslip",
+            "identityTheftIndicator",
+            "fakeNationalId",
+            "forgedBankStatement",
+        ):
+            with self.subTest(hard_stop=hard_stop):
+                result = compute_fraud_score(SimpleNamespace(requirements={
+                    "fraudIntelligence": {hard_stop: True},
+                }))
+
+                self.assertEqual(result["overall_fraud_score"], 0.0)
+                self.assertEqual(result["fraud_flags"]["fraud_grade"], "Black")
+                self.assertEqual(result["fraud_flags"]["override_action"], "Automatic Decline")
+
+    def test_fraud_engine_applies_second_worst_score_for_sanctions_match(self) -> None:
+        result = compute_fraud_score(SimpleNamespace(requirements={
+            "fraudIntelligence": {"sanctionsPepMatch": True},
+        }))
+
+        self.assertEqual(result["overall_fraud_score"], 20.0)
+        self.assertEqual(result["fraud_flags"]["fraud_grade"], "Red")
+        self.assertEqual(result["fraud_flags"]["override_action"], "Enhanced Due Diligence")

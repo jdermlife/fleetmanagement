@@ -340,6 +340,10 @@ describe('BuildProfilePage', () => {
     expect((screen.getByRole('combobox', { name: 'Profile Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
 
+    await userEvent.click(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ }))
+    const forgedPayslipGroup = screen.getByRole('group', { name: 'Forged Payslip' })
+    await userEvent.click(within(forgedPayslipGroup).getByRole('checkbox', { name: 'Yes' }))
+
     let resolvePreparation!: (value: unknown) => void
     mockUpdateLoanApplication.mockImplementationOnce(() => new Promise((resolve) => { resolvePreparation = resolve }))
     await userEvent.click(screen.getByRole('button', { name: /Step 12: FILSCORE Score Links/ }))
@@ -360,6 +364,7 @@ describe('BuildProfilePage', () => {
           borrower_name: 'Jordan Santos',
           requirements: expect.objectContaining({
             buildProfile: expect.objectContaining({ profileId: 'APP-REVIEW-1' }),
+            fraudIntelligence: expect.objectContaining({ forgedPayslip: true }),
           }),
         }),
       )
@@ -628,6 +633,28 @@ describe('BuildProfilePage', () => {
     expect(yes).toHaveProperty('checked', false)
     expect(no).toHaveProperty('checked', true)
     expect(stepButton.getAttribute('aria-label')).toBe(yesCompletion)
+  })
+
+  it('shows separate Yes and No checkboxes for every fraud hard stop', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
+
+    for (const fieldName of [
+      'Forged Payslip',
+      'Identity Theft Indicator',
+      'Fake National ID',
+      'Forged Bank Statement',
+      'Sanctions / PEP Match',
+    ]) {
+      const group = screen.getByRole('group', { name: fieldName })
+      const yes = within(group).getByRole('checkbox', { name: 'Yes' })
+      const no = within(group).getByRole('checkbox', { name: 'No' })
+
+      expect(yes.getAttribute('type')).toBe('checkbox')
+      expect(no.getAttribute('type')).toBe('checkbox')
+    }
   })
 
   it('provides spouse and repeatable dependent requirements in Step 2', async () => {

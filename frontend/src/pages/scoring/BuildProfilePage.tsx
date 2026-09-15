@@ -409,6 +409,16 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   const employment = requirements.employmentInformation
   const banking = requirements.bankingRelationships
   const dueDiligence = requirements.enhancedDueDiligence
+  const fraudIntelligence = requirements.fraudIntelligence ?? {
+    watchlistStatus: '',
+    previousFraudRecords: '',
+    applicationVelocity: '',
+    fakeNationalId: false,
+    forgedPayslip: false,
+    forgedBankStatement: false,
+    identityTheftIndicator: false,
+    sanctionsPepMatch: false,
+  }
   const spouse = requirements.spouseInformation
   const collateral = requirements.collateralAssetDetails
   const property = requirements.collateralInformation
@@ -474,6 +484,14 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
     mobileYearsUsed: contact.mobileYearsUsed,
     emailYearsUsed: contact.emailYearsUsed,
     deviceVerified: String(otherInformation.deviceVerified),
+    watchlistStatus: fraudIntelligence.watchlistStatus,
+    previousFraudRecords: fraudIntelligence.previousFraudRecords,
+    applicationVelocity: fraudIntelligence.applicationVelocity,
+    fakeNationalId: String(fraudIntelligence.fakeNationalId),
+    forgedPayslip: String(fraudIntelligence.forgedPayslip),
+    forgedBankStatement: String(fraudIntelligence.forgedBankStatement),
+    identityTheftIndicator: String(fraudIntelligence.identityTheftIndicator),
+    sanctionsPepMatch: String(fraudIntelligence.sanctionsPepMatch),
     spouseFullName: spouse.fullName,
     spouseDateOfBirth: spouse.dateOfBirth,
     spousePlaceOfBirth: spouse.placeOfBirth,
@@ -567,6 +585,17 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
   const booleanValue = (key: string, fallback = false) => values[key] === undefined
     ? fallback
     : values[key] === 'true'
+  const fraudIntelligence = requirements.fraudIntelligence ?? {
+    watchlistStatus: '',
+    previousFraudRecords: '',
+    applicationVelocity: '',
+    fakeNationalId: false,
+    forgedPayslip: false,
+    forgedBankStatement: false,
+    identityTheftIndicator: false,
+    sanctionsPepMatch: false,
+  }
+  requirements.fraudIntelligence = fraudIntelligence
 
   Object.assign(requirements.applicantPersonal, {
     dateOfBirth: values.dateOfBirth || '',
@@ -687,6 +716,16 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
     incomeDocumentsStatus: values.incomeDocumentsStatus || requirements.fraudVerification.incomeDocumentsStatus,
     employmentVerificationStatus: values.employmentVerificationStatus || requirements.fraudVerification.employmentVerificationStatus,
     bankStatementVerificationStatus: values.bankStatementVerificationStatus || requirements.fraudVerification.bankStatementVerificationStatus,
+  })
+  Object.assign(fraudIntelligence, {
+    watchlistStatus: values.watchlistStatus || fraudIntelligence.watchlistStatus,
+    previousFraudRecords: values.previousFraudRecords || fraudIntelligence.previousFraudRecords,
+    applicationVelocity: values.applicationVelocity || fraudIntelligence.applicationVelocity,
+    fakeNationalId: booleanValue('fakeNationalId', fraudIntelligence.fakeNationalId),
+    forgedPayslip: booleanValue('forgedPayslip', fraudIntelligence.forgedPayslip),
+    forgedBankStatement: booleanValue('forgedBankStatement', fraudIntelligence.forgedBankStatement),
+    identityTheftIndicator: booleanValue('identityTheftIndicator', fraudIntelligence.identityTheftIndicator),
+    sanctionsPepMatch: booleanValue('sanctionsPepMatch', fraudIntelligence.sanctionsPepMatch),
   })
   requirements.documentAnalysis.ocrAnalysisStatus = values.ocrAnalysisStatus || requirements.documentAnalysis.ocrAnalysisStatus
   Object.assign(requirements.collateralAssetDetails, {

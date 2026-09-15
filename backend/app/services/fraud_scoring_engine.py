@@ -141,6 +141,7 @@ def _score_document_verification(payload: Any) -> tuple[float, dict[str, Any]]:
     banking = _requirements(payload, "bankingRelationships")
     due_diligence = _requirements(payload, "enhancedDueDiligence")
     fraud_verification = _requirements(payload, "fraudVerification")
+    fraud_intelligence = _requirements(payload, "fraudIntelligence")
     document_analysis = _requirements(payload, "documentAnalysis")
 
     income_docs_status = safe_text(
@@ -220,8 +221,8 @@ def _score_document_verification(payload: Any) -> tuple[float, dict[str, Any]]:
         else:
             ocr_analysis_score = 0.0
 
-    forged_payslip = "forged" in income_docs_status
-    forged_bank_statement = "forged" in bank_statement_status
+    forged_payslip = _to_bool(fraud_intelligence.get("forgedPayslip")) or "forged" in income_docs_status
+    forged_bank_statement = _to_bool(fraud_intelligence.get("forgedBankStatement")) or "forged" in bank_statement_status
 
     return (
         income_documents_score
@@ -558,9 +559,11 @@ def compute_fraud_score(payload: Any) -> dict[str, float | str | dict[str, Any]]
     elif override_action == "Manual Investigation":
         total_score = min(total_score, 40.0)
     elif override_action == "Enhanced Due Diligence":
-        total_score = min(total_score, 60.0)
+        total_score = 20.0
 
     grade, risk_interpretation = _risk_level_and_grade(total_score)
+    if override_action == "Enhanced Due Diligence":
+        grade, risk_interpretation = "Red", "Very High Fraud Risk"
     fraud_risk_level = (
         f"{risk_interpretation} | {override_action}"
         if override_action

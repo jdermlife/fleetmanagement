@@ -7796,8 +7796,14 @@ th { color: var(--dark-gold); }
 }
 
 .build-profile-yes-no-field input {
+  appearance: auto;
+  width: 20px;
+  min-width: 20px;
+  height: 20px;
   min-height: 0;
   margin: 0;
+  accent-color: #166534;
+  cursor: pointer;
 }
 
 .build-profile-totals-grid {
