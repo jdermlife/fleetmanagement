@@ -56,7 +56,7 @@ Note: Python 3.13+ is not currently supported for the FastAPI smoke-test stack i
 For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first.
 Before deploying the hardened PayPal flow, run `python migrate_paypal_payment_integrity.py` from `backend`.
 Before enabling recurring PayPal or PayMongo billing, run `python migrate_recurring_billing.py` from `backend`.
-The backend performs an idempotent startup preflight for application-specific FILSCORE Wealth columns. The same check can be run manually with `python migrate_overall_scores_wealth_fields.py` from `backend` before deployment.
+The Render deployment performs idempotent startup migrations for FILSCORE composite/rating and Wealth columns. For manual deployments, run `python migrate_overall_scores_composite_fields.py` and `python migrate_overall_scores_wealth_fields.py` from `backend` before starting the API.
 
 ### Frontend
 

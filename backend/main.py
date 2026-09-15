@@ -504,6 +504,11 @@ async def unhandled_exception_boundary(request: Request, call_next):
     try:
         return await call_next(request)
     except Exception:
+        error_logger.exception(
+            "Unhandled request exception",
+            method=request.method,
+            path=request.url.path,
+        )
         return Response(
             content=json.dumps({"detail": "Internal server error"}),
             media_type="application/json",

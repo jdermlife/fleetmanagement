@@ -31,6 +31,9 @@ class StructuredLogger:
     def error(self, message: str, **kwargs):
         self.logger.error(self._format(message, **kwargs))
 
+    def exception(self, message: str, **kwargs):
+        self.logger.exception(self._format(message, **kwargs))
+
     def debug(self, message: str, **kwargs):
         self.logger.debug(self._format(message, **kwargs))
 
