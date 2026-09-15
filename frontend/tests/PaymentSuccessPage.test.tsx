@@ -23,7 +23,7 @@ describe('PaymentSuccessPage', () => {
         name: /Continue to Financial Health/i,
       }).getAttribute('href'),
     ).toBe('/financial-health-summary')
-    expect(screen.getByRole('link', { name: 'View Account' }).getAttribute('href')).toBe('/account')
+    expect(screen.getByRole('link', { name: 'View Account' }).getAttribute('href')).toBe('/build-profile')
   })
 
   it('renders a provider-neutral confirmation for the legacy gateway return URL', () => {

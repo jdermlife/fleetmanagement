@@ -460,10 +460,7 @@ def _enforce_login_access_policy(user: User, db: Session) -> None:
             and user.account_access_expires_at is not None
             and user.account_access_expires_at <= datetime.now(timezone.utc)
         ):
-            raise HTTPException(
-                status_code=403,
-                detail="Free trial and 24-hour payment grace period expired due to non-payment. Complete payment to reactivate access.",
-            )
+            return
         raise HTTPException(status_code=403, detail="Account is disabled")
 
     if user.is_deleted:

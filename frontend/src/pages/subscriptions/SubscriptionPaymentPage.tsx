@@ -231,7 +231,7 @@ export default function SubscriptionPaymentPage() {
   const isAuthenticated = Boolean(getAuthToken())
   const usesNativeStore = Capacitor.getPlatform() === 'ios'
   const guestTrialPlan =
-    !isAuthenticated && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
+    !usesNativeStore && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
       : null
 

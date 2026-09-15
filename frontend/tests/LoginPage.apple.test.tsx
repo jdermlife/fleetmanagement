@@ -180,6 +180,42 @@ describe('LoginPage Apple sign-in', () => {
     })
   })
 
+  it('keeps an expired user session and routes the account to payment', async () => {
+    mockLogin.mockResolvedValue({
+      user: {
+        id: 12,
+        username: 'expired-user',
+        email: 'expired@example.com',
+        role: 'subscriber_borrower',
+        roles: ['subscriber_borrower'],
+        permissions: [],
+        isActive: false,
+        createdAt: '2026-07-10T00:00:00Z',
+        updatedAt: '2026-07-10T00:00:00Z',
+        lastLoginAt: null,
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Other Email' }))
+    await user.type(screen.getByPlaceholderText('Email or username'), 'expired@example.com')
+    await user.type(screen.getByPlaceholderText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Log In' }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/trial-expired?source=login&account=expired%40example.com',
+      )
+    })
+    expect(mockNavigate).not.toHaveBeenCalledWith('/financial-health-summary', { replace: true })
+  })
+
   it('moves an email account to registration only after login reports that it is missing', async () => {
     mockLogin.mockRejectedValue({
       response: {

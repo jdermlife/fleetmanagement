@@ -211,8 +211,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(apiMocks.createPublicTrialPayPalOrder).not.toHaveBeenCalled()
   })
 
-  it('routes each guest payment control to its intended provider', async () => {
-    authToken.value = null
+  it('routes public-plan payment controls correctly while preserving a restricted session', async () => {
     let paypalButtonOptions: { createOrder: () => Promise<string> } | null = null
     const buttons = vi.fn((options) => {
       paypalButtonOptions = options

@@ -47,7 +47,7 @@ export default function PaymentSuccessPage() {
             Continue to Financial Health
             <span aria-hidden="true">→</span>
           </Link>
-          <Link className="payment-success-action payment-success-action-secondary" to="/account">
+          <Link className="payment-success-action payment-success-action-secondary" to="/build-profile">
             View Account
           </Link>
         </div>

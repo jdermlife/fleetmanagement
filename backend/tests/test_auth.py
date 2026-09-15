@@ -376,7 +376,7 @@ def test_login_does_not_call_turnstile(app_client, monkeypatch):
     assert response.status_code == 200
 
 
-def test_login_deactivates_expired_unpaid_account(app_client):
+def test_login_preserves_session_for_expired_unpaid_account(app_client):
     client, auth_module, fake_db = app_client
 
     user = User(
@@ -398,13 +398,13 @@ def test_login_deactivates_expired_unpaid_account(app_client):
         json={"username": "expireduser", "password": "password123"},
     )
 
-    assert response.status_code == 403
-    assert response.json()["detail"] == (
-        "Free trial and 24-hour payment grace period expired due to non-payment. "
-        "Complete payment to reactivate access."
-    )
+    assert response.status_code == 200
+    assert response.json()["access_token"]
+    assert response.json()["refresh_token"]
+    assert response.json()["user"]["is_active"] is False
     assert user.is_active is False
     assert user.account_status == "SUSPENDED"
+    assert len(fake_db.rows_by_model[AuthSession]) == 1
 
 
 def test_apple_callback_route_exchanges_code_and_redirects_to_android(app_client, monkeypatch):

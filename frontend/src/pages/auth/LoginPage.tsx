@@ -175,7 +175,12 @@ export default function LoginPage() {
     setMessage('')
 
     try {
-      await login({ username, password, rememberMe })
+      const result = await login({ username, password, rememberMe })
+      if (!result.user.isActive) {
+        const account = encodeURIComponent(username.trim())
+        navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')
+        return
+      }
       openFinancialHealthJourney()
     } catch (error) {
       const { status } = getBackendErrorPayload(error)
@@ -213,11 +218,15 @@ export default function LoginPage() {
     setIsSaving(true)
     setMessage('')
     try {
-      await loginWithGoogle({
+      const result = await loginWithGoogle({
         idToken,
         platform,
         rememberMe,
       })
+      if (!result.user.isActive) {
+        navigate('/trial-expired?source=google')
+        return
+      }
       openFinancialHealthJourney()
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
@@ -276,10 +285,14 @@ export default function LoginPage() {
         redirectURI: appleRedirectUri,
       })
 
-      await loginWithApple({
+      const result = await loginWithApple({
         idToken: appleTokenResult.idToken,
         rememberMe,
       })
+      if (!result.user.isActive) {
+        navigate('/trial-expired?source=apple')
+        return
+      }
       openFinancialHealthJourney()
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
