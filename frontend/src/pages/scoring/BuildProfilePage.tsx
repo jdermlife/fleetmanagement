@@ -996,7 +996,6 @@ export default function BuildProfilePage() {
       ...current.values,
       [key]: value,
       ...(key === 'dateOfBirth' ? { age: calculateAge(value) } : {}),
-      ...(key === 'employmentHistory' ? { spouseEmployerBusinessName: value } : {}),
       ...(key === 'financialGoal' ? { loanPurpose: value } : {}),
     },
     ...(key === 'dependents' ? {

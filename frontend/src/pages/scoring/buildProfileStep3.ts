@@ -34,10 +34,10 @@ export const STEP_3_SECTIONS: Step3Section[] = [
   {
     title: 'Employment and Income  - Spouse',
     fields: [
-      { key: 'employmentHistory', label: 'Employment History (Current Employer) (Demo Data Accepted)' },
-      { key: 'monthlyIncome', label: 'Primary Monthly Income', type: 'number' },
-      { key: 'otherIncome', label: 'Other Sources of Income', type: 'number' },
-      { key: 'debtObligations', label: 'Existing Monthly Debt Obligations', type: 'number' },
+      { key: 'spouseEmployerBusinessName', label: 'Spouse Employment History (Current Employer) (Demo Data Accepted)' },
+      { key: 'spouseGrossMonthlyIncome', label: 'Spouse Primary Monthly Income', type: 'number' },
+      { key: 'spouseOtherIncomeSources', label: 'Spouse Other Sources of Income', type: 'number' },
+      { key: 'spouseMonthlyExpenses', label: 'Spouse Existing Monthly Debt Obligations', type: 'number' },
     ],
 
 
