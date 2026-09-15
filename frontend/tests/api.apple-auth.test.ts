@@ -161,6 +161,31 @@ describe('loginWithApple', () => {
     expect(window.localStorage.getItem('refresh_token')).toBeNull()
   })
 
+  it('starts public PayMongo checkout without waiting for a health probe', async () => {
+    const apiModule = await import('../src/api')
+    const healthCheckClient = clients[0]
+    const apiClient = clients[1]
+    const checkout = {
+      checkout_id: 'cs_test_123',
+      checkout_url: 'https://checkout.paymongo.com/test',
+    }
+    apiClient.post.mockResolvedValue({ data: checkout })
+
+    await expect(apiModule.createPublicTrialPayMongoCheckout({
+      account_identifier: 'subscriber@example.com',
+      plan: 'single',
+    })).resolves.toEqual(checkout)
+
+    expect(healthCheckClient.get).not.toHaveBeenCalled()
+    expect(apiClient.post).toHaveBeenCalledWith(
+      '/api/subscriptions/public/payments/paymongo/checkout',
+      {
+        account_identifier: 'subscriber@example.com',
+        plan: 'single',
+      },
+    )
+  })
+
   it('posts identity_token to apple-token endpoint and stores session tokens', async () => {
     const apiModule = await import('../src/api')
 

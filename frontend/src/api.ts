@@ -24,9 +24,6 @@ let activeApiBaseUrl =
     ? apiBaseUrlCandidates[0]
     : APP_CONFIG.apiBase
 
-let apiBaseUrlResolutionRequest: Promise<void> | null = null
-let apiBaseUrlResolved = false
-
 export const api = axios.create({
   baseURL: activeApiBaseUrl,
   timeout: 60000,
@@ -91,13 +88,11 @@ export async function createProfileHistory(
 
 function setActiveApiBaseUrl(url: string): void {
   if (activeApiBaseUrl === url) {
-    apiBaseUrlResolved = true
     return
   }
 
   activeApiBaseUrl = url
   api.defaults.baseURL = url
-  apiBaseUrlResolved = true
 }
 
 async function findHealthyApiBaseUrl(): Promise<string | null> {
@@ -116,31 +111,6 @@ async function findHealthyApiBaseUrl(): Promise<string | null> {
   }
 
   return null
-}
-
-async function ensureHealthyApiBaseUrl(): Promise<void> {
-  if (apiBaseUrlResolved) {
-    return
-  }
-
-  if (apiBaseUrlResolutionRequest) {
-    await apiBaseUrlResolutionRequest
-    return
-  }
-
-  apiBaseUrlResolutionRequest = (async () => {
-    const healthyBaseUrl = await findHealthyApiBaseUrl()
-    if (healthyBaseUrl) {
-      setActiveApiBaseUrl(healthyBaseUrl)
-      return
-    }
-
-    apiBaseUrlResolved = true
-  })().finally(() => {
-    apiBaseUrlResolutionRequest = null
-  })
-
-  await apiBaseUrlResolutionRequest
 }
 
 let authToken: string | null = null
@@ -296,8 +266,7 @@ function shouldSkipSessionRefresh(url?: string): boolean {
 
 // Request interceptor
 api.interceptors.request.use(
-  async (config) => {
-    await ensureHealthyApiBaseUrl()
+  (config) => {
     if (isDevelopment) {
       console.log(`[API] ${config.method?.toUpperCase()} ${config.url}`)
     }
@@ -643,7 +612,6 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse> {
-  await ensureHealthyApiBaseUrl()
   const response = await api.post('/api/auth/register', {
     username: data.username,
     email: data.email,
