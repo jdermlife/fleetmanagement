@@ -1,5 +1,4 @@
 import { useEffect, useState, type FormEvent } from 'react'
-import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 
 import {
@@ -23,7 +22,6 @@ import {
   type SubscriptionRecord,
 } from '../../api'
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft'
-import SubscriptionAccessDeniedCard from './SubscriptionAccessDeniedCard'
 
 type SubmitEvent = FormEvent<HTMLFormElement>
 
@@ -32,7 +30,6 @@ function toDateValue(value: string): string {
 }
 
 export default function SubscriptionManagementPage() {
-  const navigate = useNavigate()
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [payments, setPayments] = useState<SubscriptionPayment[]>([])
