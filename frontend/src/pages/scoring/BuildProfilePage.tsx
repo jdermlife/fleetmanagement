@@ -1429,6 +1429,21 @@ export default function BuildProfilePage() {
       </label>
     }
 
+    if (field.type === 'yes-no') {
+      return <fieldset key={field.key} className="build-profile-yes-no-field" aria-invalid={value !== 'true' && value !== 'false'}>
+        <legend>{field.label}</legend>
+        <div>
+          {(['true', 'false'] as const).map((option) => {
+            const optionLabel = option === 'true' ? 'Yes' : 'No'
+            return <label key={option}>
+              <input type="checkbox" checked={value === option} onChange={(event) => updateValue(field.key, event.target.checked ? option : '')} />
+              <span>{optionLabel}</span>
+            </label>
+          })}
+        </div>
+      </fieldset>
+    }
+
     return <label key={field.key}>
       {field.label}
       {field.type === 'select' ? (

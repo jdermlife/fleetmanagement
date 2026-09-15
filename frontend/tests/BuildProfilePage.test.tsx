@@ -757,6 +757,31 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.guarantors).toEqual([])
   })
 
+  it('stores Previous Loan Restructuring Disclosure as an exclusive Yes or No choice', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Banking Relationships/ }))
+
+    const restructuringDisclosure = screen.getByRole('group', { name: 'Previous Loan Restructuring Disclosure' })
+    const restructuringYes = within(restructuringDisclosure).getByRole('checkbox', { name: 'Yes' })
+    const restructuringNo = within(restructuringDisclosure).getByRole('checkbox', { name: 'No' })
+    expect(restructuringYes).toHaveProperty('checked', false)
+    expect(restructuringNo).toHaveProperty('checked', false)
+
+    await user.click(restructuringYes)
+    expect(restructuringYes).toHaveProperty('checked', true)
+    expect(restructuringNo).toHaveProperty('checked', false)
+
+    await user.click(restructuringNo)
+    expect(restructuringYes).toHaveProperty('checked', false)
+    expect(restructuringNo).toHaveProperty('checked', true)
+
+    await user.click(screen.getByRole('button', { name: 'Save Profile' }))
+    const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+    expect(savedProfile.values.previousLoanRestructuringDisclosures).toBe('false')
+  })
+
   it('copies the complete Lending Scorecard banking relationships content into Step 5', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)

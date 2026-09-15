@@ -1,7 +1,7 @@
 export type BankingField = {
   key: string
   label: string
-  type?: 'calculated' | 'datalist' | 'date' | 'number' | 'radio' | 'select' | 'text' | 'textarea'
+  type?: 'calculated' | 'datalist' | 'date' | 'number' | 'radio' | 'select' | 'text' | 'textarea' | 'yes-no'
   options?: string[]
   rows?: number
 }
@@ -14,7 +14,7 @@ export type BankingSection = {
 
 export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
   {
-    title: 'Existing Credit Card Information',
+    title: 'Existing Credit Card Information (Consolidate)',
     fields: [
       { key: 'creditCardIssuer', label: 'Card Issuer', type: 'datalist', options: ['Visa', 'Mastercard', 'American Express', 'Discover', 'JCB', 'Diners Club', 'UnionPay'] },
       { key: 'creditCardNumber', label: 'Card Number' },
@@ -24,7 +24,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
     ],
   },
   {
-    title: 'Existing Bank Account Information',
+    title: 'Existing Bank Account Information (Consolidate)',
     fields: [
       { key: 'bankBranch', label: 'Bank / Branch' },
       { key: 'accountType', label: 'Account Type' },
@@ -33,7 +33,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
     ],
   },
   {
-    title: 'Existing Loan Information',
+    title: 'Existing Loan Information (Consolidate)',
     fields: [
       { key: 'loanLender', label: 'Lender / Bank' },
       { key: 'loanType', label: 'Loan Type' },
@@ -124,7 +124,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
     fields: [
       { key: 'previousLendersAndExistingLoanAccounts', label: 'Previous Lenders and Existing Loan Accounts', type: 'textarea', rows: 3 },
       { key: 'numberOfActiveLoans', label: 'Number of Active Loans', type: 'number' },
-      { key: 'previousLoanRestructuringDisclosures', label: 'Previous Loan Restructuring Disclosures', type: 'textarea', rows: 3 },
+      { key: 'previousLoanRestructuringDisclosures', label: 'Previous Loan Restructuring Disclosure', type: 'yes-no' },
       { key: 'creditPaymentHistory', label: 'Declaration of Previously with Unpaid Loan or Credit Card', type: 'select', options: ['Excellent handling (no past due)', 'Satisfactory handling (minimal delays, settled)', 'No previous borrowing', 'Not properly handled / delayed payments'] },
       { key: 'accountHandling', label: 'Deposit / Current Account Handling', type: 'select', options: ['Excellent handling (no returned checks)', 'Satisfactory handling (minimal returned checks, settled)', 'Not properly handled'] },
       { key: 'utilityCreditBureauStatus', label: 'Payment of Utilities / Credit Bureau Findings', type: 'select', options: ['Very satisfactory to satisfactory', 'Dismissed / settled (fully settled with date)', 'Not satisfactory'] },
