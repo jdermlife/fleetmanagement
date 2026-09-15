@@ -92,14 +92,19 @@ function buildPayPalRequestId(): string {
 }
 
 const PAYPAL_CLIENT_ID = import.meta.env.VITE_PAYPAL_CLIENT_ID?.trim() || (import.meta.env.DEV ? 'sb' : '')
-const PAYPAL_SUBSCRIPTION_OPTIONS: Record<string, { planId: string; shape: 'pill' | 'rect' }> = {
+const PAYPAL_BUTTON_STYLE = {
+  layout: 'vertical',
+  shape: 'rect',
+  color: 'gold',
+  height: 48,
+  tagline: false,
+} as const
+const PAYPAL_SUBSCRIPTION_OPTIONS: Record<string, { planId: string }> = {
   SINGLE_PROFILE: {
     planId: import.meta.env.VITE_PAYPAL_PLAN_ID_SINGLE_PROFILE?.trim() || 'P-22H97304EW2909622NKQYBJQ',
-    shape: 'pill',
   },
   MULTIPLE_PROFILE: {
     planId: import.meta.env.VITE_PAYPAL_PLAN_ID_MULTIPLE_PROFILE?.trim() || 'P-9BU104216F9185333NKQYJNA',
-    shape: 'rect',
   },
 }
 const PAYMENT_CANCELLATION_CONTEXT_KEY = 'fms:payment-cancellation-context'
@@ -447,11 +452,8 @@ export default function SubscriptionPaymentPage() {
 
         buttons = paypal.Buttons({
           style: {
-            layout: 'vertical',
-            shape: 'rect',
-            color: 'gold',
+            ...PAYPAL_BUTTON_STYLE,
             label: 'paypal',
-            tagline: false,
           },
           createOrder: async () => {
             paypalStageRef.current = 'create'
@@ -569,9 +571,7 @@ export default function SubscriptionPaymentPage() {
 
         buttons = paypal.Buttons({
           style: {
-            shape: paypalSubscriptionOption.shape,
-            color: 'gold',
-            layout: 'vertical',
+            ...PAYPAL_BUTTON_STYLE,
             label: 'subscribe',
           },
           createSubscription: async () => {
@@ -668,11 +668,8 @@ export default function SubscriptionPaymentPage() {
 
         buttons = paypal.Buttons({
           style: {
-            layout: 'vertical',
-            shape: 'rect',
-            color: 'gold',
+            ...PAYPAL_BUTTON_STYLE,
             label: 'paypal',
-            tagline: false,
           },
           createOrder: async () => {
             paypalStageRef.current = 'create'

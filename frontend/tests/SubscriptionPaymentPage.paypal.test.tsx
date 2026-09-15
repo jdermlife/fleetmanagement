@@ -182,6 +182,14 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
+    expect(buttons.mock.calls[0][0].style).toMatchObject({
+      shape: 'rect',
+      color: 'gold',
+      layout: 'vertical',
+      label: 'paypal',
+      height: 48,
+      tagline: false,
+    })
 
     let orderId = ''
     await act(async () => {
@@ -288,6 +296,8 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       color: 'gold',
       layout: 'vertical',
       label: 'subscribe',
+      height: 48,
+      tagline: false,
     })
     expect(document.getElementById('paypal-button-container-P-9BU104216F9185333NKQYJNA')).toBeTruthy()
 
@@ -327,7 +337,14 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(subscriptionButtons).toHaveBeenCalledTimes(1))
-    expect(subscriptionButtons.mock.calls[0][0].style.shape).toBe('pill')
+    expect(subscriptionButtons.mock.calls[0][0].style).toMatchObject({
+      shape: 'rect',
+      color: 'gold',
+      layout: 'vertical',
+      label: 'subscribe',
+      height: 48,
+      tagline: false,
+    })
     expect(document.getElementById('paypal-button-container-P-22H97304EW2909622NKQYBJQ')).toBeTruthy()
   })
 
