@@ -7,6 +7,8 @@ from app.services.credit_scoring import (
     ScoreBand,
     grade_for_score,
     has_adverse_signal,
+    BRONZE_SCORE_CAP,
+    is_affirmative,
     monthly_payment,
     normalize_product_type,
     parse_years,
@@ -283,6 +285,12 @@ def compute_credit_score(payload: Any) -> dict[str, float | str]:
         capacity_score + character_score + capital_score + collateral_score + conditions_score,
         2,
     )
+    if is_affirmative(
+        requirements_section(payload, "enhancedDueDiligence").get(
+            "previousLoanRestructuringDisclosures"
+        )
+    ):
+        scorecard_total = min(scorecard_total, BRONZE_SCORE_CAP)
     bureau_score = round(min(850.0, max(300.0, 300.0 + (scorecard_total * 5.5))), 2)
     grade = grade_for_score(scorecard_total)
 

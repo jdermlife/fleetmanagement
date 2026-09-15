@@ -67,7 +67,7 @@ class QuantScoringServiceTests(unittest.TestCase):
         self.assertEqual(result["relationship_scores"]["relationship_score"], 88.0)
 
     def test_ai_orchestrator_calls_engines_in_expected_order(self) -> None:
-        payload = SimpleNamespace(loan_amount=450000.0)
+        payload = SimpleNamespace(loan_amount=450000.0, requirements={})
         calls = []
         credit = {"total_credit_score": 825.0}
         fraud = {"overall_fraud_score": 76.0}
@@ -111,3 +111,50 @@ class QuantScoringServiceTests(unittest.TestCase):
         self.assertIs(calls[6][1][5], profit)
         self.assertEqual(result["quant_scores"]["overallScore"], 82)
         self.assertEqual(result["ai_recommendations"]["ai_model"], "ai-orchestrator-v1")
+
+    def test_loan_restructuring_caps_overall_score_at_bronze(self) -> None:
+        payload = SimpleNamespace(
+            loan_amount=450000.0,
+            requirements={
+                "enhancedDueDiligence": {
+                    "previousLoanRestructuringDisclosures": "true",
+                }
+            },
+        )
+        calls = []
+        orchestrator = AIOrchestrator(
+            credit_engine=StubEngine("credit", {"total_credit_score": 90.0}, calls),
+            fraud_engine=StubEngine("fraud", {"overall_fraud_score": 90.0}, calls),
+            psychometric_engine=StubEngine("behavior", {"overall_psychometric_score": 90.0}, calls),
+            social_engine=StubEngine("social", {"overall_social_score": 90.0}, calls),
+            credit_risk_engine=StubEngine(
+                "risk",
+                {
+                    "relationship_scores": {"relationship_score": 90.0},
+                    "credit_bureau_reports": {"bureau_score": 90.0},
+                    "collateral_scores": {"overall_collateral_score": 90.0},
+                    "overall_credit_risk_score": 90.0,
+                },
+                calls,
+            ),
+            profitability_engine=StubEngine("profit", {"profitability_score": 90.0}, calls),
+            decision_engine=StubEngine(
+                "decision",
+                {
+                    "final_score": 90.0,
+                    "composite_score": 900,
+                    "final_grade": "A+",
+                    "final_rating": "Exceptional",
+                    "decision": "APPROVE",
+                },
+                calls,
+            ),
+        )
+
+        result = orchestrator.evaluate(payload)
+
+        self.assertEqual(result["quant_scores"]["overallScore"], 59)
+        self.assertEqual(result["quant_scores"]["compositeScore"], 590)
+        self.assertEqual(result["quant_scores"]["finalGrade"], "Bronze 1")
+        self.assertEqual(result["quant_scores"]["finalRating"], "Elevated Risk")
+        self.assertEqual(result["quant_scores"]["decision"], "REVIEW")

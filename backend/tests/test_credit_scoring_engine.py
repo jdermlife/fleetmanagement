@@ -91,6 +91,18 @@ class CreditScoringEngineTests(unittest.TestCase):
         self.assertEqual(result["credit_grade"], "Gold 2")
         self.assertEqual(result["model_version"], "product-scorecard-v1:Home Loan")
 
+    def test_previous_loan_restructuring_caps_credit_score_at_bronze(self) -> None:
+        payload = build_payload("Home Loan")
+        payload.requirements["enhancedDueDiligence"][
+            "previousLoanRestructuringDisclosures"
+        ] = "true"
+
+        result = compute_credit_score(payload)
+
+        self.assertEqual(result["total_credit_score"], 59.0)
+        self.assertEqual(result["internal_score"], 59.0)
+        self.assertEqual(result["credit_grade"], "Bronze 1")
+
     def test_home_loan_prefers_structured_model_criteria_fields(self) -> None:
         payload = build_payload("Home Loan", appraised_value=3500000.0)
         payload.requirements["bankingRelationships"].update(

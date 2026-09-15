@@ -60,6 +60,8 @@ ADVERSE_KEYWORDS = {
     "not satisfactory",
 }
 
+BRONZE_SCORE_CAP = 59.0
+
 
 def to_float(value: Any, default: float = 0.0) -> float:
     try:
@@ -72,6 +74,12 @@ def safe_text(value: Any) -> str:
     if value is None:
         return ""
     return str(value).strip()
+
+
+def is_affirmative(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    return safe_text(value).lower() in {"1", "true", "yes", "y"}
 
 
 def requirements_section(payload: Any, key: str) -> dict[str, Any]:

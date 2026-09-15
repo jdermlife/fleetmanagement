@@ -12,6 +12,7 @@ from app.services import (
     psychometric_engine,
     social_scoring_engine,
 )
+from app.services.credit_scoring.common import BRONZE_SCORE_CAP, grade_for_score, is_affirmative
 
 
 class ApplicationEngine(Protocol):
@@ -31,6 +32,32 @@ def _to_int(value: Any, default: int = 0) -> int:
         return int(round(float(value)))
     except (TypeError, ValueError):
         return default
+
+
+def _apply_loan_restructuring_cap(application: Any, decision: dict[str, Any]) -> dict[str, Any]:
+    requirements = getattr(application, "requirements", {}) or {}
+    due_diligence = requirements.get("enhancedDueDiligence", {})
+    if not isinstance(due_diligence, dict) or not is_affirmative(
+        due_diligence.get("previousLoanRestructuringDisclosures")
+    ):
+        return decision
+
+    final_score = _to_float(decision.get("final_score"))
+    if final_score <= BRONZE_SCORE_CAP:
+        return decision
+
+    bronze_band = grade_for_score(BRONZE_SCORE_CAP)
+    capped_decision = str(decision.get("decision", ""))
+    if capped_decision == "APPROVE":
+        capped_decision = "REVIEW"
+    return {
+        **decision,
+        "final_score": BRONZE_SCORE_CAP,
+        "composite_score": int(BRONZE_SCORE_CAP * 10),
+        "final_grade": bronze_band.label,
+        "final_rating": bronze_band.risk_level,
+        "decision": capped_decision,
+    }
 
 
 def _build_ai_explanation(
@@ -80,6 +107,7 @@ class AIOrchestrator:
             risk,
             profit,
         )
+        decision = _apply_loan_restructuring_cap(application, decision)
 
         overall_scores = {
             "credit_score": _to_float(credit.get("total_credit_score")),

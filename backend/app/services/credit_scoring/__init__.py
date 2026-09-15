@@ -6,6 +6,7 @@ from app.services.credit_scoring.auto_loan import (
 )
 from app.services.credit_scoring.common import (
     ADVERSE_KEYWORDS,
+    BRONZE_SCORE_CAP,
     GRADE_BANDS,
     GradeBand,
     HIGH_DEMAND_AUTO_BRANDS,
@@ -14,6 +15,7 @@ from app.services.credit_scoring.common import (
     ScoreBand,
     grade_for_score,
     has_adverse_signal,
+    is_affirmative,
     monthly_payment,
     normalize_product_type,
     parse_years,
@@ -55,6 +57,7 @@ from app.services.credit_scoring.personal_loan import (
 
 __all__ = [
     "ADVERSE_KEYWORDS",
+    "BRONZE_SCORE_CAP",
     "GRADE_BANDS",
     "GradeBand",
     "HIGH_DEMAND_AUTO_BRANDS",
@@ -63,6 +66,7 @@ __all__ = [
     "ScoreBand",
     "grade_for_score",
     "has_adverse_signal",
+    "is_affirmative",
     "monthly_payment",
     "normalize_product_type",
     "parse_years",
