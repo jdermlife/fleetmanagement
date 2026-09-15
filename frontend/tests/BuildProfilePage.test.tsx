@@ -1121,7 +1121,7 @@ describe('BuildProfilePage', () => {
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-09-15')
     await user.click(screen.getByText('Statement Filters - Details of Net Worth and Income & Expenses', { selector: 'summary' }))
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-income')
-    await user.type(screen.getByLabelText('Salary setup amount'), '50000')
+    await user.type(screen.getByLabelText('Salary setup amount'), '10000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')
     await user.type(screen.getByLabelText('Housing setup amount'), '20000')
     await user.click(screen.getByText(/Actual \/ Current Personal Income and Expenses with Goals and Protection/, { selector: 'summary' }))
