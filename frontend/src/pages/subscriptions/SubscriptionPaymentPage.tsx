@@ -450,6 +450,7 @@ export default function SubscriptionPaymentPage() {
         }
 
         buttons = paypal.Buttons({
+          fundingSource: 'paypal',
           style: {
             ...PAYPAL_BUTTON_STYLE,
             label: 'paypal',
@@ -569,6 +570,7 @@ export default function SubscriptionPaymentPage() {
         }
 
         buttons = paypal.Buttons({
+          fundingSource: 'paypal',
           style: {
             ...PAYPAL_BUTTON_STYLE,
             label: 'subscribe',
@@ -666,6 +668,7 @@ export default function SubscriptionPaymentPage() {
         }
 
         buttons = paypal.Buttons({
+          fundingSource: 'paypal',
           style: {
             ...PAYPAL_BUTTON_STYLE,
             label: 'paypal',

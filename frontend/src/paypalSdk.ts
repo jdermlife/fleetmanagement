@@ -1,4 +1,5 @@
 export interface PayPalButtonsOptions {
+  fundingSource?: 'paypal'
   style?: Record<string, unknown>
   createOrder?: () => Promise<string>
   createSubscription?: () => Promise<string>

@@ -7,6 +7,7 @@ const apiMocks = vi.hoisted(() => ({
   cancelRecurringSubscription: vi.fn(),
   cancelSubscriptionPayment: vi.fn(),
   capturePayPalOrder: vi.fn(),
+  createPublicTrialPayMongoCheckout: vi.fn(),
   createPublicTrialPayPalOrder: vi.fn(),
   createPayMongoSubscription: vi.fn(),
   createPayPalOrder: vi.fn(),
@@ -101,6 +102,13 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       checkout_url: '#paymongo-checkout',
       payment: { ...payment, payment_method: 'PayMongo Checkout', payment_status: 'PENDING' },
     })
+    apiMocks.createPublicTrialPayMongoCheckout.mockResolvedValue({
+      checkout_id: 'cs_guest_123',
+      checkout_url: '#paymongo-guest-checkout',
+      amount: 160,
+      currency: 'PHP',
+      payment: { ...payment, payment_method: 'PayMongo Checkout', payment_status: 'PENDING' },
+    })
     apiMocks.createPayPalOrder.mockResolvedValue({
       order_id: 'ORDER-123',
       status: 'CREATED',
@@ -191,6 +199,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
     expect(screen.queryByRole('button', { name: 'Pay with PayPal' })).toBeNull()
+    expect(buttons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(buttons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
@@ -201,6 +210,49 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       'Enter your registered username or email before starting PayPal checkout.',
     )
     expect(apiMocks.createPublicTrialPayPalOrder).not.toHaveBeenCalled()
+  })
+
+  it('routes each guest payment control to its intended provider', async () => {
+    authToken.value = null
+    let paypalButtonOptions: { createOrder: () => Promise<string> } | null = null
+    const buttons = vi.fn((options) => {
+      paypalButtonOptions = options
+      return { render: vi.fn(), close: vi.fn() }
+    })
+    window.paypal = { Buttons: buttons }
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription/payment?plan=single']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const accountInput = screen.getByLabelText('Registered Username or Email')
+    fireEvent.change(accountInput, { target: { value: 'subscriber@example.com' } })
+
+    const payMongoButton = screen.getByRole('button', { name: 'Pay with PayMongo' })
+    await act(async () => payMongoButton.click())
+    expect(apiMocks.createPublicTrialPayMongoCheckout).toHaveBeenCalledWith({
+      account_identifier: 'subscriber@example.com',
+      plan: 'single',
+    })
+    expect(window.location.hash).toBe('#paymongo-guest-checkout')
+    expect(apiMocks.createPublicTrialPayPalOrder).not.toHaveBeenCalled()
+
+    await waitFor(() => expect(paypalButtonOptions).not.toBeNull())
+    let orderId = ''
+    await act(async () => {
+      orderId = await paypalButtonOptions!.createOrder()
+    })
+    expect(orderId).toBe('ORDER-GUEST-123')
+    expect(apiMocks.createPublicTrialPayPalOrder).toHaveBeenCalledWith({
+      account_identifier: 'subscriber@example.com',
+      plan: 'single',
+      request_id: expect.stringMatching(/^[A-Za-z0-9._-]{8,38}$/),
+    })
   })
 
   it('creates and captures the exact one-time PayPal order', async () => {
@@ -225,6 +277,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
+    expect(buttons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(buttons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
@@ -334,6 +387,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     )
 
     await waitFor(() => expect(subscriptionButtons).toHaveBeenCalledTimes(1))
+    expect(subscriptionButtons.mock.calls[0][0].fundingSource).toBe('paypal')
     expect(subscriptionButtons.mock.calls[0][0].style).toMatchObject({
       shape: 'rect',
       color: 'gold',
