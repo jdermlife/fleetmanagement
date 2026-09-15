@@ -99,7 +99,18 @@ describe('FinancialHealthSummaryPage', () => {
     authorization.isAdmin = false
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PROFILE-USER-1',
-      values: { wealthCurrency: 'PHP', 'asset-cash-on-hand': '10000' },
+      values: {
+        wealthCurrency: 'PHP',
+        financialGoal: 'Emergency Fund',
+        targetAmount: '60000',
+        targetMonths: '6',
+        'asset-cash-on-hand': '10000',
+        'liability-home-mortgage': '80000',
+        'income-salary': '50000',
+        'expense-housing': '15000',
+        'goal-emergency-fund': '10000',
+        'insurance-life': '500000',
+      },
       documents: [],
       suitabilityAnswers: {},
       coBorrowers: [],
@@ -116,8 +127,14 @@ describe('FinancialHealthSummaryPage', () => {
 
     fireEvent.click(openButton)
     const statement = screen.getByRole('dialog', { name: 'Statement of Assets and Liabilities' })
-    expect(within(statement).getByText('Profile ID: PROFILE-USER-1')).toBeTruthy()
+    expect(within(statement).getAllByText('Profile ID: PROFILE-USER-1')).toHaveLength(3)
     expect(within(statement).getAllByText('₱10,000').length).toBeGreaterThan(0)
+    expect(within(statement).getByRole('heading', { name: 'Current Net Worth' })).toBeTruthy()
+    expect(within(statement).getAllByText('Home Mortgage').length).toBeGreaterThan(0)
+    expect(within(statement).getAllByText('₱80,000').length).toBeGreaterThan(0)
+    expect(within(statement).getByRole('heading', { name: 'Actual / Current Personal Income and Expenses with Goals and Protection' })).toBeTruthy()
+    expect(within(statement).getByText('Life Insurance')).toBeTruthy()
+    expect(within(statement).getAllByText('₱500,000').length).toBeGreaterThan(0)
 
     fireEvent.click(within(statement).getByRole('button', { name: 'Close financial statement' }))
     expect(screen.queryByRole('dialog', { name: 'Statement of Assets and Liabilities' })).toBeNull()

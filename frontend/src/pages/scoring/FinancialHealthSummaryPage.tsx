@@ -2197,7 +2197,7 @@ export default function FinancialHealthSummaryPage() {
               ))}
             </div>
           </article>
-          <div className="financial-health-statement-action">
+          <div className="financial-health-statement-action flex justify-start">
             <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setIsFinancialStatementOpen(true)}>
               Open Statement of Assets and Liabilities
             </button>

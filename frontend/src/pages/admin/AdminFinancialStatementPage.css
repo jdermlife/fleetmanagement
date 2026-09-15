@@ -56,6 +56,13 @@
   line-height: 1.18;
 }
 
+.admin-statement-pages {
+  --statement-font-size: 10pt;
+  display: grid;
+  gap: 18px;
+}
+.admin-statement-pages .admin-statement-sheet { font-size: var(--statement-font-size); }
+
 .admin-statement-sheet-a4 { width: 297mm; min-height: 210mm; }
 .admin-statement-sheet-letter { width: 279.4mm; min-height: 215.9mm; }
 .admin-statement-heading { display: flex; justify-content: space-between; gap: 20px; padding-bottom: 7px; border-bottom: 3px solid #163f32; }
@@ -100,6 +107,53 @@
 .admin-statement-no-gaps { padding: 14px; border: 1px solid #c7a064; background: #fff5dd; }
 .admin-statement-no-profile { margin-top: 8px; }
 .admin-statement-sheet footer { margin-top: 6px; color: #68736f; font-size: .66em; text-align: center; }
+.admin-current-net-worth-sheet,
+.admin-current-financial-sheet { display: flex; flex-direction: column; }
+.admin-current-page-note { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; padding: 5px 7px; border: 1px solid #b8c2bd; background: #eef3f0; font-size: .76em; }
+.admin-current-page-note strong { color: #567168; }
+.admin-current-net-worth-grid { display: grid; grid-template-columns: 1.6fr 1fr; gap: 7px; margin-top: 7px; min-height: 0; }
+.admin-current-net-worth-section { min-width: 0; border: 1px solid #aab5b0; }
+.admin-current-net-worth-section > header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 7px; color: #fff; }
+.admin-current-net-worth-assets > header { background: #f97316; }
+.admin-current-net-worth-liabilities > header { background: #0ea5d7; }
+.admin-current-net-worth-section > header h2 { margin: 0; font-size: .92em; }
+.admin-current-net-worth-section > header strong { font-size: .82em; white-space: nowrap; }
+.admin-current-net-worth-assets .admin-current-net-worth-lines { columns: 2; column-gap: 9px; }
+.admin-current-net-worth-group { padding: 2px 5px; break-inside: avoid; }
+.admin-current-net-worth-group + .admin-current-net-worth-group { border-top: 1px solid #d7dedb; }
+.admin-current-net-worth-group h3 { margin: 0 0 1px; padding: 2px 3px; background: #fff0dc; color: #6f3a13; font-size: .59em; text-transform: uppercase; }
+.admin-current-net-worth-liabilities .admin-current-net-worth-group h3 { background: #e0f2fe; color: #075985; }
+.admin-current-net-worth-row { display: flex; justify-content: space-between; gap: 5px; padding: 1px 2px; font-size: .64em; line-height: 1.05; }
+.admin-current-net-worth-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-current-net-worth-row strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.admin-current-net-worth-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
+.admin-current-net-worth-results > div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; background: #e8f0ec; color: #102b22; font-weight: 800; }
+.admin-current-financial-sheet .admin-statement-heading h1 { font-size: 1.48em; }
+.admin-current-financial-meta { display: grid; grid-template-columns: 1.5fr 1fr .7fr; gap: 6px; margin-top: 7px; }
+.admin-current-financial-meta > div { display: flex; justify-content: space-between; gap: 8px; padding: 5px 7px; border: 1px solid #b8c2bd; background: #eef3f0; }
+.admin-current-financial-meta span { color: #567168; font-size: .72em; font-weight: 800; text-transform: uppercase; }
+.admin-current-financial-grid { display: grid; grid-template-columns: .9fr 1.55fr .95fr; grid-template-areas: "income expenses goals" "income expenses protection"; gap: 7px; margin-top: 7px; }
+.admin-current-financial-section { min-width: 0; border: 1px solid #aab5b0; }
+.admin-current-financial-section > header { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 7px; background: #173f32; color: #fff; }
+.admin-current-financial-section > header h2 { margin: 0; font-size: .92em; }
+.admin-current-financial-section > header strong { font-size: .82em; white-space: nowrap; }
+.admin-current-financial-monthly-income > header { background: #ef5b43; }
+.admin-current-financial-monthly-expenses > header { background: #70bf32; }
+.admin-current-financial-financial-goals > header { background: #d9a90b; }
+.admin-current-financial-insurance-coverage > header { background: #0ea5d7; }
+.admin-current-financial-monthly-income { grid-area: income; }
+.admin-current-financial-monthly-expenses { grid-area: expenses; }
+.admin-current-financial-financial-goals { grid-area: goals; }
+.admin-current-financial-insurance-coverage { grid-area: protection; }
+.admin-current-financial-monthly-expenses .admin-current-financial-lines { columns: 2; column-gap: 10px; }
+.admin-current-financial-group { padding: 3px 6px; break-inside: avoid; }
+.admin-current-financial-group + .admin-current-financial-group { border-top: 1px solid #d7dedb; }
+.admin-current-financial-group h3 { margin: 0 0 2px; color: #8a3c20; font-size: .65em; text-transform: uppercase; }
+.admin-current-financial-row { display: flex; justify-content: space-between; gap: 6px; padding: 1px 0; font-size: .76em; line-height: 1.12; }
+.admin-current-financial-row span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-current-financial-row strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.admin-current-financial-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
+.admin-current-financial-results > div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; background: #e8f0ec; color: #102b22; font-weight: 800; }
 
 @media (max-width: 1000px) {
   .admin-financial-statement-overlay { padding: 0; }
@@ -112,10 +166,13 @@
   body * { visibility: hidden !important; }
   .admin-financial-statement-overlay,
   .admin-financial-statement-page,
+  .admin-statement-pages,
   .admin-statement-sheet,
   .admin-statement-sheet * { visibility: visible !important; }
   .admin-financial-statement-overlay { position: static; overflow: visible; padding: 0; background: #fff; }
   .admin-financial-statement-page { padding: 0; background: #fff; }
   .admin-statement-toolbar { display: none !important; }
-  .admin-statement-sheet { position: absolute; inset: 0; width: 100%; min-height: 100%; box-shadow: none; print-color-adjust: exact; }
+  .admin-statement-pages { display: block; }
+  .admin-statement-sheet { position: relative; width: 100%; height: 100vh; min-height: 0; box-shadow: none; break-after: page; page-break-after: always; print-color-adjust: exact; }
+  .admin-statement-sheet:last-child { break-after: auto; page-break-after: auto; }
 }
