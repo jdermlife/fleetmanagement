@@ -95,6 +95,34 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(summary as HTMLElement).getByText('Weights total 100%')).toBeTruthy()
   })
 
+  it('opens the Build Profile financial statement for non-admin users below the comparative graph', () => {
+    authorization.isAdmin = false
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PROFILE-USER-1',
+      values: { wealthCurrency: 'PHP', 'asset-cash-on-hand': '10000' },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+    }))
+
+    render(<FinancialHealthSummaryPage />)
+
+    const graph = screen.getByRole('heading', { name: 'Health profile and weighted contribution' }).closest('article')
+    const openButton = screen.getByRole('button', { name: 'Open Statement of Assets and Liabilities' })
+    expect(graph).toBeTruthy()
+    expect(graph!.compareDocumentPosition(openButton) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    fireEvent.click(openButton)
+    const statement = screen.getByRole('dialog', { name: 'Statement of Assets and Liabilities' })
+    expect(within(statement).getByText('Profile ID: PROFILE-USER-1')).toBeTruthy()
+    expect(within(statement).getAllByText('₱10,000').length).toBeGreaterThan(0)
+
+    fireEvent.click(within(statement).getByRole('button', { name: 'Close financial statement' }))
+    expect(screen.queryByRole('dialog', { name: 'Statement of Assets and Liabilities' })).toBeNull()
+  })
+
   it('reveals journey guidance when outer and central circles are hovered or focused', () => {
     render(<FinancialHealthSummaryPage />)
 

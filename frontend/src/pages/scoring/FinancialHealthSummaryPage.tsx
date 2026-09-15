@@ -16,6 +16,7 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import { calculateAndSaveMonthlyProfile } from '../../services/profilemonthlysnapshotcalculator'
+import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
 
 import {
   buildFinancialHealthGroupRings,
@@ -730,6 +731,7 @@ export default function FinancialHealthSummaryPage() {
   const [baselineComparisonMonth, setBaselineComparisonMonth] = useState('')
   const [snapshotMessage, setSnapshotMessage] = useState('')
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false)
+  const [isFinancialStatementOpen, setIsFinancialStatementOpen] = useState(false)
   const [monthlySnapshotDrafts, setMonthlySnapshotDrafts] = useState<MonthlySnapshotDrafts | null>(null)
   const [monthlyProfileResult, setMonthlyProfileResult] = useState<Awaited<ReturnType<typeof calculateAndSaveMonthlyProfile>> | null>(null)
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
@@ -1324,6 +1326,7 @@ export default function FinancialHealthSummaryPage() {
     : 'Leaf graph awaiting saved lending scores'
   return (
     <div className="psychometric-page financial-health-page">
+      {isFinancialStatementOpen ? <FinancialStatementModal onClose={() => setIsFinancialStatementOpen(false)} /> : null}
       <FinancialJourneyGuide
         completion={journeyStepCompletion}
         doNotShowAgain={doNotShowJourneyAgain}
@@ -2194,6 +2197,11 @@ export default function FinancialHealthSummaryPage() {
               ))}
             </div>
           </article>
+          <div className="financial-health-statement-action">
+            <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setIsFinancialStatementOpen(true)}>
+              Open Statement of Assets and Liabilities
+            </button>
+          </div>
         </div>
 
         <aside className="financial-health-side-stack">
