@@ -7,6 +7,7 @@ const apiMocks = vi.hoisted(() => ({
   cancelRecurringSubscription: vi.fn(),
   cancelSubscriptionPayment: vi.fn(),
   capturePayPalOrder: vi.fn(),
+  createPublicTrialPayPalOrder: vi.fn(),
   createPayMongoSubscription: vi.fn(),
   createPayPalOrder: vi.fn(),
   createPayPalSubscription: vi.fn(),
@@ -20,6 +21,7 @@ const apiMocks = vi.hoisted(() => ({
 }))
 const mockNavigate = vi.hoisted(() => vi.fn())
 const platform = vi.hoisted(() => ({ value: 'web' }))
+const authToken = vi.hoisted(() => ({ value: 'subscriber-access-token' as string | null }))
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
@@ -44,7 +46,7 @@ vi.mock('axios', () => ({
 
 vi.mock('../src/api', () => ({
   ...apiMocks,
-  getAuthToken: () => 'subscriber-access-token',
+  getAuthToken: () => authToken.value,
   getErrorMessage: (error: unknown, fallback: string) =>
     error instanceof Error ? error.message : fallback,
 }))
@@ -88,6 +90,7 @@ const payment = {
 describe('SubscriptionPaymentPage PayPal Buttons', () => {
   beforeEach(() => {
     platform.value = 'web'
+    authToken.value = 'subscriber-access-token'
     mockNavigate.mockReset()
     vi.stubEnv('VITE_PAYPAL_CLIENT_ID', 'test-client')
     apiMocks.listPublicSubscriptionPlans.mockResolvedValue([plan])
@@ -103,6 +106,14 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       status: 'CREATED',
       approval_url: null,
       amount: 100,
+      currency: 'PHP',
+      payment: { ...payment, payment_status: 'PENDING' },
+    })
+    apiMocks.createPublicTrialPayPalOrder.mockResolvedValue({
+      order_id: 'ORDER-GUEST-123',
+      status: 'CREATED',
+      approval_url: null,
+      amount: 160,
       currency: 'PHP',
       payment: { ...payment, payment_status: 'PENDING' },
     })
@@ -158,6 +169,38 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     const payMongoButton = await screen.findByRole('button', { name: 'Pay once with PayMongo' })
     expect(payMongoButton.querySelector('img')?.getAttribute('src')).toContain('paymongo-official.png')
     expect(screen.queryByRole('heading', { name: 'App Store Subscription' })).toBeNull()
+  })
+
+  it('renders the official PayPal button before guest account entry', async () => {
+    authToken.value = null
+    let buttonOptions: { createOrder: () => Promise<string> } | null = null
+    const buttons = vi.fn((options) => {
+      buttonOptions = options
+      return { render: vi.fn() }
+    })
+    window.paypal = { Buttons: buttons }
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription/payment?plan=single']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    await waitFor(() => expect(buttons).toHaveBeenCalledTimes(1))
+    expect(screen.queryByRole('button', { name: 'Pay with PayPal' })).toBeNull()
+    expect(buttons.mock.calls[0][0].style).toMatchObject({
+      shape: 'rect',
+      color: 'gold',
+      label: 'paypal',
+      height: 48,
+    })
+    await expect(buttonOptions!.createOrder()).rejects.toThrow(
+      'Enter your registered username or email before starting PayPal checkout.',
+    )
+    expect(apiMocks.createPublicTrialPayPalOrder).not.toHaveBeenCalled()
   })
 
   it('creates and captures the exact one-time PayPal order', async () => {

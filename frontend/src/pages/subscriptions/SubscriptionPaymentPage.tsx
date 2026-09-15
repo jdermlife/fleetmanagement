@@ -395,7 +395,6 @@ export default function SubscriptionPaymentPage() {
     Boolean(selectedSubscription || selectedPlan)
   const canRenderGuestPayPalButtons =
     Boolean(guestTrialPlan)
-    && guestAccountIdentifier.trim().length >= 3
     && Boolean(PAYPAL_CLIENT_ID)
 
   const ensureSubscriptionForPayment = useCallback(async (): Promise<SubscriptionRecord | null> => {
@@ -672,12 +671,17 @@ export default function SubscriptionPaymentPage() {
             label: 'paypal',
           },
           createOrder: async () => {
+            const accountIdentifier = guestAccountIdentifier.trim()
+            if (accountIdentifier.length < 3) {
+              throw new Error('Enter your registered username or email before starting PayPal checkout.')
+            }
+
             paypalStageRef.current = 'create'
             setPaymentMessage('Creating a secure PayPal order...')
 
             const requestId = buildPayPalRequestId()
             const order = await createPublicTrialPayPalOrder({
-              account_identifier: guestAccountIdentifier.trim(),
+              account_identifier: accountIdentifier,
               plan: guestTrialPlan.id,
               request_id: requestId,
             })
