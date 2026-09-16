@@ -56,7 +56,6 @@ export const calculateApplicationInformationCompletion = (
   const otherInformation = requirements?.otherInformation
   const employment = requirements?.employmentInformation
   const dueDiligence = requirements?.enhancedDueDiligence
-  const documents = requirements?.supportingDocuments
   const spouse = requirements?.spouseInformation
   const coBorrowers = requirements?.coBorrowers ?? []
   const banking = requirements?.bankingRelationships
@@ -78,14 +77,11 @@ export const calculateApplicationInformationCompletion = (
     hasText(application.phone),
     hasText(application.gov_id),
     hasText(application.address),
-    hasText(applicant?.firstName),
-    hasText(applicant?.lastName),
     hasText(applicant?.dateOfBirth),
     hasText(applicant?.placeOfBirth),
     hasText(applicant?.gender),
     hasText(applicant?.citizenship),
     hasText(applicant?.maritalStatus),
-    hasText(applicant?.mothersMaidenName),
     hasText(contact?.mobileNumber),
     hasText(addresses?.permanentAddress),
     hasText(addresses?.mailingAddress),
@@ -213,7 +209,6 @@ export const calculateApplicationInformationCompletion = (
         hasPositiveNumber(application.appraised_value),
         ...(productType === 'Auto Loan'
           ? [
-              hasText(collateral?.vehicleMarketabilityCategory),
               hasText(collateral?.vehicleConditionCategory),
               hasText(collateral?.vehicleTypeCategory),
               hasText(collateral?.insuranceProviderCompany),
@@ -239,11 +234,6 @@ export const calculateApplicationInformationCompletion = (
     ...additionalCollateralChecks,
   ]
 
-  const hasAtLeastOneSupportingDocument = Object.values(documents ?? {}).some(
-    (value) => value === true,
-  )
-  const step7Checks = [hasAtLeastOneSupportingDocument]
-
   const steps = {
     1: calculateStep(1, step1Checks),
     2: calculateStep(2, step2Checks),
@@ -251,7 +241,7 @@ export const calculateApplicationInformationCompletion = (
     4: calculateStep(4, step4Checks, step4Applicable),
     5: calculateStep(5, step5Checks),
     6: calculateStep(6, step6Checks),
-    7: calculateStep(7, step7Checks),
+    7: calculateStep(7, [], false),
   } satisfies Record<InformationStepNumber, StepInformationCompletion>
 
   const applicableSteps = Object.values(steps).filter((step) => step.applicable)
