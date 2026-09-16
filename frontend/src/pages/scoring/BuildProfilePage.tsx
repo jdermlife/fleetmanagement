@@ -923,6 +923,7 @@ export default function BuildProfilePage() {
   const profileAutosaveDefaultsRef = useRef(createEmptyProfile())
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
+  const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
   const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
@@ -1290,9 +1291,18 @@ export default function BuildProfilePage() {
   }, [prepareStep12Scores, profile.step, scoreApplicationNo, scorePreparationKey])
 
   const saveProfile = async () => {
+    if (isSavingProfile) return
+    setIsSavingProfile(true)
+    setSaveMessage('Saving profile...')
     try {
       persistProfileSnapshot(profile)
-      await profileAutosave.saveNow()
+      const synchronized = await profileAutosave.saveNow()
+      if (!synchronized) {
+        setSaveMessage(isAuthenticated
+          ? 'Profile saved on this device, but database synchronization failed. Please try again.'
+          : `Profile draft ${profile.profileId} saved on this device. Sign in to save it to the database.`)
+        return
+      }
       const applicationNo = profile.selectedApplicationNo?.trim()
         || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
       if (applicationNo) {
@@ -1305,11 +1315,13 @@ export default function BuildProfilePage() {
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
         setSaveMessage(isAuthenticated
-          ? `Profile draft ${profile.profileId} saved and synchronized to your account.`
+          ? `Saved. Profile ${profile.profileId} is synchronized in Loan Applications.`
           : `Profile draft ${profile.profileId} saved on this device. Sign in to synchronize it.`)
       }
     } catch {
       setSaveMessage('Unable to save and synchronize this profile.')
+    } finally {
+      setIsSavingProfile(false)
     }
   }
 
@@ -3020,7 +3032,7 @@ export default function BuildProfilePage() {
         {renderCurrentStep()}
         <div className="build-profile-form-actions">
           <button type="button" className="loan-footer-button" disabled={profile.step === 1} onClick={() => goToStep((profile.step - 1) as ProfileStep)}>Previous</button>
-          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => void saveProfile()}>Save Profile</button>
+          <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => void saveProfile()} disabled={isSavingProfile} aria-busy={isSavingProfile}>{isSavingProfile ? 'Saving...' : 'Save Profile'}</button>
           <button type="button" className="loan-footer-button" disabled={profile.step === 12} onClick={() => goToStep((profile.step + 1) as ProfileStep)}>Next</button>
         </div>
         {saveMessage ? <p className="status-message" role="status">{saveMessage}</p> : null}

@@ -176,6 +176,67 @@ describe('useAutosaveDraft', () => {
     })
   })
 
+  it('reports whether saveNow synchronized the current value remotely', async () => {
+    const successful = createClient()
+    const successfulAutosave = renderAutosave(successful.client)
+    await settleHydration()
+
+    await act(async () => {
+      successfulAutosave.result.current.setValue({
+        person: { name: 'Ana', email: '' },
+        notes: [],
+      })
+    })
+
+    let synchronized = false
+    await act(async () => {
+      synchronized = await successfulAutosave.result.current.saveNow()
+    })
+    expect(synchronized).toBe(true)
+
+    successfulAutosave.unmount()
+    const failed = createClient({
+      put: async () => {
+        throw new Error('Database unavailable')
+      },
+    })
+    const failedAutosave = renderAutosave(failed.client)
+    await settleHydration()
+
+    await act(async () => {
+      failedAutosave.result.current.setValue({
+        person: { name: 'Bea', email: '' },
+        notes: [],
+      })
+    })
+
+    await act(async () => {
+      synchronized = await failedAutosave.result.current.saveNow()
+    })
+    expect(synchronized).toBe(false)
+  })
+
+  it('forces an unchanged remote draft through the backend on manual save', async () => {
+    const existing = remoteDraft(defaults, 4)
+    const { client, putMock } = createClient({
+      get: async () => existing,
+      put: async (input) => remoteDraft(input.payload, 5),
+    })
+    const autosave = renderAutosave(client)
+    await settleHydration()
+
+    let synchronized = false
+    await act(async () => {
+      synchronized = await autosave.result.current.saveNow()
+    })
+
+    expect(synchronized).toBe(true)
+    expect(putMock).toHaveBeenCalledWith({
+      payload: defaults,
+      expectedRevision: 4,
+    })
+  })
+
   it('does not create a draft until the user changes the initial form', async () => {
     const { client, putMock } = createClient()
     renderAutosave(client)

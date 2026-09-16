@@ -24,7 +24,7 @@ export const DEFAULT_LOCAL_AUTOSAVE_DELAY_MS = 250
 export const DEFAULT_REMOTE_AUTOSAVE_DELAY_MS = 1_500
 
 interface ActiveAutosaveRegistration {
-  saveNow: () => Promise<void>
+  saveNow: () => Promise<boolean>
   clearLocalForLogout: () => void
 }
 
@@ -66,7 +66,7 @@ export interface UseAutosaveDraftResult {
   isHydrated: boolean
   status: AutosaveStatusDetail
   clear: () => Promise<void>
-  saveNow: () => Promise<void>
+  saveNow: () => Promise<boolean>
 }
 
 function signatureOf(value: unknown): string | null {
@@ -234,7 +234,7 @@ export function useAutosaveDraft<T>({
     return true
   }, [publish])
 
-  const enqueueRemote = useCallback((): Promise<void> => {
+  const enqueueRemote = useCallback((force = false): Promise<void> => {
     if (!enabledRef.current || !remoteRef.current || !hydratedRef.current) {
       return remoteChainRef.current
     }
@@ -251,7 +251,7 @@ export function useAutosaveDraft<T>({
       }
       return remoteChainRef.current
     }
-    if (signature === lastRemoteSignatureRef.current) {
+    if (!force && signature === lastRemoteSignatureRef.current) {
       return remoteChainRef.current
     }
     if (conflictRef.current) {
@@ -628,13 +628,19 @@ export function useAutosaveDraft<T>({
 
   const saveNow = useCallback(async () => {
     if (!enabledRef.current || !hydratedRef.current) {
-      return
+      return false
     }
     clearTimers()
-    flushLocal()
-    if (remoteRef.current) {
-      await enqueueRemote()
+    const locallySaved = flushLocal()
+    if (!locallySaved) {
+      return false
     }
+    if (remoteRef.current) {
+      const signature = signatureOf(valueRef.current)
+      await enqueueRemote(true)
+      return signature !== null && signature === lastRemoteSignatureRef.current
+    }
+    return true
   }, [clearTimers, enqueueRemote, flushLocal])
 
   const clearLocalForLogout = useCallback(() => {
