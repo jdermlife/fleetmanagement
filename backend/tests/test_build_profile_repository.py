@@ -2,9 +2,11 @@ from __future__ import annotations
 
 import pytest
 from fastapi import HTTPException
+from types import SimpleNamespace
 
 from app.fastapi_auth import CurrentUser
 from app.models.loan_application import LoanApplication
+from app.routes.loan_routes import serialize_loan_application_fields
 from app.services.build_profile_repository import upsert_build_profile_record
 
 
@@ -78,3 +80,12 @@ def test_profile_draft_cannot_update_another_accounts_record():
         )
 
     assert error.value.status_code == 403
+
+
+def test_loan_serialization_includes_creator_username():
+    record = LoanApplication(application_no="PRO-001", created_by=7)
+    record.creator_user = SimpleNamespace(username="jorge.creator")
+
+    serialized = serialize_loan_application_fields(record)
+
+    assert serialized["created_by_username"] == "jorge.creator"

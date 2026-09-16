@@ -96,6 +96,12 @@ class LoanApplication(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
+    creator_user = relationship(
+        "User",
+        foreign_keys=[created_by],
+        lazy="joined",
+    )
+
     credit_scores = relationship(
         "CreditScore",
         back_populates="loan_application",

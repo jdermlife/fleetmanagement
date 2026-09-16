@@ -212,6 +212,9 @@ def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]
         "id": record.id,
         "application_no": record.application_no,
         "created_by": record.created_by,
+        "created_by_username": (
+            record.creator_user.username if record.creator_user else "Unknown"
+        ),
         "status": record.status,
         "product_type": record.product_type,
         "client_name": client_name,

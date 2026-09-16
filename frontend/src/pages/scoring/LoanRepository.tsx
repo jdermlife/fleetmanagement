@@ -666,6 +666,7 @@ export default function LoanRepository() {
                       >
                         {row.application_no}
                       </button>
+                      <div className="text-xs text-slate-500">Created by {row.created_by_username || "Unknown"}</div>
                       <div className="text-xs text-slate-500">{formatDateTime(row.created_at)}</div>
                       <div className="text-sm font-medium text-slate-900">{row.borrower_name}</div>
                       <div className="text-xs text-slate-500">{row.product_type}</div>
@@ -791,6 +792,7 @@ export default function LoanRepository() {
                 <thead>
                   <tr className="bg-slate-100">
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Application No</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Created By</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Created At</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Product</th>
                     <th className="px-4 py-3 text-left text-xs font-semibold uppercase tracking-[0.16em] text-slate-600">Applicant / Borrower</th>
@@ -831,6 +833,7 @@ export default function LoanRepository() {
                           {row.application_no}
                         </button>
                       </td>
+                      <td className="px-4 py-4 text-sm font-medium text-slate-800">{row.created_by_username || "Unknown"}</td>
                       <td className="px-4 py-4 text-sm text-slate-600">{formatDateTime(row.created_at)}</td>
                       <td className="px-4 py-4 text-sm text-slate-700">{row.product_type}</td>
                       <td className="px-4 py-4 text-sm font-medium text-slate-900">{row.borrower_name}</td>
@@ -935,7 +938,7 @@ export default function LoanRepository() {
                   {!loading && filteredApplications.length === 0 && (
                     <tr>
                       <td
-                        colSpan={25}
+                        colSpan={26}
                         className="p-10 text-center text-sm text-slate-500"
                       >
                         No loan applications matched the current filters.

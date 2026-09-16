@@ -80,4 +80,48 @@ describe('LoanRepository upload overlay', () => {
       expect(screen.getByText(/Upload completed/)).toBeTruthy()
     })
   })
+
+  it('shows the creator username in the second repository column', async () => {
+    mockApiGet.mockResolvedValue({
+      data: {
+        total: 1,
+        limit: 10,
+        offset: 0,
+        records: [{
+          application_no: 'PRO-001',
+          created_by_username: 'jorge.creator',
+          created_at: '2026-09-16T10:00:00Z',
+          product_type: 'Personal Loan',
+          borrower_name: 'Sample Borrower',
+          email: '',
+          phone: '',
+          gov_id: '',
+          address: '',
+          monthly_income: 0,
+          other_income: 0,
+          debt_obligations: 0,
+          loan_amount: 0,
+          term_months: 0,
+          interest_rate: 0,
+          purpose: '',
+          vehicle_info: '',
+          committee_remarks: '',
+          executive_approval: false,
+          scorecard_total: 0,
+          ai_probability: 0,
+          dti: 0,
+          dsr: 0,
+          ltv: 0,
+          status: 'Draft',
+        }],
+      },
+    })
+
+    render(<LoanRepository />)
+    await waitFor(() => expect(screen.getAllByText('jorge.creator').length).toBeGreaterThan(0))
+
+    const headers = Array.from(document.querySelectorAll('.loan-repository-table thead th'))
+      .map((header) => header.textContent)
+    expect(headers.slice(0, 3)).toEqual(['Application No', 'Created By', 'Created At'])
+  })
 })

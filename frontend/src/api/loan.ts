@@ -582,6 +582,7 @@ export interface LoanApplicationPayload {
 export interface LoanApplicationRecord extends LoanApplicationPayload {
   psychometric_risk_level: string
   id?: number
+  created_by_username?: string
   created_at?: string
   updated_at?: string
 }
