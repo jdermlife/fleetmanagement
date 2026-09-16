@@ -646,7 +646,7 @@ const psychometricAssessmentResponseToPoints = (
     return 0;
   }
 
-  return 5 - optionIndex;
+  return Math.max(0, 4 - optionIndex);
 };
 
 const buildPsychometricAssessmentScores = (
@@ -675,7 +675,7 @@ const buildPsychometricAssessmentScores = (
         0,
       );
 
-      return Math.round((rawScore / 25) * 100);
+      return Math.round((rawScore / 20) * 100);
     });
 
     const groupedTraitScores = {

@@ -883,7 +883,7 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
   requirements.psychometricAssessment = Object.fromEntries(CREDIT_VALUES_QUESTIONS.map((question) => {
     const selected = values[`creditValues.${question.field}`] || ''
     const optionIndex = question.options.indexOf(selected)
-    return [question.field.padStart(3, '0'), optionIndex >= 0 ? String(4 - optionIndex) : '']
+    return [question.field.padStart(3, '0'), optionIndex >= 0 ? String(Math.max(0, 4 - optionIndex)) : '']
   }))
   requirements.buildProfile = JSON.parse(JSON.stringify({
     ...profile,
