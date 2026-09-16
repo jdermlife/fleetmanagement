@@ -1315,7 +1315,7 @@ export default function BuildProfilePage() {
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
         setSaveMessage(isAuthenticated
-          ? `Saved. Profile ${profile.profileId} is synchronized in Loan Applications.`
+          ? `Saved. Profile ${profile.profileId} is synchronized in Profile Setup.`
           : `Profile draft ${profile.profileId} saved on this device. Sign in to synchronize it.`)
       }
     } catch {

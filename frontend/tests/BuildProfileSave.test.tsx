@@ -86,7 +86,7 @@ describe('BuildProfilePage manual save', () => {
     const savedButton = await screen.findByRole('button', { name: 'Save Profile' })
     expect(savedButton.hasAttribute('disabled')).toBe(false)
     expect(screen.getByRole('status').textContent).toMatch(
-      /Saved\. Profile PRO-[A-Z0-9]{6} is synchronized in Loan Applications\./,
+      /Saved\. Profile PRO-[A-Z0-9]{6} is synchronized in Profile Setup\./,
     )
     expect(saveNow).toHaveBeenCalledTimes(1)
   })
