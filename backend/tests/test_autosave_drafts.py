@@ -12,6 +12,7 @@ from sqlalchemy.pool import StaticPool
 from app.database import get_db
 from app.fastapi_auth import CurrentUser, get_current_user, require_authenticated_user
 from app.models.autosave_draft import AutosaveDraft
+from app.routes import autosave_drafts
 from app.routes.autosave_drafts import router
 
 
@@ -113,6 +114,44 @@ def test_create_update_and_stale_revision_conflict(autosave_client):
     fetched = client.get(draft_url)
     assert fetched.status_code == 200
     assert fetched.json()["payload"] == {"step": 2}
+
+
+def test_build_profile_autosave_is_mirrored_to_loan_applications(
+    autosave_client,
+    monkeypatch,
+):
+    client, _active_user, _testing_session = autosave_client
+    mirrored = []
+    monkeypatch.setattr(
+        autosave_drafts,
+        "upsert_build_profile_record",
+        lambda db, user, profile, profile_id: mirrored.append(
+            (db, user.id, profile, profile_id)
+        ),
+    )
+    profile = {
+        "profileId": "PRO-TEST-001",
+        "values": {"fullName": "Ana", "monthlyIncome": "50000"},
+    }
+
+    response = client.put(
+        "/api/drafts/build-profile/current",
+        json={"payload": profile, "expected_revision": 0},
+    )
+    updated_profile = {
+        **profile,
+        "values": {**profile["values"], "monthlyIncome": "60000"},
+    }
+    updated = client.put(
+        "/api/drafts/build-profile/current",
+        json={"payload": updated_profile, "expected_revision": 1},
+    )
+
+    assert response.status_code == 200, response.text
+    assert updated.status_code == 200, updated.text
+    assert len(mirrored) == 2
+    assert mirrored[0][1:] == (1, profile, "PRO-TEST-001")
+    assert mirrored[1][1:] == (1, updated_profile, "PRO-TEST-001")
 
 
 def test_rejects_oversized_draft_payloads(autosave_client):

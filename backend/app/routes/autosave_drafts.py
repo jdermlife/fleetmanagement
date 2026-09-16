@@ -12,6 +12,7 @@ from app.schemas.autosave_draft_schema import (
     AutosaveDraftResponse,
     AutosaveDraftUpsert,
 )
+from app.services.build_profile_repository import upsert_build_profile_record
 
 
 DRAFT_TTL = timedelta(days=30)
@@ -48,6 +49,21 @@ def _revision_conflict(expected_revision: int, current_revision: int) -> HTTPExc
             "current_revision": current_revision,
         },
     )
+
+
+def _mirror_build_profile_draft(
+    db: Session,
+    user: CurrentUser,
+    scope: str,
+    entity_key: str,
+    payload: object,
+) -> None:
+    if scope != "build-profile" or entity_key != "current" or not isinstance(payload, dict):
+        return
+
+    profile_id = str(payload.get("profileId") or "").strip()
+    if profile_id:
+        upsert_build_profile_record(db, user, payload, profile_id)
 
 
 @router.get(
@@ -120,6 +136,7 @@ def put_autosave_draft(
         )
         db.add(draft)
         try:
+            _mirror_build_profile_draft(db, user, scope, entity_key, payload.payload)
             db.commit()
         except IntegrityError as exc:
             db.rollback()
@@ -157,6 +174,7 @@ def put_autosave_draft(
         current_revision = current.revision if current is not None else 0
         raise _revision_conflict(payload.expected_revision, current_revision)
 
+    _mirror_build_profile_draft(db, user, scope, entity_key, payload.payload)
     db.commit()
     updated_draft = query.first()
     if updated_draft is None:
