@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from io import BytesIO
 from typing import Any
 
 from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, status as http_status
+from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from sqlalchemy import MetaData, Table, select, text
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 
@@ -21,6 +23,7 @@ from app.models.loan_application import (
     DecisionAuditTrail,
     FraudScore,
     LoanApplication,
+    LoanScorecardSnapshot,
     OverallScore,
     ProfitabilityScore,
     PsychometricScore,
@@ -31,6 +34,8 @@ from app.schemas.loan_schema import (
     BillReminderRecordsPayload,
     BudgetRecordsPayload,
     LoanApplicationCreate,
+    LoanScorecardSnapshotCreate,
+    LoanScorecardSnapshotResponse,
     MonitoringRecordPayload,
     NetWorthRecordPayload,
     WealthScoreUpdatePayload,
@@ -402,6 +407,27 @@ def serialize_loan_application(record: LoanApplication) -> dict[str, Any]:
 
 def serialize_loan_application_list_item(record: LoanApplication) -> dict[str, Any]:
     return serialize_loan_application_fields(record)
+
+
+def build_scorecard_snapshot(
+    record: LoanApplication,
+    snapshot_date: date,
+    finalized_by: int,
+) -> LoanScorecardSnapshot:
+    overall_score = latest_record(record.overall_scores)
+    final_status = record.status.upper() if record.status in {"Approved", "Released"} else "FINAL"
+
+    return LoanScorecardSnapshot(
+        loan_application_id=record.id,
+        snapshot_date=snapshot_date,
+        finalized_by=finalized_by,
+        final_status=final_status,
+        overall_score=overall_score.final_score if overall_score else None,
+        grade=overall_score.final_grade if overall_score else None,
+        rating=overall_score.final_rating if overall_score else None,
+        decision=overall_score.final_decision if overall_score else None,
+        scorecard_payload=jsonable_encoder(serialize_loan_application(record)),
+    )
 
 
 def upsert_related_record(
@@ -1223,6 +1249,84 @@ def get_loan_application(
         record = get_loan_application_or_404(db, application_no)
         enforce_loan_application_access(user, record)
         return serialize_loan_application(record)
+    finally:
+        db.close()
+
+
+@router.post(
+    "/loan-applications/{application_no}/scorecard-snapshots",
+    response_model=LoanScorecardSnapshotResponse,
+    status_code=http_status.HTTP_201_CREATED,
+)
+def create_loan_scorecard_snapshot(
+    application_no: str,
+    data: LoanScorecardSnapshotCreate,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    if data.snapshot_date > datetime.now(timezone.utc).date():
+        raise HTTPException(
+            status_code=http_status.HTTP_400_BAD_REQUEST,
+            detail="Snapshot date cannot be in the future",
+        )
+
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+
+        existing = (
+            db.query(LoanScorecardSnapshot.id)
+            .filter(
+                LoanScorecardSnapshot.loan_application_id == record.id,
+                LoanScorecardSnapshot.snapshot_date == data.snapshot_date,
+            )
+            .first()
+        )
+        if existing:
+            raise HTTPException(
+                status_code=http_status.HTTP_409_CONFLICT,
+                detail="A final scorecard already exists for this snapshot date",
+            )
+
+        snapshot = build_scorecard_snapshot(record, data.snapshot_date, user.id)
+        db.add(snapshot)
+        db.commit()
+        db.refresh(snapshot)
+        return snapshot
+    except IntegrityError as error:
+        db.rollback()
+        raise HTTPException(
+            status_code=http_status.HTTP_409_CONFLICT,
+            detail="A final scorecard already exists for this snapshot date",
+        ) from error
+    except Exception:
+        db.rollback()
+        raise
+    finally:
+        db.close()
+
+
+@router.get(
+    "/loan-applications/{application_no}/scorecard-snapshots",
+    response_model=list[LoanScorecardSnapshotResponse],
+)
+def get_loan_scorecard_snapshots(
+    application_no: str,
+    user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
+):
+    db = SessionLocal()
+    try:
+        record = get_loan_application_or_404(db, application_no)
+        enforce_loan_application_access(user, record)
+        return (
+            db.query(LoanScorecardSnapshot)
+            .filter(LoanScorecardSnapshot.loan_application_id == record.id)
+            .order_by(
+                LoanScorecardSnapshot.snapshot_date.desc(),
+                LoanScorecardSnapshot.finalized_at.desc(),
+            )
+            .all()
+        )
     finally:
         db.close()
 

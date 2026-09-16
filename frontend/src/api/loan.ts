@@ -591,6 +591,21 @@ export interface LoanMutationResponse {
   application_no?: string
 }
 
+export interface LoanScorecardSnapshotRecord {
+  id: number
+  loan_application_id: number
+  snapshot_date: string
+  finalized_at: string
+  finalized_by: number | null
+  final_status: 'FINAL' | 'APPROVED' | 'RELEASED'
+  overall_score: number | null
+  grade: string | null
+  rating: string | null
+  decision: string | null
+  scorecard_payload: Record<string, unknown>
+  created_at: string
+}
+
 export interface QuantScoresSummary {
   credit_score: number
   credit_bureau_score: number
@@ -792,6 +807,26 @@ export async function fetchLoanApplication(
 ): Promise<LoanApplicationRecord> {
   const response = await api.get<LoanApplicationRecord>(
     `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}`,
+  )
+  return response.data
+}
+
+export async function createLoanScorecardSnapshot(
+  applicationNo: string,
+  snapshotDate: string,
+): Promise<LoanScorecardSnapshotRecord> {
+  const response = await api.post<LoanScorecardSnapshotRecord>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/scorecard-snapshots`,
+    { snapshot_date: snapshotDate },
+  )
+  return response.data
+}
+
+export async function fetchLoanScorecardSnapshots(
+  applicationNo: string,
+): Promise<LoanScorecardSnapshotRecord[]> {
+  const response = await api.get<LoanScorecardSnapshotRecord[]>(
+    `${LOAN_APPLICATIONS_PATH}/${encodeURIComponent(applicationNo)}/scorecard-snapshots`,
   )
   return response.data
 }

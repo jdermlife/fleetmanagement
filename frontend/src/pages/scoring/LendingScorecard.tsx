@@ -17,6 +17,7 @@ import {
 import {
   computeQuantScores,
   createLoanApplication,
+  createLoanScorecardSnapshot,
   fetchLoanCreationEntitlement,
   fetchLoanApplication,
   type LoanCreationEntitlementResponse,
@@ -2023,6 +2024,9 @@ export default function LendingScorecard() {
   const [isSaving, setIsSaving] = useState(false);
   const [workflowActionState, setWorkflowActionState] = useState<'idle' | 'processing' | 'completed' | 'error'>('idle');
   const [completedWorkflowAction, setCompletedWorkflowAction] = useState<WorkflowStatus | null>(null);
+  const [snapshotDate, setSnapshotDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [snapshotState, setSnapshotState] = useState<'idle' | 'processing' | 'completed' | 'error'>('idle');
+  const [snapshotMessage, setSnapshotMessage] = useState('');
   const [isLoadingApplication, setIsLoadingApplication] = useState(false);
   const [isGeneratingScore, setIsGeneratingScore] = useState(false);
   const [backendQuantSummary, setBackendQuantSummary] = useState<QuantScoresSummary | null>(null);
@@ -3204,10 +3208,10 @@ export default function LendingScorecard() {
   const persistLoanApplication = async (
     newStatus: WorkflowStatus,
     applicationOverride?: LoanApplication,
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     if (creditCardValidationError || bankAccountValidationError) {
       setSaveMessage(creditCardValidationError || bankAccountValidationError || 'Validation failed.');
-      return false;
+      return null;
     }
 
     if (!hasPersistedRecord) {
@@ -3227,7 +3231,7 @@ export default function LendingScorecard() {
         setSaveMessage(
           'New record creation is currently unavailable.',
         );
-        return false;
+        return null;
       }
     }
 
@@ -3255,12 +3259,12 @@ export default function LendingScorecard() {
       }
       setTransientMessage(result.message || `Application saved as ${newStatus}`);
       await refreshLoanCreationEntitlement();
-      return true;
+      return persistedApplicationNo;
     } catch (error) {
       setSaveMessage(
         getErrorMessage(error, 'Failed to save loan application.'),
       );
-      return false;
+      return null;
     } finally {
       setIsSaving(false);
     }
@@ -3286,15 +3290,15 @@ export default function LendingScorecard() {
     }
 
     if (applicationOverride) {
-      return persistLoanApplication(newStatus, applicationOverride);
+      return (await persistLoanApplication(newStatus, applicationOverride)) !== null;
     }
 
     if (step === 10) {
-      return persistLoanApplication(newStatus);
+      return (await persistLoanApplication(newStatus)) !== null;
     }
 
     if (!hasPersistedRecord || formData.status === 'Draft') {
-      return persistLoanApplication(newStatus);
+      return (await persistLoanApplication(newStatus)) !== null;
     }
 
     setIsSaving(true);
@@ -3417,6 +3421,41 @@ export default function LendingScorecard() {
     }
 
     setWorkflowActionState('error');
+  };
+
+  const handleSaveFinalScorecard = async () => {
+    const today = new Date().toISOString().slice(0, 10);
+    if (!snapshotDate) {
+      setSnapshotState('error');
+      setSnapshotMessage('Select a snapshot date.');
+      return;
+    }
+    if (snapshotDate > today) {
+      setSnapshotState('error');
+      setSnapshotMessage('Snapshot date cannot be in the future.');
+      return;
+    }
+    if (!window.confirm(`Save an immutable final scorecard dated ${snapshotDate}?`)) {
+      return;
+    }
+
+    setSnapshotState('processing');
+    setSnapshotMessage('Saving current scorecard before finalizing...');
+    const persistedApplicationNo = await persistLoanApplication(formData.status);
+    if (!persistedApplicationNo) {
+      setSnapshotState('error');
+      setSnapshotMessage('The current scorecard could not be saved, so no final snapshot was created.');
+      return;
+    }
+
+    try {
+      const snapshot = await createLoanScorecardSnapshot(persistedApplicationNo, snapshotDate);
+      setSnapshotState('completed');
+      setSnapshotMessage(`Final scorecard saved for ${snapshot.snapshot_date}.`);
+    } catch (error) {
+      setSnapshotState('error');
+      setSnapshotMessage(getErrorMessage(error, 'Failed to save final scorecard.'));
+    }
   };
 
   const handleFinalizeDocumentReview = async (newStatus: WorkflowStatus) => {
@@ -5844,6 +5883,43 @@ export default function LendingScorecard() {
                           Completed: Record status changed to {completedWorkflowAction}
                         </div>
                       )}
+
+                      <div className="border-t border-amber-300 pt-4">
+                        <div className="grid gap-3 md:grid-cols-[220px_minmax(0,1fr)] md:items-end">
+                          <label className="block">
+                            <span className="mb-1.5 block text-xs font-bold uppercase tracking-wide text-blue-700">
+                              Snapshot As Of
+                            </span>
+                            <input
+                              type="date"
+                              value={snapshotDate}
+                              max={new Date().toISOString().slice(0, 10)}
+                              onChange={(event) => {
+                                setSnapshotDate(event.target.value);
+                                setSnapshotState('idle');
+                                setSnapshotMessage('');
+                              }}
+                              className="loan-form-input w-full rounded-md border border-blue-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </label>
+                          <button
+                            type="button"
+                            onClick={handleSaveFinalScorecard}
+                            disabled={isSaving || snapshotState === 'processing' || creationLocked || !snapshotDate}
+                            className="loan-inline-button loan-inline-button-primary inline-flex min-h-[42px] items-center justify-center rounded-md px-4 py-2 text-sm font-semibold disabled:opacity-50"
+                          >
+                            {snapshotState === 'processing' ? 'Saving Final Scorecard...' : 'Save Final Scorecard'}
+                          </button>
+                        </div>
+                        {snapshotMessage ? (
+                          <div
+                            role={snapshotState === 'error' ? 'alert' : 'status'}
+                            className={`mt-3 rounded-md border px-4 py-3 text-sm font-bold ${snapshotState === 'error' ? 'border-red-300 bg-red-50 text-red-800' : 'border-emerald-300 bg-emerald-100 text-emerald-800'}`}
+                          >
+                            {snapshotMessage}
+                          </div>
+                        ) : null}
+                      </div>
                     </div>
                   </div>
                 </div>

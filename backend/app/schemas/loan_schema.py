@@ -187,6 +187,27 @@ class DecisionAuditTrailPayload(BaseModel):
     changed_at: datetime | None = None
 
 
+class LoanScorecardSnapshotCreate(BaseModel):
+    snapshot_date: date
+
+
+class LoanScorecardSnapshotResponse(BaseModel):
+    id: int
+    loan_application_id: int
+    snapshot_date: date
+    finalized_at: datetime
+    finalized_by: int | None = None
+    final_status: Literal["FINAL", "APPROVED", "RELEASED"]
+    overall_score: float | None = None
+    grade: str | None = None
+    rating: str | None = None
+    decision: str | None = None
+    scorecard_payload: dict[str, Any]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
 class LoanApplicationCreate(BaseModel):
     application_no: str
     status: str

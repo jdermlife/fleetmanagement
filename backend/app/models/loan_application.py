@@ -151,6 +151,11 @@ class LoanApplication(Base):
         back_populates="loan_application",
         cascade="all, delete-orphan",
     )
+    scorecard_snapshots = relationship(
+        "LoanScorecardSnapshot",
+        back_populates="loan_application",
+        cascade="all, delete-orphan",
+    )
 
 
 class CreditScore(Base):
@@ -400,6 +405,30 @@ class OverallScore(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
 
     loan_application = relationship("LoanApplication", back_populates="overall_scores")
+
+
+class LoanScorecardSnapshot(Base):
+    __tablename__ = "loan_scorecard_snapshots"
+
+    id = Column(BigInteger, primary_key=True)
+    loan_application_id = Column(
+        Integer,
+        ForeignKey("loan_applications.id", ondelete="CASCADE"),
+        nullable=False,
+        index=True,
+    )
+    snapshot_date = Column(Date, nullable=False, index=True)
+    finalized_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    finalized_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"))
+    final_status = Column(String(30), nullable=False, default="FINAL", server_default="FINAL")
+    overall_score = Column(Numeric(10, 2))
+    grade = Column(String(20))
+    rating = Column(String(100))
+    decision = Column(String(50))
+    scorecard_payload = Column(JSONB, nullable=False)
+    created_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+
+    loan_application = relationship("LoanApplication", back_populates="scorecard_snapshots")
 
 
 class DecisionAuditTrail(Base):
