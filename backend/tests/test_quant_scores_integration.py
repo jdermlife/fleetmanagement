@@ -19,24 +19,73 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from app.database import SessionLocal
+from app.fastapi_auth import CurrentUser, require_authenticated_user
 from app.routes import loan_routes
 from app.routes.loan_routes import router as loan_router
 from app.models.loan_application import LoanApplication
-from security.auth import create_token
+
+
+class FakeQuery:
+    def filter(self, *_criteria):
+        return self
+
+    def first(self):
+        return None
+
+
+class FakeSession:
+    def __init__(self):
+        self.next_id = 1
+
+    def query(self, _model):
+        return FakeQuery()
+
+    def add(self, record):
+        if getattr(record, "id", None) is None:
+            record.id = self.next_id
+            self.next_id += 1
+
+    def execute(self, *_args, **_kwargs):
+        raise RuntimeError("workflow history is unavailable in the route test session")
+
+    def flush(self):
+        return None
+
+    def commit(self):
+        return None
+
+    def refresh(self, _record):
+        return None
+
+    def rollback(self):
+        return None
+
+    def close(self):
+        return None
 
 
 @pytest.fixture
-def client():
-    """Create a test FastAPI app with loan router (without database fixtures)."""
+def client(monkeypatch):
+    """Create an authenticated endpoint client isolated from local database state."""
+    monkeypatch.setattr(loan_routes, "SessionLocal", FakeSession)
+    monkeypatch.setattr(
+        loan_routes,
+        "evaluate_loan_record_create_entitlement",
+        lambda *_args: {"allowed": True},
+    )
     app = FastAPI()
     app.include_router(loan_router, prefix="/api")
+    app.dependency_overrides[require_authenticated_user] = lambda: CurrentUser(
+        id=1001,
+        username="subscriber_test",
+        role="SUBSCRIBER",
+    )
     return TestClient(app)
 
 
 @pytest.fixture
 def subscriber_headers():
-    token = create_token(user_id=1001, username="subscriber_test", role="SUBSCRIBER")
-    return {"Authorization": f"Bearer {token}"}
+    return {}
 
 
 def get_test_payload():
