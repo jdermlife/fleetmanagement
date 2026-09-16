@@ -545,7 +545,7 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   const values = { ...profileBase.values }
 
   Object.assign(values, {
-    fullName: application.borrower_name,
+    fullName: application.client_name || application.borrower_name,
     email: application.email || contact.emailAddress,
     mobileNumber: application.phone || contact.mobileNumber,
     dateOfBirth: applicant.dateOfBirth,
@@ -894,7 +894,8 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
     ...source,
     application_no: source.application_no,
     product_type: (values.productType || source.product_type) as LoanApplicationPayload['product_type'],
-    borrower_name: values.fullName || source.borrower_name,
+    client_name: values.fullName || source.client_name || source.borrower_name,
+    borrower_name: values.fullName || source.client_name || source.borrower_name,
     email: values.email || '',
     phone: values.mobileNumber || '',
     gov_id: values.governmentId || values.otherGovernmentIdNumber || '',

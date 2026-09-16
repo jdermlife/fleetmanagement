@@ -202,13 +202,15 @@ def latest_record(records: list[Any]) -> Any:
 
 
 def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]:
+    client_name = record.client_name or record.borrower_name
     return {
         "id": record.id,
         "application_no": record.application_no,
         "created_by": record.created_by,
         "status": record.status,
         "product_type": record.product_type,
-        "borrower_name": record.borrower_name,
+        "client_name": client_name,
+        "borrower_name": client_name,
         "email": record.email,
         "phone": record.phone,
         "gov_id": record.gov_id,
@@ -569,7 +571,9 @@ def apply_loan_application_fields(record: LoanApplication, data: LoanApplication
     record.status = normalize_status(data.status)
     record.product_type = data.product_type
 
-    record.borrower_name = data.borrower_name
+    client_name = (data.client_name or data.borrower_name).strip()
+    record.client_name = client_name
+    record.borrower_name = client_name
     record.email = data.email
     record.phone = data.phone
     record.gov_id = data.gov_id
@@ -842,6 +846,10 @@ def save_net_worth_record(
     try:
         record = get_loan_application_or_404(db, application_no)
         enforce_loan_application_access(user, record)
+        if payload.client_name and payload.client_name.strip():
+            client_name = payload.client_name.strip()
+            record.client_name = client_name
+            record.borrower_name = client_name
         values = {**payload.model_dump(), "loan_application_id": record.id}
         db.execute(
             text(

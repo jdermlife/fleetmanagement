@@ -31,7 +31,13 @@ class FakeSession:
 
 
 def configure_route(monkeypatch):
-    record = SimpleNamespace(id=17, application_no="APP-WORKFLOW-1", updated_by=None)
+    record = SimpleNamespace(
+        id=17,
+        application_no="APP-WORKFLOW-1",
+        client_name="Original Client",
+        borrower_name="Original Client",
+        updated_by=None,
+    )
     session = FakeSession()
     monkeypatch.setattr(loan_routes, "SessionLocal", lambda: session)
     monkeypatch.setattr(
@@ -47,6 +53,7 @@ def test_net_worth_is_saved_for_internal_loan_id(monkeypatch):
     record, session, user = configure_route(monkeypatch)
     payload = NetWorthRecordPayload(
         snapshot_date=date(2026, 7, 29),
+        client_name="Revised Client",
         total_assets=1_500_000,
         total_liabilities=400_000,
         net_worth=1_100_000,
@@ -62,6 +69,8 @@ def test_net_worth_is_saved_for_internal_loan_id(monkeypatch):
     assert session.executions[1][1]["net_worth"] == 1_100_000
     assert session.commits == 1
     assert record.updated_by == 42
+    assert record.client_name == "Revised Client"
+    assert record.borrower_name == "Revised Client"
     assert result["application_no"] == record.application_no
 
 

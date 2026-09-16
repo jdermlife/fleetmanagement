@@ -543,6 +543,7 @@ export interface LoanApplicationPayload {
   application_no: string
   status: WorkflowStatus
   product_type: ProductType
+  client_name?: string
   borrower_name: string
   email: string
   phone: string
@@ -803,6 +804,7 @@ type WorkflowSaveResponse = {
 
 export type NetWorthRecordPayload = {
   snapshot_date: string
+  client_name?: string
   total_assets: number
   total_liabilities: number
   net_worth: number

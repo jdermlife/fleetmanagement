@@ -131,6 +131,7 @@ class WealthScoreUpdatePayload(BaseModel):
 
 class NetWorthRecordPayload(BaseModel):
     snapshot_date: date
+    client_name: str | None = Field(default=None, max_length=255)
     total_assets: float = 0
     total_liabilities: float = 0
     net_worth: float = 0
@@ -191,6 +192,7 @@ class LoanApplicationCreate(BaseModel):
     status: str
     product_type: str
 
+    client_name: str | None = Field(default=None, max_length=255)
     borrower_name: str
     email: str
     phone: str

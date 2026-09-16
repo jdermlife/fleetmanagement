@@ -62,6 +62,7 @@ class LoanApplication(Base):
     status = Column(String)
     product_type = Column(String)
 
+    client_name = Column(String(255))
     borrower_name = Column(String)
     email = Column(String)
     phone = Column(String)

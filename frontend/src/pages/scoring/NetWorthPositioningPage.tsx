@@ -739,7 +739,8 @@ export default function NetWorthPositioningPage() {
       (application) => application.application_no === applicationNo,
     ) ?? applications[0];
 
-    return selectedApplication?.borrower_name?.trim()
+    return selectedApplication?.client_name?.trim()
+      || selectedApplication?.borrower_name?.trim()
       || certifierName.trim()
       || 'FILSCORE Wealth Client';
   }, [applicationNo, applications, certifierName]);
@@ -1532,6 +1533,7 @@ export default function NetWorthPositioningPage() {
           persistWealthScore('NOT_GENERATED'),
           saveLoanApplicationNetWorth(applicationNo, {
             snapshot_date: asOfDate,
+            client_name: wealthClientName,
             total_assets: totalAssets,
             total_liabilities: totalLiabilities,
             net_worth: totalAssets - totalLiabilities,
@@ -1558,7 +1560,7 @@ export default function NetWorthPositioningPage() {
     } finally {
       setIsSavingDraft(false);
     }
-  }, [amounts, applicationNo, asOfDate, autosaveValue, draftEntityKey, draftRevision, netWorthBuildingScore.metrics.savingsRatePercent, persistWealthScore]);
+  }, [amounts, applicationNo, asOfDate, autosaveValue, draftEntityKey, draftRevision, netWorthBuildingScore.metrics.savingsRatePercent, persistWealthScore, wealthClientName]);
 
   const handleProduceWealthCertification = useCallback(async () => {
     if (!hasWealthDataForCertification) {
