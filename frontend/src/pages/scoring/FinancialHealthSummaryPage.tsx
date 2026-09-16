@@ -777,6 +777,8 @@ export default function FinancialHealthSummaryPage() {
     const loadNetWorthDraft = async () => {
       if (!isIdentityReady) return
 
+      setSummaryInputsLoaded(false)
+      setSummaryComputedAt(null)
       setMonthlyProfileResult(null)
 
       const analysisEntityKey = entityKey || 'identity-pending'
@@ -978,12 +980,12 @@ export default function FinancialHealthSummaryPage() {
   const index = publishedSummary.index
 
   useEffect(() => {
-    if (!isRefreshingSummary || !summaryInputsLoaded) return
+    if (!summaryInputsLoaded || (summaryComputedAt && !isRefreshingSummary)) return
 
     setPublishedSummary(computeFinancialHealthSummary(latestSummaryInputs))
     setSummaryComputedAt(new Date())
     setIsRefreshingSummary(false)
-  }, [isRefreshingSummary, latestSummaryInputs, summaryInputsLoaded])
+  }, [isRefreshingSummary, latestSummaryInputs, summaryComputedAt, summaryInputsLoaded])
 
   const refreshFinancialHealth = () => {
     setIsRefreshingSummary(true)
