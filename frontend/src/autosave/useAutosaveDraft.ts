@@ -254,13 +254,16 @@ export function useAutosaveDraft<T>({
     if (!force && signature === lastRemoteSignatureRef.current) {
       return remoteChainRef.current
     }
-    if (conflictRef.current) {
+    if (conflictRef.current && !force) {
       publish({
         state: 'conflict',
         message: 'Saved on this device. Another session has a newer copy.',
         source: 'local',
       })
       return remoteChainRef.current
+    }
+    if (force) {
+      conflictRef.current = false
     }
 
     const write = async () => {

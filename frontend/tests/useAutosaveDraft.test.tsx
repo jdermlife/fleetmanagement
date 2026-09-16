@@ -430,6 +430,44 @@ describe('useAutosaveDraft', () => {
     expect(loadAutosaveDraft<FormValue>(key)?.value.notes).toEqual(['try again'])
   })
 
+  it('retries a conflicted draft when the user explicitly saves', async () => {
+    let putCount = 0
+    const { client, putMock } = createClient({
+      get: async () => remoteDraft(defaults, 1),
+      put: async (input) => {
+        putCount += 1
+        if (putCount === 1) {
+          throw new AutosaveConflictError(remoteDraft(defaults, 2))
+        }
+        return remoteDraft(input.payload, 3)
+      },
+    })
+    const { result } = renderAutosave(client)
+    await settleHydration()
+
+    act(() => {
+      result.current.setValue({ ...defaults, notes: ['current profile'] })
+    })
+    await act(async () => {
+      vi.advanceTimersByTime(1_500)
+      await Promise.resolve()
+    })
+    expect(result.current.status.state).toBe('conflict')
+
+    let synchronized = false
+    await act(async () => {
+      synchronized = await result.current.saveNow()
+    })
+
+    expect(synchronized).toBe(true)
+    expect(putMock).toHaveBeenCalledTimes(2)
+    expect(putMock.mock.calls[1][0]).toEqual({
+      payload: { ...defaults, notes: ['current profile'] },
+      expectedRevision: 2,
+    })
+    expect(result.current.status.state).toBe('saved')
+  })
+
   it('syncs a locally saved offline edit when connectivity returns', async () => {
     Object.defineProperty(window.navigator, 'onLine', {
       configurable: true,
