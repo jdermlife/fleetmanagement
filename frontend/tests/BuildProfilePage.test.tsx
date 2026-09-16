@@ -441,6 +441,20 @@ describe('BuildProfilePage', () => {
     expect((screen.getByRole('combobox', { name: 'Long Term Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
   })
 
+  it('backfills Step 6 purpose from a saved Step 1 financial goal', async () => {
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'PRO-GOAL01',
+      step: 1,
+      values: { financialGoal: 'Buy a Home' },
+    }))
+    const user = userEvent.setup()
+
+    render(<BuildProfilePage />)
+    await user.click(screen.getByRole('button', { name: /Goal Setting/ }))
+
+    expect(screen.getByLabelText('Financial Goal / Purpose')).toHaveProperty('value', 'Buy a Home')
+  })
+
   it('navigates through source-derived lending and net worth steps', async () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)

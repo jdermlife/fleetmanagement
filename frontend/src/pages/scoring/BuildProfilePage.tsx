@@ -243,6 +243,11 @@ function createEmptyProfile(): ProfileData {
   return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
 }
 
+function synchronizeFinancialGoalPurpose(values: Record<string, string>): Record<string, string> {
+  if (!values.financialGoal?.trim() || values.loanPurpose?.trim()) return values
+  return { ...values, loanPurpose: values.financialGoal }
+}
+
 function createPropertyDeclaration(): PropertyDeclaration {
   return {
     id: `PROP-${Math.random().toString(36).slice(2, 8).toUpperCase()}`,
@@ -310,11 +315,11 @@ function loadProfile(): ProfileData {
     if (parsed.values) {
       const values = { ...parsed.values }
       if (values.dateOfBirth) values.age = calculateAge(values.dateOfBirth)
-      return { ...createEmptyProfile(), ...parsed, values }
+      return { ...createEmptyProfile(), ...parsed, values: synchronizeFinancialGoalPurpose(values) }
     }
     const { profileId, ...legacyValues } = parsed
     if (legacyValues.dateOfBirth) legacyValues.age = calculateAge(legacyValues.dateOfBirth)
-    return { ...createEmptyProfile(), profileId: profileId || createProfileId(), values: legacyValues }
+    return { ...createEmptyProfile(), profileId: profileId || createProfileId(), values: synchronizeFinancialGoalPurpose(legacyValues) }
   } catch {
     return createEmptyProfile()
   }
@@ -956,7 +961,7 @@ export default function BuildProfilePage() {
       ...createEmptyProfile(),
       ...draft,
       profileId: draft.profileId?.trim() || createProfileId(),
-      values: { ...(draft.values ?? {}) },
+      values: synchronizeFinancialGoalPurpose({ ...(draft.values ?? {}) }),
     }
     setProfile(hydratedProfile)
     persistProfileSnapshot(hydratedProfile)
