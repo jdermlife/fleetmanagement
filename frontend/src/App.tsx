@@ -14,6 +14,7 @@ import AuthProgressOverlay from './components/auth/AuthProgressOverlay'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
 import FloatingChatbot from './components/ai/FloatingChatbot'
+import { synchronizeBuildProfileDraft } from './autosave/buildProfileSync'
 import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
 
 type MenuLink = {
@@ -190,6 +191,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
+  const [profileSyncReady, setProfileSyncReady] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
@@ -299,6 +301,7 @@ const borrowerVisibleMenus = [
 const isBorrowerSubscriber = isBorrowerSubscriberRole(currentUser?.role)
 const isLenderSubscriber = isLenderSubscriberRole(currentUser?.role)
 const isAdminUser = currentUser?.role?.toLowerCase() === 'admin'
+const currentUserId = currentUser?.id
 const defaultHomePath = '/financial-health-summary'
 
 const visibleMenuLinks = isBorrowerSubscriber
@@ -388,6 +391,25 @@ const isSignedIn = authReady && Boolean(currentUser)
       setMenuOpen(false)
     }
   }, [currentUser])
+
+  useEffect(() => {
+    if (!currentUserId) {
+      setProfileSyncReady(false)
+      return
+    }
+
+    let cancelled = false
+    setProfileSyncReady(false)
+    void synchronizeBuildProfileDraft()
+      .catch(() => undefined)
+      .finally(() => {
+        if (!cancelled) setProfileSyncReady(true)
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [currentUserId])
 
   const handleTopbarLogout = async () => {
     setIsSigningOut(true)
@@ -897,6 +919,9 @@ const isSignedIn = authReady && Boolean(currentUser)
   {/* PAGE CONTENT */}
       <main className={`content${isLoginRoute ? ' content-login' : ''}`}>
         <Suspense fallback={<div className="card">Loading page...</div>}>
+          {currentUser && !profileSyncReady ? (
+            <div className="card" role="status">Synchronizing profile...</div>
+          ) : (
           <Routes>
             <Route
               path="/"
@@ -1508,6 +1533,7 @@ const isSignedIn = authReady && Boolean(currentUser)
               }
             />
           </Routes>
+          )}
         </Suspense>
       </main>
       {!isLoginRoute && !isPaymentSuccessRoute ? (

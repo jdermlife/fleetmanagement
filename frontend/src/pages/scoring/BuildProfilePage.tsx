@@ -8,6 +8,7 @@ import {
   type LoanApplicationPayload,
   type LoanApplicationRecord,
 } from '../../api/loan'
+import { useAutosaveDraft } from '../../autosave'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import FinancialJourneyGuide, {
   JOURNEY_DO_NOT_SHOW_STORAGE_KEY,
@@ -916,9 +917,10 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
 export default function BuildProfilePage() {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
-  const { isAdmin } = useAuthorization()
+  const { isAdmin, isAuthenticated, isLoading: isAuthorizationLoading } = useAuthorization()
   const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || ''
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
+  const profileAutosaveDefaultsRef = useRef(createEmptyProfile())
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
   const [saveMessage, setSaveMessage] = useState('')
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
@@ -947,6 +949,28 @@ export default function BuildProfilePage() {
     : ''
   const currentScorePreparationKeyRef = useRef(scorePreparationKey)
   currentScorePreparationKeyRef.current = scorePreparationKey
+
+  const hydrateProfileDraft = useCallback((draft: ProfileData) => {
+    const hydratedProfile = {
+      ...createEmptyProfile(),
+      ...draft,
+      profileId: draft.profileId?.trim() || createProfileId(),
+      values: { ...(draft.values ?? {}) },
+    }
+    setProfile(hydratedProfile)
+    persistProfileSnapshot(hydratedProfile)
+  }, [])
+
+  const profileAutosave = useAutosaveDraft({
+    scope: 'build-profile',
+    entityKey: 'current',
+    value: profile,
+    defaults: profileAutosaveDefaultsRef.current,
+    onHydrate: hydrateProfileDraft,
+    enabled: !isAuthorizationLoading,
+    remote: isAuthenticated,
+    createRemoteWhenMissing: isAuthenticated,
+  })
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
@@ -1268,6 +1292,7 @@ export default function BuildProfilePage() {
   const saveProfile = async () => {
     try {
       persistProfileSnapshot(profile)
+      await profileAutosave.saveNow()
       const applicationNo = profile.selectedApplicationNo?.trim()
         || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
       if (applicationNo) {
@@ -1279,7 +1304,9 @@ export default function BuildProfilePage() {
         setSourceApplication({ ...baseline, ...payload })
         setSaveMessage('Profile saved successfully and synchronized for FILSCORE computation.')
       } else {
-        setSaveMessage('Ensure to save with Profile Reference')
+        setSaveMessage(isAuthenticated
+          ? `Profile draft ${profile.profileId} saved and synchronized to your account.`
+          : `Profile draft ${profile.profileId} saved on this device. Sign in to synchronize it.`)
       }
     } catch {
       setSaveMessage('Unable to save and synchronize this profile.')

@@ -53,12 +53,16 @@ def autosave_client():
 def test_drafts_require_authentication():
     engine = create_engine("sqlite://")
     AutosaveDraft.__table__.create(bind=engine)
-    testing_session = sessionmaker(bind=engine)
 
     app = FastAPI()
     app.include_router(router, prefix="/api")
-    app.dependency_overrides[get_db] = testing_session
     app.dependency_overrides[get_current_user] = lambda: None
+
+    def override_db():
+        with sessionmaker(bind=engine)() as db:
+            yield db
+
+    app.dependency_overrides[get_db] = override_db
 
     with TestClient(app) as client:
         response = client.get("/api/drafts/loan/new")

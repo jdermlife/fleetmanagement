@@ -1,12 +1,13 @@
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockGetAuthToken, mockLogout, mockPrepareAutosavesForLogout } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockGetAuthToken, mockLogout, mockPrepareAutosavesForLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockGetAuthToken: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
+  mockSynchronizeBuildProfileDraft: vi.fn(),
 }))
 
 vi.mock('../src/api', () => ({
@@ -19,6 +20,9 @@ vi.mock('../src/api', () => ({
 
 vi.mock('../src/autosave/useAutosaveDraft', () => ({
   prepareAutosavesForLogout: mockPrepareAutosavesForLogout,
+}))
+vi.mock('../src/autosave/buildProfileSync', () => ({
+  synchronizeBuildProfileDraft: mockSynchronizeBuildProfileDraft,
 }))
 
 vi.mock('../src/components/AutosaveStatus', () => ({ default: () => null }))
@@ -58,6 +62,7 @@ describe('App account menu accordions', () => {
     })
     mockLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
+    mockSynchronizeBuildProfileDraft.mockResolvedValue(undefined)
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
       configurable: true,
@@ -107,5 +112,23 @@ describe('App account menu accordions', () => {
     )
 
     expect(await screen.findByRole('heading', { name: 'Subscription Fees Disclosure' })).toBeTruthy()
+  })
+
+  it('waits for profile synchronization before mounting an authenticated route', async () => {
+    let finishSynchronization!: () => void
+    mockSynchronizeBuildProfileDraft.mockReturnValue(new Promise<void>((resolve) => {
+      finishSynchronization = resolve
+    }))
+
+    render(
+      <MemoryRouter initialEntries={['/menu-test']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect((await screen.findByRole('status')).textContent).toBe('Synchronizing profile...')
+
+    await act(async () => finishSynchronization())
+    await waitFor(() => expect(screen.queryByText('Synchronizing profile...')).toBeNull())
   })
 })

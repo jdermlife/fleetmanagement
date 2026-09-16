@@ -54,6 +54,18 @@ export function readReplicatedBuildProfile(expectedId?: string): ReplicatedBuild
   }
 }
 
+export function cacheReplicatedBuildProfile(
+  profile: ReplicatedBuildProfile,
+  updatedAt = new Date().toISOString(),
+): void {
+  if (typeof window === 'undefined') return
+  window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+    ...profile,
+    ownerKey: getCurrentBuildProfileOwner(),
+    updatedAt,
+  }))
+}
+
 export function toNetWorthDraft(
   profile: ReplicatedBuildProfile,
   statementEntries: StatementEntry[],

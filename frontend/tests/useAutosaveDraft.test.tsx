@@ -102,7 +102,12 @@ function createClient(options: {
   return { client, getMock, putMock, deleteMock }
 }
 
-function renderAutosave(client: AutosaveDraftClient, remote = true, storage?: Storage) {
+function renderAutosave(
+  client: AutosaveDraftClient,
+  remote = true,
+  storage?: Storage,
+  createRemoteWhenMissing = false,
+) {
   return renderHook(() => {
     const [value, setValue] = useState(defaults)
     const autosave = useAutosaveDraft({
@@ -114,6 +119,7 @@ function renderAutosave(client: AutosaveDraftClient, remote = true, storage?: St
       client,
       remote,
       storage,
+      createRemoteWhenMissing,
     })
     return { ...autosave, value, setValue }
   })
@@ -182,6 +188,23 @@ describe('useAutosaveDraft', () => {
     const key = buildAutosaveStorageKey('profile:primary', null)
     expect(loadAutosaveDraft(key)).toBeNull()
     expect(putMock).not.toHaveBeenCalled()
+  })
+
+  it('creates a server copy of the initial draft when requested', async () => {
+    const { client, putMock } = createClient()
+    renderAutosave(client, true, undefined, true)
+    await settleHydration()
+
+    await act(async () => {
+      vi.advanceTimersByTime(0)
+      await Promise.resolve()
+    })
+
+    expect(putMock).toHaveBeenCalledTimes(1)
+    expect(putMock.mock.calls[0][0]).toEqual({
+      payload: defaults,
+      expectedRevision: null,
+    })
   })
 
   it('does not overwrite user edits made while the server draft is loading', async () => {

@@ -54,6 +54,7 @@ export interface UseAutosaveDraftOptions<T> {
   onHydrate: (value: T) => void
   enabled?: boolean
   remote?: boolean
+  createRemoteWhenMissing?: boolean
   token?: string | null
   storage?: Storage
   localDebounceMs?: number
@@ -97,6 +98,7 @@ export function useAutosaveDraft<T>({
   onHydrate,
   enabled = true,
   remote = true,
+  createRemoteWhenMissing = false,
   token,
   storage,
   localDebounceMs = DEFAULT_LOCAL_AUTOSAVE_DELAY_MS,
@@ -437,11 +439,14 @@ export function useAutosaveDraft<T>({
             hydrationSignaturesRef.current.add(remoteSignature)
             onHydrateRef.current(remoteValue)
           }
-        } else if (!localDraft) {
+        } else if (!localDraft && !createRemoteWhenMissing) {
           lastLocalSignatureRef.current = initialSignature
           lastRemoteSignatureRef.current = initialSignature
         }
         finishHydration()
+        if (!remoteDraft && createRemoteWhenMissing) {
+          scheduleRemote(0)
+        }
         if (conflictRef.current) {
           publish({
             state: 'conflict',
@@ -477,6 +482,7 @@ export function useAutosaveDraft<T>({
     }
   }, [
     clearTimers,
+    createRemoteWhenMissing,
     enabled,
     normalizedEntityKey,
     normalizedScope,
@@ -484,6 +490,7 @@ export function useAutosaveDraft<T>({
     remote,
     storage,
     storageKey,
+    scheduleRemote,
   ])
 
   useEffect(() => {
