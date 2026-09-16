@@ -90,6 +90,7 @@ describe('LoanRepository upload overlay', () => {
         records: [{
           application_no: 'PRO-001',
           created_by_username: 'jorge.creator',
+          created_by_email: 'jorge@example.com',
           created_at: '2026-09-16T10:00:00Z',
           product_type: 'Personal Loan',
           borrower_name: 'Sample Borrower',
@@ -119,9 +120,10 @@ describe('LoanRepository upload overlay', () => {
 
     render(<LoanRepository />)
     await waitFor(() => expect(screen.getAllByText('jorge.creator').length).toBeGreaterThan(0))
+    expect(screen.getAllByText('jorge@example.com').length).toBeGreaterThan(0)
 
     const headers = Array.from(document.querySelectorAll('.loan-repository-table thead th'))
       .map((header) => header.textContent)
-    expect(headers.slice(0, 3)).toEqual(['Application No', 'Created By', 'Created At'])
+    expect(headers.slice(0, 4)).toEqual(['Application No', 'Created By', 'Creator Email', 'Created At'])
   })
 })
