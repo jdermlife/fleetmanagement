@@ -2084,7 +2084,7 @@ export default function BuildProfilePage() {
           </div>
         </section>
 
-        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth">
+        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-detailed-net-worth" open>
           <summary><strong>Current Net Worth (Indicate zero if none) </strong></summary>
           <div className="build-profile-net-worth-meta"><span>Enter all applicable assets and liabilities</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns">
@@ -2117,7 +2117,7 @@ export default function BuildProfilePage() {
           <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{formatSignedCurrency(wealthScore.metrics.netWorth)}</strong></div>
         </details>
 
-        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement">
+        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement" open>
           <summary>Actual / Current Personal Income and Expenses with Goals and Protection (Indicate zero if none)</summary>
           <div className="build-profile-net-worth-meta"><span>Actual personal income, expenses, goals, and protection statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns build-profile-income-expense-columns">
