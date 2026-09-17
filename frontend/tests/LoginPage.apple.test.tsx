@@ -137,6 +137,18 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.getByRole('link', { name: 'Dispute Resolution' }).getAttribute('href')).toBe('/dispute-resolution')
   })
 
+  it('defaults free FILSCORE access to the Financial Health Journey page', () => {
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    expect(screen.getByRole('link', { name: /access filscore free/i }).getAttribute('href')).toBe(
+      '/financial-health-journey',
+    )
+  })
+
   it('navigates immediately after email login succeeds', async () => {
     window.localStorage.setItem('fms:journey:minimized', '1')
     window.localStorage.setItem('fms:journey:do-not-show', '1')
