@@ -3,55 +3,40 @@
 from __future__ import annotations
 
 from app.database import engine
-from sqlalchemy import text
+from sqlalchemy import inspect
 
 
-def _sqlite_has_column(connection, table_name: str, column_name: str) -> bool:
-    rows = connection.exec_driver_sql(f"PRAGMA table_info({table_name})")
-    return any(row[1] == column_name for row in rows)
+COMPOSITE_SCORE_COLUMNS = {
+    "composite_score": "NUMERIC(10, 2)",
+    "final_rating": "VARCHAR(50)",
+}
 
 
-def _postgres_has_column(connection, table_name: str, column_name: str) -> bool:
-    row = connection.execute(
-    text(
-        """
-        SELECT 1
-        FROM information_schema.columns
-        WHERE table_schema = 'public'
-      AND table_name = :table_name
-      AND column_name = :column_name
-        LIMIT 1
-        """
-    ),
-        {"table_name": table_name, "column_name": column_name},
-    ).first()
-    return row is not None
+def ensure_composite_score_columns(bind=None) -> None:
+    bind = bind or engine
+    with bind.begin() as connection:
+        if not inspect(connection).has_table("overall_scores"):
+            return
 
-
-def run() -> None:
-    with engine.begin() as connection:
-        dialect = connection.dialect.name
-
-        if dialect == "sqlite":
-            if not _sqlite_has_column(connection, "overall_scores", "composite_score"):
+        if connection.dialect.name == "postgresql":
+            for column_name, column_type in COMPOSITE_SCORE_COLUMNS.items():
                 connection.exec_driver_sql(
-                    "ALTER TABLE overall_scores ADD COLUMN composite_score NUMERIC(10, 2)"
-                )
-            if not _sqlite_has_column(connection, "overall_scores", "final_rating"):
-                connection.exec_driver_sql(
-                    "ALTER TABLE overall_scores ADD COLUMN final_rating VARCHAR(50)"
+                    f"ALTER TABLE overall_scores ADD COLUMN IF NOT EXISTS {column_name} {column_type}"
                 )
             return
 
-        # Postgres and compatible dialects.
-        if not _postgres_has_column(connection, "overall_scores", "composite_score"):
-            connection.exec_driver_sql(
-                "ALTER TABLE overall_scores ADD COLUMN composite_score NUMERIC(10, 2)"
-            )
-        if not _postgres_has_column(connection, "overall_scores", "final_rating"):
-            connection.exec_driver_sql(
-                "ALTER TABLE overall_scores ADD COLUMN final_rating VARCHAR(50)"
-            )
+        existing_columns = {
+            column["name"] for column in inspect(connection).get_columns("overall_scores")
+        }
+        for column_name, column_type in COMPOSITE_SCORE_COLUMNS.items():
+            if column_name not in existing_columns:
+                connection.exec_driver_sql(
+                    f"ALTER TABLE overall_scores ADD COLUMN {column_name} {column_type}"
+                )
+
+
+def run() -> None:
+    ensure_composite_score_columns()
 
 
 if __name__ == "__main__":

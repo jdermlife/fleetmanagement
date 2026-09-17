@@ -87,6 +87,7 @@ from app.routes.paymongo import router as paymongo_router
 from app.routes.paypal import router as paypal_router
 from app.routes.subscriptions import router as subscriptions_router
 from migrate_loan_application_owner import add_loan_application_owner_column
+from migrate_overall_scores_composite_fields import ensure_composite_score_columns
 from migrate_overall_scores_wealth_fields import ensure_wealth_score_columns
 from migrate_profile_history import run_migration as migrate_profile_history
 
@@ -241,6 +242,7 @@ def _ensure_workflow_history_table() -> None:
 async def lifespan(_app: FastAPI):
     global history_retention_task, notification_dispatcher_task
 
+    ensure_composite_score_columns()
     ensure_wealth_score_columns()
     _ensure_loan_application_schema()
     _ensure_workflow_history_table()
