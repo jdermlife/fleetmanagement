@@ -118,7 +118,7 @@ describe('RegisterPage Apple sign-up', () => {
     expect(mockRequestAppleSignInToken).not.toHaveBeenCalled()
   })
 
-  it('defaults subscriber type to Subscriber Single Profile', () => {
+  it('defaults to Single Profile and allows Multiple Profile selection', async () => {
     render(
       <MemoryRouter initialEntries={['/register']}>
         <RegisterPage />
@@ -130,7 +130,12 @@ describe('RegisterPage Apple sign-up', () => {
 
     expect((singleProfile as HTMLInputElement).checked).toBe(true)
     expect((multipleProfile as HTMLInputElement).checked).toBe(false)
-    expect((multipleProfile as HTMLInputElement).disabled).toBe(true)
+  expect((multipleProfile as HTMLInputElement).disabled).toBe(false)
+
+  await userEvent.click(multipleProfile)
+
+  expect((singleProfile as HTMLInputElement).checked).toBe(false)
+  expect((multipleProfile as HTMLInputElement).checked).toBe(true)
   })
 
   it('opens email registration when routed from Other Email', () => {
@@ -234,6 +239,7 @@ describe('RegisterPage Apple sign-up', () => {
     const consentBoxes = screen.getAllByRole('checkbox')
     await user.click(consentBoxes[0])
     await user.click(consentBoxes[1])
+    await user.click(screen.getByRole('radio', { name: /subscriber multiple profile/i }))
     await user.click(screen.getByRole('button', { name: /other email/i }))
     await user.type(screen.getByLabelText('Username'), 'new-user')
     await user.type(screen.getByLabelText('Email'), 'new-user@example.com')
@@ -248,7 +254,7 @@ describe('RegisterPage Apple sign-up', () => {
         username: 'new-user',
         email: 'new-user@example.com',
         password: 'password123',
-        subscriberType: 'borrower',
+        subscriberType: 'lender',
         lenderDataSharingConsent: false,
         turnstileToken: 'turnstile-token-123',
       })

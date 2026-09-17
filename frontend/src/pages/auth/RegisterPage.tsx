@@ -374,19 +374,13 @@ export default function RegisterPage() {
           </p>
           <div className="auth-role-options subscriber-type-options">
             {REGISTER_SUBSCRIBER_OPTIONS.map((option) => {
-              const isDisabled = option.value === 'lender'
-
               return (
-              <label
-                key={option.value}
-                className={`auth-role-option${isDisabled ? ' auth-role-option-disabled' : ''}`}
-              >
+              <label key={option.value} className="auth-role-option">
                 <input
                   type="radio"
                   name="subscriber-type"
                   value={option.value}
                   checked={subscriberType === option.value}
-                  disabled={isDisabled}
                   onChange={(event) =>
                     setSubscriberType(event.target.value as RegisterSubscriberType)
                   }
