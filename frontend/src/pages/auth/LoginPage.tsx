@@ -333,7 +333,7 @@ export default function LoginPage() {
         <div className="login-art-card">
           <div className="login-art-social-stack" aria-live="polite">
             <Link
-              to="/register"
+              to="/financial-health-journey"
               className="login-art-social-button login-art-social-button-apple login-art-free-access-button"
             >
               Access FILSCORE Free

@@ -1408,11 +1408,7 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/financial-health-journey"
-              element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <FinancialHealthJourneyPage />
-                </ProtectedRoute>
-              }
+              element={<FinancialHealthJourneyPage />}
             />
 
             <Route
