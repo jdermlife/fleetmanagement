@@ -186,6 +186,20 @@ function authenticatedPage(
   return <ProtectedRoute roles={roles}>{children}</ProtectedRoute>
 }
 
+function RegistrationAccessNotice({ title, description }: { title: string; description: string }) {
+  return (
+    <section className="financial-health-registration-notice" aria-labelledby="registration-access-title">
+      <span>Free FILSCORE access</span>
+      <h2 id="registration-access-title">{title}</h2>
+      <p>{description}</p>
+      <div className="financial-health-registration-actions">
+        <Link to="/register" className="financial-health-registration-primary">Register Now</Link>
+        <Link to="/login" className="financial-health-registration-secondary">Sign In</Link>
+      </div>
+    </section>
+  )
+}
+
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -954,9 +968,23 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/build-profile"
               element={
-                <ProtectedRoute>
-                  <BuildProfilePage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute>
+                    <BuildProfilePage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <BuildProfilePage />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to create or update your profile"
+                      description="Create your account to build your financial profile and unlock personalized scores and recommendations."
+                    />
+                  </div>
+                )
               }
             />
 
@@ -1411,15 +1439,10 @@ const isSignedIn = authReady && Boolean(currentUser)
                     <div className="financial-health-registration-preview" aria-hidden="true">
                       <FinancialHealthSummaryPage />
                     </div>
-                    <section className="financial-health-registration-notice" aria-labelledby="financial-health-registration-title">
-                      <span>Free FILSCORE access</span>
-                      <h2 id="financial-health-registration-title">Register to view your Financial Health Summary</h2>
-                      <p>Create your account to access your complete financial health dashboard, scores, and recommendations.</p>
-                      <div className="financial-health-registration-actions">
-                        <Link to="/register" className="financial-health-registration-primary">Register Now</Link>
-                        <Link to="/login" className="financial-health-registration-secondary">Sign In</Link>
-                      </div>
-                    </section>
+                    <RegistrationAccessNotice
+                      title="Register to view your Financial Health Summary"
+                      description="Create your account to access your complete financial health dashboard, scores, and recommendations."
+                    />
                   </div>
                 )
               }
