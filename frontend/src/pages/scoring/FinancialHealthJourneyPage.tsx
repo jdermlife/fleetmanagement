@@ -37,12 +37,12 @@ export default function FinancialHealthJourneyPage() {
         </article>
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
           <span>Connected Outcome</span>
-          <strong>1 Score</strong>
+          <strong>3 Major Scores</strong>
           <small>Your complete Financial Health view</small>
         </article>
         <article className="psychometric-summary-card">
           <span>Recommended Path</span>
-          <strong>In Order</strong>
+          <strong> Multiple Indicators</strong>
           <small>Each stage strengthens the next assessment</small>
         </article>
       </section>
