@@ -1106,11 +1106,6 @@ export default function FinancialHealthSummaryPage() {
     safeStorageSet(JOURNEY_MINIMIZED_STORAGE_KEY, '1')
   }
 
-  const openJourney = () => {
-    setIsJourneyMinimized(false)
-    safeStorageRemove(JOURNEY_MINIMIZED_STORAGE_KEY)
-  }
-
   const launchJourneyStep = (step: JourneyStep) => {
     if (typeof window !== 'undefined') {
       const selectedQuery = selectedApplicationNo
@@ -1511,18 +1506,14 @@ export default function FinancialHealthSummaryPage() {
           
           
         ) : null}
-                {isJourneyMinimized && !isJourneyDismissed ? (
-          <button
-            type="button"
-            className="financial-health-journey-main-fab"
-            aria-label="Financial Journey Guide"
-            onClick={openJourney}
-          >
-              User Guide
-          </button>
-          
-          
-        ) : null}
+        <button
+          type="button"
+          className="financial-health-journey-main-fab"
+          aria-label="Financial Journey Guide"
+          onClick={() => window.location.assign('/financial-health-journey')}
+        >
+          User Guide
+        </button>
      
         
       </section>

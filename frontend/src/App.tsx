@@ -47,6 +47,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
 
 
 const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
+const FinancialHealthJourneyPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthJourneyPage'))
 const FinancialDecisions = lazyWithRetry(() => import('./pages/scoring/FinancialDecisions'))
 const BuildProfilePage = lazyWithRetry(() => import('./pages/scoring/BuildProfilePage'))
 const LendingScorecard = lazyWithRetry(() => import('./pages/scoring/LendingScorecard'))
@@ -1401,6 +1402,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
                   <FinancialHealthSummaryPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/financial-health-journey"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <FinancialHealthJourneyPage />
                 </ProtectedRoute>
               }
             />

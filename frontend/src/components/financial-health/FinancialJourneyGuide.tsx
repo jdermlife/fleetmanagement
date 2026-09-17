@@ -10,9 +10,9 @@ export type JourneyStep = {
   description: string
 }
 
-type JourneyDetailId = JourneyStepId | 'financialHealth'
+export type JourneyDetailId = JourneyStepId | 'financialHealth'
 
-type JourneyDetail = {
+export type JourneyDetail = {
   title: string
   points: string[]
 }
@@ -62,7 +62,7 @@ export const FINANCIAL_HEALTH_JOURNEY_STEPS: JourneyStep[] = [
   },
 ]
 
-const FINANCIAL_HEALTH_JOURNEY_DETAILS: Record<JourneyDetailId, JourneyDetail> = {
+export const FINANCIAL_HEALTH_JOURNEY_DETAILS: Record<JourneyDetailId, JourneyDetail> = {
   createProfile: {
     title: 'Profile',
     points: [

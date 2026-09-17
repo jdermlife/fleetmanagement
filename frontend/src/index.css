@@ -13629,6 +13629,339 @@ th { color: var(--dark-gold); }
   cursor: pointer;
 }
 
+.financial-health-journey-page {
+  --journey-teal: #0f766e;
+  --journey-gold: #d6a11f;
+  --journey-ink: #0f172a;
+}
+
+.financial-health-journey-page-hero {
+  min-height: 280px;
+  align-items: center;
+  border-radius: 8px;
+  background:
+    linear-gradient(90deg, rgba(15, 23, 42, 0.96), rgba(15, 118, 110, 0.88)),
+    repeating-linear-gradient(45deg, transparent 0 24px, rgba(255, 255, 255, 0.05) 24px 26px);
+}
+
+.financial-health-journey-page-hero .psychometric-hero-copy p:first-of-type {
+  color: #fde68a;
+  font-size: 0.8rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.financial-health-journey-page-mark {
+  width: 190px;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(253, 230, 138, 0.82);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.42);
+  box-shadow: inset 0 0 0 10px rgba(255, 255, 255, 0.06), 0 18px 36px rgba(15, 23, 42, 0.28);
+  color: #ffffff;
+}
+
+.financial-health-journey-page-mark svg {
+  width: 28px;
+  height: 28px;
+  color: #fde68a;
+}
+
+.financial-health-journey-page-mark strong {
+  font-size: 3rem;
+  line-height: 1;
+}
+
+.financial-health-journey-page-mark span {
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.financial-health-journey-page-summary {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.financial-health-journey-page-summary small {
+  color: #64748b;
+  line-height: 1.4;
+}
+
+.financial-health-journey-page-overview {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(240px, 0.34fr);
+  gap: 24px;
+  align-items: center;
+  border-radius: 8px;
+}
+
+.financial-health-journey-page-overview-copy {
+  display: grid;
+  gap: 10px;
+}
+
+.financial-health-journey-page-overview-copy h2 {
+  margin: 0;
+}
+
+.financial-health-journey-page-overview-copy ul {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px 18px;
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.financial-health-journey-page-overview-copy li {
+  display: flex;
+  gap: 8px;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.financial-health-journey-page-overview-copy li svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--journey-teal);
+}
+
+.financial-health-journey-page-dashboard-link {
+  min-height: 132px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 18px;
+  border: 1px solid rgba(15, 118, 110, 0.36);
+  border-radius: 8px;
+  background: linear-gradient(145deg, #0f766e, #115e59);
+  color: #ffffff;
+  font-weight: 800;
+  text-align: center;
+  text-decoration: none;
+}
+
+.financial-health-journey-page-dashboard-link:hover {
+  background: linear-gradient(145deg, #0d9488, #0f766e);
+}
+
+.financial-health-journey-page-dashboard-link svg {
+  width: 30px;
+  height: 30px;
+  color: #fde68a;
+}
+
+.financial-health-journey-page-path {
+  display: grid;
+  gap: 20px;
+  border-radius: 8px;
+}
+
+.financial-health-journey-page-path .psychometric-panel-header h2 {
+  margin: 4px 0 0;
+}
+
+.financial-health-journey-page-sequence {
+  padding: 8px 12px;
+  border: 1px solid rgba(15, 118, 110, 0.28);
+  border-radius: 999px;
+  background: #f0fdfa;
+  color: #115e59;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.financial-health-journey-page-steps {
+  position: relative;
+  display: grid;
+  gap: 14px;
+}
+
+.financial-health-journey-page-steps::before {
+  content: '';
+  position: absolute;
+  top: 38px;
+  bottom: 38px;
+  left: 29px;
+  width: 2px;
+  background: linear-gradient(var(--journey-gold), var(--journey-teal));
+}
+
+.financial-health-journey-page-step {
+  position: relative;
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) minmax(190px, auto);
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.26);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #ffffff, #fffdf4);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.07);
+}
+
+.financial-health-journey-page-step-number {
+  z-index: 1;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: var(--journey-teal);
+  color: #ffffff;
+  box-shadow: 0 0 0 2px rgba(15, 118, 110, 0.35);
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.financial-health-journey-page-step:nth-child(2n) .financial-health-journey-page-step-number {
+  background: #a56f08;
+  box-shadow: 0 0 0 2px rgba(214, 161, 31, 0.4);
+}
+
+.financial-health-journey-page-step-copy {
+  min-width: 0;
+  display: grid;
+  gap: 6px;
+}
+
+.financial-health-journey-page-step-copy h3,
+.financial-health-journey-page-step-copy p {
+  margin: 0;
+}
+
+.financial-health-journey-page-step-copy h3 {
+  color: var(--journey-ink);
+  font-size: 1.2rem;
+}
+
+.financial-health-journey-page-step-copy > p {
+  color: #475569;
+  line-height: 1.55;
+}
+
+.financial-health-journey-page-detail {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+  padding: 12px 14px;
+  border-left: 3px solid var(--journey-gold);
+  background: #f8fafc;
+}
+
+.financial-health-journey-page-detail strong {
+  color: #115e59;
+}
+
+.financial-health-journey-page-detail ul {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding-left: 18px;
+  color: #64748b;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.financial-health-journey-page-action {
+  min-width: 190px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border-color: #0f766e;
+  background: #0f766e;
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.financial-health-journey-page-action:hover {
+  background: #115e59;
+}
+
+.financial-health-journey-page-action svg {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 820px) {
+  .financial-health-journey-page-summary,
+  .financial-health-journey-page-overview {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-health-journey-page-overview-copy ul {
+    grid-template-columns: 1fr;
+  }
+
+  .financial-health-journey-page-dashboard-link {
+    min-height: 96px;
+  }
+
+  .financial-health-journey-page-step {
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+
+  .financial-health-journey-page-step-number {
+    width: 50px;
+    height: 50px;
+  }
+
+  .financial-health-journey-page-steps::before {
+    left: 25px;
+  }
+
+  .financial-health-journey-page-action {
+    grid-column: 2;
+    width: 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .financial-health-journey-page-hero {
+    min-height: 0;
+  }
+
+  .financial-health-journey-page-mark {
+    width: 132px;
+  }
+
+  .financial-health-journey-page-mark strong {
+    font-size: 2.25rem;
+  }
+
+  .financial-health-journey-page-step {
+    grid-template-columns: 42px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px 12px;
+  }
+
+  .financial-health-journey-page-step-number {
+    width: 42px;
+    height: 42px;
+    font-size: 0.85rem;
+  }
+
+  .financial-health-journey-page-steps::before {
+    left: 21px;
+  }
+
+  .financial-health-journey-page-action {
+    min-width: 0;
+  }
+}
+
 
 .credit-health-journey-modal {
   width: min(100%, 1040px);
