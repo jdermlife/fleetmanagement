@@ -14297,6 +14297,24 @@ th { color: var(--dark-gold); }
   box-shadow: 0 14px 30px rgba(15, 23, 42, 0.12);
 }
 
+.psychometric-hero-with-journey-menu {
+  flex-wrap: wrap;
+}
+
+.psychometric-hero-with-journey-menu > * {
+  order: 2;
+}
+
+.psychometric-hero-with-journey-menu > .psychometric-hero-copy {
+  order: 1;
+}
+
+.psychometric-hero-with-journey-menu > .financial-health-journey-menu-in-hero {
+  order: 3;
+  flex: 1 0 100%;
+  width: 100%;
+}
+
 .financial-health-journey-menu > summary {
   min-height: 58px;
   display: flex;

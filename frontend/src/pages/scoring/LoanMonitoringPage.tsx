@@ -5,6 +5,7 @@ import { useAutosaveDraft } from '../../autosave';
 import { fetchAutosaveDraft } from '../../autosave/draftApi';
 import { saveLoanApplicationMonitoring, updateLoanApplication } from '../../api/loan';
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -1218,7 +1219,7 @@ export default function LoanMonitoringPage() {
 
   return (
     <div className="psychometric-page loan-monitoring-dashboard-page">
-      <section className="psychometric-hero loan-monitoring-dashboard-hero">
+      <section className="psychometric-hero loan-monitoring-dashboard-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Resources Performance Oversight</span>
           <h1>Debt Cash Collateral Optimizer</h1>
@@ -1230,6 +1231,7 @@ export default function LoanMonitoringPage() {
             using portfolio-monitoring best practices.
           </p>
         </div>
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
         <LoanOptimizationTachometer input={loanOptimizationInput} />
       </section>
 

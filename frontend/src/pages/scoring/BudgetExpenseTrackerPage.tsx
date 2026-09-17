@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useAutosaveDraft } from '../../autosave';
 import { saveLoanApplicationBudget } from '../../api/loan';
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -880,7 +881,7 @@ export default function BudgetExpenseTrackerPage() {
         </section>
       ) : null}
 
-      <section className="psychometric-hero budget-dashboard-hero">
+      <section className="psychometric-hero budget-dashboard-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Budget Workflow Controls</span>
           <h1>Budget and Expense Tracker</h1>
@@ -904,6 +905,8 @@ export default function BudgetExpenseTrackerPage() {
         </a>
           </p>
         </div>
+
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <div className="budget-utilization-graph" aria-labelledby="budget-utilization-title">
           <div className="budget-utilization-heading">

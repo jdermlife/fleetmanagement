@@ -19,6 +19,7 @@ import FinancialJourneyGuide, {
   type JourneyStep,
   type JourneyStepId,
 } from '../../components/financial-health/FinancialJourneyGuide'
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
@@ -2861,8 +2862,9 @@ export default function BuildProfilePage() {
   }
 
   return <div className="psychometric-page lending-psychometric-page build-profile-page">
-    <section className="psychometric-hero lending-psychometric-hero">
+    <section className="psychometric-hero lending-psychometric-hero psychometric-hero-with-journey-menu">
       <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1> Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
+      <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
       <div className="psychometric-hero-metric build-profile-completion" aria-label={`${completionPercent}% profile completion`}>
         <div className="build-profile-incomplete-activities">
           <span>Form Status</span>

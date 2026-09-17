@@ -12,6 +12,7 @@ import FinancialJourneyGuide, {
   type JourneyStep,
   type JourneyStepId,
 } from '../../components/financial-health/FinancialJourneyGuide'
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
@@ -1341,7 +1342,7 @@ export default function FinancialHealthSummaryPage() {
         onMinimize={minimizeJourney}
       />
 
-      <section className="psychometric-hero financial-health-hero" aria-labelledby="financial-health-title">
+      <section className="psychometric-hero financial-health-hero psychometric-hero-with-journey-menu" aria-labelledby="financial-health-title">
         <div className="psychometric-hero-copy financial-health-hero-copy">
           <span className="psychometric-eyebrow">FILSCORE Financial Vital Signs</span>
           <h1 id="financial-health-title">Financial Health</h1>
@@ -1371,6 +1372,8 @@ export default function FinancialHealthSummaryPage() {
             <span>Top health band</span>
           </div>
         </div>
+
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <figure
           className="financial-health-ring-figure"

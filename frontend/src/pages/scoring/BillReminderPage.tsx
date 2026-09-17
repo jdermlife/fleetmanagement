@@ -4,6 +4,7 @@ import { NumericFormat } from 'react-number-format';
 import { useAutosaveDraft } from '../../autosave';
 import { saveLoanApplicationBillReminders } from '../../api/loan';
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
@@ -1036,7 +1037,7 @@ export default function BillReminderPage() {
 
   return (
     <div className="psychometric-page bill-reminder-dashboard-page">
-      <section className="psychometric-hero bill-reminder-dashboard-hero">
+      <section className="psychometric-hero bill-reminder-dashboard-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Billing Workflow Controls</span>
           <h1>Bill Manager</h1>
@@ -1048,6 +1049,8 @@ export default function BillReminderPage() {
             payment variance with AI recommendations.
           </p>
         </div>
+
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <BillDueDateHeatMap bills={savedSetup.length > 0 ? savedSetup : draftBillers} />
       </section>

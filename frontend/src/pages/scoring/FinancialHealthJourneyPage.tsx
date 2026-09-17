@@ -1,43 +1,11 @@
-import { ArrowRight, CheckCircle2, ChevronDown, Compass, Gauge } from 'lucide-react'
+import { ArrowRight, CheckCircle2, Compass, Gauge } from 'lucide-react'
 import { Link, useNavigate } from 'react-router-dom'
 
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 import {
   FINANCIAL_HEALTH_JOURNEY_DETAILS,
   FINANCIAL_HEALTH_JOURNEY_STEPS,
 } from '../../components/financial-health/FinancialJourneyGuide'
-
-const JOURNEY_MENU_GROUPS = [
-  {
-    title: 'Journey Overview',
-    links: [
-      { label: 'Financial Health Journey', route: '/financial-health-journey' },
-      { label: 'Financial Health Summary', route: '/financial-health-summary' },
-    ],
-  },
-  {
-    title: 'Build Your Foundation',
-    links: [
-      { label: 'Personalize / Build Profile', route: '/build-profile' },
-      { label: 'Loan & Wealth Readiness', route: '/lending-scorecard' },
-      { label: 'Wealth Builder', route: '/net-worth-positioning' },
-    ],
-  },
-  {
-    title: 'Manage Your Finances',
-    links: [
-      { label: 'Budget & Expense Tracker', route: '/budget-expense-tracker' },
-      { label: 'Resource Optimizer', route: '/loan-monitoring' },
-      { label: 'Bill Manager', route: '/bill-reminder' },
-    ],
-  },
-  {
-    title: 'Track Progress',
-    links: [
-      { label: 'Financial Health Dashboard', route: '/financial-health-summary' },
-      { label: 'Financial Decisions & Action Plan', route: '/financial-decisions' },
-    ],
-  },
-] as const
 
 export default function FinancialHealthJourneyPage() {
   const navigate = useNavigate()
@@ -59,28 +27,7 @@ export default function FinancialHealthJourneyPage() {
         </div>
       </section>
 
-      <details className="financial-health-journey-menu">
-        <summary>
-          <span>
-            <Compass aria-hidden="true" />
-            Financial Health Journey Menu
-          </span>
-          <ChevronDown className="financial-health-journey-menu-chevron" aria-hidden="true" />
-        </summary>
-        <nav className="financial-health-journey-menu-panel" aria-label="Financial Health Journey pages">
-          {JOURNEY_MENU_GROUPS.map((group) => (
-            <section key={group.title} className="financial-health-journey-menu-group">
-              <h2>{group.title}</h2>
-              {group.links.map((link) => (
-                <Link key={`${group.title}-${link.label}`} to={link.route}>
-                  <span>{link.label}</span>
-                  <ArrowRight aria-hidden="true" />
-                </Link>
-              ))}
-            </section>
-          ))}
-        </nav>
-      </details>
+      <FinancialHealthJourneyMenu />
 
       <section className="psychometric-summary-grid financial-health-journey-page-summary" aria-label="Journey overview">
         <article className="psychometric-summary-card">

@@ -3,6 +3,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
 import ThirdPartyAiConsent, {
   AI_PROCESSING_CONSENT_VERSION,
 } from '../../components/ai/ThirdPartyAiConsent';
@@ -4544,7 +4545,7 @@ export default function LendingScorecard() {
 
   return (
     <div className="psychometric-page lending-psychometric-page lending-report-page">
-      <section className="psychometric-hero lending-psychometric-hero">
+      <section className="psychometric-hero lending-psychometric-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Advanced  Readiness for Origination Workflow</span>
           <h1>Credit Health</h1>
@@ -4561,6 +4562,7 @@ export default function LendingScorecard() {
           </p>
         </div>
 
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <div className="credit-health-score-graph-panel">
           <CreditHealthScoreGraph
