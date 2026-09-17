@@ -367,7 +367,7 @@ const isSignedIn = authReady && Boolean(currentUser)
     }
 
     void loadCurrentUser()
-  }, [currentUser, location.pathname])
+  }, [currentUser, location.pathname, location.search])
 
   useEffect(() => {
     if (isAuthPath(location.pathname)) {
@@ -1400,9 +1400,29 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/financial-health-summary"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <FinancialHealthSummaryPage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <FinancialHealthSummaryPage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <FinancialHealthSummaryPage />
+                    </div>
+                    <div className="financial-health-registration-overlay">
+                      <section
+                        className="financial-health-registration-dialog"
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Register for Financial Health access"
+                      >
+                        <RegisterPage />
+                      </section>
+                    </div>
+                  </div>
+                )
               }
             />
 

@@ -108,7 +108,7 @@ export default function FinancialHealthJourneyPage() {
             {financialHealthDetail.points.map((point) => <li key={point}><CheckCircle2 aria-hidden="true" /> <span>{point}</span></li>)}
           </ul>
         </div>
-        <Link className="financial-health-journey-page-dashboard-link" to="/financial-health-summary">
+        <Link className="financial-health-journey-page-dashboard-link" to="/financial-health-summary?register=1">
           <Gauge aria-hidden="true" />
           <span>Open Financial Health Dashboard</span>
         </Link>

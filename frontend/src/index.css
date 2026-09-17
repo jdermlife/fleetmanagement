@@ -14115,6 +14115,44 @@ th { color: var(--dark-gold); }
   cursor: pointer;
 }
 
+.financial-health-registration-gate {
+  position: relative;
+  min-height: calc(100vh - 120px);
+}
+
+.financial-health-registration-preview {
+  pointer-events: none;
+  user-select: none;
+  filter: blur(2px);
+}
+
+.financial-health-registration-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 11000;
+  display: grid;
+  place-items: start center;
+  overflow-y: auto;
+  padding: 5vh 0;
+  background: rgba(15, 23, 42, 0.62);
+  backdrop-filter: blur(3px);
+}
+
+.financial-health-registration-dialog {
+  width: 80vw;
+  min-width: 0;
+}
+
+.financial-health-registration-dialog .register-psychometric {
+  width: 100%;
+  max-width: none;
+  margin: 0;
+}
+
+.financial-health-registration-dialog .auth-support-links {
+  padding-bottom: 18px;
+}
+
 .financial-health-journey-page {
   --journey-teal: #0f766e;
   --journey-gold: #d6a11f;
