@@ -32,7 +32,7 @@ export default function FinancialHealthJourneyPage() {
       <section className="psychometric-summary-grid financial-health-journey-page-summary" aria-label="Journey overview">
         <article className="psychometric-summary-card">
           <span>Journey Structure</span>
-          <strong>6 Steps</strong>
+          <strong>6 Tools </strong>
           <small>From personalization to bill management</small>
         </article>
         <article className="psychometric-summary-card psychometric-summary-card-highlight">
