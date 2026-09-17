@@ -15,6 +15,7 @@ import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
 from sqlalchemy import create_engine, text
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Session, sessionmaker
 from types import SimpleNamespace
 from uuid import uuid4
@@ -190,6 +191,7 @@ def test_compute_quant_scores_returns_200_with_summary(client, subscriber_header
     assert "message" in data
     assert "application_no" in data
     assert "quant_scores" in data
+    assert data["persisted"] is True
 
     # Verify quant_scores summary contains all required fields
     summary = data["quant_scores"]
@@ -272,6 +274,35 @@ def test_compute_quant_scores_missing_required_fields(client, subscriber_headers
 
     # Should return 422 (validation error) 
     assert response.status_code == 422
+
+
+def test_compute_quant_scores_returns_rating_when_persistence_fails(monkeypatch):
+    class FailingCommitSession(FakeSession):
+        def commit(self):
+            raise OperationalError("COMMIT", {}, RuntimeError("database schema is outdated"))
+
+    monkeypatch.setattr(loan_routes, "SessionLocal", FailingCommitSession)
+    monkeypatch.setattr(
+        loan_routes,
+        "evaluate_loan_record_create_entitlement",
+        lambda *_args: {"allowed": True},
+    )
+    app = FastAPI()
+    app.include_router(loan_router, prefix="/api")
+    app.dependency_overrides[require_authenticated_user] = lambda: CurrentUser(
+        id=1001,
+        username="subscriber_test",
+        role="SUBSCRIBER",
+    )
+
+    response = TestClient(app).post(
+        "/api/loan-applications/compute-quant-scores",
+        json=get_test_payload(),
+    )
+
+    assert response.status_code == 200
+    assert response.json()["persisted"] is False
+    assert response.json()["quant_scores"]["finalRating"] == "Critical"
 
 
 def test_workflow_history_failure_does_not_abort_score_transaction():

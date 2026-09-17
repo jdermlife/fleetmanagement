@@ -10,11 +10,12 @@ from fastapi import APIRouter, Depends, File, HTTPException, Query, UploadFile, 
 from fastapi.encoders import jsonable_encoder
 from fastapi.responses import StreamingResponse
 from sqlalchemy import MetaData, Table, select, text
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from sqlalchemy.orm import selectinload
 
 
 from app.database import SessionLocal
+from logging_config import error_logger
 from app.fastapi_auth import CurrentUser, require_authenticated_user, require_roles
 from app.models.loan_application import (
     AIRecommendation,
@@ -719,10 +720,10 @@ def compute_quant_scores(
     data: LoanApplicationCreate,
     user: CurrentUser = Depends(require_roles(*LOAN_ACCESS_ROLES)),
 ):
+    scored_data, quant_scores = build_scored_loan_application(data)
     db = SessionLocal()
 
     try:
-        scored_data, quant_scores = build_scored_loan_application(data)
         record = (
             db.query(LoanApplication)
             .filter(LoanApplication.application_no == scored_data.application_no)
@@ -780,6 +781,20 @@ def compute_quant_scores(
             "message": "QuantScores computed and stored",
             "application_no": record.application_no,
             "quant_scores": quant_scores,
+            "persisted": True,
+        }
+    except SQLAlchemyError as exc:
+        db.rollback()
+        error_logger.exception(
+            "QuantScores persistence failed after successful calculation",
+            application_no=scored_data.application_no,
+            error=str(exc),
+        )
+        return {
+            "message": "FILSCORE rating generated, but the record could not be saved. Please retry saving after the database is updated.",
+            "application_no": scored_data.application_no,
+            "quant_scores": quant_scores,
+            "persisted": False,
         }
     except Exception:
         db.rollback()

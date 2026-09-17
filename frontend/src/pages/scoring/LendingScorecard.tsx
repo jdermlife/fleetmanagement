@@ -2978,7 +2978,7 @@ export default function LendingScorecard() {
         throw new Error('The scoring service returned no FILSCORE rating. Please retry.');
       }
       setBackendQuantSummary(quantSummary);
-      if (result.application_no) {
+      if (result.application_no && result.persisted !== false) {
         await lendingAutosave.clear();
         await loadApplication(result.application_no);
         const editorPath = isFilscoreRoute
@@ -2989,7 +2989,7 @@ export default function LendingScorecard() {
           { replace: true },
         );
       } else {
-        setHasPersistedRecord(true);
+        setHasPersistedRecord(result.persisted !== false);
       }
       setTransientMessage(result.message || 'QuantScores computed and stored');
     } catch (error) {

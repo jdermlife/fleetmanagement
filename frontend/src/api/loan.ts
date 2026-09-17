@@ -640,6 +640,7 @@ export interface QuantScoresApiSummary {
 
 export interface QuantScoresResponse extends LoanMutationResponse {
   quant_scores: QuantScoresApiSummary
+  persisted?: boolean
 }
 
 export interface LoanCreationEntitlementResponse {
