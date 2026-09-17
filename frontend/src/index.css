@@ -7299,6 +7299,492 @@ th { color: var(--dark-gold); }
   }
 }
 
+/* Register assessment experience */
+.register-psychometric {
+  --register-ink: #17253a;
+  --register-muted: #667085;
+  --register-teal: #087f7a;
+  --register-teal-dark: #05645f;
+  --register-gold: #d6a72f;
+  --register-line: #dce5e4;
+  width: min(100%, 920px);
+  max-width: 920px;
+  margin: 36px auto 64px;
+  padding: 0;
+  gap: 18px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--register-ink);
+  font-family: Aptos, Candara, "Trebuchet MS", sans-serif;
+}
+
+.register-psychometric-header {
+  position: relative;
+  isolation: isolate;
+  min-height: 260px;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: 42px 230px 42px 42px;
+  overflow: hidden;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 87% 44%, transparent 0 38px, rgba(255, 255, 255, 0.22) 39px 41px, transparent 42px 62px, rgba(214, 167, 47, 0.72) 63px 68px, transparent 69px),
+    linear-gradient(125deg, #102238 0%, #173c4a 62%, #087f7a 100%);
+  box-shadow: 0 18px 44px rgba(23, 37, 58, 0.2);
+  color: #ffffff;
+}
+
+.register-psychometric-header::after {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  top: 0;
+  right: 0;
+  width: 180px;
+  height: 100%;
+  opacity: 0.18;
+  background-image: radial-gradient(circle, #ffffff 1.5px, transparent 1.5px);
+  background-size: 18px 18px;
+}
+
+.register-psychometric-kicker {
+  color: #f7d87f;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.register-psychometric .register-journey-title {
+  max-width: 620px;
+  margin: 0;
+  color: #ffffff;
+  font-family: Cambria, Georgia, serif;
+  font-size: clamp(2rem, 4.3vw, 3.25rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: 0;
+  white-space: normal;
+}
+
+.register-psychometric-header .intro {
+  max-width: 600px;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+.register-psychometric-scale {
+  position: absolute;
+  right: 34px;
+  bottom: 28px;
+  display: flex;
+  align-items: end;
+  gap: 7px;
+}
+
+.register-psychometric-scale span {
+  width: 8px;
+  border-radius: 2px 2px 0 0;
+  background: rgba(255, 255, 255, 0.88);
+}
+
+.register-psychometric-scale span:nth-child(1) { height: 12px; opacity: 0.46; }
+.register-psychometric-scale span:nth-child(2) { height: 20px; opacity: 0.58; }
+.register-psychometric-scale span:nth-child(3) { height: 29px; opacity: 0.7; }
+.register-psychometric-scale span:nth-child(4) { height: 39px; opacity: 0.82; }
+.register-psychometric-scale span:nth-child(5) { height: 50px; background: #f7d87f; }
+
+.register-psychometric > .auth-panel {
+  position: relative;
+  gap: 16px;
+  padding: 56px 30px 28px;
+  border: 1px solid var(--register-line);
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 10px 28px rgba(23, 37, 58, 0.07);
+}
+
+.register-psychometric > .auth-panel::before {
+  position: absolute;
+  top: 22px;
+  left: 30px;
+  color: var(--register-teal);
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.register-psychometric > .auth-panel:first-of-type::before {
+  content: '01  /  Consent and preferences';
+}
+
+.register-psychometric > .auth-panel:nth-of-type(2)::before {
+  content: '02  /  Registration channel';
+}
+
+.register-psychometric > form.auth-panel:first-of-type::before {
+  content: '03  /  Account credentials';
+}
+
+.register-psychometric .checkbox-label {
+  position: relative;
+  align-items: flex-start;
+  gap: 13px;
+  margin: 0;
+  padding: 12px 14px 12px 17px;
+  border-left: 3px solid #cbd8d7;
+  color: #3d4b5d;
+  font-size: 0.9rem;
+  line-height: 1.55;
+  transition: border-color 0.18s ease, background-color 0.18s ease;
+}
+
+.register-psychometric .checkbox-label:has(input:checked) {
+  border-left-color: var(--register-teal);
+  background: #f1f9f8;
+}
+
+.register-psychometric .checkbox-label input {
+  width: 18px;
+  height: 18px;
+  flex: 0 0 18px;
+  margin-top: 2px;
+  accent-color: var(--register-teal);
+}
+
+.register-psychometric a {
+  color: var(--register-teal-dark);
+  font-weight: 700;
+  text-underline-offset: 3px;
+}
+
+.register-psychometric .auth-role-fieldset {
+  display: grid;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 20px 0 0;
+  border: 0;
+  border-top: 1px solid var(--register-line);
+  border-radius: 0;
+}
+
+.register-psychometric .auth-role-fieldset legend {
+  padding: 0;
+  color: var(--register-ink);
+  font-family: Cambria, Georgia, serif;
+  font-size: 1.16rem;
+}
+
+.register-psychometric .auth-role-copy {
+  color: var(--register-muted);
+  line-height: 1.5;
+}
+
+.register-psychometric .auth-role-options {
+  gap: 12px;
+}
+
+.register-psychometric .auth-role-option {
+  min-height: 82px;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--register-line);
+  border-radius: 6px;
+  background: #fbfcfc;
+  cursor: pointer;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.register-psychometric .auth-role-option:hover:not(.auth-role-option-disabled) {
+  border-color: #72aaa6;
+  transform: translateY(-1px);
+}
+
+.register-psychometric .auth-role-option:has(input:checked) {
+  border-color: var(--register-teal);
+  background: #f0f9f8;
+  box-shadow: inset 0 0 0 1px var(--register-teal);
+}
+
+.register-psychometric .auth-role-option input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--register-teal);
+}
+
+.register-psychometric .auth-role-option span {
+  gap: 3px;
+}
+
+.register-psychometric .auth-role-option strong {
+  color: var(--register-ink);
+}
+
+.register-psychometric .auth-role-option small {
+  color: var(--register-muted);
+}
+
+.register-psychometric .auth-role-option-disabled {
+  cursor: not-allowed;
+  filter: grayscale(0.35);
+}
+
+.register-psychometric .register-social-option {
+  grid-template-columns: minmax(120px, 0.34fr) minmax(220px, 1fr);
+  align-items: center;
+  justify-items: stretch;
+  gap: 20px;
+}
+
+.register-psychometric .register-social-label {
+  color: #354256;
+  font-weight: 700;
+  text-align: left;
+}
+
+.register-psychometric .register-social-divider {
+  margin: 0;
+  background: var(--register-line);
+}
+
+.register-psychometric .auth-apple-button,
+.register-psychometric .register-provider-button,
+.register-psychometric .register-google-button-wrap {
+  width: 100%;
+  max-width: 420px;
+  justify-self: end;
+  border-radius: 6px;
+}
+
+.register-psychometric .auth-apple-button:focus-visible,
+.register-psychometric .auth-provider-choice:focus-visible,
+.register-psychometric .register-provider-button:focus-visible,
+.register-psychometric .register-google-button-wrap:focus-within {
+  outline-color: var(--register-teal);
+}
+
+.register-psychometric .register-other-email-button {
+  min-height: 52px;
+  margin-top: 2px;
+  border: 1px solid var(--register-teal);
+  border-radius: 6px;
+  background: #ffffff;
+  color: var(--register-teal-dark);
+  font-family: Aptos, Candara, "Trebuchet MS", sans-serif;
+  font-size: 0.98rem;
+  font-weight: 800;
+}
+
+.register-psychometric .register-other-email-button:hover {
+  background: #eef8f7;
+}
+
+.register-psychometric > form.auth-panel {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 18px;
+}
+
+.register-psychometric > form.auth-panel > label {
+  display: grid;
+  gap: 7px;
+  margin: 0;
+  color: #354256;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.register-psychometric > form.auth-panel > label:nth-of-type(2),
+.register-psychometric > form.auth-panel > label:nth-of-type(3),
+.register-psychometric .login-art-turnstile,
+.register-psychometric > form.auth-panel > .form-actions,
+.register-psychometric > form.auth-panel > .status-message {
+  grid-column: 1 / -1;
+}
+
+.register-psychometric > form.auth-panel input {
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid #cbd8d7;
+  border-radius: 5px;
+  background: #fbfcfc;
+  color: var(--register-ink);
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+.register-psychometric > form.auth-panel input:focus {
+  outline: none;
+  border-color: var(--register-teal);
+  background: #ffffff;
+  box-shadow: 0 0 0 3px rgba(8, 127, 122, 0.13);
+}
+
+.register-psychometric .form-actions {
+  align-items: center;
+  padding-top: 4px;
+}
+
+.register-psychometric .form-actions button {
+  min-height: 46px;
+  border: 1px solid var(--register-teal);
+  border-radius: 5px;
+  background: var(--register-teal);
+  color: #ffffff;
+  font-weight: 800;
+}
+
+.register-psychometric .form-actions button:hover:not(:disabled) {
+  border-color: var(--register-teal-dark);
+  background: var(--register-teal-dark);
+}
+
+.register-psychometric .form-actions .auth-link-button {
+  min-height: 46px;
+  border-color: #cbd8d7;
+  background: #ffffff;
+  color: #475467;
+}
+
+.register-psychometric .status-error {
+  padding: 10px 12px;
+  border-left: 3px solid #b42318;
+  background: #fff6f5;
+}
+
+.register-psychometric .auth-support-links {
+  justify-content: center;
+  gap: 8px 24px;
+  padding: 4px 16px;
+  font-size: 0.84rem;
+}
+
+@media (max-width: 700px) {
+  .register-psychometric {
+    margin: 20px auto 42px;
+  }
+
+  .register-psychometric-header {
+    min-height: 240px;
+    padding: 32px 28px 78px;
+  }
+
+  .register-psychometric-header::after {
+    width: 120px;
+  }
+
+  .register-psychometric-scale {
+    right: 28px;
+    bottom: 22px;
+  }
+
+  .register-psychometric > .auth-panel {
+    padding: 54px 20px 22px;
+  }
+
+  .register-psychometric > .auth-panel::before {
+    left: 20px;
+  }
+
+  .register-psychometric .subscriber-type-options,
+  .register-psychometric .subscription-plan-options,
+  .register-psychometric > form.auth-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .register-psychometric > form.auth-panel > label,
+  .register-psychometric .register-social-option {
+    grid-column: 1;
+  }
+
+  .register-psychometric .register-social-option {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .register-psychometric .register-social-label {
+    text-align: center;
+  }
+
+  .register-psychometric .auth-apple-button,
+  .register-psychometric .register-provider-button,
+  .register-psychometric .register-google-button-wrap {
+    justify-self: center;
+  }
+}
+
+@media (max-width: 520px) {
+  .standalone-card.auth-screen.register-psychometric {
+    margin: 12px auto 32px;
+    padding: 0;
+  }
+
+  .register-psychometric-header {
+    min-height: 228px;
+    padding: 28px 20px 70px;
+  }
+
+  .register-psychometric .register-journey-title {
+    font-size: 1.8rem;
+  }
+
+  .register-psychometric > .auth-panel {
+    padding-inline: 16px;
+  }
+
+  .register-psychometric > .auth-panel::before {
+    left: 16px;
+    font-size: 0.68rem;
+  }
+
+  .register-psychometric .auth-role-fieldset {
+    padding-top: 18px;
+  }
+
+  .register-psychometric .auth-role-option {
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .register-psychometric .auth-support-links {
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .app-shell:has(.register-psychometric) .page-assistant {
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+  }
+
+  .app-shell:has(.register-psychometric) .page-assistant-launcher {
+    width: 46px;
+    min-height: 46px;
+    justify-content: center;
+    padding: 5px;
+  }
+
+  .app-shell:has(.register-psychometric) .page-assistant-launcher > span:first-child {
+    width: 34px;
+    height: 34px;
+  }
+
+  .app-shell:has(.register-psychometric) .page-assistant-launcher > span:not(:first-child),
+  .app-shell:has(.register-psychometric) .page-assistant-launcher-notice {
+    display: none;
+  }
+}
+
 .build-profile-page {
   width: min(100%, 1240px);
   margin: 0 auto;

@@ -314,12 +314,22 @@ export default function RegisterPage() {
   }
 
   return (
-    <div className="standalone-card auth-screen">
-      <h1 className="register-journey-title">Unlock Your Sustainable Credit Health &amp; Wealth!</h1>
-      <p className="intro">
-        Review the legal disclosures and agree by ticking the boxes
-        before continuing.
-      </p>
+    <div className="standalone-card auth-screen register-psychometric">
+      <header className="register-psychometric-header">
+        <span className="register-psychometric-kicker">Personal profile assessment</span>
+        <h1 className="register-journey-title">Unlock Your Sustainable Credit Health &amp; Wealth!</h1>
+        <p className="intro">
+          Review the legal disclosures and agree by ticking the boxes
+          before continuing.
+        </p>
+        <div className="register-psychometric-scale" aria-hidden="true">
+          <span />
+          <span />
+          <span />
+          <span />
+          <span />
+        </div>
+      </header>
 
       <div className="stack-panel auth-panel">
         <label className="checkbox-label">
