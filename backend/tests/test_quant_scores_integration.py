@@ -14,7 +14,8 @@ Use with actual database, not test fixtures, due to complex foreign key relation
 import pytest
 from fastapi.testclient import TestClient
 from fastapi import FastAPI
-from sqlalchemy.orm import Session
+from sqlalchemy import create_engine, text
+from sqlalchemy.orm import Session, sessionmaker
 from types import SimpleNamespace
 from uuid import uuid4
 
@@ -47,6 +48,16 @@ class FakeSession:
 
     def execute(self, *_args, **_kwargs):
         raise RuntimeError("workflow history is unavailable in the route test session")
+
+    def begin_nested(self):
+        class NestedTransaction:
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *_args):
+                return False
+
+        return NestedTransaction()
 
     def flush(self):
         return None
@@ -261,6 +272,61 @@ def test_compute_quant_scores_missing_required_fields(client, subscriber_headers
 
     # Should return 422 (validation error) 
     assert response.status_code == 422
+
+
+def test_workflow_history_failure_does_not_abort_score_transaction():
+    engine = create_engine("sqlite:///:memory:")
+    with engine.begin() as connection:
+        connection.execute(text("CREATE TABLE score_commits (id INTEGER PRIMARY KEY)"))
+
+    session_factory = sessionmaker(bind=engine)
+    db = session_factory()
+    try:
+        loan_routes.append_workflow_history_entry(
+            db,
+            SimpleNamespace(id=1),
+            previous_status=None,
+            new_status="DRAFT",
+            user=CurrentUser(id=1001, username="subscriber_test", role="SUBSCRIBER"),
+        )
+        db.execute(text("INSERT INTO score_commits (id) VALUES (1)"))
+        db.commit()
+
+        persisted = db.execute(text("SELECT id FROM score_commits")).scalar_one()
+        assert persisted == 1
+    finally:
+        db.close()
+        engine.dispose()
+
+
+def test_workflow_history_serializes_metadata_for_database_driver():
+    class RecordingSession:
+        parameters = None
+
+        def begin_nested(self):
+            class NestedTransaction:
+                def __enter__(self):
+                    return self
+
+                def __exit__(self, *_args):
+                    return False
+
+            return NestedTransaction()
+
+        def execute(self, _statement, parameters):
+            self.parameters = parameters
+
+    db = RecordingSession()
+    loan_routes.append_workflow_history_entry(
+        db,
+        SimpleNamespace(id=1),
+        previous_status=None,
+        new_status="DRAFT",
+        user=CurrentUser(id=1001, username="subscriber_test", role="SUBSCRIBER"),
+    )
+
+    assert db.parameters is not None
+    assert db.parameters["metadata"] == "{}"
 
 
 def test_recompute_stored_quant_scores_uses_persisted_record(monkeypatch):

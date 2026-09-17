@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import os
 from datetime import date, datetime, timezone
 from io import BytesIO
@@ -493,25 +494,26 @@ def append_workflow_history_entry(
     to_state = str(new_status) if new_status else "UNKNOWN"
 
     try:
-        db.execute(
-            text(
-                """
-                INSERT INTO workflow_history
-                (entity_type, entity_id, from_state, to_state, performed_by, user_role, reason, metadata, created_at)
-                VALUES (:entity_type, :entity_id, :from_state, :to_state, :performed_by, :user_role, :reason, :metadata, NOW())
-                """
-            ),
-            {
-                "entity_type": "loan",
-                "entity_id": loan_application.id,
-                "from_state": from_state,
-                "to_state": to_state,
-                "performed_by": user.id,
-                "user_role": user.role,
-                "reason": reason,
-                "metadata": {},
-            },
-        )
+        with db.begin_nested():
+            db.execute(
+                text(
+                    """
+                    INSERT INTO workflow_history
+                    (entity_type, entity_id, from_state, to_state, performed_by, user_role, reason, metadata, created_at)
+                    VALUES (:entity_type, :entity_id, :from_state, :to_state, :performed_by, :user_role, :reason, :metadata, NOW())
+                    """
+                ),
+                {
+                    "entity_type": "loan",
+                    "entity_id": loan_application.id,
+                    "from_state": from_state,
+                    "to_state": to_state,
+                    "performed_by": user.id,
+                    "user_role": user.role,
+                    "reason": reason,
+                    "metadata": json.dumps({}, ensure_ascii=True),
+                },
+            )
     except Exception:
         # Keep primary workflow functional even if workflow_history is unavailable.
         pass
