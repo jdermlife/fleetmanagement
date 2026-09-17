@@ -332,6 +332,13 @@ export default function LoginPage() {
 
         <div className="login-art-card">
           <div className="login-art-social-stack" aria-live="polite">
+            <Link
+              to="/register"
+              className="login-art-social-button login-art-social-button-apple login-art-free-access-button"
+            >
+              Access FILSCORE Free
+            </Link>
+
             <div className="login-art-new-user">
               <span>New user?</span>
               <Link to="/register">Create Account</Link>
