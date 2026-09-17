@@ -315,6 +315,7 @@ const replicateBuildProfileToLendingApplication = (
 
   return {
     ...application,
+    id: profile.profileId,
     productType,
     buildProfileSnapshot: profile as unknown as Record<string, unknown>,
     borrower: { fullName: values.fullName || '', email: values.email || '', phone: values.mobileNumber || '', govId: values.governmentId || values.otherGovernmentIdNumber || '', address: values.address || '' },
