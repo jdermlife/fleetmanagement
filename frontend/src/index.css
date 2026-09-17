@@ -14120,6 +14120,10 @@ th { color: var(--dark-gold); }
   min-height: calc(100vh - 120px);
 }
 
+.app-shell:has(.financial-health-registration-gate) .page-assistant {
+  display: none;
+}
+
 .financial-health-registration-preview {
   pointer-events: none;
   user-select: none;

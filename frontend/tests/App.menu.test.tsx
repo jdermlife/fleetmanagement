@@ -2,9 +2,10 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockGetAuthToken, mockLogout, mockPrepareAutosavesForLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockGetAuthToken, mockGetMySubscription, mockLogout, mockPrepareAutosavesForLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockGetAuthToken: vi.fn(),
+  mockGetMySubscription: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
   mockSynchronizeBuildProfileDraft: vi.fn(),
@@ -14,6 +15,7 @@ vi.mock('../src/api', () => ({
   fetchCurrentUser: mockFetchCurrentUser,
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
   getAuthToken: mockGetAuthToken,
+  getMySubscription: mockGetMySubscription,
   listPublicSubscriptionPlans: vi.fn().mockResolvedValue([]),
   logout: mockLogout,
 }))
@@ -27,6 +29,9 @@ vi.mock('../src/autosave/buildProfileSync', () => ({
 
 vi.mock('../src/components/AutosaveStatus', () => ({ default: () => null }))
 vi.mock('../src/components/ai/FloatingChatbot', () => ({ default: () => null }))
+vi.mock('../src/pages/scoring/LendingScorecard', () => ({
+  default: () => <h1>Authenticated Lending Scorecard</h1>,
+}))
 
 import App from '../src/App'
 
@@ -61,6 +66,10 @@ describe('App account menu accordions', () => {
       lastLoginAt: null,
     })
     mockLogout.mockResolvedValue(undefined)
+    mockGetMySubscription.mockResolvedValue({
+      status: 'ACTIVE',
+      subscription_type: 'PAID',
+    })
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
     mockSynchronizeBuildProfileDraft.mockResolvedValue(undefined)
     Object.defineProperty(window, 'localStorage', {
@@ -130,5 +139,74 @@ describe('App account menu accordions', () => {
 
     await act(async () => finishSynchronization())
     await waitFor(() => expect(screen.queryByText('Synchronizing profile...')).toBeNull())
+  })
+
+  it('shows registration actions for unauthenticated Lending Scorecard access', async () => {
+    mockGetAuthToken.mockReturnValue(null)
+
+    render(
+      <MemoryRouter initialEntries={['/lending-scorecard']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Register to access Lending Scorecard' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'Register Now' }).getAttribute('href')).toBe('/register')
+    expect(mockGetMySubscription).not.toHaveBeenCalled()
+  })
+
+  it('shows monthly subscription action for a trial subscriber', async () => {
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 2,
+      username: 'trial-user',
+      email: 'trial@example.com',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower'],
+      permissions: [],
+      isActive: true,
+      subscriptionId: 2,
+      createdAt: '2026-09-17T00:00:00Z',
+      updatedAt: '2026-09-17T00:00:00Z',
+      lastLoginAt: null,
+    })
+    mockGetMySubscription.mockResolvedValue({
+      status: 'TRIAL',
+      subscription_type: 'TRIAL',
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/lending-scorecard']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Subscribe to access Lending Scorecard' })).toBeTruthy()
+    expect(screen.getByRole('link', { name: 'View Monthly Plans' }).getAttribute('href')).toBe('/subscription-payment')
+    expect(screen.queryByRole('heading', { name: 'Authenticated Lending Scorecard' })).toBeNull()
+  })
+
+  it('opens Lending Scorecard for an active paid subscriber', async () => {
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 3,
+      username: 'paid-user',
+      email: 'paid@example.com',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower'],
+      permissions: [],
+      isActive: true,
+      subscriptionId: 3,
+      createdAt: '2026-09-17T00:00:00Z',
+      updatedAt: '2026-09-17T00:00:00Z',
+      lastLoginAt: null,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/lending-scorecard']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Authenticated Lending Scorecard' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Subscribe to access Lending Scorecard' })).toBeNull()
   })
 })

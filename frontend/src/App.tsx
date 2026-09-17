@@ -1,7 +1,7 @@
 import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
-import { fetchCurrentUser, getAuthToken, logout, type LoginResponse } from './api'
+import { fetchCurrentUser, getAuthToken, getMySubscription, logout, type LoginResponse } from './api'
 import {
   SUBSCRIBER_BORROWER_ROLE,
   SUBSCRIBER_LENDER_ROLE,
@@ -200,6 +200,28 @@ function RegistrationAccessNotice({ title, description }: { title: string; descr
   )
 }
 
+function SubscriptionAccessNotice({ verificationFailed = false }: { verificationFailed?: boolean }) {
+  return (
+    <section className="financial-health-registration-notice" aria-labelledby="subscription-access-title">
+      <span>{verificationFailed ? 'Subscription check unavailable' : 'Monthly subscription required'}</span>
+      <h2 id="subscription-access-title">
+        {verificationFailed ? 'Verify your subscription to continue' : 'Subscribe to access Lending Scorecard'}
+      </h2>
+      <p>
+        {verificationFailed
+          ? 'We could not confirm your subscription. Review your account subscription, then return to the Lending Scorecard.'
+          : 'Your trial includes a preview of Credit Health. Choose a monthly plan to use the Lending Scorecard and receive your FILSCORE assessment.'}
+      </p>
+      <div className="financial-health-registration-actions">
+        <Link to={verificationFailed ? '/subscriptions' : '/subscription-payment'} className="financial-health-registration-primary">
+          {verificationFailed ? 'Manage Subscription' : 'View Monthly Plans'}
+        </Link>
+        <Link to="/financial-health-journey" className="financial-health-registration-secondary">Back to Journey</Link>
+      </div>
+    </section>
+  )
+}
+
 function CreditHealthScorecardPreview() {
   return (
     <div className="psychometric-page lending-psychometric-page credit-health-access-preview">
@@ -233,6 +255,81 @@ function CreditHealthScorecardPreview() {
         <p>Build your financial profile to unlock detailed scoring, risk indicators, and personalized recommendations.</p>
       </section>
     </div>
+  )
+}
+
+function LendingScorecardAccessGate({
+  authReady,
+  currentUser,
+}: {
+  authReady: boolean
+  currentUser: LoginResponse['user'] | null
+}) {
+  const [accessState, setAccessState] = useState<'loading' | 'granted' | 'subscription-required' | 'verification-failed'>('loading')
+  const isAdmin = currentUser?.role?.toLowerCase() === 'admin'
+
+  useEffect(() => {
+    if (!authReady || !currentUser) {
+      setAccessState('loading')
+      return
+    }
+
+    if (isAdmin) {
+      setAccessState('granted')
+      return
+    }
+
+    let cancelled = false
+    setAccessState('loading')
+    void getMySubscription()
+      .then((subscription) => {
+        if (cancelled) return
+        const hasPaidAccess = subscription?.status === 'ACTIVE'
+          && (subscription.subscription_type === 'PAID' || subscription.subscription_type === 'LIFETIME')
+        setAccessState(hasPaidAccess ? 'granted' : 'subscription-required')
+      })
+      .catch(() => {
+        if (!cancelled) setAccessState('verification-failed')
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [authReady, currentUser, isAdmin])
+
+  if (!authReady || (currentUser && accessState === 'loading')) {
+    return <div className="card" role="status">Checking account...</div>
+  }
+
+  if (!currentUser) {
+    return (
+      <div className="financial-health-registration-gate">
+        <div className="financial-health-registration-preview" aria-hidden="true">
+          <CreditHealthScorecardPreview />
+        </div>
+        <RegistrationAccessNotice
+          title="Register to access Lending Scorecard"
+          description="Create your account to complete your Credit Health assessment and receive your FILSCORE recommendations."
+        />
+      </div>
+    )
+  }
+
+  if (accessState !== 'granted') {
+    return (
+      <div className="financial-health-registration-gate">
+        <div className="financial-health-registration-preview" aria-hidden="true">
+          <CreditHealthScorecardPreview />
+        </div>
+        <SubscriptionAccessNotice verificationFailed={accessState === 'verification-failed'} />
+      </div>
+    )
+  }
+
+  return (
+    <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+      <LendingScorecard />
+    </ProtectedRoute>
   )
 }
 
@@ -1170,34 +1267,12 @@ const isSignedIn = authReady && Boolean(currentUser)
 
             <Route
               path="/lending-scorecard"
-              element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <LendingScorecard />
-                </ProtectedRoute>
-              }
+              element={<LendingScorecardAccessGate authReady={authReady} currentUser={currentUser} />}
             />
 
             <Route
               path="/lending-scorecard/filscore"
-              element={
-                !authReady ? (
-                  <div className="card" role="status">Checking account...</div>
-                ) : currentUser ? (
-                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                    <LendingScorecard />
-                  </ProtectedRoute>
-                ) : (
-                  <div className="financial-health-registration-gate">
-                    <div className="financial-health-registration-preview" aria-hidden="true">
-                      <CreditHealthScorecardPreview />
-                    </div>
-                    <RegistrationAccessNotice
-                      title="Register to view your Credit Health Score"
-                      description="Create your account to complete your assessment and access your FILSCORE credit health score and recommendations."
-                    />
-                  </div>
-                )
-              }
+              element={<LendingScorecardAccessGate authReady={authReady} currentUser={currentUser} />}
             />
 
             <Route
