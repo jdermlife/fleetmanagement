@@ -1411,16 +1411,15 @@ const isSignedIn = authReady && Boolean(currentUser)
                     <div className="financial-health-registration-preview" aria-hidden="true">
                       <FinancialHealthSummaryPage />
                     </div>
-                    <div className="financial-health-registration-overlay">
-                      <section
-                        className="financial-health-registration-dialog"
-                        role="dialog"
-                        aria-modal="true"
-                        aria-label="Register for Financial Health access"
-                      >
-                        <RegisterPage />
-                      </section>
-                    </div>
+                    <section className="financial-health-registration-notice" aria-labelledby="financial-health-registration-title">
+                      <span>Free FILSCORE access</span>
+                      <h2 id="financial-health-registration-title">Register to view your Financial Health Summary</h2>
+                      <p>Create your account to access your complete financial health dashboard, scores, and recommendations.</p>
+                      <div className="financial-health-registration-actions">
+                        <Link to="/register" className="financial-health-registration-primary">Register Now</Link>
+                        <Link to="/login" className="financial-health-registration-secondary">Sign In</Link>
+                      </div>
+                    </section>
                   </div>
                 )
               }
