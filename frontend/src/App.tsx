@@ -200,6 +200,186 @@ function RegistrationAccessNotice({ title, description }: { title: string; descr
   )
 }
 
+function CreditHealthScorecardPreview() {
+  return (
+    <div className="psychometric-page lending-psychometric-page credit-health-access-preview">
+      <section className="psychometric-hero lending-psychometric-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Advanced readiness for origination workflow</span>
+          <h1>Credit Health</h1>
+          <p>Credit Health combines credit, social, and psychometric indicators into one readiness assessment.</p>
+        </div>
+      </section>
+      <section className="psychometric-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>FILSCORE</span>
+          <strong>--</strong>
+          <small>Complete your profile to calculate</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Credit Score</span>
+          <strong>--</strong>
+          <small>Awaiting assessment data</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Readiness</span>
+          <strong>Pending</strong>
+          <small>Registration required</small>
+        </article>
+      </section>
+      <section className="psychometric-panel">
+        <span className="psychometric-panel-kicker">Financial Health Journey</span>
+        <h2>Credit Health Assessment</h2>
+        <p>Build your financial profile to unlock detailed scoring, risk indicators, and personalized recommendations.</p>
+      </section>
+    </div>
+  )
+}
+
+function NetWorthPositioningPreview() {
+  return (
+    <div className="psychometric-page networth-dashboard-page networth-access-preview">
+      <section className="psychometric-hero networth-dashboard-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
+          <h1>Wealth Builder</h1>
+          <p>Understand your current position, define financial goals, and track progress toward sustainable wealth.</p>
+        </div>
+      </section>
+      <section className="psychometric-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Net Worth Position</span>
+          <strong>--</strong>
+          <small>Complete your profile to calculate</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Assets</span>
+          <strong>--</strong>
+          <small>Awaiting financial information</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Goal Progress</span>
+          <strong>Pending</strong>
+          <small>Registration required</small>
+        </article>
+      </section>
+      <section className="psychometric-panel">
+        <span className="psychometric-panel-kicker">Financial Health Journey</span>
+        <h2>Net Worth Positioning</h2>
+        <p>Build your balance sheet and goals to unlock wealth-building insights and recommendations.</p>
+      </section>
+    </div>
+  )
+}
+
+function BudgetExpenseTrackerPreview() {
+  return (
+    <div className="psychometric-page budget-dashboard-page budget-access-preview">
+      <section className="psychometric-hero budget-dashboard-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Budget and Cash Flow Planning</span>
+          <h1>Budget &amp; Expense Tracker</h1>
+          <p>Set monthly targets, monitor actual spending, and understand how cash flow affects your financial health.</p>
+        </div>
+      </section>
+      <section className="psychometric-summary-grid budget-dashboard-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Monthly Income</span>
+          <strong>--</strong>
+          <small>Complete your profile to calculate</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Planned Expenses</span>
+          <strong>--</strong>
+          <small>Awaiting budget targets</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Cash Flow</span>
+          <strong>Pending</strong>
+          <small>Registration required</small>
+        </article>
+      </section>
+      <section className="psychometric-panel">
+        <span className="psychometric-panel-kicker">Financial Health Journey</span>
+        <h2>Budget Readiness</h2>
+        <p>Build your budget to unlock spending analysis, savings targets, and personalized cash-flow recommendations.</p>
+      </section>
+    </div>
+  )
+}
+
+function ResourceOptimizerPreview() {
+  return (
+    <div className="psychometric-page loan-monitoring-dashboard-page resource-optimizer-access-preview">
+      <section className="psychometric-hero loan-monitoring-dashboard-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Resources Performance Oversight</span>
+          <h1>Resource Optimizer</h1>
+          <p>Monitor loans, cash resources, and collateral performance to improve financial efficiency and resilience.</p>
+        </div>
+      </section>
+      <section className="psychometric-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Loan Position</span>
+          <strong>--</strong>
+          <small>Complete your profile to calculate</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Resource Efficiency</span>
+          <strong>--</strong>
+          <small>Awaiting account information</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Optimization Status</span>
+          <strong>Pending</strong>
+          <small>Registration required</small>
+        </article>
+      </section>
+      <section className="psychometric-panel">
+        <span className="psychometric-panel-kicker">Financial Health Journey</span>
+        <h2>Loan Monitoring</h2>
+        <p>Add your loans and resources to unlock performance monitoring and personalized optimization recommendations.</p>
+      </section>
+    </div>
+  )
+}
+
+function BillManagerPreview() {
+  return (
+    <div className="psychometric-page bill-reminder-dashboard-page bill-manager-access-preview">
+      <section className="psychometric-hero bill-reminder-dashboard-hero">
+        <div className="psychometric-hero-copy">
+          <span className="psychometric-eyebrow">Billing Workflow Controls</span>
+          <h1>Bill Manager</h1>
+          <p>Organize recurring bills, monitor due dates, and strengthen payment reliability across each billing cycle.</p>
+        </div>
+      </section>
+      <section className="psychometric-summary-grid">
+        <article className="psychometric-summary-card psychometric-summary-card-highlight">
+          <span>Upcoming Bills</span>
+          <strong>--</strong>
+          <small>Complete your profile to calculate</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Monthly Commitments</span>
+          <strong>--</strong>
+          <small>Awaiting billing information</small>
+        </article>
+        <article className="psychometric-summary-card">
+          <span>Payment Status</span>
+          <strong>Pending</strong>
+          <small>Registration required</small>
+        </article>
+      </section>
+      <section className="psychometric-panel">
+        <span className="psychometric-panel-kicker">Financial Health Journey</span>
+        <h2>Bill Reminder</h2>
+        <p>Add your recurring bills to unlock due-date monitoring, payment tracking, and timely reminders.</p>
+      </section>
+    </div>
+  )
+}
+
 function App() {
   const navigate = useNavigate()
   const location = useLocation()
@@ -1000,9 +1180,23 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/lending-scorecard/filscore"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <LendingScorecard />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <LendingScorecard />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <CreditHealthScorecardPreview />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to view your Credit Health Score"
+                      description="Create your account to complete your assessment and access your FILSCORE credit health score and recommendations."
+                    />
+                  </div>
+                )
               }
             />
 
@@ -1184,27 +1378,69 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/budget-expense-tracker"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <BudgetExpenseTrackerPage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <BudgetExpenseTrackerPage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <BudgetExpenseTrackerPreview />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to access Budget & Expense Tracker"
+                      description="Create your account to set budget targets, monitor spending, and receive personalized cash-flow recommendations."
+                    />
+                  </div>
+                )
               }
             />
 
             <Route
               path="/loan-monitoring"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <LoanMonitoringPage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <LoanMonitoringPage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <ResourceOptimizerPreview />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to access Resource Optimizer"
+                      description="Create your account to monitor loans and resources and receive personalized optimization recommendations."
+                    />
+                  </div>
+                )
               }
             />
 
             <Route
               path="/bill-reminder"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <BillReminderPage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <BillReminderPage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <BillManagerPreview />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to access Bill Manager"
+                      description="Create your account to organize bills, monitor due dates, and receive timely payment reminders."
+                    />
+                  </div>
+                )
               }
             />
 
@@ -1220,9 +1456,23 @@ const isSignedIn = authReady && Boolean(currentUser)
             <Route
               path="/net-worth-positioning"
               element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <NetWorthPositioningPage />
-                </ProtectedRoute>
+                !authReady ? (
+                  <div className="card" role="status">Checking account...</div>
+                ) : currentUser ? (
+                  <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                    <NetWorthPositioningPage />
+                  </ProtectedRoute>
+                ) : (
+                  <div className="financial-health-registration-gate">
+                    <div className="financial-health-registration-preview" aria-hidden="true">
+                      <NetWorthPositioningPreview />
+                    </div>
+                    <RegistrationAccessNotice
+                      title="Register to access Wealth Builder"
+                      description="Create your account to build your net worth position, set financial goals, and receive personalized wealth recommendations."
+                    />
+                  </div>
+                )
               }
             />
 
