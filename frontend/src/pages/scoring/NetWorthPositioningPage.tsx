@@ -8,6 +8,7 @@ import {
   saveAutosaveDraftRemote,
 } from '../../autosave/draftApi';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard';
 import { useAuthorization } from '../../hooks/useAuthorization';
@@ -1866,6 +1867,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
           <h1>Wealth Building  Score</h1>
           <p>Period: <strong>{asOfDate || snapshot.dateLabel}</strong></p>
         </div>
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
         <WealthBalanceRadar
           netWorthPositioning={netWorthBuildingScore.score}
           wealthBehaviour={wealthBehaviourScore}
@@ -2090,6 +2092,8 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
 
           </p>
         </div>
+
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <div className="psychometric-hero-metric networth-dashboard-scorecard">
           <span>Composite Wealth Score</span>
