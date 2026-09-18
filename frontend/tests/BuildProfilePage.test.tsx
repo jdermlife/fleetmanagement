@@ -14,6 +14,7 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return {
     ...actual,
+    Link: ({ to, children }: { to: string; children?: React.ReactNode }) => <a href={to}>{children}</a>,
     useNavigate: () => mockNavigate,
     useSearchParams: () => [new URLSearchParams(mockSearchParams.value), vi.fn()],
   }
@@ -938,6 +939,12 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('option', { name: 'Diesel' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Hybrid' })).toBeTruthy()
     expect(screen.getByRole('option', { name: 'Electric' })).toBeTruthy()
+    const vehicleMarketability = screen.getByRole('combobox', { name: 'Marketability of the Vehicle' })
+    expect(within(vehicleMarketability).getByRole('option', { name: 'Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)' })).toBeTruthy()
+    expect(within(vehicleMarketability).getByRole('option', { name: 'Popular brands with moderate resale demand' })).toBeTruthy()
+    expect(within(vehicleMarketability).getByRole('option', { name: 'Limited-market or low-demand brands' })).toBeTruthy()
+    expect(within(vehicleMarketability).getByRole('option', { name: 'Obsolete or difficult-to-sell models' })).toBeTruthy()
+    await user.selectOptions(vehicleMarketability, 'Popular brands with moderate resale demand')
     expect(screen.getByLabelText('Vehicle Age / Condition')).toBeTruthy()
     expect(screen.getByLabelText('Insurance Provider / Company')).toBeTruthy()
     expect(screen.getByLabelText('OR Number')).toBeTruthy()
@@ -965,6 +972,7 @@ describe('BuildProfilePage', () => {
 
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values.productType).toBe('Auto Loan')
+    expect(savedProfile.values.vehicleMarketabilityCategory).toBe('Popular brands with moderate resale demand')
     expect(savedProfile.additionalCollaterals[0].collateralType).toBe('Equipment')
       expect(savedProfile.realEstateCollaterals[0]).toMatchObject({ tctCtcNumber: 'TCT-9001', address: 'Makati City', appraisedValue: '5000000.00' })
       expect(savedProfile.financialInstrumentCollaterals[0]).toMatchObject({ assetType: 'Bonds', currency: 'USD', issuer: 'Example Treasury', value: '100000.00', markToMarket: '105000.00' })

@@ -41,6 +41,7 @@ export type FinancialInstrumentCollateral = {
 export const AUTO_LOAN_FIELDS: CollateralField[] = [
   { key: 'assetType', label: 'Type', type: 'select', options: ['Passenger Cars', 'SUVs & Crossovers', 'Pickup Trucks', 'Motorcycles & Scooters', 'Buses & Minivans', 'Commercial Trucks'] },
   { key: 'maker', label: 'Maker / Brand' }, { key: 'brand', label: 'Variant' }, { key: 'model', label: 'Model Year' }, { key: 'year', label: 'Fuel Type', type: 'select', options: ['Gasoline', 'Diesel', 'Hybrid', 'Electric'] },
+  { key: 'vehicleMarketabilityCategory', label: 'Marketability of the Vehicle', type: 'select', options: ['Brand new, high-demand brands (e.g., Toyota, Honda, Mitsubishi, Ford)', 'Popular brands with moderate resale demand', 'Limited-market or low-demand brands', 'Obsolete or difficult-to-sell models'] },
   { key: 'vehicleConditionCategory', label: 'Vehicle Age / Condition', type: 'select', options: ['Brand New', 'Used (1–3 years), Excellent Condition', 'Used (4–6 years), Good Condition', 'More than 6 years old or Fair/Poor Condition'] },
   { key: 'vehicleTypeCategory', label: 'Vehicle Type', type: 'select', options: ['Passenger vehicle for personal use', 'SUV / MPV / Pickup in good condition', 'Commercial vehicle (van, light truck)', 'Heavy equipment / Specialized vehicles', 'Salvage, rebuilt, or unregistered vehicle'] },
   { key: 'appraisedValue', label: 'Appraised Value / Brand New Price', type: 'number' },
