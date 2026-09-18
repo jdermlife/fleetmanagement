@@ -21,6 +21,7 @@ import {
   createLoanScorecardSnapshot,
   fetchLoanCreationEntitlement,
   fetchLoanApplication,
+  recomputeStoredLoanApplicationScores,
   type LoanCreationEntitlementResponse,
   type QuantScoresSummary,
   updateLoanApplication,
@@ -2973,7 +2974,12 @@ export default function LendingScorecard() {
       setIsGeneratingScore(true);
       setSaveMessage('Generating FILSCORE rating...');
       const payload = buildLoanPayload(formData.status);
-      const result = await computeQuantScores(payload);
+      const result = await computeQuantScores(payload).catch((error: unknown) => {
+        if (!hasPersistedRecord || !formData.id.trim()) {
+          throw error;
+        }
+        return recomputeStoredLoanApplicationScores(formData.id);
+      });
       const quantSummary = mapBackendQuantSummary(result.quant_scores);
       if (!quantSummary) {
         throw new Error('The scoring service returned no FILSCORE rating. Please retry.');
@@ -2994,6 +3000,7 @@ export default function LendingScorecard() {
       }
       setTransientMessage(result.message || 'QuantScores computed and stored');
     } catch (error) {
+      automaticScoreAttemptRef.current = '';
       setSaveMessage(getErrorMessage(error, 'Failed to compute QuantScores.'));
     } finally {
       setIsGeneratingScore(false);
