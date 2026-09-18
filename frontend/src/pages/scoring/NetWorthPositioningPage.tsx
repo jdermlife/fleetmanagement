@@ -1861,7 +1861,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
 
   return (
     <div className="psychometric-page networth-dashboard-page networth-report-page">
-      <section className="psychometric-hero networth-dashboard-hero networth-report-hero">
+      <section className="psychometric-hero networth-dashboard-hero networth-report-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
           <h1>Wealth Building  Score</h1>
@@ -2069,7 +2069,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
       {showLegacyWorkflow ? <>
       <NetWorthJourney />
 
-      <section className="psychometric-hero networth-dashboard-hero">
+      <section className="psychometric-hero networth-dashboard-hero psychometric-hero-with-journey-menu">
         <div className="psychometric-hero-copy">
           <span className="psychometric-eyebrow">Net Worth and Goal Tracking</span>
           <h1>Composite Wealth Score</h1>
