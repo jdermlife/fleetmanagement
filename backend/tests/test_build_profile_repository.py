@@ -7,6 +7,7 @@ from types import SimpleNamespace
 from app.fastapi_auth import CurrentUser
 from app.models.loan_application import LoanApplication
 from app.routes.loan_routes import serialize_loan_application_fields
+from app.schemas.loan_schema import LoanApplicationCreate
 from app.services.build_profile_repository import upsert_build_profile_record
 
 
@@ -93,3 +94,31 @@ def test_loan_serialization_includes_creator_identity():
 
     assert serialized["created_by_username"] == "jorge.creator"
     assert serialized["created_by_email"] == "jorge@example.com"
+
+
+def test_profile_fields_are_mapped_to_columns_and_api_schema():
+    session = FakeSession()
+    user = CurrentUser(id=7, username="owner", role="subscriber")
+    profile = {
+        "profileId": "PRO-002",
+        "values": {
+            "fullName": "Ana Cruz",
+            "dateOfBirth": "1990-05-14",
+            "gender": "Female",
+            "employmentStatus": "Regular",
+            "spouseFullName": "Rene Cruz",
+            "creditCardIssuer": "Bank A",
+        },
+    }
+
+    record, _ = upsert_build_profile_record(session, user, profile, "PRO-002")
+    serialized = serialize_loan_application_fields(record)
+
+    assert "date_of_birth" in LoanApplication.__table__.columns
+    assert "date_of_birth" in LoanApplicationCreate.model_fields
+    assert str(record.date_of_birth) == "1990-05-14"
+    assert record.gender == "Female"
+    assert record.employment_status == "Regular"
+    assert record.spouse_name == "Rene Cruz"
+    assert record.credit_card_issuer == "Bank A"
+    assert serialized["date_of_birth"].isoformat() == "1990-05-14"

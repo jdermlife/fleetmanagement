@@ -53,6 +53,10 @@ from app.services.loan_repository_io import (
     upsert_loan_applications,
 )
 from app.services.overall_scoring_engine import compute_quant_score_package
+from app.services.loan_application_profile_columns import (
+    PROFILE_COLUMN_NAMES,
+    apply_profile_columns,
+)
 from security.rbac import Permission as RBACPermission
 from security.rbac import Role as RBACRole, has_permission
 
@@ -245,6 +249,10 @@ def serialize_loan_application_fields(record: LoanApplication) -> dict[str, Any]
         "scorecard_total": record.scorecard_total,
         "ai_probability": record.ai_probability,
         "requirements": record.requirements or {},
+        **{
+            column: getattr(record, column, None)
+            for column in PROFILE_COLUMN_NAMES
+        },
         "created_at": record.created_at,
         "updated_at": record.updated_at,
     }
@@ -637,6 +645,10 @@ def apply_loan_application_fields(record: LoanApplication, data: LoanApplication
     record.ai_probability = data.ai_probability
 
     record.requirements = data.requirements
+    apply_profile_columns(record, data.requirements)
+    for column in PROFILE_COLUMN_NAMES:
+        if column in data.model_fields_set:
+            setattr(record, column, getattr(data, column))
 
 
 @router.post(

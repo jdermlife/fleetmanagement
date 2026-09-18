@@ -539,7 +539,126 @@ export interface DecisionAuditTrailRecord {
   changed_by?: string | null
 }
 
-export interface LoanApplicationPayload {
+export interface LoanApplicationProfileColumns {
+  last_name?: string | null
+  first_name?: string | null
+  middle_name?: string | null
+  date_of_birth?: string | null
+  place_of_birth?: string | null
+  age?: number | null
+  gender?: string | null
+  citizenship?: string | null
+  number_of_dependents?: number | null
+  marital_status?: string | null
+  mothers_maiden_name?: string | null
+  mobile_number?: string | null
+  home_phone_number?: string | null
+  tin?: string | null
+  sss_gsis_number?: string | null
+  other_government_id?: string | null
+  id_number?: string | null
+  issue_date?: string | null
+  expiry_date?: string | null
+  present_address?: string | null
+  permanent_address?: string | null
+  mailing_address?: string | null
+  length_of_stay?: string | null
+  home_ownership?: string | null
+  educational_attainment?: string | null
+  number_of_vehicles_owned?: number | null
+  recent_photo_uploaded?: boolean | null
+  employment_status?: string | null
+  employer_business_name?: string | null
+  office_address?: string | null
+  occupation?: string | null
+  position?: string | null
+  nature_of_work_business?: string | null
+  date_hired?: string | null
+  office_phone_number?: string | null
+  previous_employer?: string | null
+  total_years_working?: string | null
+  gross_monthly_income?: number | null
+  monthly_living_expenses?: number | null
+  other_sources_of_income?: string | null
+  investment_income?: number | null
+  business_income?: number | null
+  pension_income?: number | null
+  insurance?: string | null
+  registration?: string | null
+  property_address?: string | null
+  registered_owner?: string | null
+  lot_number?: string | null
+  block_number?: string | null
+  tct_cct_number?: string | null
+  spouse_name?: string | null
+  spouse_date_of_birth?: string | null
+  spouse_place_of_birth?: string | null
+  spouse_citizenship?: string | null
+  spouse_mobile_number?: string | null
+  spouse_present_address?: string | null
+  spouse_employer_business_name?: string | null
+  spouse_office_address?: string | null
+  spouse_occupation?: string | null
+  spouse_position?: string | null
+  spouse_nature_of_work?: string | null
+  spouse_years_with_employer?: string | null
+  spouse_previous_employer?: string | null
+  spouse_total_years_working?: string | null
+  spouse_gross_monthly_income?: number | null
+  spouse_monthly_expenses?: number | null
+  spouse_other_income_sources?: string | null
+  credit_card_issuer?: string | null
+  credit_card_number?: string | null
+  credit_limit?: number | null
+  outstanding_balance?: number | null
+  member_since?: string | null
+  bank_branch?: string | null
+  account_type?: string | null
+  account_number?: string | null
+  current_balance?: number | null
+  loan_lender?: string | null
+  loan_type?: string | null
+  loan_current_balance?: number | null
+  loan_monthly_amortization?: number | null
+  co_borrower_name?: string | null
+  co_borrower_relationship?: string | null
+  co_borrower_monthly_income?: number | null
+  guarantor_name?: string | null
+  guarantor_mobile?: string | null
+  guarantor_address?: string | null
+  guarantor_relationship?: string | null
+  guarantor_monthly_income?: number | null
+  enhanced_due_diligence?: string | null
+  identity_verification_status?: string | null
+  document_verification_status?: string | null
+  banking_verification_status?: string | null
+  device_verification_status?: string | null
+  questionnaire_responses?: Record<string, unknown> | null
+  asset_details?: Record<string, unknown> | null
+  liability_details?: Array<Record<string, unknown>> | null
+  additional_loan_details?: Array<Record<string, unknown>> | null
+  bank_account_details?: Record<string, unknown> | null
+  credit_history_details?: Record<string, unknown> | null
+  financial_goal_target_amount?: number | null
+  financial_goal_target_period?: number | null
+  financial_goal_target_period_unit?: string | null
+  credit_officer?: string | null
+  branch_manager?: string | null
+  credit_committee?: string | null
+  bank_account?: string | null
+  disbursement_account_number?: string | null
+  disbursement_date?: string | null
+  booking_date?: string | null
+  start_repayment_date?: string | null
+  first_payment_date?: string | null
+  all_required_documents_provided?: boolean | null
+  all_signatures_collected?: boolean | null
+  credit_committee_approved?: boolean | null
+  executive_approval_obtained?: boolean | null
+  collateral_documentation_ready?: boolean | null
+}
+
+export interface LoanApplicationPayload extends LoanApplicationProfileColumns {
   application_no: string
   status: WorkflowStatus
   product_type: ProductType

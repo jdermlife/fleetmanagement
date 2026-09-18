@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.fastapi_auth import CurrentUser
 from app.models.loan_application import LoanApplication
+from app.services.loan_application_profile_columns import apply_profile_columns
 
 
 def _number(values: dict[str, Any], key: str) -> float:
@@ -99,4 +100,5 @@ def upsert_build_profile_record(
         **(record.requirements or {}),
         "buildProfile": jsonable_encoder(profile),
     }
+    apply_profile_columns(record, record.requirements)
     return record, created
