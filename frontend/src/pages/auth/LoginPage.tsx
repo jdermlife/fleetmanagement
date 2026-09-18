@@ -145,6 +145,15 @@ function GoogleMark() {
 const APPLE_CONTINUE_BUTTON_URL =
   'https://appleid.cdn-apple.com/appleid/button?color=black&border_radius=5&height=62&scale=2&type=continue&width=375'
 
+const LIFE_QUESTION_CARDS = [
+  { icon: '🏝', question: 'Can I retire at 50?', detail: 'Find out if it is possible.' },
+  { icon: '📊', question: 'Is my income in the global top 10%?', detail: 'See how you compare with the world.' },
+  { icon: '💛', question: "What's my Financial Health Score?", detail: 'Know where you stand.' },
+  { icon: '📋', question: 'Why is my loan application always rejected?', detail: 'Find out the possible reasons.' },
+  { icon: '🪙', question: 'What could my net worth be at 60?', detail: 'Plan for a richer future.' },
+  { icon: '📈', question: 'Am I saving enough?', detail: "See if you're on track." },
+] as const
+
 export default function LoginPage() {
   const navigate = useNavigate()
   const googleClientId = APP_CONFIG.googleClientId
@@ -332,6 +341,22 @@ export default function LoginPage() {
 
         <div className="login-art-card">
           <div className="login-art-social-stack" aria-live="polite">
+            <section className="login-life-questions" aria-labelledby="login-life-questions-title">
+              <h1 id="login-life-questions-title">Get Answers to Life’s Important Questions</h1>
+              <div className="login-life-questions-grid">
+                {LIFE_QUESTION_CARDS.map((item) => (
+                  <article key={item.question}>
+                    <span className="login-life-question-icon" aria-hidden="true">{item.icon}</span>
+                    <span>
+                      <strong>{item.question}</strong>
+                      <small>{item.detail}</small>
+                    </span>
+                  </article>
+                ))}
+              </div>
+              <p>Your financial answers are waiting.</p>
+            </section>
+
             <Link
               to="/financial-health-journey"
               className="login-art-social-button login-art-social-button-apple login-art-free-access-button"
