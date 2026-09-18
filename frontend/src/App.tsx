@@ -309,7 +309,7 @@ function LendingScorecardAccessGate({
         </div>
         <RegistrationAccessNotice
           title="Register to access Lending Scorecard"
-          description="Create your account to complete your Credit Health assessment and receive your FILSCORE recommendations."
+          description="Profile is required as basis of Credit Health assessment. Enjoy a complimentary 2‑day trial to explore all premium features before committing."
         />
       </div>
     )
@@ -1257,8 +1257,8 @@ const isSignedIn = authReady && Boolean(currentUser)
                       <BuildProfilePage />
                     </div>
                     <RegistrationAccessNotice
-                      title="Register to create or update your profile"
-                      description="Create your account to build your financial profile and unlock personalized scores and recommendations."
+                      title="Create  profile"
+                      description="Profile is required as basis of financial position, analysis, scores and recommendations.Enjoy a complimentary 2‑day trial to explore all premium features before committing."
                     />
                   </div>
                 )
@@ -1466,7 +1466,7 @@ const isSignedIn = authReady && Boolean(currentUser)
                     </div>
                     <RegistrationAccessNotice
                       title="Register to access Budget & Expense Tracker"
-                      description="Create your account to set budget targets, monitor spending, and receive personalized cash-flow recommendations."
+                      description="Profile is required to set budget targets, monitor spending, and receive personalized cash-flow recommendations."
                     />
                   </div>
                 )
@@ -1488,8 +1488,8 @@ const isSignedIn = authReady && Boolean(currentUser)
                       <ResourceOptimizerPreview />
                     </div>
                     <RegistrationAccessNotice
-                      title="Register to access Resource Optimizer"
-                      description="Create your account to monitor loans and resources and receive personalized optimization recommendations."
+                      title="Create Account  to access Resource Optimizer"
+                      description="Profile is the  basis of monitoring loans and resources and receiving personalized optimization recommendations.Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
@@ -1511,8 +1511,8 @@ const isSignedIn = authReady && Boolean(currentUser)
                       <BillManagerPreview />
                     </div>
                     <RegistrationAccessNotice
-                      title="Register to access Bill Manager"
-                      description="Create your account to organize bills, monitor due dates, and receive timely payment reminders."
+                      title="Create Profile to access Bill Manager"
+                      description="Create account as reference to organize bills, monitor due dates, and receive timely payment reminders.Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
@@ -1544,7 +1544,7 @@ const isSignedIn = authReady && Boolean(currentUser)
                     </div>
                     <RegistrationAccessNotice
                       title="Register to access Wealth Builder"
-                      description="Create your account to build your net worth position, set financial goals, and receive personalized wealth recommendations."
+                      description="Create account as basis of financial profile to build net worth position, set financial goals, and receive personalized wealth recommendations.Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
@@ -1765,8 +1765,8 @@ const isSignedIn = authReady && Boolean(currentUser)
                       <FinancialHealthSummaryPage />
                     </div>
                     <RegistrationAccessNotice
-                      title="Register to view your Financial Health Summary"
-                      description="Create your account to access your complete financial health dashboard, scores, and recommendations."
+                      title="Register to Unlock Your Financial Health"
+                      description="Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
