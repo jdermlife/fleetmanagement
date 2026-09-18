@@ -308,7 +308,7 @@ function LendingScorecardAccessGate({
           <CreditHealthScorecardPreview />
         </div>
         <RegistrationAccessNotice
-          title="Register to access Lending Scorecard"
+          title="Register to access Credit Health Scorecard"
           description="Profile is required as basis of Credit Health assessment. Enjoy a complimentary 2‑day trial to explore all premium features before committing."
         />
       </div>
@@ -1489,7 +1489,7 @@ const isSignedIn = authReady && Boolean(currentUser)
                     </div>
                     <RegistrationAccessNotice
                       title="Create Account  to access Resource Optimizer"
-                      description="Profile is the  basis of monitoring loans and resources and receiving personalized optimization recommendations.Enjoy a complimentary 2‑day trial."
+                      description="Profile is required as basis of monitoring resources triggers and receiving optimization recommendations.Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
@@ -1544,7 +1544,7 @@ const isSignedIn = authReady && Boolean(currentUser)
                     </div>
                     <RegistrationAccessNotice
                       title="Register to access Wealth Builder"
-                      description="Create account as basis of financial profile to build net worth position, set financial goals, and receive personalized wealth recommendations.Enjoy a complimentary 2‑day trial."
+                      description="Financial profile is required to build net worth position, set financial goals, and receive specific wealth management recommendations.Enjoy a complimentary 2‑day trial."
                     />
                   </div>
                 )
