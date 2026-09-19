@@ -294,37 +294,68 @@ describe('BuildProfilePage', () => {
       phone: '09171234567',
       gov_id: 'GOV-123',
       address: 'Makati City',
-      monthly_income: 75000,
-      other_income: 5000,
-      debt_obligations: 12000,
+      monthly_income: 0,
+      other_income: 0,
+      debt_obligations: 0,
       product_type: 'Auto Loan',
       loan_amount: 800000,
       term_months: 48,
       interest_rate: 7.5,
       purpose: 'Family vehicle',
-      appraised_value: 1000000,
+      appraised_value: 0,
       requirements: {
         buildProfile: {
           profileId: 'APP-REVIEW-1',
           step: 1,
-          values: { financialGoal: 'Build Emergency Fund' },
+          values: {
+            financialGoal: 'Build Emergency Fund',
+            gender: 'Female',
+            civilStatus: 'Married',
+            lengthOfStay: '5 years',
+            homeOwnership: 'Own',
+            education: 'College Degree',
+            dependents: '1',
+            employmentHistory: 'Snapshot Employer',
+            monthlyIncome: '75000',
+            otherIncome: '5000',
+            debtObligations: '12000',
+            employmentStatus: 'Regular',
+            spouseEmployerBusinessName: 'Spouse Employer',
+            spouseGrossMonthlyIncome: '45000',
+            spouseMonthlyExpenses: '10000',
+            hasCoBorrower: 'true',
+            hasGuarantor: 'true',
+            securityClassification: 'Secured',
+            assetType: 'Passenger Cars',
+            maker: 'Toyota',
+            brand: 'Vios G',
+            model: '2025',
+            year: 'Gasoline',
+            vehicleMarketabilityCategory: 'Popular brands with moderate resale demand',
+            vehicleConditionCategory: 'Brand New',
+            vehicleTypeCategory: 'Passenger vehicle for personal use',
+            appraisedValue: '1000000',
+          },
           documents: ['income-proof.jpg'],
           suitabilityAnswers: { 'suitability-q1': 'To protect principal and preserve income.' },
-          coBorrowers: [],
-          guarantors: [{ id: 'GUARANTOR-1', name: 'Saved Guarantor' }],
-          additionalCollaterals: [],
+          coBorrowers: [{ id: 'COBORROWER-1', name: 'Saved Co-Borrower', relationship: 'Sibling', employerBusinessName: 'Co-Borrower Employer', officeAddress: '', occupation: '', position: '', natureOfWork: '', previousEmployer: '', yearsWithEmployer: '', totalYearsWorking: '8', monthlyIncome: '35000', monthlyExpenses: '8000', otherIncomeSources: '', debtObligations: '3000', creditStanding: 'Good' }],
+          guarantors: [{ id: 'GUARANTOR-1', name: 'Saved Guarantor', relationship: 'Friend', mobileNumber: '', presentAddress: '', employerBusinessName: 'Guarantor Employer', occupation: '', monthlyIncome: '30000', debtObligations: '2000', creditStanding: 'Good' }],
+          additionalCollaterals: [{ id: 'COLLATERAL-1', collateralType: 'Vehicle', propertyType: '', maker: 'Honda', brand: 'City', model: '2023', year: '2023', appraisedValue: '600000', insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', tctCctNumber: '', notes: '' }],
+          realEstateCollaterals: [{ id: 'REAL-ESTATE-1', tctCtcNumber: 'TCT-123', address: 'Makati City', appraisedValue: '2500000' }],
+          financialInstrumentCollaterals: [{ id: 'FINANCIAL-1', assetType: 'Bonds', currency: 'PHP', issuer: 'Treasury', value: '500000', markToMarket: '510000' }],
+          dependents: [{ id: 'DEPENDENT-1', name: 'Alex Santos', dateOfBirth: '2015-05-10' }],
         },
-        applicantPersonal: { dateOfBirth: '1990-01-02', age: 36, citizenship: 'Filipino', maritalStatus: 'Single', placeOfBirth: 'Manila', gender: 'Male', numberOfDependents: 1 },
+        applicantPersonal: { dateOfBirth: '1990-01-02', age: 36, citizenship: 'Filipino', maritalStatus: '', placeOfBirth: 'Manila', gender: '', numberOfDependents: 1 },
         contactInformation: { emailAddress: 'jordan@example.com', mobileNumber: '09171234567', homePhoneNumber: '', mobileYearsUsed: '5', emailYearsUsed: '8' },
         governmentIds: { tin: 'TIN-1', sssGsisNumber: 'SSS-1', otherGovernmentId: 'Passport', idNumber: 'GOV-123', issueDate: '', expiryDate: '' },
-        addressInformation: { presentAddress: 'Makati City', permanentAddress: 'Quezon City', mailingAddress: 'Makati City', lengthOfStay: '5 years' },
-        otherInformation: { homeOwnership: 'Renting', educationalAttainment: 'College Degree', numberOfVehiclesOwned: 1, deviceVerified: true },
-        employmentInformation: { employerBusinessName: 'Example Corp', grossMonthlyIncome: 75000, otherSourcesOfIncome: 5000, employmentStatus: 'Regular', employmentLocation: 'Locally Employed', employerBusinessYears: 10, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', monthlyLivingExpenses: 20000, investmentIncome: 0, businessIncome: 0, pensionIncome: 0 },
+        addressInformation: { presentAddress: 'Makati City', permanentAddress: 'Quezon City', mailingAddress: 'Makati City', lengthOfStay: '' },
+        otherInformation: { homeOwnership: '', educationalAttainment: '', numberOfVehiclesOwned: 1, deviceVerified: true },
+        employmentInformation: { employerBusinessName: '', grossMonthlyIncome: 0, otherSourcesOfIncome: 0, employmentStatus: '', employmentLocation: '', employerBusinessYears: 0, officeAddress: '', occupation: '', position: '', natureOfWorkBusiness: '', dateHired: '', officePhoneNumber: '', previousEmployer: '', totalYearsWorking: '', monthlyLivingExpenses: 0, investmentIncome: 0, businessIncome: 0, pensionIncome: 0 },
         bankingRelationships: {},
         enhancedDueDiligence: {},
         spouseInformation: { fullName: '', dateOfBirth: '', placeOfBirth: '', citizenship: '', mobileNumber: '', presentAddress: '', employerBusinessName: '', officeAddress: '', occupation: '', position: '', natureOfWork: '', yearsWithEmployer: '', previousEmployer: '', totalYearsWorking: '', grossMonthlyIncome: 0, monthlyExpenses: 0, otherIncomeSources: '' },
         coBorrowers: [],
-        collateralAssetDetails: { securityClassification: 'Secured', assetType: 'Passenger Cars', maker: 'Toyota', brand: 'Toyota', model: 'Vios', year: '2025', vehicleConditionCategory: 'Brand New', vehicleTypeCategory: 'Passenger vehicle for personal use', motorcycleIntendedUse: '', useAsCollateral: true, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', additionalCollaterals: [] },
+        collateralAssetDetails: { securityClassification: '', assetType: '', maker: '', brand: '', model: '', year: '', vehicleMarketabilityCategory: '', vehicleConditionCategory: '', vehicleTypeCategory: '', motorcycleIntendedUse: '', useAsCollateral: true, insuranceProviderCompany: '', policyNumber: '', orNumber: '', crNumber: '', additionalCollaterals: [] },
         collateralInformation: { propertyAddress: '', registeredOwner: '', lotNumber: '', blockNumber: '', tctCctNumber: '', propertyMarketabilityCategory: '', houseUnitModelCategory: '', collateralOccupancyType: '', propertyAppraisedValue: 0 },
         fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
         documentAnalysis: { ocrAnalysisStatus: '' },
@@ -338,12 +369,33 @@ describe('BuildProfilePage', () => {
     expect(screen.getByText('APP-REVIEW-1')).toBeTruthy()
     expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Jordan Santos')
     expect((screen.getByLabelText('Email Address') as HTMLInputElement).value).toBe('jordan@example.com')
+    expect((screen.getByRole('combobox', { name: 'Gender' }) as HTMLSelectElement).value).toBe('Female')
+    expect((screen.getByRole('combobox', { name: 'Civil Status' }) as HTMLSelectElement).value).toBe('Married')
+    expect((screen.getByLabelText('Length of Stay at Present Address') as HTMLInputElement).value).toBe('5 years')
+    expect((screen.getByRole('combobox', { name: 'Home Ownership' }) as HTMLSelectElement).value).toBe('Own')
+    expect((screen.getByRole('combobox', { name: 'Educational Attainment' }) as HTMLSelectElement).value).toBe('College Degree')
     expect((screen.getByRole('combobox', { name: 'Profile Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
 
+    await userEvent.click(screen.getByRole('button', { name: /Step 2: Spouse and Dependents/ }))
+    expect((screen.getByLabelText('Dependent 1 Full Name') as HTMLInputElement).value).toBe('Alex Santos')
+
     await userEvent.click(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ }))
+    expect((screen.getByLabelText(/^Employment History \(Current Employer\)/) as HTMLInputElement).value).toBe('Snapshot Employer')
+    expect((screen.getByLabelText('Primary Monthly Income') as HTMLInputElement).value).toBe('75,000.00')
     const forgedPayslipGroup = screen.getByRole('group', { name: 'Forged Payslip' })
     await userEvent.click(within(forgedPayslipGroup).getByRole('checkbox', { name: 'Yes' }))
+
+    await userEvent.click(screen.getByRole('button', { name: /Step 4: Spouse Employment, Co-Borrower, and Guarantor/ }))
+    expect((screen.getByLabelText(/^Spouse Current Employer/) as HTMLInputElement).value).toBe('Spouse Employer')
+    expect((screen.getByLabelText('Co-Borrower 1 Full Name (Demo Data Accepted)') as HTMLInputElement).value).toBe('Saved Co-Borrower')
+    expect((screen.getByLabelText('Guarantor 1 Full Name (Demo Data Accepted)') as HTMLInputElement).value).toBe('Saved Guarantor')
+
+    await userEvent.click(screen.getByRole('button', { name: /Step 7: Collateral Assets/ }))
+    expect((screen.getByLabelText('Maker / Brand') as HTMLInputElement).value).toBe('Toyota')
+    expect((screen.getByLabelText('Real Estate 1 TCT / CTC Number') as HTMLInputElement).value).toBe('TCT-123')
+    expect((screen.getByLabelText('Financial Instrument 1 Issuer') as HTMLInputElement).value).toBe('Treasury')
+    expect((screen.getByLabelText('Additional Collateral 1 Maker') as HTMLInputElement).value).toBe('Honda')
 
     let resolvePreparation!: (value: unknown) => void
     mockUpdateLoanApplication.mockImplementationOnce(() => new Promise((resolve) => { resolvePreparation = resolve }))
