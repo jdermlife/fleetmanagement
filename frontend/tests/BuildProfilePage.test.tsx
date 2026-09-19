@@ -28,6 +28,83 @@ vi.mock('../src/api/loan', () => ({
 
 import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
 
+const persistedReferenceFraudAndBankingValues: Record<string, string> = {
+  employmentReferencePerson: 'Employment reference 09170000001',
+  hrContactInformation: 'HR reference 09170000002',
+  supervisorInformation: 'Supervisor reference 09170000003',
+  sourceOfIncomeVerificationReferences: 'Income reference 09170000004',
+  lengthOfResidenceConfirmation: 'Confirmed residence for five years',
+  utilityAccountReferences: 'Electric account UTIL-100',
+  lifestyleIndicator: 'Respectable lifestyle (no gambling, drinking, etc.)',
+  secondaryIncomeProfile: 'One additional regular income source',
+  characterReferences: 'Character reference 09170000005',
+  guarantorReferences: 'Guarantor reference 09170000006',
+  coBorrowerReferences: 'Co-borrower reference 09170000007',
+  referencesFromEmployerOrCommunity: 'Community reference 09170000008',
+  communityReputation: 'Excellent references',
+  professionalOrganizationMemberships: 'Philippine Finance Association',
+  professionalLicenses: 'Professional License PRC-100',
+  additionalPropertyDeclarations: 'Residential property in Makati',
+  additionalVehicleDeclarations: 'Investment vehicle portfolio',
+  communityInvolvementInformation: 'Community financial literacy volunteer',
+  facebookProfile: 'facebook.example/profile',
+  instagramProfile: 'instagram.example/profile',
+  xProfile: 'x.example/profile',
+  tikTokProfile: 'tiktok.example/profile',
+  linkedInProfile: 'linkedin.example/profile',
+  otherSocialMediaLinks: 'social.example/profile',
+  businessWebsite: 'business.example',
+  watchlistStatus: 'Clear',
+  previousFraudRecords: 'None',
+  applicationVelocity: 'Normal',
+  fakeNationalId: 'false',
+  forgedPayslip: 'false',
+  forgedBankStatement: 'false',
+  identityTheftIndicator: 'false',
+  sanctionsPepMatch: 'false',
+  fraudAndDocumentAuthenticityAttestation: 'true',
+  creditCardIssuer: 'Visa',
+  creditCardNumber: '4111111111111111',
+  creditLimit: '100000',
+  outstandingBalance: '25000',
+  memberSince: '2020-01-15',
+  bankBranch: 'Example Bank Makati',
+  accountType: 'Savings',
+  accountNumber: 'BANK-100',
+  currentBalance: '150000',
+  loanLender: 'Example Lender',
+  loanType: 'Personal Loan',
+  loanCurrentBalance: '50000',
+  loanMonthlyAmortization: '5000',
+  creditBureauLatePaymentFrequency: 'No late payments',
+  creditBureauDelinquencyDefaultHistory: 'No delinquency/default',
+  creditBureauOverallBalanceRatio: 'Less than 20%',
+  creditBureauActiveLoanCount: '1–2',
+  creditBureauCollectionCallsLast12Months: '0–2',
+  creditBureauCreditHistoryLength: 'More than 10 years',
+  creditBureauWrittenOffAccountStatus: 'No written-off account',
+  creditBureauLegalCaseCollectionStatus: 'None',
+  creditBureauUnpaidDebtRecord: 'None',
+  creditBureauLoanAmount: 'Not Applicable',
+  creditBureauLoanPaidStatus: 'Not Applicable',
+  previousLendersAndExistingLoanAccounts: 'Example Lender account',
+  numberOfActiveLoans: '1',
+  previousLoanRestructuringDisclosures: 'false',
+  creditPaymentHistory: 'Excellent handling (no past due)',
+  accountHandling: 'Excellent handling (no returned checks)',
+  utilityCreditBureauStatus: 'Very satisfactory to satisfactory',
+  creditCardRelationshipStatus: 'Existing cardholder for more than 5 years with excellent payment history',
+  additionalBankAccountsOwned: 'One additional savings account',
+  priorBankingRelationships: 'Ten-year banking relationship',
+  averageSavingsBalance: '125000',
+  averageDailyBalance: '100000',
+  depositRegularity: 'Regular deposits',
+  bankingRelationshipTier: 'Premium/Preferred banking customer with multiple products',
+  existingInsurancePolicies: 'Life and vehicle insurance',
+  selfDeclaredAssetsAndLiabilities: 'Assets exceed liabilities',
+  selfDeclaredInvestmentPortfolio: 'Government bonds and equities',
+}
+
 class MockProfileSpeechRecognition {
   static current: MockProfileSpeechRecognition | null = null
   continuous = false
@@ -308,6 +385,7 @@ describe('BuildProfilePage', () => {
           profileId: 'APP-REVIEW-1',
           step: 1,
           values: {
+            ...persistedReferenceFraudAndBankingValues,
             financialGoal: 'Build Emergency Fund',
             gender: 'Female',
             civilStatus: 'Married',
@@ -376,6 +454,11 @@ describe('BuildProfilePage', () => {
     expect((screen.getByRole('combobox', { name: 'Educational Attainment' }) as HTMLSelectElement).value).toBe('College Degree')
     expect((screen.getByRole('combobox', { name: 'Profile Financial Goal' }) as HTMLSelectElement).value).toBe('Build Emergency Fund')
     expect(mockFetchLoanApplication).toHaveBeenCalledWith('APP-REVIEW-1')
+
+    await waitFor(() => {
+      const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
+      expect(savedProfile.values).toMatchObject(persistedReferenceFraudAndBankingValues)
+    })
 
     await userEvent.click(screen.getByRole('button', { name: /Step 2: Spouse and Dependents/ }))
     expect((screen.getByLabelText('Dependent 1 Full Name') as HTMLInputElement).value).toBe('Alex Santos')

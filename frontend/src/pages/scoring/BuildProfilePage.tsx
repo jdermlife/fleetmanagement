@@ -672,6 +672,7 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
     collateralOccupancyType: hydratedValue(property.collateralOccupancyType, 'collateralOccupancyType'),
     propertyAppraisedValue: hydratedValue(property.propertyAppraisedValue, 'propertyAppraisedValue'),
   })
+  Object.assign(values, persistedProfile?.values ?? {})
 
   return {
     ...profileBase,
