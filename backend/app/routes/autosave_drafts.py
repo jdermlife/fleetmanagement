@@ -60,14 +60,30 @@ def _mirror_build_profile_draft(
     scope: str,
     entity_key: str,
     payload: object,
-) -> None:
+) -> tuple[str, str] | None:
     if scope != "build-profile" or entity_key != "current" or not isinstance(payload, dict):
-        return
+        return None
 
     profile_id = str(payload.get("profileId") or "").strip()
     if profile_id:
-        record, _created = upsert_build_profile_record(db, user, payload, profile_id)
+        record, created = upsert_build_profile_record(db, user, payload, profile_id)
         compute_and_persist_build_profile_scores(db, record)
+        return record.application_no, "created" if created else "matched"
+    return None
+
+
+def _draft_response(
+    draft: AutosaveDraft,
+    mirror_result: tuple[str, str] | None = None,
+) -> AutosaveDraftResponse:
+    response = AutosaveDraftResponse.model_validate(draft)
+    if mirror_result is None:
+        return response
+    application_no, mirror_status = mirror_result
+    return response.model_copy(update={
+        "application_no": application_no,
+        "mirror_status": mirror_status,
+    })
 
 
 @router.get(
@@ -140,7 +156,9 @@ def put_autosave_draft(
         )
         db.add(draft)
         try:
-            _mirror_build_profile_draft(db, user, scope, entity_key, payload.payload)
+            mirror_result = _mirror_build_profile_draft(
+                db, user, scope, entity_key, payload.payload
+            )
             db.commit()
         except IntegrityError as exc:
             db.rollback()
@@ -151,7 +169,7 @@ def put_autosave_draft(
                 current_revision,
             ) from exc
         db.refresh(draft)
-        return draft
+        return _draft_response(draft, mirror_result)
 
     if payload.expected_revision != draft.revision:
         raise _revision_conflict(payload.expected_revision, draft.revision)
@@ -178,7 +196,9 @@ def put_autosave_draft(
         current_revision = current.revision if current is not None else 0
         raise _revision_conflict(payload.expected_revision, current_revision)
 
-    _mirror_build_profile_draft(db, user, scope, entity_key, payload.payload)
+    mirror_result = _mirror_build_profile_draft(
+        db, user, scope, entity_key, payload.payload
+    )
     db.commit()
     updated_draft = query.first()
     if updated_draft is None:
@@ -186,7 +206,7 @@ def put_autosave_draft(
             status_code=status.HTTP_409_CONFLICT,
             detail="Draft changed while it was being saved",
         )
-    return updated_draft
+    return _draft_response(updated_draft, mirror_result)
 
 
 @router.delete(

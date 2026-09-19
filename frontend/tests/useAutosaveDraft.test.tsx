@@ -107,6 +107,7 @@ function renderAutosave(
   remote = true,
   storage?: Storage,
   createRemoteWhenMissing = false,
+  onRemoteSaved?: (draft: RemoteDraft<FormValue>) => void,
 ) {
   return renderHook(() => {
     const [value, setValue] = useState(defaults)
@@ -116,6 +117,7 @@ function renderAutosave(
       value,
       defaults,
       onHydrate: setValue,
+      onRemoteSaved,
       client,
       remote,
       storage,
@@ -235,6 +237,28 @@ describe('useAutosaveDraft', () => {
       payload: defaults,
       expectedRevision: 4,
     })
+  })
+
+  it('reports backend mirror metadata after a remote save', async () => {
+    const onRemoteSaved = vi.fn()
+    const { client } = createClient({
+      put: async (input) => ({
+        ...remoteDraft(input.payload),
+        mirrorStatus: 'matched',
+        applicationNo: 'PRO-001',
+      }),
+    })
+    const autosave = renderAutosave(client, true, undefined, false, onRemoteSaved)
+    await settleHydration()
+
+    await act(async () => {
+      await autosave.result.current.saveNow()
+    })
+
+    expect(onRemoteSaved).toHaveBeenCalledWith(expect.objectContaining({
+      mirrorStatus: 'matched',
+      applicationNo: 'PRO-001',
+    }))
   })
 
   it('does not create a draft until the user changes the initial form', async () => {

@@ -27,7 +27,7 @@ describe('autosave draft API', () => {
     })
     const { saveAutosaveDraftRemote } = await import('../src/autosave/draftApi')
 
-    await saveAutosaveDraftRemote('profile', 'new', {
+    const saved = await saveAutosaveDraftRemote('profile', 'new', {
       payload: { name: 'Ana' },
       expectedRevision: null,
     })
@@ -36,5 +36,29 @@ describe('autosave draft API', () => {
       payload: { name: 'Ana' },
       expected_revision: 0,
     })
+    expect(saved.mirrorStatus).toBeUndefined()
+  })
+
+  it('returns the Build Profile loan mirror outcome', async () => {
+    api.put.mockResolvedValue({
+      data: {
+        scope: 'build-profile',
+        entity_key: 'current',
+        payload: { profileId: 'PRO-001', values: {} },
+        revision: 1,
+        updated_at: '2026-07-13T12:00:00.000Z',
+        mirror_status: 'created',
+        application_no: 'PRO-001',
+      },
+    })
+    const { saveAutosaveDraftRemote } = await import('../src/autosave/draftApi')
+
+    const saved = await saveAutosaveDraftRemote('build-profile', 'current', {
+      payload: { profileId: 'PRO-001', values: {} },
+      expectedRevision: null,
+    })
+
+    expect(saved.mirrorStatus).toBe('created')
+    expect(saved.applicationNo).toBe('PRO-001')
   })
 })

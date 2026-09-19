@@ -8,6 +8,8 @@ export interface RemoteDraft<T> {
   payload: T
   revision: number
   updatedAt: string
+  mirrorStatus?: 'created' | 'matched'
+  applicationNo?: string
 }
 
 export interface SaveRemoteDraftInput<T> {
@@ -32,6 +34,8 @@ interface DraftApiPayload<T> {
   data?: T
   revision?: number
   updated_at?: string
+  mirror_status?: 'created' | 'matched' | null
+  application_no?: string | null
 }
 
 function draftPath(scope: string, entityKey: string): string {
@@ -57,6 +61,8 @@ function normalizeDraft<T>(
     payload,
     revision: response.revision,
     updatedAt: response.updated_at ?? new Date().toISOString(),
+    mirrorStatus: response.mirror_status ?? undefined,
+    applicationNo: response.application_no ?? undefined,
   }
 }
 

@@ -89,7 +89,7 @@ describe('build profile replication', () => {
       profileId: 'PRO-AS6GKX',
       selectedApplicationNo: 'PRO-AS6GKX',
     }))
-    expect(getSelectedBuildProfileApplicationNo()).toBe('')
+    expect(getSelectedBuildProfileApplicationNo()).toBe('PRO-AS6GKX')
   })
 
   it('does not expose another user’s selected application on a shared browser', () => {

@@ -52,6 +52,7 @@ export interface UseAutosaveDraftOptions<T> {
   value: T
   defaults: T
   onHydrate: (value: T) => void
+  onRemoteSaved?: (draft: import('./draftApi').RemoteDraft<T>) => void
   enabled?: boolean
   remote?: boolean
   createRemoteWhenMissing?: boolean
@@ -96,6 +97,7 @@ export function useAutosaveDraft<T>({
   value,
   defaults,
   onHydrate,
+  onRemoteSaved,
   enabled = true,
   remote = true,
   createRemoteWhenMissing = false,
@@ -125,6 +127,7 @@ export function useAutosaveDraft<T>({
   const valueRef = useRef(value)
   const defaultsRef = useRef(defaults)
   const onHydrateRef = useRef(onHydrate)
+  const onRemoteSavedRef = useRef(onRemoteSaved)
   const clientRef = useRef(client)
   const enabledRef = useRef(enabled)
   const remoteRef = useRef(remote)
@@ -149,6 +152,7 @@ export function useAutosaveDraft<T>({
   valueRef.current = value
   defaultsRef.current = defaults
   onHydrateRef.current = onHydrate
+  onRemoteSavedRef.current = onRemoteSaved
   clientRef.current = client
   enabledRef.current = enabled
   remoteRef.current = remote
@@ -287,6 +291,7 @@ export function useAutosaveDraft<T>({
         }
 
         revisionRef.current = saved.revision
+        onRemoteSavedRef.current?.(saved)
         conflictRef.current = false
         lastRemoteSignatureRef.current = signature
         retainAutosaveDraftOnLogout(storageKeyRef.current, false)

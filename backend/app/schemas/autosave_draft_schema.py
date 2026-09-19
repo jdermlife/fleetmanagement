@@ -1,5 +1,6 @@
 import json
 from datetime import datetime
+from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, JsonValue, field_validator
 
@@ -34,3 +35,5 @@ class AutosaveDraftResponse(BaseModel):
     created_at: datetime
     updated_at: datetime
     expires_at: datetime
+    mirror_status: Literal["created", "matched"] | None = None
+    application_no: str | None = None

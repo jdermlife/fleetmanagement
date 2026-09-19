@@ -577,7 +577,27 @@ describe('BuildProfilePage', () => {
     expect(mockNavigate).toHaveBeenLastCalledWith(`/net-worth-positioning?profileId=${profileId}`)
   })
 
-  it('does not synchronize a generated profile ID as a loan application', async () => {
+  it('synchronizes a backend-confirmed profile ID as a loan application', async () => {
+    mockFetchLoanApplication.mockResolvedValue({
+      application_no: 'PRO-AS6GKX',
+      requirements: {
+        applicantPersonal: {},
+        contactInformation: {},
+        governmentIds: {},
+        addressInformation: {},
+        otherInformation: {},
+        employmentInformation: {},
+        spouseInformation: {},
+        bankingRelationships: {},
+        enhancedDueDiligence: {},
+        fraudVerification: {},
+        fraudIntelligence: {},
+        documentAnalysis: {},
+        collateralAssetDetails: {},
+        collateralInformation: {},
+      },
+    })
+    mockUpdateLoanApplication.mockResolvedValue({})
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PRO-AS6GKX',
       selectedApplicationNo: 'PRO-AS6GKX',
@@ -600,9 +620,14 @@ describe('BuildProfilePage', () => {
     render(<BuildProfilePage />)
     await userEvent.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
 
-    expect(mockFetchLoanApplication).not.toHaveBeenCalled()
-    expect(mockUpdateLoanApplication).not.toHaveBeenCalled()
-    expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?profileId=PRO-AS6GKX')
+    await waitFor(() => {
+      expect(mockFetchLoanApplication).toHaveBeenCalledWith('PRO-AS6GKX')
+      expect(mockUpdateLoanApplication).toHaveBeenCalledWith(
+        'PRO-AS6GKX',
+        expect.objectContaining({ application_no: 'PRO-AS6GKX' }),
+      )
+      expect(mockNavigate).toHaveBeenCalledWith('/lending-scorecard/filscore?applicationNo=PRO-AS6GKX')
+    })
   })
 
   it('selects the Financial Goal immediately after Profile ID', async () => {

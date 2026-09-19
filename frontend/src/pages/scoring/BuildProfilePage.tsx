@@ -948,6 +948,7 @@ export default function BuildProfilePage() {
   const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
   const preparedScoreKeyRef = useRef('')
   const scorePreparationPromiseRef = useRef<{ key: string; promise: Promise<LoanApplicationRecord> } | null>(null)
+  const mirrorResultRef = useRef<{ applicationNo: string; status: 'created' | 'matched' } | null>(null)
   const [wealthSectionFilter, setWealthSectionFilter] = useState<'all' | StatementSection>('all')
   const [wealthCategoryFilter, setWealthCategoryFilter] = useState('all')
   const [wealthLineSearch, setWealthLineSearch] = useState('')
@@ -990,6 +991,16 @@ export default function BuildProfilePage() {
     value: profileAutosaveValue,
     defaults: profileAutosaveDefaultsRef.current,
     onHydrate: hydrateProfileDraft,
+    onRemoteSaved: (draft) => {
+      if (!draft.applicationNo || !draft.mirrorStatus) return
+      mirrorResultRef.current = {
+        applicationNo: draft.applicationNo,
+        status: draft.mirrorStatus,
+      }
+      setProfile((current) => current.selectedApplicationNo === draft.applicationNo
+        ? current
+        : { ...current, selectedApplicationNo: draft.applicationNo })
+    },
     enabled: !isAuthorizationLoading,
     remote: isAuthenticated,
     createRemoteWhenMissing: isAuthenticated,
@@ -1322,6 +1333,13 @@ export default function BuildProfilePage() {
         setSaveMessage(isAuthenticated
           ? 'Profile saved on this device, but database synchronization failed. Please try again.'
           : `Profile draft ${profile.profileId} saved on this device. Sign in to save it to the database.`)
+        return
+      }
+      const mirrorResult = mirrorResultRef.current
+      if (mirrorResult?.applicationNo === profile.profileId) {
+        setSaveMessage(mirrorResult.status === 'created'
+          ? `No existing loan application matched. Created ${mirrorResult.applicationNo} and computed FILSCORE.`
+          : `Matched loan application ${mirrorResult.applicationNo}. Profile data and FILSCORE were updated.`)
         return
       }
       const applicationNo = getSelectedBuildProfileApplicationNo(profile)

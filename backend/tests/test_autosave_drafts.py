@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI
@@ -123,7 +124,7 @@ def test_build_profile_autosave_is_mirrored_to_loan_applications(
     client, _active_user, _testing_session = autosave_client
     mirrored = []
     scored = []
-    record = object()
+    record = SimpleNamespace(application_no="PRO-TEST-001")
 
     def mirror_profile(db, user, profile, profile_id):
         mirrored.append((db, user.id, profile, profile_id))
@@ -159,6 +160,10 @@ def test_build_profile_autosave_is_mirrored_to_loan_applications(
 
     assert response.status_code == 200, response.text
     assert updated.status_code == 200, updated.text
+    assert response.json()["mirror_status"] == "created"
+    assert response.json()["application_no"] == "PRO-TEST-001"
+    assert updated.json()["mirror_status"] == "matched"
+    assert updated.json()["application_no"] == "PRO-TEST-001"
     assert len(mirrored) == 2
     assert mirrored[0][1:] == (1, profile, "PRO-TEST-001")
     assert mirrored[1][1:] == (1, updated_profile, "PRO-TEST-001")
