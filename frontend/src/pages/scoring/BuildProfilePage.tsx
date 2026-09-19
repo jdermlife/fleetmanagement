@@ -75,7 +75,7 @@ import {
   type FinancialInstrumentCollateral,
   type RealEstateCollateral,
 } from './buildProfileStep7'
-import { BUILD_PROFILE_STORAGE_KEY, getCurrentBuildProfileOwner } from './buildProfileReplication'
+import { BUILD_PROFILE_STORAGE_KEY, getCurrentBuildProfileOwner, getSelectedBuildProfileApplicationNo } from './buildProfileReplication'
 
 type ProfileStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
 
@@ -964,8 +964,7 @@ export default function BuildProfilePage() {
   const [doNotShowJourneyAgain, setDoNotShowJourneyAgain] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
   const [isJourneyDismissed, setIsJourneyDismissed] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
-  const scoreApplicationNo = profile.selectedApplicationNo?.trim()
-    || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
+  const scoreApplicationNo = getSelectedBuildProfileApplicationNo(profile)
   const scorePreparationKey = scoreApplicationNo
     ? `${scoreApplicationNo}:${scorePreparationFingerprint(profile)}`
     : ''
@@ -1251,8 +1250,7 @@ export default function BuildProfilePage() {
   })
 
   const prepareStep12Scores = useCallback((profileSnapshot: ProfileData = profile) => {
-    const applicationNo = profileSnapshot.selectedApplicationNo?.trim()
-      || (!profileSnapshot.profileId.startsWith('PRO-') ? profileSnapshot.profileId.trim() : '')
+    const applicationNo = getSelectedBuildProfileApplicationNo(profileSnapshot)
     if (!applicationNo) {
       setScorePreparationStatus('error')
       setSaveMessage('Select a repository record before preparing FILSCORE results.')
@@ -1324,8 +1322,7 @@ export default function BuildProfilePage() {
           : `Profile draft ${profile.profileId} saved on this device. Sign in to save it to the database.`)
         return
       }
-      const applicationNo = profile.selectedApplicationNo?.trim()
-        || (!profile.profileId.startsWith('PRO-') ? profile.profileId.trim() : '')
+      const applicationNo = getSelectedBuildProfileApplicationNo(profile)
       if (applicationNo) {
         const baseline = sourceApplication?.application_no === applicationNo
           ? sourceApplication

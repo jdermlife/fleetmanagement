@@ -83,6 +83,13 @@ describe('build profile replication', () => {
       profileId: 'PRO-LOCAL',
     }))
     expect(getSelectedBuildProfileApplicationNo()).toBe('')
+
+    window.localStorage.setItem(BUILD_PROFILE_STORAGE_KEY, JSON.stringify({
+      ...profile,
+      profileId: 'PRO-AS6GKX',
+      selectedApplicationNo: 'PRO-AS6GKX',
+    }))
+    expect(getSelectedBuildProfileApplicationNo()).toBe('')
   })
 
   it('does not expose another user’s selected application on a shared browser', () => {

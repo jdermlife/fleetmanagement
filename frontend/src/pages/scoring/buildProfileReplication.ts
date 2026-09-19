@@ -97,7 +97,9 @@ export function getSelectedBuildProfileApplicationNo(
   if (!profile) return ''
 
   const selectedApplicationNo = profile.selectedApplicationNo?.trim()
-  if (selectedApplicationNo) return selectedApplicationNo
+  if (selectedApplicationNo && !selectedApplicationNo.startsWith('PRO-')) {
+    return selectedApplicationNo
+  }
 
   const legacyProfileId = profile.profileId.trim()
   return legacyProfileId.startsWith('PRO-') ? '' : legacyProfileId
