@@ -2,6 +2,14 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
+  return {
+    ...actual,
+    Link: ({ to, children }: { to: string; children?: React.ReactNode }) => <a href={to}>{children}</a>,
+  }
+})
+
 vi.mock('../src/components/profile/SelectedProfileIdCard', () => ({
   default: () => <article>Record ID</article>,
 }))
@@ -27,6 +35,10 @@ describe('FinancialDecisions', () => {
     render(<FinancialDecisions />)
 
     expect(screen.getByRole('heading', { name: 'Financial Decisions' })).toBeTruthy()
+    const journeyMenu = screen.getByText('Financial Health Journey Menu').closest('details')
+    expect(journeyMenu).toBeTruthy()
+    expect(journeyMenu?.closest('.financial-decisions-header')).toBeTruthy()
+    expect(within(journeyMenu as HTMLElement).getByRole('link', { name: /Financial Health Journey/ })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Your Financial Snapshot' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'What are you deciding today?' })).toBeTruthy()
     expect(document.querySelectorAll('.decision-card')).toHaveLength(7)

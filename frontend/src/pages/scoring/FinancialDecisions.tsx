@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
+import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 import { readReplicatedBuildProfile } from './buildProfileReplication'
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAffordability, type AffordabilityInputs } from './affordabilityEngine'
@@ -405,7 +406,7 @@ export default function FinancialDecisions() {
 
   return (
     <main className="financial-decisions-page">
-      <header className="financial-decisions-header">
+      <header className="financial-decisions-header psychometric-hero-with-journey-menu">
         <div>
           <span className="financial-decisions-brand"><Sparkles size={16} aria-hidden="true" /> FIN HEALTH DECISION INTELLIGENCE</span>
           <h1>Financial Decisions</h1>
@@ -414,6 +415,7 @@ export default function FinancialDecisions() {
         <button type="button" className="financial-decisions-profile-button" onClick={refreshFromProfile}>
           <RefreshCw size={16} aria-hidden="true" /> Refresh Profile
         </button>
+        <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
       </header>
 
       <section className="financial-snapshot" aria-labelledby="financial-snapshot-title">
