@@ -364,7 +364,12 @@ describe('BuildProfilePage', () => {
           application_no: 'APP-REVIEW-1',
           borrower_name: 'Jordan Santos',
           requirements: expect.objectContaining({
-            buildProfile: expect.objectContaining({ profileId: 'APP-REVIEW-1' }),
+            buildProfile: expect.objectContaining({
+              profileId: 'APP-REVIEW-1',
+              completionPercent: expect.any(Number),
+              values: expect.objectContaining({ forgedPayslip: 'true' }),
+              documents: ['income-proof.jpg'],
+            }),
             fraudIntelligence: expect.objectContaining({ forgedPayslip: true }),
           }),
         }),

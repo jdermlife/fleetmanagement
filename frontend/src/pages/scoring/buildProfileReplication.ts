@@ -118,11 +118,22 @@ export function getCurrentBuildProfileOwner(): string {
 }
 
 export function getBuildProfileCompletionPercent(
-  profile: ReplicatedBuildProfile | null | undefined,
+  profile: Pick<ReplicatedBuildProfile, 'completionPercent'> | null | undefined,
   fallback: number,
 ): number {
   const completionPercent = profile?.completionPercent
   return typeof completionPercent === 'number' && Number.isFinite(completionPercent)
     ? Math.max(0, Math.min(100, Math.round(completionPercent)))
     : fallback
+}
+
+export function getAuthoritativeBuildProfileCompletionPercent(
+  persistedProfile: Pick<ReplicatedBuildProfile, 'completionPercent'> | null | undefined,
+  localProfile: Pick<ReplicatedBuildProfile, 'completionPercent'> | null | undefined,
+  fallback: number,
+): number {
+  return getBuildProfileCompletionPercent(
+    persistedProfile,
+    getBuildProfileCompletionPercent(localProfile, fallback),
+  )
 }
