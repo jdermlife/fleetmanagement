@@ -75,6 +75,7 @@ import {
   type FinancialInstrumentCollateral,
   type RealEstateCollateral,
 } from './buildProfileStep7'
+import { buildPsychometricAssessment } from './buildProfilePsychometric'
 import { BUILD_PROFILE_STORAGE_KEY, getCurrentBuildProfileOwner, getSelectedBuildProfileApplicationNo } from './buildProfileReplication'
 
 type ProfileStep = 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 10 | 11 | 12
@@ -83,6 +84,7 @@ type ProfileData = {
   profileId: string
   selectedApplicationNo?: string
   ownerKey?: string
+  psychometricAssessment?: Record<string, string>
   step: ProfileStep
   values: Record<string, string>
   documents: string[]
@@ -902,11 +904,7 @@ function loanPayloadFromProfile(profile: ProfileData, source: LoanApplicationRec
     collateralOccupancyType: values.collateralOccupancyType || '',
     propertyAppraisedValue: numberValue('propertyAppraisedValue'),
   })
-  requirements.psychometricAssessment = Object.fromEntries(CREDIT_VALUES_QUESTIONS.map((question) => {
-    const selected = values[`creditValues.${question.field}`] || ''
-    const optionIndex = question.options.indexOf(selected)
-    return [question.field.padStart(3, '0'), optionIndex >= 0 ? String(Math.max(0, 4 - optionIndex)) : '']
-  }))
+  requirements.psychometricAssessment = buildPsychometricAssessment(values)
   requirements.buildProfile = JSON.parse(JSON.stringify({
     ...profile,
     completionPercent: calculateBuildProfileCompletion(profile).completionPercent,
@@ -970,6 +968,10 @@ export default function BuildProfilePage() {
     : ''
   const currentScorePreparationKeyRef = useRef(scorePreparationKey)
   currentScorePreparationKeyRef.current = scorePreparationKey
+  const profileAutosaveValue = useMemo<ProfileData>(() => ({
+    ...profile,
+    psychometricAssessment: buildPsychometricAssessment(profile.values),
+  }), [profile])
 
   const hydrateProfileDraft = useCallback((draft: ProfileData) => {
     const hydratedProfile = {
@@ -985,7 +987,7 @@ export default function BuildProfilePage() {
   const profileAutosave = useAutosaveDraft({
     scope: 'build-profile',
     entityKey: 'current',
-    value: profile,
+    value: profileAutosaveValue,
     defaults: profileAutosaveDefaultsRef.current,
     onHydrate: hydrateProfileDraft,
     enabled: !isAuthorizationLoading,

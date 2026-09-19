@@ -1,3 +1,5 @@
+import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
+import { buildPsychometricAssessment } from '../src/pages/scoring/buildProfilePsychometric'
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -26,7 +28,17 @@ vi.mock('../src/api/loan', () => ({
   updateLoanApplication: mockUpdateLoanApplication,
 }))
 
-import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
+it('serializes Build Profile credit values for backend psychometric scoring', () => {
+  const assessment = buildPsychometricAssessment({
+    'creditValues.q01': '1 month',
+    'creditValues.q22': 'Strongly disagree',
+  })
+
+  expect(assessment.q01).toBe('4')
+  expect(assessment.q22).toBe('4')
+  expect(assessment.q02).toBe('')
+  expect(assessment).not.toHaveProperty('001')
+})
 
 const persistedReferenceFraudAndBankingValues: Record<string, string> = {
   employmentReferencePerson: 'Employment reference 09170000001',

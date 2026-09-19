@@ -122,12 +122,22 @@ def test_build_profile_autosave_is_mirrored_to_loan_applications(
 ):
     client, _active_user, _testing_session = autosave_client
     mirrored = []
+    scored = []
+    record = object()
+
+    def mirror_profile(db, user, profile, profile_id):
+        mirrored.append((db, user.id, profile, profile_id))
+        return record, len(mirrored) == 1
+
     monkeypatch.setattr(
         autosave_drafts,
         "upsert_build_profile_record",
-        lambda db, user, profile, profile_id: mirrored.append(
-            (db, user.id, profile, profile_id)
-        ),
+        mirror_profile,
+    )
+    monkeypatch.setattr(
+        autosave_drafts,
+        "compute_and_persist_build_profile_scores",
+        lambda db, mirrored_record: scored.append((db, mirrored_record)),
     )
     profile = {
         "profileId": "PRO-TEST-001",
@@ -152,6 +162,7 @@ def test_build_profile_autosave_is_mirrored_to_loan_applications(
     assert len(mirrored) == 2
     assert mirrored[0][1:] == (1, profile, "PRO-TEST-001")
     assert mirrored[1][1:] == (1, updated_profile, "PRO-TEST-001")
+    assert [mirrored_record for _db, mirrored_record in scored] == [record, record]
 
 
 def test_rejects_oversized_draft_payloads(autosave_client):

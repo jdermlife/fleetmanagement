@@ -12,7 +12,10 @@ from app.schemas.autosave_draft_schema import (
     AutosaveDraftResponse,
     AutosaveDraftUpsert,
 )
-from app.services.build_profile_repository import upsert_build_profile_record
+from app.services.build_profile_repository import (
+    compute_and_persist_build_profile_scores,
+    upsert_build_profile_record,
+)
 
 
 DRAFT_TTL = timedelta(days=30)
@@ -63,7 +66,8 @@ def _mirror_build_profile_draft(
 
     profile_id = str(payload.get("profileId") or "").strip()
     if profile_id:
-        upsert_build_profile_record(db, user, payload, profile_id)
+        record, _created = upsert_build_profile_record(db, user, payload, profile_id)
+        compute_and_persist_build_profile_scores(db, record)
 
 
 @router.get(
