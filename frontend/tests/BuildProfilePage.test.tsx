@@ -539,6 +539,36 @@ describe('BuildProfilePage', () => {
     expect(mockRecomputeStoredScores).not.toHaveBeenCalled()
   })
 
+  it('loads a legacy repository profile with missing requirements sections', async () => {
+    mockSearchParams.value = 'applicationNo=PRO-LEGACY'
+    mockFetchLoanApplication.mockResolvedValue({
+      application_no: 'PRO-LEGACY',
+      borrower_name: 'Legacy Account',
+      client_name: 'Legacy Account',
+      email: 'legacy@example.com',
+      phone: '09170000000',
+      gov_id: '',
+      address: 'Makati City',
+      monthly_income: 50000,
+      other_income: 0,
+      debt_obligations: 5000,
+      product_type: 'Personal Loan',
+      loan_amount: 100000,
+      term_months: 12,
+      interest_rate: 8,
+      purpose: 'Emergency fund',
+      appraised_value: 0,
+      requirements: {},
+    })
+
+    render(<BuildProfilePage />)
+
+    expect(await screen.findByText('Profile PRO-LEGACY loaded.')).toBeTruthy()
+    expect((screen.getByLabelText('Full Name') as HTMLInputElement).value).toBe('Legacy Account')
+    expect((screen.getByLabelText('Date of Birth (Optional)') as HTMLInputElement).value).toBe('')
+    expect(screen.queryByText('Unable to load profile PRO-LEGACY.')).toBeNull()
+  })
+
   it('shows an overlay while retrieving a repository profile', async () => {
     mockSearchParams.value = 'applicationNo=APP-PENDING-1'
     let rejectRetrieval!: (reason?: unknown) => void

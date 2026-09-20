@@ -7,6 +7,7 @@ import {
   updateLoanApplication,
   type LoanApplicationPayload,
   type LoanApplicationRecord,
+  type LoanApplicationRequirements,
 } from '../../api/loan'
 import { useAutosaveDraft } from '../../autosave'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
@@ -513,21 +514,21 @@ function loadProfileApplication(applicationNo: string): Promise<LoanApplicationR
 }
 
 function profileFromLoanApplication(application: LoanApplicationRecord, current: ProfileData): ProfileData {
-  const requirements = application.requirements
+  const requirements = application.requirements ?? ({} as LoanApplicationRequirements)
   const savedBuildProfile = requirements.buildProfile
   const persistedProfile = savedBuildProfile
     && typeof savedBuildProfile === 'object'
     && !Array.isArray(savedBuildProfile)
     ? savedBuildProfile as Partial<ProfileData>
     : null
-  const applicant = requirements.applicantPersonal
-  const contact = requirements.contactInformation
-  const governmentIds = requirements.governmentIds
-  const addresses = requirements.addressInformation
-  const otherInformation = requirements.otherInformation
-  const employment = requirements.employmentInformation
-  const banking = requirements.bankingRelationships
-  const dueDiligence = requirements.enhancedDueDiligence
+  const applicant = requirements.applicantPersonal ?? ({} as LoanApplicationRequirements['applicantPersonal'])
+  const contact = requirements.contactInformation ?? ({} as LoanApplicationRequirements['contactInformation'])
+  const governmentIds = requirements.governmentIds ?? ({} as LoanApplicationRequirements['governmentIds'])
+  const addresses = requirements.addressInformation ?? ({} as LoanApplicationRequirements['addressInformation'])
+  const otherInformation = requirements.otherInformation ?? ({} as LoanApplicationRequirements['otherInformation'])
+  const employment = requirements.employmentInformation ?? ({} as LoanApplicationRequirements['employmentInformation'])
+  const banking = requirements.bankingRelationships ?? ({} as LoanApplicationRequirements['bankingRelationships'])
+  const dueDiligence = requirements.enhancedDueDiligence ?? ({} as LoanApplicationRequirements['enhancedDueDiligence'])
   const fraudIntelligence = requirements.fraudIntelligence ?? {
     watchlistStatus: '',
     previousFraudRecords: '',
@@ -538,9 +539,9 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
     identityTheftIndicator: false,
     sanctionsPepMatch: false,
   }
-  const spouse = requirements.spouseInformation
-  const collateral = requirements.collateralAssetDetails
-  const property = requirements.collateralInformation
+  const spouse = requirements.spouseInformation ?? ({} as LoanApplicationRequirements['spouseInformation'])
+  const collateral = requirements.collateralAssetDetails ?? ({} as LoanApplicationRequirements['collateralAssetDetails'])
+  const property = requirements.collateralInformation ?? ({} as LoanApplicationRequirements['collateralInformation'])
   const isSameProfile = current.profileId === application.application_no
   const profileBase: ProfileData = {
     ...createEmptyProfile(),
@@ -550,8 +551,9 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
   const dependentRecords = requirements.dependents?.length
     ? requirements.dependents
     : profileBase.dependents
-  const dependents = dependentRecords.length > 0
-    ? dependentRecords.map((dependent, index) => ({ id: 'id' in dependent && typeof dependent.id === 'string' ? dependent.id : `DEP-${application.application_no}-${index + 1}`, name: dependent.name, dateOfBirth: dependent.dateOfBirth }))
+  const validDependentRecords = dependentRecords.filter((dependent) => dependent && typeof dependent === 'object')
+  const dependents = validDependentRecords.length > 0
+    ? validDependentRecords.map((dependent, index) => ({ id: 'id' in dependent && typeof dependent.id === 'string' ? dependent.id : `DEP-${application.application_no}-${index + 1}`, name: String(dependent.name ?? ''), dateOfBirth: String(dependent.dateOfBirth ?? '') }))
     : Array.from({ length: applicant.numberOfDependents || 0 }, () => createDependent())
   const values = { ...profileBase.values }
   const hydratedValue = (structuredValue: unknown, profileKey: string): string => {
