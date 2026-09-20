@@ -260,7 +260,7 @@ def upsert_build_profile_record(
             status="Draft",
         )
         db.add(record)
-    elif record.created_by != user.id:
+    elif record.created_by != user.id and user.role.strip().lower() != "admin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="You are not allowed to update this profile draft",
