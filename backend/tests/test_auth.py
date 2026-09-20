@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 from datetime import datetime, timedelta, timezone
+from types import SimpleNamespace
 
 import pytest
 from fastapi import FastAPI, HTTPException
@@ -16,6 +17,24 @@ from app.models.users import AuthSession, User
 from app.routes import apple_auth as apple_auth_routes
 from app.routes import subscriptions as subscriptions_routes
 from app.routes import security as security_routes
+
+
+@pytest.mark.parametrize(
+    ("username", "roles"),
+    [
+        ("multi-role-admin", [SimpleNamespace(name="admin")]),
+        ("admin123", []),
+    ],
+)
+def test_effective_token_role_promotes_admin_accounts(username, roles):
+    user = SimpleNamespace(
+        username=username,
+        role="subscriber_borrower",
+        roles=roles,
+        role_ref=None,
+    )
+
+    assert security_routes._effective_token_role(user) == "admin"
 
 
 class FakeQuery:

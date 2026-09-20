@@ -16,6 +16,7 @@ import AutosaveStatus from './components/AutosaveStatus'
 import FloatingChatbot from './components/ai/FloatingChatbot'
 import { synchronizeBuildProfileDraft } from './autosave/buildProfileSync'
 import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
+import { isAdminUser } from './hooks/useAuthorization'
 
 type MenuLink = {
   id: string
@@ -266,7 +267,7 @@ function LendingScorecardAccessGate({
   currentUser: LoginResponse['user'] | null
 }) {
   const [accessState, setAccessState] = useState<'loading' | 'granted' | 'subscription-required' | 'verification-failed'>('loading')
-  const isAdmin = currentUser?.role?.toLowerCase() === 'admin'
+  const isAdmin = isAdminUser(currentUser)
 
   useEffect(() => {
     if (!authReady || !currentUser) {

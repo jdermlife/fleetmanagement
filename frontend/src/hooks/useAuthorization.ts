@@ -10,6 +10,15 @@ function isAdminUsernameOverride(username?: string | null): boolean {
   return normalize(username ?? '') === 'admin123'
 }
 
+export function isAdminUser(user?: Pick<AuthUser, 'role' | 'roles' | 'username'> | null): boolean {
+  if (isAdminUsernameOverride(user?.username)) {
+    return true
+  }
+
+  const roles = user?.roles ?? (user?.role ? [user.role] : [])
+  return roles.some((role) => normalize(role) === 'admin')
+}
+
 export function useAuthorization() {
   const [user, setUser] = useState<AuthUser | null>(null)
   const [isLoading, setIsLoading] = useState(true)
@@ -67,7 +76,7 @@ export function useAuthorization() {
     return permissions.some((permission) => hasPermission(permission))
   }
 
-  const isAdmin = isUsernameOverrideAdmin || hasRole('admin')
+  const isAdmin = isAdminUser(user)
 
   return {
     user,

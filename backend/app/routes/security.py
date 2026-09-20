@@ -283,6 +283,14 @@ def _resolved_role_names(user: User) -> list[str]:
     )
 
 
+def _effective_token_role(user: User) -> str:
+    if is_admin_username_override(user.username):
+        return "admin"
+    if any(role_name.strip().lower() == "admin" for role_name in _resolved_role_names(user)):
+        return "admin"
+    return user.role
+
+
 def _fallback_permissions_for_role_names(role_names: list[str]) -> list[str]:
     permissions = set[str]()
 
@@ -486,7 +494,7 @@ def _build_login_payload(
     access_token = create_token(
         user.id,
         user.username,
-        user.role,
+        _effective_token_role(user),
         auth_provider=auth_provider,
         session_jti=refresh_jti,
     )
@@ -1160,7 +1168,7 @@ def refresh_tokens(payload: TokenRefreshRequest, db: Session = Depends(get_db)):
     access_token = create_token(
         user.id,
         user.username,
-        user.role,
+        _effective_token_role(user),
         auth_provider=auth_provider,
         session_jti=new_jti,
     )

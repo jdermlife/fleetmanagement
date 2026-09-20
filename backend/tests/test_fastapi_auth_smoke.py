@@ -83,6 +83,17 @@ class FastAPIAuthSmokeTests(unittest.TestCase):
         )
         self.assertEqual(response.status_code, 200)
 
+    def test_admin_username_override_resolves_token_role_to_admin(self) -> None:
+        from fastapi.security import HTTPAuthorizationCredentials
+
+        token = self.auth_module.create_token(1, "admin123", "Subscriber", expires_in_hours=1)
+        current_user = self.fastapi_auth_module.get_current_user(
+            HTTPAuthorizationCredentials(scheme="Bearer", credentials=token)
+        )
+
+        self.assertIsNotNone(current_user)
+        self.assertEqual(current_user.role, "admin")
+
     def test_viewer_token_cannot_create_driver(self) -> None:
         token = self.auth_module.create_token(2, "viewer.user", "Viewer", expires_in_hours=1)
         response = self.client.post(

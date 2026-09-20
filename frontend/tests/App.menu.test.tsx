@@ -150,8 +150,44 @@ describe('App account menu accordions', () => {
       </MemoryRouter>,
     )
 
-    expect(await screen.findByRole('heading', { name: 'Register to access Lending Scorecard' })).toBeTruthy()
+    expect(await screen.findByRole('heading', { name: 'Register to access Credit Health Scorecard' })).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Register Now' }).getAttribute('href')).toBe('/register')
+    expect(mockGetMySubscription).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    {
+      username: 'multi-role-admin',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower', 'admin'],
+    },
+    {
+      username: 'admin123',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower'],
+    },
+  ])('opens Lending Scorecard for effective Admin $username', async ({ username, role, roles }) => {
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 4,
+      username,
+      email: `${username}@example.com`,
+      role,
+      roles,
+      permissions: [],
+      isActive: true,
+      subscriptionId: null,
+      createdAt: '2026-09-17T00:00:00Z',
+      updatedAt: '2026-09-17T00:00:00Z',
+      lastLoginAt: null,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/lending-scorecard']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Authenticated Lending Scorecard' })).toBeTruthy()
     expect(mockGetMySubscription).not.toHaveBeenCalled()
   })
 
