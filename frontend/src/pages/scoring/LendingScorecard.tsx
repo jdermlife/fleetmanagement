@@ -61,6 +61,7 @@ import {
 import CreditHealthScoreGraph from './CreditHealthScoreGraph';
 import { getCanonicalBorrowerName } from './borrowerName';
 import { getFilscoreBand, toFilscore } from './filscoreScale';
+import { allowsLocalBuildProfile, resolveDatabaseApplicationNo } from './creditHealthDataSource';
 import { buildLendingScoreTimeline, calculateAffordableLoan } from './lendingDecisionInsights';
 import { getLendingImprovementAreas } from './lendingScoreRecommendations';
 import { getAuthoritativeBuildProfileCompletionPercent, readReplicatedBuildProfile, type ReplicatedBuildProfile } from './buildProfileReplication';
@@ -1997,6 +1998,7 @@ const extractTopAdvisorActions = (advice: string): string[] => {
 // --- Main Component ---
 export default function LendingScorecard() {
   const location = useLocation();
+  const isFilscoreRoute = location.pathname === '/lending-scorecard/filscore';
   const navigate = useNavigate();
   const forwardedActionHandledRef = useRef(false);
   const automaticScoreAttemptRef = useRef('');
@@ -2010,16 +2012,21 @@ export default function LendingScorecard() {
   const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin);
   const { selectedApplicationNo } = useSelectedAnalysisEntity();
   const requestedProfileId = searchParams.get('profileId')?.trim() || '';
-  const requestedApplicationNo = searchParams.get('applicationNo')?.trim()
-    || (requestedProfileId ? '' : selectedApplicationNo);
+  const requestedApplicationNo = resolveDatabaseApplicationNo(
+    searchParams,
+    isFilscoreRoute,
+    selectedApplicationNo,
+  );
   const replicationId = requestedApplicationNo || requestedProfileId;
+  const useLocalBuildProfile = allowsLocalBuildProfile(isFilscoreRoute);
   const [formattedNumberDrafts, setFormattedNumberDrafts] = useState<Record<string, string>>({});
   const [documentReview, setDocumentReview] = useState<DocumentParseReview | null>(null);
   const [reviewDocumentId, setReviewDocumentId] = useState<string | null>(null);
   const [selectedWorkflowAction, setSelectedWorkflowAction] = useState<WorkflowStatus>('Credit Review');
-  const isFilscoreRoute = location.pathname === '/lending-scorecard/filscore';
   const [step, setStep] = useState(8);
-  const [formData, setFormData] = useState<LoanApplication>(() => replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
+  const [formData, setFormData] = useState<LoanApplication>(() => useLocalBuildProfile
+    ? replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined))
+    : createNewApplicationInstance());
   const [isParsing, setIsParsing] = useState(false);
   const [hasDocumentAiConsent, setHasDocumentAiConsent] = useState(false);
   const [saveMessage, setSaveMessage] = useState('');
@@ -2067,20 +2074,22 @@ export default function LendingScorecard() {
     step,
   ]);
   const hydrateAutosaveDraft = useCallback((draft: LendingAutosaveDraft) => {
-    setFormData(replicateBuildProfileToLendingApplication(draft.formData, readReplicatedBuildProfile(replicationId || undefined)));
+    setFormData(useLocalBuildProfile
+      ? replicateBuildProfileToLendingApplication(draft.formData, readReplicatedBuildProfile(replicationId || undefined))
+      : draft.formData);
     setStep(draft.step);
     setFormattedNumberDrafts(draft.formattedNumberDrafts);
     setDocumentReview(draft.documentReview);
     setReviewDocumentId(draft.reviewDocumentId);
     setSelectedWorkflowAction(draft.selectedWorkflowAction);
-  }, [replicationId]);
+  }, [replicationId, useLocalBuildProfile]);
   const lendingAutosave = useAutosaveDraft({
     scope: 'loan-application',
     entityKey: replicationId || 'new',
     value: autosaveValue,
     defaults: autosaveDefaults,
     onHydrate: hydrateAutosaveDraft,
-    enabled: !requestedApplicationNo || hasPersistedRecord,
+    enabled: !isFilscoreRoute && (!requestedApplicationNo || hasPersistedRecord),
   });
   const isHomeLoan = formData.loan.productType === 'Home Loan';
   const isPersonalLoan = formData.loan.productType === 'Personal Loan';
@@ -2939,7 +2948,7 @@ export default function LendingScorecard() {
   );
   const informationProvidedPercent = getAuthoritativeBuildProfileCompletionPercent(
     formData.buildProfileSnapshot,
-    readReplicatedBuildProfile(replicationId || undefined),
+    useLocalBuildProfile ? readReplicatedBuildProfile(replicationId || undefined) : null,
     informationCompletion.overallPercent,
   );
   const hasSufficientInformationForRating =
@@ -2974,13 +2983,18 @@ export default function LendingScorecard() {
     try {
       setIsGeneratingScore(true);
       setSaveMessage('Generating FILSCORE rating...');
-      const payload = buildLoanPayload(formData.status);
-      const result = await computeQuantScores(payload).catch((error: unknown) => {
-        if (!hasPersistedRecord || !formData.id.trim()) {
-          throw error;
-        }
-        return recomputeStoredLoanApplicationScores(formData.id);
-      });
+      const persistedApplicationNo = requestedApplicationNo || formData.id.trim();
+      if (isFilscoreRoute && (!persistedApplicationNo || !hasPersistedRecord)) {
+        throw new Error('A synchronized Application No. or Profile No. is required to compute Credit Health.');
+      }
+      const result = isFilscoreRoute
+        ? await recomputeStoredLoanApplicationScores(persistedApplicationNo)
+        : await computeQuantScores(buildLoanPayload(formData.status)).catch((error: unknown) => {
+            if (!hasPersistedRecord || !formData.id.trim()) {
+              throw error;
+            }
+            return recomputeStoredLoanApplicationScores(formData.id);
+          });
       const quantSummary = mapBackendQuantSummary(result.quant_scores);
       if (!quantSummary) {
         throw new Error('The scoring service returned no FILSCORE rating. Please retry.');
@@ -3025,6 +3039,7 @@ export default function LendingScorecard() {
   useEffect(() => {
     if (
       !isFilscoreRoute
+      || !requestedApplicationNo
       || !hasSufficientInformationForRating
       || backendQuantSummary
       || isGeneratingScore
@@ -3502,12 +3517,17 @@ export default function LendingScorecard() {
   }, [hydrateApplication, setTransientMessage]);
 
   useEffect(() => {
+    if (isFilscoreRoute && !requestedApplicationNo) {
+      setBackendQuantSummary(null);
+      setSaveMessage('A synchronized Application No. or Profile No. is required to open Credit Health.');
+      return;
+    }
     if (!requestedApplicationNo) {
       return;
     }
 
     void loadApplication(requestedApplicationNo);
-  }, [loadApplication, requestedApplicationNo]);
+  }, [isFilscoreRoute, loadApplication, requestedApplicationNo]);
 
   const refreshLoanCreationEntitlement = useCallback(async () => {
     try {
@@ -3541,14 +3561,18 @@ export default function LendingScorecard() {
   // --- Global Nav Actions ---
   const handleCreateNew = async () => {
     await lendingAutosave.clear();
-    setFormData(replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined)));
+    setFormData(useLocalBuildProfile
+      ? replicateBuildProfileToLendingApplication(createNewApplicationInstance(), readReplicatedBuildProfile(replicationId || undefined))
+      : createNewApplicationInstance());
     setFormattedNumberDrafts({});
     setDocumentReview(null);
     setReviewDocumentId(null);
     setBackendQuantSummary(null);
     setHasPersistedRecord(false);
     setStep(1);
-    const profile = readReplicatedBuildProfile(replicationId || undefined);
+    const profile = useLocalBuildProfile
+      ? readReplicatedBuildProfile(replicationId || undefined)
+      : null;
     navigate(profile ? `/lending-scorecard?profileId=${encodeURIComponent(profile.profileId)}` : '/lending-scorecard', { replace: true });
     setTransientMessage('New application draft generated.');
   };
