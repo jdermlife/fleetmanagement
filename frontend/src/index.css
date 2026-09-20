@@ -585,6 +585,12 @@ textarea {
   min-width: 0;
 }
 
+.app-brand-subtitle-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .app-brand-title {
   margin: 0;
   color: #fff;

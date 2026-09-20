@@ -739,7 +739,31 @@ const isSignedIn = authReady && Boolean(currentUser)
               <img className="app-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
               <div className="app-brand-text">
                 <h2 className="app-brand-title">{APP_NAME}</h2>
-                <p className="app-brand-subtitle">{APP_TAGLINE}</p>
+                <div className="app-brand-subtitle-row">
+                  <p className="app-brand-subtitle">{APP_TAGLINE}</p>
+                  {shouldShowBackButton ? (
+                    <div className="app-mini-nav" aria-label="Page navigation controls">
+                      <button
+                        type="button"
+                        className="app-mini-nav-button"
+                        onClick={handleTopbarBack}
+                        aria-label="Go back"
+                        title="Back"
+                      >
+                        &larr;
+                      </button>
+                      <button
+                        type="button"
+                        className="app-mini-nav-button"
+                        onClick={handleTopbarForward}
+                        aria-label="Go forward"
+                        title="Next"
+                      >
+                        &rarr;
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
               </div>
             </div>
           </div>
@@ -760,28 +784,6 @@ const isSignedIn = authReady && Boolean(currentUser)
                   </button>
                 ) : null}
 
-                {shouldShowBackButton ? (
-                  <div className="app-mini-nav" aria-label="Page navigation controls">
-                    <button
-                      type="button"
-                      className="app-mini-nav-button"
-                      onClick={handleTopbarBack}
-                      aria-label="Go back"
-                      title="Back"
-                    >
-                      &larr;
-                    </button>
-                    <button
-                      type="button"
-                      className="app-mini-nav-button"
-                      onClick={handleTopbarForward}
-                      aria-label="Go forward"
-                      title="Next"
-                    >
-                      &rarr;
-                    </button>
-                  </div>
-                ) : null}
               </div>
             ) : null}
           </div>
