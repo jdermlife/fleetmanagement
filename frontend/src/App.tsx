@@ -630,7 +630,7 @@ const adminMenuItems = isAdminUser
 
 const isLoginRoute = location.pathname === '/login'
 const isPaymentSuccessRoute = ['/payment-success', '/payment/success', '/payment/cancel'].includes(location.pathname)
-const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/financial-health-summary', '/login'].includes(location.pathname)
+const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
 
   useEffect(() => {
