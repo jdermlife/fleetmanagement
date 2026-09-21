@@ -932,6 +932,7 @@ export default function BuildProfilePage() {
   const [searchParams] = useSearchParams()
   const { isAdmin, isAuthenticated, isLoading: isAuthorizationLoading } = useAuthorization()
   const requestedApplicationNo = searchParams.get('applicationNo')?.trim() || ''
+  const requestedStep = searchParams.get('step') === '8' ? 8 : null
   const [profile, setProfile] = useState<ProfileData>(loadProfile)
   const profileAutosaveDefaultsRef = useRef(createEmptyProfile())
   const [sourceApplication, setSourceApplication] = useState<LoanApplicationRecord | null>(null)
@@ -1016,7 +1017,10 @@ export default function BuildProfilePage() {
     void loadProfileApplication(requestedApplicationNo)
       .then((application) => {
         if (cancelled) return
-        setProfile((current) => profileFromLoanApplication(application, current))
+        setProfile((current) => {
+          const hydrated = profileFromLoanApplication(application, current)
+          return requestedStep ? { ...hydrated, step: requestedStep } : hydrated
+        })
         setSourceApplication(application)
         setSaveMessage(`Profile ${requestedApplicationNo} loaded.`)
       })
@@ -1030,7 +1034,19 @@ export default function BuildProfilePage() {
     return () => {
       cancelled = true
     }
-  }, [requestedApplicationNo])
+  }, [requestedApplicationNo, requestedStep])
+
+  useEffect(() => {
+    if (requestedApplicationNo || !requestedStep) return
+    setProfile((current) => ({ ...current, step: requestedStep }))
+  }, [requestedApplicationNo, requestedStep])
+
+  useEffect(() => {
+    if (profile.step !== 8 || window.location.hash !== '#build-profile-step-8-income-expenses') return
+    window.requestAnimationFrame(() => {
+      document.getElementById('build-profile-step-8-income-expenses')?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    })
+  }, [profile.step])
 
   const stepCompletion = useMemo(() => {
     const result = {} as Record<ProfileStep, number>
@@ -2136,7 +2152,7 @@ export default function BuildProfilePage() {
           <div className="build-profile-net-worth-result"><span>Net Worth (Total Assets Less Total Liabilities)</span><strong>{formatSignedCurrency(wealthScore.metrics.netWorth)}</strong></div>
         </details>
 
-        <details className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement" open>
+        <details id="build-profile-step-8-income-expenses" className="build-profile-detail-section build-profile-net-worth-statement build-profile-income-expense-statement" open>
           <summary>Actual / Current Personal Income and Expenses with Goals and Protection (Indicate zero if none)</summary>
           <div className="build-profile-net-worth-meta"><span>Actual personal income, expenses, goals, and protection statement</span><strong>As of: {profile.values.asOfDate || 'Not set'}</strong></div>
           <div className="build-profile-net-worth-columns build-profile-income-expense-columns">

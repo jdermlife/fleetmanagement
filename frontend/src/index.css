@@ -6046,6 +6046,42 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 10px;
 }
 
+.budget-journal-entry-panel {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.budget-journal-entry-form {
+  display: grid;
+  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(140px, 1fr)) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.budget-journal-entry-form label {
+  display: grid;
+  gap: 6px;
+  color: #334155;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.budget-journal-entry-table td:first-child small {
+  display: block;
+  margin-top: 3px;
+  color: #64748b;
+}
+
+@media (max-width: 850px) {
+  .budget-journal-entry-form {
+    grid-template-columns: 1fr;
+  }
+}
+
 .networth-line-item-primary {
   font-weight: 700;
   color: #0f172a;
