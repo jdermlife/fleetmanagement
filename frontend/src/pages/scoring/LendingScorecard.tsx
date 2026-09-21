@@ -1,6 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
+import {
+  BadgeCheck,
+  BarChart3,
+  ClipboardList,
+  Gem,
+  Landmark,
+  UserRound,
+  UsersRound,
+} from 'lucide-react';
 
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
@@ -4696,6 +4705,12 @@ export default function LendingScorecard() {
             <>
             <section className="loan-certification-shell lending-inline-certification" aria-label="FILSCORE credit health report">
               <div className="loan-certification-frame">
+                <div className="loan-certification-ornaments" aria-hidden="true">
+                  <span className="loan-certification-ornament loan-certification-ornament-top-left" />
+                  <span className="loan-certification-ornament loan-certification-ornament-top-right" />
+                  <span className="loan-certification-ornament loan-certification-ornament-bottom-left" />
+                  <span className="loan-certification-ornament loan-certification-ornament-bottom-right" />
+                </div>
                 <div className="loan-certification-inner">
                   <div className="loan-certification-brand">
                     <img className="loan-certification-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
@@ -4732,33 +4747,40 @@ export default function LendingScorecard() {
                   ) : null}
 
                   <div className="loan-certification-summary-grid">
-                    <div className="loan-certification-summary-card">
-                      <span className="loan-certification-summary-label">Composite Score</span>
+                    <div className="loan-certification-summary-card loan-certification-summary-card-score">
+                      <span className="loan-certification-card-icon" aria-hidden="true"><BarChart3 /></span>
+                      <span className="loan-certification-card-copy">
+                        <span className="loan-certification-summary-label">Composite Score</span>
+                        <span className="loan-certification-metric-band">
+                          {hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : ''}
+                        </span>
+                      </span>
                       <strong className="loan-certification-summary-value">{reportScore(compositeInternalScore)}</strong>
                     </div>
-                    <div className="loan-certification-summary-card">
-                      <span className="loan-certification-summary-label">Label</span>
-                      <strong className="loan-certification-summary-value">
-                        {hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : ''}
-                      </strong>
-                    </div>
-                    <div className="loan-certification-summary-card">
-                      <span className="loan-certification-summary-label">Decision</span>
+                    <div className="loan-certification-summary-card loan-certification-summary-card-decision">
+                      <span className="loan-certification-card-icon" aria-hidden="true"><BadgeCheck /></span>
+                      <span className="loan-certification-card-copy">
+                        <span className="loan-certification-summary-label">Decision</span>
+                        <span className="loan-certification-metric-band">Overall assessment result</span>
+                      </span>
                       <strong className="loan-certification-summary-value">{hasPaidScoreAccess && reportHasRating ? displayedQuantSummary.decision : ''}</strong>
                     </div>
                   </div>
 
                   <div className="loan-certification-metrics-grid">
                     {[
-                      { label: `Credit Score - ${formData.loan.productType}`, value: reportScore(displayedQuantSummary?.credit_score), band: reportBand(displayedQuantSummary?.credit_score) },
-                      { label: 'Credit Bureau Score', value: hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : '', band: hasPaidScoreAccess ? '100-Point Bureau Model' : '' },
-                      { label: 'Non-Starter Score', value: reportScore(displayedQuantSummary?.fraud_score), band: reportBand(displayedQuantSummary?.fraud_score) },
-                      { label: 'Social Score', value: reportScore(displayedQuantSummary?.social_score), band: reportBand(displayedQuantSummary?.social_score) },
-                      { label: 'Credit Values Score', value: reportScore(displayedQuantSummary?.psychometric_score), band: reportBand(displayedQuantSummary?.psychometric_score) },
+                      { label: `Credit Score (${formData.loan.productType})`, value: reportScore(displayedQuantSummary?.credit_score), band: reportBand(displayedQuantSummary?.credit_score), Icon: ClipboardList },
+                      { label: 'Credit Bureau Score', value: hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : '', band: hasPaidScoreAccess ? 'Based on bureau model information' : '', Icon: Landmark },
+                      { label: 'Non-Starter Score', value: reportScore(displayedQuantSummary?.fraud_score), band: reportBand(displayedQuantSummary?.fraud_score), Icon: UserRound },
+                      { label: 'Social Score', value: reportScore(displayedQuantSummary?.social_score), band: reportBand(displayedQuantSummary?.social_score), Icon: UsersRound },
+                      { label: 'Credit Value Score', value: reportScore(displayedQuantSummary?.psychometric_score), band: reportBand(displayedQuantSummary?.psychometric_score), Icon: Gem },
                     ].map((item) => (
                       <div key={item.label} className="loan-certification-metric-card">
-                        <span className="loan-certification-metric-label">{item.label}</span>
-                        <span className="loan-certification-metric-band">{item.band}</span>
+                        <span className="loan-certification-card-icon" aria-hidden="true"><item.Icon /></span>
+                        <span className="loan-certification-card-copy">
+                          <span className="loan-certification-metric-label">{item.label}</span>
+                          <span className="loan-certification-metric-band">{item.band}</span>
+                        </span>
                         <strong className="loan-certification-metric-value">{item.value}</strong>
                       </div>
                     ))}

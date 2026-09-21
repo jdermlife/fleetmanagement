@@ -1522,6 +1522,333 @@ textarea {
   text-align: center;
 }
 
+/* Lending Scorecard FILSCORE report: certificate treatment scoped to Step 8. */
+.lending-inline-certification {
+  max-width: 900px;
+}
+
+.lending-inline-certification .loan-certification-frame {
+  padding: 22px;
+  border: 3px solid #c99716;
+  border-radius: 2px;
+  background:
+    repeating-linear-gradient(0deg, transparent 0 4px, rgba(255, 255, 255, 0.1) 4px 5px),
+    repeating-linear-gradient(90deg, transparent 0 7px, rgba(91, 145, 216, 0.28) 7px 8px),
+    linear-gradient(135deg, #062253 0%, #0d438d 48%, #061d48 100%);
+  box-shadow: 0 16px 36px rgba(7, 30, 73, 0.18);
+}
+
+.lending-inline-certification .loan-certification-frame::before {
+  inset: 7px;
+  border: 4px double #dceaff;
+  border-radius: 0;
+  box-shadow: inset 0 0 0 2px #0a3475, inset 0 0 0 4px #bf941d;
+}
+
+.lending-inline-certification .loan-certification-frame::after {
+  inset: 16px;
+  border-color: #d5e5fb;
+  box-shadow: 0 0 0 2px #082b63;
+}
+
+.lending-inline-certification .loan-certification-ornament {
+  width: 38px;
+  height: 38px;
+  border-radius: 0;
+  transform: rotate(45deg);
+  background:
+    repeating-linear-gradient(45deg, #dceaff 0 2px, #0a3475 2px 5px),
+    #0a3475;
+  box-shadow: 0 0 0 2px #0a3475, 0 0 0 3px #c79a20;
+}
+
+.lending-inline-certification .loan-certification-ornament::after {
+  inset: 8px;
+  border-radius: 0;
+  border-color: #d9b84a;
+}
+
+.lending-inline-certification .loan-certification-inner {
+  padding: 15px 18px 13px;
+  border: 1px solid #9ebce4;
+  background:
+    radial-gradient(circle at 2% 3%, rgba(250, 204, 21, 0.2), transparent 19%),
+    radial-gradient(circle at 98% 4%, rgba(29, 78, 216, 0.1), transparent 22%),
+    linear-gradient(180deg, #fffdf2 0%, #f5faff 45%, #ffffff 100%);
+}
+
+.lending-inline-certification .loan-certification-brand {
+  gap: 1px;
+}
+
+.lending-inline-certification .loan-certification-brand-mark {
+  width: 38px;
+  height: 38px;
+}
+
+.lending-inline-certification .loan-certification-brand-copy {
+  gap: 1px;
+}
+
+.lending-inline-certification .loan-certification-kicker {
+  color: #174d82;
+  font-size: 0.42rem;
+  letter-spacing: 0.2em;
+}
+
+.lending-inline-certification .loan-certification-title {
+  margin: 0;
+  color: #003f97;
+  font-size: 1.62rem;
+  line-height: 1;
+  letter-spacing: 0.12em;
+}
+
+.lending-inline-certification .loan-certification-reference {
+  color: #a37200;
+  font-size: 0.58rem;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+}
+
+.lending-inline-certification .loan-certification-name {
+  margin-top: 3px;
+  color: #102d5a;
+  font-size: 1.5rem;
+  line-height: 1.08;
+}
+
+.lending-inline-certification .loan-certification-copy {
+  max-width: 640px;
+  margin-top: 3px;
+  color: #31547d;
+  font-size: 0.56rem;
+  line-height: 1.25;
+}
+
+.lending-inline-certification .loan-certification-summary-grid,
+.lending-inline-certification .loan-certification-metrics-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.lending-inline-certification .loan-certification-summary-grid {
+  margin-top: 9px;
+}
+
+.lending-inline-certification .loan-certification-metrics-grid {
+  margin-top: 6px;
+}
+
+.lending-inline-certification .loan-certification-summary-card,
+.lending-inline-certification .loan-certification-metric-card {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) minmax(78px, auto);
+  align-items: center;
+  align-content: center;
+  gap: 8px;
+  min-height: 68px;
+  padding: 6px 7px;
+  overflow: hidden;
+  border: 2px solid #d6a820;
+  border-radius: 8px;
+  background: linear-gradient(105deg, #fffdf4 0%, #fff7d4 58%, #ffffff 100%);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.88);
+}
+
+.lending-inline-certification .loan-certification-metric-card:last-child {
+  grid-column: 1;
+}
+
+.lending-inline-certification .loan-certification-card-icon {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  place-items: center;
+  border: 2px solid #d7e8ff;
+  border-radius: 50%;
+  color: #ffffff;
+  background: linear-gradient(150deg, #1164b5, #052a67);
+  box-shadow: 0 1px 0 #ffffff, 0 2px 4px rgba(6, 39, 89, 0.25);
+}
+
+.lending-inline-certification .loan-certification-card-icon svg {
+  width: 22px;
+  height: 22px;
+  stroke-width: 2.5;
+}
+
+.lending-inline-certification .loan-certification-card-copy {
+  min-width: 0;
+}
+
+.lending-inline-certification .loan-certification-summary-label,
+.lending-inline-certification .loan-certification-metric-label {
+  color: #073778;
+  font-size: 0.82rem;
+  line-height: 1.05;
+  letter-spacing: 0;
+}
+
+.lending-inline-certification .loan-certification-metric-band {
+  margin-top: 3px;
+  color: #34577c;
+  font-size: 0.48rem;
+  font-weight: 600;
+  line-height: 1.15;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.lending-inline-certification .loan-certification-summary-value,
+.lending-inline-certification .loan-certification-metric-value {
+  display: grid;
+  min-width: 78px;
+  min-height: 50px;
+  margin: 0;
+  padding: 5px 8px;
+  place-items: center;
+  border: 1px solid #d9a51e;
+  border-radius: 6px;
+  color: #ffffff;
+  font-size: 1.55rem;
+  line-height: 1;
+  text-align: center;
+  background: linear-gradient(180deg, #d9a514 0%, #aa7600 100%);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.42), 0 2px 4px rgba(116, 76, 0, 0.2);
+  overflow-wrap: anywhere;
+}
+
+.lending-inline-certification .loan-certification-summary-card-decision {
+  border-color: #49a85f;
+  background: linear-gradient(105deg, #f7fff8 0%, #e5f8e8 58%, #ffffff 100%);
+}
+
+.lending-inline-certification .loan-certification-summary-card-decision .loan-certification-card-icon {
+  border-color: #d9f7df;
+  background: linear-gradient(150deg, #53b76a, #238040);
+}
+
+.lending-inline-certification .loan-certification-summary-card-decision .loan-certification-summary-value {
+  border-color: #31844a;
+  background: linear-gradient(180deg, #438f56 0%, #176132 100%);
+  font-size: 1.18rem;
+}
+
+.lending-inline-certification .loan-certification-footer {
+  margin-top: 8px;
+}
+
+.lending-inline-certification .loan-certification-meta {
+  gap: 1px;
+}
+
+.lending-inline-certification .loan-certification-meta p {
+  color: #264b76;
+  font-size: 0.52rem;
+  line-height: 1.2;
+}
+
+.lending-inline-certification .loan-certification-qr {
+  min-width: 72px;
+  gap: 1px;
+}
+
+.lending-inline-certification .loan-certification-qr img {
+  width: 58px;
+  height: 58px;
+  border: 1px solid #153d69;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.lending-inline-certification .loan-certification-qr span {
+  color: #264b76;
+  font-size: 0.36rem;
+  letter-spacing: 0.04em;
+}
+
+.lending-inline-certification .loan-certification-information-provided {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top-color: #9ab2ce;
+  color: #31547d;
+  font-size: 0.58rem;
+  letter-spacing: 0.04em;
+}
+
+.lending-inline-certification .loan-certification-ai-disclaimer {
+  margin-top: 2px;
+  color: #496786;
+  font-size: 0.48rem;
+}
+
+@media (max-width: 760px) {
+  .lending-inline-certification .loan-certification-summary-grid,
+  .lending-inline-certification .loan-certification-metrics-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .lending-inline-certification .loan-certification-metric-card:last-child {
+    grid-column: 1;
+  }
+
+  .lending-inline-certification .loan-certification-summary-card,
+  .lending-inline-certification .loan-certification-metric-card {
+    grid-template-columns: 36px minmax(0, 1fr) minmax(72px, auto);
+  }
+}
+
+@media (max-width: 420px) {
+  .lending-inline-certification .loan-certification-frame {
+    padding: 14px;
+  }
+
+  .lending-inline-certification .loan-certification-frame::after {
+    inset: 10px;
+  }
+
+  .lending-inline-certification .loan-certification-inner {
+    padding: 12px 9px 10px;
+  }
+
+  .lending-inline-certification .loan-certification-summary-card,
+  .lending-inline-certification .loan-certification-metric-card {
+    grid-template-columns: 32px minmax(0, 1fr) 68px;
+    gap: 6px;
+    padding: 5px;
+  }
+
+  .lending-inline-certification .loan-certification-card-icon {
+    width: 30px;
+    height: 30px;
+  }
+
+  .lending-inline-certification .loan-certification-card-icon svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .lending-inline-certification .loan-certification-summary-label,
+  .lending-inline-certification .loan-certification-metric-label {
+    font-size: 0.68rem;
+  }
+
+  .lending-inline-certification .loan-certification-summary-value,
+  .lending-inline-certification .loan-certification-metric-value {
+    min-width: 68px;
+    min-height: 44px;
+    padding: 4px;
+    font-size: 0.92rem;
+    overflow-wrap: normal;
+    white-space: nowrap;
+  }
+
+  .lending-inline-certification .loan-certification-summary-card-decision .loan-certification-summary-value {
+    font-size: 0.78rem;
+  }
+}
+
 .lending-report-page .lending-psychometric-summary-grid,
 .lending-report-page .lending-psychometric-footer,
 .lending-report-page .lending-psychometric-side-panel,
