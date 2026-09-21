@@ -7,6 +7,16 @@ import {
   FINANCIAL_HEALTH_JOURNEY_STEPS,
 } from '../../components/financial-health/FinancialJourneyGuide'
 
+const JOURNEY_RESOURCE_LINKS = [
+  { label: 'About', to: '/about-filscore' },
+  { label: 'Privacy', to: '/privacy' },
+  { label: 'Terms', to: '/terms' },
+  { label: 'Fees', to: '/fees' },
+  { label: 'Returns and Refunds', to: '/return-refund-policy' },
+  { label: 'Customer Service', to: '/customer-service' },
+  { label: 'Dispute Resolution', to: '/dispute-resolution' },
+] as const
+
 export default function FinancialHealthJourneyPage() {
   const navigate = useNavigate()
   const financialHealthDetail = FINANCIAL_HEALTH_JOURNEY_DETAILS.financialHealth
@@ -94,6 +104,12 @@ export default function FinancialHealthJourneyPage() {
           })}
         </div>
       </section>
+
+      <nav className="financial-health-journey-resource-links" aria-label="FILSCORE information and support">
+        {JOURNEY_RESOURCE_LINKS.map((resource) => (
+          <Link key={resource.to} to={resource.to}>{resource.label}</Link>
+        ))}
+      </nav>
     </main>
   )
 }
