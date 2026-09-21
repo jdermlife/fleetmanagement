@@ -40,6 +40,10 @@ export function resolveApiBase(configuredApiBase: string | undefined, isDevelopm
   return isDevelopment ? 'http://localhost:5000' : '/api'
 }
 
+export function resolveOptionalApiBase(configuredApiBase: string | undefined): string | null {
+  return configuredApiBase?.trim() ? validateConfiguredApiBase(configuredApiBase) : null
+}
+
 export function resolveGoogleClientId(configuredClientId: string | undefined): string {
   return configuredClientId?.trim() || DEFAULT_GOOGLE_CLIENT_ID
 }
@@ -63,6 +67,9 @@ export function resolveOllamaFallbackUrl(configuredUrl: string | undefined): str
 export const APP_CONFIG = {
   get apiBase() {
     return resolveApiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV)
+  },
+  get apiFallbackBase() {
+    return resolveOptionalApiBase(import.meta.env.VITE_API_FALLBACK_URL)
   },
   get appleClientId() {
     return import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'

@@ -7,6 +7,7 @@ import {
   resolveAppleRedirect,
   resolveGoogleClientId,
   resolveOllamaFallbackUrl,
+  resolveOptionalApiBase,
   validateConfiguredApiBase,
 } from '../src/config'
 
@@ -39,6 +40,15 @@ describe('resolveApiBase', () => {
     expect(() => validateConfiguredApiBase('http://fleetmanagement-dq9t.onrender.com')).toThrow(
       'must use HTTPS',
     )
+  })
+})
+
+describe('resolveOptionalApiBase', () => {
+  it('normalizes a configured fallback URL and permits an omitted fallback', () => {
+    expect(resolveOptionalApiBase('https://filscore-ai.quantech.international/')).toBe(
+      'https://filscore-ai.quantech.international',
+    )
+    expect(resolveOptionalApiBase(undefined)).toBeNull()
   })
 })
 

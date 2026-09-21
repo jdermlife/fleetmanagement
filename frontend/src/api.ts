@@ -10,7 +10,10 @@ const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 type AuthStorageMode = 'persistent' | 'session'
 
 const isDevelopment = import.meta.env.DEV
-const apiBaseUrlCandidates = [APP_CONFIG.apiBase]
+const apiBaseUrlCandidates = Array.from(new Set([
+  APP_CONFIG.apiBase,
+  APP_CONFIG.apiFallbackBase,
+].filter((candidate): candidate is string => Boolean(candidate))))
 
 const healthCheckClient = axios.create({
   timeout: 6000,
@@ -98,7 +101,7 @@ function setActiveApiBaseUrl(url: string): void {
 async function findHealthyApiBaseUrl(): Promise<string | null> {
   for (const candidate of apiBaseUrlCandidates) {
     try {
-      const response = await healthCheckClient.get('/health', {
+      const response = await healthCheckClient.get('/api/health', {
         baseURL: candidate,
       })
 
@@ -264,6 +267,26 @@ function shouldSkipSessionRefresh(url?: string): boolean {
   ].some((path) => url.includes(path))
 }
 
+function canRetryOnFallback(method?: string, url?: string): boolean {
+  const normalizedMethod = method?.toLowerCase() ?? 'get'
+  if (['get', 'head', 'options'].includes(normalizedMethod)) return true
+  if (!url) return false
+  return [
+    '/api/auth/login',
+    '/api/auth/google-token',
+    '/api/auth/apple-token',
+    '/api/auth/register',
+    '/api/auth/refresh',
+  ].some((path) => url.includes(path))
+}
+
+async function selectHealthyBackend(): Promise<boolean> {
+  const healthyBaseUrl = await findHealthyApiBaseUrl()
+  if (!healthyBaseUrl) return false
+  setActiveApiBaseUrl(healthyBaseUrl)
+  return true
+}
+
 // Request interceptor
 api.interceptors.request.use(
   (config) => {
@@ -298,8 +321,31 @@ api.interceptors.response.use(
       })
     }
 
-    const originalRequest = error.config as (typeof error.config & { _retry?: boolean }) | undefined
+    const originalRequest = error.config as (typeof error.config & { _retry?: boolean; _failoverRetry?: boolean }) | undefined
     const refreshTokenCandidate = getRefreshToken()
+
+    if (
+      !error.response
+      && originalRequest
+      && !originalRequest._failoverRetry
+      && apiBaseUrlCandidates.length > 1
+      && canRetryOnFallback(originalRequest.method, originalRequest.url)
+    ) {
+      originalRequest._failoverRetry = true
+      const failedBaseUrl = originalRequest.baseURL ?? activeApiBaseUrl
+      const fallbackCandidates = apiBaseUrlCandidates.filter((candidate) => candidate !== failedBaseUrl)
+      for (const candidate of fallbackCandidates) {
+        try {
+          const response = await healthCheckClient.get('/api/health', { baseURL: candidate })
+          if (response.status !== 200) continue
+          setActiveApiBaseUrl(candidate)
+          originalRequest.baseURL = candidate
+          return await api.request(originalRequest)
+        } catch {
+          // Continue to the next configured fallback.
+        }
+      }
+    }
 
     if (
       error.response?.status === 401 &&
@@ -387,13 +433,7 @@ export function getErrorMessage(error: unknown, fallback: string): string {
  * Check if the backend is reachable
  */
 export async function checkBackendHealth(): Promise<boolean> {
-  const healthyBaseUrl = await findHealthyApiBaseUrl()
-  if (!healthyBaseUrl) {
-    return false
-  }
-
-  setActiveApiBaseUrl(healthyBaseUrl)
-  return true
+  return selectHealthyBackend()
 }
 
 /**
@@ -531,6 +571,7 @@ function syncSessionFromAuthResponse(
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
+  await selectHealthyBackend()
   const response = await api.post('/api/auth/login', {
     username: credentials.username,
     password: credentials.password,
@@ -556,6 +597,7 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
+  await selectHealthyBackend()
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
     platform: payload.platform,
@@ -584,6 +626,7 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 }
 
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
+  await selectHealthyBackend()
   const response = await api.post('/api/auth/apple-token', {
     identity_token: payload.idToken,
     id_token: payload.idToken,
@@ -612,6 +655,7 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse> {
+  await selectHealthyBackend()
   const response = await api.post('/api/auth/register', {
     username: data.username,
     email: data.email,

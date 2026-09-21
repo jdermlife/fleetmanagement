@@ -87,7 +87,50 @@ describe('loginWithApple', () => {
     })
     clients.length = 0
     vi.restoreAllMocks()
+    vi.unstubAllEnvs()
     vi.resetModules()
+  })
+
+  it('uses the configured fallback backend when the primary health check fails', async () => {
+    vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
+    vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
+    const apiModule = await import('../src/api')
+    const healthCheckClient = clients[0]
+    const authClient = clients[1]
+    healthCheckClient.get
+      .mockRejectedValueOnce(new Error('Render timed out'))
+      .mockResolvedValueOnce({ status: 200 })
+    authClient.post.mockResolvedValue({
+      data: {
+        access_token: 'fallback-access-token',
+        refresh_token: 'fallback-refresh-token',
+        user: {
+          id: 11,
+          username: 'fallback-user',
+          email: 'fallback@example.com',
+          role: 'admin',
+          roles: ['admin'],
+          permissions: [],
+          is_active: true,
+        },
+      },
+    })
+
+    await apiModule.login({ username: 'fallback-user', password: 'not-a-real-password' })
+
+    expect(healthCheckClient.get).toHaveBeenNthCalledWith(1, '/api/health', {
+      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+    })
+    expect(healthCheckClient.get).toHaveBeenNthCalledWith(2, '/api/health', {
+      baseURL: 'https://filscore-ai.quantech.international',
+    })
+    expect((authClient.defaults as typeof authClient.defaults & { baseURL?: string }).baseURL).toBe(
+      'https://filscore-ai.quantech.international',
+    )
+    expect(authClient.post).toHaveBeenCalledWith('/api/auth/login', {
+      username: 'fallback-user',
+      password: 'not-a-real-password',
+    })
   })
 
   it('persists standard login tokens across an app reload', async () => {
