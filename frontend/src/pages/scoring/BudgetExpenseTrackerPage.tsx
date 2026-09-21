@@ -3,6 +3,7 @@ import { NumericFormat } from 'react-number-format';
 import { useNavigate } from 'react-router-dom';
 
 import { useAutosaveDraft } from '../../autosave';
+import { fetchAutosaveDraft, saveAutosaveDraftRemote } from '../../autosave/draftApi';
 import { saveLoanApplicationBudget } from '../../api/loan';
 import FinancialJourneyGuideLauncher from '../../components/financial-health/FinancialJourneyGuideLauncher';
 import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu';
@@ -10,6 +11,12 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { postToStep8Account } from './budgetJournal';
+import {
+  cacheReplicatedBuildProfile,
+  readReplicatedBuildProfile,
+  type ReplicatedBuildProfile,
+} from './buildProfileReplication';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 import { NET_WORTH_STATEMENT_ENTRIES } from './NetWorthPositioningPage';
 
@@ -155,6 +162,7 @@ export default function BudgetExpenseTrackerPage() {
   const [journalAccountId, setJournalAccountId] = useState('');
   const [debitEntryDraft, setDebitEntryDraft] = useState('');
   const [creditEntryDraft, setCreditEntryDraft] = useState('');
+  const [isPostingJournalEntry, setIsPostingJournalEntry] = useState(false);
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [actionsToBeTaken, setActionsToBeTaken] = useState('');
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
@@ -696,22 +704,57 @@ export default function BudgetExpenseTrackerPage() {
     navigate(`/build-profile${query}#build-profile-step-8-income-expenses`);
   };
 
-  const addJournalEntry = () => {
-    if (!journalAccountId || (toSafeNumber(debitEntryDraft) === 0 && toSafeNumber(creditEntryDraft) === 0)) {
+  const addJournalEntry = async () => {
+    const account = step8Accounts.find((candidate) => candidate.id === journalAccountId);
+    const debitAmount = toSafeNumber(debitEntryDraft);
+    const creditAmount = toSafeNumber(creditEntryDraft);
+    if (!account || (debitAmount === 0 && creditAmount === 0)) {
       setSetupStatusMessage('Select a Step 8 account and enter a debit or credit amount.');
       return;
     }
 
-    setJournalEntries((current) => [...current, {
-      id: `${Date.now()}-${current.length + 1}`,
-      accountId: journalAccountId,
-      debitAmount: debitEntryDraft,
-      creditAmount: creditEntryDraft,
-    }]);
-    setJournalAccountId('');
-    setDebitEntryDraft('');
-    setCreditEntryDraft('');
-    setSetupStatusMessage('Debit / credit entry added to the tracker draft.');
+    setIsPostingJournalEntry(true);
+    try {
+      const localProfile = readReplicatedBuildProfile(selectedApplicationNo || undefined);
+      const remoteDraft = await fetchAutosaveDraft<ReplicatedBuildProfile>('build-profile', 'current').catch(() => null);
+      const remoteProfileMatches = remoteDraft?.payload
+        && (!selectedApplicationNo
+          || remoteDraft.payload.profileId === selectedApplicationNo
+          || remoteDraft.payload.selectedApplicationNo === selectedApplicationNo);
+      const sourceProfile = remoteProfileMatches ? remoteDraft.payload : localProfile;
+      if (!sourceProfile) {
+        setSetupStatusMessage('Open Build Profile Step 8 first so the selected profile can receive this entry.');
+        return;
+      }
+      const updatedProfile = postToStep8Account(
+        sourceProfile,
+        account.id,
+        account.section as 'assets' | 'liabilities' | 'monthly-income' | 'monthly-expenses',
+        debitAmount,
+        creditAmount,
+      );
+      cacheReplicatedBuildProfile(updatedProfile);
+      if (remoteProfileMatches) {
+        await saveAutosaveDraftRemote('build-profile', 'current', {
+          payload: updatedProfile,
+          expectedRevision: remoteDraft.revision,
+        });
+      }
+      setJournalEntries((current) => [...current, {
+        id: `${Date.now()}-${current.length + 1}`,
+        accountId: journalAccountId,
+        debitAmount: debitEntryDraft,
+        creditAmount: creditEntryDraft,
+      }]);
+      setJournalAccountId('');
+      setDebitEntryDraft('');
+      setCreditEntryDraft('');
+      setSetupStatusMessage(`${account.label} was updated in Build Profile Step 8${remoteProfileMatches ? ' and synchronized' : ' on this device'}.`);
+    } catch {
+      setSetupStatusMessage('The Step 8 amount could not be updated. Please retry.');
+    } finally {
+      setIsPostingJournalEntry(false);
+    }
   };
 
   const topVarianceRows = useMemo(() => {
@@ -1419,19 +1462,19 @@ export default function BudgetExpenseTrackerPage() {
                     Select an account from the Step 8 Balance Sheet or Income Statement, then enter its debit or credit amount.
                   </p>
                   <div className="budget-journal-entry-form">
-                    <label>Step 8 Account
+                    <label className="budget-journal-account-field">Step 8 Account
                       <select aria-label="Step 8 account" value={journalAccountId} onChange={(event) => setJournalAccountId(event.target.value)}>
                         <option value="">Select account</option>
                         {step8Accounts.map((account) => <option key={account.id} value={account.id}>{account.label} - {account.category}</option>)}
                       </select>
                     </label>
-                    <label>Debit Entry
-                      <NumericFormat value={debitEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Debit entry amount" onValueChange={({ value }) => setDebitEntryDraft(value)} />
+                    <label>Use On (*Debit)
+                      <NumericFormat value={debitEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use On Debit amount" onValueChange={({ value }) => setDebitEntryDraft(value)} />
                     </label>
-                    <label>Credit Entry
-                      <NumericFormat value={creditEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Credit entry amount" onValueChange={({ value }) => setCreditEntryDraft(value)} />
+                    <label>Use with (Credit)
+                      <NumericFormat value={creditEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use with Credit amount" onValueChange={({ value }) => setCreditEntryDraft(value)} />
                     </label>
-                    <button type="button" className="psychometric-reset-button" onClick={addJournalEntry}>Add Entry</button>
+                    <button type="button" className="psychometric-reset-button" onClick={() => void addJournalEntry()} disabled={isPostingJournalEntry} aria-busy={isPostingJournalEntry}>{isPostingJournalEntry ? 'Posting...' : 'Add Entry'}</button>
                   </div>
 
                   {journalEntries.length > 0 ? <div className="psychometric-scale-table-wrap">

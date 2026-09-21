@@ -43,7 +43,7 @@ import {
   STEP_3_SECTIONS,
   type Step3Field,
 } from './buildProfileStep3'
-import { calculateFinancialStatementCompletion } from './buildProfileFinancialStatement'
+import { calculateFinancialStatementCompletion, withFinancialStatementDefaults } from './buildProfileFinancialStatement'
 import {
   CO_BORROWER_FIELDS,
   GUARANTOR_FIELDS,
@@ -245,12 +245,13 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: {}, documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: withFinancialStatementDefaults({}), documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
 }
 
 function synchronizeFinancialGoalPurpose(values: Record<string, string>): Record<string, string> {
-  if (!values.financialGoal?.trim() || values.loanPurpose?.trim()) return values
-  return { ...values, loanPurpose: values.financialGoal }
+  const synchronizedValues = withFinancialStatementDefaults(values)
+  if (!synchronizedValues.financialGoal?.trim() || synchronizedValues.loanPurpose?.trim()) return synchronizedValues
+  return { ...synchronizedValues, loanPurpose: synchronizedValues.financialGoal }
 }
 
 function createPropertyDeclaration(): PropertyDeclaration {
@@ -674,7 +675,7 @@ function profileFromLoanApplication(application: LoanApplicationRecord, current:
     ...profileBase,
     profileId: application.application_no,
     selectedApplicationNo: application.application_no,
-    values,
+    values: synchronizeFinancialGoalPurpose(values),
     coBorrowers: (requirements.coBorrowers?.length ? requirements.coBorrowers : profileBase.coBorrowers).map((item, index) => ({
       id: `CB-${application.application_no}-${index + 1}`,
       name: item.name,

@@ -6057,9 +6057,13 @@ button.loan-repository-action-release { background: #4f46e5; }
 
 .budget-journal-entry-form {
   display: grid;
-  grid-template-columns: minmax(240px, 2fr) repeat(2, minmax(140px, 1fr)) auto;
+  grid-template-columns: repeat(2, minmax(140px, 1fr)) auto;
   gap: 12px;
   align-items: end;
+}
+
+.budget-journal-account-field {
+  grid-column: 1 / -1;
 }
 
 .budget-journal-entry-form label {
