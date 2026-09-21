@@ -572,10 +572,11 @@ function syncSessionFromAuthResponse(
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  await selectHealthyBackend()
   const response = await api.post('/api/auth/login', {
     username: credentials.username,
     password: credentials.password,
+  }, {
+    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -598,7 +599,6 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
-  await selectHealthyBackend()
   const response = await api.post('/api/auth/google-token', {
     id_token: payload.idToken,
     platform: payload.platform,
@@ -629,12 +629,13 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 }
 
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
-  await selectHealthyBackend()
   const response = await api.post('/api/auth/apple-token', {
     identity_token: payload.idToken,
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
+  }, {
+    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -658,7 +659,6 @@ export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginR
 }
 
 export async function register(data: RegisterRequest): Promise<LoginResponse> {
-  await selectHealthyBackend()
   const response = await api.post('/api/auth/register', {
     username: data.username,
     email: data.email,
@@ -666,6 +666,8 @@ export async function register(data: RegisterRequest): Promise<LoginResponse> {
     subscriber_type: data.subscriberType,
     lender_data_sharing_consent: data.lenderDataSharingConsent,
     turnstile_token: data.turnstileToken,
+  }, {
+    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const rawUser = responseData.user as Record<string, unknown> | undefined

@@ -91,7 +91,7 @@ describe('loginWithApple', () => {
     vi.resetModules()
   })
 
-  it('uses the configured fallback backend when the primary health check fails', async () => {
+  it('starts password login without waiting for backend health probes', async () => {
     vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
     vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
     const apiModule = await import('../src/api')
@@ -118,18 +118,12 @@ describe('loginWithApple', () => {
 
     await apiModule.login({ username: 'fallback-user', password: 'not-a-real-password' })
 
-    expect(healthCheckClient.get).toHaveBeenNthCalledWith(1, '/api/health', {
-      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
-    })
-    expect(healthCheckClient.get).toHaveBeenNthCalledWith(2, '/api/health', {
-      baseURL: 'https://filscore-ai.quantech.international',
-    })
-    expect((authClient.defaults as typeof authClient.defaults & { baseURL?: string }).baseURL).toBe(
-      'https://filscore-ai.quantech.international',
-    )
+    expect(healthCheckClient.get).not.toHaveBeenCalled()
     expect(authClient.post).toHaveBeenCalledWith('/api/auth/login', {
       username: 'fallback-user',
       password: 'not-a-real-password',
+    }, {
+      timeout: 12000,
     })
   })
 
@@ -299,6 +293,8 @@ describe('loginWithApple', () => {
       id_token: 'apple-jwt-token',
       subscriber_type: undefined,
       lender_data_sharing_consent: undefined,
+    }, {
+      timeout: 12000,
     })
     expect(response.token).toBe('access-token-123')
     expect(response.user.email).toBe('apple@example.com')

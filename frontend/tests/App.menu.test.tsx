@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -123,11 +123,8 @@ describe('App account menu accordions', () => {
     expect(await screen.findByRole('heading', { name: 'Subscription Fees Disclosure' })).toBeTruthy()
   })
 
-  it('waits for profile synchronization before mounting an authenticated route', async () => {
-    let finishSynchronization!: () => void
-    mockSynchronizeBuildProfileDraft.mockReturnValue(new Promise<void>((resolve) => {
-      finishSynchronization = resolve
-    }))
+  it('mounts authenticated content while profile synchronization runs in the background', async () => {
+    mockSynchronizeBuildProfileDraft.mockReturnValue(new Promise<void>(() => undefined))
 
     render(
       <MemoryRouter initialEntries={['/menu-test']}>
@@ -135,10 +132,9 @@ describe('App account menu accordions', () => {
       </MemoryRouter>,
     )
 
-    expect((await screen.findByRole('status')).textContent).toBe('Synchronizing profile...')
-
-    await act(async () => finishSynchronization())
-    await waitFor(() => expect(screen.queryByText('Synchronizing profile...')).toBeNull())
+    expect(await screen.findByRole('button', { name: 'Toggle account and application menu' })).toBeTruthy()
+    expect(mockSynchronizeBuildProfileDraft).toHaveBeenCalledTimes(1)
+    expect(screen.queryByText('Synchronizing profile...')).toBeNull()
   })
 
   it('shows registration actions for unauthenticated Lending Scorecard access', async () => {

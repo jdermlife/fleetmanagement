@@ -2,6 +2,8 @@ import axios from 'axios'
 
 import { api } from '../api'
 
+const DRAFT_READ_TIMEOUT_MS = 10000
+
 export interface RemoteDraft<T> {
   scope: string
   entityKey: string
@@ -89,7 +91,9 @@ export async function fetchAutosaveDraft<T>(
   entityKey: string,
 ): Promise<RemoteDraft<T> | null> {
   try {
-    const response = await api.get<DraftApiPayload<T>>(draftPath(scope, entityKey))
+    const response = await api.get<DraftApiPayload<T>>(draftPath(scope, entityKey), {
+      timeout: DRAFT_READ_TIMEOUT_MS,
+    })
     return normalizeDraft(response.data, scope, entityKey)
   } catch (error) {
     if (axios.isAxiosError(error) && error.response?.status === 404) {

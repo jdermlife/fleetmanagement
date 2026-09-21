@@ -15,6 +15,27 @@ describe('autosave draft API', () => {
     api.delete.mockReset()
   })
 
+  it('bounds remote draft reads so one source cannot stall a page indefinitely', async () => {
+    api.get.mockResolvedValue({
+      data: {
+        scope: 'budget',
+        entity_key: 'APP-001',
+        payload: {},
+        revision: 1,
+        updated_at: '2026-09-21T00:00:00.000Z',
+      },
+    })
+    const { fetchAutosaveDraft } = await import('../src/autosave/draftApi')
+
+    await expect(fetchAutosaveDraft('budget', 'APP-001')).resolves.toMatchObject({
+      scope: 'budget',
+      entityKey: 'APP-001',
+    })
+    expect(api.get).toHaveBeenCalledWith('/api/drafts/budget/APP-001', {
+      timeout: 10000,
+    })
+  })
+
   it('uses revision zero when creating a remote draft', async () => {
     api.put.mockResolvedValue({
       data: {

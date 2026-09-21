@@ -484,7 +484,6 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [currentUser, setCurrentUser] = useState<LoginResponse['user'] | null>(null)
   const [authReady, setAuthReady] = useState(false)
-  const [profileSyncReady, setProfileSyncReady] = useState(false)
   const [isSigningOut, setIsSigningOut] = useState(false)
   const [fleetOpen, setFleetOpen] = useState(true)
   const [aiOpen, setAiOpen] = useState(true)
@@ -686,22 +685,8 @@ const isSignedIn = authReady && Boolean(currentUser)
   }, [currentUser])
 
   useEffect(() => {
-    if (!currentUserId) {
-      setProfileSyncReady(false)
-      return
-    }
-
-    let cancelled = false
-    setProfileSyncReady(false)
-    void synchronizeBuildProfileDraft()
-      .catch(() => undefined)
-      .finally(() => {
-        if (!cancelled) setProfileSyncReady(true)
-      })
-
-    return () => {
-      cancelled = true
-    }
+    if (!currentUserId) return
+    void synchronizeBuildProfileDraft().catch(() => undefined)
   }, [currentUserId])
 
   const handleTopbarLogout = async () => {
@@ -1214,9 +1199,6 @@ const isSignedIn = authReady && Boolean(currentUser)
   {/* PAGE CONTENT */}
       <main className={`content${isLoginRoute ? ' content-login' : ''}`}>
         <Suspense fallback={<div className="card">Loading page...</div>}>
-          {currentUser && !profileSyncReady ? (
-            <div className="card" role="status">Synchronizing profile...</div>
-          ) : (
           <Routes>
             <Route
               path="/"
@@ -1909,7 +1891,6 @@ const isSignedIn = authReady && Boolean(currentUser)
               }
             />
           </Routes>
-          )}
         </Suspense>
       </main>
       {!isLoginRoute && !isPaymentSuccessRoute ? (

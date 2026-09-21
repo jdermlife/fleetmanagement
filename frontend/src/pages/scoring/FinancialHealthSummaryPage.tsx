@@ -786,6 +786,66 @@ export default function FinancialHealthSummaryPage() {
       const lendingEntityKey = selectedApplicationNo || 'new'
       const creditEntityKey = selectedApplicationNo || 'primary'
       try {
+        const netWorthDraftRequest = fetchAutosaveDraft<NetWorthBuildingDraftInput>(
+          'net-worth-positioning',
+          analysisEntityKey,
+        ).catch(() => null)
+        const lendingDraftRequest = fetchAutosaveDraft<unknown>(
+          'loan-application',
+          lendingEntityKey,
+        ).catch(() => null)
+        const budgetDraftRequest = fetchAutosaveDraft<BudgetHealthDraftInput>(
+          'budget-expense-tracker',
+          analysisEntityKey,
+        ).catch(() => null)
+        const billReminderDraftRequest = fetchAutosaveDraft<unknown>(
+          'bill-reminder',
+          analysisEntityKey,
+        ).catch(() => null)
+        const creditHealthDraftRequest = fetchAutosaveDraft<unknown>(
+          'credit-scoring',
+          creditEntityKey,
+        ).catch(() => null)
+        const loanMonitoringDraftRequest = fetchAutosaveDraft<{ publishedScore?: LoanMonitoringScoreResult }>(
+          'loan-monitoring',
+          analysisEntityKey,
+        ).catch(() => null)
+
+        void netWorthDraftRequest.then((draft) => {
+          if (disposed) return
+          const payload = draft?.payload
+          setNetWorthBuildingScore(payload ? computeNetWorthBuildingScore(payload) : null)
+          setWealthFoundationScore(payload ? computeWealthFoundationScore(payload) : null)
+          setJourneyStepCompletion((current) => ({ ...current, wealthBuilder: hasMeaningfulValue(payload) }))
+        })
+        void lendingDraftRequest.then((draft) => {
+          if (disposed) return
+          setLendingLeafScores(draft?.payload ? deriveLendingLeafScores(draft.payload) : null)
+          setJourneyStepCompletion((current) => ({
+            ...current,
+            billsLoans: current.billManager || hasMeaningfulValue(draft?.payload),
+            creditHealth: hasMeaningfulValue(draft?.payload),
+          }))
+        })
+        void budgetDraftRequest.then((draft) => {
+          if (disposed) return
+          setBudgetHealthScore(draft?.payload ? computeBudgetHealthScore(draft.payload) : null)
+          setJourneyStepCompletion((current) => ({ ...current, budgetTargets: hasMeaningfulValue(draft?.payload) }))
+        })
+        void billReminderDraftRequest.then((draft) => {
+          if (disposed) return
+          const hasBillData = hasMeaningfulValue(draft?.payload)
+          setJourneyStepCompletion((current) => ({
+            ...current,
+            billManager: hasBillData,
+            billsLoans: current.billsLoans || hasBillData,
+          }))
+        })
+        void creditHealthDraftRequest.then((draft) => {
+          if (disposed || !hasMeaningfulValue(draft?.payload)) return
+          setJourneyStepCompletion((current) => ({ ...current, creditHealth: true }))
+        })
+
         const [
           netWorthDraft,
           lendingDraft,
@@ -794,12 +854,12 @@ export default function FinancialHealthSummaryPage() {
           creditHealthDraft,
           loanMonitoringDraft,
         ] = await Promise.all([
-          fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
-          fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
-          fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', analysisEntityKey),
-          fetchAutosaveDraft<unknown>('bill-reminder', analysisEntityKey),
-          fetchAutosaveDraft<unknown>('credit-scoring', creditEntityKey),
-          fetchAutosaveDraft<{ publishedScore?: LoanMonitoringScoreResult }>('loan-monitoring', analysisEntityKey),
+          netWorthDraftRequest,
+          lendingDraftRequest,
+          budgetDraftRequest,
+          billReminderDraftRequest,
+          creditHealthDraftRequest,
+          loanMonitoringDraftRequest,
         ])
 
         if (disposed || !netWorthDraft?.payload) {
