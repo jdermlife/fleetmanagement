@@ -35,7 +35,9 @@ interface WorkflowLineItem {
 
 interface JournalEntry {
   id: string;
-  accountId: string;
+  accountId?: string;
+  debitAccountId: string;
+  creditAccountId: string;
   debitAmount: string;
   creditAmount: string;
 }
@@ -159,7 +161,8 @@ export default function BudgetExpenseTrackerPage() {
   const [savedSetup, setSavedSetup] = useState<WorkflowLineItem[]>([]);
   const [actualEntries, setActualEntries] = useState<Record<string, string>>({});
   const [journalEntries, setJournalEntries] = useState<JournalEntry[]>([]);
-  const [journalAccountId, setJournalAccountId] = useState('');
+  const [debitAccountId, setDebitAccountId] = useState('');
+  const [creditAccountId, setCreditAccountId] = useState('');
   const [debitEntryDraft, setDebitEntryDraft] = useState('');
   const [creditEntryDraft, setCreditEntryDraft] = useState('');
   const [isPostingJournalEntry, setIsPostingJournalEntry] = useState(false);
@@ -205,7 +208,11 @@ export default function BudgetExpenseTrackerPage() {
     setExpenseAllocationDraft(draft.expenseAllocationDraft ?? {});
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
-    setJournalEntries(draft.journalEntries ?? []);
+    setJournalEntries((draft.journalEntries ?? []).map((entry) => ({
+      ...entry,
+      debitAccountId: entry.debitAccountId || entry.accountId || '',
+      creditAccountId: entry.creditAccountId || entry.accountId || '',
+    })));
     setVarianceNotes(draft.varianceNotes);
     setActionsToBeTaken(draft.actionsToBeTaken ?? '');
   }, []);
@@ -705,11 +712,12 @@ export default function BudgetExpenseTrackerPage() {
   };
 
   const addJournalEntry = async () => {
-    const account = step8Accounts.find((candidate) => candidate.id === journalAccountId);
+    const debitAccount = step8Accounts.find((candidate) => candidate.id === debitAccountId);
+    const creditAccount = step8Accounts.find((candidate) => candidate.id === creditAccountId);
     const debitAmount = toSafeNumber(debitEntryDraft);
     const creditAmount = toSafeNumber(creditEntryDraft);
-    if (!account || (debitAmount === 0 && creditAmount === 0)) {
-      setSetupStatusMessage('Select a Step 8 account and enter a debit or credit amount.');
+    if (!debitAccount || !creditAccount || (debitAmount === 0 && creditAmount === 0)) {
+      setSetupStatusMessage('Select both Step 8 accounts and enter a debit or credit amount.');
       return;
     }
 
@@ -726,11 +734,18 @@ export default function BudgetExpenseTrackerPage() {
         setSetupStatusMessage('Open Build Profile Step 8 first so the selected profile can receive this entry.');
         return;
       }
-      const updatedProfile = postToStep8Account(
+      const debitedProfile = postToStep8Account(
         sourceProfile,
-        account.id,
-        account.section as 'assets' | 'liabilities' | 'monthly-income' | 'monthly-expenses',
+        debitAccount.id,
+        debitAccount.section as 'assets' | 'liabilities' | 'monthly-income' | 'monthly-expenses',
         debitAmount,
+        0,
+      );
+      const updatedProfile = postToStep8Account(
+        debitedProfile,
+        creditAccount.id,
+        creditAccount.section as 'assets' | 'liabilities' | 'monthly-income' | 'monthly-expenses',
+        0,
         creditAmount,
       );
       cacheReplicatedBuildProfile(updatedProfile);
@@ -742,14 +757,16 @@ export default function BudgetExpenseTrackerPage() {
       }
       setJournalEntries((current) => [...current, {
         id: `${Date.now()}-${current.length + 1}`,
-        accountId: journalAccountId,
+        debitAccountId,
+        creditAccountId,
         debitAmount: debitEntryDraft,
         creditAmount: creditEntryDraft,
       }]);
-      setJournalAccountId('');
+      setDebitAccountId('');
+      setCreditAccountId('');
       setDebitEntryDraft('');
       setCreditEntryDraft('');
-      setSetupStatusMessage(`${account.label} was updated in Build Profile Step 8${remoteProfileMatches ? ' and synchronized' : ' on this device'}.`);
+      setSetupStatusMessage(`${debitAccount.label} and ${creditAccount.label} were updated in Build Profile Step 8${remoteProfileMatches ? ' and synchronized' : ' on this device'}.`);
     } catch {
       setSetupStatusMessage('The Step 8 amount could not be updated. Please retry.');
     } finally {
@@ -1462,36 +1479,48 @@ export default function BudgetExpenseTrackerPage() {
                     Select an account from the Step 8 Balance Sheet or Income Statement, then enter its debit or credit amount.
                   </p>
                   <div className="budget-journal-entry-form">
-                    <label className="budget-journal-account-field">Step 8 Account
-                      <select aria-label="Step 8 account" value={journalAccountId} onChange={(event) => setJournalAccountId(event.target.value)}>
-                        <option value="">Select account</option>
-                        {step8Accounts.map((account) => <option key={account.id} value={account.id}>{account.label} - {account.category}</option>)}
-                      </select>
-                    </label>
-                    <label>Use On (*Debit)
-                      <NumericFormat value={debitEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use On Debit amount" onValueChange={({ value }) => setDebitEntryDraft(value)} />
-                    </label>
-                    <label>Use with (Credit)
-                      <NumericFormat value={creditEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use with Credit amount" onValueChange={({ value }) => setCreditEntryDraft(value)} />
-                    </label>
+                    <div className="budget-journal-entry-column">
+                      <label>Step 8 Account
+                        <select aria-label="Use On Step 8 account" value={debitAccountId} onChange={(event) => setDebitAccountId(event.target.value)}>
+                          <option value="">Select account</option>
+                          {step8Accounts.map((account) => <option key={account.id} value={account.id}>{account.label} - {account.category}</option>)}
+                        </select>
+                      </label>
+                      <label>Use On (*Debit)
+                        <NumericFormat value={debitEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use On Debit amount" onValueChange={({ value }) => setDebitEntryDraft(value)} />
+                      </label>
+                    </div>
+                    <div className="budget-journal-entry-column">
+                      <label>Step 8 Account
+                        <select aria-label="Use with Step 8 account" value={creditAccountId} onChange={(event) => setCreditAccountId(event.target.value)}>
+                          <option value="">Select account</option>
+                          {step8Accounts.map((account) => <option key={account.id} value={account.id}>{account.label} - {account.category}</option>)}
+                        </select>
+                      </label>
+                      <label>Use with (Credit)
+                        <NumericFormat value={creditEntryDraft} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="0.00" aria-label="Use with Credit amount" onValueChange={({ value }) => setCreditEntryDraft(value)} />
+                      </label>
+                    </div>
                     <button type="button" className="psychometric-reset-button" onClick={() => void addJournalEntry()} disabled={isPostingJournalEntry} aria-busy={isPostingJournalEntry}>{isPostingJournalEntry ? 'Posting...' : 'Add Entry'}</button>
                   </div>
 
                   {journalEntries.length > 0 ? <div className="psychometric-scale-table-wrap">
                     <table className="psychometric-scale-table budget-journal-entry-table">
-                      <thead><tr><th>Account</th><th>Debit</th><th>Credit</th><th>Action</th></tr></thead>
+                      <thead><tr><th>Use On Account</th><th>Debit</th><th>Use with Account</th><th>Credit</th><th>Action</th></tr></thead>
                       <tbody>
                         {journalEntries.map((entry) => {
-                          const account = step8Accounts.find((candidate) => candidate.id === entry.accountId);
+                          const debitAccount = step8Accounts.find((candidate) => candidate.id === entry.debitAccountId);
+                          const creditAccount = step8Accounts.find((candidate) => candidate.id === entry.creditAccountId);
                           return <tr key={entry.id}>
-                            <td data-label="Account"><strong>{account?.label ?? entry.accountId}</strong><small>{account?.category ?? 'Step 8 account'}</small></td>
+                            <td data-label="Use On Account"><strong>{debitAccount?.label ?? entry.debitAccountId}</strong><small>{debitAccount?.category ?? 'Step 8 account'}</small></td>
                             <td data-label="Debit">{formatCurrency(toSafeNumber(entry.debitAmount))}</td>
+                            <td data-label="Use with Account"><strong>{creditAccount?.label ?? entry.creditAccountId}</strong><small>{creditAccount?.category ?? 'Step 8 account'}</small></td>
                             <td data-label="Credit">{formatCurrency(toSafeNumber(entry.creditAmount))}</td>
                             <td data-label="Action"><button type="button" className="budget-dashboard-category-reset" onClick={() => setJournalEntries((current) => current.filter((item) => item.id !== entry.id))}>Remove</button></td>
                           </tr>;
                         })}
                       </tbody>
-                      <tfoot><tr><th>Totals</th><th>{formatCurrency(journalTotals.debit)}</th><th>{formatCurrency(journalTotals.credit)}</th><th>{journalDifference === 0 ? 'Balanced' : `${formatCurrency(Math.abs(journalDifference))} difference`}</th></tr></tfoot>
+                      <tfoot><tr><th>Totals</th><th>{formatCurrency(journalTotals.debit)}</th><th /><th>{formatCurrency(journalTotals.credit)}</th><th>{journalDifference === 0 ? 'Balanced' : `${formatCurrency(Math.abs(journalDifference))} difference`}</th></tr></tfoot>
                     </table>
                   </div> : <p className="build-profile-applicability-note">No debit or credit entries added yet.</p>}
                 </section>

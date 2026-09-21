@@ -135,4 +135,6 @@ def test_bill_reminders_replace_application_collection(monkeypatch):
     assert "DELETE FROM loan_application_bill_reminders" in session.executions[0][0]
     assert "INSERT INTO loan_application_bill_reminders" in session.executions[1][0]
     assert session.executions[1][1]["loan_application_id"] == 17
+    assert session.executions[1][1]["reminder_enabled"] is False
+    assert session.executions[1][1]["reminder_days_before"] == 10
     assert result["saved"] == 1

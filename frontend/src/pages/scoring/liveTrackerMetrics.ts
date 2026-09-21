@@ -486,7 +486,7 @@ function scoreFromRatio(numerator: number, denominator: number): number {
 
 function formatBudgetStatus(actual: number, budget: number, higherIsBetter = false): BudgetStatus {
   if (budget <= 0) {
-    return 'attention';
+    return actual <= budget ? 'maintain' : 'attention';
   }
 
   if (higherIsBetter) {

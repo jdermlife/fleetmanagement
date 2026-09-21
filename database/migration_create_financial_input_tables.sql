@@ -210,6 +210,8 @@ CREATE TABLE IF NOT EXISTS loan_application_bill_reminders (
     due_date DATE,
     payment_date DATE,
     payment_status VARCHAR(30) NOT NULL DEFAULT 'PENDING',
+    reminder_enabled BOOLEAN NOT NULL DEFAULT FALSE,
+    reminder_days_before INTEGER NOT NULL DEFAULT 10 CHECK (reminder_days_before BETWEEN 1 AND 365),
     reminder_sent BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP

@@ -75,6 +75,7 @@ from app.services.profile_history_audit import (
     profile_history_response_audit_metadata,
 )
 from app.services.account_access_service import queue_due_trial_reminders
+from app.services.bill_reminder_service import queue_due_bill_reminders
 from app.services.notification_service import dispatch_queued_notifications
 from app.services.security_bootstrap import seed_roles_and_permissions
 from security.auth import TokenError, decode_token
@@ -87,6 +88,7 @@ from app.routes.paymongo import router as paymongo_router
 from app.routes.paypal import router as paypal_router
 from app.routes.subscriptions import router as subscriptions_router
 from migrate_loan_application_owner import add_loan_application_owner_column
+from migrate_bill_reminder_email import run_migration as migrate_bill_reminder_email
 from migrate_overall_scores_composite_fields import ensure_composite_score_columns
 from migrate_overall_scores_wealth_fields import ensure_wealth_score_columns
 from migrate_profile_history import run_migration as migrate_profile_history
@@ -110,6 +112,7 @@ async def _notification_dispatcher_loop() -> None:
         db = SessionLocal()
         try:
             queue_due_trial_reminders(db)
+            queue_due_bill_reminders(db)
             dispatch_queued_notifications(db, limit=notification_dispatch_batch_size)
         except Exception as exc:
             backend_logger.error("Notification dispatcher loop failed", error=str(exc))
@@ -247,6 +250,7 @@ async def lifespan(_app: FastAPI):
     _ensure_loan_application_schema()
     _ensure_workflow_history_table()
     migrate_profile_history()
+    migrate_bill_reminder_email()
 
     if notification_dispatcher_enabled and notification_dispatcher_task is None:
         notification_dispatcher_task = asyncio.create_task(_notification_dispatcher_loop())

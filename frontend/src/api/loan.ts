@@ -998,6 +998,8 @@ export type BillReminderRecordPayload = {
   due_date: string | null
   payment_date: string | null
   payment_status: string
+  reminder_enabled: boolean
+  reminder_days_before: number
   reminder_sent: boolean
 }
 

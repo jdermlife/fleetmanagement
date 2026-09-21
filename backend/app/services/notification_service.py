@@ -5,7 +5,7 @@ from string import Template
 from typing import Any
 
 import requests
-from sqlalchemy import and_, func, or_
+from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
 
 from app.models.notification import (
@@ -263,6 +263,18 @@ def dispatch_queued_notifications(db: Session, limit: int = 100) -> dict[str, in
             notification.status = NotificationStatus.SENT
             notification.sent_at = datetime.now(timezone.utc)
             notification.error_message = None
+            if (
+                notification.source_table == "loan_application_bill_reminders"
+                and notification.source_record_id
+            ):
+                db.execute(
+                    text(
+                        "UPDATE loan_application_bill_reminders "
+                        "SET reminder_sent = TRUE, updated_at = CURRENT_TIMESTAMP "
+                        "WHERE id = :reminder_id"
+                    ),
+                    {"reminder_id": int(notification.source_record_id)},
+                )
             sent += 1
 
             _log_attempt(

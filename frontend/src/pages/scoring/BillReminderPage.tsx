@@ -684,6 +684,8 @@ export default function BillReminderPage() {
           due_date: biller.dateCovered || null,
           payment_date: null,
           payment_status: 'PENDING',
+          reminder_enabled: biller.emailReminder10DaysBefore,
+          reminder_days_before: 10,
           reminder_sent: false,
         })));
         setSetupStatusMessage('Setup saved to the selected Profile ID bill reminder records. Continue with Step 3.');
@@ -808,6 +810,8 @@ export default function BillReminderPage() {
           payment_status: amountPaid >= biller.budgetedAmount
             ? 'PAID'
             : amountPaid > 0 ? 'PARTIAL' : 'PENDING',
+          reminder_enabled: biller.emailReminder10DaysBefore,
+          reminder_days_before: 10,
           reminder_sent: false,
         };
       }));

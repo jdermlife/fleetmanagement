@@ -1036,8 +1036,9 @@ def save_bill_reminder_records(
         insert_statement = text(
             "INSERT INTO loan_application_bill_reminders "
             "(loan_application_id, bill_type, biller_name, amount_due, due_date, payment_date, "
-            "payment_status, reminder_sent) VALUES (:loan_application_id, :bill_type, "
-            ":biller_name, :amount_due, :due_date, :payment_date, :payment_status, :reminder_sent)"
+            "payment_status, reminder_enabled, reminder_days_before, reminder_sent) "
+            "VALUES (:loan_application_id, :bill_type, :biller_name, :amount_due, :due_date, "
+            ":payment_date, :payment_status, :reminder_enabled, :reminder_days_before, :reminder_sent)"
         )
         for reminder in payload.records:
             db.execute(

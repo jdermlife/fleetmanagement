@@ -172,6 +172,8 @@ class BillReminderRecordPayload(BaseModel):
     due_date: date | None = None
     payment_date: date | None = None
     payment_status: str = Field(default="PENDING", max_length=30)
+    reminder_enabled: bool = False
+    reminder_days_before: int = Field(default=10, ge=1, le=365)
     reminder_sent: bool = False
 
 
