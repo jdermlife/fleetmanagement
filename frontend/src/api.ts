@@ -6,6 +6,7 @@ import { APP_CONFIG } from './config'
 const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
+const AUTH_REQUEST_TIMEOUT_MS = 12000
 
 type AuthStorageMode = 'persistent' | 'session'
 
@@ -603,6 +604,8 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
     platform: payload.platform,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
+  }, {
+    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined

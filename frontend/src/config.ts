@@ -6,6 +6,8 @@ function getCurrentOrigin(): string {
 
 export const DEFAULT_GOOGLE_CLIENT_ID =
   '542183516756-2q3nuh3oui4cjdvcr7hpts6b40kfhheo.apps.googleusercontent.com'
+export const DEFAULT_API_FALLBACK_URL =
+  'https://filscore-ai.quantech.international'
 export const DEFAULT_OLLAMA_FALLBACK_URL =
   'https://filscore-ai.quantech.international/local-ai/page-assistant'
 
@@ -44,6 +46,14 @@ export function resolveOptionalApiBase(configuredApiBase: string | undefined): s
   return configuredApiBase?.trim() ? validateConfiguredApiBase(configuredApiBase) : null
 }
 
+export function resolveApiFallbackBase(
+  configuredApiBase: string | undefined,
+  isDevelopment: boolean,
+): string | null {
+  return resolveOptionalApiBase(configuredApiBase)
+    ?? (isDevelopment ? null : DEFAULT_API_FALLBACK_URL)
+}
+
 export function resolveGoogleClientId(configuredClientId: string | undefined): string {
   return configuredClientId?.trim() || DEFAULT_GOOGLE_CLIENT_ID
 }
@@ -69,7 +79,7 @@ export const APP_CONFIG = {
     return resolveApiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV)
   },
   get apiFallbackBase() {
-    return resolveOptionalApiBase(import.meta.env.VITE_API_FALLBACK_URL)
+    return resolveApiFallbackBase(import.meta.env.VITE_API_FALLBACK_URL, import.meta.env.DEV)
   },
   get appleClientId() {
     return import.meta.env.VITE_APPLE_CLIENT_ID?.trim() || 'com.quantech.filscore.web'

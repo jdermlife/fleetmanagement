@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  DEFAULT_API_FALLBACK_URL,
   DEFAULT_GOOGLE_CLIENT_ID,
   DEFAULT_OLLAMA_FALLBACK_URL,
   resolveApiBase,
+  resolveApiFallbackBase,
   resolveAppleRedirect,
   resolveGoogleClientId,
   resolveOllamaFallbackUrl,
@@ -49,6 +51,16 @@ describe('resolveOptionalApiBase', () => {
       'https://filscore-ai.quantech.international',
     )
     expect(resolveOptionalApiBase(undefined)).toBeNull()
+  })
+})
+
+describe('resolveApiFallbackBase', () => {
+  it('uses Contabo by default in production when the build variable is omitted', () => {
+    expect(resolveApiFallbackBase(undefined, false)).toBe(DEFAULT_API_FALLBACK_URL)
+  })
+
+  it('does not contact the production fallback by default during local development', () => {
+    expect(resolveApiFallbackBase(undefined, true)).toBeNull()
   })
 })
 

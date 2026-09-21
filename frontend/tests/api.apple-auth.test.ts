@@ -133,6 +133,40 @@ describe('loginWithApple', () => {
     })
   })
 
+  it('retries the Google token exchange on Contabo after a Render network timeout', async () => {
+    vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
+    vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
+    await import('../src/api')
+    const healthCheckClient = clients[0]
+    const authClient = clients[1]
+    const responseErrorHandler = authClient.interceptors.response.use.mock.calls[0][1] as (
+      error: unknown,
+    ) => Promise<unknown>
+    healthCheckClient.get.mockResolvedValue({ status: 200 })
+    authClient.request.mockResolvedValue({ data: { ok: true } })
+    const failedRequest = {
+      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+      method: 'post',
+      url: '/api/auth/google-token',
+      data: '{"id_token":"google-token"}',
+    }
+
+    await responseErrorHandler({
+      config: failedRequest,
+      message: 'timeout of 12000ms exceeded',
+    })
+
+    expect(healthCheckClient.get).toHaveBeenCalledWith('/api/health', {
+      baseURL: 'https://filscore-ai.quantech.international',
+    })
+    expect(authClient.request).toHaveBeenCalledWith(expect.objectContaining({
+      baseURL: 'https://filscore-ai.quantech.international',
+      method: 'post',
+      url: '/api/auth/google-token',
+      _failoverRetry: true,
+    }))
+  })
+
   it('persists standard login tokens across an app reload', async () => {
     const apiModule = await import('../src/api')
     const authClient = clients[1]
