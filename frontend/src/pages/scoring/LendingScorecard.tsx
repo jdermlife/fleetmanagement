@@ -493,7 +493,23 @@ const calculateAutomatedScorecard = (
   application: LoanApplication,
   calculations: ReturnType<typeof calculateLoanMetrics>,
 ) => {
-  const character = application.borrower.govId ? 8 : 5;
+  const communityReputation =
+    application.enhancedDueDiligence.communityReputation.trim().toLowerCase();
+  const hasExcellentReferences = communityReputation === 'excellent references';
+  const hasGoodOrAverageReferences =
+    communityReputation === 'good references' || communityReputation === 'average';
+  const hasNoFraudIndicators =
+    !application.fraudIntelligence.forgedPayslip &&
+    !application.fraudIntelligence.fakeNationalId &&
+    !application.fraudIntelligence.forgedBankStatement &&
+    !application.fraudIntelligence.identityTheftIndicator;
+  const character = !hasNoFraudIndicators
+    ? 0
+    : hasExcellentReferences
+      ? 8
+      : hasGoodOrAverageReferences
+        ? 5
+        : 0;
   const capacity = calculations.dsr < 30 ? 10 : calculations.dsr < 40 ? 7 : 4;
   const capital = application.employment.otherIncome > 0 ? 8 : 5;
   const collateral = calculations.ltv < 80 ? 10 : calculations.ltv < 90 ? 7 : 4;
