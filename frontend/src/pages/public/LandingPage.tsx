@@ -167,6 +167,8 @@ export default function LandingPage() {
             <p>
               Quantech.International Solutions OPC builds practical digital systems that help
               people and organizations use financial intelligence with greater clarity and confidence.
+              Company  mission is to empower users with actionable insights, transforming complex financial data into clear, strategic decisions.
+              Quantech.International Solutions OPC is committed to delivering innovative financial solutions that drive informed decision-making.
             </p>
           </div>
         </div>
