@@ -34,7 +34,7 @@
     },
     {
       "source": "/api/:path*",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/:path*"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/:path*"
     },
     {
       "source": "/backend/:path*",

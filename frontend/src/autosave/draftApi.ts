@@ -3,6 +3,7 @@ import axios from 'axios'
 import { api } from '../api'
 
 const DRAFT_READ_TIMEOUT_MS = 10000
+const DRAFT_WRITE_TIMEOUT_MS = 12000
 
 export interface RemoteDraft<T> {
   scope: string
@@ -112,6 +113,8 @@ export async function saveAutosaveDraftRemote<T>(
     const response = await api.put<DraftApiPayload<T>>(draftPath(scope, entityKey), {
       payload: input.payload,
       expected_revision: input.expectedRevision ?? 0,
+    }, {
+      timeout: DRAFT_WRITE_TIMEOUT_MS,
     })
     return normalizeDraft(response.data, scope, entityKey)
   } catch (error) {

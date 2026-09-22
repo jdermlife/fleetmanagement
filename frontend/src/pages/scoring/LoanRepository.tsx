@@ -290,7 +290,9 @@ export default function LoanRepository() {
         limit: number;
         offset: number;
         records: LoanApplicationRecord[];
-      }>(`/api/loan-applications?${searchParams.toString()}`);
+      }>(`/api/loan-applications?${searchParams.toString()}`, {
+        timeout: 12000,
+      });
 
       setApplications(response.data.records);
       setTotalApplications(response.data.total);

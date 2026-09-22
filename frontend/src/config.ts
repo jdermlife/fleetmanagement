@@ -76,9 +76,11 @@ export function resolveOllamaFallbackUrl(configuredUrl: string | undefined): str
 
 export const APP_CONFIG = {
   get apiBase() {
+    if (!import.meta.env.DEV && !Capacitor.isNativePlatform()) return getCurrentOrigin()
     return resolveApiBase(import.meta.env.VITE_API_URL, import.meta.env.DEV)
   },
   get apiFallbackBase() {
+    if (!import.meta.env.DEV && !Capacitor.isNativePlatform()) return null
     return resolveApiFallbackBase(import.meta.env.VITE_API_FALLBACK_URL, import.meta.env.DEV)
   },
   get appleClientId() {
