@@ -2990,7 +2990,7 @@ export default function LendingScorecard() {
       return;
     }
 
-    if (!isFilscoreRoute) {
+    if (!isFilscoreRoute && hasPersistedRecord) {
       navigate(`/lending-scorecard/filscore${getApplicationQuery()}`);
     }
 

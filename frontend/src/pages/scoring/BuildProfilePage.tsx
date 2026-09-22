@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import axios from 'axios'
 import { NumericFormat } from 'react-number-format'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -942,6 +943,7 @@ export default function BuildProfilePage() {
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
   const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
   const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
+  const [missingScoreApplicationNo, setMissingScoreApplicationNo] = useState('')
   const preparedScoreKeyRef = useRef('')
   const scorePreparationPromiseRef = useRef<{ key: string; promise: Promise<LoanApplicationRecord> } | null>(null)
   const mirrorResultRef = useRef<{ applicationNo: string; status: 'created' | 'matched' } | null>(null)
@@ -959,7 +961,10 @@ export default function BuildProfilePage() {
   const [doNotShowJourneyAgain, setDoNotShowJourneyAgain] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
   const [isJourneyDismissed, setIsJourneyDismissed] = useState(() => safeJourneyStorageGet(JOURNEY_DO_NOT_SHOW_STORAGE_KEY) === '1')
   const currentStep = WORKFLOW_STEPS.find((item) => item.id === profile.step) ?? WORKFLOW_STEPS[0]
-  const scoreApplicationNo = getSelectedBuildProfileApplicationNo(profile)
+  const candidateScoreApplicationNo = getSelectedBuildProfileApplicationNo(profile)
+  const scoreApplicationNo = candidateScoreApplicationNo === missingScoreApplicationNo
+    ? ''
+    : candidateScoreApplicationNo
   const scorePreparationKey = scoreApplicationNo
     ? `${scoreApplicationNo}:${scorePreparationFingerprint(profile)}`
     : ''
@@ -1299,6 +1304,12 @@ export default function BuildProfilePage() {
       }
       return synchronizedApplication
     })().catch((error) => {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        setMissingScoreApplicationNo(applicationNo)
+        setScorePreparationStatus('ready')
+        setSaveMessage(`${profileSnapshot.profileId} is ready. Credit Health will create a repository record when saved.`)
+        throw error
+      }
       if (currentScorePreparationKeyRef.current === preparationKey) {
         setScorePreparationStatus('error')
         setSaveMessage(`Unable to prepare profile ${applicationNo}. Select a score button to retry.`)
@@ -1373,7 +1384,13 @@ export default function BuildProfilePage() {
     setProfile(updatedProfile)
     if (!scoreApplicationNo) {
       persistProfileSnapshot(updatedProfile)
-      navigate(`${destination}?profileId=${encodeURIComponent(profile.profileId)}`)
+      if (destination === '/lending-scorecard/filscore') {
+        navigate(`/lending-scorecard?profileId=${encodeURIComponent(profile.profileId)}`, {
+          state: { scorecardAction: 'open-filscore' },
+        })
+      } else {
+        navigate(`${destination}?profileId=${encodeURIComponent(profile.profileId)}`)
+      }
       return
     }
     setPendingScorePage(key)
@@ -1381,7 +1398,18 @@ export default function BuildProfilePage() {
       const preparedApplication = await prepareStep12Scores(profile)
       persistProfileSnapshot(updatedProfile)
       navigate(`${destination}?applicationNo=${encodeURIComponent(preparedApplication.application_no)}`)
-    } catch {
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 404) {
+        persistProfileSnapshot(updatedProfile)
+        if (destination === '/lending-scorecard/filscore') {
+          navigate(`/lending-scorecard?profileId=${encodeURIComponent(profile.profileId)}`, {
+            state: { scorecardAction: 'open-filscore' },
+          })
+        } else {
+          navigate(`${destination}?profileId=${encodeURIComponent(profile.profileId)}`)
+        }
+        return
+      }
       setSaveMessage('Unable to synchronize profile data and compute FILSCORE right now.')
     } finally {
       setPendingScorePage(null)

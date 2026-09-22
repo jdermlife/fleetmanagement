@@ -630,10 +630,48 @@ describe('BuildProfilePage', () => {
     expect(mockUpdateLoanApplication).not.toHaveBeenCalled()
 
     await user.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
-    expect(mockNavigate).toHaveBeenLastCalledWith(`/lending-scorecard/filscore?profileId=${profileId}`)
+    expect(mockNavigate).toHaveBeenLastCalledWith(`/lending-scorecard?profileId=${profileId}`, {
+      state: { scorecardAction: 'open-filscore' },
+    })
 
     await user.click(screen.getByRole('button', { name: 'Open Wealth Building Score' }))
     expect(mockNavigate).toHaveBeenLastCalledWith(`/net-worth-positioning?profileId=${profileId}`)
+  })
+
+  it('creates FILSCORE from a local profile when its legacy application ID is missing', async () => {
+    const user = userEvent.setup()
+    window.localStorage.setItem('fms:build-profile', JSON.stringify({
+      profileId: 'APP-SAMPLE',
+      selectedApplicationNo: 'APP-SAMPLE',
+      completionPercent: 100,
+      step: 12,
+      values: { fullName: 'Alexa Laya' },
+      documents: [],
+      suitabilityAnswers: {},
+      coBorrowers: [],
+      guarantors: [],
+      additionalCollaterals: [],
+      realEstateCollaterals: [],
+      financialInstrumentCollaterals: [],
+      additionalLoans: [],
+      propertyDeclarations: [],
+      step3FinancialInvestments: [],
+      financialInvestments: [],
+      dependents: [],
+    }))
+    mockFetchLoanApplication.mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 404 },
+    })
+
+    render(<BuildProfilePage />)
+    await user.click(screen.getByRole('button', { name: 'Open Credit Health Score' }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenLastCalledWith('/lending-scorecard?profileId=APP-SAMPLE', {
+        state: { scorecardAction: 'open-filscore' },
+      })
+    })
   })
 
   it('synchronizes a backend-confirmed profile ID as a loan application', async () => {
