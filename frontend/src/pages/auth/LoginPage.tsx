@@ -65,13 +65,30 @@ function getBackendErrorPayload(error: unknown): { status?: number; detail?: str
   return { status }
 }
 
-function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string {
+function resolveSocialAuthErrorMessage(
+  error: unknown,
+  fallback: string,
+  useThrownMessage = true,
+): string {
   const { detail } = getBackendErrorPayload(error)
   if (detail) {
     return detail
   }
 
-  if (error instanceof Error && error.message.trim().length > 0) {
+  if (typeof error === 'object' && error !== null) {
+    const candidate = error as { code?: unknown; message?: unknown }
+    const message = typeof candidate.message === 'string' ? candidate.message.toLowerCase() : ''
+    if (
+      candidate.code === 'ECONNABORTED'
+      || candidate.code === 'ETIMEDOUT'
+      || message.includes('timeout')
+      || message.includes('network error')
+    ) {
+      return 'The login provider is temporarily unavailable. Please try again shortly.'
+    }
+  }
+
+  if (useThrownMessage && error instanceof Error && error.message.trim().length > 0) {
     return error.message
   }
 
@@ -204,7 +221,7 @@ export default function LoginPage() {
         return
       }
 
-      const resolvedMessage = getErrorMessage(error, 'Unable to sign in right now.')
+      const resolvedMessage = resolveSocialAuthErrorMessage(error, 'Unable to sign in right now.', false)
       if (isTrialExpiredMessage(resolvedMessage)) {
         const account = encodeURIComponent(username.trim())
         navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')

@@ -123,8 +123,43 @@ describe('loginWithApple', () => {
       username: 'fallback-user',
       password: 'not-a-real-password',
     }, {
-      timeout: 12000,
+      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+      timeout: 4000,
+      _loginProviderAttempt: true,
     })
+  })
+
+  it('caches only the working login provider URL after fast failover', async () => {
+    vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
+    vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
+    const apiModule = await import('../src/api')
+    const authClient = clients[1]
+    authClient.post
+      .mockRejectedValueOnce(new Error('primary unavailable'))
+      .mockResolvedValueOnce({
+        data: {
+          access_token: 'fallback-access-token',
+          refresh_token: 'fallback-refresh-token',
+          user: {
+            id: 12,
+            username: 'fallback-user',
+            email: 'fallback@example.com',
+            role: 'admin',
+            roles: ['admin'],
+            permissions: [],
+            is_active: true,
+          },
+        },
+      })
+
+    await apiModule.login({ username: 'fallback-user', password: 'not-a-real-password' })
+
+    expect(authClient.post).toHaveBeenNthCalledWith(2, '/api/auth/login', expect.anything(),
+      expect.objectContaining({ baseURL: 'https://filscore-ai.quantech.international' }))
+    expect(JSON.parse(window.localStorage.getItem('fms:auth:login-provider') || '{}')).toMatchObject({
+      baseUrl: 'https://filscore-ai.quantech.international',
+    })
+    expect(window.localStorage.getItem('fms:auth:login-provider')).not.toContain('not-a-real-password')
   })
 
   it('retries the Google token exchange on Contabo after a Render network timeout', async () => {
@@ -294,7 +329,9 @@ describe('loginWithApple', () => {
       subscriber_type: undefined,
       lender_data_sharing_consent: undefined,
     }, {
-      timeout: 12000,
+      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+      timeout: 4000,
+      _loginProviderAttempt: true,
     })
     expect(response.token).toBe('access-token-123')
     expect(response.user.email).toBe('apple@example.com')

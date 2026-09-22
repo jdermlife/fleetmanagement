@@ -21,6 +21,18 @@
   ],
   "rewrites": [
     {
+      "source": "/api/auth/login",
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/login"
+    },
+    {
+      "source": "/api/auth/google-token",
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/google-token"
+    },
+    {
+      "source": "/api/auth/apple-token",
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/apple-token"
+    },
+    {
       "source": "/api/:path*",
       "destination": "https://fleetmanagement-dq9t.onrender.com/:path*"
     },

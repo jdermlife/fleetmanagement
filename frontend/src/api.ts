@@ -7,6 +7,8 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 const AUTH_REQUEST_TIMEOUT_MS = 12000
+const LOGIN_PROVIDER_TIMEOUT_MS = 4000
+const LOGIN_PROVIDER_CACHE_KEY = 'fms:auth:login-provider'
 
 type AuthStorageMode = 'persistent' | 'session'
 
@@ -15,6 +17,68 @@ const apiBaseUrlCandidates = Array.from(new Set([
   APP_CONFIG.apiBase,
   APP_CONFIG.apiFallbackBase,
 ].filter((candidate): candidate is string => Boolean(candidate))))
+
+function normalizeLoginProviderBase(candidate: string): string | null {
+  try {
+    const baseOrigin = typeof window === 'undefined' ? undefined : window.location.origin
+    const url = new URL(candidate, baseOrigin)
+    if (!['http:', 'https:'].includes(url.protocol)) return null
+    if (url.pathname === '/api' || url.pathname === '/api/') url.pathname = '/'
+    url.search = ''
+    url.hash = ''
+    return url.toString().replace(/\/$/, '')
+  } catch {
+    return null
+  }
+}
+
+function getLoginProviderCandidates(): string[] {
+  const configuredCandidates = apiBaseUrlCandidates
+    .map(normalizeLoginProviderBase)
+    .filter((candidate): candidate is string => Boolean(candidate))
+  const sameOrigin = typeof window !== 'undefined' && !isDevelopment
+    ? normalizeLoginProviderBase(window.location.origin)
+    : null
+  const allowedCandidates = Array.from(new Set([
+    sameOrigin,
+    ...configuredCandidates,
+  ].filter((candidate): candidate is string => Boolean(candidate))))
+
+  let cachedProvider: string | null = null
+  if (typeof window !== 'undefined') {
+    try {
+      const cached = JSON.parse(window.localStorage.getItem(LOGIN_PROVIDER_CACHE_KEY) || 'null') as {
+        baseUrl?: unknown
+      } | null
+      if (typeof cached?.baseUrl === 'string' && allowedCandidates.includes(cached.baseUrl)) {
+        cachedProvider = cached.baseUrl
+      }
+    } catch {
+      try {
+        window.localStorage.removeItem(LOGIN_PROVIDER_CACHE_KEY)
+      } catch {
+        // Login must continue when browser storage is unavailable.
+      }
+    }
+  }
+
+  return Array.from(new Set([
+    cachedProvider,
+    ...allowedCandidates,
+  ].filter((candidate): candidate is string => Boolean(candidate))))
+}
+
+function cacheLoginProvider(baseUrl: string): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(LOGIN_PROVIDER_CACHE_KEY, JSON.stringify({
+      baseUrl,
+      updatedAt: new Date().toISOString(),
+    }))
+  } catch {
+    // Provider caching is an optimization and must never block login.
+  }
+}
 
 const healthCheckClient = axios.create({
   timeout: 6000,
@@ -281,6 +345,36 @@ function canRetryOnFallback(method?: string, url?: string): boolean {
   ].some((path) => url.includes(path))
 }
 
+async function postToLoginProvider<T>(path: string, data: unknown): Promise<AxiosResponse<T>> {
+  const candidates = getLoginProviderCandidates()
+  let lastError: unknown = new Error('No login provider is configured.')
+
+  for (const baseURL of candidates) {
+    try {
+      const response = await api.post<T>(path, data, {
+        baseURL,
+        timeout: LOGIN_PROVIDER_TIMEOUT_MS,
+        _loginProviderAttempt: true,
+      } as Parameters<typeof api.post<T>>[2] & { _loginProviderAttempt: boolean })
+      cacheLoginProvider(baseURL)
+      setActiveApiBaseUrl(baseURL)
+      return response
+    } catch (error) {
+      lastError = error
+      if (axios.isAxiosError(error)) {
+        const status = error.response?.status
+        if (status && ![404, 408, 502, 503, 504].includes(status)) {
+          cacheLoginProvider(baseURL)
+          setActiveApiBaseUrl(baseURL)
+          throw error
+        }
+      }
+    }
+  }
+
+  throw lastError
+}
+
 async function selectHealthyBackend(): Promise<boolean> {
   const healthyBaseUrl = await findHealthyApiBaseUrl()
   if (!healthyBaseUrl) return false
@@ -322,12 +416,17 @@ api.interceptors.response.use(
       })
     }
 
-    const originalRequest = error.config as (typeof error.config & { _retry?: boolean; _failoverRetry?: boolean }) | undefined
+    const originalRequest = error.config as (typeof error.config & {
+      _retry?: boolean
+      _failoverRetry?: boolean
+      _loginProviderAttempt?: boolean
+    }) | undefined
     const refreshTokenCandidate = getRefreshToken()
 
     if (
       !error.response
       && originalRequest
+      && !originalRequest._loginProviderAttempt
       && !originalRequest._failoverRetry
       && apiBaseUrlCandidates.length > 1
       && canRetryOnFallback(originalRequest.method, originalRequest.url)
@@ -572,11 +671,9 @@ function syncSessionFromAuthResponse(
 }
 
 export async function login(credentials: LoginRequest): Promise<LoginResponse> {
-  const response = await api.post('/api/auth/login', {
+  const response = await postToLoginProvider<Record<string, unknown>>('/api/auth/login', {
     username: credentials.username,
     password: credentials.password,
-  }, {
-    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -599,13 +696,11 @@ export async function login(credentials: LoginRequest): Promise<LoginResponse> {
 }
 
 export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<LoginResponse> {
-  const response = await api.post('/api/auth/google-token', {
+  const response = await postToLoginProvider<Record<string, unknown>>('/api/auth/google-token', {
     id_token: payload.idToken,
     platform: payload.platform,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
-  }, {
-    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
@@ -629,13 +724,11 @@ export async function loginWithGoogle(payload: GoogleLoginRequest): Promise<Logi
 }
 
 export async function loginWithApple(payload: AppleLoginRequest): Promise<LoginResponse> {
-  const response = await api.post('/api/auth/apple-token', {
+  const response = await postToLoginProvider<Record<string, unknown>>('/api/auth/apple-token', {
     identity_token: payload.idToken,
     id_token: payload.idToken,
     subscriber_type: payload.subscriberType,
     lender_data_sharing_consent: payload.lenderDataSharingConsent,
-  }, {
-    timeout: AUTH_REQUEST_TIMEOUT_MS,
   })
   const responseData = response.data as Record<string, unknown>
   const user = responseData.user as Record<string, unknown> | undefined
