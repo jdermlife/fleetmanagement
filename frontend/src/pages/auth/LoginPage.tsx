@@ -14,6 +14,10 @@ const FINANCIAL_HEALTH_PATH = '/financial-health-summary'
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
 const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
 
+function isMarkupPayload(value: string): boolean {
+  return /<\/?[a-z][^>]*>/i.test(value)
+}
+
 function getBackendErrorPayload(error: unknown): { status?: number; detail?: string } {
   if (typeof error !== 'object' || error === null || !('response' in error)) {
     return {}
@@ -29,7 +33,11 @@ function getBackendErrorPayload(error: unknown): { status?: number; detail?: str
   const status = typeof response?.status === 'number' ? response.status : undefined
   const payload = response?.data
 
-  if (typeof payload === 'string' && payload.trim().length > 0) {
+  if (
+    typeof payload === 'string'
+    && payload.trim().length > 0
+    && !isMarkupPayload(payload)
+  ) {
     return { status, detail: payload.trim() }
   }
 

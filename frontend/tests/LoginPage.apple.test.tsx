@@ -289,6 +289,33 @@ describe('LoginPage Apple sign-in', () => {
     })
   })
 
+  it('does not render an HTML gateway response as a login error', async () => {
+    mockLogin.mockRejectedValue({
+      isAxiosError: true,
+      response: {
+        status: 502,
+        data: '<html><body><h1>502 Bad Gateway</h1></body></html>',
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const user = userEvent.setup()
+    await user.click(screen.getByRole('button', { name: 'Other Email' }))
+    await user.type(screen.getByPlaceholderText('Email or username'), 'email-user@example.com')
+    await user.type(screen.getByPlaceholderText('Password'), 'password123')
+    await user.click(screen.getByRole('button', { name: 'Log In' }))
+
+    await waitFor(() => {
+      expect(screen.getByText('Unable to sign in right now.')).toBeTruthy()
+    })
+    expect(screen.queryByText(/<html>/i)).toBeNull()
+  })
+
   it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',

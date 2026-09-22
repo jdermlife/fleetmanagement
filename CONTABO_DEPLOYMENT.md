@@ -1,4 +1,5 @@
-# Contabo Backend Deployment
+TYPE THE CONTABO PASSWORD IN THIS TERMINAL, THEN PRESS ENTER
+root@217.216.109.68's password:# Contabo Backend Deployment
 
 This deployment replaces the Render web service. The Vercel frontend keeps using its same-origin `/api` proxy, which now targets `filscore-ai.quantech.international`.
 
@@ -54,4 +55,4 @@ docker compose -f docker-compose.contabo.yml pull
 docker compose -f docker-compose.contabo.yml up -d --build
 ```
 
-Use the existing scripts in `ops/backup` to schedule and verify PostgreSQL backups before any database migration.
+Use the existing scripts in `ops/backup` to schedule and verify PostgreSQL backups before any database migration.root@217.216.109.68's password:TH3DA$B6_#JEC3@e

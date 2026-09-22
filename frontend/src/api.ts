@@ -520,7 +520,9 @@ export function getErrorMessage(error: unknown, fallback: string): string {
         return 'Resource not found.'
       case 500:
         return 'Server error. Please try again later.'
+      case 502:
       case 503:
+      case 504:
         return 'Server is temporarily unavailable.'
       default:
         return `Error: ${error.response?.statusText || fallback}`

@@ -55,7 +55,9 @@ vi.mock('axios', () => {
   return {
     default: {
       create,
-      isAxiosError: () => false,
+      isAxiosError: (error: unknown) => Boolean(
+        error && typeof error === 'object' && 'isAxiosError' in error
+      ),
     },
     create,
   }
@@ -89,6 +91,19 @@ describe('loginWithApple', () => {
     vi.restoreAllMocks()
     vi.unstubAllEnvs()
     vi.resetModules()
+  })
+
+  it('maps gateway failures to a user-safe availability message', async () => {
+    const apiModule = await import('../src/api')
+
+    expect(apiModule.getErrorMessage({
+      isAxiosError: true,
+      response: {
+        status: 502,
+        statusText: 'Bad Gateway',
+        data: '<html><body><h1>502 Bad Gateway</h1></body></html>',
+      },
+    }, 'Unable to sign in right now.')).toBe('Server is temporarily unavailable.')
   })
 
   it('starts password login without waiting for backend health probes', async () => {
