@@ -8,6 +8,7 @@ const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 const AUTH_REQUEST_TIMEOUT_MS = 12000
 const LOGIN_PROVIDER_TIMEOUT_MS = 4000
+const LOGOUT_REVOCATION_TIMEOUT_MS = 3000
 const LOGIN_PROVIDER_CACHE_KEY = 'fms:auth:login-provider'
 
 type AuthStorageMode = 'persistent' | 'session'
@@ -778,17 +779,17 @@ export async function logout(): Promise<void> {
   const currentRefreshToken = getRefreshToken()
   const autosaveOwnerToken = getAuthToken() ?? currentRefreshToken
 
-  try {
-    if (currentRefreshToken) {
-      await api.post('/api/auth/logout', {
-        refresh_token: currentRefreshToken,
-      })
-    }
-  } catch {
-    // Clear the local session even if the backend session is already expired.
-  } finally {
-    clearAutosaveDraftsForToken(autosaveOwnerToken)
-    syncStoredSession(null, null)
+  clearAutosaveDraftsForToken(autosaveOwnerToken)
+  syncStoredSession(null, null)
+
+  if (currentRefreshToken) {
+    void api.post('/api/auth/logout', {
+      refresh_token: currentRefreshToken,
+    }, {
+      timeout: LOGOUT_REVOCATION_TIMEOUT_MS,
+    }).catch(() => {
+      // Remote revocation is best-effort after the local session is closed.
+    })
   }
 }
 

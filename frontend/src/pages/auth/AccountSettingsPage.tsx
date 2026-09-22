@@ -17,7 +17,10 @@ import {
   type SubscriptionPayment,
   type SubscriptionPlan,
 } from '../../api'
-import { prepareAutosavesForLogout } from '../../autosave/useAutosaveDraft'
+import {
+  prepareAutosavesForFastLogout,
+  prepareAutosavesForLogout,
+} from '../../autosave/useAutosaveDraft'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
@@ -131,15 +134,12 @@ export default function AccountSettingsPage() {
     window.localStorage.setItem(THEME_STORAGE_KEY, theme)
   }, [theme])
 
-  const handleLogout = async () => {
+  const handleLogout = () => {
     setIsSigningOut(true)
-    try {
-      await prepareAutosavesForLogout()
-      await logout()
-      navigate('/login')
-    } finally {
-      setIsSigningOut(false)
-    }
+    void prepareAutosavesForFastLogout().catch(() => undefined)
+    void logout().catch(() => undefined)
+    navigate('/login')
+    setIsSigningOut(false)
   }
 
   const handlePasswordChange = async (event: FormEvent<HTMLFormElement>) => {
@@ -265,8 +265,8 @@ export default function AccountSettingsPage() {
     try {
       const response = await disconnectSignInProvider(provider)
       if (response.signOutRequired) {
-        await prepareAutosavesForLogout()
-        await logout()
+        void prepareAutosavesForFastLogout().catch(() => undefined)
+        void logout().catch(() => undefined)
         navigate('/login')
         return
       }

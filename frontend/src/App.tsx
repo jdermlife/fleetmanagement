@@ -15,7 +15,7 @@ import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
 import FloatingChatbot from './components/ai/FloatingChatbot'
 import { synchronizeBuildProfileDraft } from './autosave/buildProfileSync'
-import { prepareAutosavesForLogout } from './autosave/useAutosaveDraft'
+import { prepareAutosavesForFastLogout } from './autosave/useAutosaveDraft'
 import { isAdminUser } from './hooks/useAuthorization'
 
 type MenuLink = {
@@ -689,16 +689,13 @@ const isSignedIn = authReady && Boolean(currentUser)
     void synchronizeBuildProfileDraft().catch(() => undefined)
   }, [currentUserId])
 
-  const handleTopbarLogout = async () => {
+  const handleTopbarLogout = () => {
     setIsSigningOut(true)
-    try {
-      await prepareAutosavesForLogout()
-      await logout()
-      setCurrentUser(null)
-      navigate('/login')
-    } finally {
-      setIsSigningOut(false)
-    }
+    void prepareAutosavesForFastLogout().catch(() => undefined)
+    void logout().catch(() => undefined)
+    setCurrentUser(null)
+    navigate('/login')
+    setIsSigningOut(false)
   }
 
   useEffect(() => {

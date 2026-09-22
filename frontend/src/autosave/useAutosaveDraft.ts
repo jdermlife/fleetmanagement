@@ -22,6 +22,7 @@ import {
 
 export const DEFAULT_LOCAL_AUTOSAVE_DELAY_MS = 250
 export const DEFAULT_REMOTE_AUTOSAVE_DELAY_MS = 1_500
+export const LOGOUT_AUTOSAVE_FLUSH_TIMEOUT_MS = 500
 
 interface ActiveAutosaveRegistration {
   saveNow: () => Promise<boolean>
@@ -43,6 +44,22 @@ export async function prepareAutosavesForLogout(): Promise<void> {
   const registrations = Array.from(activeAutosaves)
   const activeSaves = registrations.map((registration) => registration.saveNow())
   await Promise.allSettled([...Array.from(pendingAutosaveFlushes), ...activeSaves])
+  registrations.forEach((registration) => registration.clearLocalForLogout())
+}
+
+export async function prepareAutosavesForFastLogout(): Promise<void> {
+  const registrations = Array.from(activeAutosaves)
+  const activeSaves = registrations.map((registration) => registration.saveNow())
+  const flushes = Promise.allSettled([...Array.from(pendingAutosaveFlushes), ...activeSaves])
+
+  let timeoutId: ReturnType<typeof setTimeout> | undefined
+  await Promise.race([
+    flushes,
+    new Promise<void>((resolve) => {
+      timeoutId = setTimeout(resolve, LOGOUT_AUTOSAVE_FLUSH_TIMEOUT_MS)
+    }),
+  ])
+  if (timeoutId !== undefined) clearTimeout(timeoutId)
   registrations.forEach((registration) => registration.clearLocalForLogout())
 }
 

@@ -2,12 +2,12 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockGetAuthToken, mockGetMySubscription, mockLogout, mockPrepareAutosavesForLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockGetAuthToken, mockGetMySubscription, mockLogout, mockPrepareAutosavesForFastLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockGetAuthToken: vi.fn(),
   mockGetMySubscription: vi.fn(),
   mockLogout: vi.fn(),
-  mockPrepareAutosavesForLogout: vi.fn(),
+  mockPrepareAutosavesForFastLogout: vi.fn(),
   mockSynchronizeBuildProfileDraft: vi.fn(),
 }))
 
@@ -21,7 +21,7 @@ vi.mock('../src/api', () => ({
 }))
 
 vi.mock('../src/autosave/useAutosaveDraft', () => ({
-  prepareAutosavesForLogout: mockPrepareAutosavesForLogout,
+  prepareAutosavesForFastLogout: mockPrepareAutosavesForFastLogout,
 }))
 vi.mock('../src/autosave/buildProfileSync', () => ({
   synchronizeBuildProfileDraft: mockSynchronizeBuildProfileDraft,
@@ -29,6 +29,9 @@ vi.mock('../src/autosave/buildProfileSync', () => ({
 
 vi.mock('../src/components/AutosaveStatus', () => ({ default: () => null }))
 vi.mock('../src/components/ai/FloatingChatbot', () => ({ default: () => null }))
+vi.mock('../src/pages/auth/LoginPage', () => ({
+  default: () => <h1>Login Page</h1>,
+}))
 vi.mock('../src/pages/scoring/LendingScorecard', () => ({
   default: () => <h1>Authenticated Lending Scorecard</h1>,
 }))
@@ -70,7 +73,7 @@ describe('App account menu accordions', () => {
       status: 'ACTIVE',
       subscription_type: 'PAID',
     })
-    mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
+    mockPrepareAutosavesForFastLogout.mockResolvedValue(undefined)
     mockSynchronizeBuildProfileDraft.mockResolvedValue(undefined)
     Object.defineProperty(window, 'localStorage', {
       value: createStorageMock(),
@@ -109,6 +112,24 @@ describe('App account menu accordions', () => {
     expect(screen.queryByRole('link', { name: 'Billing' })).toBeNull()
     expect(screen.queryByRole('link', { name: 'Support' })).toBeNull()
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeTruthy()
+  })
+
+  it('navigates to login while logout work remains pending', async () => {
+    mockPrepareAutosavesForFastLogout.mockReturnValue(new Promise<void>(() => undefined))
+    mockLogout.mockReturnValue(new Promise<void>(() => undefined))
+
+    render(
+      <MemoryRouter initialEntries={['/menu-test']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Toggle account and application menu' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Sign Out' }))
+
+    expect(mockPrepareAutosavesForFastLogout).toHaveBeenCalledTimes(1)
+    expect(mockLogout).toHaveBeenCalledTimes(1)
+    expect(await screen.findByRole('heading', { name: 'Login Page' })).toBeTruthy()
   })
 
   it('renders the fees disclosure without authentication', async () => {

@@ -9,6 +9,7 @@ const {
   mockListPublicSubscriptionPlans,
   mockListSubscriptionPayments,
   mockLogout,
+  mockPrepareAutosavesForFastLogout,
   mockPrepareAutosavesForLogout,
 } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
@@ -17,6 +18,7 @@ const {
   mockListPublicSubscriptionPlans: vi.fn(),
   mockListSubscriptionPayments: vi.fn(),
   mockLogout: vi.fn(),
+  mockPrepareAutosavesForFastLogout: vi.fn(),
   mockPrepareAutosavesForLogout: vi.fn(),
 }))
 
@@ -35,6 +37,7 @@ vi.mock('../src/api', () => ({
 }))
 
 vi.mock('../src/autosave/useAutosaveDraft', () => ({
+  prepareAutosavesForFastLogout: mockPrepareAutosavesForFastLogout,
   prepareAutosavesForLogout: mockPrepareAutosavesForLogout,
 }))
 
@@ -72,6 +75,7 @@ describe('AccountSettingsPage', () => {
     mockListPublicSubscriptionPlans.mockReset()
     mockListSubscriptionPayments.mockReset()
     mockLogout.mockReset()
+    mockPrepareAutosavesForFastLogout.mockReset()
     mockPrepareAutosavesForLogout.mockReset()
     mockFetchCurrentUser.mockResolvedValue({
       id: 42,
@@ -89,6 +93,7 @@ describe('AccountSettingsPage', () => {
     mockListPublicSubscriptionPlans.mockRejectedValue(new Error('Unable to load plans'))
     mockListSubscriptionPayments.mockResolvedValue([])
     mockLogout.mockResolvedValue(undefined)
+    mockPrepareAutosavesForFastLogout.mockResolvedValue(undefined)
     mockPrepareAutosavesForLogout.mockResolvedValue(undefined)
     mockDeleteAccount.mockResolvedValue({ message: 'Associated account data deleted successfully' })
     mockDisconnectSignInProvider.mockResolvedValue({
@@ -218,15 +223,9 @@ describe('AccountSettingsPage', () => {
     expect(screen.getByRole('status').textContent).toContain('Welcome pop-ups restored')
   })
 
-  it('shows the signing-out overlay until autosaves and logout finish', async () => {
-    let resolveAutosaves: () => void = () => undefined
-    let resolveLogout: () => void = () => undefined
-    mockPrepareAutosavesForLogout.mockImplementation(() => new Promise<void>((resolve) => {
-      resolveAutosaves = resolve
-    }))
-    mockLogout.mockImplementation(() => new Promise<void>((resolve) => {
-      resolveLogout = resolve
-    }))
+  it('signs out without waiting for autosaves or remote logout', async () => {
+    mockPrepareAutosavesForFastLogout.mockReturnValue(new Promise<void>(() => undefined))
+    mockLogout.mockReturnValue(new Promise<void>(() => undefined))
 
     render(
       <MemoryRouter initialEntries={['/account']}>
@@ -236,17 +235,9 @@ describe('AccountSettingsPage', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Sign Out' }))
 
-    expect(screen.getByRole('dialog', { name: 'Signing you out' })).toBeTruthy()
-    expect(mockLogout).not.toHaveBeenCalled()
-
-    resolveAutosaves()
-    await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1))
-    expect(screen.getByRole('dialog', { name: 'Signing you out' })).toBeTruthy()
-
-    resolveLogout()
-    await waitFor(() => {
-      expect(screen.queryByRole('dialog', { name: 'Signing you out' })).toBeNull()
-    })
+    expect(mockPrepareAutosavesForFastLogout).toHaveBeenCalledTimes(1)
+    expect(mockLogout).toHaveBeenCalledTimes(1)
+    expect(screen.queryByRole('dialog', { name: 'Signing you out' })).toBeNull()
   })
 
   it('offers mutually exclusive account and data deletion options', async () => {
@@ -305,7 +296,7 @@ describe('AccountSettingsPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: 'Disconnect Google Sign-In' }))
 
     await waitFor(() => expect(mockDisconnectSignInProvider).toHaveBeenCalledWith('google'))
-    await waitFor(() => expect(mockPrepareAutosavesForLogout).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(mockPrepareAutosavesForFastLogout).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(mockLogout).toHaveBeenCalledTimes(1))
   })
 
