@@ -80,6 +80,7 @@ const DriverManagementScorecardPage = lazy(() => import('./pages/drivers/DriverM
 const DriverRegistrationPage = lazy(() => import('./pages/drivers/DriverRegistrationPage'))
 const LiveGpsTrackingPage = lazy(() => import('./pages/gps/LiveGpsTrackingPage'))
 const MaintenanceManagementPage = lazy(() => import('./pages/maintenance/MaintenanceManagementPage'))
+const LandingPage = lazy(() => import('./pages/public/LandingPage'))
 const LoginPage = lazy(() => import('./pages/auth/LoginPage'))
 const RegisterPage = lazy(() => import('./pages/auth/RegisterPage'))
 const ForgotPasswordPage = lazy(() => import('./pages/auth/ForgotPasswordPage'))
@@ -628,6 +629,7 @@ const adminMenuItems = isAdminUser
   : []
 
 const isLoginRoute = location.pathname === '/login'
+const isLandingRoute = location.pathname === '/'
 const isPaymentSuccessRoute = ['/payment-success', '/payment/success', '/payment/cancel'].includes(location.pathname)
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
@@ -712,7 +714,7 @@ const isSignedIn = authReady && Boolean(currentUser)
   return (
     <div className="app-shell">
       {/* TOP NAVIGATION */}
-      {!isLoginRoute ? (
+      {!isLoginRoute && !isLandingRoute ? (
       <header className="sidebar">
         <div className="app-topbar-row">
           {/* BRAND */}
@@ -1194,16 +1196,12 @@ const isSignedIn = authReady && Boolean(currentUser)
 </header>
       ) : null}
   {/* PAGE CONTENT */}
-      <main className={`content${isLoginRoute ? ' content-login' : ''}`}>
+      <main className={`content${isLoginRoute ? ' content-login' : ''}${isLandingRoute ? ' content-landing' : ''}`}>
         <Suspense fallback={<div className="card">Loading page...</div>}>
           <Routes>
             <Route
               path="/"
-              element={
-                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
-                  <Navigate to="/financial-health-summary" replace />
-                </ProtectedRoute>
-              }
+              element={<LandingPage />}
             />
 
             <Route
@@ -1890,7 +1888,7 @@ const isSignedIn = authReady && Boolean(currentUser)
           </Routes>
         </Suspense>
       </main>
-      {!isLoginRoute && !isPaymentSuccessRoute ? (
+      {!isLoginRoute && !isLandingRoute && !isPaymentSuccessRoute ? (
         <FloatingChatbot
           pathname={location.pathname}
           authenticated={Boolean(currentUser)}

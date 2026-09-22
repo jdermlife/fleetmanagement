@@ -299,6 +299,11 @@ textarea {
   position: relative;
 }
 
+.content.content-landing {
+  padding: 0;
+  overflow: visible;
+}
+
 /* ========================
    TOP NAVIGATION
    ======================== */
