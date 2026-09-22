@@ -92,8 +92,8 @@ describe('loginWithApple', () => {
   })
 
   it('starts password login without waiting for backend health probes', async () => {
-    vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
-    vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
+    vi.stubEnv('VITE_API_URL', 'https://filscore-ai.quantech.international')
+    vi.stubEnv('VITE_API_FALLBACK_URL', '')
     const apiModule = await import('../src/api')
     const healthCheckClient = clients[0]
     const authClient = clients[1]
@@ -123,7 +123,7 @@ describe('loginWithApple', () => {
       username: 'fallback-user',
       password: 'not-a-real-password',
     }, {
-      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+      baseURL: 'https://filscore-ai.quantech.international',
       timeout: 4000,
       _loginProviderAttempt: true,
     })
@@ -329,7 +329,7 @@ describe('loginWithApple', () => {
       subscriber_type: undefined,
       lender_data_sharing_consent: undefined,
     }, {
-      baseURL: 'https://fleetmanagement-dq9t.onrender.com',
+      baseURL: 'https://filscore-ai.quantech.international',
       timeout: 4000,
       _loginProviderAttempt: true,
     })

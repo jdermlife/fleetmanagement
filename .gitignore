@@ -25,6 +25,7 @@ dist/
 .env
 .env.*
 !.env.example
+!backend/.env.contabo.example
 
 .omx/
 !.omx/

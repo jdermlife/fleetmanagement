@@ -22,23 +22,23 @@
   "rewrites": [
     {
       "source": "/api/auth/login",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/login"
+      "destination": "https://filscore-ai.quantech.international/api/auth/login"
     },
     {
       "source": "/api/auth/google-token",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/google-token"
+      "destination": "https://filscore-ai.quantech.international/api/auth/google-token"
     },
     {
       "source": "/api/auth/apple-token",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/apple-token"
+      "destination": "https://filscore-ai.quantech.international/api/auth/apple-token"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/api/:path*"
+      "destination": "https://filscore-ai.quantech.international/api/:path*"
     },
     {
       "source": "/backend/:path*",
-      "destination": "https://fleetmanagement-dq9t.onrender.com/:path*"
+      "destination": "https://filscore-ai.quantech.international/:path*"
     },
     {
       "source": "/((?!assets/).*)",

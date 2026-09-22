@@ -15,7 +15,7 @@ const ANDROID_APPLE_CLIENT_ID =
   'com.quantech.filscore.web'
 
 const ANDROID_APPLE_REDIRECT =
-  'https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback'
+  'https://filscore-ai.quantech.international/api/auth/apple/callback'
 
 // =====================================================
 // Apple JS types

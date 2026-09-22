@@ -192,7 +192,7 @@ APPLE_TEAM_ID = os.getenv("APPLE_TEAM_ID", "").strip()
 APPLE_PRIVATE_KEY = os.getenv("APPLE_PRIVATE_KEY", "").strip()
 APPLE_REDIRECT_URI = os.getenv(
     "APPLE_REDIRECT_URI",
-    "https://fleetmanagement-dq9t.onrender.com/api/auth/apple/callback",
+    "https://filscore-ai.quantech.international/api/auth/apple/callback",
 ).strip()
 APPLE_ANDROID_REDIRECT_URI = os.getenv(
     "APPLE_ANDROID_REDIRECT_URI",
