@@ -177,6 +177,41 @@ describe('loginWithApple', () => {
     expect(window.localStorage.getItem('fms:auth:login-provider')).not.toContain('not-a-real-password')
   })
 
+  it('rejects an SPA document and continues to the configured auth backend', async () => {
+    vi.stubEnv('VITE_API_URL', 'https://localhost')
+    vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')
+    const apiModule = await import('../src/api')
+    const authClient = clients[1]
+    authClient.post
+      .mockResolvedValueOnce({ data: '<!doctype html><html><body>FILSCORE</body></html>' })
+      .mockResolvedValueOnce({
+        data: {
+          access_token: 'backend-access-token',
+          refresh_token: 'backend-refresh-token',
+          user: {
+            id: 13,
+            username: 'mobile-user',
+            email: 'mobile@example.com',
+            role: 'subscriber_borrower',
+            roles: ['subscriber_borrower'],
+            permissions: [],
+            is_active: true,
+          },
+        },
+      })
+
+    await expect(apiModule.login({
+      username: 'mobile-user',
+      password: 'not-a-real-password',
+    })).resolves.toMatchObject({ token: 'backend-access-token' })
+
+    expect(authClient.post).toHaveBeenNthCalledWith(2, '/api/auth/login', expect.anything(),
+      expect.objectContaining({ baseURL: 'https://filscore-ai.quantech.international' }))
+    expect(JSON.parse(window.localStorage.getItem('fms:auth:login-provider') || '{}')).toMatchObject({
+      baseUrl: 'https://filscore-ai.quantech.international',
+    })
+  })
+
   it('retries the Google token exchange on Contabo after a Render network timeout', async () => {
     vi.stubEnv('VITE_API_URL', 'https://fleetmanagement-dq9t.onrender.com')
     vi.stubEnv('VITE_API_FALLBACK_URL', 'https://filscore-ai.quantech.international')

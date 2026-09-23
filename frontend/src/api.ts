@@ -1,4 +1,5 @@
 import axios, { AxiosError, AxiosResponse } from 'axios'
+import { Capacitor } from '@capacitor/core'
 
 import { clearAutosaveDraftsForToken } from './autosave/draftStorage'
 import { APP_CONFIG } from './config'
@@ -37,7 +38,7 @@ function getLoginProviderCandidates(): string[] {
   const configuredCandidates = apiBaseUrlCandidates
     .map(normalizeLoginProviderBase)
     .filter((candidate): candidate is string => Boolean(candidate))
-  const sameOrigin = typeof window !== 'undefined' && !isDevelopment
+  const sameOrigin = typeof window !== 'undefined' && !isDevelopment && !Capacitor.isNativePlatform()
     ? normalizeLoginProviderBase(window.location.origin)
     : null
   const allowedCandidates = Array.from(new Set([
@@ -357,6 +358,14 @@ async function postToLoginProvider<T>(path: string, data: unknown): Promise<Axio
         timeout: LOGIN_PROVIDER_TIMEOUT_MS,
         _loginProviderAttempt: true,
       } as Parameters<typeof api.post<T>>[2] & { _loginProviderAttempt: boolean })
+      if (
+        typeof response.data !== 'object'
+        || response.data === null
+        || Array.isArray(response.data)
+      ) {
+        lastError = new Error(`Invalid authentication response from ${baseURL}.`)
+        continue
+      }
       cacheLoginProvider(baseURL)
       setActiveApiBaseUrl(baseURL)
       return response
