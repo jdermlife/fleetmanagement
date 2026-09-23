@@ -2,7 +2,10 @@ package com.quantech.filscore;
 
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Bundle;
 import android.util.Log;
+
+import androidx.activity.EdgeToEdge;
 
 import com.getcapacitor.BridgeActivity;
 import com.getcapacitor.Plugin;
@@ -14,6 +17,12 @@ import ee.forgr.capacitor.social.login.SocialLoginPlugin;
 
 public class MainActivity extends BridgeActivity
         implements ModifiedMainActivityForSocialLoginPlugin {
+
+        @Override
+        protected void onCreate(Bundle savedInstanceState) {
+                EdgeToEdge.enable(this);
+                super.onCreate(savedInstanceState);
+        }
 
     @Override
     public void onActivityResult(
