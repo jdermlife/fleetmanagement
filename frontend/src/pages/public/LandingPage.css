@@ -385,19 +385,50 @@
 }
 
 @media (max-width: 560px) {
+  .landing-nav {
+    width: calc(100% - 32px);
+    min-height: 68px;
+  }
+  .landing-brand { gap: 8px; font-size: 1rem; }
   .landing-brand small { display: none; }
-  .landing-nav { min-height: 72px; }
-  .landing-brand img { width: 40px; height: 40px; }
-  .landing-hero { min-height: 740px; padding-top: 112px; padding-bottom: 62px; }
-  .landing-hero h1 { font-size: clamp(2.35rem, 13vw, 3.5rem); }
+  .landing-brand img { width: 36px; height: 36px; }
+  .landing-nav .landing-sign-in { min-height: 42px; padding: 10px 15px; }
+  .landing-hero {
+    min-height: auto;
+    padding: 104px 20px 52px;
+  }
+  .landing-hero-mark {
+    top: 42%;
+    right: -220px;
+    width: 520px;
+  }
+  .landing-eyebrow { margin-bottom: 10px; font-size: 0.72rem; }
+  .landing-hero h1 { font-size: clamp(2.15rem, 11vw, 3rem); line-height: 1.06; }
+  .landing-hero-lead { margin-top: 20px; font-size: 1rem; line-height: 1.55; }
   .landing-hero-actions { align-items: stretch; flex-direction: column; }
-  .landing-secondary-action { text-align: center; }
+  .landing-primary-action,
+  .landing-secondary-action { width: 100%; min-height: 50px; text-align: center; }
   .landing-hero-score { display: none; }
-  .landing-section-heading { grid-template-columns: 1fr; }
+  .landing-trust-line { align-items: flex-start; line-height: 1.4; }
+  .landing-section-heading { grid-template-columns: 1fr; gap: 12px; margin-bottom: 28px; }
+  .landing-section-heading h2 { font-size: 2rem; }
   .landing-tool-grid { grid-template-columns: 1fr; }
-  .landing-tool { min-height: 230px; }
-  .landing-tools { padding-top: 68px; padding-bottom: 68px; }
+  .landing-tool {
+    min-height: auto;
+    padding: 20px;
+  }
+  .landing-tool h3 { margin-top: 14px; }
+  .landing-tools { padding: 52px 20px; }
+  .landing-outcomes { gap: 22px; padding: 48px 20px; }
+  .landing-outcomes h2 { font-size: 1.85rem; }
+  .landing-outcomes li { align-items: flex-start; line-height: 1.4; }
+  .landing-trial { gap: 24px; padding: 48px 20px; }
+  .landing-trial h2 { font-size: 2rem; }
+  .landing-trial-actions { width: 100%; }
+  .landing-footer { padding: 44px 20px 24px; }
   .landing-footer-about { flex-direction: column; }
+  .landing-footer-about img { width: 56px; height: 56px; }
+  .landing-footer nav { gap: 16px 20px; margin-top: 28px; }
 }
 
 @media (prefers-reduced-motion: reduce) {

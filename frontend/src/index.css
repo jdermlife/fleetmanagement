@@ -12195,34 +12195,93 @@ th { color: var(--dark-gold); }
 
 @media (max-width: 420px) {
   .login-art-page {
-    padding: 8px 8px;
+    display: block;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding:
+      max(12px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(18px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
   }
 
   .login-art-shell {
-    gap: 6px;
+    width: 100%;
+    gap: 8px;
+    margin: 0 auto;
   }
 
   .login-art-logo {
-    width: min(100%, 210px);
+    width: min(100%, 132px);
+  }
+
+  .login-art-brand-copy {
+    gap: 1px;
+  }
+
+  .login-art-brand-name {
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+  }
+
+  .login-art-brand-tagline {
+    font-size: 0.61rem;
   }
 
   .login-art-card {
-    padding: 12px 12px 10px;
-    border-radius: 18px;
+    gap: 10px;
+    padding: 10px;
+    border-radius: 12px;
+  }
+
+  .login-art-social-stack,
+  .login-art-form {
+    gap: 9px;
+  }
+
+  .login-life-questions {
+    padding: 8px;
+  }
+
+  .login-life-questions h1 {
+    margin-bottom: 6px;
+    font-size: 0.88rem;
+  }
+
+  .login-life-questions-grid {
+    gap: 5px;
+  }
+
+  .login-life-questions article {
+    min-height: 48px;
+    grid-template-columns: 25px minmax(0, 1fr);
+    padding: 5px;
+  }
+
+  .login-life-question-icon {
+    font-size: 1.05rem;
+  }
+
+  .login-life-questions strong {
+    font-size: 0.61rem;
+  }
+
+  .login-life-questions small {
+    font-size: 0.45rem;
   }
 
   .login-art-social-button,
   .login-art-google-wrap,
   .login-art-field {
-    min-height: 50px;
+    min-height: 52px;
   }
 
   .login-art-social-button-apple,
   .login-art-provider-button,
   .login-art-google-preview,
   .login-art-google-live > .login-art-google-preview {
-    min-height: 50px;
-    font-size: 1.3125rem;
+    min-height: 52px;
+    font-size: 1rem;
   }
 
   .login-art-social-button,
@@ -12250,16 +12309,18 @@ th { color: var(--dark-gold); }
 
   .login-art-google-live iframe,
   .login-art-google-live div[role="button"] {
-    min-height: 50px !important;
+    min-height: 52px !important;
   }
 
   .login-art-submit {
     min-height: 52px;
-    font-size: 1.14rem;
+    font-size: 1.05rem;
   }
 
   .login-art-support-links {
-    gap: 8px;
+    gap: 8px 12px;
+    padding: 2px 4px;
+    line-height: 1.45;
   }
 
   .login-art-service-note,
@@ -18381,9 +18442,33 @@ html.native-mobile-app body {
   overscroll-behavior-y: none;
 }
 
-.native-mobile-app :is(.app-shell, .content, .psychometric-page, .psychometric-panel, .psychometric-summary-card) {
+.native-mobile-app :is(
+  .app-shell,
+  .content,
+  .content > *,
+  .psychometric-page,
+  .psychometric-page > *,
+  .psychometric-panel,
+  .psychometric-summary-card,
+  .card,
+  .standalone-card,
+  form,
+  fieldset
+) {
   min-width: 0;
   max-width: 100%;
+}
+
+.native-mobile-app :is(h1, h2, h3, h4, p, a, button, label, legend, span, strong, small) {
+  overflow-wrap: anywhere;
+}
+
+.native-mobile-app :is(.content, .psychometric-page, .card, .standalone-card) :is(img, video, canvas, svg) {
+  max-width: 100%;
+}
+
+.native-mobile-app :is(.content, .psychometric-page, .card, .standalone-card) :is([style*="width"], [style*="min-width"]) {
+  max-width: 100% !important;
 }
 
 .native-mobile-app .sidebar {
@@ -18504,11 +18589,69 @@ html.native-mobile-app body {
   text-align: left;
 }
 
-.native-mobile-app .table-responsive,
-.native-mobile-app .subscription-fees-table-wrap {
+.native-mobile-app :is(
+  .table-wrap,
+  .table-responsive,
+  .psychometric-scale-table-wrap,
+  .subscription-fees-table-wrap,
+  .admin-user-billing-table-wrap,
+  .calculation-reference-table-wrap,
+  .loan-repository-table-scroll
+) {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.native-mobile-app :is(
+  .table-wrap,
+  .table-responsive,
+  .psychometric-scale-table-wrap,
+  .subscription-fees-table-wrap,
+  .admin-user-billing-table-wrap,
+  .calculation-reference-table-wrap,
+  .loan-repository-table-scroll
+) > table {
+  max-width: none;
+}
+
+.native-mobile-app .loan-stepper-shell {
+  width: 100%;
   max-width: 100%;
   overflow-x: auto;
   overscroll-behavior-x: contain;
+}
+
+.native-mobile-app .loan-repository-mobile-records {
+  overflow: visible;
+}
+
+.native-mobile-app .loan-repository-record-card,
+.native-mobile-app .loan-repository-record-metrics,
+.native-mobile-app .loan-repository-metric-grid {
+  grid-template-columns: minmax(0, 1fr);
+  min-width: 0;
+  max-width: 100%;
+}
+
+.native-mobile-app .loan-repository-record-card {
+  gap: 12px;
+  padding: 12px;
+}
+
+.native-mobile-app .loan-repository-record-summary,
+.native-mobile-app .loan-repository-record-contact {
+  padding: 0;
+  border: 0;
+}
+
+.native-mobile-app .loan-repository-record-actions > button {
+  flex: 1 1 min(140px, 100%);
+  min-height: 44px;
 }
 
 .native-mobile-app .page-assistant {
@@ -18892,7 +19035,14 @@ html.native-mobile-app body {
 
 .native-mobile-app .financial-health-hero {
   align-items: stretch;
+  flex-wrap: nowrap;
   padding: 16px;
+}
+
+.native-mobile-app .psychometric-hero-with-journey-menu > .financial-health-journey-menu-in-hero {
+  flex: none;
+  width: 100%;
+  min-width: 0;
 }
 
 .native-mobile-app .financial-health-ring-figure {
