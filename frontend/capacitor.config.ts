@@ -8,6 +8,15 @@ const config: CapacitorConfig = {
   server: {
     androidScheme: 'https',
   },
+  android: {
+    includePlugins: [
+      '@capacitor/app',
+      '@capacitor/keyboard',
+      '@capacitor/splash-screen',
+      '@capgo/capacitor-social-login',
+      '@capgo/native-purchases',
+    ],
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
@@ -19,6 +28,10 @@ const config: CapacitorConfig = {
     StatusBar: {
       style: 'DARK',
       backgroundColor: '#b8860b',
+    },
+    SystemBars: {
+      style: 'DARK',
+      insetsHandling: 'css',
     },
     Keyboard: {
       resize: 'native',

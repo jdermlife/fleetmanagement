@@ -22,9 +22,11 @@ const setupNativeMobileRuntime = async () => {
   }
 
   try {
-    await StatusBar.setOverlaysWebView({ overlay: false })
-    await StatusBar.setStyle({ style: Style.Dark })
-    await StatusBar.setBackgroundColor({ color: '#b8860b' })
+    if (Capacitor.getPlatform() === 'ios') {
+      await StatusBar.setOverlaysWebView({ overlay: false })
+      await StatusBar.setStyle({ style: Style.Dark })
+      await StatusBar.setBackgroundColor({ color: '#b8860b' })
+    }
     await Keyboard.setResizeMode({ mode: KeyboardResize.Body })
     await SplashScreen.hide()
   } catch {
