@@ -21,7 +21,7 @@ export default function CustomerServicePage() {
           <h3>Service Provider</h3>
           <p>Quantech.International Solutions OPC</p>
           <p>
-            Service: FILSCORE / FMS Mobile
+            Service: FILSCORE / Financial Health
             <br />
             Website:{' '}
             <a href="https://filscore-ai.quantech.international">

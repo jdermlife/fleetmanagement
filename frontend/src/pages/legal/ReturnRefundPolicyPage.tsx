@@ -7,7 +7,7 @@ export default function ReturnRefundPolicyPage() {
       <p className="intro">
         Effective Date: September 12, 2026
         <br />
-        Service: FILSCORE / FMS Mobile
+        Service: FILSCORE / Financial Health
         <br />
         Service Provider: Quantech.International Solutions OPC
       </p>

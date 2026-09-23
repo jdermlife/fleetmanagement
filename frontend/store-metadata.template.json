@@ -1,8 +1,8 @@
 {
   "app": {
-    "name": "FMS Mobile",
+    "name": "Financial Health",
     "shortDescription": "Secure fleet, lending, and credit workflow operations in one mobile workspace.",
-    "fullDescription": "FMS Mobile helps authorized teams manage fleet operations, borrower records, loan workflows, supporting documents, and audit-ready credit processes from a single secure mobile workspace. Current features include role-based access, secure authentication, loan origination support, document handling, meeting-audio transcription workflows, and operational dashboards for credit, compliance, and workflow visibility.",
+    "fullDescription": "Financial Health helps authorized teams manage fleet operations, borrower records, loan workflows, supporting documents, and audit-ready credit processes from a single secure mobile workspace. Current features include role-based access, secure authentication, loan origination support, document handling, meeting-audio transcription workflows, and operational dashboards for credit, compliance, and workflow visibility.",
     "primaryCategory": "Business",
     "secondaryCategory": "Productivity",
     "supportEmail": "admin@quantech.international",

@@ -106,7 +106,7 @@ export default function PrivacyPage() {
       <p className="intro">
         Effective Date: September 12, 2026
         <br />
-        Application: FILSCORE / FMS Mobile
+        Application: FILSCORE / Financial Health
         <br />
         Service Provider: Quantech.International Solutions OPC
         <br />
