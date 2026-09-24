@@ -1,4 +1,5 @@
 import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
@@ -11,6 +12,9 @@ const historyApi = vi.hoisted(() => ({
   createProfileHistory: vi.fn(),
   listProfileHistory: vi.fn(),
 }))
+const { getMySubscription } = vi.hoisted(() => ({
+  getMySubscription: vi.fn(),
+}))
 
 vi.mock('../src/autosave/draftApi', () => ({
   fetchAutosaveDraft,
@@ -20,6 +24,7 @@ vi.mock('../src/hooks/useAuthorization', () => ({
 }))
 vi.mock('../src/api', () => ({
   ...historyApi,
+  getMySubscription,
   getErrorMessage: (error: unknown, fallback: string) => error instanceof Error ? error.message : fallback,
 }))
 vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
@@ -44,6 +49,8 @@ describe('FinancialHealthSummaryPage', () => {
     historyApi.createProfileHistory.mockReset()
     historyApi.listProfileHistory.mockReset()
     historyApi.listProfileHistory.mockResolvedValue({ items: [], total: 0 })
+    getMySubscription.mockReset()
+    getMySubscription.mockResolvedValue({ status: 'ACTIVE', subscription_type: 'PAID' })
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       clear: () => values.clear(),
@@ -133,13 +140,18 @@ describe('FinancialHealthSummaryPage', () => {
       additionalCollaterals: [],
     }))
 
-    render(<FinancialHealthSummaryPage />)
+    render(
+      <MemoryRouter>
+        <FinancialHealthSummaryPage />
+      </MemoryRouter>,
+    )
 
     await waitFor(() => {
       expect(document.querySelector('.financial-health-ring-score strong')?.textContent).toBe('820')
     })
 
-    const openButton = screen.getByRole('button', { name: 'Open Statement of Assets and Liabilities' })
+    const openButton = screen.getByRole('button', { name: 'Open Statement of Assets and Liabilities' }) as HTMLButtonElement
+    await waitFor(() => expect(openButton.disabled).toBe(false))
     const interpretation = screen.getByText('Interpretation', { selector: '.psychometric-panel-kicker' }).closest('article')
     const focusNext = screen.getByText('Focus next', { selector: '.psychometric-panel-kicker' }).closest('article')
     expect(interpretation).toBeTruthy()
@@ -166,6 +178,25 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(statement).getAllByText('₱500,000').length).toBeGreaterThan(0)
 
     fireEvent.click(within(statement).getByRole('button', { name: 'Close financial statement' }))
+    expect(screen.queryByRole('dialog', { name: 'Statement of Assets and Liabilities' })).toBeNull()
+  })
+
+  it('dims and disables the financial statement for non-paid accounts', async () => {
+    authorization.isAdmin = false
+    getMySubscription.mockResolvedValue({ status: 'ACTIVE', subscription_type: 'FREE' })
+
+    render(
+      <MemoryRouter>
+        <FinancialHealthSummaryPage />
+      </MemoryRouter>,
+    )
+
+    const openButton = await screen.findByRole('button', { name: 'Open Statement of Assets and Liabilities' }) as HTMLButtonElement
+    await waitFor(() => expect(openButton.disabled).toBe(true))
+    expect(screen.getByText('Available for paid accounts only.')).toBeTruthy()
+    expect(openButton.closest('.financial-health-statement-action')?.classList.contains('is-locked')).toBe(true)
+
+    fireEvent.click(openButton)
     expect(screen.queryByRole('dialog', { name: 'Statement of Assets and Liabilities' })).toBeNull()
   })
 

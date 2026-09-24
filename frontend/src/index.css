@@ -17342,6 +17342,22 @@ th { color: var(--dark-gold); }
   justify-content: center;
 }
 
+.financial-health-statement-action.is-locked button {
+  cursor: not-allowed;
+  filter: grayscale(0.55);
+  opacity: 0.42;
+}
+
+.financial-health-statement-action > span {
+  display: block;
+  margin-top: 6px;
+  color: var(--financial-health-muted);
+  font-size: 0.72rem;
+  font-weight: 650;
+  line-height: 1.3;
+  text-align: center;
+}
+
 .financial-health-side-panel-header {
   display: flex;
   align-items: flex-start;

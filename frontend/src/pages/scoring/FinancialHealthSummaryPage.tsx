@@ -15,6 +15,7 @@ import FinancialJourneyGuide, {
 import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
+import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import { calculateAndSaveMonthlyProfile } from '../../services/profilemonthlysnapshotcalculator'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
@@ -715,6 +716,7 @@ function resolveInvestmentSuitabilityRisk(
 
 export default function FinancialHealthSummaryPage() {
   const { isAdmin } = useAuthorization()
+  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
   const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)
@@ -2287,10 +2289,19 @@ export default function FinancialHealthSummaryPage() {
             </ul>
           </CollapsibleSidebarPanel>
 
-          <div className="financial-health-statement-action">
-            <button type="button" className="loan-inline-button loan-inline-button-primary" onClick={() => setIsFinancialStatementOpen(true)}>
+          <div className={`financial-health-statement-action${!isScoreAccessLoading && !hasPaidScoreAccess ? ' is-locked' : ''}`}>
+            <button
+              type="button"
+              className="loan-inline-button loan-inline-button-primary"
+              onClick={() => setIsFinancialStatementOpen(true)}
+              disabled={isScoreAccessLoading || !hasPaidScoreAccess}
+              aria-describedby={!isScoreAccessLoading && !hasPaidScoreAccess ? 'financial-health-statement-access-note' : undefined}
+            >
               Open Statement of Assets and Liabilities
             </button>
+            {!isScoreAccessLoading && !hasPaidScoreAccess ? (
+              <span id="financial-health-statement-access-note">Available for paid accounts only.</span>
+            ) : null}
           </div>
 
           <CollapsibleSidebarPanel
