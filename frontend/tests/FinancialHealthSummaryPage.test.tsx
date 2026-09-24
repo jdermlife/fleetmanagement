@@ -95,10 +95,25 @@ describe('FinancialHealthSummaryPage', () => {
     expect(within(summary as HTMLElement).getByText('Weights total 100%')).toBeTruthy()
   })
 
-  it('opens the Build Profile financial statement for non-admin users between Interpretation and Focus Next', () => {
+  it('opens the Build Profile financial statement with live cover scores for non-admin users', async () => {
     authorization.isAdmin = false
+    fetchAutosaveDraft.mockImplementation((scope: string) => Promise.resolve(
+      scope === 'loan-application'
+        ? {
+            payload: {
+              formData: {
+                borrower: { govId: 'ID-123' },
+                employment: { monthlyIncome: 100000, debtObligations: 5000 },
+                loan: { amount: 120000, interestRate: 0, termMonths: 12 },
+                documents: [{ status: 'Parsed' }, { status: 'Pending' }],
+              },
+            },
+          }
+        : null,
+    ))
     window.localStorage.setItem('fms:build-profile', JSON.stringify({
       profileId: 'PROFILE-USER-1',
+      selectedApplicationNo: 'APP-001',
       values: {
         wealthCurrency: 'PHP',
         financialGoal: 'Emergency Fund',
@@ -112,13 +127,17 @@ describe('FinancialHealthSummaryPage', () => {
         'insurance-life': '500000',
       },
       documents: [],
-      suitabilityAnswers: {},
+      suitabilityAnswers: { riskCapacity: '4', investmentDiscipline: '4' },
       coBorrowers: [],
       guarantors: [],
       additionalCollaterals: [],
     }))
 
     render(<FinancialHealthSummaryPage />)
+
+    await waitFor(() => {
+      expect(document.querySelector('.financial-health-ring-score strong')?.textContent).toBe('820')
+    })
 
     const openButton = screen.getByRole('button', { name: 'Open Statement of Assets and Liabilities' })
     const interpretation = screen.getByText('Interpretation', { selector: '.psychometric-panel-kicker' }).closest('article')
@@ -130,7 +149,14 @@ describe('FinancialHealthSummaryPage', () => {
 
     fireEvent.click(openButton)
     const statement = screen.getByRole('dialog', { name: 'Statement of Assets and Liabilities' })
-    expect(within(statement).getAllByText('Profile ID: PROFILE-USER-1')).toHaveLength(3)
+    expect(within(statement).getAllByText('Profile ID: PROFILE-USER-1')).toHaveLength(4)
+    expect(statement.querySelectorAll('.admin-statement-sheet')).toHaveLength(4)
+    expect(statement.querySelector('.admin-cover-ring-score strong')?.textContent).toBe('820')
+    expect(statement.querySelector('.admin-cover-health-band strong')?.textContent).toBe('Very Good')
+    expect(statement.querySelector('.admin-cover-credit')?.textContent).toContain('732')
+    const wealthBehaviour = [...statement.querySelectorAll('.wealth-balance-radar-indicator')]
+      .find((indicator) => indicator.textContent?.includes('Wealth Behaviour'))
+    expect(wealthBehaviour?.querySelector('strong')?.textContent).toBe('100')
     expect(within(statement).getAllByText('₱10,000').length).toBeGreaterThan(0)
     expect(within(statement).getByRole('heading', { name: 'Current Net Worth' })).toBeTruthy()
     expect(within(statement).getAllByText('Home Mortgage').length).toBeGreaterThan(0)

@@ -1386,6 +1386,7 @@ export default function FinancialHealthSummaryPage() {
     <div className="psychometric-page financial-health-page">
       {isFinancialStatementOpen ? <FinancialStatementModal
         onClose={() => setIsFinancialStatementOpen(false)}
+        financialHealthSummary={publishedSummary}
         creditScores={{
           credit: toFilscore(lendingLeafScores?.creditScore ?? null),
           nonStarter: toFilscore(lendingLeafScores?.nonStarterScore ?? null),
