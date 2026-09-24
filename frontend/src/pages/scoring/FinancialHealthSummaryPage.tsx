@@ -1384,7 +1384,15 @@ export default function FinancialHealthSummaryPage() {
     : 'Leaf graph awaiting saved lending scores'
   return (
     <div className="psychometric-page financial-health-page">
-      {isFinancialStatementOpen ? <FinancialStatementModal onClose={() => setIsFinancialStatementOpen(false)} /> : null}
+      {isFinancialStatementOpen ? <FinancialStatementModal
+        onClose={() => setIsFinancialStatementOpen(false)}
+        creditScores={{
+          credit: toFilscore(lendingLeafScores?.creditScore ?? null),
+          nonStarter: toFilscore(lendingLeafScores?.nonStarterScore ?? null),
+          social: toFilscore(lendingLeafScores?.socialScore ?? null),
+          psychometric: toFilscore(lendingLeafScores?.psychometricScore ?? null),
+        }}
+      /> : null}
       <FinancialJourneyGuide
         completion={journeyStepCompletion}
         doNotShowAgain={doNotShowJourneyAgain}

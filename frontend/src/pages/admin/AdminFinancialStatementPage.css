@@ -101,6 +101,107 @@
 .admin-statement-no-gaps { padding: 14px; border: 1px solid #c7a064; background: #fff5dd; }
 .admin-statement-no-profile { margin-top: 8px; }
 .admin-statement-sheet footer { margin-top: 6px; color: #68736f; font-size: .66em; text-align: center; }
+.admin-statement-cover-sheet { display: flex; flex-direction: column; }
+.admin-statement-cover-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 1.08fr 1.12fr;
+  grid-template-rows: 1fr 1fr;
+  gap: 10px;
+  flex: 1;
+  min-height: 0;
+  margin-top: 9px;
+}
+.admin-cover-position {
+  grid-row: 1 / 3;
+  min-width: 0;
+  border: 1px solid #9dafaa;
+  background: #fff;
+}
+.admin-cover-position > header { padding: 8px 9px; background: #173f32; color: #fff; }
+.admin-cover-position > header span,
+.admin-cover-kicker { color: #f4d46d; font-size: .68em; font-weight: 900; letter-spacing: .12em; text-transform: uppercase; }
+.admin-cover-position > header h2 { margin: 2px 0 0; font-size: 1.06em; }
+.admin-cover-position-section { padding: 5px 8px; border-bottom: 1px solid #d8e0dc; }
+.admin-cover-position-section h3 { margin: 0 0 3px; color: #a44728; font-size: .76em; text-transform: uppercase; }
+.admin-cover-position-section p { margin: 2px 0; color: #78847f; font-size: .74em; }
+.admin-cover-position-row,
+.admin-cover-position-total,
+.admin-cover-position-results > div { display: flex; justify-content: space-between; gap: 8px; padding: 1px 0; }
+.admin-cover-position-row { font-size: .74em; }
+.admin-cover-position-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.admin-cover-position-row strong,
+.admin-cover-position-total strong,
+.admin-cover-position-results strong { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.admin-cover-position-total { margin-top: 3px; padding-top: 3px; border-top: 1px solid #9dafaa; font-size: .78em; font-weight: 900; }
+.admin-cover-position-results { padding: 6px 8px; background: #e8f0ec; color: #102b22; font-size: .8em; font-weight: 900; }
+.admin-cover-position-results > div + div { margin-top: 3px; border-top: 1px solid #bfd0c8; }
+
+.admin-cover-health {
+  grid-row: 1 / 3;
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid #58471c;
+  border-radius: 7px;
+  background: #050505;
+  color: #fff;
+}
+.admin-cover-health h2 { margin: 4px 0 9px; font-size: 1.8em; }
+.admin-cover-health-groups { display: grid; gap: 5px; }
+.admin-cover-health-groups > div { display: grid; gap: 1px; padding-left: 8px; border-left: 2px solid #d8a51e; }
+.admin-cover-health-groups > div:nth-child(2) { border-color: #d3d9df; }
+.admin-cover-health-groups > div:nth-child(3) { border-color: #c66a2b; }
+.admin-cover-health-groups strong { font-size: .72em; }
+.admin-cover-health-groups span { color: #aeb1b5; font-size: .61em; }
+.admin-cover-health-band { display: flex; align-items: center; gap: 7px; margin-top: 10px; padding: 7px 8px; border: 1px solid #29302e; border-radius: 5px; }
+.admin-cover-health-band > i { width: 10px; height: 10px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 8px #22c55e; }
+.admin-cover-health-band span { color: #999; font-size: .7em; }
+.admin-cover-health-rings { position: relative; width: 220px; max-width: 80%; aspect-ratio: 1; margin: 12px auto 4px; }
+.admin-cover-ring { position: absolute; border-radius: 50%; background: conic-gradient(from -45deg, var(--ring-color) 0deg var(--cover-ring-progress), #1d1d1d var(--cover-ring-progress) 360deg); filter: drop-shadow(0 0 4px var(--ring-color)); }
+.admin-cover-ring::after { content: ""; position: absolute; inset: 12px; border-radius: 50%; background: #050505; }
+.admin-cover-ring-1 { inset: 0; --ring-color: #e3ae24; }
+.admin-cover-ring-2 { inset: 24px; --ring-color: #d6dce2; }
+.admin-cover-ring-3 { inset: 48px; --ring-color: #c86d2f; }
+.admin-cover-ring-score { position: absolute; inset: 72px; z-index: 2; display: grid; place-content: center; text-align: center; }
+.admin-cover-ring-score strong { font-size: 2em; line-height: 1; }
+.admin-cover-ring-score span { color: #aaa; font-size: .7em; }
+.admin-cover-ring-legend { display: grid; gap: 2px; width: max-content; margin: 0 auto; font-size: .66em; }
+.admin-cover-ring-legend span { display: flex; align-items: center; gap: 5px; }
+.admin-cover-ring-legend i { width: 8px; height: 8px; border-radius: 50%; background: #e3ae24; }
+.admin-cover-ring-legend span:nth-child(2) i { background: #d6dce2; }
+.admin-cover-ring-legend span:nth-child(3) i { background: #c86d2f; }
+
+.admin-cover-credit,
+.admin-cover-wealth { min-width: 0; padding: 8px; border: 1px solid #315362; border-radius: 4px; background: #153343; color: #fff; }
+.admin-cover-credit .credit-health-score-graph { display: grid; grid-template-columns: .95fr 1.05fr; align-items: center; height: calc(100% - 26px); margin: 0; }
+.admin-cover-credit .credit-health-score-indicators { display: grid; gap: 5px; }
+.admin-cover-credit .credit-health-score-indicator { display: grid; grid-template-columns: 8px 1fr; padding: 5px; background: #10283a; font-size: .62em; }
+.admin-cover-credit .credit-health-score-indicator i { grid-row: 1 / 3; align-self: start; width: 6px; height: 6px; margin-top: 2px; border-radius: 50%; }
+.admin-cover-credit .credit-health-score-indicator strong { grid-column: 2; font-size: 1.16em; }
+.admin-cover-credit .credit-health-score-ring-visual { position: relative; aspect-ratio: 1; }
+.admin-cover-credit .credit-health-score-ring-visual svg { width: 100%; height: 100%; overflow: visible; }
+.admin-cover-credit .credit-health-score-ring-track,
+.admin-cover-credit .credit-health-score-ring-progress { fill: none; stroke-width: 10; }
+.admin-cover-credit .credit-health-score-ring-track { opacity: .18; }
+.admin-cover-credit .credit-health-score-ring-progress { stroke-linecap: round; }
+.admin-cover-credit .credit-health-score-ring-center { position: absolute; inset: 38%; display: grid; place-content: center; border-radius: 50%; background: #17394a; text-align: center; }
+.admin-cover-credit .credit-health-score-ring-center strong { font-size: .65em; }
+.admin-cover-credit .credit-health-score-ring-center span { font-size: .48em; }
+.admin-cover-credit-footer { display: flex; justify-content: space-between; gap: 8px; padding: 5px 7px; background: #092334; font-size: .65em; }
+.admin-cover-credit-footer strong { color: #fff; }
+
+.admin-cover-wealth { background: #1d3144; }
+.admin-cover-wealth .wealth-balance-radar { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, .95fr); align-items: center; width: 100%; max-width: 100%; min-width: 0; height: 100%; margin: 0; }
+.admin-cover-wealth .wealth-balance-radar-indicators { min-width: 0; }
+.admin-cover-wealth .wealth-balance-radar-kicker { color: #e8c83d; font-size: .55em; font-weight: 900; letter-spacing: 0; text-transform: uppercase; }
+.admin-cover-wealth h2 { margin: 3px 0 7px; font-size: 1em; }
+.admin-cover-wealth .wealth-balance-radar-indicator-list { display: grid; gap: 4px; }
+.admin-cover-wealth .wealth-balance-radar-indicator { display: grid; grid-template-columns: 7px 1fr auto; align-items: center; gap: 4px; font-size: .55em; }
+.admin-cover-wealth .wealth-balance-radar-indicator i { width: 5px; height: 9px; }
+.admin-cover-wealth .wealth-balance-radar-visual { width: 100%; max-height: 150px; }
+.admin-cover-wealth .wealth-balance-radar-grid { fill: none; stroke: #6d8090; stroke-width: 1; }
+.admin-cover-wealth .wealth-balance-radar-axis { stroke-width: 1; opacity: .75; }
+.admin-cover-wealth .wealth-balance-radar-score { opacity: .62; }
+.admin-cover-wealth .wealth-balance-radar-point { stroke: #fff; stroke-width: 1.5; }
 .admin-current-net-worth-sheet,
 .admin-current-financial-sheet { display: flex; flex-direction: column; }
 .admin-current-page-note { display: flex; justify-content: space-between; gap: 12px; margin-top: 7px; padding: 5px 7px; border: 1px solid #b8c2bd; background: #eef3f0; font-size: .76em; }
