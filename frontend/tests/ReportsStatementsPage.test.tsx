@@ -49,6 +49,28 @@ vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
   }),
 }))
 
+vi.mock('../src/pages/scoring/LoanCertificationPage', () => ({
+  default: () => (
+    <section aria-label="FILSCORE Credit Health certification">
+      <h2>FILSCORE Credit Health Certificate</h2>
+      <span>760</span>
+    </section>
+  ),
+}))
+
+vi.mock('../src/pages/scoring/NetWorthPositioningPage', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('../src/pages/scoring/NetWorthPositioningPage')>()
+  return {
+    ...actual,
+    default: () => (
+      <section aria-label="FILSCORE wealth building certification">
+        <h2>FILSCORE Wealth Building Score</h2>
+        <span>Actual Wealth Score: 88</span>
+      </section>
+    ),
+  }
+})
+
 import ReportsStatementsPage from '../src/pages/reports/ReportsStatementsPage'
 
 function createStorageMock(): Storage {
@@ -105,7 +127,7 @@ describe('ReportsStatementsPage', () => {
 
     expect(screen.getByRole('heading', { name: 'Financial Statements' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Score Certificates' })).toBeTruthy()
-    expect(screen.getAllByRole('link')).toHaveLength(6)
+    expect(screen.getAllByRole('link')).toHaveLength(3)
     expect(await screen.findByRole('button', { name: /Statement of Net Worth/ })).toBeTruthy()
     const balanceSheet = screen.getByRole('link', { name: /Balance Sheet/ })
     const incomeStatement = screen.getByRole('link', { name: /Income Statement/ })
@@ -116,9 +138,53 @@ describe('ReportsStatementsPage', () => {
     expect(within(incomeStatement).getByText('See statement of Networth')).toBeTruthy()
     expect(cashFlowStatement.getAttribute('href')).toBe('/budget-expense-tracker')
     expect(within(cashFlowStatement).queryByText('Open report')).toBeNull()
-    expect(screen.getByRole('link', { name: /Credit Score Certificate/ }).getAttribute('href')).toBe('/lending-scorecard/filscore')
-    expect(screen.getByRole('link', { name: /Wealth Protection Score Certificate/ }).getAttribute('href')).toBe('/net-worth-positioning')
-    expect(screen.getByRole('link', { name: /Wealth Building Score Certificate/ }).getAttribute('href')).toBe('/net-worth-positioning')
+    expect(screen.getByRole('button', { name: /Credit Score Certificate/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Wealth Protection Score Certificate/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Wealth Building Score Certificate/ })).toBeTruthy()
+  })
+
+  it('opens the existing live Credit Health certificate in a popout', () => {
+    render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    fireEvent.click(screen.getByRole('button', { name: /Credit Score Certificate/ }))
+
+    const dialog = screen.getByRole('dialog', { name: 'FILSCORE Credit Health Certificate' })
+    const certificate = within(dialog).getByLabelText('FILSCORE Credit Health certification')
+    expect(within(certificate).getByRole('heading', { name: 'FILSCORE Credit Health Certificate', level: 2 })).toBeTruthy()
+    expect(within(certificate).getByText('760')).toBeTruthy()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close certificate report' }))
+    expect(screen.queryByRole('dialog', { name: 'FILSCORE Credit Health Certificate' })).toBeNull()
+  })
+
+  it('opens the existing live Wealth Building certificate in a popout', () => {
+    render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    fireEvent.click(screen.getByRole('button', { name: /Wealth Building Score Certificate/ }))
+
+    const dialog = screen.getByRole('dialog', { name: 'FILSCORE Wealth Building Score Certificate' })
+    expect(within(dialog).getByRole('heading', { name: 'FILSCORE Wealth Building Score' })).toBeTruthy()
+    expect(within(dialog).getByText('Actual Wealth Score: 88')).toBeTruthy()
+
+    fireEvent.keyDown(document, { key: 'Escape' })
+    expect(screen.queryByRole('dialog', { name: 'FILSCORE Wealth Building Score Certificate' })).toBeNull()
+  })
+
+  it('opens the Wealth Protection Score Certificate in a popout', () => {
+    render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    fireEvent.click(screen.getByRole('button', { name: /Wealth Protection Score Certificate/ }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Wealth Protection Score Certificate' })
+    const certificate = within(dialog).getByLabelText('Wealth Protection Score Certificate')
+    expect(within(certificate).getByText('Assessment pending')).toBeTruthy()
+    expect(within(certificate).getByText('Insurance coverage adequacy')).toBeTruthy()
+    expect(within(certificate).getByText('40% of total score')).toBeTruthy()
+    expect(within(certificate).getByText('Strong protection')).toBeTruthy()
+    expect(within(certificate).getByText('High vulnerability')).toBeTruthy()
+
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close certificate report' }))
+    expect(screen.queryByRole('dialog', { name: 'Wealth Protection Score Certificate' })).toBeNull()
   })
 
   it('opens the assets and liabilities report with live financial and credit charts', async () => {

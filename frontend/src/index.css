@@ -17523,6 +17523,263 @@ th { color: var(--dark-gold); }
   color: #4b5563;
 }
 
+.reports-certificate-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 100002;
+  overflow: auto;
+  padding: 24px;
+  background: rgb(8 20 38 / 78%);
+}
+
+.reports-certificate-modal {
+  width: min(100%, 1080px);
+  min-height: calc(100vh - 48px);
+  margin: 0 auto;
+  background: #e9eef4;
+  box-shadow: 0 24px 70px rgb(4 15 31 / 35%);
+}
+
+.reports-certificate-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 13px 16px;
+  border-bottom: 1px solid #c8d2de;
+  background: #ffffff;
+}
+
+.reports-certificate-toolbar span {
+  color: #8a650b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reports-certificate-toolbar h2 {
+  margin: 2px 0 0;
+  color: #102d5a;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.reports-certificate-toolbar button {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 auto;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #b9c6d5;
+  color: #183554;
+  background: #ffffff;
+  cursor: pointer;
+}
+
+.reports-certificate-toolbar button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.reports-certificate-body {
+  padding: 22px;
+}
+
+.reports-certificate-body.is-credit .loan-certification-page {
+  min-height: 0;
+  padding: 0;
+}
+
+.reports-certificate-body.is-credit .loan-certification-toolbar {
+  display: none;
+}
+
+.reports-certificate-body.is-wealth .networth-report-page {
+  width: 100%;
+  padding: 0;
+}
+
+.reports-certificate-body.is-wealth .networth-report-page > :not(.networth-report-layout),
+.reports-certificate-body.is-wealth .networth-report-side,
+.reports-certificate-body.is-wealth .networth-report-main > :not(.lending-inline-certification) {
+  display: none;
+}
+
+.reports-certificate-body.is-wealth .networth-report-layout {
+  display: block;
+}
+
+.reports-certificate-body.is-wealth .lending-inline-certification {
+  padding: 0;
+}
+
+.wealth-protection-certificate {
+  width: min(100%, 900px);
+  margin: 0 auto;
+  border: 1px solid #c8d2de;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgb(17 43 75 / 12%);
+}
+
+.wealth-protection-certificate-header {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 28px;
+  border-bottom: 4px solid #b88914;
+  background: linear-gradient(105deg, #f5f9fd, #ffffff 58%, #fff8df);
+}
+
+.wealth-protection-certificate-mark {
+  display: grid;
+  width: 58px;
+  height: 58px;
+  place-items: center;
+  border: 1px solid #9eb8d3;
+  color: #0b477e;
+  background: #e9f3fb;
+}
+
+.wealth-protection-certificate-mark svg {
+  width: 30px;
+  height: 30px;
+}
+
+.wealth-protection-certificate-header span,
+.wealth-protection-certificate-section-heading span {
+  color: #8a650b;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.wealth-protection-certificate-header h2 {
+  margin: 4px 0 6px;
+  color: #102d5a;
+  font-size: 1.55rem;
+  letter-spacing: 0;
+}
+
+.wealth-protection-certificate-header p {
+  margin: 0;
+  color: #52647a;
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+.wealth-protection-certificate-score {
+  display: grid;
+  min-width: 126px;
+  padding: 14px;
+  border: 1px solid #d7b45a;
+  text-align: center;
+  background: #fffaf0;
+}
+
+.wealth-protection-certificate-score strong {
+  color: #102d5a;
+  font-size: 1.65rem;
+}
+
+.wealth-protection-certificate-score span {
+  margin-top: 3px;
+  color: #765b18;
+  font-size: 0.62rem;
+}
+
+.wealth-protection-certificate-section {
+  padding: 24px 28px;
+  border-bottom: 1px solid #dce3eb;
+}
+
+.wealth-protection-certificate-section-heading h3 {
+  margin: 3px 0 16px;
+  color: #172b4d;
+  font-size: 1.05rem;
+  letter-spacing: 0;
+}
+
+.wealth-protection-component-list {
+  display: grid;
+  gap: 10px;
+}
+
+.wealth-protection-component {
+  display: grid;
+  grid-template-columns: minmax(220px, 1.5fr) minmax(120px, 1fr) 44px;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 12px;
+  border: 1px solid #e0e6ed;
+  background: #fbfcfe;
+}
+
+.wealth-protection-component > div:first-child {
+  display: grid;
+  gap: 2px;
+}
+
+.wealth-protection-component strong {
+  color: #183554;
+  font-size: 0.82rem;
+}
+
+.wealth-protection-component > div:first-child span {
+  color: #718096;
+  font-size: 0.68rem;
+}
+
+.wealth-protection-component > strong {
+  text-align: right;
+}
+
+.wealth-protection-component-bar {
+  height: 8px;
+  overflow: hidden;
+  background: #e4eaf0;
+}
+
+.wealth-protection-component-bar span {
+  display: block;
+  height: 100%;
+  background: #1b6597;
+}
+
+.wealth-protection-band-list {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.wealth-protection-band-list > div {
+  display: grid;
+  gap: 4px;
+  padding: 13px;
+  border-top: 3px solid #1b6597;
+  background: #f3f7fa;
+}
+
+.wealth-protection-band-list strong {
+  color: #102d5a;
+}
+
+.wealth-protection-band-list span {
+  color: #52647a;
+  font-size: 0.74rem;
+}
+
+.wealth-protection-certificate footer {
+  padding: 16px 28px;
+  color: #5f6f82;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 @media (max-width: 820px) {
   .reports-statements-certificate-grid {
     grid-template-columns: 1fr;
@@ -17541,6 +17798,49 @@ th { color: var(--dark-gold); }
 
   .reports-statements-card {
     min-height: 158px;
+  }
+
+  .reports-certificate-overlay {
+    padding: 0;
+  }
+
+  .reports-certificate-modal {
+    min-height: 100vh;
+  }
+
+  .reports-certificate-body {
+    padding: 12px;
+  }
+
+  .wealth-protection-certificate-header {
+    grid-template-columns: 46px minmax(0, 1fr);
+    padding: 20px;
+  }
+
+  .wealth-protection-certificate-mark {
+    width: 46px;
+    height: 46px;
+  }
+
+  .wealth-protection-certificate-score {
+    grid-column: 1 / -1;
+  }
+
+  .wealth-protection-certificate-section {
+    padding: 20px;
+  }
+
+  .wealth-protection-component {
+    grid-template-columns: minmax(0, 1fr) 42px;
+  }
+
+  .wealth-protection-component-bar {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
+
+  .wealth-protection-band-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

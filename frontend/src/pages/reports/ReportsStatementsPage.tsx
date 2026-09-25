@@ -17,6 +17,8 @@ import { useAuthorization } from '../../hooks/useAuthorization'
 import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
+import LoanCertificationPage from '../scoring/LoanCertificationPage'
+import NetWorthPositioningPage from '../scoring/NetWorthPositioningPage'
 import type { CreditHealthGraphScores } from '../scoring/CreditHealthScoreGraph'
 import { computeBudgetHealthScore, type BudgetHealthDraftInput } from '../scoring/budgetHealthEngine'
 import { readReplicatedBuildProfile } from '../scoring/buildProfileReplication'
@@ -33,6 +35,8 @@ import {
   computeNetWorthBuildingScore,
   type NetWorthBuildingDraftInput,
 } from '../scoring/netWorthBuildingEngine'
+import ReportCertificateModal from './ReportCertificateModal'
+import WealthProtectionCertificate from './WealthProtectionCertificate'
 
 type ReportItem = {
   actionLabel?: string | null
@@ -194,6 +198,7 @@ export default function ReportsStatementsPage() {
   const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
   const { entityKey, isIdentityReady, selectedApplicationNo } = useSelectedAnalysisEntity()
   const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
+  const [openCertificate, setOpenCertificate] = useState<'credit' | 'protection' | 'wealth' | null>(null)
   const [financialHealthSummary, setFinancialHealthSummary] = useState<FinancialHealthSummaryResult | null>(null)
   const [creditScores, setCreditScores] = useState<CreditHealthGraphScores>(EMPTY_CREDIT_SCORES)
   const locked = isScoreAccessLoading || !hasPaidScoreAccess
@@ -239,6 +244,33 @@ export default function ReportsStatementsPage() {
           creditScores={creditScores}
         />
       ) : null}
+      {openCertificate === 'credit' ? (
+        <ReportCertificateModal
+          mode="credit"
+          onClose={() => setOpenCertificate(null)}
+          title="FILSCORE Credit Health Certificate"
+        >
+          <LoanCertificationPage />
+        </ReportCertificateModal>
+      ) : null}
+      {openCertificate === 'protection' ? (
+        <ReportCertificateModal
+          mode="protection"
+          onClose={() => setOpenCertificate(null)}
+          title="Wealth Protection Score Certificate"
+        >
+          <WealthProtectionCertificate />
+        </ReportCertificateModal>
+      ) : null}
+      {openCertificate === 'wealth' ? (
+        <ReportCertificateModal
+          mode="wealth"
+          onClose={() => setOpenCertificate(null)}
+          title="FILSCORE Wealth Building Score Certificate"
+        >
+          <NetWorthPositioningPage />
+        </ReportCertificateModal>
+      ) : null}
       <header className="reports-statements-header">
         <span>Financial records</span>
         <h1>Reports &amp; Statements</h1>
@@ -275,7 +307,20 @@ export default function ReportsStatementsPage() {
           </div>
         </div>
         <div className="reports-statements-grid reports-statements-certificate-grid">
-          {certificateItems.map((item) => <ReportCard key={item.title} item={item} locked={locked} />)}
+          {certificateItems.map((item) => (
+            <ReportCard
+              key={item.title}
+              item={item}
+              locked={locked}
+              onOpen={item.title === 'Credit Score Certificate'
+                ? () => setOpenCertificate('credit')
+                : item.title === 'Wealth Protection Score Certificate'
+                  ? () => setOpenCertificate('protection')
+                : item.title === 'Wealth Building Score Certificate'
+                  ? () => setOpenCertificate('wealth')
+                  : undefined}
+            />
+          ))}
         </div>
       </section>
     </div>
