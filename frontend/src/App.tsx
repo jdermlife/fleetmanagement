@@ -48,6 +48,7 @@ function lazyWithRetry<T extends { default: ComponentType<unknown> }>(
 
 
 const FinancialHealthSummaryPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthSummaryPage'))
+const ReportsStatementsPage = lazyWithRetry(() => import('./pages/reports/ReportsStatementsPage'))
 const FinancialHealthJourneyPage = lazyWithRetry(() => import('./pages/scoring/FinancialHealthJourneyPage'))
 const FinancialDecisions = lazyWithRetry(() => import('./pages/scoring/FinancialDecisions'))
 const BuildProfilePage = lazyWithRetry(() => import('./pages/scoring/BuildProfilePage'))
@@ -128,6 +129,7 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 const menuLinks: MenuLink[] = [
   { id: 'build-profile', label: 'Profile' },
   { id: 'financial-health-summary', label: 'Financial Health' },
+  { id: 'reports-statements', label: 'Reports & Statements' },
   { id: 'lending-scorecard', label: 'Credit Health Score' },
   { id: 'net-worth-positioning', label: 'Wealth Building Score' },
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
@@ -570,6 +572,7 @@ const subscriberHiddenMenus = [
 const subscriberAlwaysVisibleMenus = [
   'build-profile',
   'financial-health-summary',
+  'reports-statements',
   'financial-decisions',
   'lending-scorecard',
   'budget-expense-tracker',
@@ -582,6 +585,7 @@ const subscriberAlwaysVisibleMenus = [
 const borrowerVisibleMenus = [
   'build-profile',
   'financial-health-summary',
+  'reports-statements',
   'financial-decisions',
   'lending-scorecard',
   'budget-expense-tracker',
@@ -1750,6 +1754,15 @@ const isSignedIn = authReady && Boolean(currentUser)
                     />
                   </div>
                 )
+              }
+            />
+
+            <Route
+              path="/reports-statements"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <ReportsStatementsPage />
+                </ProtectedRoute>
               }
             />
 

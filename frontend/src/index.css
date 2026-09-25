@@ -17358,6 +17358,184 @@ th { color: var(--dark-gold); }
   text-align: center;
 }
 
+.reports-statements-page {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  gap: 18px;
+}
+
+.reports-statements-header {
+  padding: 24px 26px;
+  border-left: 5px solid #b88914;
+  background:
+    linear-gradient(90deg, rgba(255, 247, 214, 0.92), rgba(255, 255, 255, 0.96) 48%),
+    #ffffff;
+}
+
+.reports-statements-header > span,
+.reports-statements-section-heading span {
+  color: #8a650b;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reports-statements-header h1 {
+  margin: 4px 0 6px;
+  color: #102d5a;
+  font-size: clamp(1.65rem, 3vw, 2.35rem);
+  letter-spacing: 0;
+}
+
+.reports-statements-header p {
+  max-width: 720px;
+  margin: 0;
+  color: #52647a;
+  line-height: 1.55;
+}
+
+.reports-statements-section {
+  padding: 22px;
+  border: 1px solid #d9e1ea;
+  background: #ffffff;
+}
+
+.reports-statements-section-heading {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.reports-statements-section-heading > svg {
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border: 1px solid #d7b45a;
+  color: #103f75;
+  background: #fff8df;
+}
+
+.reports-statements-section-heading h2 {
+  margin: 2px 0 0;
+  color: #172b4d;
+  font-size: 1.15rem;
+  letter-spacing: 0;
+}
+
+.reports-statements-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.reports-statements-certificate-grid {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.reports-statements-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 12px;
+  min-height: 138px;
+  padding: 17px;
+  border: 1px solid #cfd9e5;
+  border-radius: 6px;
+  color: inherit;
+  background: #fbfcfe;
+  text-decoration: none;
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+
+a.reports-statements-card:hover,
+a.reports-statements-card:focus-visible {
+  border-color: #b88914;
+  box-shadow: 0 8px 22px rgba(20, 47, 82, 0.1);
+  transform: translateY(-2px);
+}
+
+.reports-statements-card-icon {
+  display: grid;
+  width: 42px;
+  height: 42px;
+  place-items: center;
+  border: 1px solid #b8cbe1;
+  color: #0b477e;
+  background: #edf5fc;
+}
+
+.reports-statements-card-icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.reports-statements-card-copy {
+  display: grid;
+  align-content: start;
+  gap: 7px;
+  min-width: 0;
+}
+
+.reports-statements-card h3 {
+  margin: 0;
+  color: #132d50;
+  font-size: 1rem;
+  letter-spacing: 0;
+}
+
+.reports-statements-card p {
+  margin: 0;
+  color: #5d6d80;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.reports-statements-card-copy > span {
+  margin-top: auto;
+  color: #8a650b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.reports-statements-card.is-locked {
+  cursor: not-allowed;
+  filter: grayscale(0.7);
+  opacity: 0.46;
+}
+
+.reports-statements-card-lock {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 17px;
+  height: 17px;
+  color: #4b5563;
+}
+
+@media (max-width: 820px) {
+  .reports-statements-certificate-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .reports-statements-header,
+  .reports-statements-section {
+    padding: 17px;
+  }
+
+  .reports-statements-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .reports-statements-card {
+    min-height: 158px;
+  }
+}
+
 .financial-health-side-panel-header {
   display: flex;
   align-items: flex-start;

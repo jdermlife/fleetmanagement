@@ -94,6 +94,8 @@ describe('App account menu accordions', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: 'Toggle account and application menu' }))
 
+    expect(screen.getByRole('link', { name: 'Reports & Statements' }).getAttribute('href')).toBe('/reports-statements')
+
     const administrationToggle = screen.getByRole('button', { name: 'ADMINISTRATION' })
     expect(administrationToggle.getAttribute('aria-expanded')).toBe('true')
     expect(screen.getByRole('link', { name: 'Calculation Models' })).toBeTruthy()
