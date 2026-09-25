@@ -30,6 +30,7 @@ const JOURNEY_MENU_GROUPS = [
     links: [
       { label: 'Financial Health Dashboard', route: '/financial-health-summary' },
       { label: 'Financial Decisions & Action Plan', route: '/financial-decisions' },
+      { label: 'Reports & Statements', route: '/reports-statements' },
     ],
   },
 ] as const
