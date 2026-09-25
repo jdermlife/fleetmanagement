@@ -9,10 +9,13 @@ import {
   Scale,
   ShieldCheck,
 } from 'lucide-react'
+import { useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
+import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
+import { computeFinancialHealthSummary } from '../scoring/financialHealthSummaryEngine'
 
 type ReportItem = {
   description: string
@@ -69,7 +72,7 @@ const certificateItems: ReportItem[] = [
   },
 ]
 
-function ReportCard({ item, locked }: { item: ReportItem; locked: boolean }) {
+function ReportCard({ item, locked, onOpen }: { item: ReportItem; locked: boolean; onOpen?: () => void }) {
   const Icon = item.icon
   const content = (
     <>
@@ -87,16 +90,27 @@ function ReportCard({ item, locked }: { item: ReportItem; locked: boolean }) {
     return <article className="reports-statements-card is-locked" aria-disabled="true">{content}</article>
   }
 
+  if (onOpen) {
+    return <button className="reports-statements-card" type="button" onClick={onOpen}>{content}</button>
+  }
+
   return <Link className="reports-statements-card" to={item.destination}>{content}</Link>
 }
 
 export default function ReportsStatementsPage() {
   const { isAdmin } = useAuthorization()
   const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
+  const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
   const locked = isScoreAccessLoading || !hasPaidScoreAccess
 
   return (
     <div className="psychometric-page reports-statements-page">
+      {isNetWorthStatementOpen ? (
+        <FinancialStatementModal
+          onClose={() => setIsNetWorthStatementOpen(false)}
+          financialHealthSummary={computeFinancialHealthSummary()}
+        />
+      ) : null}
       <header className="reports-statements-header">
         <span>Financial records</span>
         <h1>Reports &amp; Statements</h1>
@@ -112,7 +126,14 @@ export default function ReportsStatementsPage() {
           </div>
         </div>
         <div className="reports-statements-grid">
-          {statementItems.map((item) => <ReportCard key={item.title} item={item} locked={locked} />)}
+          {statementItems.map((item) => (
+            <ReportCard
+              key={item.title}
+              item={item}
+              locked={locked}
+              onOpen={item.title === 'Statement of Net Worth' ? () => setIsNetWorthStatementOpen(true) : undefined}
+            />
+          ))}
         </div>
       </section>
 

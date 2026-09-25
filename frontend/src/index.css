@@ -17445,14 +17445,17 @@ th { color: var(--dark-gold); }
   border-radius: 6px;
   color: inherit;
   background: #fbfcfe;
+  font: inherit;
+  text-align: left;
   text-decoration: none;
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 
-a.reports-statements-card:hover,
-a.reports-statements-card:focus-visible {
+.reports-statements-card:not(.is-locked):hover,
+.reports-statements-card:not(.is-locked):focus-visible {
   border-color: #b88914;
   box-shadow: 0 8px 22px rgba(20, 47, 82, 0.1);
+  cursor: pointer;
   transform: translateY(-2px);
 }
 
