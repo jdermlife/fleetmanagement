@@ -9,15 +9,33 @@ import {
   Scale,
   ShieldCheck,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 
+import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
-import { computeFinancialHealthSummary } from '../scoring/financialHealthSummaryEngine'
+import type { CreditHealthGraphScores } from '../scoring/CreditHealthScoreGraph'
+import { computeBudgetHealthScore, type BudgetHealthDraftInput } from '../scoring/budgetHealthEngine'
+import { readReplicatedBuildProfile } from '../scoring/buildProfileReplication'
+import {
+  computeFinancialHealthSummary,
+  type FinancialHealthSummaryResult,
+} from '../scoring/financialHealthSummaryEngine'
+import {
+  deriveLendingLeafScores,
+  type LendingLeafScores,
+} from '../scoring/lendingLeafScores'
+import { toFilscore } from '../scoring/filscoreScale'
+import {
+  computeNetWorthBuildingScore,
+  type NetWorthBuildingDraftInput,
+} from '../scoring/netWorthBuildingEngine'
 
 type ReportItem = {
+  actionLabel?: string | null
   description: string
   destination: string
   icon: typeof FileBadge
@@ -33,18 +51,21 @@ const statementItems: ReportItem[] = [
   },
   {
     title: 'Balance Sheet',
+    actionLabel: 'Statement of Networth',
     description: 'Open the existing assets and liabilities reporting workflow.',
     destination: '/financial-health-summary',
     icon: Scale,
   },
   {
     title: 'Income Statement',
+    actionLabel: 'See statement of Networth',
     description: 'Review income, expenses, and the current operating result.',
     destination: '/budget-expense-tracker',
     icon: ReceiptText,
   },
   {
     title: 'Cash Flow Statement',
+    actionLabel: null,
     description: 'Review monthly inflows, outflows, and available cash flow.',
     destination: '/budget-expense-tracker',
     icon: LineChart,
@@ -72,7 +93,72 @@ const certificateItems: ReportItem[] = [
   },
 ]
 
-function ReportCard({ item, locked, onOpen }: { item: ReportItem; locked: boolean; onOpen?: () => void }) {
+const EMPTY_CREDIT_SCORES: CreditHealthGraphScores = {
+  credit: null,
+  nonStarter: null,
+  social: null,
+  psychometric: null,
+}
+
+function averageAvailable(values: Array<number | null>): number | null {
+  const available = values.filter((value): value is number => value !== null)
+  return available.length > 0
+    ? available.reduce((total, value) => total + value, 0) / available.length
+    : null
+}
+
+function profileNetWorthPayload(): NetWorthBuildingDraftInput | null {
+  const profile = readReplicatedBuildProfile()
+  if (!profile) return null
+
+  const actualEntries = Object.fromEntries(Object.entries(profile.values)
+    .filter(([key, value]) => key.startsWith('wealthActual.') && value.trim() !== '')
+    .map(([key, value]) => [key.slice('wealthActual.'.length), value]))
+  const amounts = Object.fromEntries(Object.entries(profile.values)
+    .filter(([key, value]) => !key.includes('.') && value.trim() !== ''))
+
+  if (Object.keys(actualEntries).length > 0) return { amounts: {}, actualEntries }
+  return Object.keys(amounts).length > 0 ? { amounts } : null
+}
+
+function buildLiveSummary(
+  netWorthPayload: NetWorthBuildingDraftInput | null,
+  budgetPayload: BudgetHealthDraftInput | null,
+  lendingScores: LendingLeafScores | null,
+): FinancialHealthSummaryResult {
+  const netWorthScore = netWorthPayload ? computeNetWorthBuildingScore(netWorthPayload) : null
+  const components = netWorthScore?.componentScores
+  const investmentScore = components
+    ? averageAvailable([
+        components.investmentReadiness,
+        components.retirementReadiness,
+        components.financialIndependence,
+      ])
+    : null
+
+  return computeFinancialHealthSummary({
+    credit: lendingScores?.creditScore ?? null,
+    'cash-flow': components?.cashFlowStrength ?? null,
+    wealth: netWorthScore?.normalizedScore ?? null,
+    budget: budgetPayload ? computeBudgetHealthScore(budgetPayload).score : null,
+    payment: components?.leverageControl ?? null,
+    protection: components?.protectionCoverage ?? null,
+    investment: investmentScore,
+    goal: components?.goalMomentum ?? null,
+  })
+}
+
+function ReportCard({
+  item,
+  loading = false,
+  locked,
+  onOpen,
+}: {
+  item: ReportItem
+  loading?: boolean
+  locked: boolean
+  onOpen?: () => void
+}) {
   const Icon = item.icon
   const content = (
     <>
@@ -80,7 +166,9 @@ function ReportCard({ item, locked, onOpen }: { item: ReportItem; locked: boolea
       <div className="reports-statements-card-copy">
         <h3>{item.title}</h3>
         <p>{item.description}</p>
-        <span>{locked ? 'Paid account required' : 'Open report'}</span>
+        {locked || loading || item.actionLabel !== null ? (
+          <span>{locked ? 'Paid account required' : loading ? 'Loading report data' : item.actionLabel ?? 'Open report'}</span>
+        ) : null}
       </div>
       {locked ? <LockKeyhole className="reports-statements-card-lock" aria-hidden="true" /> : null}
     </>
@@ -88,6 +176,10 @@ function ReportCard({ item, locked, onOpen }: { item: ReportItem; locked: boolea
 
   if (locked) {
     return <article className="reports-statements-card is-locked" aria-disabled="true">{content}</article>
+  }
+
+  if (loading) {
+    return <article className="reports-statements-card is-loading" aria-disabled="true">{content}</article>
   }
 
   if (onOpen) {
@@ -100,15 +192,51 @@ function ReportCard({ item, locked, onOpen }: { item: ReportItem; locked: boolea
 export default function ReportsStatementsPage() {
   const { isAdmin } = useAuthorization()
   const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
+  const { entityKey, isIdentityReady, selectedApplicationNo } = useSelectedAnalysisEntity()
   const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
+  const [financialHealthSummary, setFinancialHealthSummary] = useState<FinancialHealthSummaryResult | null>(null)
+  const [creditScores, setCreditScores] = useState<CreditHealthGraphScores>(EMPTY_CREDIT_SCORES)
   const locked = isScoreAccessLoading || !hasPaidScoreAccess
+
+  useEffect(() => {
+    let disposed = false
+    if (!isIdentityReady) return
+
+    const loadStatementMetrics = async () => {
+      const [netWorthDraft, budgetDraft, lendingDraft] = await Promise.all([
+        fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', entityKey).catch(() => null),
+        fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', entityKey).catch(() => null),
+        fetchAutosaveDraft<unknown>('loan-application', selectedApplicationNo || 'new').catch(() => null),
+      ])
+      if (disposed) return
+
+      const lendingScores = lendingDraft?.payload ? deriveLendingLeafScores(lendingDraft.payload) : null
+      setFinancialHealthSummary(buildLiveSummary(
+        netWorthDraft?.payload ?? profileNetWorthPayload(),
+        budgetDraft?.payload ?? null,
+        lendingScores,
+      ))
+      setCreditScores({
+        credit: toFilscore(lendingScores?.creditScore ?? null),
+        nonStarter: toFilscore(lendingScores?.nonStarterScore ?? null),
+        social: toFilscore(lendingScores?.socialScore ?? null),
+        psychometric: toFilscore(lendingScores?.psychometricScore ?? null),
+      })
+    }
+
+    void loadStatementMetrics()
+    return () => {
+      disposed = true
+    }
+  }, [entityKey, isIdentityReady, selectedApplicationNo])
 
   return (
     <div className="psychometric-page reports-statements-page">
       {isNetWorthStatementOpen ? (
         <FinancialStatementModal
           onClose={() => setIsNetWorthStatementOpen(false)}
-          financialHealthSummary={computeFinancialHealthSummary()}
+          financialHealthSummary={financialHealthSummary ?? computeFinancialHealthSummary()}
+          creditScores={creditScores}
         />
       ) : null}
       <header className="reports-statements-header">
@@ -130,6 +258,7 @@ export default function ReportsStatementsPage() {
             <ReportCard
               key={item.title}
               item={item}
+              loading={item.title === 'Statement of Net Worth' && !financialHealthSummary}
               locked={locked}
               onOpen={item.title === 'Statement of Net Worth' ? () => setIsNetWorthStatementOpen(true) : undefined}
             />

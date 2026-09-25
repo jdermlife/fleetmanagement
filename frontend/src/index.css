@@ -17509,6 +17509,11 @@ th { color: var(--dark-gold); }
   opacity: 0.46;
 }
 
+.reports-statements-card.is-loading {
+  cursor: wait;
+  opacity: 0.68;
+}
+
 .reports-statements-card-lock {
   position: absolute;
   top: 12px;
