@@ -170,8 +170,10 @@ describe('ReportsStatementsPage', () => {
     expect(screen.queryByRole('dialog', { name: 'FILSCORE Wealth Building Score Certificate' })).toBeNull()
   })
 
-  it('opens the Wealth Protection Score Certificate in a popout', () => {
+  it('opens the Wealth Protection Score Certificate with the live assessment in a popout', async () => {
     render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    await waitFor(() => expect(fetchAutosaveDraft).toHaveBeenCalled())
 
     fireEvent.click(screen.getByRole('button', { name: /Wealth Protection Score Certificate/ }))
 
@@ -182,6 +184,13 @@ describe('ReportsStatementsPage', () => {
     expect(within(certificate).getByText('40% of total score')).toBeTruthy()
     expect(within(certificate).getByText('Strong protection')).toBeTruthy()
     expect(within(certificate).getByText('High vulnerability')).toBeTruthy()
+
+    const actualCertificate = within(dialog).getByLabelText('Actual Wealth Protection Score Certificate')
+    expect(within(actualCertificate).getByRole('heading', { name: 'Actual Wealth Protection Score' })).toBeTruthy()
+    expect(within(actualCertificate).getByText('High vulnerability')).toBeTruthy()
+    expect(within(actualCertificate).getByText('39')).toBeTruthy()
+    expect(within(actualCertificate).getAllByText('Not assessed')).toHaveLength(4)
+    expect(within(actualCertificate).getByText('25.0 months of expenses in liquid reserves')).toBeTruthy()
 
     fireEvent.click(within(dialog).getByRole('button', { name: 'Close certificate report' }))
     expect(screen.queryByRole('dialog', { name: 'Wealth Protection Score Certificate' })).toBeNull()

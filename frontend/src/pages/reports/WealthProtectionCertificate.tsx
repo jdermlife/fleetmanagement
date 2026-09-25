@@ -1,5 +1,7 @@
 import { ShieldCheck } from 'lucide-react'
 
+import type { WealthProtectionScoreResult } from './wealthProtectionEngine'
+
 const protectionComponents = [
   { label: 'Liquidity & emergency reserves', weight: 20 },
   { label: 'Insurance coverage adequacy', weight: 40 },
@@ -17,8 +19,13 @@ const scoreBands = [
   { range: '0–39', label: 'High vulnerability' },
 ] as const
 
-export default function WealthProtectionCertificate() {
+export default function WealthProtectionCertificate({
+  result,
+}: {
+  result: WealthProtectionScoreResult | null
+}) {
   return (
+    <div className="wealth-protection-certificate-stack">
     <article className="wealth-protection-certificate" aria-label="Wealth Protection Score Certificate">
       <header className="wealth-protection-certificate-header">
         <div className="wealth-protection-certificate-mark" aria-hidden="true">
@@ -75,5 +82,51 @@ export default function WealthProtectionCertificate() {
         A score is certified only after all seven components are evaluated from verified client data.
       </footer>
     </article>
+
+    <article className="wealth-protection-certificate is-actual" aria-label="Actual Wealth Protection Score Certificate">
+      <header className="wealth-protection-certificate-header">
+        <div className="wealth-protection-certificate-mark" aria-hidden="true">
+          <ShieldCheck />
+        </div>
+        <div>
+          <span>Live client assessment</span>
+          <h2>Actual Wealth Protection Score</h2>
+          <p>Calculated from the financial and protection data currently provided.</p>
+        </div>
+        <div className="wealth-protection-certificate-score" aria-label="Actual score status">
+          <strong>{result?.score ?? '—'}</strong>
+          <span>{result?.band ?? 'Data unavailable'}</span>
+        </div>
+      </header>
+
+      {result ? (
+        <section className="wealth-protection-certificate-section" aria-labelledby="actual-protection-assessment-title">
+          <div className="wealth-protection-certificate-section-heading">
+            <span>{result.assessedWeight}% of weighted inputs assessed</span>
+            <h3 id="actual-protection-assessment-title">Component assessment</h3>
+          </div>
+          <div className="wealth-protection-actual-list">
+            {result.components.map((component) => (
+              <div className="wealth-protection-actual-row" key={component.id}>
+                <div>
+                  <strong>{component.label}</strong>
+                  <span>{component.evidence}</span>
+                </div>
+                <span>{component.weight}% weight</span>
+                <strong>{component.score === null ? 'Not assessed' : `${component.score}/100`}</strong>
+                <span>{component.weightedPoints.toFixed(1)} points</span>
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : (
+        <p className="wealth-protection-certificate-empty">No live Net Worth Positioning data is available for assessment.</p>
+      )}
+
+      <footer>
+        This provisional score uses only supplied data. Missing component data contributes zero points and is identified as not assessed.
+      </footer>
+    </article>
+    </div>
   )
 }

@@ -37,6 +37,10 @@ import {
 } from '../scoring/netWorthBuildingEngine'
 import ReportCertificateModal from './ReportCertificateModal'
 import WealthProtectionCertificate from './WealthProtectionCertificate'
+import {
+  computeWealthProtectionScore,
+  type WealthProtectionScoreResult,
+} from './wealthProtectionEngine'
 
 type ReportItem = {
   actionLabel?: string | null
@@ -200,6 +204,7 @@ export default function ReportsStatementsPage() {
   const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
   const [openCertificate, setOpenCertificate] = useState<'credit' | 'protection' | 'wealth' | null>(null)
   const [financialHealthSummary, setFinancialHealthSummary] = useState<FinancialHealthSummaryResult | null>(null)
+  const [wealthProtectionScore, setWealthProtectionScore] = useState<WealthProtectionScoreResult | null>(null)
   const [creditScores, setCreditScores] = useState<CreditHealthGraphScores>(EMPTY_CREDIT_SCORES)
   const locked = isScoreAccessLoading || !hasPaidScoreAccess
 
@@ -216,11 +221,14 @@ export default function ReportsStatementsPage() {
       if (disposed) return
 
       const lendingScores = lendingDraft?.payload ? deriveLendingLeafScores(lendingDraft.payload) : null
+      const profile = readReplicatedBuildProfile()
+      const netWorthInput = netWorthDraft?.payload ?? profileNetWorthPayload()
       setFinancialHealthSummary(buildLiveSummary(
-        netWorthDraft?.payload ?? profileNetWorthPayload(),
+        netWorthInput,
         budgetDraft?.payload ?? null,
         lendingScores,
       ))
+      setWealthProtectionScore(computeWealthProtectionScore(netWorthInput, profile?.values))
       setCreditScores({
         credit: toFilscore(lendingScores?.creditScore ?? null),
         nonStarter: toFilscore(lendingScores?.nonStarterScore ?? null),
@@ -259,7 +267,7 @@ export default function ReportsStatementsPage() {
           onClose={() => setOpenCertificate(null)}
           title="Wealth Protection Score Certificate"
         >
-          <WealthProtectionCertificate />
+          <WealthProtectionCertificate result={wealthProtectionScore} />
         </ReportCertificateModal>
       ) : null}
       {openCertificate === 'wealth' ? (
