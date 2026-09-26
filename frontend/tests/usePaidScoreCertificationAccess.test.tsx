@@ -1,11 +1,18 @@
 import { renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockGetMySubscription } = vi.hoisted(() => ({
+const { mockGetMyStoreEntitlements, mockGetMySubscription, platform } = vi.hoisted(() => ({
+  mockGetMyStoreEntitlements: vi.fn(),
   mockGetMySubscription: vi.fn(),
+  platform: { value: 'web' },
+}))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { getPlatform: () => platform.value },
 }))
 
 vi.mock('../src/api', () => ({
+  getMyStoreEntitlements: mockGetMyStoreEntitlements,
   getMySubscription: mockGetMySubscription,
 }))
 
@@ -13,6 +20,8 @@ import { usePaidScoreCertificationAccess } from '../src/hooks/usePaidScoreCertif
 
 describe('usePaidScoreCertificationAccess', () => {
   beforeEach(() => {
+    platform.value = 'web'
+    mockGetMyStoreEntitlements.mockReset()
     mockGetMySubscription.mockReset()
   })
 
@@ -43,6 +52,23 @@ describe('usePaidScoreCertificationAccess', () => {
 
     expect(result.current.hasPaidScoreAccess).toBe(true)
     expect(result.current.isScoreAccessLoading).toBe(false)
+    expect(mockGetMySubscription).not.toHaveBeenCalled()
+  })
+
+  it('uses category entitlements for Android without changing subscription lookup', async () => {
+    platform.value = 'android'
+    mockGetMyStoreEntitlements.mockResolvedValue({
+      subscription_grants_all: false,
+      reports: true,
+      statements: false,
+      certifications: false,
+      scores: false,
+    })
+
+    const { result } = renderHook(() => usePaidScoreCertificationAccess(false, 'REPORTS'))
+
+    await waitFor(() => expect(result.current.isScoreAccessLoading).toBe(false))
+    expect(result.current.hasPaidScoreAccess).toBe(true)
     expect(mockGetMySubscription).not.toHaveBeenCalled()
   })
 })

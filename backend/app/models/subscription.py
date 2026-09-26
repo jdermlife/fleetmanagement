@@ -98,16 +98,30 @@ class StoreProduct(Base):
     __tablename__ = "store_products"
 
     id = Column(BigInteger, primary_key=True, index=True)
-    plan_id = Column(BigInteger, ForeignKey("subscription_plans.id"), nullable=False, index=True)
+    plan_id = Column(BigInteger, ForeignKey("subscription_plans.id"), index=True)
     platform = Column(String(20), nullable=False)
     product_id = Column(String(255), nullable=False)
     base_plan_id = Column(String(255))
+    product_type = Column(String(20), nullable=False, default="SUBS", server_default="SUBS")
+    entitlement_category = Column(String(30))
     is_active = Column(Boolean, nullable=False, default=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     __table_args__ = (
         CheckConstraint("platform IN ('ANDROID','IOS')", name="ck_store_products_platform"),
+        CheckConstraint("product_type IN ('SUBS','INAPP')", name="ck_store_products_product_type"),
+        CheckConstraint(
+            "entitlement_category IS NULL OR entitlement_category IN "
+            "('REPORTS','STATEMENTS','CERTIFICATIONS','SCORES')",
+            name="ck_store_products_entitlement_category",
+        ),
+        CheckConstraint(
+            "(product_type = 'SUBS' AND plan_id IS NOT NULL AND entitlement_category IS NULL) OR "
+            "(product_type = 'INAPP' AND platform = 'ANDROID' AND plan_id IS NULL "
+            "AND base_plan_id IS NULL AND entitlement_category IS NOT NULL)",
+            name="ck_store_products_product_coherence",
+        ),
         UniqueConstraint("platform", "product_id", name="uq_store_products_platform_product"),
     )
 
@@ -274,7 +288,7 @@ class StorePurchase(Base):
 
     id = Column(BigInteger, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), nullable=False, index=True)
+    subscription_id = Column(BigInteger, ForeignKey("subscriptions.id"), index=True)
     store_product_id = Column(BigInteger, ForeignKey("store_products.id"), nullable=False, index=True)
     payment_id = Column(BigInteger, ForeignKey("subscription_payments.id"), unique=True, index=True)
     platform = Column(String(20), nullable=False)
@@ -295,6 +309,7 @@ class StorePurchase(Base):
             name="ck_store_purchases_status",
         ),
         UniqueConstraint("platform", "transaction_id", name="uq_store_purchases_platform_transaction"),
+        UniqueConstraint("platform", "purchase_token_hash", name="uq_store_purchases_platform_token"),
     )
 
     subscription = relationship("Subscription", lazy="selectin")

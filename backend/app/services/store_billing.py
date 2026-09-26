@@ -259,8 +259,57 @@ def verify_google_play_purchase(purchase_token: str) -> VerifiedStorePurchase:
     )
 
 
-def verify_store_purchase(platform: str, verification_data: str) -> VerifiedStorePurchase:
+def verify_google_play_product(product_id: str, purchase_token: str) -> VerifiedStorePurchase:
+    try:
+        from google.auth.transport.requests import AuthorizedSession
+    except ImportError as exc:
+        raise StoreBillingConfigurationError("google-auth is required for Google Play verification") from exc
+
+    package_name = os.getenv("GOOGLE_PLAY_PACKAGE_NAME", "com.quantech.filscore").strip()
+    if not product_id.strip() or not purchase_token.strip():
+        raise StorePurchaseVerificationError("Google Play product and purchase token are required")
+    session = AuthorizedSession(_google_credentials())
+    response = session.get(
+        "https://androidpublisher.googleapis.com/androidpublisher/v3/"
+        f"applications/{package_name}/purchases/products/{product_id}/tokens/{purchase_token}",
+        timeout=15,
+    )
+    if response.status_code != 200:
+        raise StorePurchaseVerificationError("Google Play could not verify this purchase")
+    try:
+        payload = response.json()
+        purchase_state = int(payload["purchaseState"])
+    except (KeyError, TypeError, ValueError) as exc:
+        raise StorePurchaseVerificationError("Google Play returned an incomplete purchase") from exc
+    status_by_state = {0: "ACTIVE", 1: "CANCELLED", 2: "PENDING"}
+    if purchase_state not in status_by_state:
+        raise StorePurchaseVerificationError("Google Play returned an unknown purchase state")
+    token_hash = hashlib.sha256(purchase_token.encode("utf-8")).hexdigest()
+    transaction_id = str(payload.get("orderId") or f"GOOGLE-INAPP-{token_hash}").strip()
+    return VerifiedStorePurchase(
+        platform="ANDROID",
+        product_id=product_id,
+        transaction_id=transaction_id,
+        original_transaction_id=None,
+        purchase_token_hash=token_hash,
+        status=status_by_state[purchase_state],
+        purchased_at=_timestamp_millis(payload.get("purchaseTimeMillis")),
+        expires_at=None,
+    )
+
+
+def verify_store_purchase(
+    platform: str,
+    verification_data: str,
+    *,
+    product_type: str = "SUBS",
+    product_id: str | None = None,
+) -> VerifiedStorePurchase:
     normalized_platform = platform.strip().upper()
+    if product_type == "INAPP":
+        if normalized_platform != "ANDROID" or not product_id:
+            raise StorePurchaseVerificationError("INAPP products require an Android product mapping")
+        return verify_google_play_product(product_id, verification_data)
     if normalized_platform == "ANDROID":
         return verify_google_play_purchase(verification_data)
     if normalized_platform == "IOS":

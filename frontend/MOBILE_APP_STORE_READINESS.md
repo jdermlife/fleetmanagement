@@ -65,8 +65,9 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 
 ## 9. Native Subscription Billing
 - [ ] Create matching subscription products in Google Play Console and App Store Connect.
+- [ ] Create Android non-consumable one-time products for Reports, Statements, Certifications, and Scores.
 - [ ] Configure backend `STORE_PRODUCT_MAPPINGS_JSON`, for example:
-  `[{"platform":"ANDROID","plan_code":"SINGLE_PROFILE","product_id":"filscore_single_monthly","base_plan_id":"monthly"},{"platform":"IOS","plan_code":"SINGLE_PROFILE","product_id":"com.quantech.filscore.single.monthly"}]`
+  `[{"platform":"ANDROID","plan_code":"SINGLE_PROFILE","product_id":"filscore_single_monthly","base_plan_id":"monthly","product_type":"SUBS"},{"platform":"ANDROID","product_id":"filscore_reports","product_type":"INAPP","entitlement_category":"REPORTS"},{"platform":"ANDROID","product_id":"filscore_statements","product_type":"INAPP","entitlement_category":"STATEMENTS"},{"platform":"ANDROID","product_id":"filscore_certifications","product_type":"INAPP","entitlement_category":"CERTIFICATIONS"},{"platform":"ANDROID","product_id":"filscore_scores","product_type":"INAPP","entitlement_category":"SCORES"},{"platform":"IOS","plan_code":"SINGLE_PROFILE","product_id":"com.quantech.filscore.single.monthly","product_type":"SUBS"}]`
 - [ ] Configure `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` as service-account JSON or a secret-file path.
 - [ ] Configure `GOOGLE_PLAY_PACKAGE_NAME=com.quantech.filscore`.
 - [ ] Configure Google Play Real-time Developer Notifications to push to `/api/subscriptions/store-notifications/google` with OIDC authentication.

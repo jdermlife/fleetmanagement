@@ -1375,7 +1375,7 @@ export interface PaymentProvider {
 export interface SubscriptionPayment {
   id: number
   payment_reference: string
-  subscription_id: number
+  subscription_id: number | null
   provider_id: number | null
   invoice_no: string | null
   amount: number | null
@@ -1425,19 +1425,31 @@ export interface RecurringBillingSession {
 }
 
 export type NativeStorePlatform = 'ANDROID' | 'IOS'
+export type StoreProductType = 'SUBS' | 'INAPP'
+export type StoreEntitlementCategory = 'REPORTS' | 'STATEMENTS' | 'CERTIFICATIONS' | 'SCORES'
 
 export interface StoreProductMapping {
   id: number
-  plan_id: number
+  plan_id: number | null
   platform: NativeStorePlatform
   product_id: string
   base_plan_id: string | null
+  product_type: StoreProductType
+  entitlement_category: StoreEntitlementCategory | null
   is_active: boolean
+}
+
+export interface StoreEntitlements {
+  subscription_grants_all: boolean
+  reports: boolean
+  statements: boolean
+  certifications: boolean
+  scores: boolean
 }
 
 export interface VerifiedStorePurchase {
   id: number
-  subscription_id: number
+  subscription_id: number | null
   platform: NativeStorePlatform
   product_id: string
   transaction_id: string
@@ -1704,6 +1716,11 @@ export async function listStoreProducts(platform: NativeStorePlatform): Promise<
   const response = await api.get<StoreProductMapping[]>('/api/subscriptions/store-products', {
     params: { platform },
   })
+  return response.data
+}
+
+export async function getMyStoreEntitlements(): Promise<StoreEntitlements> {
+  const response = await api.get<StoreEntitlements>('/api/subscriptions/me/store-entitlements')
   return response.data
 }
 

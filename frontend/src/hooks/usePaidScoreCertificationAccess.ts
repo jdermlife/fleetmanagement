@@ -1,10 +1,18 @@
+import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 
-import { getMySubscription } from '../api'
+import {
+  getMyStoreEntitlements,
+  getMySubscription,
+  type StoreEntitlementCategory,
+} from '../api'
 
 export const PAID_SCORE_CERTIFICATION_MESSAGE = 'Score available for paid users only.'
 
-export function usePaidScoreCertificationAccess(isAdmin: boolean) {
+export function usePaidScoreCertificationAccess(
+  isAdmin: boolean,
+  category: StoreEntitlementCategory = 'SCORES',
+) {
   const [hasPaidScoreAccess, setHasPaidScoreAccess] = useState(isAdmin)
   const [isScoreAccessLoading, setIsScoreAccessLoading] = useState(!isAdmin)
 
@@ -24,6 +32,12 @@ export function usePaidScoreCertificationAccess(isAdmin: boolean) {
 
     const loadSubscription = async () => {
       try {
+        if (Capacitor.getPlatform() === 'android') {
+          const entitlements = await getMyStoreEntitlements()
+          const categoryKey = category.toLowerCase() as Lowercase<StoreEntitlementCategory>
+          if (!disposed) setHasPaidScoreAccess(entitlements[categoryKey])
+          return
+        }
         const subscription = await getMySubscription()
         const type = subscription?.subscription_type?.toUpperCase()
         const status = subscription?.status?.toUpperCase()
@@ -48,7 +62,7 @@ export function usePaidScoreCertificationAccess(isAdmin: boolean) {
     return () => {
       disposed = true
     }
-  }, [isAdmin])
+  }, [category, isAdmin])
 
   return { hasPaidScoreAccess, isScoreAccessLoading }
 }

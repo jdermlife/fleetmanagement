@@ -529,7 +529,7 @@ function resolveInvestmentSuitabilityRisk(
 
 export default function FinancialHealthSummaryPage() {
   const { isAdmin } = useAuthorization()
-  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
+  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin, 'STATEMENTS')
   const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [netWorthBuildingScore, setNetWorthBuildingScore] = useState<NetWorthBuildingScoreResult | null>(null)
   const [wealthFoundationScore, setWealthFoundationScore] = useState<WealthFoundationScoreResult | null>(null)

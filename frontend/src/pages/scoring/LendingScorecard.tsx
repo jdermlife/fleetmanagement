@@ -2034,7 +2034,7 @@ export default function LendingScorecard() {
   } | null>(null);
   const [searchParams] = useSearchParams();
   const { isAdmin, user } = useAuthorization();
-  const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin);
+  const { hasPaidScoreAccess } = usePaidScoreCertificationAccess(isAdmin, 'REPORTS');
   const { selectedApplicationNo } = useSelectedAnalysisEntity();
   const requestedProfileId = searchParams.get('profileId')?.trim() || '';
   const requestedApplicationNo = resolveDatabaseApplicationNo(

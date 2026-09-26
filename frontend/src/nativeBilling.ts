@@ -12,6 +12,7 @@ import {
   listStoreProducts,
   verifyNativeStorePurchase,
   type NativeStorePlatform,
+  type StoreEntitlementCategory,
   type StoreProductMapping,
   type VerifiedStorePurchase,
 } from './api'
@@ -25,6 +26,14 @@ export interface NativeStoreProduct {
   currencyCode: string
   subscriptionPeriod: SubscriptionPeriod
   introductoryPrice: SKProductDiscount | null
+}
+
+export type AndroidOneTimeProduct = NativeStoreProduct & {
+  mapping: StoreProductMapping & {
+    platform: 'ANDROID'
+    product_type: 'INAPP'
+    entitlement_category: StoreEntitlementCategory
+  }
 }
 
 function currentStorePlatform(): NativeStorePlatform | null {
@@ -105,7 +114,7 @@ export async function loadNativeStoreProducts(): Promise<NativeStoreProduct[]> {
   if (!isBillingSupported) {
     throw new Error('App store billing is not available on this device.')
   }
-  const mappings = await listStoreProducts(platform)
+  const mappings = (await listStoreProducts(platform)).filter((mapping) => mapping.product_type === 'SUBS')
   if (mappings.length === 0) {
     return []
   }
@@ -115,6 +124,41 @@ export async function loadNativeStoreProducts(): Promise<NativeStoreProduct[]> {
   })
   return mappings.flatMap((mapping) => {
     const product = findProduct(mapping, products)
+    return product ? [{
+      mapping,
+      title: product.title,
+      description: product.description,
+      price: product.price,
+      priceString: product.priceString,
+      currencyCode: product.currencyCode,
+      subscriptionPeriod: product.subscriptionPeriod,
+      introductoryPrice: product.introductoryPrice,
+    }] : []
+  })
+}
+
+export async function loadAndroidOneTimeProducts(): Promise<AndroidOneTimeProduct[]> {
+  const platform = requireStorePlatform()
+  if (platform !== 'ANDROID') return []
+
+  const { isBillingSupported } = await NativePurchases.isBillingSupported()
+  if (!isBillingSupported) throw new Error('Google Play billing is not available on this device.')
+
+  const mappings = (await listStoreProducts('ANDROID')).filter(
+    (mapping): mapping is AndroidOneTimeProduct['mapping'] => (
+      mapping.platform === 'ANDROID'
+      && mapping.product_type === 'INAPP'
+      && mapping.entitlement_category !== null
+    ),
+  )
+  if (mappings.length === 0) return []
+
+  const { products } = await NativePurchases.getProducts({
+    productIdentifiers: [...new Set(mappings.map((mapping) => mapping.product_id))],
+    productType: PURCHASE_TYPE.INAPP,
+  })
+  return mappings.flatMap((mapping) => {
+    const product = products.find((candidate) => candidate.identifier === mapping.product_id)
     return product ? [{
       mapping,
       title: product.title,
@@ -144,6 +188,23 @@ export async function purchaseNativeSubscription(
   return verifyTransaction(product.mapping, transaction, subscriptionId)
 }
 
+export async function purchaseAndroidOneTimeProduct(
+  product: AndroidOneTimeProduct,
+  userId: number,
+): Promise<VerifiedStorePurchase> {
+  if (requireStorePlatform() !== 'ANDROID') {
+    throw new Error('Google Play one-time products are only available in the Android app.')
+  }
+  const transaction = await NativePurchases.purchaseProduct({
+    productIdentifier: product.mapping.product_id,
+    productType: PURCHASE_TYPE.INAPP,
+    appAccountToken: await accountToken(userId),
+    isConsumable: false,
+    autoAcknowledgePurchases: false,
+  })
+  return verifyTransaction(product.mapping, transaction)
+}
+
 export async function restoreNativeSubscriptions(
   products: NativeStoreProduct[],
   subscriptionId?: number,
@@ -160,6 +221,24 @@ export async function restoreNativeSubscriptions(
     if (product) {
       restored.push(await verifyTransaction(product.mapping, transaction, subscriptionId))
     }
+  }
+  return restored
+}
+
+export async function restoreAndroidOneTimeProducts(
+  products: AndroidOneTimeProduct[],
+  userId: number,
+): Promise<VerifiedStorePurchase[]> {
+  if (requireStorePlatform() !== 'ANDROID') return []
+  await NativePurchases.restorePurchases()
+  const { purchases } = await NativePurchases.getPurchases({
+    productType: PURCHASE_TYPE.INAPP,
+    appAccountToken: await accountToken(userId),
+  })
+  const restored: VerifiedStorePurchase[] = []
+  for (const transaction of purchases) {
+    const product = products.find((item) => item.mapping.product_id === transaction.productIdentifier)
+    if (product) restored.push(await verifyTransaction(product.mapping, transaction))
   }
   return restored
 }

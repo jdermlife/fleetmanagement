@@ -199,14 +199,16 @@ function ReportCard({
 
 export default function ReportsStatementsPage() {
   const { isAdmin } = useAuthorization()
-  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
+  const statementAccess = usePaidScoreCertificationAccess(isAdmin, 'STATEMENTS')
+  const certificateAccess = usePaidScoreCertificationAccess(isAdmin, 'CERTIFICATIONS')
   const { entityKey, isIdentityReady, selectedApplicationNo } = useSelectedAnalysisEntity()
   const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
   const [openCertificate, setOpenCertificate] = useState<'credit' | 'protection' | 'wealth' | null>(null)
   const [financialHealthSummary, setFinancialHealthSummary] = useState<FinancialHealthSummaryResult | null>(null)
   const [wealthProtectionScore, setWealthProtectionScore] = useState<WealthProtectionScoreResult | null>(null)
   const [creditScores, setCreditScores] = useState<CreditHealthGraphScores>(EMPTY_CREDIT_SCORES)
-  const locked = isScoreAccessLoading || !hasPaidScoreAccess
+  const statementsLocked = statementAccess.isScoreAccessLoading || !statementAccess.hasPaidScoreAccess
+  const certificatesLocked = certificateAccess.isScoreAccessLoading || !certificateAccess.hasPaidScoreAccess
 
   useEffect(() => {
     let disposed = false
@@ -299,7 +301,7 @@ export default function ReportsStatementsPage() {
               key={item.title}
               item={item}
               loading={item.title === 'Statement of Net Worth' && !financialHealthSummary}
-              locked={locked}
+              locked={statementsLocked}
               onOpen={item.title === 'Statement of Net Worth' ? () => setIsNetWorthStatementOpen(true) : undefined}
             />
           ))}
@@ -319,7 +321,7 @@ export default function ReportsStatementsPage() {
             <ReportCard
               key={item.title}
               item={item}
-              locked={locked}
+              locked={certificatesLocked}
               onOpen={item.title === 'Credit Score Certificate'
                 ? () => setOpenCertificate('credit')
                 : item.title === 'Wealth Protection Score Certificate'

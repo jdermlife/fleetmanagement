@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 const access = vi.hoisted(() => ({
   hasPaidScoreAccess: true,
   isScoreAccessLoading: false,
+  categoryAccess: {} as Partial<Record<string, boolean>>,
 }))
 const { fetchAutosaveDraft } = vi.hoisted(() => ({
   fetchAutosaveDraft: vi.fn(),
@@ -39,7 +40,12 @@ vi.mock('../src/hooks/useAuthorization', () => ({
 }))
 
 vi.mock('../src/hooks/usePaidScoreCertificationAccess', () => ({
-  usePaidScoreCertificationAccess: () => access,
+  usePaidScoreCertificationAccess: (_isAdmin: boolean, category?: string) => ({
+    hasPaidScoreAccess: category && category in access.categoryAccess
+      ? access.categoryAccess[category]
+      : access.hasPaidScoreAccess,
+    isScoreAccessLoading: access.isScoreAccessLoading,
+  }),
 }))
 vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
   useSelectedAnalysisEntity: () => ({
@@ -120,6 +126,7 @@ describe('ReportsStatementsPage', () => {
     vi.unstubAllGlobals()
     access.hasPaidScoreAccess = true
     access.isScoreAccessLoading = false
+    access.categoryAccess = {}
   })
 
   it('groups all existing statements and certificates for paid accounts', async () => {
@@ -223,5 +230,16 @@ describe('ReportsStatementsPage', () => {
     expect(screen.getAllByText('Paid account required')).toHaveLength(7)
     expect(document.querySelectorAll('.reports-statements-card.is-locked')).toHaveLength(7)
     expect(document.querySelectorAll('[aria-disabled="true"]')).toHaveLength(7)
+  })
+
+  it('keeps Android statement and certificate entitlements independent', async () => {
+    access.categoryAccess = { STATEMENTS: true, CERTIFICATIONS: false }
+
+    render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    expect(await screen.findByRole('button', { name: /Statement of Net Worth/ })).toBeTruthy()
+    expect(screen.getAllByRole('link')).toHaveLength(3)
+    expect(screen.queryByRole('button', { name: /Credit Score Certificate/ })).toBeNull()
+    expect(document.querySelectorAll('.reports-statements-certificate-grid .is-locked')).toHaveLength(3)
   })
 })

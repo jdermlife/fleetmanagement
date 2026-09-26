@@ -1,16 +1,24 @@
 from __future__ import annotations
 
-from datetime import date, timedelta
+from datetime import date, datetime, timezone, timedelta
 
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
 from app.database import get_db
-from app.models.subscription import Feature, Subscription, SubscriptionPayment, SubscriptionPlan
+from app.models.subscription import (
+    Feature,
+    StoreProduct,
+    StorePurchase,
+    Subscription,
+    SubscriptionPayment,
+    SubscriptionPlan,
+)
 from app.models.users import User
 from app.routes import subscriptions as subscription_routes
 from app.routes.subscriptions import router as subscriptions_router
+from app.services.store_billing import VerifiedStorePurchase
 from security.auth import create_token
 
 
@@ -160,6 +168,113 @@ def test_plans_create_and_list_smoke(client: TestClient, admin_headers):
     rows = list_response.json()
     assert len(rows) == 1
     assert rows[0]["plan_code"] == "BASIC"
+
+
+def test_android_inapp_verification_is_subscription_free_and_idempotent(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+    monkeypatch,
+):
+    product = StoreProduct(
+        id=1,
+        plan_id=None,
+        platform="ANDROID",
+        product_id="reports_unlock",
+        product_type="INAPP",
+        entitlement_category="REPORTS",
+        is_active=True,
+    )
+    fake_db.rows_by_model[StoreProduct] = [product]
+    verified = VerifiedStorePurchase(
+        platform="ANDROID",
+        product_id="reports_unlock",
+        transaction_id="GPA.1234-5678",
+        original_transaction_id=None,
+        purchase_token_hash="a" * 64,
+        status="ACTIVE",
+        purchased_at=datetime.now(timezone.utc),
+        expires_at=None,
+    )
+    monkeypatch.setattr(subscription_routes, "verify_store_purchase", lambda *_args, **_kwargs: verified)
+
+    payload = {
+        "platform": "ANDROID",
+        "product_id": "reports_unlock",
+        "verification_data": "purchase-token",
+    }
+    first = client.post("/api/subscriptions/store-purchases/verify", headers=subscriber_headers, json=payload)
+    second = client.post("/api/subscriptions/store-purchases/verify", headers=subscriber_headers, json=payload)
+
+    assert first.status_code == 200
+    assert second.status_code == 200
+    assert first.json()["subscription_id"] is None
+    assert len(fake_db.rows_by_model.get(Subscription, [])) == 0
+    assert len(fake_db.rows_by_model[StorePurchase]) == 1
+    assert len(fake_db.rows_by_model[SubscriptionPayment]) == 1
+    assert fake_db.rows_by_model[SubscriptionPayment][0].subscription_id is None
+
+
+def test_store_entitlements_aggregate_inapp_and_paid_subscription(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+):
+    reports_product = StoreProduct(
+        id=1,
+        platform="ANDROID",
+        product_id="reports_unlock",
+        product_type="INAPP",
+        entitlement_category="REPORTS",
+        is_active=True,
+    )
+    fake_db.rows_by_model[StorePurchase] = [
+        StorePurchase(
+            id=1,
+            user_id=42,
+            store_product_id=1,
+            platform="ANDROID",
+            transaction_id="GPA.REPORTS",
+            purchase_token_hash="b" * 64,
+            status="ACTIVE",
+            verified_at=datetime.now(timezone.utc),
+            store_product=reports_product,
+        )
+    ]
+
+    purchase_only = client.get("/api/subscriptions/me/store-entitlements", headers=subscriber_headers)
+
+    assert purchase_only.status_code == 200
+    assert purchase_only.json() == {
+        "subscription_grants_all": False,
+        "reports": True,
+        "statements": False,
+        "certifications": False,
+        "scores": False,
+    }
+
+    fake_db.rows_by_model[Subscription] = [
+        Subscription(
+            id=1,
+            subscription_no="SUB-PAID-001",
+            user_id=42,
+            plan_id=1,
+            status="ACTIVE",
+            subscription_type="PAID",
+            subscription_start=date.today(),
+        )
+    ]
+
+    subscribed = client.get("/api/subscriptions/me/store-entitlements", headers=subscriber_headers)
+
+    assert subscribed.status_code == 200
+    assert subscribed.json() == {
+        "subscription_grants_all": True,
+        "reports": True,
+        "statements": True,
+        "certifications": True,
+        "scores": True,
+    }
 
 
 def test_public_plans_endpoint_lists_only_active_public_plans_smoke(

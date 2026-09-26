@@ -162,8 +162,8 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     vi.resetModules()
   })
 
-  it('shows branded web payment providers in the Android app', async () => {
-    platform.value = 'android'
+  it('shows branded web payment providers in the browser', async () => {
+    platform.value = 'web'
 
     const { default: SubscriptionPaymentPage } = await import(
       '../src/pages/subscriptions/SubscriptionPaymentPage'

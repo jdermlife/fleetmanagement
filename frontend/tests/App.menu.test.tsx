@@ -2,19 +2,26 @@ import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/re
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockFetchCurrentUser, mockGetAuthToken, mockGetMySubscription, mockLogout, mockPrepareAutosavesForFastLogout, mockSynchronizeBuildProfileDraft } = vi.hoisted(() => ({
+const { mockFetchCurrentUser, mockGetAuthToken, mockGetMyStoreEntitlements, mockGetMySubscription, mockLogout, mockPrepareAutosavesForFastLogout, mockSynchronizeBuildProfileDraft, platform } = vi.hoisted(() => ({
   mockFetchCurrentUser: vi.fn(),
   mockGetAuthToken: vi.fn(),
+  mockGetMyStoreEntitlements: vi.fn(),
   mockGetMySubscription: vi.fn(),
   mockLogout: vi.fn(),
   mockPrepareAutosavesForFastLogout: vi.fn(),
   mockSynchronizeBuildProfileDraft: vi.fn(),
+  platform: { value: 'web' },
+}))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: { getPlatform: () => platform.value },
 }))
 
 vi.mock('../src/api', () => ({
   fetchCurrentUser: mockFetchCurrentUser,
   getErrorMessage: (_error: unknown, fallback: string) => fallback,
   getAuthToken: mockGetAuthToken,
+  getMyStoreEntitlements: mockGetMyStoreEntitlements,
   getMySubscription: mockGetMySubscription,
   listPublicSubscriptionPlans: vi.fn().mockResolvedValue([]),
   logout: mockLogout,
@@ -54,6 +61,7 @@ function createStorageMock(): Storage {
 
 describe('App account menu accordions', () => {
   beforeEach(() => {
+    platform.value = 'web'
     mockGetAuthToken.mockReturnValue('access-token')
     mockFetchCurrentUser.mockResolvedValue({
       id: 1,
@@ -268,5 +276,38 @@ describe('App account menu accordions', () => {
 
     expect(await screen.findByRole('heading', { name: 'Authenticated Lending Scorecard' })).toBeTruthy()
     expect(screen.queryByRole('heading', { name: 'Subscribe to access Lending Scorecard' })).toBeNull()
+  })
+
+  it('opens Lending Scorecard for an Android reports-only purchase', async () => {
+    platform.value = 'android'
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 5,
+      username: 'reports-user',
+      email: 'reports@example.com',
+      role: 'subscriber_borrower',
+      roles: ['subscriber_borrower'],
+      permissions: [],
+      isActive: true,
+      subscriptionId: null,
+      createdAt: '2026-09-17T00:00:00Z',
+      updatedAt: '2026-09-17T00:00:00Z',
+      lastLoginAt: null,
+    })
+    mockGetMyStoreEntitlements.mockResolvedValue({
+      subscription_grants_all: false,
+      reports: true,
+      statements: false,
+      certifications: false,
+      scores: false,
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/lending-scorecard']}>
+        <App />
+      </MemoryRouter>,
+    )
+
+    expect(await screen.findByRole('heading', { name: 'Authenticated Lending Scorecard' })).toBeTruthy()
+    expect(mockGetMySubscription).not.toHaveBeenCalled()
   })
 })

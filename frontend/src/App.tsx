@@ -1,7 +1,8 @@
+import { Capacitor } from '@capacitor/core'
 import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
-import { fetchCurrentUser, getAuthToken, getMySubscription, logout, type LoginResponse } from './api'
+import { fetchCurrentUser, getAuthToken, getMyStoreEntitlements, getMySubscription, logout, type LoginResponse } from './api'
 import {
   SUBSCRIBER_BORROWER_ROLE,
   SUBSCRIBER_LENDER_ROLE,
@@ -285,12 +286,16 @@ function LendingScorecardAccessGate({
 
     let cancelled = false
     setAccessState('loading')
-    void getMySubscription()
-      .then((subscription) => {
-        if (cancelled) return
-        const hasPaidAccess = subscription?.status === 'ACTIVE'
+    const accessRequest = Capacitor.getPlatform() === 'android'
+      ? getMyStoreEntitlements().then((entitlements) => entitlements.reports || entitlements.scores)
+      : getMySubscription().then((subscription) => (
+          subscription?.status === 'ACTIVE'
           && (subscription.subscription_type === 'PAID' || subscription.subscription_type === 'LIFETIME')
-        setAccessState(hasPaidAccess ? 'granted' : 'subscription-required')
+        ))
+
+    void accessRequest
+      .then((hasPaidAccess) => {
+        if (!cancelled) setAccessState(hasPaidAccess ? 'granted' : 'subscription-required')
       })
       .catch(() => {
         if (!cancelled) setAccessState('verification-failed')

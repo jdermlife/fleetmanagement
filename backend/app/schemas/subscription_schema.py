@@ -1,7 +1,7 @@
 from datetime import date, datetime
 from typing import Any, Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 
 
 class SubscriptionPlanCreate(BaseModel):
@@ -280,11 +280,32 @@ class SubscriptionCheckoutCreateRequest(BaseModel):
 class StoreProductCreateRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    plan_id: int
+    plan_id: int | None = None
     platform: Literal["ANDROID", "IOS"]
     product_id: str = Field(min_length=3, max_length=255)
     base_plan_id: str | None = Field(default=None, max_length=255)
+    product_type: Literal["SUBS", "INAPP"] = "SUBS"
+    entitlement_category: Literal["REPORTS", "STATEMENTS", "CERTIFICATIONS", "SCORES"] | None = None
     is_active: bool = True
+
+    @model_validator(mode="after")
+    def validate_product_mapping(self):
+        if self.product_type == "SUBS":
+            if self.plan_id is None or self.entitlement_category is not None:
+                raise ValueError("SUBS products require plan_id and no entitlement_category")
+        elif self.platform != "ANDROID" or self.plan_id is not None or self.base_plan_id is not None:
+            raise ValueError("INAPP products require Android with no plan_id or base_plan_id")
+        if self.product_type == "INAPP" and self.entitlement_category is None:
+            raise ValueError("INAPP products require entitlement_category")
+        return self
+
+
+class StoreEntitlements(BaseModel):
+    subscription_grants_all: bool
+    reports: bool
+    statements: bool
+    certifications: bool
+    scores: bool
 
 
 class StorePurchaseVerificationRequest(BaseModel):

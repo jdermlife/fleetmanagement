@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import base64
 from datetime import datetime, timedelta, timezone
+import sys
+from types import ModuleType
 
 import jwt
 import pytest
@@ -11,7 +13,11 @@ from cryptography.hazmat.primitives.asymmetric import ec
 from cryptography.x509.oid import NameOID
 
 from app.routes.subscriptions import _store_purchase_grants_entitlement
-from app.services.store_billing import StorePurchaseVerificationError, verify_apple_transaction
+from app.services.store_billing import (
+    StorePurchaseVerificationError,
+    verify_apple_transaction,
+    verify_google_play_product,
+)
 
 
 def _certificate(
@@ -102,3 +108,57 @@ def test_cancelled_subscription_remains_entitled_until_expiration():
 
     assert _store_purchase_grants_entitlement("CANCELLED", now + timedelta(days=2)) is True
     assert _store_purchase_grants_entitlement("CANCELLED", now - timedelta(seconds=1)) is False
+
+
+@pytest.mark.parametrize(
+    ("purchase_state", "expected_status"),
+    [(0, "ACTIVE"), (1, "CANCELLED"), (2, "PENDING")],
+)
+def test_verify_google_play_product_uses_products_endpoint_and_maps_states(
+    monkeypatch,
+    purchase_state,
+    expected_status,
+):
+    requested = {}
+
+    class Response:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {
+                "purchaseState": purchase_state,
+                "orderId": "GPA.1234-5678",
+                "purchaseTimeMillis": "1767225600000",
+            }
+
+    class Session:
+        def __init__(self, credentials):
+            requested["credentials"] = credentials
+
+        @staticmethod
+        def get(url, timeout):
+            requested["url"] = url
+            requested["timeout"] = timeout
+            return Response()
+
+    requests_module = ModuleType("google.auth.transport.requests")
+    requests_module.AuthorizedSession = Session
+    monkeypatch.setitem(sys.modules, "google", ModuleType("google"))
+    monkeypatch.setitem(sys.modules, "google.auth", ModuleType("google.auth"))
+    monkeypatch.setitem(sys.modules, "google.auth.transport", ModuleType("google.auth.transport"))
+    monkeypatch.setitem(sys.modules, "google.auth.transport.requests", requests_module)
+    monkeypatch.setattr("app.services.store_billing._google_credentials", lambda: "credentials")
+    monkeypatch.setenv("GOOGLE_PLAY_PACKAGE_NAME", "com.example.fms")
+
+    verified = verify_google_play_product("reports_unlock", "purchase-token")
+
+    assert requested["url"] == (
+        "https://androidpublisher.googleapis.com/androidpublisher/v3/"
+        "applications/com.example.fms/purchases/products/reports_unlock/tokens/purchase-token"
+    )
+    assert requested["timeout"] == 15
+    assert verified.product_id == "reports_unlock"
+    assert verified.transaction_id == "GPA.1234-5678"
+    assert verified.status == expected_status
+    assert verified.expires_at is None

@@ -154,7 +154,7 @@ const getCertificationMetadata = (applicationNo: string, issuedAt: string) => {
 
 export default function LoanCertificationPage() {
   const { isAdmin } = useAuthorization()
-  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin)
+  const { hasPaidScoreAccess, isScoreAccessLoading } = usePaidScoreCertificationAccess(isAdmin, 'CERTIFICATIONS')
   const navigate = useNavigate()
   const location = useLocation()
   const [searchParams] = useSearchParams()
