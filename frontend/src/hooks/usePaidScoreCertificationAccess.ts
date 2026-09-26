@@ -32,7 +32,7 @@ export function usePaidScoreCertificationAccess(
 
     const loadSubscription = async () => {
       try {
-        if (Capacitor.getPlatform() === 'android') {
+        if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
           const entitlements = await getMyStoreEntitlements()
           const categoryKey = category.toLowerCase() as Lowercase<StoreEntitlementCategory>
           if (!disposed) setHasPaidScoreAccess(entitlements[categoryKey])

@@ -307,9 +307,13 @@ def verify_store_purchase(
 ) -> VerifiedStorePurchase:
     normalized_platform = platform.strip().upper()
     if product_type == "INAPP":
-        if normalized_platform != "ANDROID" or not product_id:
-            raise StorePurchaseVerificationError("INAPP products require an Android product mapping")
-        return verify_google_play_product(product_id, verification_data)
+        if not product_id:
+            raise StorePurchaseVerificationError("INAPP products require a product mapping")
+        if normalized_platform == "ANDROID":
+            return verify_google_play_product(product_id, verification_data)
+        if normalized_platform == "IOS":
+            return verify_apple_transaction(verification_data)
+        raise StorePurchaseVerificationError("Unsupported store platform")
     if normalized_platform == "ANDROID":
         return verify_google_play_purchase(verification_data)
     if normalized_platform == "IOS":

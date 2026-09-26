@@ -293,8 +293,8 @@ class StoreProductCreateRequest(BaseModel):
         if self.product_type == "SUBS":
             if self.plan_id is None or self.entitlement_category is not None:
                 raise ValueError("SUBS products require plan_id and no entitlement_category")
-        elif self.platform != "ANDROID" or self.plan_id is not None or self.base_plan_id is not None:
-            raise ValueError("INAPP products require Android with no plan_id or base_plan_id")
+        elif self.plan_id is not None or self.base_plan_id is not None:
+            raise ValueError("INAPP products require no plan_id or base_plan_id")
         if self.product_type == "INAPP" and self.entitlement_category is None:
             raise ValueError("INAPP products require entitlement_category")
         return self

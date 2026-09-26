@@ -18,12 +18,12 @@ const apiMocks = vi.hoisted(() => ({
 }))
 
 const nativeBillingMocks = vi.hoisted(() => ({
-  loadAndroidOneTimeProducts: vi.fn(),
+  loadNativeOneTimeProducts: vi.fn(),
   loadNativeStoreProducts: vi.fn(),
   manageNativeSubscriptions: vi.fn(),
-  purchaseAndroidOneTimeProduct: vi.fn(),
+  purchaseNativeOneTimeProduct: vi.fn(),
   purchaseNativeSubscription: vi.fn(),
-  restoreAndroidOneTimeProducts: vi.fn(),
+  restoreNativeOneTimeProducts: vi.fn(),
   restoreNativeSubscriptions: vi.fn(),
 }))
 
@@ -98,9 +98,9 @@ describe('SubscriptionPaymentPage native billing', () => {
         },
       },
     }])
-    nativeBillingMocks.loadAndroidOneTimeProducts.mockResolvedValue([])
-    nativeBillingMocks.purchaseAndroidOneTimeProduct.mockResolvedValue({ status: 'ACTIVE' })
-    nativeBillingMocks.restoreAndroidOneTimeProducts.mockResolvedValue([])
+    nativeBillingMocks.loadNativeOneTimeProducts.mockResolvedValue([])
+    nativeBillingMocks.purchaseNativeOneTimeProduct.mockResolvedValue({ status: 'ACTIVE' })
+    nativeBillingMocks.restoreNativeOneTimeProducts.mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -155,7 +155,7 @@ describe('SubscriptionPaymentPage native billing', () => {
       introductoryPrice: null,
     }])
     const categories = ['REPORTS', 'STATEMENTS', 'CERTIFICATIONS', 'SCORES'] as const
-    nativeBillingMocks.loadAndroidOneTimeProducts.mockResolvedValue(categories.map((category, index) => ({
+    nativeBillingMocks.loadNativeOneTimeProducts.mockResolvedValue(categories.map((category, index) => ({
       mapping: {
         id: 30 + index,
         plan_id: null,
@@ -184,12 +184,50 @@ describe('SubscriptionPaymentPage native billing', () => {
       </MemoryRouter>,
     )
 
-    const oneTimeSection = await screen.findByRole('region', { name: 'Google Play one-time products' })
+    const oneTimeSection = await screen.findByRole('region', { name: 'App store one-time products' })
     expect(within(oneTimeSection).getAllByRole('button', { name: /^Buy / })).toHaveLength(4)
     expect(screen.queryByRole('heading', { name: 'Choose Payment Channel' })).toBeNull()
 
     fireEvent.click(within(oneTimeSection).getByRole('button', { name: 'Buy reports' }))
-    await waitFor(() => expect(nativeBillingMocks.purchaseAndroidOneTimeProduct).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(nativeBillingMocks.purchaseNativeOneTimeProduct).toHaveBeenCalledTimes(1))
+    expect(await screen.findByText('Reports Access is now available.')).toBeTruthy()
+  })
+
+  it('shows and purchases an iOS Reports non-consumable product', async () => {
+    nativeBillingMocks.loadNativeOneTimeProducts.mockResolvedValue([{
+      mapping: {
+        id: 40,
+        plan_id: null,
+        platform: 'IOS',
+        product_id: 'com.quantech.filscore.reports',
+        base_plan_id: null,
+        product_type: 'INAPP',
+        entitlement_category: 'REPORTS',
+        is_active: true,
+      },
+      title: 'Reports Access',
+      description: 'Permanent reports access.',
+      price: 49,
+      priceString: '₱49.00',
+      currencyCode: 'PHP',
+      subscriptionPeriod: { numberOfUnits: 0, unit: 0, unitString: '' },
+      introductoryPrice: null,
+    }])
+
+    const { default: SubscriptionPaymentPage } = await import(
+      '../src/pages/subscriptions/SubscriptionPaymentPage'
+    )
+    render(
+      <MemoryRouter initialEntries={['/subscription-payment?planId=7']}>
+        <SubscriptionPaymentPage />
+      </MemoryRouter>,
+    )
+
+    const oneTimeSection = await screen.findByRole('region', { name: 'App store one-time products' })
+    expect(within(oneTimeSection).getByRole('heading', { name: 'App Store One-Time Access' })).toBeTruthy()
+    fireEvent.click(within(oneTimeSection).getByRole('button', { name: 'Buy reports' }))
+
+    await waitFor(() => expect(nativeBillingMocks.purchaseNativeOneTimeProduct).toHaveBeenCalledTimes(1))
     expect(await screen.findByText('Reports Access is now available.')).toBeTruthy()
   })
 })

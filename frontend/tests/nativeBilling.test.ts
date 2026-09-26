@@ -12,10 +12,11 @@ const apiMocks = vi.hoisted(() => ({
   listStoreProducts: vi.fn(),
   verifyNativeStorePurchase: vi.fn(),
 }))
+const platform = vi.hoisted(() => ({ value: 'android' }))
 
 vi.mock('@capacitor/core', () => ({
   Capacitor: {
-    getPlatform: () => 'android',
+    getPlatform: () => platform.value,
     isNativePlatform: () => true,
   },
 }))
@@ -28,9 +29,9 @@ vi.mock('@capgo/native-purchases', () => ({
 vi.mock('../src/api', () => apiMocks)
 
 import {
-  loadAndroidOneTimeProducts,
-  purchaseAndroidOneTimeProduct,
-  restoreAndroidOneTimeProducts,
+  loadNativeOneTimeProducts,
+  purchaseNativeOneTimeProduct,
+  restoreNativeOneTimeProducts,
 } from '../src/nativeBilling'
 
 const mapping = {
@@ -61,6 +62,7 @@ const transaction = {
 
 describe('Android native one-time billing', () => {
   beforeEach(() => {
+    platform.value = 'android'
     vi.clearAllMocks()
     nativeMocks.isBillingSupported.mockResolvedValue({ isBillingSupported: true })
     nativeMocks.getProducts.mockResolvedValue({ products: [product] })
@@ -73,13 +75,13 @@ describe('Android native one-time billing', () => {
   })
 
   it('loads and purchases a durable INAPP product before acknowledging it', async () => {
-    const products = await loadAndroidOneTimeProducts()
+    const products = await loadNativeOneTimeProducts()
     expect(nativeMocks.getProducts).toHaveBeenCalledWith({
       productIdentifiers: ['filscore_reports'],
       productType: 'inapp',
     })
 
-    await purchaseAndroidOneTimeProduct(products[0], 42)
+    await purchaseNativeOneTimeProduct(products[0], 42)
 
     expect(nativeMocks.purchaseProduct).toHaveBeenCalledWith(expect.objectContaining({
       productIdentifier: 'filscore_reports',
@@ -97,8 +99,8 @@ describe('Android native one-time billing', () => {
   })
 
   it('restores only Android INAPP purchases for the signed-in account', async () => {
-    const products = await loadAndroidOneTimeProducts()
-    const restored = await restoreAndroidOneTimeProducts(products, 42)
+    const products = await loadNativeOneTimeProducts()
+    const restored = await restoreNativeOneTimeProducts(products, 42)
 
     expect(nativeMocks.getPurchases).toHaveBeenCalledWith(expect.objectContaining({
       productType: 'inapp',
@@ -107,6 +109,38 @@ describe('Android native one-time billing', () => {
     expect(restored).toHaveLength(1)
     expect(nativeMocks.acknowledgePurchase).toHaveBeenCalledWith({
       purchaseToken: 'android-purchase-token',
+    })
+  })
+
+  it('verifies an iOS non-consumable JWS before acknowledging the transaction', async () => {
+    platform.value = 'ios'
+    apiMocks.listStoreProducts.mockResolvedValue([{
+      ...mapping,
+      platform: 'IOS',
+      product_id: 'com.quantech.filscore.reports',
+    }])
+    nativeMocks.getProducts.mockResolvedValue({ products: [{
+      ...product,
+      identifier: 'com.quantech.filscore.reports',
+    }] })
+    nativeMocks.purchaseProduct.mockResolvedValue({
+      productIdentifier: 'com.quantech.filscore.reports',
+      transactionId: '2000000123456789',
+      jwsRepresentation: 'signed-storekit-transaction',
+    })
+
+    const products = await loadNativeOneTimeProducts()
+    await purchaseNativeOneTimeProduct(products[0], 42)
+
+    expect(apiMocks.verifyNativeStorePurchase).toHaveBeenCalledWith(expect.objectContaining({
+      platform: 'IOS',
+      product_id: 'com.quantech.filscore.reports',
+      verification_data: 'signed-storekit-transaction',
+    }))
+    expect(apiMocks.verifyNativeStorePurchase.mock.invocationCallOrder[0])
+      .toBeLessThan(nativeMocks.acknowledgePurchase.mock.invocationCallOrder[0])
+    expect(nativeMocks.acknowledgePurchase).toHaveBeenCalledWith({
+      purchaseToken: '2000000123456789',
     })
   })
 })

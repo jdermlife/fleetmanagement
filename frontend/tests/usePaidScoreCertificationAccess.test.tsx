@@ -55,8 +55,8 @@ describe('usePaidScoreCertificationAccess', () => {
     expect(mockGetMySubscription).not.toHaveBeenCalled()
   })
 
-  it('uses category entitlements for Android without changing subscription lookup', async () => {
-    platform.value = 'android'
+  it.each(['android', 'ios'])('uses category entitlements for %s without changing subscription lookup', async (nativePlatform) => {
+    platform.value = nativePlatform
     mockGetMyStoreEntitlements.mockResolvedValue({
       subscription_grants_all: false,
       reports: true,

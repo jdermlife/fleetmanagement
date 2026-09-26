@@ -288,8 +288,7 @@ def _aggregate_store_entitlements(
     categories = {
         purchase.store_product.entitlement_category
         for purchase in purchases
-        if purchase.platform == "ANDROID"
-        and purchase.status == "ACTIVE"
+        if purchase.status == "ACTIVE"
         and purchase.store_product is not None
         and purchase.store_product.product_type == "INAPP"
         and purchase.store_product.is_active
@@ -1214,7 +1213,11 @@ def receive_apple_store_notification(payload: AppleStoreNotificationRequest):
         processed = purchase is not None
         if purchase is not None:
             _synchronize_store_purchase(db, purchase, verified)
-            if event_type == "DID_CHANGE_RENEWAL_STATUS" and event_subtype == "AUTO_RENEW_DISABLED":
+            if (
+                purchase.subscription is not None
+                and event_type == "DID_CHANGE_RENEWAL_STATUS"
+                and event_subtype == "AUTO_RENEW_DISABLED"
+            ):
                 purchase.subscription.auto_renew = False
         db.add(PaymentWebhook(
             provider_id=provider.id,

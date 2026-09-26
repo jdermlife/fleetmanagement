@@ -25,14 +25,14 @@ import {
   type SubscriptionRecord,
 } from '../../api'
 import {
-  loadAndroidOneTimeProducts,
+  loadNativeOneTimeProducts,
   loadNativeStoreProducts,
   manageNativeSubscriptions,
-  purchaseAndroidOneTimeProduct,
+  purchaseNativeOneTimeProduct,
   purchaseNativeSubscription,
-  restoreAndroidOneTimeProducts,
+  restoreNativeOneTimeProducts,
   restoreNativeSubscriptions,
-  type AndroidOneTimeProduct,
+  type NativeOneTimeProduct,
   type NativeStoreProduct,
 } from '../../nativeBilling'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
@@ -218,7 +218,7 @@ export default function SubscriptionPaymentPage() {
   const [payMongoPaymentMethodId, setPayMongoPaymentMethodId] = useState('')
   const [isStartingFreeTrial, setIsStartingFreeTrial] = useState(false)
   const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
-  const [androidOneTimeProducts, setAndroidOneTimeProducts] = useState<AndroidOneTimeProduct[]>([])
+  const [nativeOneTimeProducts, setNativeOneTimeProducts] = useState<NativeOneTimeProduct[]>([])
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalSubscriptionButtonContainerRef = useRef<HTMLDivElement | null>(null)
@@ -304,10 +304,10 @@ export default function SubscriptionPaymentPage() {
     if (!usesNativeStore || !isAuthenticated || guestTrialPlan) {
       return
     }
-    const catalogRequests = [loadNativeStoreProducts().then(setNativeProducts)]
-    if (usesAndroidStore) {
-      catalogRequests.push(loadAndroidOneTimeProducts().then(setAndroidOneTimeProducts))
-    }
+    const catalogRequests = [
+      loadNativeStoreProducts().then(setNativeProducts),
+      loadNativeOneTimeProducts().then(setNativeOneTimeProducts),
+    ]
     void Promise.all(catalogRequests)
       .catch((error) => {
         setLoadMessage(getErrorMessage(error, 'Unable to load subscriptions from the app store.'))
@@ -886,37 +886,37 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
-  const handleAndroidOneTimePurchase = async (product: AndroidOneTimeProduct) => {
+  const handleNativeOneTimePurchase = async (product: NativeOneTimeProduct) => {
     setIsNativePurchasePending(true)
-    setPaymentMessage(`Waiting for Google Play confirmation for ${product.title}...`)
+    setPaymentMessage(`Waiting for app store confirmation for ${product.title}...`)
     try {
       const currentUser = await fetchCurrentUser()
-      const purchase = await purchaseAndroidOneTimeProduct(product, currentUser.id)
+      const purchase = await purchaseNativeOneTimeProduct(product, currentUser.id)
       setPaymentMessage(
         purchase.status === 'ACTIVE'
           ? `${product.title} is now available.`
-          : `Google Play reports this purchase as ${purchase.status.toLowerCase()}.`,
+          : `The app store reports this purchase as ${purchase.status.toLowerCase()}.`,
       )
     } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to complete the Google Play purchase.'))
+      setPaymentMessage(getErrorMessage(error, 'Unable to complete the app store purchase.'))
     } finally {
       setIsNativePurchasePending(false)
     }
   }
 
-  const handleRestoreAndroidOneTimePurchases = async () => {
+  const handleRestoreNativeOneTimePurchases = async () => {
     setIsNativePurchasePending(true)
-    setPaymentMessage('Restoring Google Play one-time purchases...')
+    setPaymentMessage('Restoring app store one-time purchases...')
     try {
       const currentUser = await fetchCurrentUser()
-      const restored = await restoreAndroidOneTimeProducts(androidOneTimeProducts, currentUser.id)
+      const restored = await restoreNativeOneTimeProducts(nativeOneTimeProducts, currentUser.id)
       setPaymentMessage(
         restored.length > 0
-          ? 'Your Google Play one-time purchases have been restored.'
-          : 'No Google Play one-time purchases were found.',
+          ? 'Your app store one-time purchases have been restored.'
+          : 'No app store one-time purchases were found.',
       )
     } catch (error) {
-      setPaymentMessage(getErrorMessage(error, 'Unable to restore Google Play one-time purchases.'))
+      setPaymentMessage(getErrorMessage(error, 'Unable to restore app store one-time purchases.'))
     } finally {
       setIsNativePurchasePending(false)
     }
@@ -1210,12 +1210,12 @@ export default function SubscriptionPaymentPage() {
                 Manage Subscription
               </button>
             </div>
-            {usesAndroidStore ? (
-              <section className="android-one-time-products" aria-label="Google Play one-time products">
-                <h2>Google Play One-Time Access</h2>
+            {nativeOneTimeProducts.length > 0 ? (
+              <section className="android-one-time-products" aria-label="App store one-time products">
+                <h2>{usesAndroidStore ? 'Google Play' : 'App Store'} One-Time Access</h2>
                 <p>Purchase permanent access to one feature category. An active subscription includes all categories.</p>
                 <div className="trial-expired-payment-buttons">
-                  {androidOneTimeProducts.map((product) => (
+                  {nativeOneTimeProducts.map((product) => (
                     <article className="trial-expired-payment-option register-social-option" key={product.mapping.product_id}>
                       <h3>{product.title}</h3>
                       <p>{product.description}</p>
@@ -1223,7 +1223,7 @@ export default function SubscriptionPaymentPage() {
                       <button
                         type="button"
                         className="auth-link-button auth-apple-button"
-                        onClick={() => void handleAndroidOneTimePurchase(product)}
+                        onClick={() => void handleNativeOneTimePurchase(product)}
                         disabled={isNativePurchasePending}
                       >
                         Buy {product.mapping.entitlement_category.toLowerCase()}
@@ -1234,8 +1234,8 @@ export default function SubscriptionPaymentPage() {
                 <button
                   type="button"
                   className="auth-link-button"
-                  onClick={() => void handleRestoreAndroidOneTimePurchases()}
-                  disabled={isNativePurchasePending || androidOneTimeProducts.length === 0}
+                  onClick={() => void handleRestoreNativeOneTimePurchases()}
+                  disabled={isNativePurchasePending || nativeOneTimeProducts.length === 0}
                 >
                   Restore One-Time Purchases
                 </button>

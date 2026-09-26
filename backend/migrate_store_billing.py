@@ -38,13 +38,12 @@ POSTGRES_UPGRADE_STATEMENTS = (
     """,
     """
     DO $$ BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'ck_store_products_product_coherence') THEN
-            ALTER TABLE store_products ADD CONSTRAINT ck_store_products_product_coherence CHECK (
-                (product_type = 'SUBS' AND plan_id IS NOT NULL AND entitlement_category IS NULL) OR
-                (product_type = 'INAPP' AND platform = 'ANDROID' AND plan_id IS NULL
-                    AND base_plan_id IS NULL AND entitlement_category IS NOT NULL)
-            );
-        END IF;
+        ALTER TABLE store_products DROP CONSTRAINT IF EXISTS ck_store_products_product_coherence;
+        ALTER TABLE store_products ADD CONSTRAINT ck_store_products_product_coherence CHECK (
+            (product_type = 'SUBS' AND plan_id IS NOT NULL AND entitlement_category IS NULL) OR
+            (product_type = 'INAPP' AND plan_id IS NULL
+                AND base_plan_id IS NULL AND entitlement_category IS NOT NULL)
+        );
     END $$
     """,
     """
@@ -107,12 +106,11 @@ def run_migration() -> None:
                 if plan is None:
                     raise ValueError(f"Subscription plan {plan_code} does not exist")
             elif (
-                platform != "ANDROID"
-                or category not in {"REPORTS", "STATEMENTS", "CERTIFICATIONS", "SCORES"}
+                category not in {"REPORTS", "STATEMENTS", "CERTIFICATIONS", "SCORES"}
                 or mapping.get("base_plan_id")
                 or mapping.get("plan_code")
             ):
-                raise ValueError("INAPP store mappings require Android, category, and no plan or base plan")
+                raise ValueError("INAPP store mappings require category and no plan or base plan")
             existing = (
                 db.query(StoreProduct)
                 .filter(StoreProduct.platform == platform)

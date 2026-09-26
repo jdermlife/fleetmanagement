@@ -278,8 +278,8 @@ describe('App account menu accordions', () => {
     expect(screen.queryByRole('heading', { name: 'Subscribe to access Lending Scorecard' })).toBeNull()
   })
 
-  it('opens Lending Scorecard for an Android reports-only purchase', async () => {
-    platform.value = 'android'
+  it.each(['android', 'ios'])('opens Lending Scorecard for a %s reports-only purchase', async (nativePlatform) => {
+    platform.value = nativePlatform
     mockFetchCurrentUser.mockResolvedValue({
       id: 5,
       username: 'reports-user',

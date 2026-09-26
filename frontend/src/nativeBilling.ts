@@ -28,9 +28,9 @@ export interface NativeStoreProduct {
   introductoryPrice: SKProductDiscount | null
 }
 
-export type AndroidOneTimeProduct = NativeStoreProduct & {
+export type NativeOneTimeProduct = NativeStoreProduct & {
   mapping: StoreProductMapping & {
-    platform: 'ANDROID'
+    platform: NativeStorePlatform
     product_type: 'INAPP'
     entitlement_category: StoreEntitlementCategory
   }
@@ -137,16 +137,15 @@ export async function loadNativeStoreProducts(): Promise<NativeStoreProduct[]> {
   })
 }
 
-export async function loadAndroidOneTimeProducts(): Promise<AndroidOneTimeProduct[]> {
+export async function loadNativeOneTimeProducts(): Promise<NativeOneTimeProduct[]> {
   const platform = requireStorePlatform()
-  if (platform !== 'ANDROID') return []
 
   const { isBillingSupported } = await NativePurchases.isBillingSupported()
-  if (!isBillingSupported) throw new Error('Google Play billing is not available on this device.')
+  if (!isBillingSupported) throw new Error('App store billing is not available on this device.')
 
-  const mappings = (await listStoreProducts('ANDROID')).filter(
-    (mapping): mapping is AndroidOneTimeProduct['mapping'] => (
-      mapping.platform === 'ANDROID'
+  const mappings = (await listStoreProducts(platform)).filter(
+    (mapping): mapping is NativeOneTimeProduct['mapping'] => (
+      mapping.platform === platform
       && mapping.product_type === 'INAPP'
       && mapping.entitlement_category !== null
     ),
@@ -188,12 +187,12 @@ export async function purchaseNativeSubscription(
   return verifyTransaction(product.mapping, transaction, subscriptionId)
 }
 
-export async function purchaseAndroidOneTimeProduct(
-  product: AndroidOneTimeProduct,
+export async function purchaseNativeOneTimeProduct(
+  product: NativeOneTimeProduct,
   userId: number,
 ): Promise<VerifiedStorePurchase> {
-  if (requireStorePlatform() !== 'ANDROID') {
-    throw new Error('Google Play one-time products are only available in the Android app.')
+  if (requireStorePlatform() !== product.mapping.platform) {
+    throw new Error('This one-time product belongs to another app store.')
   }
   const transaction = await NativePurchases.purchaseProduct({
     productIdentifier: product.mapping.product_id,
@@ -225,11 +224,11 @@ export async function restoreNativeSubscriptions(
   return restored
 }
 
-export async function restoreAndroidOneTimeProducts(
-  products: AndroidOneTimeProduct[],
+export async function restoreNativeOneTimeProducts(
+  products: NativeOneTimeProduct[],
   userId: number,
 ): Promise<VerifiedStorePurchase[]> {
-  if (requireStorePlatform() !== 'ANDROID') return []
+  const platform = requireStorePlatform()
   await NativePurchases.restorePurchases()
   const { purchases } = await NativePurchases.getPurchases({
     productType: PURCHASE_TYPE.INAPP,
@@ -237,7 +236,10 @@ export async function restoreAndroidOneTimeProducts(
   })
   const restored: VerifiedStorePurchase[] = []
   for (const transaction of purchases) {
-    const product = products.find((item) => item.mapping.product_id === transaction.productIdentifier)
+    const product = products.find((item) => (
+      item.mapping.platform === platform
+      && item.mapping.product_id === transaction.productIdentifier
+    ))
     if (product) restored.push(await verifyTransaction(product.mapping, transaction))
   }
   return restored

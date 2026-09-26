@@ -170,16 +170,18 @@ def test_plans_create_and_list_smoke(client: TestClient, admin_headers):
     assert rows[0]["plan_code"] == "BASIC"
 
 
-def test_android_inapp_verification_is_subscription_free_and_idempotent(
+@pytest.mark.parametrize("platform", ["ANDROID", "IOS"])
+def test_native_inapp_verification_is_subscription_free_and_idempotent(
     client: TestClient,
     fake_db: FakeSession,
     subscriber_headers,
     monkeypatch,
+    platform,
 ):
     product = StoreProduct(
         id=1,
         plan_id=None,
-        platform="ANDROID",
+        platform=platform,
         product_id="reports_unlock",
         product_type="INAPP",
         entitlement_category="REPORTS",
@@ -187,9 +189,9 @@ def test_android_inapp_verification_is_subscription_free_and_idempotent(
     )
     fake_db.rows_by_model[StoreProduct] = [product]
     verified = VerifiedStorePurchase(
-        platform="ANDROID",
+        platform=platform,
         product_id="reports_unlock",
-        transaction_id="GPA.1234-5678",
+        transaction_id="GPA.1234-5678" if platform == "ANDROID" else "2000000123456789",
         original_transaction_id=None,
         purchase_token_hash="a" * 64,
         status="ACTIVE",
@@ -199,7 +201,7 @@ def test_android_inapp_verification_is_subscription_free_and_idempotent(
     monkeypatch.setattr(subscription_routes, "verify_store_purchase", lambda *_args, **_kwargs: verified)
 
     payload = {
-        "platform": "ANDROID",
+        "platform": platform,
         "product_id": "reports_unlock",
         "verification_data": "purchase-token",
     }
@@ -215,14 +217,16 @@ def test_android_inapp_verification_is_subscription_free_and_idempotent(
     assert fake_db.rows_by_model[SubscriptionPayment][0].subscription_id is None
 
 
+@pytest.mark.parametrize("platform", ["ANDROID", "IOS"])
 def test_store_entitlements_aggregate_inapp_and_paid_subscription(
     client: TestClient,
     fake_db: FakeSession,
     subscriber_headers,
+    platform,
 ):
     reports_product = StoreProduct(
         id=1,
-        platform="ANDROID",
+        platform=platform,
         product_id="reports_unlock",
         product_type="INAPP",
         entitlement_category="REPORTS",
@@ -233,8 +237,8 @@ def test_store_entitlements_aggregate_inapp_and_paid_subscription(
             id=1,
             user_id=42,
             store_product_id=1,
-            platform="ANDROID",
-            transaction_id="GPA.REPORTS",
+            platform=platform,
+            transaction_id="GPA.REPORTS" if platform == "ANDROID" else "2000000123456789",
             purchase_token_hash="b" * 64,
             status="ACTIVE",
             verified_at=datetime.now(timezone.utc),

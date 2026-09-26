@@ -118,7 +118,7 @@ class StoreProduct(Base):
         ),
         CheckConstraint(
             "(product_type = 'SUBS' AND plan_id IS NOT NULL AND entitlement_category IS NULL) OR "
-            "(product_type = 'INAPP' AND platform = 'ANDROID' AND plan_id IS NULL "
+            "(product_type = 'INAPP' AND plan_id IS NULL "
             "AND base_plan_id IS NULL AND entitlement_category IS NOT NULL)",
             name="ck_store_products_product_coherence",
         ),

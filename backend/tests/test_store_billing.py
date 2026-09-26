@@ -17,6 +17,7 @@ from app.services.store_billing import (
     StorePurchaseVerificationError,
     verify_apple_transaction,
     verify_google_play_product,
+    verify_store_purchase,
 )
 
 
@@ -43,7 +44,14 @@ def _certificate(
     )
 
 
-def _signed_transaction(tmp_path, monkeypatch, *, bundle_id: str = "com.quantech.filscore") -> str:
+def _signed_transaction(
+    tmp_path,
+    monkeypatch,
+    *,
+    bundle_id: str = "com.quantech.filscore",
+    product_id: str = "com.quantech.filscore.single.monthly",
+    expires: bool = True,
+) -> str:
     root_key = ec.generate_private_key(ec.SECP256R1())
     root_name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, "Test Apple Root")])
     root_certificate = _certificate(
@@ -67,16 +75,18 @@ def _signed_transaction(tmp_path, monkeypatch, *, bundle_id: str = "com.quantech
     monkeypatch.setenv("APPLE_BUNDLE_ID", "com.quantech.filscore")
     monkeypatch.setenv("APPLE_STORE_ENVIRONMENT", "Sandbox")
     now_millis = int(datetime.now(timezone.utc).timestamp() * 1000)
-    return jwt.encode(
-        {
+    payload = {
             "transactionId": "2000000123456789",
             "originalTransactionId": "2000000123456000",
-            "productId": "com.quantech.filscore.single.monthly",
+            "productId": product_id,
             "bundleId": bundle_id,
             "environment": "Sandbox",
             "purchaseDate": now_millis,
-            "expiresDate": now_millis + 3_600_000,
-        },
+        }
+    if expires:
+        payload["expiresDate"] = now_millis + 3_600_000
+    return jwt.encode(
+        payload,
         leaf_key,
         algorithm="ES256",
         headers={
@@ -101,6 +111,26 @@ def test_verify_apple_transaction_rejects_another_bundle(tmp_path, monkeypatch):
 
     with pytest.raises(StorePurchaseVerificationError, match="another application"):
         verify_apple_transaction(signed_transaction)
+
+
+def test_verify_store_purchase_accepts_apple_non_consumable(tmp_path, monkeypatch):
+    signed_transaction = _signed_transaction(
+        tmp_path,
+        monkeypatch,
+        product_id="com.quantech.filscore.reports",
+        expires=False,
+    )
+
+    verified = verify_store_purchase(
+        "IOS",
+        signed_transaction,
+        product_type="INAPP",
+        product_id="com.quantech.filscore.reports",
+    )
+
+    assert verified.product_id == "com.quantech.filscore.reports"
+    assert verified.status == "ACTIVE"
+    assert verified.expires_at is None
 
 
 def test_cancelled_subscription_remains_entitled_until_expiration():

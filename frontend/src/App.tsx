@@ -286,7 +286,8 @@ function LendingScorecardAccessGate({
 
     let cancelled = false
     setAccessState('loading')
-    const accessRequest = Capacitor.getPlatform() === 'android'
+    const nativePlatform = Capacitor.getPlatform()
+    const accessRequest = nativePlatform === 'android' || nativePlatform === 'ios'
       ? getMyStoreEntitlements().then((entitlements) => entitlements.reports || entitlements.scores)
       : getMySubscription().then((subscription) => (
           subscription?.status === 'ACTIVE'
