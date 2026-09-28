@@ -103,6 +103,7 @@ const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHeal
 const CalculationPage = lazy(() => import('./pages/admin/CalculationPage'))
 const AmlKycScoringPage = lazy(() => import('./pages/admin/AmlKycScoringPage'))
 const AboutFilscoreMobilePage = lazy(() => import('./pages/admin/AboutFilscoreMobilePage'))
+const SmeLoanApplicationPage = lazy(() => import('./pages/admin/SmeLoanApplicationPage'))
 const SubscriptionManagementPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionManagementPage'))
 const SubscriptionPaymentPage = lazyWithRetry(() => import('./pages/subscriptions/SubscriptionPaymentPage'))
 const PaymentSuccessPage = lazyWithRetry(() => import('./pages/subscriptions/PaymentSuccessPage'))
@@ -166,6 +167,7 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
+  { id: 'sme', label: 'SME' },
   { id: 'about-filscore-mobile', label: 'About FILSCORE for Apps' },
   { id: 'subscription-payment', label: 'Subscription Payment' },
   { id: 'trial-expired', label: 'Trial Expired Reminder' },
@@ -550,6 +552,7 @@ const adminMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'sme',
   'about-filscore-mobile',
   'subscription-payment',
   'trial-expired',
@@ -1811,6 +1814,15 @@ const isSignedIn = authReady && Boolean(currentUser)
               element={
                 <ProtectedRoute roles={['admin']}>
                   <AboutFilscoreMobilePage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/sme"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <SmeLoanApplicationPage />
                 </ProtectedRoute>
               }
             />
