@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { FormEvent, ReactNode } from 'react'
-import { CheckCircle2, Printer, RotateCcw, Save } from 'lucide-react'
+import { CheckCircle2, Gauge, Printer, RotateCcw, Save } from 'lucide-react'
 
 const STORAGE_KEY = 'fms:admin:sme-loan-application'
 const registrationTypes = ['CDA', 'DTI', 'SEC', 'BIR', "Barangay/Mayor's Permit", 'Other']
@@ -69,6 +69,7 @@ export default function SmeLoanApplicationPage() {
   const [values, setValues] = useState<Values>(loadSavedValues)
   const [status, setStatus] = useState('')
   const completed = useMemo(() => finalChecklist.filter((item) => values[`final-${item}`]).length, [values])
+  const completionPercentage = Math.round((completed / finalChecklist.length) * 100)
 
   function handleChange(event: FormEvent<HTMLFormElement>) {
     const target = event.target
@@ -92,8 +93,13 @@ export default function SmeLoanApplicationPage() {
     setStatus('Application cleared')
   }
 
-  return <main className="sme-page">
-    <header className="sme-page-header"><div><span className="sme-eyebrow">Administration / Credit origination</span><h1>SME</h1><p>Business loan application, due-diligence details, and document readiness.</p></div><div className="sme-progress"><strong>{completed}/12</strong><span>submission checks</span></div></header>
+  return <main className="psychometric-page sme-page">
+    <header className="psychometric-hero sme-page-header">
+      <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Administration / Credit origination</span><h1>SME</h1><p>Business loan application, due-diligence details, and document readiness.</p></div>
+      <button type="button" className="sme-completion-button" onClick={() => document.getElementById('sme-final-review')?.scrollIntoView({ behavior: 'smooth' })} aria-label={`${completionPercentage}% application completion`}>
+        <Gauge size={22} /><span>Application completion</span><strong>{completionPercentage}%</strong><span className="sme-completion-track" aria-hidden="true"><span style={{ width: `${completionPercentage}%` }} /></span>
+      </button>
+    </header>
     <form className="sme-form" onChange={handleChange} onSubmit={handleSave}>
       <Section number="01" title="Business information" description="Registration, operating profile, contact details, and authorized representatives.">
         <div className="sme-subsection"><h3>Registration and profile</h3><div className="sme-field-grid">
@@ -131,7 +137,7 @@ export default function SmeLoanApplicationPage() {
       <Section number="04" title="Undertaking, declaration, and consent"><Checks legend="Applicant acknowledgements" name="declaration" options={declarations} values={values} /><div className="sme-field-grid sme-top-gap"><Field label="Guarantor / security grantor" name="guarantorName" values={values} /><Field label="Affiliation / relationship" name="guarantorRelationship" values={values} /><Field label="Authorized signatory" name="signatoryName" values={values} /><Field label="Designation" name="signatoryDesignation" values={values} /><Field label="Signature date" name="signatureDate" type="date" values={values} /></div></Section>
       <Section number="05" title="Supporting documents" description="Select documents received or verified for this application."><Checks legend="Basic, registration, income, and other documents" name="document" options={supportingDocuments} values={values} /><Checks legend="Security, construction, and post-approval documents" name="securityDocument" options={securityDocuments} values={values} /></Section>
       <Section number="06" title="Application addendum" description="For cooperatives, partnerships, OPCs, and corporations."><div className="sme-field-grid"><Field label="Property / asset offered" name="addendumAsset" values={values} /><Field label="Title / registration details" name="addendumRegistration" values={values} /><Field label="Registered owner" name="addendumOwner" values={values} /><Field label="Asset amount (PHP)" name="addendumAmount" type="number" values={values} /><Field label="Authorized signatory" name="addendumSignatory" values={values} /><Field label="Designation" name="addendumDesignation" values={values} /><Field label="Date" name="addendumDate" type="date" values={values} /><Checks legend="Terms reviewed" name="addendumTerms" options={['Insurance', 'Taxes', 'Maintenance of mortgaged property', 'Events and consequences of default']} values={values} /></div></Section>
-      <Section number="07" title="Final submission review"><div className="sme-checklist-summary"><CheckCircle2 size={24} /><strong>{completed} of 12 complete</strong><progress value={completed} max={12} /></div><Checks legend="Ready-to-submit checklist" name="final" options={finalChecklist} values={values} /></Section>
+      <div id="sme-final-review"><Section number="07" title="Final submission review"><div className="sme-checklist-summary"><CheckCircle2 size={24} /><strong>{completionPercentage}% complete</strong><progress value={completionPercentage} max={100} /></div><Checks legend="Ready-to-submit checklist" name="final" options={finalChecklist} values={values} /></Section></div>
       <footer className="sme-form-actions"><span role="status">{status}</span><button type="button" className="secondary" onClick={() => window.print()}><Printer size={18} /> Print</button><button type="button" className="secondary" onClick={handleReset}><RotateCcw size={18} /> Reset</button><button type="submit"><Save size={18} /> Save application</button></footer>
     </form>
   </main>
