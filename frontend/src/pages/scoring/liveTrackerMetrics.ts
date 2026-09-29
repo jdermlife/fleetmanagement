@@ -1711,14 +1711,24 @@ export function buildBudgetExpenseTrackerSnapshot(records: LoanApplicationRecord
       note: 'Income from declared investments and portfolio returns.',
     },
     {
-      id: 'business-pension-income',
-      label: 'Business and Pension',
-      amount: sourceRecord ? getBusinessIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+      id: 'business-income',
+      label: 'Business Income',
+      amount: sourceRecord ? getBusinessIncome(sourceRecord) : 0,
       share: scoreFromRatio(
-        sourceRecord ? getBusinessIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+        sourceRecord ? getBusinessIncome(sourceRecord) : 0,
         totalIncome,
       ),
-      note: 'Business operations, retirement, and similar recurring inflows.',
+      note: 'Income from business operations.',
+    },
+    {
+      id: 'all-other-income',
+      label: 'All Other Income',
+      amount: sourceRecord ? getSupplementalIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+      share: scoreFromRatio(
+        sourceRecord ? getSupplementalIncome(sourceRecord) + getPensionIncome(sourceRecord) : 0,
+        totalIncome,
+      ),
+      note: 'Other recurring income, including pension income.',
     },
   ];
 
