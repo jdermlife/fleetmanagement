@@ -82,7 +82,7 @@ export const STEP_3_SECTIONS: Step3Section[] = [
     ],
   },
   {
-    title: 'References, Declarations, and Professional Profile',
+    title: 'References, Declarations, and Professional Profile (Indicate NA  or zero or date today if Not Applicable)',
     fields: [
       { key: 'lifestyleIndicator', label: 'Lifestyle', type: 'select', options: ['Respectable lifestyle (no gambling, drinking, etc.)', 'Signs of adverse characteristics'] },
       { key: 'secondaryIncomeProfile', label: 'Secondary Source of Income', type: 'select', options: ['Multiple stable income sources', 'One additional regular income source', 'Occasional additional income', 'No secondary income'] },

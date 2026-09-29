@@ -9,7 +9,7 @@ export const SPOUSE_FIELDS: RelatedPartyField[] = [
   { key: 'spouseFullName', label: 'Spouse Full Name (Optional)' },
   { key: 'spouseDateOfBirth', label: 'Spouse Date of Birth (Optional)', type: 'date' },
   { key: 'spousePlaceOfBirth', label: 'Spouse Place of Birth (Optional)' },
-  { key: 'spouseCitizenship', label: 'Spouse Citizenship (Optional' },
+  { key: 'spouseCitizenship', label: 'Spouse Citizenship (Optional)' },
   { key: 'spouseMobileNumber', label: 'Spouse Mobile Number (Optional)', type: 'tel' },
   { key: 'spousePresentAddress', label: 'Spouse Present Address (Optional)' },
 ]

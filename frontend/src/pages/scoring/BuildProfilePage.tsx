@@ -1604,17 +1604,17 @@ export default function BuildProfilePage() {
 
     if (field.key === 'selfDeclaredAssetsAndLiabilities') {
       return <fieldset key={field.key} className="build-profile-declaration-box build-profile-field-wide">
-        <legend>Declared Assets and Liabilities</legend>
+        <legend>Assets and Liabilities </legend>
         <div className="build-profile-declaration-grid build-profile-two-column-declaration-grid">
           <label>Assets<NumericFormat value={profile.values.declaredAssets ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateDeclaredAssetsAndLiabilities('declaredAssets', numericValue)} /></label>
           <label>Liabilities<NumericFormat value={profile.values.declaredLiabilities ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateDeclaredAssetsAndLiabilities('declaredLiabilities', numericValue)} /></label>
-        </div>
+        </div>Fill 
       </fieldset>
     }
 
     if (field.key === 'selfDeclaredInvestmentPortfolio') {
       return <fieldset key={field.key} className="build-profile-declaration-box build-profile-field-wide">
-        <legend>Self-Declared Portfolio</legend>
+        <legend>InvestmentPortfolio</legend>
         <div className="build-profile-declaration-grid build-profile-two-column-declaration-grid">
           <label>Asset Type<input value={profile.values.portfolioAssetType ?? ''} onChange={(event) => updateSelfDeclaredPortfolio('portfolioAssetType', event.target.value)} /></label>
           <label>Total Amount<NumericFormat value={profile.values.portfolioTotalAmount ?? ''} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateSelfDeclaredPortfolio('portfolioTotalAmount', numericValue)} /></label>
