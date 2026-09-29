@@ -1721,8 +1721,11 @@ export default function BuildProfilePage() {
     }
 
     if (profile.step === 3) {
-      const totalHouseholdIncome = Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0)
-      const totalExistingDebt = Number(profile.values.debtObligations || 0)
+      const totalBorrowerIncome = Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0)
+      const totalBorrowerDebt = Number(profile.values.debtObligations || 0)
+      const totalSpouseIncome = Number(profile.values.spouseGrossMonthlyIncome || 0) + Number(profile.values.spouseOtherIncomeSources || 0)
+      const totalHouseholdIncome = totalBorrowerIncome + totalSpouseIncome
+      const totalHouseholdDebt = totalBorrowerDebt + Number(profile.values.spouseMonthlyExpenses || 0)
       const answeredCreditValues = CREDIT_VALUES_QUESTIONS.filter((question) => profile.values[`creditValues.${question.field}`]?.trim()).length
 
       return <div className="build-profile-step-content build-profile-step-three">
@@ -1732,10 +1735,18 @@ export default function BuildProfilePage() {
           {section.note ? <p>{section.note}</p> : null}
           <div className="build-profile-form-grid">{section.fields.map(renderStep3Field)}</div>
           {index === 0 ? <div className="build-profile-totals-grid">
-            <div><span>Total Borrower Income</span><strong>{formatCurrency(String(totalHouseholdIncome))}</strong></div>
-            <div><span>Total Existing Debt</span><strong>{formatCurrency(String(totalExistingDebt))}</strong></div>
+            <div><span>Total Borrower Income</span><strong>{formatCurrency(String(totalBorrowerIncome))}</strong></div>
+            <div><span>Total Existing Debt</span><strong>{formatCurrency(String(totalBorrowerDebt))}</strong></div>
           </div> : null}
         </section>)}
+
+        <section className="build-profile-detail-section">
+          <h4>Total Household</h4>
+          <div className="build-profile-totals-grid">
+            <div><span>Total Household Income</span><strong>{formatCurrency(String(totalHouseholdIncome))}</strong></div>
+            <div><span>Total Household Debt</span><strong>{formatCurrency(String(totalHouseholdDebt))}</strong></div>
+          </div>
+        </section>
 
         {STEP_3_SECTIONS.slice(2, 4).map((section) => <section key={section.title} className="build-profile-detail-section">
           <h4>{section.title}</h4>

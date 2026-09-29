@@ -441,6 +441,7 @@ describe('BuildProfilePage', () => {
             employmentStatus: 'Regular',
             spouseEmployerBusinessName: 'Spouse Employer',
             spouseGrossMonthlyIncome: '45000',
+            spouseOtherIncomeSources: '5000',
             spouseMonthlyExpenses: '10000',
             hasCoBorrower: 'true',
             hasGuarantor: 'true',
@@ -507,6 +508,8 @@ describe('BuildProfilePage', () => {
     await userEvent.click(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ }))
     expect((screen.getByLabelText(/^Employment History \(Current Employer\)/) as HTMLInputElement).value).toBe('Snapshot Employer')
     expect((screen.getByLabelText('Primary Monthly Income') as HTMLInputElement).value).toBe('75,000.00')
+    expect(screen.getByText('Total Household Income').parentElement?.textContent).toContain('₱130,000')
+    expect(screen.getByText('Total Household Debt').parentElement?.textContent).toContain('₱22,000')
     const forgedPayslipGroup = screen.getByRole('group', { name: 'Forged Payslip' })
     await userEvent.click(within(forgedPayslipGroup).getByRole('checkbox', { name: 'Yes' }))
 
