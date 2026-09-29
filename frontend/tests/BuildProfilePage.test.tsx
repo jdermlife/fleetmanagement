@@ -1491,11 +1491,11 @@ describe('BuildProfilePage', () => {
     const financialInvestmentDropdown = screen.getByText('Details of Financial Invesment', { selector: 'summary' }).closest('details')!
     const actualIncomeDropdown = screen.getByText('Desired / Target Personal Income and Expenses', { selector: 'summary' }).closest('details')!
     const actualFiltersDropdown = screen.getByText('Statement Filters - Details', { selector: 'summary' }).closest('details')!
-    expect(actualNetWorthDropdown.hasAttribute('open')).toBe(false)
+    expect(actualNetWorthDropdown.hasAttribute('open')).toBe(true)
     expect(financialInvestmentDropdown.hasAttribute('open')).toBe(false)
     expect(actualNetWorthDropdown.compareDocumentPosition(financialInvestmentDropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
     expect(financialInvestmentDropdown.compareDocumentPosition(actualIncomeDropdown) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(actualIncomeDropdown.hasAttribute('open')).toBe(false)
+    expect(actualIncomeDropdown.hasAttribute('open')).toBe(true)
     expect(actualFiltersDropdown.hasAttribute('open')).toBe(false)
     expect(screen.queryByRole('heading', { name: 'Monthly Expense Allocation' })).toBeNull()
     expect(screen.queryByText('Setup Lines Review')).toBeNull()
@@ -1503,7 +1503,6 @@ describe('BuildProfilePage', () => {
     expect(screen.queryByRole('button', { name: 'Apply Revised % Allocation' })).toBeNull()
 
     expect((screen.getByLabelText('Target statement as of date') as HTMLInputElement).value).toBe('2026-07-27')
-    await user.click(screen.getByText('Desired / Target Net Worth', { selector: 'strong' }))
     const actualCashInput = within(actualNetWorthDropdown).getByLabelText('Cash on Hand target net worth amount') as HTMLInputElement
     expect(actualCashInput.value).toBe('50,000.00')
     await user.clear(actualCashInput)
