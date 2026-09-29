@@ -5,6 +5,7 @@ import axios from "axios";
 import { api, getErrorMessage } from "../../api";
 import {
   exportLoanApplications,
+  fetchAllLoanApplications,
   importLoanApplications,
   updateLoanApplicationStatus,
   type LoanApplicationRecord,
@@ -13,6 +14,7 @@ import {
 import Authorize from "../../components/auth/Authorize";
 import AuthProgressOverlay from "../../components/auth/AuthProgressOverlay";
 import { useAuthorization } from "../../hooks/useAuthorization";
+import { createApplicationRegisterCsv, downloadApplicationRegisterCsv } from "./loanRepositoryCsv";
 
 const statusOptions: Array<"All" | WorkflowStatus> = [
   "All",
@@ -408,6 +410,28 @@ export default function LoanRepository() {
     setActionNotice("");
 
     try {
+      const filename = `loan-repository-${appliedStatusFilter.toLowerCase()}-${appliedDateFrom || "start"}-${appliedDateTo || "end"}.${format}`;
+      if (format === "csv") {
+        const records = await fetchAllLoanApplications({
+          dateFrom: appliedDateFrom,
+          dateTo: appliedDateTo,
+          maxRecords: 5000,
+          status: appliedStatusFilter,
+          summary: true,
+        });
+        const normalizedSearch = appliedSearchText.trim().toLowerCase();
+        const registerRecords = normalizedSearch
+          ? records.filter((record) =>
+              record.application_no.toLowerCase().includes(normalizedSearch)
+              || record.borrower_name.toLowerCase().includes(normalizedSearch))
+          : records;
+        const csv = createApplicationRegisterCsv(registerRecords);
+        downloadApplicationRegisterCsv(new Blob([csv], { type: "text/csv;charset=utf-8" }), filename);
+        setMessage(`Application Register CSV generated with ${registerRecords.length} records.`);
+        setActionNotice("👍 CSV download completed.");
+        return;
+      }
+
       const blob = await exportLoanApplications({
         dateFrom: appliedDateFrom,
         dateTo: appliedDateTo,
@@ -417,7 +441,7 @@ export default function LoanRepository() {
       const downloadUrl = window.URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = downloadUrl;
-      link.download = `loan-repository-${appliedStatusFilter.toLowerCase()}-${appliedDateFrom || "start"}-${appliedDateTo || "end"}.${format}`;
+      link.download = filename;
       document.body.appendChild(link);
       link.click();
       link.remove();

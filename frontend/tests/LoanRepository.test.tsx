@@ -1,8 +1,9 @@
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockApiGet, mockImportLoanApplications } = vi.hoisted(() => ({
+const { mockApiGet, mockFetchAllLoanApplications, mockImportLoanApplications } = vi.hoisted(() => ({
   mockApiGet: vi.fn(),
+  mockFetchAllLoanApplications: vi.fn(),
   mockImportLoanApplications: vi.fn(),
 }))
 
@@ -18,6 +19,7 @@ vi.mock('../src/api', () => ({
 
 vi.mock('../src/api/loan', () => ({
   exportLoanApplications: vi.fn(),
+  fetchAllLoanApplications: mockFetchAllLoanApplications,
   importLoanApplications: mockImportLoanApplications,
   updateLoanApplicationStatus: vi.fn(),
 }))
