@@ -2111,6 +2111,13 @@ textarea {
 }
 
 @media (max-width: 760px) {
+  .networth-dashboard-hero > .psychometric-hero-copy,
+  .networth-dashboard-hero > .wealth-balance-radar {
+    flex: 1 1 100%;
+    width: 100%;
+    max-width: 100%;
+  }
+
   .wealth-balance-radar {
     width: 100%;
     grid-template-columns: minmax(0, 0.88fr) minmax(0, 1.12fr);
@@ -2139,6 +2146,21 @@ textarea {
 
   .wealth-balance-radar-indicator strong {
     font-size: 0.7rem;
+  }
+}
+
+@media (max-width: 420px) {
+  .networth-dashboard-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .networth-dashboard-hero .wealth-balance-radar {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .networth-dashboard-hero .wealth-balance-radar-visual {
+    width: min(100%, 220px);
   }
 }
 
@@ -2407,6 +2429,26 @@ textarea {
 
   .networth-report-page .lending-inline-certification .loan-certification-summary-grid {
     grid-template-columns: 1fr;
+  }
+
+  .networth-report-page .lending-inline-certification .networth-composite-score {
+    grid-template-rows: auto auto;
+    align-content: start;
+    gap: 12px;
+    min-height: 0;
+    padding: 12px;
+  }
+
+  .networth-report-page .lending-inline-certification .networth-composite-score .loan-certification-summary-label,
+  .networth-report-page .lending-inline-certification .networth-composite-score .loan-certification-summary-value {
+    position: static;
+    min-width: 0;
+    margin: 0;
+  }
+
+  .networth-report-page .lending-inline-certification .networth-composite-score .loan-certification-summary-label {
+    line-height: 1.35;
+    overflow-wrap: anywhere;
   }
 
   .networth-report-page .lending-inline-certification .networth-certification-metrics .loan-certification-metric-card,

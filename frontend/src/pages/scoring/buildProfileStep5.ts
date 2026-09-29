@@ -138,6 +138,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
       { key: 'existingInsurancePolicies', label: 'Existing Insurance Policies', type: 'textarea', rows: 3 },
       { key: 'selfDeclaredAssetsAndLiabilities', label: 'Declared Assets and Liabilities' },
       { key: 'selfDeclaredInvestmentPortfolio', label: 'Self-Declared Portfolio' },
+       { key: "", label: 'Fill Out  Step 8 and 9  Assets and Liabilites and Income for Details' },
     ],
   },
 ]
