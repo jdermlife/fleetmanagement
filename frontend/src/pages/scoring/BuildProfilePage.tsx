@@ -1732,7 +1732,7 @@ export default function BuildProfilePage() {
           {section.note ? <p>{section.note}</p> : null}
           <div className="build-profile-form-grid">{section.fields.map(renderStep3Field)}</div>
           {index === 0 ? <div className="build-profile-totals-grid">
-            <div><span>Total Household Income</span><strong>{formatCurrency(String(totalHouseholdIncome))}</strong></div>
+            <div><span>Total Borrower Income</span><strong>{formatCurrency(String(totalHouseholdIncome))}</strong></div>
             <div><span>Total Existing Debt</span><strong>{formatCurrency(String(totalExistingDebt))}</strong></div>
           </div> : null}
         </section>)}
