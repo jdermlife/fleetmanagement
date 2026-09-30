@@ -6398,6 +6398,10 @@ button.loan-repository-action-release { background: #4f46e5; }
   border-radius: 6px;
 }
 
+.budget-expense-setup-table .budget-dashboard-category-input.is-default-value {
+  color: #64748b;
+}
+
 .budget-expense-setup-suggested {
   display: grid;
   gap: 2px;

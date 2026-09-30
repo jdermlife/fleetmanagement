@@ -340,7 +340,7 @@ export default function BudgetExpenseTrackerPage() {
 
     setExpenseDraft(
       expenseSetupItems.reduce<Record<string, string>>((accumulator, item) => {
-        accumulator[item.id] = toInputAmount(item.amount);
+        accumulator[item.id] = item.amount.toFixed(2);
         return accumulator;
       }, {}),
     );
@@ -1513,7 +1513,7 @@ export default function BudgetExpenseTrackerPage() {
                                   [item.id]: value,
                                 }));
                               }}
-                              className="budget-dashboard-category-input"
+                              className={`budget-dashboard-category-input${toSafeNumber(expenseDraft[item.id] ?? '') === item.amount ? ' is-default-value' : ''}`}
                               aria-label={`${item.label} setup amount`}
                             />
                           </td>
