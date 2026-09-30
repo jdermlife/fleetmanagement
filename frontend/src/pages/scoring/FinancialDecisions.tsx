@@ -18,7 +18,12 @@ import {
 
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
-import { readReplicatedBuildProfile } from './buildProfileReplication'
+import { fetchAutosaveDraft } from '../../autosave/draftApi'
+import {
+  cacheReplicatedBuildProfile,
+  readReplicatedBuildProfile,
+  type ReplicatedBuildProfile,
+} from './buildProfileReplication'
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAffordability, type AffordabilityInputs } from './affordabilityEngine'
 import {
@@ -194,12 +199,11 @@ const RETIREMENT_FIELD_GROUPS: Array<{ title: string; fields: Array<{ key: keyof
 const currency = new Intl.NumberFormat('en-PH', { style: 'currency', currency: 'PHP', maximumFractionDigits: 0 })
 const percent = new Intl.NumberFormat('en', { maximumFractionDigits: 1 })
 
-function profileInputs(): { inputs: AffordabilityInputs; usesHypotheticalData: boolean } {
-  const profile = readReplicatedBuildProfile()
+function profileInputs(profile: ReplicatedBuildProfile | null = readReplicatedBuildProfile()): { inputs: AffordabilityInputs; usesHypotheticalData: boolean } {
   if (!profile) return { inputs: HYPOTHETICAL_INPUTS, usesHypotheticalData: true }
 
   const values = profile.values
-  const actual = (key: string) => Number(values[`wealthActual.${key}`] || values[key] || 0)
+  const actual = (key: string) => Number(values[key] || values[`wealthActual.${key}`] || 0)
   const sum = (keys: string[]) => keys.reduce((total, key) => total + Math.max(0, actual(key)), 0)
   const incomeKeys = Object.keys(values).filter((key) => !key.includes('.') && key.startsWith('income-'))
   const goalKeys = Object.keys(values).filter((key) => !key.includes('.') && key.startsWith('goal-'))
@@ -236,8 +240,7 @@ function profileInputs(): { inputs: AffordabilityInputs; usesHypotheticalData: b
   }
 }
 
-function profileSavingsInputs(): { inputs: SavingsGoalInputs; usesHypotheticalData: boolean; goalName: string } {
-  const profile = readReplicatedBuildProfile()
+function profileSavingsInputs(profile: ReplicatedBuildProfile | null = readReplicatedBuildProfile()): { inputs: SavingsGoalInputs; usesHypotheticalData: boolean; goalName: string } {
   if (!profile) return { inputs: HYPOTHETICAL_SAVINGS_INPUTS, usesHypotheticalData: true, goalName: 'Savings goal' }
 
   const values = profile.values
@@ -277,12 +280,11 @@ function ageFromDateOfBirth(dateOfBirth: string): number {
   return Math.max(0, age)
 }
 
-function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypotheticalData: boolean; linkedFields: RetirementLinkedField[] } {
-  const profile = readReplicatedBuildProfile()
+function profileRetirementInputs(profile: ReplicatedBuildProfile | null = readReplicatedBuildProfile()): { inputs: RetirementModelInputs; usesHypotheticalData: boolean; linkedFields: RetirementLinkedField[] } {
   if (!profile) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true, linkedFields: [] }
 
   const values = profile.values
-  const sourceValue = (key: string) => values[`wealthActual.${key}`] ?? values[key]
+  const sourceValue = (key: string) => values[key] ?? values[`wealthActual.${key}`]
   const amount = (key: string) => Math.max(0, Number(sourceValue(key) || 0))
   const hasValue = (key: string) => sourceValue(key) !== undefined && sourceValue(key) !== ''
   const currentAge = amount('age') || ageFromDateOfBirth(values.dateOfBirth || '')
@@ -337,6 +339,8 @@ export default function FinancialDecisions() {
   const [retirementInputs, setRetirementInputs] = useState(initialRetirement.inputs)
   const [usesHypotheticalRetirement, setUsesHypotheticalRetirement] = useState(initialRetirement.usesHypotheticalData)
   const [linkedRetirementFields, setLinkedRetirementFields] = useState(initialRetirement.linkedFields)
+  const [isRefreshingProfile, setIsRefreshingProfile] = useState(false)
+  const [refreshStatus, setRefreshStatus] = useState('Updated just now')
   const [activeDecision, setActiveDecision] = useState<DecisionId>('affordability')
   const [question, setQuestion] = useState('')
   const result = useMemo(() => computeAffordability(inputs), [inputs])
@@ -356,10 +360,24 @@ export default function FinancialDecisions() {
     setInputs((current) => ({ ...current, [key]: Math.max(0, Number(value) || 0) }))
   }
 
-  const refreshFromProfile = () => {
-    const refreshed = profileInputs()
-    const refreshedSavings = profileSavingsInputs()
-    const refreshedRetirement = profileRetirementInputs()
+  const refreshFromProfile = async () => {
+    setIsRefreshingProfile(true)
+    let profile = readReplicatedBuildProfile()
+    let status = profile ? 'Local profile refreshed' : 'No saved profile found'
+    try {
+      const remoteDraft = await fetchAutosaveDraft<ReplicatedBuildProfile>('build-profile', 'current')
+      if (remoteDraft?.payload) {
+        profile = remoteDraft.payload
+        cacheReplicatedBuildProfile(profile, remoteDraft.updatedAt)
+        status = 'Latest profile loaded'
+      }
+    } catch {
+      status = profile ? 'Local profile refreshed; server unavailable' : 'Profile refresh unavailable'
+    }
+
+    const refreshed = profileInputs(profile)
+    const refreshedSavings = profileSavingsInputs(profile)
+    const refreshedRetirement = profileRetirementInputs(profile)
     setInputs(refreshed.inputs)
     setUsesHypotheticalData(refreshed.usesHypotheticalData)
     setSavingsInputs(refreshedSavings.inputs)
@@ -368,6 +386,8 @@ export default function FinancialDecisions() {
     setRetirementInputs(refreshedRetirement.inputs)
     setUsesHypotheticalRetirement(refreshedRetirement.usesHypotheticalData)
     setLinkedRetirementFields(refreshedRetirement.linkedFields)
+    setRefreshStatus(status)
+    setIsRefreshingProfile(false)
   }
 
   const updateSavingsInput = (key: keyof SavingsGoalInputs, value: string) => {
@@ -424,8 +444,8 @@ export default function FinancialDecisions() {
           <h1>Financial Decisions</h1>
           <p>Make confident choices with data-driven insights from your financial profile.</p>
         </div>
-        <button type="button" className="financial-decisions-profile-button" onClick={refreshFromProfile}>
-          <RefreshCw size={16} aria-hidden="true" /> Refresh Profile
+        <button type="button" className="financial-decisions-profile-button" onClick={refreshFromProfile} disabled={isRefreshingProfile}>
+          <RefreshCw size={16} aria-hidden="true" /> {isRefreshingProfile ? 'Refreshing...' : 'Refresh Profile'}
         </button>
         <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
       </header>
@@ -433,7 +453,7 @@ export default function FinancialDecisions() {
       <section className="financial-snapshot" aria-labelledby="financial-snapshot-title">
         <div className="financial-snapshot-heading">
           <div><span>Live profile</span><h2 id="financial-snapshot-title">Your Financial Snapshot</h2></div>
-          <small>{usesHypotheticalData ? 'Illustrative data' : 'Profile data'} · Updated just now</small>
+          <small>{usesHypotheticalData ? 'Illustrative data' : 'Profile data'} · {refreshStatus}</small>
         </div>
         <div className="financial-snapshot-grid">
           <div className="financial-snapshot-record"><span>Selected profile</span><SelectedProfileIdCard compactId label="Record ID" nameFirst /></div>

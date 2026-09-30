@@ -2,6 +2,14 @@ import { cleanup, fireEvent, render, screen, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
+const { mockFetchAutosaveDraft } = vi.hoisted(() => ({
+  mockFetchAutosaveDraft: vi.fn(),
+}))
+
+vi.mock('../src/autosave/draftApi', () => ({
+  fetchAutosaveDraft: mockFetchAutosaveDraft,
+}))
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
   return {
@@ -18,6 +26,8 @@ import FinancialDecisions from '../src/pages/scoring/FinancialDecisions'
 
 describe('FinancialDecisions', () => {
   beforeEach(() => {
+    mockFetchAutosaveDraft.mockReset()
+    mockFetchAutosaveDraft.mockResolvedValue(null)
     const values = new Map<string, string>()
     vi.stubGlobal('localStorage', {
       getItem: (key: string) => values.get(key) ?? null,
@@ -169,5 +179,33 @@ describe('FinancialDecisions', () => {
 
     fireEvent.change(linkedInputs[4], { target: { value: '20000' } })
     expect(linkedInputs[4].parentElement?.classList.contains('is-profile-linked')).toBe(false)
+  })
+
+  it('refreshes all decisions from the latest remote Build Profile', async () => {
+    mockFetchAutosaveDraft.mockResolvedValue({
+      payload: {
+        profileId: 'PRO-REMOTE',
+        values: {
+          'income-salary': '90000',
+          'income-business': '10000',
+          'expense-housing': '20000',
+          'expense-groceries': '10000',
+        },
+        documents: [],
+        suitabilityAnswers: {},
+        coBorrowers: [],
+        guarantors: [],
+        additionalCollaterals: [],
+      },
+      revision: 2,
+      updatedAt: '2026-09-30T10:00:00Z',
+    })
+
+    render(<FinancialDecisions />)
+    await userEvent.click(screen.getByRole('button', { name: 'Refresh Profile' }))
+
+    expect(mockFetchAutosaveDraft).toHaveBeenCalledWith('build-profile', 'current')
+    expect((screen.getByLabelText('Net Monthly Income') as HTMLInputElement).value).toBe('100000')
+    expect(screen.getByText(/Latest profile loaded/)).toBeTruthy()
   })
 })
