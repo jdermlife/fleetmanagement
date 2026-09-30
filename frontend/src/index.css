@@ -6544,6 +6544,30 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 16px;
 }
 
+.budget-income-source-reminder {
+  padding: 14px 16px;
+  border-left: 3px solid #0f766e;
+  background: #f0fdfa;
+  color: #334155;
+}
+
+.budget-income-source-reminder h4 {
+  margin: 0 0 8px;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.budget-income-source-reminder ol {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 22px;
+}
+
+.budget-income-source-reminder strong {
+  color: #0f172a;
+}
+
 .budget-workflow-inline-actions {
   display: flex;
   flex-wrap: wrap;
