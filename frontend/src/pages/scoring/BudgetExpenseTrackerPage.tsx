@@ -282,13 +282,23 @@ export default function BudgetExpenseTrackerPage() {
     const salaryIncome = step8Income('income-salary');
     const businessIncome = step8Income('income-business');
     const dividendIncome = step8Income('income-dividend');
+    const hasPrimaryMonthlyIncome = Boolean(buildProfile && (
+      !isBlank(buildProfile.values.monthlyIncome)
+      || !isBlank(buildProfile.values.spouseGrossMonthlyIncome)
+    ));
+    const householdPrimaryMonthlyIncome = toSafeNumber(buildProfile?.values.monthlyIncome ?? '')
+      + toSafeNumber(buildProfile?.values.spouseGrossMonthlyIncome ?? '');
     const totalStep8Income = step8IncomeEntries.reduce(
       (total, entry) => total + step8Income(entry.id),
       0,
     );
 
     setIncomeDraft({
-      salary: toInputAmount(hasStep8Income ? salaryIncome : findIncomeValue(['salary', 'gross monthly', 'employment'])),
+      salary: toInputAmount(hasPrimaryMonthlyIncome
+        ? householdPrimaryMonthlyIncome
+        : hasStep8Income
+          ? salaryIncome
+          : findIncomeValue(['salary', 'gross monthly', 'employment'])),
       business: toInputAmount(hasStep8Income ? businessIncome : findIncomeValue(['business'])),
       investment: toInputAmount(hasStep8Income ? dividendIncome : findIncomeValue(['investment'])),
       pension: toInputAmount(hasStep8Income
