@@ -155,6 +155,7 @@ export default function LandingPage() {
               Create Free Account <ArrowRight size={18} aria-hidden="true" />
             </Link>
             <Link to="/fees">View plans and fees</Link>
+            <Link className="landing-bottom-sign-in" to="/login">Sign In</Link>
           </div>
         </section>
       </main>

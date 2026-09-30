@@ -351,7 +351,18 @@
 .landing-trial-copy > span { display: block; max-width: 680px; margin-top: 18px; color: #3f3217; }
 .landing-trial-actions { flex: 0 0 240px; flex-direction: column; gap: 13px; }
 .landing-trial-actions .landing-primary-action { width: 100%; background: var(--landing-navy); color: #fff; }
-.landing-trial-actions > a:last-child { color: #2e260f; font-size: 0.85rem; font-weight: 700; }
+.landing-trial-actions > a:not(.landing-primary-action, .landing-bottom-sign-in) { color: #2e260f; font-size: 0.85rem; font-weight: 700; }
+.landing-trial-actions .landing-bottom-sign-in {
+  display: inline-flex;
+  width: 100%;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #172033;
+  color: #172033;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
 
 .landing-footer {
   padding: 58px max(24px, calc((100vw - 1180px) / 2)) 28px;
