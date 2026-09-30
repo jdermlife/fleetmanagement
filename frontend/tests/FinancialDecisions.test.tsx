@@ -114,20 +114,21 @@ describe('FinancialDecisions', () => {
   it('renders all retirement engines and recalculates the required corpus', () => {
     render(<FinancialDecisions />)
 
-    expect(screen.getByRole('heading', { name: 'Retirement Model Engine' })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: 'FS Retirement Model' })).toBeTruthy()
     for (const engine of [
-      'Retirement Needs Engine',
-      'Inflation Engine',
-      'Retirement Income Engine',
-      'Investment Projection Engine',
-      'Retirement Corpus Engine',
-      'FI Date Engine',
+      'Retirement Needs',
+      'Inflation',
+      'Retirement Income',
+      'Investment Projection',
+      'Retirement Corpus',
+      'FI Date',
       'Contribution Optimizer',
-      'Scenario Engine',
+      'Scenario',
       'Stress / Monte Carlo Engine',
+      'Insurance Coverage Engine',
     ]) expect(screen.getByText(engine)).toBeTruthy()
 
-    const corpusPanel = screen.getByText('Retirement Corpus Engine').closest('article')
+    const corpusPanel = screen.getByText('Retirement Corpus').closest('article')
     const initialCorpus = corpusPanel?.querySelector(':scope > strong')?.textContent
     fireEvent.change(screen.getByLabelText('Annual Inflation'), { target: { value: '6' } })
 
@@ -143,6 +144,8 @@ describe('FinancialDecisions', () => {
         'expense-groceries': '12000',
         'asset-retirement-fund': '600000',
         'asset-provident-fund': '400000',
+        'income-salary': '70000',
+        'income-business': '10000',
         'expense-retirement-savings': '15000',
       },
       documents: [],
@@ -156,14 +159,15 @@ describe('FinancialDecisions', () => {
 
     const linkedInputs = [
       screen.getByLabelText('Current Age'),
+      screen.getByLabelText('Current Monthly Income'),
       screen.getByLabelText('Current Monthly Expenses'),
       screen.getByLabelText('Current Retirement Savings'),
       screen.getByLabelText('Monthly Investment'),
     ]
-    expect(linkedInputs.map((input) => (input as HTMLInputElement).value)).toEqual(['36', '45000', '1000000', '15000'])
+    expect(linkedInputs.map((input) => (input as HTMLInputElement).value)).toEqual(['36', '80000', '45000', '1000000', '15000'])
     linkedInputs.forEach((input) => expect(input.parentElement?.classList.contains('is-profile-linked')).toBe(true))
 
-    fireEvent.change(linkedInputs[3], { target: { value: '20000' } })
-    expect(linkedInputs[3].parentElement?.classList.contains('is-profile-linked')).toBe(false)
+    fireEvent.change(linkedInputs[4], { target: { value: '20000' } })
+    expect(linkedInputs[4].parentElement?.classList.contains('is-profile-linked')).toBe(false)
   })
 })

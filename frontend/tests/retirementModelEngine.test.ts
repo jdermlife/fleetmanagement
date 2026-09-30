@@ -6,6 +6,7 @@ const baseline: RetirementModelInputs = {
   currentAge: 35,
   retirementAge: 60,
   lifeExpectancy: 85,
+  currentMonthlyIncome: 70000,
   currentMonthlyExpenses: 50000,
   retirementSpendingPercent: 80,
   currentRetirementSavings: 1000000,
@@ -35,6 +36,16 @@ describe('computeRetirementModel', () => {
     expect(result.monteCarlo.trials).toBe(500)
     expect(result.monteCarlo.successProbabilityPercent).toBeGreaterThanOrEqual(0)
     expect(result.monteCarlo.successProbabilityPercent).toBeLessThanOrEqual(100)
+    expect(result.insuranceCoverage.monthlyIncomeTargetAtRetirement).toBeGreaterThan(baseline.currentMonthlyIncome)
+    expect(result.insuranceCoverage.requiredCoverage).toBeGreaterThanOrEqual(0)
+  })
+
+  it('uses current income as the insurance retirement-income target', () => {
+    const base = computeRetirementModel(baseline)
+    const higherIncome = computeRetirementModel({ ...baseline, currentMonthlyIncome: 100000 })
+
+    expect(higherIncome.insuranceCoverage.monthlyIncomeTargetAtRetirement).toBeGreaterThan(base.insuranceCoverage.monthlyIncomeTargetAtRetirement)
+    expect(higherIncome.insuranceCoverage.requiredCoverage).toBeGreaterThan(base.insuranceCoverage.requiredCoverage)
   })
 
   it('shows a larger corpus and monthly contribution when inflation rises', () => {

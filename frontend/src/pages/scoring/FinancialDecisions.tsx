@@ -63,6 +63,7 @@ const HYPOTHETICAL_RETIREMENT_INPUTS: RetirementModelInputs = {
   currentAge: 35,
   retirementAge: 60,
   lifeExpectancy: 85,
+  currentMonthlyIncome: 70000,
   currentMonthlyExpenses: 50000,
   retirementSpendingPercent: 80,
   currentRetirementSavings: 1000000,
@@ -100,7 +101,7 @@ const ESSENTIAL_EXPENSE_KEYS = [
 ]
 
 type DecisionId = 'affordability' | 'savings' | 'debt' | 'investing' | 'emergency' | 'health' | 'what-if'
-type RetirementLinkedField = 'currentAge' | 'currentMonthlyExpenses' | 'currentRetirementSavings' | 'monthlyContribution'
+type RetirementLinkedField = 'currentAge' | 'currentMonthlyIncome' | 'currentMonthlyExpenses' | 'currentRetirementSavings' | 'monthlyContribution'
 
 type DecisionCard = {
   id: DecisionId
@@ -164,6 +165,7 @@ const RETIREMENT_FIELD_GROUPS: Array<{ title: string; fields: Array<{ key: keyof
       { key: 'currentAge', label: 'Current Age', suffix: 'years' },
       { key: 'retirementAge', label: 'Target Retirement Age', suffix: 'years' },
       { key: 'lifeExpectancy', label: 'Planning Life Expectancy', suffix: 'years' },
+      { key: 'currentMonthlyIncome', label: 'Current Monthly Income' },
       { key: 'currentMonthlyExpenses', label: 'Current Monthly Expenses' },
       { key: 'retirementSpendingPercent', label: 'Retirement Spending Need', suffix: '% of current' },
     ],
@@ -288,13 +290,22 @@ function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypothe
     .filter((key) => !key.includes('.') && key.startsWith('expense-'))
   const currentMonthlyExpenses = expenseKeys
     .reduce((total, key) => total + amount(key), 0)
+  const incomeKeys = Object.keys(values)
+    .filter((key) => !key.includes('.') && key.startsWith('income-'))
+  const step8MonthlyIncome = incomeKeys.reduce(
+    (total, key) => total + Math.max(0, Number(values[key] || 0)),
+    0,
+  )
+  const currentMonthlyIncome = step8MonthlyIncome
+    || Math.max(0, Number(values.monthlyIncome || 0)) + Math.max(0, Number(values.otherIncome || 0))
   const currentRetirementSavings = RETIREMENT_ASSET_KEYS.reduce((total, key) => total + amount(key), 0)
   const monthlyContribution = amount('expense-retirement-savings')
-  const hasRetirementData = currentAge > 0 || currentMonthlyExpenses > 0 || currentRetirementSavings > 0 || monthlyContribution > 0
+  const hasRetirementData = currentAge > 0 || currentMonthlyIncome > 0 || currentMonthlyExpenses > 0 || currentRetirementSavings > 0 || monthlyContribution > 0
   if (!hasRetirementData) return { inputs: HYPOTHETICAL_RETIREMENT_INPUTS, usesHypotheticalData: true, linkedFields: [] }
 
   const linkedFields: RetirementLinkedField[] = []
   if (hasValue('age') || Boolean(values.dateOfBirth)) linkedFields.push('currentAge')
+  if (incomeKeys.some((key) => values[key] !== undefined && values[key] !== '') || hasValue('monthlyIncome') || hasValue('otherIncome')) linkedFields.push('currentMonthlyIncome')
   if (expenseKeys.some(hasValue) || hasValue('monthlyExpenses')) linkedFields.push('currentMonthlyExpenses')
   if (RETIREMENT_ASSET_KEYS.some(hasValue)) linkedFields.push('currentRetirementSavings')
   if (hasValue('expense-retirement-savings')) linkedFields.push('monthlyContribution')
@@ -305,6 +316,7 @@ function profileRetirementInputs(): { inputs: RetirementModelInputs; usesHypothe
     inputs: {
       ...HYPOTHETICAL_RETIREMENT_INPUTS,
       currentAge: currentAge || HYPOTHETICAL_RETIREMENT_INPUTS.currentAge,
+      currentMonthlyIncome: currentMonthlyIncome || HYPOTHETICAL_RETIREMENT_INPUTS.currentMonthlyIncome,
       currentMonthlyExpenses: currentMonthlyExpenses || amount('monthlyExpenses') || HYPOTHETICAL_RETIREMENT_INPUTS.currentMonthlyExpenses,
       currentRetirementSavings,
       monthlyContribution,
@@ -672,8 +684,14 @@ export default function FinancialDecisions() {
             <p>{retirementResult.monteCarlo.trials} market paths. Median ending balance: {currency.format(retirementResult.monteCarlo.medianEndingBalance)}.</p>
             <small>10th to 90th percentile: {currency.format(retirementResult.monteCarlo.percentile10EndingBalance)} to {currency.format(retirementResult.monteCarlo.percentile90EndingBalance)}</small>
           </article>
+          <article>
+            <span>Insurance Coverage Engine</span><h3>How much insurance coverage do I need?</h3>
+            <strong>{currency.format(retirementResult.insuranceCoverage.requiredCoverage)}</strong>
+            <p>Additional capital needed at retirement to sustain an inflation-adjusted income target of {currency.format(retirementResult.insuranceCoverage.monthlyIncomeTargetAtRetirement)} per month.</p>
+            <small>Projected annual income gap: {currency.format(retirementResult.insuranceCoverage.annualIncomeGap)}.</small>
+          </article>
         </div>
-        <p className="retirement-model-disclaimer">Planning projection only. Returns, inflation, pension income, longevity, taxes, and withdrawal needs can differ materially from these assumptions.</p>
+        <p className="retirement-model-disclaimer">Planning projection only. The insurance result is an estimated retirement funding gap, not a product recommendation. Returns, inflation, pension income, longevity, taxes, and withdrawal needs can differ materially from these assumptions.</p>
       </section>
     </main>
   )

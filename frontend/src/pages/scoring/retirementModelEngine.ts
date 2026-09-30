@@ -2,6 +2,7 @@ export type RetirementModelInputs = {
   currentAge: number
   retirementAge: number
   lifeExpectancy: number
+  currentMonthlyIncome: number
   currentMonthlyExpenses: number
   retirementSpendingPercent: number
   currentRetirementSavings: number
@@ -69,6 +70,12 @@ export type RetirementModelResult = {
     medianEndingBalance: number
     percentile90EndingBalance: number
     resilience: 'Strong' | 'Moderate' | 'Vulnerable'
+  }
+  insuranceCoverage: {
+    monthlyIncomeTargetAtRetirement: number
+    annualIncomeTargetAtRetirement: number
+    annualIncomeGap: number
+    requiredCoverage: number
   }
 }
 
@@ -234,6 +241,10 @@ export function computeRetirementModel(input: RetirementModelInputs): Retirement
   const contributions = totalContributions(values)
   const fiDate = financialIndependenceDate(values)
   const cumulativeInflation = Math.pow(1 + annualRate(values.inflationRate), yearsToRetirement)
+  const monthlyIncomeTargetAtRetirement = values.currentMonthlyIncome * cumulativeInflation
+  const annualIncomeTargetAtRetirement = monthlyIncomeTargetAtRetirement * 12
+  const annualInsuranceIncomeGap = Math.max(0, annualIncomeTargetAtRetirement - totalAnnualIncome)
+  const requiredInsuranceCoverage = annualInsuranceIncomeGap / Math.max(0.001, withdrawalRate)
   const lifetimeSpending = Array.from({ length: retirementYears }, (_, year) => annualExpensesAtRetirement * Math.pow(1 + annualRate(values.inflationRate), year))
     .reduce((total, expense) => total + expense, 0)
 
@@ -288,5 +299,11 @@ export function computeRetirementModel(input: RetirementModelInputs): Retirement
     },
     scenarios,
     monteCarlo: runMonteCarlo(values),
+    insuranceCoverage: {
+      monthlyIncomeTargetAtRetirement,
+      annualIncomeTargetAtRetirement,
+      annualIncomeGap: annualInsuranceIncomeGap,
+      requiredCoverage: requiredInsuranceCoverage,
+    },
   }
 }
