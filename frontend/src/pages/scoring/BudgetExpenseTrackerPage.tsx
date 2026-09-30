@@ -1482,53 +1482,61 @@ export default function BudgetExpenseTrackerPage() {
                 <p className="psychometric-section-note">
                   Revise the budget allocation percentage per expense, then apply or normalize it. The allocation must remain at 100% before Step 2 can be saved.
                 </p>
-                <div className="budget-dashboard-category-grid">
-                  {snapshot.categoryItems.map((item) => (
-                    <article key={item.id} className="budget-dashboard-card">
-                      <div className="budget-dashboard-card-header">
-                        <span className="budget-expense-card-type">{item.label}</span>
-                        <strong className="budget-expense-card-suggested">{formatPercentInput(item.share)}% suggested</strong>
-                      </div>
-                      <label className="budget-dashboard-category-input-wrap">
-                        <span className="budget-dashboard-category-input-label">Budget Allocation %</span>
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          step="0.01"
-                          value={expenseAllocationDraft[item.id] ?? ''}
-                          onChange={(event) => {
-                            setExpenseAllocationDraft((previous) => ({
-                              ...previous,
-                              [item.id]: event.target.value,
-                            }));
-                          }}
-                          className="budget-dashboard-category-input"
-                          aria-label={`${item.label} budget allocation percentage`}
-                        />
-                      </label>
-                      <label className="budget-dashboard-category-input-wrap">
-                        <span className="budget-dashboard-category-input-label">Setup Amount</span>
-                        <NumericFormat
-                          value={expenseDraft[item.id] ?? ''}
-                          valueIsNumericString
-                          thousandSeparator="," decimalScale={2} fixedDecimalScale
-                          inputMode="decimal" allowNegative={false}
-                          onValueChange={({ value }) => {
-                            setExpenseDraft((previous) => ({
-                              ...previous,
-                              [item.id]: value,
-                            }));
-                          }}
-                          className="budget-dashboard-category-input"
-                          aria-label={`${item.label} setup amount`}
-                        />
-                      </label>
-                      <small className="budget-dashboard-category-helper">
-                        Suggested baseline: {formatCurrency(item.amount)}
-                      </small>
-                    </article>
-                  ))}
+                <div className="budget-expense-setup-table-wrap">
+                  <table className="budget-expense-setup-table">
+                    <thead>
+                      <tr>
+                        <th scope="col">Expense Account</th>
+                        <th scope="col">Budget Allocation %</th>
+                        <th scope="col">Setup Amount</th>
+                        <th scope="col">Suggested Baseline</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {snapshot.categoryItems.map((item) => (
+                        <tr key={item.id}>
+                          <th scope="row">{item.label}</th>
+                          <td>
+                            <input
+                              type="number"
+                              min={0}
+                              max={100}
+                              step="0.01"
+                              value={expenseAllocationDraft[item.id] ?? ''}
+                              onChange={(event) => {
+                                setExpenseAllocationDraft((previous) => ({
+                                  ...previous,
+                                  [item.id]: event.target.value,
+                                }));
+                              }}
+                              className="budget-dashboard-category-input"
+                              aria-label={`${item.label} budget allocation percentage`}
+                            />
+                          </td>
+                          <td>
+                            <NumericFormat
+                              value={expenseDraft[item.id] ?? ''}
+                              valueIsNumericString
+                              thousandSeparator="," decimalScale={2} fixedDecimalScale
+                              inputMode="decimal" allowNegative={false}
+                              onValueChange={({ value }) => {
+                                setExpenseDraft((previous) => ({
+                                  ...previous,
+                                  [item.id]: value,
+                                }));
+                              }}
+                              className="budget-dashboard-category-input"
+                              aria-label={`${item.label} setup amount`}
+                            />
+                          </td>
+                          <td className="budget-expense-setup-suggested">
+                            <strong>{formatCurrency(item.amount)}</strong>
+                            <small>{formatPercentInput(item.share)}% suggested</small>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
 
                 <div className="budget-workflow-inline-actions">

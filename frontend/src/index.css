@@ -6339,6 +6339,78 @@ button.loan-repository-action-release { background: #4f46e5; }
   font-style: italic;
 }
 
+.budget-expense-setup-table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #fff;
+}
+
+.budget-expense-setup-table {
+  width: 100%;
+  min-width: 720px;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.budget-expense-setup-table th,
+.budget-expense-setup-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.budget-expense-setup-table thead th {
+  background: #f1f5f9;
+  color: #334155;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.budget-expense-setup-table thead th:first-child {
+  width: 34%;
+}
+
+.budget-expense-setup-table thead th:not(:first-child) {
+  width: 22%;
+}
+
+.budget-expense-setup-table tbody th {
+  color: #0f172a;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.budget-expense-setup-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.budget-expense-setup-table tbody tr:nth-child(even) {
+  background: #f8fafc;
+}
+
+.budget-expense-setup-table .budget-dashboard-category-input {
+  width: 100%;
+  min-height: 40px;
+  border-radius: 6px;
+}
+
+.budget-expense-setup-suggested {
+  display: grid;
+  gap: 2px;
+}
+
+.budget-expense-setup-suggested strong {
+  color: #0f172a;
+}
+
+.budget-expense-setup-suggested small {
+  color: #64748b;
+}
+
 .budget-dashboard-category-actions {
   display: inline-flex;
   align-items: center;
