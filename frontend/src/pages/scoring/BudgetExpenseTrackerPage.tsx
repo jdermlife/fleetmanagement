@@ -164,6 +164,20 @@ export default function BudgetExpenseTrackerPage() {
       note: `Build Profile Step 8 ${entry.category}`,
     }));
   }, [selectedApplicationNo]);
+  const defaultExpenseDraft = useMemo(() => Object.fromEntries(
+    expenseSetupItems.map((item) => [item.id, item.amount.toFixed(2)]),
+  ), [expenseSetupItems]);
+  const defaultExpenseAllocationDraft = useMemo(() => {
+    let allocated = 0;
+    return expenseSetupItems.reduce<Record<string, string>>((defaults, item, index) => {
+      const allocation = index === expenseSetupItems.length - 1
+        ? Math.max(0, 100 - allocated)
+        : Number(item.share.toFixed(2));
+      allocated += allocation;
+      defaults[item.id] = formatPercentInput(allocation);
+      return defaults;
+    }, {});
+  }, [expenseSetupItems]);
   const [step, setStep] = useState<WorkflowStep>(1);
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
@@ -217,12 +231,23 @@ export default function BudgetExpenseTrackerPage() {
   ]);
 
   const handleAutosaveHydrate = useCallback((draft: BudgetExpenseTrackerDraft) => {
+    const hydratedExpenseDraft = { ...draft.expenseDraft };
+    const hydratedAllocationDraft = { ...(draft.expenseAllocationDraft ?? {}) };
+    expenseSetupItems.forEach((item) => {
+      if (isBlank(hydratedExpenseDraft[item.id])) {
+        hydratedExpenseDraft[item.id] = defaultExpenseDraft[item.id];
+      }
+      if (isBlank(hydratedAllocationDraft[item.id])) {
+        hydratedAllocationDraft[item.id] = defaultExpenseAllocationDraft[item.id];
+      }
+    });
+
     setStep(draft.step);
     setPeriodStart(draft.periodStart);
     setPeriodEnd(draft.periodEnd);
     setIncomeDraft(draft.incomeDraft);
-    setExpenseDraft(draft.expenseDraft);
-    setExpenseAllocationDraft(draft.expenseAllocationDraft ?? {});
+    setExpenseDraft(hydratedExpenseDraft);
+    setExpenseAllocationDraft(hydratedAllocationDraft);
     setSavedSetup(draft.savedSetup);
     setActualEntries(draft.actualEntries);
     setJournalEntries((draft.journalEntries ?? []).map((entry) => ({
@@ -232,7 +257,7 @@ export default function BudgetExpenseTrackerPage() {
     })));
     setVarianceNotes(draft.varianceNotes);
     setActionsToBeTaken(draft.actionsToBeTaken ?? '');
-  }, []);
+  }, [defaultExpenseAllocationDraft, defaultExpenseDraft, expenseSetupItems]);
 
   const { isHydrated } = useAutosaveDraft({
     scope: 'budget-expense-tracker',
@@ -338,19 +363,8 @@ export default function BudgetExpenseTrackerPage() {
         : findIncomeValue(['all other', 'other income'])),
     });
 
-    setExpenseDraft(
-      expenseSetupItems.reduce<Record<string, string>>((accumulator, item) => {
-        accumulator[item.id] = item.amount.toFixed(2);
-        return accumulator;
-      }, {}),
-    );
-
-    setExpenseAllocationDraft(
-      expenseSetupItems.reduce<Record<string, string>>((accumulator, item) => {
-        accumulator[item.id] = formatPercentInput(item.share);
-        return accumulator;
-      }, {}),
-    );
+    setExpenseDraft(defaultExpenseDraft);
+    setExpenseAllocationDraft(defaultExpenseAllocationDraft);
   }, [
     actualEntries,
     expenseAllocationDraft,
@@ -367,6 +381,8 @@ export default function BudgetExpenseTrackerPage() {
     snapshot.incomeItems,
     step,
     actionsToBeTaken,
+    defaultExpenseAllocationDraft,
+    defaultExpenseDraft,
     varianceNotes,
   ]);
 
@@ -626,7 +642,7 @@ export default function BudgetExpenseTrackerPage() {
         type: 'expense',
       },
       ...expenseSetupItems.map((item) => ({
-        id: `expense-${item.id}`,
+        id: item.id,
         label: `Expense - ${item.label}`,
         setupAmount: toSafeNumber(expenseDraft[item.id] ?? ''),
         type: 'expense' as const,
