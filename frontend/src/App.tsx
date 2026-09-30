@@ -174,6 +174,23 @@ const menuLinks: MenuLink[] = [
 ]
 
 const AUTH_PATH_PREFIXES = ['/login', '/register', '/forgot-password', '/reset-password']
+const GRACE_PERIOD_CLEAR_PATH_PREFIXES = [
+  '/trial-expired',
+  '/subscription-payment',
+  '/subscription/payment',
+  '/payment-success',
+  '/payment/success',
+  '/payment/cancel',
+  '/fees',
+  '/about-filscore',
+  '/support',
+  '/privacy',
+  '/terms',
+  '/return-refund-policy',
+  '/customer-service',
+  '/dispute-resolution',
+  '/financial-health-journey',
+]
 const LAST_ROUTE_STORAGE_KEY = 'fms:last-route'
 const THEME_STORAGE_KEY = 'fms:theme'
 const LEGACY_UNSCOPED_DRAFT_KEYS = [
@@ -184,6 +201,12 @@ const VALID_THEME_IDS = new Set(['classic', 'civic', 'philippine-flag'])
 
 function isAuthPath(pathname: string) {
   return AUTH_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}?`))
+}
+
+function isGracePeriodClearPath(pathname: string) {
+  return pathname === '/'
+    || isAuthPath(pathname)
+    || GRACE_PERIOD_CLEAR_PATH_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`))
 }
 
 function authenticatedPage(
@@ -646,6 +669,24 @@ const isLandingRoute = location.pathname === '/'
 const isPaymentSuccessRoute = ['/payment-success', '/payment/success', '/payment/cancel'].includes(location.pathname)
 const shouldShowBackButton = !['/', '/dashboard', '/lending-scorecard', '/login'].includes(location.pathname)
 const isSignedIn = authReady && Boolean(currentUser)
+const [accessClock, setAccessClock] = useState(() => Date.now())
+const trialExpiresAt = currentUser?.trialExpiresAt ? Date.parse(currentUser.trialExpiresAt) : Number.NaN
+const graceExpiresAt = currentUser?.graceExpiresAt ? Date.parse(currentUser.graceExpiresAt) : Number.NaN
+const isGracePeriod = currentUser?.accessState === 'GRACE'
+  || (
+    ['TRIAL', 'TRIAL_REMINDER'].includes(currentUser?.accessState ?? '')
+    && Number.isFinite(trialExpiresAt)
+    && Number.isFinite(graceExpiresAt)
+    && accessClock >= trialExpiresAt
+    && accessClock < graceExpiresAt
+  )
+const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(location.pathname)
+
+  useEffect(() => {
+    if (!currentUser?.graceExpiresAt) return
+    const timer = window.setInterval(() => setAccessClock(Date.now()), 60_000)
+    return () => window.clearInterval(timer)
+  }, [currentUser?.graceExpiresAt])
 
   useEffect(() => {
     const token = getAuthToken()
@@ -1209,7 +1250,13 @@ const isSignedIn = authReady && Boolean(currentUser)
 </header>
       ) : null}
   {/* PAGE CONTENT */}
-      <main className={`content${isLoginRoute ? ' content-login' : ''}${isLandingRoute ? ' content-landing' : ''}`}>
+      {shouldMuteGracePeriodPage ? (
+        <aside className="grace-period-security-notice" role="status">
+          Trial grace period active. Complete payment to restore the standard page display.
+          <Link to="/subscription/payment">Review subscription options</Link>
+        </aside>
+      ) : null}
+      <main className={`content${isLoginRoute ? ' content-login' : ''}${isLandingRoute ? ' content-landing' : ''}${shouldMuteGracePeriodPage ? ' content-grace-period' : ''}`}>
         <Suspense fallback={<div className="card">Loading page...</div>}>
           <Routes>
             <Route

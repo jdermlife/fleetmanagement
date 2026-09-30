@@ -129,6 +129,43 @@ describe('App account menu accordions', () => {
     expect(screen.getByRole('button', { name: 'Sign Out' })).toBeTruthy()
   })
 
+  it('mutes normal pages during trial grace while leaving payment pages clear', async () => {
+    mockFetchCurrentUser.mockResolvedValue({
+      id: 2,
+      username: 'grace-user',
+      email: 'grace@example.com',
+      role: 'admin',
+      roles: ['admin'],
+      permissions: ['manage:system'],
+      isActive: true,
+      subscriptionId: null,
+      createdAt: '2026-09-28T00:00:00Z',
+      updatedAt: '2026-09-28T00:00:00Z',
+      lastLoginAt: null,
+      accessState: 'GRACE',
+      trialExpiresAt: '2026-09-30T00:00:00Z',
+      graceExpiresAt: '2026-10-02T00:00:00Z',
+      paymentRequired: true,
+    })
+
+    const normalPage = render(
+      <MemoryRouter initialEntries={['/financial-decisions']}>
+        <App />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(document.querySelector('.content-grace-period')).toBeTruthy())
+    expect(screen.getByText(/Trial grace period active/)).toBeTruthy()
+    normalPage.unmount()
+
+    render(
+      <MemoryRouter initialEntries={['/subscription/payment']}>
+        <App />
+      </MemoryRouter>,
+    )
+    await waitFor(() => expect(mockFetchCurrentUser).toHaveBeenCalled())
+    expect(document.querySelector('.content-grace-period')).toBeNull()
+  })
+
   it('navigates to login while logout work remains pending', async () => {
     mockPrepareAutosavesForFastLogout.mockReturnValue(new Promise<void>(() => undefined))
     mockLogout.mockReturnValue(new Promise<void>(() => undefined))

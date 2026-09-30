@@ -421,6 +421,32 @@ textarea {
   padding: 0;
 }
 
+.content-grace-period {
+  background: #eef0f2;
+  filter: grayscale(0.8);
+  opacity: 0.58;
+}
+
+.grace-period-security-notice {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 10px 24px;
+  border-bottom: 1px solid #cbd5e1;
+  background: #e5e7eb;
+  color: #334155;
+  font-size: 0.88rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.grace-period-security-notice a {
+  color: #0f172a;
+  text-decoration: underline;
+}
+
 .app-mobile-back-inline {
   display: none;
   min-height: 34px;

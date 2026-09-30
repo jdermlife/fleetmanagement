@@ -600,6 +600,10 @@ export interface AuthUser {
   mfaEnabled?: boolean
   lenderDataSharingConsent?: boolean
   lenderDataSharingConsentRecordedAt?: string | null
+  accessState?: 'TRIAL' | 'TRIAL_REMINDER' | 'GRACE' | 'PAID' | 'LOCKED'
+  trialExpiresAt?: string | null
+  graceExpiresAt?: string | null
+  paymentRequired?: boolean
 }
 
 function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
@@ -636,6 +640,10 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     lenderDataSharingConsentRecordedAt: (
       raw.lenderDataSharingConsentRecordedAt ?? raw.lender_data_sharing_consent_recorded_at ?? null
     ) as string | null,
+    accessState: (raw.accessState ?? raw.access_state) as AuthUser['accessState'],
+    trialExpiresAt: (raw.trialExpiresAt ?? raw.trial_expires_at ?? null) as string | null,
+    graceExpiresAt: (raw.graceExpiresAt ?? raw.grace_expires_at ?? null) as string | null,
+    paymentRequired: Boolean(raw.paymentRequired ?? raw.payment_required ?? false),
   }
 }
 
