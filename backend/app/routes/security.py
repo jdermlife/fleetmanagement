@@ -21,7 +21,6 @@ from sqlalchemy.orm import Session
 from app.database import SessionLocal, set_rls_context
 from app.fastapi_auth import (
     CurrentUser,
-    is_admin_username_override,
     require_authenticated_user,
     require_roles,
 )
@@ -284,8 +283,6 @@ def _resolved_role_names(user: User) -> list[str]:
 
 
 def _effective_token_role(user: User) -> str:
-    if is_admin_username_override(user.username):
-        return "admin"
     if any(role_name.strip().lower() == "admin" for role_name in _resolved_role_names(user)):
         return "admin"
     return user.role
@@ -308,10 +305,6 @@ def _fallback_permissions_for_role_names(role_names: list[str]) -> list[str]:
 
 
 def _user_permissions(user: User, db: Session) -> list[str]:
-    if is_admin_username_override(user.username):
-        permission_rows = db.query(Permission.name).distinct().all()
-        return sorted(row[0] for row in permission_rows)
-
     if not user.roles:
         return _fallback_permissions_for_role_names(_resolved_role_names(user))
     role_ids = [role.id for role in user.roles]
@@ -333,8 +326,6 @@ def _serialize_user(
     auth_provider: str | None = None,
 ) -> dict[str, object]:
     role_names = _resolved_role_names(user)
-    if is_admin_username_override(user.username):
-        role_names = sorted(set(role_names) | {"admin"})
 
     access_state = get_account_access_state(user)
 
@@ -365,7 +356,7 @@ def _serialize_user(
         "total_login_count": user.total_login_count,
         "mfa_enabled": user.mfa_enabled,
         "last_login_at": user.last_login_at,
-        "role": "admin" if is_admin_username_override(user.username) else (role_names[0] if role_names else user.role),
+        "role": role_names[0] if role_names else user.role,
         "roles": role_names,
         "permissions": _user_permissions(user, db),
         "created_at": user.created_at,

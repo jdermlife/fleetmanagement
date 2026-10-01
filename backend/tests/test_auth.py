@@ -23,7 +23,6 @@ from app.routes import security as security_routes
     ("username", "roles"),
     [
         ("multi-role-admin", [SimpleNamespace(name="admin")]),
-        ("admin123", []),
     ],
 )
 def test_effective_token_role_promotes_admin_accounts(username, roles):
@@ -35,6 +34,17 @@ def test_effective_token_role_promotes_admin_accounts(username, roles):
     )
 
     assert security_routes._effective_token_role(user) == "admin"
+
+
+def test_effective_token_role_does_not_promote_reserved_username():
+    user = SimpleNamespace(
+        username="admin123",
+        role="subscriber_borrower",
+        roles=[],
+        role_ref=None,
+    )
+
+    assert security_routes._effective_token_role(user) == "subscriber_borrower"
 
 
 class FakeQuery:
@@ -170,27 +180,41 @@ def subscriptions_client(monkeypatch, fake_db: FakeSession):
     app.dependency_overrides.clear()
 
 
-def test_register_endpoint_exists(app_client):
+@pytest.mark.parametrize(
+    ("subscriber_type", "expected_role"),
+    [
+        ("borrower", "subscriber_borrower"),
+        ("lender", "subscriber_lender"),
+    ],
+)
+def test_register_endpoint_assigns_normal_user_access(app_client, subscriber_type, expected_role):
     client, _auth_module, fake_db = app_client
+    fake_db.rows_by_model[Role] = [
+        Role(id=1, name=expected_role, description="Public registration role", is_system=True),
+    ]
 
     response = client.post(
         "/api/auth/register",
         json={
-            "username": "testuser",
-            "email": "test@example.com",
+            "username": f"test-{subscriber_type}",
+            "email": f"{subscriber_type}@example.com",
             "password": "password123",
-            "subscriber_type": "borrower",
+            "subscriber_type": subscriber_type,
             "lender_data_sharing_consent": False,
         },
     )
 
     assert response.status_code == 201
-    assert response.json()["user"]["username"] == "testuser"
+    assert response.json()["user"]["username"] == f"test-{subscriber_type}"
+    assert response.json()["user"]["role"] == expected_role
+    assert "admin" not in response.json()["user"]["roles"]
     assert response.json()["access_token"]
     assert response.json()["refresh_token"]
     assert response.json()["user"]["account_access_expires_at"] is not None
     assert len(fake_db.rows_by_model[User]) == 1
     registered_user = fake_db.rows_by_model[User][0]
+    assert registered_user.role == expected_role
+    assert all(role.name != "admin" for role in registered_user.roles)
     assert registered_user.lender_data_sharing_consent is False
     assert registered_user.lender_data_sharing_consent_recorded_at is not None
 

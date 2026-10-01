@@ -230,11 +230,6 @@ describe('App account menu accordions', () => {
       role: 'subscriber_borrower',
       roles: ['subscriber_borrower', 'admin'],
     },
-    {
-      username: 'admin123',
-      role: 'subscriber_borrower',
-      roles: ['subscriber_borrower'],
-    },
   ])('opens Lending Scorecard for effective Admin $username', async ({ username, role, roles }) => {
     mockFetchCurrentUser.mockResolvedValue({
       id: 4,

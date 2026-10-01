@@ -12,7 +12,6 @@ import security.auth as token_auth
 
 
 AUTH_REQUIRED = os.getenv("ENFORCE_AUTH", "true").lower() == "true"
-ADMIN_USERNAME_OVERRIDE = "admin123"
 
 bearer_scheme = HTTPBearer(auto_error=False)
 
@@ -25,10 +24,6 @@ class CurrentUser:
     issued_at: float = 0
     auth_provider: str | None = None
     session_jti: str | None = None
-
-
-def is_admin_username_override(username: str | None) -> bool:
-    return (username or "").strip().lower() == ADMIN_USERNAME_OVERRIDE
 
 
 def get_current_user(
@@ -55,12 +50,10 @@ def get_current_user(
             detail="Authentication is not configured",
         ) from exc
 
-    resolved_role = "admin" if is_admin_username_override(payload.username) else payload.role
-
     return CurrentUser(
         id=payload.sub,
         username=payload.username,
-        role=resolved_role,
+        role=payload.role,
         issued_at=payload.iat,
         auth_provider=payload.auth_provider,
         session_jti=payload.session_jti,

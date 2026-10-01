@@ -6,15 +6,7 @@ function normalize(value: string): string {
   return value.trim().toLowerCase()
 }
 
-function isAdminUsernameOverride(username?: string | null): boolean {
-  return normalize(username ?? '') === 'admin123'
-}
-
-export function isAdminUser(user?: Pick<AuthUser, 'role' | 'roles' | 'username'> | null): boolean {
-  if (isAdminUsernameOverride(user?.username)) {
-    return true
-  }
-
+export function isAdminUser(user?: Pick<AuthUser, 'role' | 'roles'> | null): boolean {
   const roles = user?.roles ?? (user?.role ? [user.role] : [])
   return roles.some((role) => normalize(role) === 'admin')
 }
@@ -54,10 +46,9 @@ export function useAuthorization() {
     () => new Set((user?.permissions ?? []).map(normalize)),
     [user],
   )
-  const isUsernameOverrideAdmin = isAdminUsernameOverride(user?.username)
 
   const hasRole = (role: string): boolean =>
-    isUsernameOverrideAdmin || roleSet.has(normalize(role))
+    roleSet.has(normalize(role))
 
   const hasAnyRole = (roles: string[]): boolean => {
     if (roles.length === 0) {
@@ -67,7 +58,7 @@ export function useAuthorization() {
   }
 
   const hasPermission = (permission: string): boolean =>
-    isUsernameOverrideAdmin || permissionSet.has(normalize(permission))
+    permissionSet.has(normalize(permission))
 
   const hasAnyPermission = (permissions: string[]): boolean => {
     if (permissions.length === 0) {
