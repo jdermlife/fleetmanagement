@@ -8,11 +8,11 @@ import re
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Literal
-from urllib.parse import parse_qs, urlencode
+from urllib.parse import parse_qs, urlencode, urlsplit
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import HTMLResponse, RedirectResponse
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from pydantic import BaseModel, Field
 import requests
 from sqlalchemy import and_
@@ -48,6 +48,7 @@ from app.services.mfa_service import (
 from app.services.email_service import send_email
 from app.services.new_user_notification_service import notify_admins_of_new_user
 from app.services.security_bootstrap import seed_roles_and_permissions
+from logging_config import security_logger
 from security.rbac import ROLE_PERMISSIONS, Role as RBACRole
 from security.auth import SECRET_KEY, TokenError, create_token, decode_token, hash_password, verify_password
 
@@ -58,6 +59,8 @@ except ImportError:  # pragma: no cover - handled in runtime checks
 
 router = APIRouter(prefix="/auth", tags=["security"])
 admin_router = APIRouter(prefix="/admin", tags=["security-admin"])
+CSP_REPORT_MAX_BYTES = 16_384
+CSP_REPORT_MAX_ITEMS = 10
 
 
 class LoginRequest(BaseModel):
@@ -141,6 +144,68 @@ class CreateUserRequest(BaseModel):
     api_access: bool = False
     email_verified: bool = False
     roles: list[str] = Field(default_factory=list)
+
+
+def _csp_report_origin(value: object) -> str | None:
+    if not isinstance(value, str):
+        return None
+    normalized = value.strip()
+    if not normalized:
+        return None
+    parsed = urlsplit(normalized)
+    if parsed.scheme in {"http", "https"} and parsed.netloc:
+        return f"{parsed.scheme}://{parsed.netloc}"[:512]
+    return normalized[:128]
+
+
+def _csp_report_items(payload: object) -> list[dict[str, object]]:
+    candidates = payload if isinstance(payload, list) else [payload]
+    reports: list[dict[str, object]] = []
+    for candidate in candidates[:CSP_REPORT_MAX_ITEMS]:
+        if not isinstance(candidate, dict):
+            continue
+        legacy_report = candidate.get("csp-report")
+        report = legacy_report if isinstance(legacy_report, dict) else candidate.get("body", candidate)
+        if isinstance(report, dict):
+            reports.append(report)
+    return reports
+
+
+@router.post("/csp-report", status_code=status.HTTP_204_NO_CONTENT)
+async def collect_csp_report(request: Request) -> Response:
+    body = bytearray()
+    async for chunk in request.stream():
+        if len(body) + len(chunk) > CSP_REPORT_MAX_BYTES:
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        body.extend(chunk)
+
+    if not body:
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    try:
+        payload = json.loads(body)
+    except (UnicodeDecodeError, json.JSONDecodeError):
+        return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+    for report in _csp_report_items(payload):
+        security_logger.warning(
+            "csp_violation_report",
+            effective_directive=str(
+                report.get("effective-directive") or report.get("effectiveDirective") or "unknown"
+            )[:128],
+            blocked_origin=_csp_report_origin(
+                report.get("blocked-uri") or report.get("blockedURL")
+            ),
+            document_origin=_csp_report_origin(
+                report.get("document-uri") or report.get("documentURL")
+            ),
+            source_origin=_csp_report_origin(
+                report.get("source-file") or report.get("sourceFile")
+            ),
+            disposition=str(report.get("disposition") or "report")[:32],
+        )
+
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
 
 
 class UpdateUserRequest(BaseModel):

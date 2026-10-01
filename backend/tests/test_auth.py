@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import json
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
@@ -217,6 +218,43 @@ def test_register_endpoint_assigns_normal_user_access(app_client, subscriber_typ
     assert all(role.name != "admin" for role in registered_user.roles)
     assert registered_user.lender_data_sharing_consent is False
     assert registered_user.lender_data_sharing_consent_recorded_at is not None
+
+
+def test_csp_report_endpoint_sanitizes_violation_urls(app_client, monkeypatch):
+    client, _auth_module, _fake_db = app_client
+    captured: list[tuple[str, dict[str, object]]] = []
+    monkeypatch.setattr(
+        security_routes.security_logger,
+        "warning",
+        lambda message, **fields: captured.append((message, fields)),
+    )
+
+    response = client.post(
+        "/api/auth/csp-report",
+        headers={"Content-Type": "application/csp-report"},
+        content=json.dumps({
+            "csp-report": {
+                "document-uri": "https://app.example.com/private/account?token=secret",
+                "effective-directive": "script-src-elem",
+                "blocked-uri": "https://unexpected.example.net/tracker.js?user=42",
+                "source-file": "https://app.example.com/assets/index.js?build=7",
+                "script-sample": "sensitive inline content",
+                "disposition": "report",
+            },
+        }),
+    )
+
+    assert response.status_code == 204
+    assert captured == [(
+        "csp_violation_report",
+        {
+            "effective_directive": "script-src-elem",
+            "blocked_origin": "https://unexpected.example.net",
+            "document_origin": "https://app.example.com",
+            "source_origin": "https://app.example.com",
+            "disposition": "report",
+        },
+    )]
 
 
 def test_withdrawing_lender_data_sharing_consent_updates_choice_timestamp(app_client):
