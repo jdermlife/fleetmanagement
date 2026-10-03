@@ -6134,44 +6134,56 @@ export default function LendingScorecard() {
           )}
 
           {isAdmin && step === 10 && (
-            <div className="space-y-4">
-              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 10: Loan Release & Booking</h3>
-              <div className="bg-blue-50 p-4 rounded-md border border-blue-200 mb-4">
-                <h4 className="font-bold text-blue-800 mb-2 text-sm uppercase">✅ System Validation Check</h4>
-                <ul className="space-y-1">
+            <div className="release-psychometric-tab space-y-4">
+              <header className="release-psychometric-heading">
+                <div>
+                  <span className="psychometric-section-code">Step 10 · Release</span>
+                  <h3>Loan Release &amp; Booking</h3>
+                  <p>Complete final controls, confirm disbursement instructions, and authorize the booking outcome.</p>
+                </div>
+                <div className="psychometric-section-score">
+                  <strong>{validationChecks.filter((check) => check.passed).length} / {validationChecks.length}</strong>
+                  <span>controls passed</span>
+                </div>
+              </header>
+
+              <section className="release-psychometric-section">
+                <div className="release-psychometric-section-header">
+                  <div><span>A</span><div><small>Release readiness</small><h4>System Validation Check</h4></div></div>
+                </div>
+                <ul className="release-validation-list">
                   {validationChecks.map((check, idx) => (
-                    <li key={idx} className={`text-sm flex items-center gap-2 ${check.passed ? 'text-green-700' : 'text-red-600'}`}>
-                      {check.passed ? '✓' : '✗'} {check.label}
+                    <li key={idx} className={check.passed ? 'release-validation-passed' : 'release-validation-pending'}>
+                      <span aria-hidden="true">{check.passed ? '✓' : '!'}</span>
+                      {check.label}
                     </li>
                   ))}
                 </ul>
-              </div>
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-lg border border-green-200 mb-4">
-                <h4 className="font-bold text-green-800 text-sm mb-3">Approval Summary</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
-                  <div className="bg-white/50 p-3 rounded">
-                    <span className="text-gray-600">Requested Loan Amount:</span>
-                    <p className="text-xl font-bold text-green-700">PHP {formData.loan.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                  </div>
-                  <div className="bg-white/50 p-3 rounded">
-                    <span className="text-gray-600">Approved Loan Amount:</span>
-                    <p className="text-xl font-bold text-blue-700">PHP {aiRecommendation.suggestedAmount.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-white/50 p-3 rounded">
-                    <span className="text-gray-600">Monthly Amortization:</span>
-                    <p className="text-xl font-bold text-orange-700">PHP {calculations.monthlyPayment.toFixed(2)}</p>
-                  </div>
-                  <div className="bg-white/50 p-3 rounded">
-                    <span className="text-gray-600">AI Approval Probability:</span>
-                    <p className="text-xl font-bold text-indigo-700">{aiRecommendation.probability}%</p>
-                  </div>
+              </section>
+
+              <div className="release-psychometric-metrics" aria-label="Approval summary">
+                <div className="psychometric-formula-card">
+                  <span>Requested loan amount</span>
+                  <strong>PHP {formData.loan.amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</strong>
+                </div>
+                <div className="psychometric-formula-card psychometric-formula-card-accent">
+                  <span>Approved loan amount</span>
+                  <strong>PHP {aiRecommendation.suggestedAmount.toLocaleString()}</strong>
+                </div>
+                <div className="psychometric-formula-card">
+                  <span>Monthly amortization</span>
+                  <strong>PHP {calculations.monthlyPayment.toFixed(2)}</strong>
+                </div>
+                <div className="psychometric-formula-card">
+                  <span>AI approval probability</span>
+                  <strong>{aiRecommendation.probability}%</strong>
                 </div>
               </div>
 
-              <div className="rounded-lg border border-indigo-200 bg-indigo-50 p-4 mb-4">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-                  <h4 className="font-bold text-indigo-900 text-sm uppercase">AI Credit Advisor</h4>
-                  <div className="flex flex-wrap gap-2">
+              <section className="release-psychometric-section">
+                <div className="release-psychometric-section-header release-advisor-header">
+                  <div><span>B</span><div><small>Decision support</small><h4>AI Credit Advisor</h4></div></div>
+                  <div className="release-advisor-actions">
                     <button
                       type="button"
                       onClick={() => void handleGenerateCreditAdvisorPlan()}
@@ -6199,24 +6211,24 @@ export default function LendingScorecard() {
                   </div>
                 </div>
 
-                <p className="text-xs text-indigo-800/90 mb-3">
+                <p className="psychometric-section-note release-advisor-note">
                   Uses current DTI, DSR, LTV, income, debt, and workflow posture to propose priority actions for improving credit readiness.
                 </p>
 
                 {advisorError ? (
-                  <div className="rounded border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700 mb-3">
+                  <div className="release-advisor-message release-advisor-message-error">
                     {advisorError}
                   </div>
                 ) : null}
 
                 {advisorMeta ? (
-                  <div className="text-xs text-indigo-800/80 mb-3">
+                  <div className="release-advisor-meta">
                     Provider: {advisorMeta.provider} | Model: {advisorMeta.model} | Tokens: {advisorMeta.total_tokens} | Latency: {advisorMeta.latency_ms}ms
                   </div>
                 ) : null}
 
                 {advisorNotice ? (
-                  <div className="rounded border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-700 mb-3">
+                  <div className="release-advisor-message">
                     {advisorNotice}
                   </div>
                 ) : null}
@@ -6225,12 +6237,12 @@ export default function LendingScorecard() {
                   value={advisorAdvice}
                   onChange={(event) => setAdvisorAdvice(event.target.value)}
                   rows={12}
-                  className="w-full rounded-md border border-indigo-200 bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="release-advisor-textarea w-full rounded-md border bg-white px-3 py-2 text-sm text-slate-800 focus:outline-none"
                   placeholder="Generated AI advisory plan will appear here."
                 />
 
                 {formData.advisorChecklist.length > 0 ? (
-                  <div className="mt-4 rounded-md border border-emerald-200 bg-white p-3">
+                  <div className="release-advisor-checklist">
                     <div className="mb-2 flex items-center justify-between gap-2">
                       <h5 className="text-xs font-semibold uppercase tracking-wide text-emerald-800">Advisor Action Checklist</h5>
                       <span className="inline-flex items-center rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">
@@ -6261,66 +6273,78 @@ export default function LendingScorecard() {
                     </div>
                   </div>
                 ) : null}
-              </div>
+              </section>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderInput('disbursement', 'bankAccount', 'Disbursement Bank Account')}
-                {renderInput('disbursement', 'accountNumber', 'Account Number')}
-                {renderInput('disbursement', 'disbursementDate', 'Scheduled Disbursement Date', 'date')}
-                {renderInput('disbursement', 'bookingDate', 'Loan Booking Date', 'date')}
-                {renderInput('disbursement', 'startRepaymentDate', 'Start of Repayment', 'date')}
-                {renderInput('disbursement', 'firstPaymentDate', 'First Payment Due Date', 'date')}
-              </div>
+              <section className="release-psychometric-section">
+                <div className="release-psychometric-section-header">
+                  <div><span>C</span><div><small>Funding instructions</small><h4>Disbursement &amp; Booking Details</h4></div></div>
+                </div>
+                <div className="release-psychometric-form-grid">
+                  {renderInput('disbursement', 'bankAccount', 'Disbursement Bank Account')}
+                  {renderInput('disbursement', 'accountNumber', 'Account Number')}
+                  {renderInput('disbursement', 'disbursementDate', 'Scheduled Disbursement Date', 'date')}
+                  {renderInput('disbursement', 'bookingDate', 'Loan Booking Date', 'date')}
+                  {renderInput('disbursement', 'startRepaymentDate', 'Start of Repayment', 'date')}
+                  {renderInput('disbursement', 'firstPaymentDate', 'First Payment Due Date', 'date')}
+                </div>
+              </section>
 
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Final Checklist</h4>
-                <div className="space-y-2">
-                  <label className="flex items-center text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.finalChecklist?.allRequiredDocumentsProvided || false} onChange={(e) => updateField('finalChecklist', 'allRequiredDocumentsProvided', e.target.checked)} className="mr-3 h-4 w-4" />
-                    <span className="text-gray-700">All required documents provided</span>
+              <section className="release-psychometric-section">
+                <div className="release-psychometric-section-header">
+                  <div><span>D</span><div><small>Final control evidence</small><h4>Release Checklist</h4></div></div>
+                </div>
+                <div className="release-checklist-grid">
+                  <label className="release-checklist-item">
+                    <input type="checkbox" checked={formData.finalChecklist?.allRequiredDocumentsProvided || false} onChange={(e) => updateField('finalChecklist', 'allRequiredDocumentsProvided', e.target.checked)} />
+                    <span>All required documents provided</span>
                   </label>
-                  <label className="flex items-center text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.finalChecklist?.allSignaturesCollected || false} onChange={(e) => updateField('finalChecklist', 'allSignaturesCollected', e.target.checked)} className="mr-3 h-4 w-4" />
-                    <span className="text-gray-700">All signatures collected</span>
+                  <label className="release-checklist-item">
+                    <input type="checkbox" checked={formData.finalChecklist?.allSignaturesCollected || false} onChange={(e) => updateField('finalChecklist', 'allSignaturesCollected', e.target.checked)} />
+                    <span>All signatures collected</span>
                   </label>
-                  <label className="flex items-center text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.finalChecklist?.creditCommitteeApproved || false} onChange={(e) => updateField('finalChecklist', 'creditCommitteeApproved', e.target.checked)} className="mr-3 h-4 w-4" />
-                    <span className="text-gray-700">Credit committee approved</span>
+                  <label className="release-checklist-item">
+                    <input type="checkbox" checked={formData.finalChecklist?.creditCommitteeApproved || false} onChange={(e) => updateField('finalChecklist', 'creditCommitteeApproved', e.target.checked)} />
+                    <span>Credit committee approved</span>
                   </label>
-                  <label className="flex items-center text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.finalChecklist?.executiveApprovalObtained || false} onChange={(e) => updateField('finalChecklist', 'executiveApprovalObtained', e.target.checked)} className="mr-3 h-4 w-4" />
-                    <span className="text-gray-700">Executive approval obtained</span>
+                  <label className="release-checklist-item">
+                    <input type="checkbox" checked={formData.finalChecklist?.executiveApprovalObtained || false} onChange={(e) => updateField('finalChecklist', 'executiveApprovalObtained', e.target.checked)} />
+                    <span>Executive approval obtained</span>
                   </label>
-                  <label className="flex items-center text-sm cursor-pointer">
-                    <input type="checkbox" checked={formData.finalChecklist?.collateralDocumentationReady || false} onChange={(e) => updateField('finalChecklist', 'collateralDocumentationReady', e.target.checked)} className="mr-3 h-4 w-4" />
-                    <span className="text-gray-700">Collateral documentation ready</span>
+                  <label className="release-checklist-item">
+                    <input type="checkbox" checked={formData.finalChecklist?.collateralDocumentationReady || false} onChange={(e) => updateField('finalChecklist', 'collateralDocumentationReady', e.target.checked)} />
+                    <span>Collateral documentation ready</span>
                   </label>
-                  <label className="flex items-center text-sm cursor-not-allowed">
+                  <label className="release-checklist-item release-checklist-item-disabled">
                     <input
                       type="checkbox"
                       checked={formData.finalChecklist?.creditImprovementActionsTracked || false}
                       disabled
                       readOnly
-                      className="mr-3 h-4 w-4"
                     />
-                    <span className="text-gray-700">Advisor top actions completed (auto-tracked)</span>
+                    <span>Advisor top actions completed (auto-tracked)</span>
                   </label>
                 </div>
-              </div>
+              </section>
 
-              <div className="border-t pt-4 mt-4">
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-2">Release Authorization Notes</label>
+              <section className="release-psychometric-section">
+                <div className="release-psychometric-section-header">
+                  <div><span>E</span><div><small>Authorization record</small><h4>Release Notes</h4></div></div>
+                </div>
+                <label className="loan-form-label mb-2 block text-xs font-semibold tracking-wide text-slate-600">Release Authorization Notes</label>
                 <textarea 
                   value={formData.releaseNotes || ''}
                   onChange={(e) => setFormData(prev => ({ ...prev, releaseNotes: e.target.value }))}
                   rows={3}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500"
+                  className="release-notes-textarea w-full rounded-md border px-3 py-2 text-sm focus:outline-none"
                   placeholder="Any final notes or special conditions for loan release..."
                 />
-              </div>
+              </section>
 
-              <div className="bg-slate-800 text-white p-6 rounded-lg mt-6">
-                <h4 className="font-bold text-lg mb-4">Final Workflow Actions</h4>
+              <section className="release-workflow-actions">
+                <div className="release-workflow-actions-header">
+                  <span>F</span>
+                  <div><small>Controlled status change</small><h4>Final Workflow Actions</h4></div>
+                </div>
                 <div className="flex flex-wrap gap-3 items-end">
                   <div className="min-w-[220px]">
                     <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-300">
@@ -6374,7 +6398,7 @@ export default function LendingScorecard() {
                     <span className="px-4 py-2 bg-green-800 text-green-100 rounded text-sm font-bold border border-green-600">Application Successfully Released</span>
                   )}
                 </div>
-              </div>
+              </section>
             </div>
           )}
         </div>
