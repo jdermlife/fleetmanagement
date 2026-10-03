@@ -6012,41 +6012,60 @@ export default function LendingScorecard() {
           )}
 
           {isAdmin && step === 9 && (
-            <div className="space-y-4">
-              <h3 className="workflow-duplicate-step-title text-lg font-bold text-slate-800 border-b pb-2">Step 9: Probability Approval Workflow</h3>
-              <div className="rounded-md border border-slate-200 bg-slate-50 p-4">
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                  Origination Profitability
-                </p>
-                <p className="mt-2 text-2xl font-bold text-slate-900">
-                  PHP {creditRiskInsights.originationProfitability.toLocaleString(undefined, {
-                    maximumFractionDigits: 0,
-                  })}
-                </p>
-                <p className="mt-1 text-xs text-slate-500">
-                  Margin {creditRiskInsights.originationMargin.toFixed(1)}%
-                </p>
+            <div className="approval-psychometric-tab space-y-4">
+              <header className="approval-psychometric-heading">
+                <div>
+                  <span className="psychometric-section-code">Step 9 · Approval</span>
+                  <h3>Probability Approval Workflow</h3>
+                  <p>Record routing, policy outcomes, decision authority, conditions, and final reasons.</p>
+                </div>
+                <div className="psychometric-section-score">
+                  <strong>{aiRecommendation.probability}%</strong>
+                  <span>AI approval probability</span>
+                </div>
+              </header>
+
+              <div className="approval-psychometric-metrics" aria-label="Approval metrics">
+                <div className="psychometric-formula-card psychometric-formula-card-accent">
+                  <span>Origination profitability</span>
+                  <strong>PHP {creditRiskInsights.originationProfitability.toLocaleString(undefined, { maximumFractionDigits: 0 })}</strong>
+                </div>
+                <div className="psychometric-formula-card">
+                  <span>Origination margin</span>
+                  <strong>{creditRiskInsights.originationMargin.toFixed(1)}%</strong>
+                </div>
+                <div className="psychometric-formula-card">
+                  <span>Current decision stage</span>
+                  <strong>{formData.underwritingDecision.stage || 'Application Review'}</strong>
+                </div>
               </div>
-              <div className="mb-4">
-                <label className="block text-xs font-semibold text-gray-600 uppercase mb-1">Credit Committee Remarks</label>
+
+              <section className="approval-psychometric-section">
+                <div className="approval-psychometric-section-header">
+                  <div><span>A</span><div><small>Decision context</small><h4>Committee Routing &amp; Remarks</h4></div></div>
+                </div>
+                <label className="loan-form-label mb-1.5 block text-xs font-semibold tracking-wide text-slate-600">Credit Committee Remarks</label>
                 <div className="w-full rounded-md border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
                   {formData.committeeRemarks.trim().length > 0
                     ? formData.committeeRemarks
                     : 'No remarks yet. Use Step 8 to update this field.'}
                 </div>
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {renderInput('routing', 'creditOfficer', 'Assigned Credit Officer')}
-                {renderInput('routing', 'branchManager', 'Branch Manager')}
-                {renderInput('routing', 'creditCommittee', 'Committee Status')}
-                <div className="mb-3 flex items-center mt-6">
-                  <input type="checkbox" checked={formData.routing.executiveApproval} onChange={(e) => updateField('routing', 'executiveApproval', e.target.checked)} className="mr-2 h-4 w-4" />
-                  <label className="text-sm font-medium text-gray-700">Requires Executive Approval</label>
+                <div className="approval-psychometric-form-grid">
+                  {renderInput('routing', 'creditOfficer', 'Assigned Credit Officer')}
+                  {renderInput('routing', 'branchManager', 'Branch Manager')}
+                  {renderInput('routing', 'creditCommittee', 'Committee Status')}
+                  <label className="approval-psychometric-check">
+                    <input type="checkbox" checked={formData.routing.executiveApproval} onChange={(e) => updateField('routing', 'executiveApproval', e.target.checked)} />
+                    <span>Requires Executive Approval</span>
+                  </label>
                 </div>
-              </div>
-              <div className="border-t pt-4 mt-4">
-                <h4 className="font-semibold text-sm text-gray-700 mb-3">Signatures & Authorization</h4>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </section>
+
+              <section className="approval-psychometric-section">
+                <div className="approval-psychometric-section-header">
+                  <div><span>B</span><div><small>Authorization evidence</small><h4>Signatures &amp; Authorization</h4></div></div>
+                </div>
+                <div className="approval-psychometric-form-grid">
                   {[
                     ['signatures', 'applicantSignature', 'Applicant Signature'],
                     ['signatures', 'spouseOrCoBorrowerSignature', 'Spouse / Co-Borrower Signature'],
@@ -6054,12 +6073,14 @@ export default function LendingScorecard() {
                     ['signatures', 'extensionCardholderSignature', 'Extension Cardholder Signature'],
                   ].map(([section, field, label]) => renderInput(section as EditableSection, field, label))}
                 </div>
-              </div>
+              </section>
 
-              <div className="border-t pt-4 mt-4 space-y-5">
-                <section>
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Origination Routing &amp; SLA</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="approval-psychometric-sections">
+                <section className="approval-psychometric-section">
+                  <div className="approval-psychometric-section-header">
+                    <div><span>C</span><div><small>Operational ownership</small><h4>Origination Routing &amp; SLA</h4></div></div>
+                  </div>
+                  <div className="approval-psychometric-form-grid">
                     {renderInput('underwritingDecision', 'branch', 'Branch')}
                     {renderSelect('underwritingDecision', 'channel', 'Origination Channel', ['Branch', 'Web', 'Mobile App', 'Partner', 'Agent', 'Call Center', 'Other'])}
                     {renderInput('underwritingDecision', 'referralSource', 'Referral Source')}
@@ -6072,9 +6093,11 @@ export default function LendingScorecard() {
                   </div>
                 </section>
 
-                <section className="border-t border-slate-200 pt-4">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Policy Evaluation</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <section className="approval-psychometric-section">
+                  <div className="approval-psychometric-section-header">
+                    <div><span>D</span><div><small>Automated and manual controls</small><h4>Policy Evaluation</h4></div></div>
+                  </div>
+                  <div className="approval-psychometric-form-grid">
                     {renderInput('underwritingDecision', 'modelVersion', 'Decision Model Version')}
                     {renderInput('underwritingDecision', 'rulesetVersion', 'Policy Ruleset Version')}
                     {renderTextarea('underwritingDecision', 'policyRulesPassed', 'Policy Rules Passed', 4, false, 'Enter one rule code and result per line')}
@@ -6082,9 +6105,11 @@ export default function LendingScorecard() {
                   </div>
                 </section>
 
-                <section className="border-t border-slate-200 pt-4">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Decision Governance</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <section className="approval-psychometric-section">
+                  <div className="approval-psychometric-section-header">
+                    <div><span>E</span><div><small>Authority and accountability</small><h4>Decision Governance</h4></div></div>
+                  </div>
+                  <div className="approval-psychometric-form-grid">
                     {renderTextarea('underwritingDecision', 'decisionReasonCodes', 'Decision Reason Codes', 3, false, 'Enter one reason code and description per line')}
                     {renderSelect('underwritingDecision', 'approvalAuthority', 'Approval Authority', ['Credit Officer', 'Branch Manager', 'Credit Committee', 'Executive Committee', 'Board / Delegated Authority'])}
                     {renderTextarea('underwritingDecision', 'exceptions', 'Policy Exceptions', 4, false, 'Describe each exception and justification')}
@@ -6094,9 +6119,11 @@ export default function LendingScorecard() {
                   </div>
                 </section>
 
-                <section className="border-t border-slate-200 pt-4">
-                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Decline &amp; Adverse Action</h4>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <section className="approval-psychometric-section approval-psychometric-section-adverse">
+                  <div className="approval-psychometric-section-header">
+                    <div><span>F</span><div><small>Notice-ready rationale</small><h4>Decline &amp; Adverse Action</h4></div></div>
+                  </div>
+                  <div className="approval-psychometric-form-grid">
                     {renderTextarea('underwritingDecision', 'declineReasons', 'Decline Reasons', 4, false, 'Enter specific decline reasons and supporting facts')}
                     {renderTextarea('underwritingDecision', 'adverseActionReasons', 'Adverse-Action Reasons', 4, false, 'Enter notice-ready reasons and applicable codes')}
                   </div>
