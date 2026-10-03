@@ -4636,6 +4636,7 @@ export default function LendingScorecard() {
           <CreditHealthScoreGraph
             scores={{
               credit: toFilscore(displayedQuantSummary?.credit_score),
+              creditBureau: toFilscore(displayedQuantSummary?.credit_bureau_score),
               nonStarter: toFilscore(displayedQuantSummary?.fraud_score),
               social: toFilscore(displayedQuantSummary?.social_score),
               psychometric: toFilscore(displayedQuantSummary?.psychometric_score),

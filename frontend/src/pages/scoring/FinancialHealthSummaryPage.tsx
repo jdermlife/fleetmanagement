@@ -1204,6 +1204,7 @@ export default function FinancialHealthSummaryPage() {
         financialHealthSummary={publishedSummary}
         creditScores={{
           credit: toFilscore(lendingLeafScores?.creditScore ?? null),
+          creditBureau: null,
           nonStarter: toFilscore(lendingLeafScores?.nonStarterScore ?? null),
           social: toFilscore(lendingLeafScores?.socialScore ?? null),
           psychometric: toFilscore(lendingLeafScores?.psychometricScore ?? null),

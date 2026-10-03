@@ -84,6 +84,7 @@ type FinancialStatementModalProps = {
 
 const EMPTY_CREDIT_SCORES: CreditHealthGraphScores = {
   credit: null,
+  creditBureau: null,
   nonStarter: null,
   social: null,
   psychometric: null,

@@ -103,6 +103,7 @@ const certificateItems: ReportItem[] = [
 
 const EMPTY_CREDIT_SCORES: CreditHealthGraphScores = {
   credit: null,
+  creditBureau: null,
   nonStarter: null,
   social: null,
   psychometric: null,
@@ -233,6 +234,7 @@ export default function ReportsStatementsPage() {
       setWealthProtectionScore(computeWealthProtectionScore(netWorthInput, profile?.values))
       setCreditScores({
         credit: toFilscore(lendingScores?.creditScore ?? null),
+        creditBureau: null,
         nonStarter: toFilscore(lendingScores?.nonStarterScore ?? null),
         social: toFilscore(lendingScores?.socialScore ?? null),
         psychometric: toFilscore(lendingScores?.psychometricScore ?? null),

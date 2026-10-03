@@ -4565,7 +4565,7 @@ button.loan-repository-action-release { background: #4f46e5; }
 .credit-health-score-ring-track,
 .credit-health-score-ring-progress {
   fill: none;
-  stroke-width: 11;
+  stroke-width: 9;
 }
 
 .credit-health-score-ring-track {

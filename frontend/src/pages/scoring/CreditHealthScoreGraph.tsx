@@ -2,6 +2,7 @@ import { useId } from 'react';
 
 export type CreditHealthGraphScores = {
   credit: number | null;
+  creditBureau: number | null;
   nonStarter: number | null;
   social: number | null;
   psychometric: number | null;
@@ -19,28 +20,35 @@ const SCORE_RINGS: ScoreRing[] = [
   {
     id: 'credit',
     label: 'Credit Score',
-    radius: 80,
+    radius: 82,
     color: '#3b82f6',
     gradient: ['#bfdbfe', '#60a5fa', '#2563eb', '#1e3a8a'],
   },
   {
+    id: 'creditBureau',
+    label: 'Credit Bureau Score',
+    radius: 68,
+    color: '#14b8a6',
+    gradient: ['#ccfbf1', '#5eead4', '#0d9488', '#134e4a'],
+  },
+  {
     id: 'nonStarter',
     label: 'Non-Starter Score',
-    radius: 64,
+    radius: 54,
     color: '#ef4444',
     gradient: ['#fecaca', '#fb7185', '#dc2626', '#7f1d1d'],
   },
   {
     id: 'social',
     label: 'Social Score',
-    radius: 48,
+    radius: 40,
     color: '#facc15',
     gradient: ['#fef9c3', '#fde047', '#eab308', '#a16207'],
   },
   {
     id: 'psychometric',
     label: 'Psychometric Score',
-    radius: 32,
+    radius: 26,
     color: '#ffffff',
     gradient: ['#ffffff', '#f8fafc', '#dbe4ee', '#94a3b8'],
   },
