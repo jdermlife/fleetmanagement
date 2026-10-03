@@ -93,6 +93,7 @@ interface CollateralInformation { propertyAddress: string; registeredOwner: stri
 interface SpouseInformation { fullName: string; dateOfBirth: string; placeOfBirth: string; citizenship: string; mobileNumber: string; presentAddress: string; employerBusinessName: string; officeAddress: string; occupation: string; position: string; natureOfWork: string; yearsWithEmployer: string; previousEmployer: string; totalYearsWorking: string; grossMonthlyIncome: number; monthlyExpenses: number; otherIncomeSources: string; }
 interface BankingRelationships { creditCardIssuer: string; creditCardNumber: string; creditPaymentHistory: string; creditCardRelationshipStatus: string; creditLimit: number; outstandingBalance: number; memberSince: string; bankBranch: string; accountType: string; accountNumber: string; currentBalance: number; averageSavingsBalance: number; averageDailyBalance: number; depositRegularity: string; bankingRelationshipTier: string; accountHandling: string; utilityCreditBureauStatus: string; loanLender: string; loanType: string; loanCurrentBalance: number; loanMonthlyAmortization: number; }
 interface Signatures { applicantSignature: string; spouseOrCoBorrowerSignature: string; borrowerSignatureAutoLoanInsurance: string; extensionCardholderSignature: string; }
+interface UnderwritingDecision { branch: string; channel: string; referralSource: string; assignedOfficer: string; priority: string; stage: string; slaStartDate: string; slaDueDate: string; slaCompletedDate: string; policyRulesPassed: string; policyRulesFailed: string; modelVersion: string; rulesetVersion: string; decisionReasonCodes: string; approvalAuthority: string; exceptions: string; overrides: string; approvalConditions: string; committeeVotes: string; declineReasons: string; adverseActionReasons: string; }
 interface SupportingDocuments { validGovernmentId: boolean; selfiePhotoOptional?: boolean; passportIfApplicable: boolean; driversLicense: boolean; philSysId: boolean; certificateOfEmployment: boolean; latestPayslips: boolean; latestItr: boolean; dtiSecRegistration: boolean; businessPermit: boolean; financialStatements: boolean; utilityBill: boolean; waterBill: boolean; internetBill: boolean; titleTctCct: boolean; taxDeclaration: boolean; lotPlan: boolean; propertyPhotos: boolean; vehicleQuotation: boolean; vehicleInvoice: boolean; orCrForRefinancing: boolean; proofOfIncome: boolean; bankStatements: boolean; existingCreditCardStatements: boolean; additionalSupportingDocuments: boolean; auditedFinancialStatements: boolean; proofOfRemittanceIncome: boolean; investmentStatements: boolean; }
 interface EnhancedDueDiligence { previousLendersAndExistingLoanAccounts: string; numberOfActiveLoans: number; previousLoanRestructuringDisclosures: string; lifestyleIndicator: string; secondaryIncomeProfile: string; employmentReferencePerson: string; hrContactInformation: string; supervisorInformation: string; additionalBankAccountsOwned: string; sourceOfIncomeVerificationReferences: string; lengthOfResidenceConfirmation: string; utilityAccountReferences: string; digitalBankingUsage: string; characterReferences: string; communityReputation: string; professionalOrganizationMemberships: string; professionalLicenses: string; facebookProfile: string; facebookProfileDateOpened: string; instagramProfile: string; instagramProfileDateOpened: string; xProfile: string; xProfileDateOpened: string; tikTokProfile: string; tikTokProfileDateOpened: string; linkedInProfile: string; linkedInProfileDateOpened: string; otherSocialMediaLinks: string; businessWebsite: string; guarantorReferences: string; coBorrowerReferences: string; additionalPropertyDeclarations: string; additionalVehicleDeclarations: string; selfDeclaredAssetsAndLiabilities: string; selfDeclaredInvestmentPortfolio: string; existingInsurancePolicies: string; priorBankingRelationships: string; consentOpenBankingDataAccess: boolean; consentEmploymentVerification: boolean; consentIdentityVerification: boolean; psychometricQuestionnaireResponses: string; financialBehaviorQuestionnaireResponses: string; riskAppetiteQuestionnaireResponses: string; businessOutlookQuestionnaireResponses: string; futureFinancialPlansQuestionnaire: string; spendingBehaviorQuestionnaire: string; householdBudgetingQuestionnaire: string; emergencyPreparednessQuestionnaire: string; characterAndIntegrityAssessmentAnswers: string; communityInvolvementInformation: string; referencesFromEmployerOrCommunity: string; }
 interface FraudVerification { faceMatchScore: number; livenessDetection: string; incomeDocumentsStatus: string; employmentVerificationStatus: string; bankStatementVerificationStatus: string; payrollVerificationStatus: string; bankAccountOwnershipStatus: string; }
@@ -128,6 +129,7 @@ interface LoanApplication {
   spouseInformation: SpouseInformation;
   bankingRelationships: BankingRelationships;
   signatures: Signatures;
+  underwritingDecision: UnderwritingDecision;
   supportingDocuments: SupportingDocuments;
   enhancedDueDiligence: EnhancedDueDiligence;
   fraudVerification: FraudVerification;
@@ -283,6 +285,7 @@ const createNewApplicationInstance = (): LoanApplication => ({
   spouseInformation: createBlankSpouseInformation(),
   bankingRelationships: { creditCardIssuer: '', creditCardNumber: '', creditPaymentHistory: '', creditCardRelationshipStatus: '', creditLimit: 0, outstandingBalance: 0, memberSince: '', bankBranch: '', accountType: '', accountNumber: '', currentBalance: 0, averageSavingsBalance: 0, averageDailyBalance: 0, depositRegularity: '', bankingRelationshipTier: '', accountHandling: '', utilityCreditBureauStatus: '', loanLender: '', loanType: '', loanCurrentBalance: 0, loanMonthlyAmortization: 0 },
   signatures: { applicantSignature: '', spouseOrCoBorrowerSignature: '', borrowerSignatureAutoLoanInsurance: '', extensionCardholderSignature: '' },
+  underwritingDecision: { branch: '', channel: '', referralSource: '', assignedOfficer: '', priority: 'Normal', stage: 'Application Review', slaStartDate: '', slaDueDate: '', slaCompletedDate: '', policyRulesPassed: '', policyRulesFailed: '', modelVersion: '', rulesetVersion: '', decisionReasonCodes: '', approvalAuthority: '', exceptions: '', overrides: '', approvalConditions: '', committeeVotes: '', declineReasons: '', adverseActionReasons: '' },
   supportingDocuments: { validGovernmentId: false, selfiePhotoOptional: false, passportIfApplicable: false, driversLicense: false, philSysId: false, certificateOfEmployment: false, latestPayslips: false, latestItr: false, dtiSecRegistration: false, businessPermit: false, financialStatements: false, utilityBill: false, waterBill: false, internetBill: false, titleTctCct: false, taxDeclaration: false, lotPlan: false, propertyPhotos: false, vehicleQuotation: false, vehicleInvoice: false, orCrForRefinancing: false, proofOfIncome: false, bankStatements: false, existingCreditCardStatements: false, additionalSupportingDocuments: false, auditedFinancialStatements: false, proofOfRemittanceIncome: false, investmentStatements: false },
   enhancedDueDiligence: { previousLendersAndExistingLoanAccounts: '', numberOfActiveLoans: 0, previousLoanRestructuringDisclosures: '', lifestyleIndicator: '', secondaryIncomeProfile: '', employmentReferencePerson: '', hrContactInformation: '', supervisorInformation: '', additionalBankAccountsOwned: '', sourceOfIncomeVerificationReferences: '', lengthOfResidenceConfirmation: '', utilityAccountReferences: '', digitalBankingUsage: '', characterReferences: '', communityReputation: '', professionalOrganizationMemberships: '', professionalLicenses: '', facebookProfile: '', facebookProfileDateOpened: '', instagramProfile: '', instagramProfileDateOpened: '', xProfile: '', xProfileDateOpened: '', tikTokProfile: '', tikTokProfileDateOpened: '', linkedInProfile: '', linkedInProfileDateOpened: '', otherSocialMediaLinks: '', businessWebsite: '', guarantorReferences: '', coBorrowerReferences: '', additionalPropertyDeclarations: '', additionalVehicleDeclarations: '', selfDeclaredAssetsAndLiabilities: '', selfDeclaredInvestmentPortfolio: '', existingInsurancePolicies: '', priorBankingRelationships: '', consentOpenBankingDataAccess: false, consentEmploymentVerification: false, consentIdentityVerification: false, psychometricQuestionnaireResponses: '', financialBehaviorQuestionnaireResponses: '', riskAppetiteQuestionnaireResponses: '', businessOutlookQuestionnaireResponses: '', futureFinancialPlansQuestionnaire: '', spendingBehaviorQuestionnaire: '', householdBudgetingQuestionnaire: '', emergencyPreparednessQuestionnaire: '', characterAndIntegrityAssessmentAnswers: '', communityInvolvementInformation: '', referencesFromEmployerOrCommunity: '' },
   fraudVerification: { faceMatchScore: 0, livenessDetection: '', incomeDocumentsStatus: '', employmentVerificationStatus: '', bankStatementVerificationStatus: '', payrollVerificationStatus: '', bankAccountOwnershipStatus: '' },
@@ -445,6 +448,7 @@ const buildLoanRequirements = (
         branchManager: application.routing.branchManager,
         creditCommittee: application.routing.creditCommittee,
       },
+      underwritingDecision: application.underwritingDecision,
       disbursement: application.disbursement,
     },
     releaseReadiness: {
@@ -2333,6 +2337,7 @@ export default function LendingScorecard() {
     | 'spouseInformation'
     | 'bankingRelationships'
     | 'signatures'
+    | 'underwritingDecision'
     | 'supportingDocuments'
     | 'enhancedDueDiligence'
     | 'fraudVerification'
@@ -2360,6 +2365,7 @@ export default function LendingScorecard() {
     | SpouseInformation
     | BankingRelationships
     | Signatures
+    | UnderwritingDecision
     | SupportingDocuments
     | EnhancedDueDiligence
     | FraudVerification
@@ -2821,6 +2827,10 @@ export default function LendingScorecard() {
       signatures: {
         ...blankApplication.signatures,
         ...savedRequirements.signatures,
+      },
+      underwritingDecision: {
+        ...blankApplication.underwritingDecision,
+        ...(savedEditorState.underwritingDecision ?? {}),
       },
       supportingDocuments: {
         ...blankApplication.supportingDocuments,
@@ -6044,6 +6054,53 @@ export default function LendingScorecard() {
                     ['signatures', 'extensionCardholderSignature', 'Extension Cardholder Signature'],
                   ].map(([section, field, label]) => renderInput(section as EditableSection, field, label))}
                 </div>
+              </div>
+
+              <div className="border-t pt-4 mt-4 space-y-5">
+                <section>
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Origination Routing &amp; SLA</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderInput('underwritingDecision', 'branch', 'Branch')}
+                    {renderSelect('underwritingDecision', 'channel', 'Origination Channel', ['Branch', 'Web', 'Mobile App', 'Partner', 'Agent', 'Call Center', 'Other'])}
+                    {renderInput('underwritingDecision', 'referralSource', 'Referral Source')}
+                    {renderInput('underwritingDecision', 'assignedOfficer', 'Assigned Officer / Underwriter')}
+                    {renderSelect('underwritingDecision', 'priority', 'Priority', ['Low', 'Normal', 'High', 'Urgent'])}
+                    {renderSelect('underwritingDecision', 'stage', 'Application Stage', ['Application Review', 'Verification', 'Credit Review', 'Committee Review', 'Conditions Pending', 'Approved', 'Declined'])}
+                    {renderInput('underwritingDecision', 'slaStartDate', 'SLA Start Date & Time', 'datetime-local')}
+                    {renderInput('underwritingDecision', 'slaDueDate', 'SLA Due Date & Time', 'datetime-local')}
+                    {renderInput('underwritingDecision', 'slaCompletedDate', 'SLA Completed Date & Time', 'datetime-local')}
+                  </div>
+                </section>
+
+                <section className="border-t border-slate-200 pt-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Policy Evaluation</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderInput('underwritingDecision', 'modelVersion', 'Decision Model Version')}
+                    {renderInput('underwritingDecision', 'rulesetVersion', 'Policy Ruleset Version')}
+                    {renderTextarea('underwritingDecision', 'policyRulesPassed', 'Policy Rules Passed', 4, false, 'Enter one rule code and result per line')}
+                    {renderTextarea('underwritingDecision', 'policyRulesFailed', 'Policy Rules Failed', 4, false, 'Enter one failed rule code and reason per line')}
+                  </div>
+                </section>
+
+                <section className="border-t border-slate-200 pt-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Decision Governance</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('underwritingDecision', 'decisionReasonCodes', 'Decision Reason Codes', 3, false, 'Enter one reason code and description per line')}
+                    {renderSelect('underwritingDecision', 'approvalAuthority', 'Approval Authority', ['Credit Officer', 'Branch Manager', 'Credit Committee', 'Executive Committee', 'Board / Delegated Authority'])}
+                    {renderTextarea('underwritingDecision', 'exceptions', 'Policy Exceptions', 4, false, 'Describe each exception and justification')}
+                    {renderTextarea('underwritingDecision', 'overrides', 'Decision Overrides', 4, false, 'Record the original outcome, override, approver, and basis')}
+                    {renderTextarea('underwritingDecision', 'approvalConditions', 'Approval Conditions', 4, false, 'Enter one condition per line')}
+                    {renderTextarea('underwritingDecision', 'committeeVotes', 'Committee Votes', 4, false, 'Record member, vote, date, and comments')}
+                  </div>
+                </section>
+
+                <section className="border-t border-slate-200 pt-4">
+                  <h4 className="font-semibold text-sm text-gray-700 mb-3">Decline &amp; Adverse Action</h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {renderTextarea('underwritingDecision', 'declineReasons', 'Decline Reasons', 4, false, 'Enter specific decline reasons and supporting facts')}
+                    {renderTextarea('underwritingDecision', 'adverseActionReasons', 'Adverse-Action Reasons', 4, false, 'Enter notice-ready reasons and applicable codes')}
+                  </div>
+                </section>
               </div>
 
             </div>

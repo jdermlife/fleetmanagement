@@ -351,6 +351,29 @@ export interface LoanApplicationRequirements {
       branchManager: string
       creditCommittee: string
     }
+    underwritingDecision?: {
+      branch: string
+      channel: string
+      referralSource: string
+      assignedOfficer: string
+      priority: string
+      stage: string
+      slaStartDate: string
+      slaDueDate: string
+      slaCompletedDate: string
+      policyRulesPassed: string
+      policyRulesFailed: string
+      modelVersion: string
+      rulesetVersion: string
+      decisionReasonCodes: string
+      approvalAuthority: string
+      exceptions: string
+      overrides: string
+      approvalConditions: string
+      committeeVotes: string
+      declineReasons: string
+      adverseActionReasons: string
+    }
     disbursement?: {
       bankAccount: string
       accountNumber: string
