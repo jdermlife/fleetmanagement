@@ -5211,12 +5211,25 @@ button.loan-repository-action-release { background: #4f46e5; }
 }
 
 .life-protect-privacy-panel,
+.life-protect-delivery-panel,
 .life-protect-section {
   border-radius: 8px;
 }
 
 .life-protect-privacy-panel {
   border-left: 4px solid #0f766e;
+}
+
+.life-protect-delivery-panel {
+  border-left: 4px solid #946200;
+}
+
+.life-protect-delivery-panel .psychometric-section-note {
+  margin-top: 5px;
+}
+
+.life-protect-email-consent {
+  margin-top: 14px;
 }
 
 .life-protect-privacy-panel .psychometric-panel-header > svg {
@@ -5423,6 +5436,10 @@ button.loan-repository-action-release { background: #4f46e5; }
   color: #047857;
   font-size: 0.82rem;
   font-weight: 800;
+}
+
+.life-protect-form-actions > span.is-error {
+  color: #b91c1c;
 }
 
 .life-protect-empty-panel {

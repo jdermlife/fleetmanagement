@@ -1,6 +1,7 @@
 import { HeartPulse, Save, ShieldCheck } from 'lucide-react'
 import { FormEvent, useState } from 'react'
 
+import { api, getErrorMessage } from '../../api'
 import FinancialHealthJourneyMenu from '../../components/financial-health/FinancialHealthJourneyMenu'
 
 type LifeProtectTab = 'pre-assessment' | 'insurance-availed' | 'insurance-existing'
@@ -25,20 +26,20 @@ const PRIORITIES = [
 ]
 
 const GOAL_AMOUNTS = [
-  'PHP 500,000 - PHP 1,000,000',
-  'PHP 1,000,000 - PHP 5,000,000',
-  'PHP 5,000,000 - PHP 10,000,000',
-  'PHP 10,000,000 - PHP 100,000,000',
-  'PHP 100,000,000 and above',
+  ' 500,000 -  1,000,000',
+  ' 1,000,000 -  5,000,000',
+  ' 5,000,000 -  10,000,000',
+  ' 10,000,000 -  100,000,000',
+  ' 100,000,000 and above',
 ]
 
 const BUDGET_AMOUNTS = [
-  'PHP 3,000 - PHP 5,000',
-  'PHP 5,000 - PHP 10,000',
-  'PHP 10,000 - PHP 20,000',
-  'PHP 20,000 - PHP 50,000',
-  'PHP 100,000 - PHP 1,000,000',
-  'PHP 1,000,000 and above',
+  ' 3,000 -  5,000',
+  ' 5,000 -  10,000',
+  ' 10,000 -  20,000',
+  ' 20,000 -  50,000',
+  ' 100,000 -  1,000,000',
+  ' 1,000,000 and above',
 ]
 
 const GROWTH_PERIODS = ['5 years and above', '10 years and above', '15 years and above', '20 years and above']
@@ -112,19 +113,39 @@ export default function LifeProtectPage() {
   const [activeTab, setActiveTab] = useState<LifeProtectTab>('pre-assessment')
   const [values, setValues] = useState<FormValues>({})
   const [notice, setNotice] = useState('')
+  const [noticeIsError, setNoticeIsError] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const updateValue = (name: string, value: string) => {
     setValues((current) => ({ ...current, [name]: value }))
     setNotice('')
+    setNoticeIsError(false)
   }
 
   const saveDraft = () => {
     setNotice('Draft retained for this open page only. Sensitive information is not stored in browser storage.')
+    setNoticeIsError(false)
   }
 
-  const submitAssessment = (event: FormEvent<HTMLFormElement>) => {
+  const submitAssessment = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    setNotice('Pre-assessment validated. Secure server submission is not configured yet.')
+    setIsSubmitting(true)
+    setNotice('')
+    setNoticeIsError(false)
+    const { recipientEmail, ...assessment } = values
+
+    try {
+      const response = await api.post<{ message: string }>('/life-protect/pre-assessment/email', {
+        recipient_email: recipientEmail,
+        assessment,
+      })
+      setNotice(response.data.message)
+    } catch (error) {
+      setNotice(getErrorMessage(error, 'Unable to email the pre-assessment. Please try again.'))
+      setNoticeIsError(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
@@ -264,13 +285,37 @@ export default function LifeProtectPage() {
               <Field label="Philippine Government ID Type" name="governmentIdType" values={values} onChange={updateValue} />
               <Field label="Philippine Government ID Number" name="governmentIdNumber" values={values} onChange={updateValue} />
             </div>
-            <label className="life-protect-field life-protect-field-wide"><span>Your Answer <b>*</b></span><textarea name="additionalAnswer" required rows={4} value={values.additionalAnswer ?? ''} onChange={(event) => updateValue('additionalAnswer', event.target.value)} /></label>
+            <label className="life-protect-field life-protect-field-wide"><span>Other Information <b>*</b></span><textarea name="additionalAnswer" required rows={4} value={values.additionalAnswer ?? ''} onChange={(event) => updateValue('additionalAnswer', event.target.value)} /></label>
+          </section>
+
+          <section className="psychometric-panel life-protect-delivery-panel">
+            <div className="psychometric-panel-header">
+              <div>
+                <span className="psychometric-panel-kicker">Secure Submission</span>
+                <h2>Email Completed Pre-assessment</h2>
+                <p className="psychometric-section-note">The complete filled form will be sent as a plain-text email to this address.</p>
+              </div>
+            </div>
+            <div className="life-protect-form-grid">
+              <Field label="Send Completed Form To" name="recipientEmail" type="email" values={values} onChange={updateValue} />
+            </div>
+            <label className="life-protect-consent life-protect-email-consent">
+              <input
+                type="checkbox"
+                required
+                checked={values.emailDeliveryConsent === 'yes'}
+                onChange={(event) => updateValue('emailDeliveryConsent', event.target.checked ? 'yes' : '')}
+              />
+              <span>I consent to sending this personal and sensitive information to the email address entered above. <b>*</b></span>
+            </label>
           </section>
 
           <div className="life-protect-form-actions">
-            <button type="button" className="psychometric-reset-button life-protect-save-button" onClick={saveDraft}><Save aria-hidden="true" /> Save Draft</button>
-            <button type="submit" className="psychometric-reset-button"><ShieldCheck aria-hidden="true" /> Submit Pre-assessment</button>
-            {notice ? <span role="status">{notice}</span> : null}
+            <div style={{ display: "flex", justifyContent: "center", alignItems: "center", gap: "1rem" }}>
+              <button type="button" className="psychometric-reset-button life-protect-save-button" onClick={saveDraft}><Save aria-hidden="true" /> Save Draft</button>
+              <button type="submit" className="psychometric-reset-button" disabled={isSubmitting}><ShieldCheck aria-hidden="true" /> {isSubmitting ? 'Sending...' : 'Submit & Email Pre-assessment'}</button>
+            </div>
+            {notice ? <span className={noticeIsError ? 'is-error' : undefined} role={noticeIsError ? 'alert' : 'status'}>{notice}</span> : null}
           </div>
         </form>
       )}
