@@ -607,7 +607,6 @@ textarea {
   height: 58px;
   flex: 0 0 auto;
   object-fit: contain;
-  filter: drop-shadow(0 8px 16px rgba(15, 37, 71, 0.2));
 }
 
 .app-brand-text {
@@ -5230,6 +5229,27 @@ button.loan-repository-action-release { background: #4f46e5; }
 
 .life-protect-email-consent {
   margin-top: 14px;
+}
+
+.life-protect-email-sender {
+  display: grid;
+  gap: 3px;
+  margin-top: 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(148, 98, 0, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 251, 235, 0.82);
+}
+
+.life-protect-email-sender span,
+.life-protect-email-sender small {
+  color: #64748b;
+  font-size: 0.76rem;
+}
+
+.life-protect-email-sender strong {
+  color: #0f172a;
+  font-size: 0.94rem;
 }
 
 .life-protect-privacy-panel .psychometric-panel-header > svg {

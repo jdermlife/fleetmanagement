@@ -61,11 +61,13 @@ def test_email_pre_assessment_sends_complete_plain_text_body(monkeypatch) -> Non
     }.items():
         monkeypatch.setenv(name, value)
 
-    deliveries: list[tuple[str, str, str]] = []
+    deliveries: list[tuple[str, str, str, str | None]] = []
     monkeypatch.setattr(
         life_protect,
         "send_email",
-        lambda recipient, subject, body: deliveries.append((recipient, subject, body)),
+        lambda recipient, subject, body, sender_name=None: deliveries.append(
+            (recipient, subject, body, sender_name)
+        ),
     )
     payload = life_protect.LifeProtectEmailRequest(
         recipient_email="advisor@example.com",
@@ -75,8 +77,9 @@ def test_email_pre_assessment_sends_complete_plain_text_body(monkeypatch) -> Non
     result = asyncio.run(life_protect.email_pre_assessment(payload))
 
     assert result == {"message": "Pre-assessment emailed to advisor@example.com"}
-    recipient, subject, body = deliveries[0]
+    recipient, subject, body, sender_name = deliveries[0]
     assert recipient == "advisor@example.com"
+    assert sender_name == "FILSCORE FINANCIAL HEALTH"
     assert subject == "FILSCORE Life Protect Pre-assessment - Test Applicant"
     assert "Applicant email: applicant@example.com" in body
     assert "Government ID number: TEST-123" in body

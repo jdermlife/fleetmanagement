@@ -135,7 +135,7 @@ export default function LifeProtectPage() {
     const { recipientEmail, ...assessment } = values
 
     try {
-      const response = await api.post<{ message: string }>('/life-protect/pre-assessment/email', {
+      const response = await api.post<{ message: string }>('/api/life-protect/pre-assessment/email', {
         recipient_email: recipientEmail,
         assessment,
       })
@@ -295,6 +295,11 @@ export default function LifeProtectPage() {
                 <h2>Email Completed Pre-assessment</h2>
                 <p className="psychometric-section-note">The complete filled form will be sent as a plain-text email to this address.</p>
               </div>
+            </div>
+            <div className="life-protect-email-sender" aria-label="Email sender">
+              <span>Email will come from</span>
+              <strong>FILSCORE FINANCIAL HEALTH</strong>
+              <small>Delivered through the configured FILSCORE email account</small>
             </div>
             <div className="life-protect-form-grid">
               <Field label="Send Completed Form To" name="recipientEmail" type="email" values={values} onChange={updateValue} />
