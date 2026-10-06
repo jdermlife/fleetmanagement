@@ -60,6 +60,7 @@ const CreditScoring = lazy(() => import('./pages/scoring/CreditScoring'))
 const BudgetExpenseTrackerPage = lazy(() => import('./pages/scoring/BudgetExpenseTrackerPage'))
 const LoanMonitoringPage = lazy(() => import('./pages/scoring/LoanMonitoringPage'))
 const BillReminderPage = lazy(() => import('./pages/scoring/BillReminderPage'))
+const LifeProtectPage = lazy(() => import('./pages/scoring/LifeProtectPage'))
 const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/PortfolioAnalyticsDashboard'))
 const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
 const CollateralMonitoringPage = lazy(() => import('./pages/scoring/CollateralMonitoringPage'))
@@ -136,6 +137,7 @@ const menuLinks: MenuLink[] = [
   { id: 'budget-expense-tracker', label: 'Budget Tracker' },
   { id: 'loan-monitoring', label: 'Resource Optimizer' },
   { id: 'bill-reminder', label: 'Bill Manager' },
+  { id: 'life-protect', label: 'Life Protect' },
   { id: 'reports-statements', label: 'Reports & Statements' },
   { id: 'financial-decisions', label: 'Financial Decisions' },
   { id: 'dashboard', label: 'Multiple Accounts' },
@@ -610,6 +612,7 @@ const subscriberAlwaysVisibleMenus = [
   'budget-expense-tracker',
   'loan-monitoring',
   'bill-reminder',
+  'life-protect',
   'collateral-monitoring',
   'net-worth-positioning',
 ]
@@ -623,6 +626,7 @@ const borrowerVisibleMenus = [
   'budget-expense-tracker',
   'loan-monitoring',
   'bill-reminder',
+  'life-protect',
   'collateral-monitoring',
   'net-worth-positioning',
 ]
@@ -1556,6 +1560,15 @@ const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(locat
                     />
                   </div>
                 )
+              }
+            />
+
+            <Route
+              path="/life-protect"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <LifeProtectPage />
+                </ProtectedRoute>
               }
             />
 

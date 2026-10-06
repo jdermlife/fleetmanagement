@@ -23,6 +23,7 @@ const JOURNEY_MENU_GROUPS = [
       { label: 'Budget & Expense Tracker', route: '/budget-expense-tracker' },
       { label: 'Resource Optimizer', route: '/loan-monitoring' },
       { label: 'Bill Manager', route: '/bill-reminder' },
+      { label: 'Life Protect', route: '/life-protect' },
     ],
   },
   {
