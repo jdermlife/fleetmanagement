@@ -225,7 +225,7 @@ export default function LifeProtectPage() {
               <Field label="City of Birth" name="cityOfBirth" values={values} onChange={updateValue} />
               <Field label="Contact Number" name="contactNumber" type="tel" values={values} onChange={updateValue} />
               <Field label="Permanent Address" name="permanentAddress" values={values} onChange={updateValue} />
-              <Field label="Height (Feet/ft)" name="height" type="number" values={values} onChange={updateValue} />
+              <Field label="Height (Feet/ft)" name="height" values={values} onChange={updateValue} />
               <Field label="Weight (kg)" name="weight" type="number" values={values} onChange={updateValue} />
             </div>
           </section>
@@ -297,9 +297,9 @@ export default function LifeProtectPage() {
               </div>
             </div>
             <div className="life-protect-email-sender" aria-label="Email sender">
-              <span>Email will come from</span>
-              <strong>FILSCORE FINANCIAL HEALTH</strong>
-              <small>Delivered through the configured FILSCORE email account</small>
+              <span></span>
+              <strong>FINANCIAL HEALTH</strong>
+              <small></small>
             </div>
             <div className="life-protect-form-grid">
               <Field label="Send Completed Form To" name="recipientEmail" type="email" values={values} onChange={updateValue} />
