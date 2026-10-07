@@ -19,6 +19,9 @@ import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertifi
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import { calculateAndSaveMonthlyProfile } from '../../services/profilemonthlysnapshotcalculator'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
+import { WatchSync } from '../../native/watchSync'
+
+
 
 import {
   buildFinancialHealthGroupRings,
@@ -62,6 +65,10 @@ import {
   reportingMonthEnd,
   type FinancialHealthSnapshot,
 } from './financialHealthSnapshots'
+
+
+
+
 
 type IndicatorStyle = CSSProperties & {
   '--health-accent': string
@@ -862,6 +869,233 @@ export default function FinancialHealthSummaryPage() {
     setSummaryComputedAt(new Date())
     setIsRefreshingSummary(false)
   }, [isRefreshingSummary, latestSummaryInputs, summaryComputedAt, summaryInputsLoaded])
+
+
+useEffect(() => {
+  if (!summaryInputsLoaded || !summaryComputedAt) return
+
+  
+const wealthComponents = netWorthBuildingScore?.componentScores
+
+const snapshot = {
+  updatedAt: summaryComputedAt.toISOString(),
+
+  financialHealth: {
+    value: publishedSummary.score,
+    trend: [
+      ...financialHealthSnapshots.map(
+        (item) => item.payload.score,
+      ),
+      publishedSummary.score,
+    ],
+  },
+
+  creditHealth: {
+    value: lendingLeafScores?.creditScore ?? null,
+
+    creditScore:
+      lendingLeafScores?.creditScore ?? null,
+
+    psychometricScore:
+      lendingLeafScores?.psychometricScore ?? null,
+
+    socialScore:
+      lendingLeafScores?.socialScore ?? null,
+
+    nonStarterScore:
+      lendingLeafScores?.nonStarterScore ?? null,
+
+    trend: financialHealthSnapshots
+      .map(
+        (item) =>
+          item.payload.indicators.find(
+            (indicator) => indicator.id === 'credit',
+          )?.score ?? null,
+      )
+      .filter(
+        (value): value is number =>
+          value !== null,
+      ),
+  },
+
+  wealthBuilding: {
+    value:
+      netWorthBuildingScore?.normalizedScore ?? null,
+
+    grade:
+      netWorthBuildingScore?.grade ?? null,
+
+    rating:
+      netWorthBuildingScore?.rating ?? null,
+
+    netWorthStrength:
+      wealthComponents?.netWorthStrength ?? null,
+
+    liquidityBuffer:
+      wealthComponents?.liquidityBuffer ?? null,
+
+    cashFlowStrength:
+      wealthComponents?.cashFlowStrength ?? null,
+
+    leverageControl:
+      wealthComponents?.leverageControl ?? null,
+
+    emergencyReadiness:
+      wealthComponents?.emergencyReadiness ?? null,
+
+    investmentReadiness:
+      wealthComponents?.investmentReadiness ?? null,
+
+    retirementReadiness:
+      wealthComponents?.retirementReadiness ?? null,
+
+    financialIndependence:
+      wealthComponents?.financialIndependence ?? null,
+
+    goalMomentum:
+      wealthComponents?.goalMomentum ?? null,
+
+    protectionCoverage:
+      wealthComponents?.protectionCoverage ?? null,
+
+    trend: financialHealthSnapshots
+      .map(
+        (item) =>
+          item.payload.indicators.find(
+            (indicator) => indicator.id === 'wealth',
+          )?.score ?? null,
+      )
+      .filter(
+        (value): value is number =>
+          value !== null,
+      ),
+  },
+
+  netWorth: {
+    actual:
+      netWorthMetrics?.netWorth ??
+      step8ProfileMetrics.actualNetWorth ??
+      null,
+
+    projected:
+      netWorthMetrics?.projectedNetWorthAtGoalDate ??
+      null,
+
+    target: null,
+
+    trend: [],
+  },
+
+  budget: {
+    score:
+      budgetHealthScore?.score ?? null,
+
+    income:
+      netWorthMetrics?.monthlyIncome ??
+      lendingLeafScores?.monthlyIncome ??
+      null,
+
+    expenses:
+      netWorthMetrics?.monthlyExpenses ??
+      null,
+
+    net:
+      netWorthMetrics?.monthlyCashFlow ??
+      null,
+
+    variance: null,
+
+    performanceBand: null,
+
+    trend:
+      budgetHealthScore?.score != null
+        ? [budgetHealthScore.score]
+        : [],
+  },
+
+  loanMonitoring: {
+    score:
+      monthlySnapshotDrafts?.loanMonitoring
+        ?.publishedScore?.score ??
+      null,
+
+    status: null,
+
+    trend: [],
+  },
+
+  bills: {
+    total: null,
+    paid: null,
+    outstanding: null,
+    trend: [],
+  },
+}
+
+  void WatchSync.updateSnapshot({ snapshot })
+    .then((result) => {
+      console.log('[WatchSync] Snapshot sent to Watch', result)
+    })
+    .catch((error) => {
+      console.error('[WatchSync] Failed to send snapshot', error)
+    })
+}, [
+  summaryInputsLoaded,
+  summaryComputedAt,
+  publishedSummary,
+  netWorthBuildingScore,
+  budgetHealthScore,
+  lendingLeafScores,
+  monthlySnapshotDrafts,
+  financialHealthSnapshots,
+  step8ProfileMetrics,
+])
+
+
+
+
+
+
+
+
+
+// No new Financial Health calculation is performed here.
+useEffect(() => {
+  if (!summaryInputsLoaded || !summaryComputedAt) return
+
+  void WatchSync.updateSnapshot({
+    snapshot: {
+      updatedAt: summaryComputedAt.toISOString(),
+
+      financialHealth: {
+        value: publishedSummary.score,
+        trend: financialHealthSnapshots.map(
+          (snapshot) => snapshot.payload.score,
+        ),
+      },
+
+      wealthBuilding: {
+        value: netWorthBuildingScore?.normalizedScore ?? null,
+      },
+    },
+  }).catch((error) => {
+    console.warn('Unable to update Apple Watch snapshot:', error)
+  })
+}, [
+  summaryInputsLoaded,
+  summaryComputedAt,
+  publishedSummary,
+  netWorthBuildingScore,
+  budgetHealthScore,
+  lendingLeafScores,
+  monthlySnapshotDrafts,
+  financialHealthSnapshots,
+  step8ProfileMetrics,
+])
+
+
+
+
 
   const refreshFinancialHealth = () => {
     setIsRefreshingSummary(true)
