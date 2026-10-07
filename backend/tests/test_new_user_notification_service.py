@@ -75,7 +75,6 @@ def test_does_not_record_sent_time_when_delivery_fails(monkeypatch) -> None:
 
 def test_email_transport_uses_both_envelope_recipients(monkeypatch) -> None:
     sent_to: list[str] = []
-    from_headers: list[str] = []
 
     class FakeSmtp:
         def __init__(self, *_args, **_kwargs) -> None:
@@ -87,9 +86,8 @@ def test_email_transport_uses_both_envelope_recipients(monkeypatch) -> None:
         def login(self, _username, _password) -> None:
             return None
 
-        def send_message(self, message, *, to_addrs) -> None:
+        def send_message(self, _message, *, to_addrs) -> None:
             sent_to.extend(to_addrs)
-            from_headers.append(message["From"])
 
         def quit(self) -> None:
             return None
@@ -107,12 +105,3 @@ def test_email_transport_uses_both_envelope_recipients(monkeypatch) -> None:
     )
 
     assert sent_to == ["jdioneda@gmail.com", "jdioneda@quantech.international"]
-
-    send_email(
-        "recipient@example.com",
-        "Life Protect",
-        "Assessment body",
-        sender_name="FILSCORE FINANCIAL HEALTH",
-    )
-
-    assert from_headers[-1] == "FILSCORE FINANCIAL HEALTH <sender@example.com>"

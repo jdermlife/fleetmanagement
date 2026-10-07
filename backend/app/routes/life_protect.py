@@ -211,17 +211,11 @@ async def email_pre_assessment(payload: LifeProtectEmailRequest) -> dict[str, st
         )
 
     subject_name = " ".join(payload.assessment.fullName.splitlines()).strip()
-    subject = f"FILSCORE Life Protect Pre-assessment - {subject_name}"
+    subject = f"FILSCORE FINANCIAL HEALTH - Life Protect Pre-assessment - {subject_name}"
     body = format_life_protect_email(payload.assessment)
 
     try:
-        await run_in_threadpool(
-            send_email,
-            payload.recipient_email,
-            subject,
-            body,
-            sender_name="FILSCORE FINANCIAL HEALTH",
-        )
+        await run_in_threadpool(send_email, payload.recipient_email, subject, body)
     except Exception as exc:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,

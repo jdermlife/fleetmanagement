@@ -1,7 +1,6 @@
 import os
 import smtplib
 from collections.abc import Sequence
-from email.utils import formataddr
 
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -11,7 +10,6 @@ def send_email(
     recipient: str | Sequence[str],
     subject: str,
     body: str,
-    sender_name: str | None = None,
 ) -> None:
 
     server = os.getenv("SMTP_SERVER")
@@ -22,9 +20,7 @@ def send_email(
 
     msg = MIMEMultipart()
 
-    if sender_name and ("\r" in sender_name or "\n" in sender_name):
-        raise ValueError("Email sender name contains invalid characters")
-    msg["From"] = formataddr((sender_name.strip(), username)) if sender_name else username
+    msg["From"] = username
     recipients = [recipient] if isinstance(recipient, str) else list(recipient)
     msg["To"] = ", ".join(recipients)
     msg["Subject"] = subject
