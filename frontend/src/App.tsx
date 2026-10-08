@@ -10,7 +10,7 @@ import {
   isBorrowerSubscriberRole,
   isLenderSubscriberRole,
 } from './authRoles'
-import { APP_NAME, APP_TAGLINE, brandLogoDataUri } from './brand'
+import { brandLogoDataUri } from './brand'
 import AuthProgressOverlay from './components/auth/AuthProgressOverlay'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
@@ -778,11 +778,11 @@ const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(locat
           {/* BRAND */}
           <div className="app-brand-block">
             <div className="app-brand-lockup">
-              <img className="app-brand-mark" src={brandLogoDataUri} alt={`${APP_NAME} logo`} />
+              <img className="app-brand-mark" src={brandLogoDataUri} alt="Financial Health logo" />
               <div className="app-brand-text">
-                <h2 className="app-brand-title">{APP_NAME}</h2>
+                <h2 className="app-brand-title">FINANCIAL HEALTH</h2>
                 <div className="app-brand-subtitle-row">
-                  <p className="app-brand-subtitle">{APP_TAGLINE}</p>
+                  <p className="app-brand-subtitle">FILSCORE TRACKER</p>
                   {shouldShowBackButton ? (
                     <div className="app-mini-nav" aria-label="Page navigation controls">
                       <button

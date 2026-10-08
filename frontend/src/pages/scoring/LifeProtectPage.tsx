@@ -200,7 +200,7 @@ export default function LifeProtectPage() {
               </div>
               <ShieldCheck aria-hidden="true" />
             </div>
-            <p>By signing this application form, you allow the collection, use, and processing of your personal information and sensitive personal information for the purposes of this assessment, in accordance with applicable data privacy regulations, including Republic Act No. 10173, the Data Privacy Act of 2012.</p>
+            <p>By signing this application form, you allow the collection, use, and processing of your personal information and sensitive personal information, to the requestor of this assessment for the purposes of this assessment, in accordance with applicable data privacy regulations, including Republic Act No. 10173, the Data Privacy Act of 2012.</p>
             <label className="life-protect-consent">
               <input
                 type="checkbox"
@@ -235,7 +235,7 @@ export default function LifeProtectPage() {
               <div><span className="psychometric-section-code">Section B</span><h3>Health &amp; Protection Priorities</h3><p>Health history, financial goals, and the risks that matter most.</p></div>
             </header>
             <ChoiceGroup legend="Have you been hospitalized or admitted to a clinic within the past 5 years?" name="hospitalized" options={['Yes', 'No']} values={values} onChange={updateValue} />
-            <label className="life-protect-field life-protect-field-wide"><span>Health Condition <b>*</b></span><textarea name="healthCondition" required rows={3} value={values.healthCondition ?? ''} onChange={(event) => updateValue('healthCondition', event.target.value)} /></label>
+            <label className="life-protect-field life-protect-field-wide"><span>Health Condition <b>*</b></span><textarea name="healthCondition" required rows={3} placeholder="Good/Fair/Poor" value={values.healthCondition ?? ''} onChange={(event) => updateValue('healthCondition', event.target.value)} /></label>
             <ChoiceGroup legend="Given the chance to invest for your future, what would you prioritize?" name="futurePriority" options={PRIORITIES} values={values} onChange={updateValue} columns />
             <ChoiceGroup legend="How much do you need to reach your financial goal?" name="goalAmount" options={GOAL_AMOUNTS} values={values} onChange={updateValue} columns />
             <ChoiceGroup legend="How much budget can you allocate to reach your goal?" name="allocatedBudget" options={BUDGET_AMOUNTS} values={values} onChange={updateValue} columns />
