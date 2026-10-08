@@ -203,6 +203,7 @@ export default function FinancialJourneyGuide({
             <li>Life and Wealth Protection and Assessment - Build Profile Form 1-12</li>
           </ul>
         </section>
+        <h3>Use All the Tools</h3>
         <p>
           Complete these steps to unlock the full power of your profile and receive more accurate financial recommendations.
           Hover over each circle to learn more, or select its button to launch that step.
