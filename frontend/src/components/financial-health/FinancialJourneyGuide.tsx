@@ -194,6 +194,15 @@ export default function FinancialJourneyGuide({
 
         <p className="financial-health-journey-kicker">GREETINGS! We wish you well today.</p>
         <h2 id="financial-health-journey-title">Welcome to Your Financial Health Journey!</h2>
+        <section className="financial-health-journey-quick-tips" aria-labelledby="financial-health-journey-quick-tips-title">
+          <h3 id="financial-health-journey-quick-tips-title">Quick Tips</h3>
+          <ul>
+            <li>Statement of Assets and Liabilities (Net Worth) - Fill Out Build Profile Form 8 and 9</li>
+            <li>Credit Health Certificate - Build Profile Form 1-7</li>
+            <li>Wealth Building Capacity Score - Build Profile Form 1-11</li>
+            <li>Life and Wealth Protection and Assessment - Build Profile Form 1-12</li>
+          </ul>
+        </section>
         <p>
           Complete these steps to unlock the full power of your profile and receive more accurate financial recommendations.
           Hover over each circle to learn more, or select its button to launch that step.

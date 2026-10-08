@@ -14036,6 +14036,21 @@ th { color: var(--dark-gold); }
   margin: 0;
 }
 
+.financial-health-journey-quick-tips {
+  color: #166534;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.financial-health-journey-quick-tips h3 {
+  font-size: 0.84rem;
+}
+
+.financial-health-journey-quick-tips ul {
+  margin: 4px 0 0;
+  padding-left: 20px;
+}
+
 .financial-health-journey-step-list {
   display: grid;
   gap: 10px;
