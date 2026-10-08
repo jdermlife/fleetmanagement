@@ -4,7 +4,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { getErrorMessage, login, loginWithApple, loginWithGoogle } from '../../api'
 import { requestAppleSignInToken } from '../../appleAuth'
-import { APP_NAME, APP_TAGLINE } from '../../brand'
+import { APP_NAME } from '../../brand'
 import loginLogo from '../../assets/filscore-logo-clean.png'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import { APP_CONFIG } from '../../config'
@@ -359,8 +359,8 @@ export default function LoginPage() {
         <div className="login-art-brand">
           <img className="login-art-logo" src={loginLogo} alt={APP_NAME} />
           <div className="login-art-brand-copy">
-            <p className="login-art-brand-name">{APP_NAME}</p>
-            <p className="login-art-brand-tagline">{APP_TAGLINE}</p>
+            <p className="login-art-brand-name">FINANCIAL HEALTH</p>
+            <p className="login-art-brand-tagline">FILSCORE TRACKER</p>
           </div>
         </div>
 
