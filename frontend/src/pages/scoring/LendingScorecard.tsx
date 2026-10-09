@@ -4537,9 +4537,6 @@ export default function LendingScorecard() {
   const completionPercent = informationProvidedPercent;
   const reportHasRating = hasSufficientInformationForRating && displayedQuantSummary !== null;
   const reportScore = (value: number | null | undefined) => {
-    if (!hasPaidScoreAccess) {
-      return '';
-    }
     if (!reportHasRating) {
       return 'Pending';
     }
@@ -4547,9 +4544,6 @@ export default function LendingScorecard() {
     return toFilscore(value)?.toString() ?? 'Pending';
   };
   const reportBand = (value: number | null | undefined) => {
-    if (!hasPaidScoreAccess) {
-      return '';
-    }
     if (!reportHasRating) {
       return 'Rating Not Produced';
     }
@@ -4623,6 +4617,7 @@ export default function LendingScorecard() {
                           <button
                   type="button"
                   onClick={handleOpenCertification}
+                          disabled={!hasPaidScoreAccess}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50 px-2 py-1 text-xs"
                 >
                   FILSCORE Credit Health Report
@@ -4730,7 +4725,10 @@ export default function LendingScorecard() {
 
           {step === 8 && (
             <>
-            <section className="loan-certification-shell lending-inline-certification" aria-label="FILSCORE credit health report">
+            <section
+              className={`loan-certification-shell lending-inline-certification${hasPaidScoreAccess ? '' : ' is-unpaid-preview'}`}
+              aria-label="FILSCORE credit health report"
+            >
               <div className="loan-certification-frame">
                 <div className="loan-certification-ornaments" aria-hidden="true">
                   <span className="loan-certification-ornament loan-certification-ornament-top-left" />
@@ -4768,8 +4766,9 @@ export default function LendingScorecard() {
                   ) : null}
 
                   {!hasPaidScoreAccess ? (
-                    <div className="loan-certification-rating-unavailable" role="alert">
-                      <strong>{PAID_SCORE_CERTIFICATION_MESSAGE}</strong>
+                    <div className="loan-certification-rating-unavailable" role="status">
+                      <strong>Unpaid account preview</strong>
+                      <span>Subscribe to request, download, or print the certified report.</span>
                     </div>
                   ) : null}
 
@@ -4779,7 +4778,7 @@ export default function LendingScorecard() {
                       <span className="loan-certification-card-copy">
                         <span className="loan-certification-summary-label">Composite Score</span>
                         <span className="loan-certification-metric-band">
-                          {hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : ''}
+                          {reportHasRating ? `${displayedQuantSummary.final_grade} - ${displayedQuantSummary.final_rating}` : 'Rating Not Produced'}
                         </span>
                       </span>
                       <strong className="loan-certification-summary-value">{reportScore(compositeInternalScore)}</strong>
@@ -4790,14 +4789,14 @@ export default function LendingScorecard() {
                         <span className="loan-certification-summary-label">Decision</span>
                         <span className="loan-certification-metric-band">Overall assessment result</span>
                       </span>
-                      <strong className="loan-certification-summary-value">{hasPaidScoreAccess && reportHasRating ? displayedQuantSummary.decision : ''}</strong>
+                      <strong className="loan-certification-summary-value">{reportHasRating ? displayedQuantSummary.decision : 'Pending'}</strong>
                     </div>
                   </div>
 
                   <div className="loan-certification-metrics-grid">
                     {[
                       { label: `Credit Score (${formData.loan.productType})`, value: reportScore(displayedQuantSummary?.credit_score), band: reportBand(displayedQuantSummary?.credit_score), Icon: ClipboardList },
-                      { label: 'Credit Bureau Score', value: hasPaidScoreAccess && reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : '', band: hasPaidScoreAccess ? 'Based on bureau model information' : '', Icon: Landmark },
+                      { label: 'Credit Bureau Score', value: reportHasRating ? `${displayedQuantSummary.credit_bureau_score} / 100` : 'Pending', band: 'Based on bureau model information', Icon: Landmark },
                       { label: 'Non-Starter Score', value: reportScore(displayedQuantSummary?.fraud_score), band: reportBand(displayedQuantSummary?.fraud_score), Icon: UserRound },
                       { label: 'Social Score', value: reportScore(displayedQuantSummary?.social_score), band: reportBand(displayedQuantSummary?.social_score), Icon: UsersRound },
                       { label: 'Credit Value Score', value: reportScore(displayedQuantSummary?.psychometric_score), band: reportBand(displayedQuantSummary?.psychometric_score), Icon: Gem },
@@ -5767,6 +5766,7 @@ export default function LendingScorecard() {
                 <button
                   type="button"
                   onClick={() => void handleOpenCertification()}
+                  disabled={!hasPaidScoreAccess}
                   className="loan-inline-button loan-inline-button-primary disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   Request Certification

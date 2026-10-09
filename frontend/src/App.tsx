@@ -352,13 +352,13 @@ function LendingScorecardAccessGate({
     )
   }
 
-  if (accessState !== 'granted') {
+  if (accessState === 'verification-failed') {
     return (
       <div className="financial-health-registration-gate">
         <div className="financial-health-registration-preview" aria-hidden="true">
           <CreditHealthScorecardPreview />
         </div>
-        <SubscriptionAccessNotice verificationFailed={accessState === 'verification-failed'} />
+        <SubscriptionAccessNotice verificationFailed />
       </div>
     )
   }

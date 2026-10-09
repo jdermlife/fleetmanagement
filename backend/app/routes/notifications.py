@@ -1,7 +1,7 @@
 from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, Query
 
 from app.database import SessionLocal
-from app.fastapi_auth import CurrentUser, get_current_user, require_roles
+from app.fastapi_auth import CurrentUser, get_current_user, require_authenticated_user, require_roles
 from app.models.notification import (
     Notification,
     NotificationDeadLetter,
@@ -115,11 +115,8 @@ def update_template(template_id: int, payload: NotificationTemplateUpdate):
 def upsert_preference(
     event_type: str,
     payload: NotificationPreferenceUpdate,
-    user: CurrentUser | None = Depends(get_current_user),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
     db = SessionLocal()
     try:
         pref = db.query(NotificationPreference).filter(
@@ -147,10 +144,7 @@ def upsert_preference(
 
 
 @router.get("/preferences", response_model=list[NotificationPreferenceResponse])
-def list_preferences(user: CurrentUser | None = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
+def list_preferences(user: CurrentUser = Depends(require_authenticated_user)):
     db = SessionLocal()
     try:
         rows = db.query(NotificationPreference).filter(
@@ -222,11 +216,8 @@ def dispatch_notifications(
 def my_notifications(
     limit: int = Query(50, ge=1, le=500),
     offset: int = Query(0, ge=0),
-    user: CurrentUser | None = Depends(get_current_user),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
     db = SessionLocal()
     try:
         rows = get_user_notifications(db, user.id, limit=limit, offset=offset)
@@ -236,10 +227,7 @@ def my_notifications(
 
 
 @router.post("/me/{notification_id}/read", response_model=NotificationReadResponse)
-def mark_one_read(notification_id: int, user: CurrentUser | None = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
+def mark_one_read(notification_id: int, user: CurrentUser = Depends(require_authenticated_user)):
     db = SessionLocal()
     try:
         row = mark_notification_read(db, notification_id, user.id)
@@ -252,10 +240,7 @@ def mark_one_read(notification_id: int, user: CurrentUser | None = Depends(get_c
 
 
 @router.post("/me/read-all")
-def mark_all_read(user: CurrentUser | None = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
+def mark_all_read(user: CurrentUser = Depends(require_authenticated_user)):
     db = SessionLocal()
     try:
         updated = mark_all_notifications_read(db, user.id)
@@ -265,10 +250,7 @@ def mark_all_read(user: CurrentUser | None = Depends(get_current_user)):
 
 
 @router.get("/me/unread-count", response_model=NotificationUnreadCountResponse)
-def my_unread_count(user: CurrentUser | None = Depends(get_current_user)):
-    if not user:
-        raise HTTPException(status_code=401, detail="Authentication required")
-
+def my_unread_count(user: CurrentUser = Depends(require_authenticated_user)):
     db = SessionLocal()
     try:
         count = unread_count(db, user.id)
