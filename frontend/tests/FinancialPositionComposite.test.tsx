@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 import FinancialPositionComposite from '../src/pages/scoring/FinancialPositionComposite'
 
 describe('FinancialPositionComposite', () => {
-  it('combines the three position scores into a static summary circle', () => {
+  it('combines the three position scores into a horizontal summary bar', () => {
     render(
       <FinancialPositionComposite
         cashFlowScore={88}

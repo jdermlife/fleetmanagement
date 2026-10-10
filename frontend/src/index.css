@@ -18339,105 +18339,190 @@ th { color: var(--dark-gold); }
 .financial-position-composite {
   container: financial-position / inline-size;
   display: grid;
-  justify-items: center;
-  gap: 8px;
-  width: min(100%, 360px);
+  gap: 10px;
+  width: min(100%, 920px);
   margin: 24px auto 4px;
 }
 
-.financial-position-composite-visual {
-  position: relative;
-  width: min(100%, 340px);
-  aspect-ratio: 1;
-}
-
-.financial-position-composite-visual > svg {
-  display: block;
-  width: 100%;
-  height: 100%;
-  filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.2));
-}
-
-.financial-position-composite-segment,
-.financial-position-composite-center {
-  position: absolute;
-  z-index: 2;
+.financial-position-composite figcaption {
   display: grid;
-  justify-items: center;
-  color: #ffffff;
-  text-align: center;
-}
-
-.financial-position-composite-segment {
-  min-width: 0;
-  width: 35%;
-  gap: 4px;
-  outline: none;
-}
-
-.financial-position-composite-segment:focus-visible {
-  border-radius: 6px;
-  box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #0f172a;
-}
-
-.financial-position-composite-segment-body {
-  display: grid;
-  grid-template-columns: repeat(2, auto);
-  place-content: center;
-  place-items: center;
-  gap: 3px 8px;
-  min-width: 0;
-  width: 100%;
-}
-
-.financial-position-composite-segment svg {
-  width: clamp(14px, 6cqi, 21px);
-  height: clamp(14px, 6cqi, 21px);
-  stroke-width: 2.2;
-}
-
-.financial-position-composite-segment b,
-.financial-position-composite-segment small {
-  display: block;
-}
-
-.financial-position-composite-score {
-  display: grid;
-  place-content: center;
-  width: clamp(32px, 13cqi, 45px);
-  aspect-ratio: 1;
-  border: 2px solid currentColor;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.94);
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
   color: #12213a;
+  text-transform: none;
 }
 
-.financial-position-composite-score strong {
-  font-size: clamp(0.82rem, 5.3cqi, 1.15rem);
-  line-height: 0.9;
+.financial-position-composite-mark {
+  display: grid;
+  place-content: center;
+  width: 38px;
+  aspect-ratio: 1;
+  border: 2px solid #e4a91d;
+  border-radius: 50%;
+  background: #09243f;
+  color: #f6c84b;
+  font-size: 1rem;
+  font-weight: 900;
 }
 
-.financial-position-composite-score span {
-  font-size: clamp(0.42rem, 2.5cqi, 0.55rem);
+.financial-position-composite-title,
+.financial-position-composite-title strong,
+.financial-position-composite-title small,
+.financial-position-composite-total,
+.financial-position-composite-total strong,
+.financial-position-composite-total small {
+  display: block;
+}
+
+.financial-position-composite-title {
+  min-width: 0;
+}
+
+.financial-position-composite-title strong {
+  font-size: 0.92rem;
+  line-height: 1.15;
+}
+
+.financial-position-composite-title small {
+  margin-top: 2px;
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 650;
+}
+
+.financial-position-composite-total {
+  color: #12213a;
+  line-height: 1;
+  text-align: right;
+}
+
+.financial-position-composite-total strong {
+  font-size: 1.5rem;
+}
+
+.financial-position-composite-total small {
+  color: #64748b;
+  font-size: 0.62rem;
   font-weight: 800;
 }
 
-.financial-position-composite-segment b {
-  max-width: 100%;
-  font-size: clamp(0.42rem, 2.7cqi, 0.64rem);
-  line-height: 1.08;
+.financial-position-composite-visual {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  overflow: hidden;
+  min-width: 0;
+  border: 2px solid #d99a12;
+  border-radius: 8px;
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.16);
+}
+
+.financial-position-composite-segment {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-rows: auto auto 8px;
+  gap: 6px 10px;
+  min-width: 0;
+  min-height: 126px;
+  padding: 14px 16px 12px;
+  color: #ffffff;
+  outline: none;
+}
+
+.financial-position-composite-segment + .financial-position-composite-segment {
+  border-left: 2px solid rgba(255, 255, 255, 0.7);
+}
+
+.financial-position-composite-segment-cash-flow {
+  background: linear-gradient(135deg, #0877e8, #063b9f);
+}
+
+.financial-position-composite-segment-credit-health {
+  background: linear-gradient(135deg, #ef2632, #a50c18);
+}
+
+.financial-position-composite-segment-net-worth-growth {
+  background: linear-gradient(135deg, #ffc928, #e58a00);
+  color: #12213a;
+}
+
+.financial-position-composite-segment:focus-visible {
+  z-index: 1;
+  box-shadow: inset 0 0 0 3px #ffffff;
+}
+
+.financial-position-composite-segment-heading {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+.financial-position-composite-segment-heading svg {
+  flex: 0 0 auto;
+  width: 21px;
+  height: 21px;
+  stroke-width: 2.2;
+}
+
+.financial-position-composite-segment-heading b {
+  min-width: 0;
+  font-size: clamp(0.65rem, 1.5cqi, 0.82rem);
+  line-height: 1.1;
   overflow-wrap: anywhere;
   text-transform: uppercase;
 }
 
-.financial-position-composite-segment small {
-  grid-column: 1 / -1;
-  max-width: 105px;
-  font-size: clamp(0.38rem, 2.1cqi, 0.49rem);
-  line-height: 1.15;
+.financial-position-composite-score {
+  align-self: center;
+  line-height: 1;
+  text-align: right;
+}
+
+.financial-position-composite-score strong {
+  font-size: clamp(1.45rem, 3.5cqi, 2rem);
+}
+
+.financial-position-composite-score span {
+  font-size: 0.58rem;
+  font-weight: 850;
+}
+
+.financial-position-composite-segment > small {
+  align-self: start;
+  max-width: 190px;
+  font-size: 0.68rem;
+  line-height: 1.25;
   font-weight: 700;
-  overflow-wrap: anywhere;
-  opacity: 0.95;
+  opacity: 0.9;
+}
+
+.financial-position-composite-track {
+  grid-column: 1 / -1;
+  align-self: end;
+  overflow: hidden;
+  width: 100%;
+  height: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.65);
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.3);
+}
+
+.financial-position-composite-track > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: #ffffff;
+}
+
+.financial-position-composite-segment-net-worth-growth .financial-position-composite-track {
+  border-color: rgba(18, 33, 58, 0.5);
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.financial-position-composite-segment-net-worth-growth .financial-position-composite-track > span {
+  background: #12213a;
 }
 
 .financial-position-composite-status {
@@ -18449,78 +18534,61 @@ th { color: var(--dark-gold); }
   white-space: nowrap;
 }
 
-.financial-position-composite-segment-cash-flow {
-  top: 13%;
-  left: 4%;
-}
-
-.financial-position-composite-segment-credit-health {
-  top: 13%;
-  right: 4%;
-}
-
-.financial-position-composite-segment-net-worth-growth {
-  bottom: 8%;
-  left: 18%;
-  width: 64%;
-  color: #12213a;
-}
-
-.financial-position-composite-segment-net-worth-growth .financial-position-composite-segment-body {
-  grid-template-columns: auto auto minmax(0, 1fr);
-  gap: 8px;
-}
-
-.financial-position-composite-segment-net-worth-growth small {
-  grid-column: auto;
-  max-width: 90px;
-  text-align: left;
-}
-
-.financial-position-composite-center {
-  top: 41.25%;
-  left: 41.25%;
-  place-content: center;
-  width: 17.5%;
-  height: 17.5%;
-  min-width: 0;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.financial-position-composite-center strong {
-  color: #f6c84b;
-  font-size: clamp(1rem, 6.8cqi, 1.45rem);
-  line-height: 0.9;
-  text-shadow: 0 2px 0 #704100;
-}
-
-.financial-position-composite-center span {
-  margin-top: 2px;
-  color: #ffffff;
-  font-size: clamp(0.44rem, 2.7cqi, 0.58rem);
-  font-weight: 900;
-}
-
-.financial-position-composite figcaption {
-  max-width: 100%;
-  color: #334155;
-  font-size: clamp(0.68rem, 3.7cqi, 0.82rem);
-  font-weight: 800;
-  overflow-wrap: anywhere;
-  text-align: center;
-  text-transform: uppercase;
-}
-
-@container financial-position (max-width: 300px) {
-  .financial-position-composite-segment small {
+@container financial-position (max-width: 560px) {
+  .financial-position-composite-title small,
+  .financial-position-composite-segment > small {
     display: none;
   }
 
-  .financial-position-composite-segment-body,
-  .financial-position-composite-segment-net-worth-growth .financial-position-composite-segment-body {
-    grid-template-columns: repeat(2, auto);
-    gap: 3px 5px;
+  .financial-position-composite-segment {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: auto auto 7px;
+    justify-items: center;
+    min-height: 108px;
+    padding: 12px 8px 10px;
+    text-align: center;
+  }
+
+  .financial-position-composite-segment-heading {
+    display: grid;
+    justify-items: center;
+    gap: 4px;
+  }
+
+  .financial-position-composite-segment-heading svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  .financial-position-composite-score {
+    text-align: center;
+  }
+}
+
+@container financial-position (max-width: 360px) {
+  .financial-position-composite-mark {
+    width: 32px;
+    font-size: 0.82rem;
+  }
+
+  .financial-position-composite-title strong {
+    font-size: 0.76rem;
+  }
+
+  .financial-position-composite-total strong {
+    font-size: 1.2rem;
+  }
+
+  .financial-position-composite-segment-heading svg {
+    display: none;
+  }
+
+  .financial-position-composite-segment-heading b {
+    font-size: clamp(0.48rem, 2.6cqi, 0.6rem);
+  }
+
+  .financial-position-composite-score strong {
+    font-size: clamp(1.05rem, 6cqi, 1.35rem);
   }
 }
 
@@ -20031,24 +20099,6 @@ th { color: var(--dark-gold); }
   .financial-position-composite {
     width: min(100%, 360px);
     margin-top: 18px;
-  }
-
-  .financial-position-composite-segment {
-    width: 35%;
-  }
-
-  .financial-position-composite-segment-cash-flow {
-    left: 4%;
-  }
-
-  .financial-position-composite-segment-credit-health {
-    right: 4%;
-  }
-
-  .financial-position-composite-segment-net-worth-growth {
-    bottom: 8%;
-    left: 18%;
-    width: 64%;
   }
 
   .financial-health-page .psychometric-panel,
