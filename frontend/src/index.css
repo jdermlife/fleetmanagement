@@ -2041,7 +2041,9 @@ textarea {
 
 .wealth-balance-radar {
   width: clamp(430px, 40vw, 560px);
+  max-width: 100%;
   min-width: 0;
+  box-sizing: border-box;
   margin: 0;
   padding: 18px;
   display: grid;
@@ -2185,12 +2187,39 @@ textarea {
     align-items: stretch;
   }
 
+  .networth-dashboard-hero > .wealth-balance-radar {
+    flex: 0 0 auto;
+    height: auto;
+  }
+
   .networth-dashboard-hero .wealth-balance-radar {
     grid-template-columns: minmax(0, 1fr);
+    gap: 12px;
+    padding: 12px;
+    overflow: hidden;
   }
 
   .networth-dashboard-hero .wealth-balance-radar-visual {
-    width: min(100%, 220px);
+    width: min(100%, 200px);
+    max-width: 200px;
+    overflow: hidden;
+  }
+
+  .wealth-balance-radar-indicators,
+  .wealth-balance-radar-indicator-list,
+  .wealth-balance-radar-indicator {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .wealth-balance-radar-indicators h2 {
+    margin-bottom: 10px;
+  }
+
+  .wealth-balance-radar-indicator span,
+  .wealth-balance-radar-indicator strong {
+    min-width: 0;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -2261,6 +2290,8 @@ textarea {
   grid-template-columns: minmax(0, 1fr);
   gap: 14px;
   align-items: start;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .networth-report-main,
@@ -2268,6 +2299,7 @@ textarea {
   display: grid;
   gap: 14px;
   min-width: 0;
+  max-width: 100%;
 }
 
 .networth-report-side .psychometric-panel {
@@ -2451,6 +2483,17 @@ textarea {
 }
 
 @media (max-width: 640px) {
+  .networth-dashboard-page,
+  .networth-dashboard-page > *,
+  .networth-report-main > *,
+  .networth-report-side > *,
+  .networth-report-page .lending-inline-certification,
+  .networth-report-page .loan-certification-frame,
+  .networth-report-page .loan-certification-inner {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .networth-report-summary,
   .networth-report-side,
   .networth-certification-metrics {
@@ -2484,6 +2527,26 @@ textarea {
   .networth-report-page .lending-inline-certification .networth-certification-metrics .loan-certification-metric-card,
   .networth-report-page .lending-inline-certification .networth-certification-metrics .loan-certification-metric-card:last-child {
     grid-template-columns: minmax(0, 1fr) minmax(82px, 104px);
+  }
+
+  .networth-report-summary .psychometric-summary-card strong,
+  .networth-report-page .loan-certification-name,
+  .networth-report-page .loan-certification-reference,
+  .networth-report-page .loan-certification-summary-value,
+  .networth-report-page .loan-certification-metric-label,
+  .networth-report-page .loan-certification-metric-band {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+    word-break: normal;
+  }
+
+  .networth-mobile-charts,
+  .networth-mobile-charts > *,
+  .networth-mobile-charts .budget-workflow-graph-row,
+  .networth-mobile-charts .budget-workflow-graph-track {
+    min-width: 0;
+    max-width: 100%;
   }
 
   .networth-report-actions > button {
@@ -20229,6 +20292,15 @@ th { color: var(--dark-gold); }
 }
 
 @media (max-width: 420px) {
+  .financial-health-page,
+  .financial-health-page > *,
+  .financial-health-page .psychometric-panel,
+  .financial-health-page .financial-health-chart,
+  .financial-health-page .financial-health-chart-row {
+    min-width: 0;
+    max-width: 100%;
+  }
+
   .financial-health-hero,
   .financial-health-page .psychometric-panel {
     padding: 14px;
@@ -20329,6 +20401,39 @@ th { color: var(--dark-gold); }
     flex-basis: auto;
   }
 
+  .financial-health-ring-figure {
+    overflow: hidden;
+    padding: 10px;
+    border-radius: 14px;
+  }
+
+  .financial-health-position-ring-card {
+    display: grid;
+    grid-template-columns: minmax(68px, 82px) minmax(0, 1fr);
+    align-items: center;
+    gap: 12px;
+  }
+
+  .financial-health-position-ring {
+    width: min(100%, 82px);
+    flex-basis: auto;
+  }
+
+  .financial-health-position-ring-copy h3,
+  .financial-health-position-ring-copy p,
+  .financial-health-position-ring-copy > strong,
+  .financial-health-vital-copy h3,
+  .financial-health-vital-copy span {
+    min-width: 0;
+    max-width: 100%;
+    overflow-wrap: anywhere;
+  }
+
+  .financial-health-position-popover,
+  .financial-health-vital-popover {
+    grid-column: 1 / -1;
+  }
+
   .financial-health-chart-row {
     grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-areas:
@@ -20340,6 +20445,9 @@ th { color: var(--dark-gold); }
   .financial-health-chart-value,
   .financial-health-chart-weight,
   .financial-health-chart-points {
+    min-width: 0;
+    font-size: 0.7rem;
+    overflow-wrap: anywhere;
     text-align: left;
   }
 
