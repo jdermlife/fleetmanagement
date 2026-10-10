@@ -37,6 +37,7 @@ import {
   financialHealthMetricSources,
 } from './financialHealthComputationSources'
 import { FINANCIAL_HEALTH_TOOL_RECOMMENDATIONS } from './financialHealthToolRecommendations'
+import FinancialPositionComposite from './FinancialPositionComposite'
 import { toFilscore } from './filscoreScale'
 import {
   computeNetWorthBuildingScore,
@@ -1835,6 +1836,11 @@ useEffect(() => {
           </div>
           <span className="financial-health-target-chip">Target 80+</span>
         </div>
+        <FinancialPositionComposite
+          cashFlowScore={positionRings[0].score}
+          creditHealthScore={positionRings[1].score}
+          netWorthGrowthScore={positionRings[2].score}
+        />
         <div className="financial-health-position-rings">
           {positionRings.map((ring) => (
             <article

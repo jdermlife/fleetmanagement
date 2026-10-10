@@ -1,4 +1,5 @@
-import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import { cleanup, fireEvent, render as renderWithTestingLibrary, screen, waitFor, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -36,6 +37,10 @@ vi.mock('../src/hooks/useSelectedAnalysisEntity', () => ({
 }))
 
 import FinancialHealthSummaryPage from '../src/pages/scoring/FinancialHealthSummaryPage'
+
+function render(children: ReactNode) {
+  return renderWithTestingLibrary(<MemoryRouter>{children}</MemoryRouter>)
+}
 
 describe('FinancialHealthSummaryPage', () => {
   afterEach(() => {
@@ -392,6 +397,7 @@ describe('FinancialHealthSummaryPage', () => {
     expect(screen.getByRole('tooltip').textContent).toContain('Review life, health, disability, property')
     fireEvent.blur(protectionVital)
     const positionRings = screen.getByRole('region', { name: 'Financial Position Rings' })
+    expect(within(positionRings).getByRole('figure', { name: 'Combined Financial Position: 87 out of 100' })).toBeTruthy()
     expect(within(positionRings).getByRole('progressbar', { name: 'Cash Flow Position Ring: 88 out of 100' })).toBeTruthy()
     expect(within(positionRings).getByRole('progressbar', { name: 'Credit Health Ring: 91 out of 100' })).toBeTruthy()
     expect(within(positionRings).getByRole('progressbar', { name: 'Net Worth Growth Ring: 82 out of 100' })).toBeTruthy()

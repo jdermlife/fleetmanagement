@@ -18336,6 +18336,130 @@ th { color: var(--dark-gold); }
   margin-top: 20px;
 }
 
+.financial-position-composite {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  width: min(100%, 620px);
+  margin: 24px auto 4px;
+}
+
+.financial-position-composite-visual {
+  position: relative;
+  width: min(100%, 560px);
+  aspect-ratio: 1;
+}
+
+.financial-position-composite-visual > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 14px 18px rgba(15, 23, 42, 0.2));
+}
+
+.financial-position-composite-segment,
+.financial-position-composite-center {
+  position: absolute;
+  z-index: 2;
+  display: grid;
+  justify-items: center;
+  color: #ffffff;
+  text-align: center;
+}
+
+.financial-position-composite-segment {
+  width: 31%;
+  outline: none;
+}
+
+.financial-position-composite-segment:focus-visible {
+  border-radius: 6px;
+  box-shadow: 0 0 0 3px #ffffff, 0 0 0 6px #0f172a;
+}
+
+.financial-position-composite-segment svg {
+  width: 28px;
+  height: 28px;
+  margin-bottom: 4px;
+  stroke-width: 2.2;
+}
+
+.financial-position-composite-segment strong,
+.financial-position-composite-segment span,
+.financial-position-composite-segment b,
+.financial-position-composite-segment small {
+  display: block;
+}
+
+.financial-position-composite-segment strong {
+  font-size: 2rem;
+  line-height: 0.92;
+}
+
+.financial-position-composite-segment span {
+  font-size: 0.67rem;
+  font-weight: 800;
+}
+
+.financial-position-composite-segment b {
+  margin-top: 7px;
+  font-size: 0.8rem;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.financial-position-composite-segment small {
+  margin-top: 4px;
+  font-size: 0.65rem;
+  font-weight: 700;
+  opacity: 0.9;
+}
+
+.financial-position-composite-segment-cash-flow {
+  top: 21%;
+  left: 8%;
+}
+
+.financial-position-composite-segment-credit-health {
+  top: 21%;
+  right: 8%;
+}
+
+.financial-position-composite-segment-net-worth-growth {
+  bottom: 7%;
+  left: 34.5%;
+  color: #12213a;
+}
+
+.financial-position-composite-center {
+  top: 38.5%;
+  left: 38.5%;
+  place-content: center;
+  width: 23%;
+  aspect-ratio: 1;
+}
+
+.financial-position-composite-center strong {
+  color: #f6c84b;
+  font-size: 2.5rem;
+  line-height: 0.9;
+  text-shadow: 0 2px 0 #704100;
+}
+
+.financial-position-composite-center span {
+  margin-top: 7px;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.financial-position-composite figcaption {
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .financial-health-position-ring-card {
   position: relative;
   container-type: inline-size;
