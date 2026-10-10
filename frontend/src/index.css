@@ -7568,6 +7568,147 @@ button.loan-repository-action-release { background: #4f46e5; }
   gap: 10px;
 }
 
+.cash-basis-toolbar {
+  display: grid;
+  grid-template-columns: minmax(180px, 240px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: end;
+}
+
+.cash-basis-toolbar > label {
+  display: grid;
+  gap: 7px;
+  color: #334155;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.cash-basis-toolbar input[type='month'] {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 10px;
+  border: 1px solid #94a3b8;
+  border-radius: 6px;
+  background: #ffffff;
+  color: #0f172a;
+  font: inherit;
+}
+
+.cash-basis-running-totals {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.cash-basis-running-totals article {
+  min-height: 74px;
+  padding: 12px 14px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+}
+
+.cash-basis-running-totals span,
+.cash-basis-running-totals strong {
+  display: block;
+}
+
+.cash-basis-running-totals span {
+  color: #64748b;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cash-basis-running-totals strong {
+  margin-top: 5px;
+  color: #0f172a;
+  font-size: 1.05rem;
+}
+
+.cash-basis-running-totals .is-positive strong {
+  color: #047857;
+}
+
+.cash-basis-running-totals .is-negative strong {
+  color: #b42318;
+}
+
+.cash-basis-calendar {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(108px, 1fr));
+  gap: 1px;
+  overflow-x: auto;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  background: #cbd5e1;
+}
+
+.cash-basis-weekday {
+  padding: 9px 8px;
+  background: #1e293b;
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.cash-basis-calendar-empty {
+  min-height: 150px;
+  background: #eef2f7;
+}
+
+.cash-basis-day {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+  min-height: 150px;
+  padding: 9px;
+  background: #ffffff;
+}
+
+.cash-basis-day time {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: #e2e8f0;
+  color: #0f172a;
+  font-size: 0.78rem;
+  font-weight: 900;
+  line-height: 26px;
+  text-align: center;
+}
+
+.cash-basis-day label {
+  display: grid;
+  gap: 3px;
+}
+
+.cash-basis-day label span {
+  color: #64748b;
+  font-size: 0.66rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.cash-basis-day input {
+  width: 100%;
+  min-width: 0;
+  height: 32px;
+  padding: 5px 6px;
+  border: 1px solid #cbd5e1;
+  border-radius: 4px;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.74rem;
+}
+
+.cash-basis-day input:focus {
+  border-color: #0f766e;
+  outline: 2px solid rgba(15, 118, 110, 0.16);
+}
+
 .budget-journal-entry-panel {
   display: grid;
   gap: 14px;
@@ -13292,6 +13433,41 @@ th { color: var(--dark-gold); }
   .budget-workflow-income-grid,
   .budget-workflow-ai-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cash-basis-toolbar,
+  .cash-basis-running-totals {
+    grid-template-columns: 1fr;
+  }
+
+  .cash-basis-calendar {
+    grid-template-columns: 1fr;
+    gap: 8px;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .cash-basis-weekday,
+  .cash-basis-calendar-empty {
+    display: none;
+  }
+
+  .cash-basis-day {
+    grid-template-columns: 34px repeat(2, minmax(0, 1fr));
+    align-items: end;
+    min-height: 0;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+  }
+
+  .cash-basis-day time {
+    align-self: center;
+  }
+
+  .cash-basis-day input {
+    height: 42px;
+    font-size: 16px;
   }
 
   .bill-reminder-health-overview-grid {

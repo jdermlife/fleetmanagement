@@ -19,8 +19,14 @@ import {
 } from './buildProfileReplication';
 import { buildBudgetExpenseTrackerSnapshot } from './liveTrackerMetrics';
 import { NET_WORTH_STATEMENT_ENTRIES } from './NetWorthPositioningPage';
+import {
+  buildCashBasisCalendar,
+  calculateCashBasisTotals,
+  normalizeMonth,
+  type CashBasisDayEntry,
+} from './cashBasisCalendar';
 
-type WorkflowStep = 1 | 2 | 3;
+type WorkflowStep = 1 | 2 | 3 | 4;
 type IncomeKey = 'salary' | 'business' | 'investment' | 'pension';
 
 const HOUSE_AMORTIZATION_KEY = 'expense-house-amortization';
@@ -54,6 +60,8 @@ interface BudgetExpenseTrackerDraft {
   journalEntries: JournalEntry[];
   varianceNotes: Record<string, string>;
   actionsToBeTaken: string;
+  cashBasisMonth?: string;
+  cashBasisEntries?: Record<string, CashBasisDayEntry>;
 }
 
 const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
@@ -73,6 +81,8 @@ const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
   journalEntries: [],
   varianceNotes: {},
   actionsToBeTaken: '',
+  cashBasisMonth: normalizeMonth(undefined),
+  cashBasisEntries: {},
 };
 
 function formatCurrency(amount: number) {
@@ -199,6 +209,8 @@ export default function BudgetExpenseTrackerPage() {
   const [isPostingJournalEntry, setIsPostingJournalEntry] = useState(false);
   const [varianceNotes, setVarianceNotes] = useState<Record<string, string>>({});
   const [actionsToBeTaken, setActionsToBeTaken] = useState('');
+  const [cashBasisMonth, setCashBasisMonth] = useState(() => normalizeMonth(undefined));
+  const [cashBasisEntries, setCashBasisEntries] = useState<Record<string, CashBasisDayEntry>>({});
   const [setupStatusMessage, setSetupStatusMessage] = useState('');
   const [isAiRecommendationsOpen, setIsAiRecommendationsOpen] = useState(false);
   const [isStepThreeSaving, setIsStepThreeSaving] = useState(false);
@@ -216,9 +228,13 @@ export default function BudgetExpenseTrackerPage() {
     journalEntries,
     varianceNotes,
     actionsToBeTaken,
+    cashBasisMonth,
+    cashBasisEntries,
   }), [
     actualEntries,
     actionsToBeTaken,
+    cashBasisEntries,
+    cashBasisMonth,
     expenseAllocationDraft,
     expenseDraft,
     incomeDraft,
@@ -257,6 +273,8 @@ export default function BudgetExpenseTrackerPage() {
     })));
     setVarianceNotes(draft.varianceNotes);
     setActionsToBeTaken(draft.actionsToBeTaken ?? '');
+    setCashBasisMonth(normalizeMonth(draft.cashBasisMonth ?? draft.periodStart?.slice(0, 7)));
+    setCashBasisEntries(draft.cashBasisEntries ?? {});
   }, [defaultExpenseAllocationDraft, defaultExpenseDraft, expenseSetupItems]);
 
   const { isHydrated } = useAutosaveDraft({
@@ -402,6 +420,11 @@ export default function BudgetExpenseTrackerPage() {
       label: 'Actual vs Setup Variance',
       description: 'Enter actual values and review variance.',
     },
+    {
+      id: 4,
+      label: 'Cash Basis Expense Monitoring',
+      description: 'Track daily cash income and expenses by month.',
+    },
   ];
 
   const currentStepLabel = workflowSteps.find((item) => item.id === step)?.label ?? 'Budget Workflow';
@@ -437,15 +460,24 @@ export default function BudgetExpenseTrackerPage() {
     const step3Percent = setupCount === 0
       ? 0
       : clamp(((actualCompleted * 0.7) + (notesCompleted * 0.2) + (hasActions ? 0.1 : 0)) * 100);
+    const cashBasisDays = buildCashBasisCalendar(cashBasisMonth);
+    const daysWithEntries = cashBasisDays.filter((day) => {
+      const entry = cashBasisEntries[day.dateKey];
+      return !isBlank(entry?.income) || !isBlank(entry?.expenses);
+    }).length;
+    const step4Percent = clamp((daysWithEntries / cashBasisDays.length) * 100);
 
     return {
       1: step1Percent,
       2: step2Percent,
       3: step3Percent,
+      4: step4Percent,
     };
   }, [
     actionsToBeTaken,
     actualEntries,
+    cashBasisEntries,
+    cashBasisMonth,
     expenseAllocationDraft,
     expenseDraft,
     incomeDraft,
@@ -455,6 +487,23 @@ export default function BudgetExpenseTrackerPage() {
     expenseSetupItems,
     varianceNotes,
   ]);
+
+  const cashBasisDays = useMemo(() => buildCashBasisCalendar(cashBasisMonth), [cashBasisMonth]);
+  const cashBasisTotals = useMemo(
+    () => calculateCashBasisTotals(cashBasisDays, cashBasisEntries),
+    [cashBasisDays, cashBasisEntries],
+  );
+
+  const updateCashBasisEntry = (dateKey: string, field: keyof CashBasisDayEntry, value: string) => {
+    setCashBasisEntries((previous) => ({
+      ...previous,
+      [dateKey]: {
+        income: previous[dateKey]?.income ?? '',
+        expenses: previous[dateKey]?.expenses ?? '',
+        [field]: value,
+      },
+    }));
+  };
 
   const budgetSetupTotals = useMemo(() => {
     const incomeTotal = toSafeNumber(incomeDraft.salary)
@@ -1706,6 +1755,9 @@ export default function BudgetExpenseTrackerPage() {
                   <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(2)}>
                     Back to Step 2
                   </button>
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(4)}>
+                    Continue to Step 4
+                  </button>
                 </div>
 
                 <div className="budget-workflow-actions-block">
@@ -1731,6 +1783,84 @@ export default function BudgetExpenseTrackerPage() {
                       {isStepThreeSaving ? 'Saving...' : 'Save / Finish'}
                     </button>
                   </div>
+                </div>
+              </div>
+            ) : null}
+
+            {step === 4 ? (
+              <div className="budget-workflow-step-block cash-basis-monitoring">
+                <h3 className="workflow-duplicate-step-title">Step 4: Cash Basis Expense Monitoring</h3>
+                <p className="psychometric-section-note">
+                  Select a month and record cash income and expenses on the day each amount is received or paid.
+                </p>
+
+                <div className="cash-basis-toolbar">
+                  <label>
+                    Month
+                    <input
+                      type="month"
+                      value={cashBasisMonth}
+                      onChange={(event) => setCashBasisMonth(normalizeMonth(event.target.value))}
+                    />
+                  </label>
+                  <div className="cash-basis-running-totals" aria-live="polite">
+                    <article>
+                      <span>Running Income</span>
+                      <strong>{formatCurrency(cashBasisTotals.income)}</strong>
+                    </article>
+                    <article>
+                      <span>Running Expenses</span>
+                      <strong>{formatCurrency(cashBasisTotals.expenses)}</strong>
+                    </article>
+                    <article className={cashBasisTotals.net < 0 ? 'is-negative' : 'is-positive'}>
+                      <span>Net Difference</span>
+                      <strong>{formatSignedCurrency(cashBasisTotals.net)}</strong>
+                    </article>
+                  </div>
+                </div>
+
+                <div className="cash-basis-calendar" aria-label={`Cash basis entries for ${cashBasisMonth}`}>
+                  {['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'].map((weekday) => (
+                    <div key={weekday} className="cash-basis-weekday">{weekday.slice(0, 3)}</div>
+                  ))}
+                  {Array.from({ length: cashBasisDays[0]?.weekday ?? 0 }, (_, index) => (
+                    <div key={`empty-${index}`} className="cash-basis-calendar-empty" aria-hidden="true" />
+                  ))}
+                  {cashBasisDays.map((day) => (
+                    <article key={day.dateKey} className="cash-basis-day">
+                      <time dateTime={day.dateKey}>{day.day}</time>
+                      <label>
+                        <span>Income</span>
+                        <NumericFormat
+                          value={cashBasisEntries[day.dateKey]?.income ?? ''}
+                          valueIsNumericString
+                          thousandSeparator="," decimalScale={2} fixedDecimalScale
+                          inputMode="decimal" allowNegative={false}
+                          placeholder="0.00"
+                          aria-label={`${day.dateKey} income`}
+                          onValueChange={({ value }) => updateCashBasisEntry(day.dateKey, 'income', value)}
+                        />
+                      </label>
+                      <label>
+                        <span>Expenses</span>
+                        <NumericFormat
+                          value={cashBasisEntries[day.dateKey]?.expenses ?? ''}
+                          valueIsNumericString
+                          thousandSeparator="," decimalScale={2} fixedDecimalScale
+                          inputMode="decimal" allowNegative={false}
+                          placeholder="0.00"
+                          aria-label={`${day.dateKey} expenses`}
+                          onValueChange={({ value }) => updateCashBasisEntry(day.dateKey, 'expenses', value)}
+                        />
+                      </label>
+                    </article>
+                  ))}
+                </div>
+
+                <div className="budget-workflow-inline-actions">
+                  <button type="button" className="budget-dashboard-category-reset" onClick={() => setStep(3)}>
+                    Back to Step 3
+                  </button>
                 </div>
               </div>
             ) : null}
