@@ -20301,14 +20301,50 @@ th { color: var(--dark-gold); }
     max-width: 100%;
   }
 
+  .financial-health-page {
+    gap: 12px;
+  }
+
   .financial-health-hero,
   .financial-health-page .psychometric-panel {
-    padding: 14px;
+    padding: 12px;
     border-radius: 8px;
   }
 
+  .financial-health-hero {
+    gap: 10px;
+  }
+
+  .financial-health-hero-copy {
+    gap: 6px;
+  }
+
   .financial-health-hero-copy h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
+  }
+
+  .financial-health-hero-copy .psychometric-eyebrow {
+    font-size: 0.66rem;
+  }
+
+  .financial-health-group-guide {
+    gap: 5px;
+    margin-top: 0;
+  }
+
+  .financial-health-group-guide div {
+    padding-left: 7px;
+  }
+
+  .financial-health-group-guide dt {
+    font-size: 0.68rem;
+    line-height: 1.15;
+  }
+
+  .financial-health-group-guide dd {
+    margin-top: 1px;
+    font-size: 0.62rem;
+    line-height: 1.2;
   }
 
   .financial-health-summary-tile,
@@ -20393,18 +20429,52 @@ th { color: var(--dark-gold); }
   .financial-health-status-row {
     width: 100%;
     flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 4px;
+    padding: 6px 9px;
     border-radius: 8px;
   }
 
+  .financial-health-status-row span:last-child {
+    font-size: 0.72rem;
+  }
+
   .financial-health-ring-visual {
-    width: min(100%, 240px);
+    width: min(100%, 180px);
     flex-basis: auto;
   }
 
   .financial-health-ring-figure {
     overflow: hidden;
-    padding: 10px;
+    gap: 8px;
+    padding: 8px;
+    height: auto;
+    flex: 0 0 auto;
     border-radius: 14px;
+  }
+
+  .financial-health-ring-legend {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    font-size: 0.58rem;
+  }
+
+  .financial-health-ring-legend span {
+    align-content: start;
+    grid-template-columns: 7px minmax(0, 1fr);
+    gap: 4px;
+    overflow-wrap: anywhere;
+  }
+
+  .financial-health-ring-legend i {
+    width: 7px;
+    height: 7px;
+  }
+
+  .financial-health-hero > .financial-health-journey-menu-in-hero > summary {
+    min-height: 46px;
+    padding: 10px 12px;
   }
 
   .financial-health-position-ring-card {
