@@ -19964,6 +19964,56 @@ th { color: var(--dark-gold); }
     overflow-x: clip;
   }
 
+  .financial-position-composite {
+    width: min(100%, 430px);
+    margin-top: 18px;
+  }
+
+  .financial-position-composite-segment {
+    width: 34%;
+  }
+
+  .financial-position-composite-segment-cash-flow {
+    left: 5%;
+  }
+
+  .financial-position-composite-segment-credit-health {
+    right: 5%;
+  }
+
+  .financial-position-composite-segment-net-worth-growth {
+    bottom: 5%;
+    left: 33%;
+  }
+
+  .financial-position-composite-segment svg {
+    width: 21px;
+    height: 21px;
+  }
+
+  .financial-position-composite-segment strong {
+    font-size: 1.4rem;
+  }
+
+  .financial-position-composite-segment b {
+    margin-top: 4px;
+    font-size: 0.67rem;
+  }
+
+  .financial-position-composite-segment small {
+    margin-top: 2px;
+    font-size: 0.58rem;
+  }
+
+  .financial-position-composite-center strong {
+    font-size: 1.85rem;
+  }
+
+  .financial-position-composite-center span {
+    margin-top: 4px;
+    font-size: 0.62rem;
+  }
+
   .financial-health-page .psychometric-panel,
   .financial-health-page .financial-health-summary-tile,
   .financial-health-page .financial-health-insight-card,
