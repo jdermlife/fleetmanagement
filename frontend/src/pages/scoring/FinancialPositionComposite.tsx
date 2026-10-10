@@ -13,7 +13,7 @@ interface Point {
 
 const CENTER = 260
 const OUTER_RADIUS = 238
-const INNER_RADIUS = 112
+const INNER_RADIUS = 98
 
 function pointAt(angle: number, radius: number): Point {
   const radians = (angle * Math.PI) / 180
@@ -64,6 +64,7 @@ export default function FinancialPositionComposite({
       id: 'cash-flow',
       label: 'Cash Flow Position',
       score: scores.cashFlow,
+      description: 'Income, expenses and savings strength',
       path: segmentPath(154, 266),
       gradient: 'financial-position-cash-gradient',
       Icon: WalletCards,
@@ -72,6 +73,7 @@ export default function FinancialPositionComposite({
       id: 'credit-health',
       label: 'Credit Health',
       score: scores.creditHealth,
+      description: 'Credit capacity and lending profile',
       path: segmentPath(274, 386),
       gradient: 'financial-position-credit-gradient',
       Icon: CreditCard,
@@ -80,6 +82,7 @@ export default function FinancialPositionComposite({
       id: 'net-worth-growth',
       label: 'Net Worth Growth',
       score: scores.netWorthGrowth,
+      description: 'Progress toward your net-worth goal',
       path: segmentPath(34, 146),
       gradient: 'financial-position-networth-gradient',
       Icon: ChartNoAxesCombined,
@@ -125,10 +128,11 @@ export default function FinancialPositionComposite({
               strokeLinejoin="round"
             />
           ))}
-          <circle cx={CENTER} cy={CENTER} r="102" fill="url(#financial-position-center-gradient)" stroke="#e5ad22" strokeWidth="8" />
+          <circle cx={CENTER} cy={CENTER} r="97" fill="#fff8dc" stroke="#9d6500" strokeWidth="5" />
+          <circle cx={CENTER} cy={CENTER} r="87" fill="url(#financial-position-center-gradient)" stroke="#f5bd31" strokeWidth="5" />
         </svg>
 
-        {segments.map(({ id, label, score, Icon }) => (
+        {segments.map(({ id, label, score, description, Icon }) => (
           <div
             key={id}
             className={`financial-position-composite-segment financial-position-composite-segment-${id}`}
@@ -138,11 +142,16 @@ export default function FinancialPositionComposite({
             aria-valuemax={100}
             aria-valuenow={score}
           >
-            <Icon aria-hidden="true" />
-            <strong>{score}</strong>
-            <span>/100</span>
             <b>{label}</b>
-            <small>{scoreStatus(score)}</small>
+            <div className="financial-position-composite-segment-body">
+              <Icon aria-hidden="true" />
+              <span className="financial-position-composite-score">
+                <strong>{score}</strong>
+                <span>/100</span>
+              </span>
+              <small>{description}</small>
+            </div>
+            <span className="financial-position-composite-status">{scoreStatus(score)}</span>
           </div>
         ))}
 
