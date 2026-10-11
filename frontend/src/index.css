@@ -11767,6 +11767,13 @@ th { color: var(--dark-gold); }
     linear-gradient(180deg, #ffca2f 0%, #d08b13 50%, #8f5902 100%);
 }
 
+.login-art-page,
+.login-art-page *,
+.login-art-page::before,
+.login-art-page::after {
+  box-sizing: border-box;
+}
+
 .login-art-page::before,
 .login-art-page::after {
   content: "";
@@ -11792,6 +11799,7 @@ th { color: var(--dark-gold); }
   position: relative;
   z-index: 1;
   width: min(100%, 580px);
+  min-width: 0;
   display: grid;
   gap: 10px;
 }
@@ -11834,6 +11842,8 @@ th { color: var(--dark-gold); }
 }
 
 .login-art-card {
+  width: 100%;
+  min-width: 0;
   display: grid;
   gap: 12px;
   padding: 18px 20px 16px;
@@ -11848,12 +11858,17 @@ th { color: var(--dark-gold); }
 
 .login-art-social-stack,
 .login-art-form {
+  width: 100%;
+  min-width: 0;
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
 }
 
 .login-life-questions {
   width: min(100%, 520px);
+  max-width: 100%;
+  min-width: 0;
   justify-self: center;
   padding: 8px 10px 6px;
   border: 1px solid rgba(218, 153, 29, 0.72);
@@ -11944,6 +11959,7 @@ th { color: var(--dark-gold); }
 .login-art-google-wrap {
   position: relative;
   width: min(100%, 375px);
+  max-width: 100%;
   aspect-ratio: 375 / 62;
   min-height: 62px;
   justify-self: center;
