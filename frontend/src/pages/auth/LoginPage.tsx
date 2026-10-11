@@ -11,6 +11,7 @@ import { APP_CONFIG } from '../../config'
 import { getNativeGooglePlatform, isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 const FINANCIAL_HEALTH_PATH = '/financial-health-summary'
+const BUILD_PROFILE_PATH = '/build-profile'
 const JOURNEY_MINIMIZED_STORAGE_KEY = 'fms:journey:minimized'
 const JOURNEY_DO_NOT_SHOW_STORAGE_KEY = 'fms:journey:do-not-show'
 
@@ -197,10 +198,10 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
   const [showEmailLogin, setShowEmailLogin] = useState(false)
-  const openFinancialHealthJourney = () => {
+  const openDefaultPage = (totalLoginCount?: number) => {
     window.localStorage.removeItem(JOURNEY_MINIMIZED_STORAGE_KEY)
     window.localStorage.removeItem(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
-    navigate(FINANCIAL_HEALTH_PATH, { replace: true })
+    navigate(totalLoginCount === 1 ? BUILD_PROFILE_PATH : FINANCIAL_HEALTH_PATH, { replace: true })
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -215,7 +216,7 @@ export default function LoginPage() {
         navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')
         return
       }
-      openFinancialHealthJourney()
+      openDefaultPage(result.user.totalLoginCount)
     } catch (error) {
       const { status } = getBackendErrorPayload(error)
       if (status === 404) {
@@ -261,7 +262,7 @@ export default function LoginPage() {
         navigate('/trial-expired?source=google')
         return
       }
-      openFinancialHealthJourney()
+      openDefaultPage(result.user.totalLoginCount)
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (
@@ -327,7 +328,7 @@ export default function LoginPage() {
         navigate('/trial-expired?source=apple')
         return
       }
-      openFinancialHealthJourney()
+      openDefaultPage(result.user.totalLoginCount)
     } catch (error) {
       const { status, detail } = getBackendErrorPayload(error)
       if (

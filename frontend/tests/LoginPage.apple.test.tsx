@@ -149,7 +149,7 @@ describe('LoginPage Apple sign-in', () => {
     )
   })
 
-  it('navigates immediately after email login succeeds', async () => {
+  it('opens Build Profile after a first login succeeds', async () => {
     window.localStorage.setItem('fms:journey:minimized', '1')
     window.localStorage.setItem('fms:journey:do-not-show', '1')
     mockLogin.mockResolvedValue({
@@ -164,6 +164,7 @@ describe('LoginPage Apple sign-in', () => {
         createdAt: '2026-07-10T00:00:00Z',
         updatedAt: '2026-07-10T00:00:00Z',
         lastLoginAt: null,
+        totalLoginCount: 1,
       },
     })
 
@@ -188,7 +189,7 @@ describe('LoginPage Apple sign-in', () => {
       })
       expect(window.localStorage.getItem('fms:journey:minimized')).toBeNull()
       expect(window.localStorage.getItem('fms:journey:do-not-show')).toBeNull()
-      expect(mockNavigate).toHaveBeenCalledWith('/financial-health-summary', { replace: true })
+      expect(mockNavigate).toHaveBeenCalledWith('/build-profile', { replace: true })
     })
   })
 
@@ -316,7 +317,7 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.queryByText(/<html>/i)).toBeNull()
   })
 
-  it('clicking Continue with Apple requests token, exchanges identity token, and redirects to financial health summary', async () => {
+  it('returns an existing Apple user to financial health summary', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',
     })
@@ -334,6 +335,7 @@ describe('LoginPage Apple sign-in', () => {
         createdAt: '2026-07-10T00:00:00Z',
         updatedAt: '2026-07-10T00:00:00Z',
         lastLoginAt: null,
+        totalLoginCount: 2,
       },
     })
 

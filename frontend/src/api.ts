@@ -595,6 +595,7 @@ export interface AuthUser {
   createdAt: string
   updatedAt: string
   lastLoginAt: string | null
+  totalLoginCount?: number
   hasAppleSignIn?: boolean
   hasGoogleSignIn?: boolean
   mfaEnabled?: boolean
@@ -631,6 +632,7 @@ function normalizeAuthUser(raw: Record<string, unknown>): AuthUser {
     createdAt: String(raw.createdAt ?? raw.created_at ?? ''),
     updatedAt: String(raw.updatedAt ?? raw.updated_at ?? ''),
     lastLoginAt: (raw.lastLoginAt ?? raw.last_login_at ?? null) as string | null,
+    totalLoginCount: Number(raw.totalLoginCount ?? raw.total_login_count ?? 0),
     hasAppleSignIn: Boolean(raw.hasAppleSignIn ?? raw.has_apple_sign_in ?? false),
     hasGoogleSignIn: Boolean(raw.hasGoogleSignIn ?? raw.has_google_sign_in ?? false),
     mfaEnabled: Boolean(raw.mfaEnabled ?? raw.mfa_enabled ?? false),
