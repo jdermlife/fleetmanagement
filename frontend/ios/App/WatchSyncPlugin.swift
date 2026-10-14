@@ -131,15 +131,26 @@ public class WatchSyncPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
+        let watchPayload: [String: Any] = [
+            "type": "financialHealthSnapshot",
+            "snapshot": cleanSnapshot
+        ]
+
+        // Keep the latest complete state available when the Watch reconnects.
+        do {
+            try session.updateApplicationContext(watchPayload)
+        } catch {
+            print(
+                "[WatchSyncPlugin] updateApplicationContext error: \(error.localizedDescription)"
+            )
+        }
+
 
         // ---------------------------------------------------------
         // Reliable background delivery
         // ---------------------------------------------------------
 
-        session.transferUserInfo([
-            "type": "financialHealthSnapshot",
-            "snapshot": cleanSnapshot
-        ])
+        session.transferUserInfo(watchPayload)
 
 
         // ---------------------------------------------------------
@@ -149,10 +160,7 @@ public class WatchSyncPlugin: CAPPlugin, CAPBridgedPlugin {
         if session.isReachable {
 
             session.sendMessage(
-                [
-                    "type": "financialHealthSnapshot",
-                    "snapshot": cleanSnapshot
-                ],
+                watchPayload,
                 replyHandler: nil,
                 errorHandler: { error in
 
