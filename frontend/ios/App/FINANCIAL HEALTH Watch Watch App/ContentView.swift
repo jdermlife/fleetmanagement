@@ -423,6 +423,27 @@ struct ContentView: View {
                     .buttonStyle(.plain)
 
 
+                    // MARK: Bill Manager
+
+                    NavigationLink {
+
+                        BillManagerWatchView()
+
+                    } label: {
+
+                        ScoreCard(
+                            title: "Bill Manager",
+                            value: String(
+                                watchSync.billCalendarDays.reduce(0) {
+                                    $0 + $1.billCount
+                                }
+                            ),
+                            subtitle: "Bills This Month"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+
                     // MARK: Credit Health
 
                     NavigationLink {
@@ -537,6 +558,8 @@ struct BudgetWatchView: View {
                     height: 125
                 )
 
+                BudgetUtilizationWatchView(watchSync: watchSync)
+
 
                 Divider()
 
@@ -618,6 +641,296 @@ struct BudgetWatchView: View {
             format: "%.0f",
             value
         )
+    }
+}
+
+struct BudgetUtilizationWatchView: View {
+    @ObservedObject var watchSync: WatchSyncReceiver
+
+    private var progressFraction: CGFloat {
+        CGFloat(min(max(watchSync.budgetProgressPercent ?? 0, 0), 100) / 100)
+    }
+
+    private var overflowFraction: CGFloat {
+        CGFloat(min(max(watchSync.budgetOverflowPercent ?? 0, 0), 100) / 100)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("BUDGET PERFORMANCE")
+                .font(.system(size: 8, weight: .bold))
+                .foregroundStyle(Color(red: 0.996, green: 0.843, blue: 0.667))
+
+            HStack(alignment: .firstTextBaseline) {
+                Text("Budget Utilization")
+                    .font(.system(size: 12, weight: .bold))
+
+                Spacer(minLength: 4)
+
+                Text(percent(watchSync.utilizationPercent))
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(red: 0.525, green: 0.937, blue: 0.675))
+                    .minimumScaleFactor(0.6)
+                    .lineLimit(1)
+            }
+
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.761, green: 0.255, blue: 0.047),
+                                    Color(red: 0.984, green: 0.573, blue: 0.235),
+                                    Color(red: 0.992, green: 0.729, blue: 0.455)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(
+                                colors: [
+                                    Color(red: 0.086, green: 0.396, blue: 0.204),
+                                    Color(red: 0.133, green: 0.773, blue: 0.369),
+                                    Color(red: 0.525, green: 0.937, blue: 0.675)
+                                ],
+                                startPoint: .leading,
+                                endPoint: .trailing
+                            )
+                        )
+                        .frame(width: geometry.size.width * progressFraction)
+                }
+            }
+            .frame(height: 14)
+
+            if overflowFraction > 0 {
+                GeometryReader { geometry in
+                    ZStack(alignment: .leading) {
+                        Capsule()
+                            .fill(Color.white.opacity(0.12))
+
+                        Capsule()
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.976, green: 0.451, blue: 0.086),
+                                        Color(red: 0.937, green: 0.267, blue: 0.267)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
+                            )
+                            .frame(width: geometry.size.width * overflowFraction)
+                    }
+                }
+                .frame(height: 4)
+            }
+
+            VStack(alignment: .leading, spacing: 3) {
+                utilizationLabel(
+                    color: Color(red: 0.133, green: 0.773, blue: 0.369),
+                    title: "Utilized",
+                    amount: watchSync.utilizedAmount
+                )
+                utilizationLabel(
+                    color: Color(red: 0.984, green: 0.573, blue: 0.235),
+                    title: "Budget",
+                    amount: watchSync.budgetAmount
+                )
+            }
+
+            Text(varianceText)
+                .font(.system(size: 8))
+                .foregroundStyle(Color(red: 0.820, green: 0.980, blue: 0.898))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .padding(10)
+        .background(Color(red: 0.059, green: 0.141, blue: 0.110).opacity(0.92))
+        .clipShape(RoundedRectangle(cornerRadius: 8))
+        .overlay(
+            RoundedRectangle(cornerRadius: 8)
+                .stroke(Color.white.opacity(0.28), lineWidth: 1)
+        )
+    }
+
+    private func utilizationLabel(color: Color, title: String, amount: Double?) -> some View {
+        HStack(spacing: 5) {
+            RoundedRectangle(cornerRadius: 1)
+                .fill(color)
+                .frame(width: 7, height: 7)
+
+            Text("\(title) \(money(amount))")
+                .font(.system(size: 8, weight: .semibold))
+                .lineLimit(1)
+        }
+    }
+
+    private func percent(_ value: Double?) -> String {
+        guard let value else { return "--" }
+        return String(format: "%.1f%%", value)
+    }
+
+    private func money(_ value: Double?) -> String {
+        guard let value else { return "--" }
+        return "₱" + String(format: "%.0f", value)
+    }
+
+    private var varianceText: String {
+        guard
+            let varianceAmount = watchSync.budgetVarianceAmount,
+            let isOverBudget = watchSync.isOverBudget,
+            let sourceLabel = watchSync.budgetSourceLabel
+        else {
+            return "Awaiting Budget Performance data"
+        }
+
+        let status = isOverBudget ? "over budget" : "remaining"
+        return "\(money(varianceAmount)) \(status) \(sourceLabel)"
+    }
+}
+
+
+// MARK: - Bill Manager
+
+struct BillManagerWatchView: View {
+    @ObservedObject private var watchSync = WatchSyncReceiver.shared
+
+    private let columns = Array(
+        repeating: GridItem(.flexible(), spacing: 2),
+        count: 7
+    )
+
+    private let weekdays = ["S", "M", "T", "W", "T", "F", "S"]
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                Text("BILL MANAGER")
+                    .font(.headline)
+                    .fontWeight(.bold)
+
+                Text("BILL DUE-DATE HEAT MAP")
+                    .font(.system(size: 8, weight: .bold))
+                    .foregroundStyle(Color(red: 0.49, green: 0.83, blue: 1.00))
+
+                Text(watchSync.billCalendarMonthLabel ?? "Awaiting calendar")
+                    .font(.system(size: 13, weight: .bold))
+
+                urgencyLegend
+
+                LazyVGrid(columns: columns, spacing: 2) {
+                    ForEach(Array(weekdays.enumerated()), id: \.offset) { _, weekday in
+                        Text(weekday)
+                            .font(.system(size: 7, weight: .bold))
+                            .foregroundStyle(.secondary)
+                    }
+
+                    ForEach(0..<calendarCellCount, id: \.self) { index in
+                        calendarCell(at: index)
+                    }
+                }
+
+                if watchSync.billCalendarDays.allSatisfy({ $0.billCount == 0 }) {
+                    Text("No bill due dates this month")
+                        .font(.system(size: 8))
+                        .foregroundStyle(.secondary)
+                }
+            }
+            .padding(.horizontal, 5)
+            .padding(.bottom, 8)
+        }
+        .navigationTitle("Bills")
+    }
+
+    private var calendarCellCount: Int {
+        watchSync.billCalendarFirstWeekday + watchSync.billCalendarDayCount
+    }
+
+    private var urgencyLegend: some View {
+        HStack(spacing: 7) {
+            legendItem(color: urgencyColor("green"), label: "10+")
+            legendItem(color: urgencyColor("amber"), label: "3-9")
+            legendItem(color: urgencyColor("red"), label: "0-2")
+        }
+    }
+
+    @ViewBuilder
+    private func calendarCell(at index: Int) -> some View {
+        let day = index - watchSync.billCalendarFirstWeekday + 1
+
+        if day < 1 || day > watchSync.billCalendarDayCount {
+            Color.clear
+                .frame(height: 22)
+        } else {
+            let calendarDay = watchSync.billCalendarDays.first { $0.day == day }
+            let color = urgencyColor(calendarDay?.urgency)
+
+            ZStack(alignment: .bottomTrailing) {
+                RoundedRectangle(cornerRadius: 3)
+                    .fill(
+                        calendarDay?.billCount ?? 0 > 0
+                            ? color.opacity(0.82)
+                            : Color.white.opacity(0.08)
+                    )
+
+                RoundedRectangle(cornerRadius: 3)
+                    .stroke(
+                        calendarDay?.isToday == true ? Color.white : Color.clear,
+                        lineWidth: 1.3
+                    )
+
+                Text(String(day))
+                    .font(.system(size: 8, weight: .semibold))
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+
+                if let billCount = calendarDay?.billCount, billCount > 1 {
+                    Text(String(billCount))
+                        .font(.system(size: 6, weight: .bold))
+                        .padding(2)
+                }
+            }
+            .frame(height: 22)
+            .accessibilityLabel(dayAccessibilityLabel(calendarDay, day: day))
+        }
+    }
+
+    private func legendItem(color: Color, label: String) -> some View {
+        HStack(spacing: 2) {
+            RoundedRectangle(cornerRadius: 1)
+                .fill(color)
+                .frame(width: 5, height: 5)
+
+            Text(label)
+                .font(.system(size: 7))
+        }
+    }
+
+    private func urgencyColor(_ urgency: String?) -> Color {
+        switch urgency {
+        case "green":
+            return Color(red: 0.13, green: 0.77, blue: 0.37)
+        case "amber":
+            return Color(red: 0.96, green: 0.62, blue: 0.04)
+        case "red":
+            return Color(red: 0.94, green: 0.27, blue: 0.27)
+        default:
+            return Color.clear
+        }
+    }
+
+    private func dayAccessibilityLabel(
+        _ calendarDay: WatchBillCalendarDay?,
+        day: Int
+    ) -> String {
+        guard let calendarDay, calendarDay.billCount > 0 else {
+            return "Day \(day), no bills due"
+        }
+
+        let billLabel = calendarDay.billCount == 1 ? "bill" : "bills"
+        return "Day \(day), \(calendarDay.billCount) \(billLabel) due"
     }
 }
 

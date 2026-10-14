@@ -62,6 +62,14 @@ export interface WatchSnapshot {
     net?: number | null;
     variance?: number | null;
     performanceBand?: string | null;
+    budgetAmount?: number | null;
+    utilizedAmount?: number | null;
+    utilizationPercent?: number | null;
+    progressPercent?: number | null;
+    overflowPercent?: number | null;
+    varianceAmount?: number | null;
+    isOverBudget?: boolean | null;
+    sourceLabel?: string | null;
     trend?: number[];
   };
 
@@ -75,6 +83,15 @@ export interface WatchSnapshot {
     total?: number | null;
     paid?: number | null;
     outstanding?: number | null;
+    monthLabel?: string | null;
+    firstWeekday?: number | null;
+    dayCount?: number | null;
+    days?: Array<{
+      day: number;
+      isToday: boolean;
+      urgency: 'green' | 'amber' | 'red' | null;
+      billCount: number;
+    }>;
     trend?: number[];
   };
 }

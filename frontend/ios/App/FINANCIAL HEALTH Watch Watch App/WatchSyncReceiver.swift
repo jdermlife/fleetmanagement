@@ -4,6 +4,15 @@ import Combine
 
 import WatchConnectivity
 
+struct WatchBillCalendarDay: Identifiable {
+    let day: Int
+    let isToday: Bool
+    let urgency: String?
+    let billCount: Int
+
+    var id: Int { day }
+}
+
 final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     static let shared = WatchSyncReceiver()
@@ -48,6 +57,32 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
     @Published private(set) var monthlyExpenses: Double?
 
     @Published private(set) var monthlyCashFlow: Double?
+
+    @Published private(set) var budgetAmount: Double?
+
+    @Published private(set) var utilizedAmount: Double?
+
+    @Published private(set) var utilizationPercent: Double?
+
+    @Published private(set) var budgetProgressPercent: Double?
+
+    @Published private(set) var budgetOverflowPercent: Double?
+
+    @Published private(set) var budgetVarianceAmount: Double?
+
+    @Published private(set) var isOverBudget: Bool?
+
+    @Published private(set) var budgetSourceLabel: String?
+
+    // MARK: - Bill Manager
+
+    @Published private(set) var billCalendarMonthLabel: String?
+
+    @Published private(set) var billCalendarFirstWeekday: Int = 0
+
+    @Published private(set) var billCalendarDayCount: Int = 0
+
+    @Published private(set) var billCalendarDays: [WatchBillCalendarDay] = []
 
     // MARK: - Net Worth
 
@@ -790,6 +825,8 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
             )
 
+        let budgetData = snapshot["budget"] as? [String: Any]
+
         DispatchQueue.main.async {
 
             self.budgetScore =
@@ -808,6 +845,46 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
                 cashFlow
 
+            self.budgetAmount = self.number(snapshot, section: "budget", key: "budgetAmount")
+            self.utilizedAmount = self.number(snapshot, section: "budget", key: "utilizedAmount")
+            self.utilizationPercent = self.number(snapshot, section: "budget", key: "utilizationPercent")
+            self.budgetProgressPercent = self.number(snapshot, section: "budget", key: "progressPercent")
+            self.budgetOverflowPercent = self.number(snapshot, section: "budget", key: "overflowPercent")
+            self.budgetVarianceAmount = self.number(snapshot, section: "budget", key: "varianceAmount")
+            self.isOverBudget = (budgetData?["isOverBudget"] as? NSNumber)?.boolValue
+            self.budgetSourceLabel = budgetData?["sourceLabel"] as? String
+
+        }
+
+        // ---------------------------------------------------------
+
+        // BILL MANAGER
+
+        // ---------------------------------------------------------
+
+        if let billsData = snapshot["bills"] as? [String: Any] {
+            let monthLabel = billsData["monthLabel"] as? String
+            let firstWeekday = (billsData["firstWeekday"] as? NSNumber)?.intValue ?? 0
+            let dayCount = (billsData["dayCount"] as? NSNumber)?.intValue ?? 0
+            let days = (billsData["days"] as? [[String: Any]] ?? []).compactMap { item in
+                guard let day = (item["day"] as? NSNumber)?.intValue else {
+                    return nil
+                }
+
+                return WatchBillCalendarDay(
+                    day: day,
+                    isToday: (item["isToday"] as? NSNumber)?.boolValue ?? false,
+                    urgency: item["urgency"] as? String,
+                    billCount: (item["billCount"] as? NSNumber)?.intValue ?? 0
+                )
+            }
+
+            DispatchQueue.main.async {
+                self.billCalendarMonthLabel = monthLabel
+                self.billCalendarFirstWeekday = firstWeekday
+                self.billCalendarDayCount = dayCount
+                self.billCalendarDays = days
+            }
         }
 
         // ---------------------------------------------------------
