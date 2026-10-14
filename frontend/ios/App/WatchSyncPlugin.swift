@@ -131,6 +131,20 @@ public class WatchSyncPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
+        guard session.isPaired, session.isWatchAppInstalled else {
+
+            print(
+                "[WatchSyncPlugin] Watch unavailable: paired=\(session.isPaired), appInstalled=\(session.isWatchAppInstalled)"
+            )
+
+            call.resolve([
+                "saved": true,
+                "sent": false
+            ])
+
+            return
+        }
+
         let watchPayload: [String: Any] = [
             "type": "financialHealthSnapshot",
             "snapshot": cleanSnapshot
