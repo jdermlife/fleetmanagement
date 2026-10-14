@@ -58,22 +58,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var monthlyCashFlow: Double?
 
-    @Published private(set) var budgetAmount: Double?
-
-    @Published private(set) var utilizedAmount: Double?
-
-    @Published private(set) var utilizationPercent: Double?
-
-    @Published private(set) var budgetProgressPercent: Double?
-
-    @Published private(set) var budgetOverflowPercent: Double?
-
-    @Published private(set) var budgetVarianceAmount: Double?
-
-    @Published private(set) var isOverBudget: Bool?
-
-    @Published private(set) var budgetSourceLabel: String?
-
     // MARK: - Bill Manager
 
     @Published private(set) var billCalendarMonthLabel: String?
@@ -823,8 +807,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
             )
 
-        let budgetData = snapshot["budget"] as? [String: Any]
-
         DispatchQueue.main.async {
 
             self.budgetScore =
@@ -842,15 +824,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
             self.monthlyCashFlow =
 
                 cashFlow
-
-            self.budgetAmount = self.number(snapshot, section: "budget", key: "budgetAmount")
-            self.utilizedAmount = self.number(snapshot, section: "budget", key: "utilizedAmount")
-            self.utilizationPercent = self.number(snapshot, section: "budget", key: "utilizationPercent")
-            self.budgetProgressPercent = self.number(snapshot, section: "budget", key: "progressPercent")
-            self.budgetOverflowPercent = self.number(snapshot, section: "budget", key: "overflowPercent")
-            self.budgetVarianceAmount = self.number(snapshot, section: "budget", key: "varianceAmount")
-            self.isOverBudget = (budgetData?["isOverBudget"] as? NSNumber)?.boolValue
-            self.budgetSourceLabel = budgetData?["sourceLabel"] as? String
 
         }
 

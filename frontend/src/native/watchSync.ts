@@ -62,14 +62,6 @@ export interface WatchSnapshot {
     net?: number | null;
     variance?: number | null;
     performanceBand?: string | null;
-    budgetAmount?: number | null;
-    utilizedAmount?: number | null;
-    utilizationPercent?: number | null;
-    progressPercent?: number | null;
-    overflowPercent?: number | null;
-    varianceAmount?: number | null;
-    isOverBudget?: boolean | null;
-    sourceLabel?: string | null;
     trend?: number[];
   };
 
