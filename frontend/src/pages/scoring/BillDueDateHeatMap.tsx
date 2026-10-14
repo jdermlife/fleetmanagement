@@ -6,11 +6,6 @@ export type BillDueDateItem = {
   dateCovered: string;
 };
 
-type BillDueDateHeatMapProps = {
-  bills: BillDueDateItem[];
-  referenceDate?: Date;
-};
-
 export type BillDueUrgency = 'green' | 'amber' | 'red';
 
 function startOfLocalDay(date: Date) {
@@ -74,15 +69,20 @@ export function buildBillDueDateHeatMap(bills: BillDueDateItem[], referenceDate 
   };
 }
 
+export type BillDueDateHeatMapCalendar = ReturnType<typeof buildBillDueDateHeatMap>;
+
+type BillDueDateHeatMapProps = {
+  calendar: BillDueDateHeatMapCalendar;
+  hasBills: boolean;
+};
+
 function timingLabel(daysUntilDue: number) {
   if (daysUntilDue < 0) return `${Math.abs(daysUntilDue)} day${Math.abs(daysUntilDue) === 1 ? '' : 's'} overdue`;
   if (daysUntilDue === 0) return 'due today';
   return `${daysUntilDue} day${daysUntilDue === 1 ? '' : 's'} remaining`;
 }
 
-export default function BillDueDateHeatMap({ bills, referenceDate = new Date() }: BillDueDateHeatMapProps) {
-  const calendar = buildBillDueDateHeatMap(bills, referenceDate);
-
+export default function BillDueDateHeatMap({ calendar, hasBills }: BillDueDateHeatMapProps) {
   return (
     <section className="bill-due-heat-map" aria-labelledby="bill-due-heat-map-title">
       <header>
@@ -121,7 +121,7 @@ export default function BillDueDateHeatMap({ bills, referenceDate = new Date() }
           </div>
         ) : <div className="bill-due-calendar-day bill-due-calendar-empty" aria-hidden="true" key={`empty-${index}`} />)}
       </div>
-      {bills.length === 0 ? <p className="bill-due-heat-map-empty">Add and save billers to display their due dates.</p> : null}
+      {!hasBills ? <p className="bill-due-heat-map-empty">Add and save billers to display their due dates.</p> : null}
     </section>
   );
 }

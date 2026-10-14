@@ -9,9 +9,10 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { WatchSync } from '../../native/watchSync';
 import { computeBillPaymentHealthScore } from './billPaymentHealthEngine';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
-import BillDueDateHeatMap from './BillDueDateHeatMap';
+import BillDueDateHeatMap, { buildBillDueDateHeatMap } from './BillDueDateHeatMap';
 
 type WorkflowStep = 1 | 2 | 3;
 type BillerFrequency = 'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annual' | 'Weekly';
@@ -362,6 +363,38 @@ export default function BillReminderPage() {
     onHydrate: handleAutosaveHydrate,
     enabled: isIdentityReady,
   });
+
+  const displayedBillers = savedSetup.length > 0 ? savedSetup : draftBillers;
+  const billDueDateCalendar = useMemo(
+    () => buildBillDueDateHeatMap(displayedBillers),
+    [displayedBillers],
+  );
+
+  useEffect(() => {
+    void WatchSync.updateSnapshot({
+      snapshot: {
+        updatedAt: new Date().toISOString(),
+        bills: {
+          heatMap: {
+            monthLabel: billDueDateCalendar.monthLabel,
+            cells: billDueDateCalendar.cells.map((cell, position) => ({
+              position,
+              day: cell?.day ?? 0,
+              isEmpty: cell === null,
+              isToday: cell?.isToday ?? false,
+              bills: cell?.bills.map((bill) => ({
+                company: bill.company,
+                utilityType: bill.utilityType,
+                urgency: bill.urgency,
+              })) ?? [],
+            })),
+          },
+        },
+      },
+    }).catch((watchError: unknown) => {
+      console.error('[WatchSync] Failed to reflect Bill Due Date Heat Map', watchError);
+    });
+  }, [billDueDateCalendar]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {
@@ -1056,7 +1089,7 @@ export default function BillReminderPage() {
 
         <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
-        <BillDueDateHeatMap bills={savedSetup.length > 0 ? savedSetup : draftBillers} />
+        <BillDueDateHeatMap calendar={billDueDateCalendar} hasBills={displayedBillers.length > 0} />
       </section>
 
       <FinancialJourneyGuideLauncher applicationNo={selectedApplicationNo} currentStep="billManager" />
