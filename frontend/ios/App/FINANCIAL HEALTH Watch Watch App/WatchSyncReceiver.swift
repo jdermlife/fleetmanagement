@@ -4,22 +4,6 @@ import Combine
 
 import WatchConnectivity
 
-struct WatchBillHeatMapBill {
-    let company: String
-    let utilityType: String
-    let urgency: String
-}
-
-struct WatchBillHeatMapCell: Identifiable {
-    let position: Int
-    let day: Int
-    let isEmpty: Bool
-    let isToday: Bool
-    let bills: [WatchBillHeatMapBill]
-
-    var id: Int { position }
-}
-
 final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     static let shared = WatchSyncReceiver()
@@ -64,12 +48,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
     @Published private(set) var monthlyExpenses: Double?
 
     @Published private(set) var monthlyCashFlow: Double?
-
-    // MARK: - Bill Due-Date Heat Map
-
-    @Published private(set) var billHeatMapMonthLabel: String?
-
-    @Published private(set) var billHeatMapCells: [WatchBillHeatMapCell] = []
 
     // MARK: - Net Worth
 
@@ -828,54 +806,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
                 cashFlow
 
-        }
-
-        // ---------------------------------------------------------
-
-        // BILL DUE-DATE HEAT MAP
-
-        // ---------------------------------------------------------
-
-        if let billsData = snapshot["bills"] as? [String: Any],
-           let heatMapData = billsData["heatMap"] as? [String: Any] {
-            let monthLabel = heatMapData["monthLabel"] as? String
-            let cells = (heatMapData["cells"] as? [[String: Any]] ?? []).compactMap { item in
-                guard
-                    let position = (item["position"] as? NSNumber)?.intValue,
-                    let day = (item["day"] as? NSNumber)?.intValue
-                else {
-                    return nil
-                }
-
-                let bills = (item["bills"] as? [[String: Any]] ?? []).compactMap { bill in
-                    guard
-                        let company = bill["company"] as? String,
-                        let utilityType = bill["utilityType"] as? String,
-                        let urgency = bill["urgency"] as? String
-                    else {
-                        return nil
-                    }
-
-                    return WatchBillHeatMapBill(
-                        company: company,
-                        utilityType: utilityType,
-                        urgency: urgency
-                    )
-                }
-
-                return WatchBillHeatMapCell(
-                    position: position,
-                    day: day,
-                    isEmpty: (item["isEmpty"] as? NSNumber)?.boolValue ?? false,
-                    isToday: (item["isToday"] as? NSNumber)?.boolValue ?? false,
-                    bills: bills
-                )
-            }
-
-            DispatchQueue.main.async {
-                self.billHeatMapMonthLabel = monthLabel
-                self.billHeatMapCells = cells
-            }
         }
 
         // ---------------------------------------------------------

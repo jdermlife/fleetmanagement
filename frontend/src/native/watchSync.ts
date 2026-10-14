@@ -75,20 +75,6 @@ export interface WatchSnapshot {
     total?: number | null;
     paid?: number | null;
     outstanding?: number | null;
-    heatMap?: {
-      monthLabel: string;
-      cells: Array<{
-        position: number;
-        day: number;
-        isEmpty: boolean;
-        isToday: boolean;
-        bills: Array<{
-          company: string;
-          utilityType: string;
-          urgency: 'green' | 'amber' | 'red';
-        }>;
-      }>;
-    };
     trend?: number[];
   };
 }
