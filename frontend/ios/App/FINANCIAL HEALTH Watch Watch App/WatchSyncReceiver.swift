@@ -75,6 +75,50 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var protectionCoverage: Double?
 
+    var resolvedGoldRingScore: Double? {
+        if let goldRingScore {
+            return goldRingScore
+        }
+
+        guard let creditScore, let cashFlowStrength, let leverageControl else {
+            return nil
+        }
+
+        return ((creditScore * 15) + (cashFlowStrength * 14) + (leverageControl * 14)) / 43
+    }
+
+    var resolvedSilverRingScore: Double? {
+        if let silverRingScore {
+            return silverRingScore
+        }
+
+        guard let budgetScore, let wealthBuilding, let protectionCoverage else {
+            return nil
+        }
+
+        return ((budgetScore * 11) + (wealthBuilding * 10) + (protectionCoverage * 10)) / 31
+    }
+
+    var resolvedBronzeRingScore: Double? {
+        if let bronzeRingScore {
+            return bronzeRingScore
+        }
+
+        guard
+            let investmentReadiness,
+            let retirementReadiness,
+            let financialIndependence,
+            let goalMomentum
+        else {
+            return nil
+        }
+
+        let investmentScore =
+            (investmentReadiness + retirementReadiness + financialIndependence) / 3
+
+        return ((investmentScore * 11) + (goalMomentum * 15)) / 26
+    }
+
     // MARK: - Update / Trends
 
     @Published private(set) var lastUpdated: Date?

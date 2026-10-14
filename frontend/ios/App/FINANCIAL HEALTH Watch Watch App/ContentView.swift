@@ -265,7 +265,7 @@ struct ContentView: View {
                    ZStack {
                        // OUTER RING — GOLD
                        WatchConcentricRing(
-                           progress: min(max((watchSync.goldRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedGoldRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 10,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -283,7 +283,7 @@ struct ContentView: View {
 
                        // MIDDLE RING — SILVER
                        WatchConcentricRing(
-                           progress: min(max((watchSync.silverRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedSilverRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 9,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -301,7 +301,7 @@ struct ContentView: View {
 
                        // INNER RING — BRONZE
                        WatchConcentricRing(
-                           progress: min(max((watchSync.bronzeRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedBronzeRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 8,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
