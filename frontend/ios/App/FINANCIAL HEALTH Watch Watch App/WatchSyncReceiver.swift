@@ -246,8 +246,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
         )
 
-        loadSavedSnapshot()
-
     }
 
     // MARK: - Receive User Info
