@@ -23,25 +23,27 @@ struct HealthRing: View {
                     lineWidth: lineWidth
                 )
 
-            Circle()
-                .trim(from: 0, to: progress)
-                .stroke(
-                    AngularGradient(
-                        colors: [
-                            Color(red: 1.00, green: 0.88, blue: 0.43),
-                            Color(red: 0.68, green: 0.43, blue: 0.03),
-                            Color(red: 1.00, green: 0.89, blue: 0.47)
-                        ],
-                        center: .center,
-                        startAngle: .degrees(-90),
-                        endAngle: .degrees(270)
-                    ),
-                    style: StrokeStyle(
-                        lineWidth: lineWidth,
-                        lineCap: .round
+            if progress > 0 {
+                Circle()
+                    .trim(from: 0, to: progress)
+                    .stroke(
+                        AngularGradient(
+                            colors: [
+                                Color(red: 1.00, green: 0.88, blue: 0.43),
+                                Color(red: 0.68, green: 0.43, blue: 0.03),
+                                Color(red: 1.00, green: 0.89, blue: 0.47)
+                            ],
+                            center: .center,
+                            startAngle: .degrees(-90),
+                            endAngle: .degrees(270)
+                        ),
+                        style: StrokeStyle(
+                            lineWidth: lineWidth,
+                            lineCap: .round
+                        )
                     )
-                )
-                .rotationEffect(.degrees(-90))
+                    .rotationEffect(.degrees(-90))
+            }
 
             VStack(spacing: 2) {
                 Text(
@@ -689,19 +691,21 @@ struct BudgetUtilizationWatchView: View {
                             )
                         )
 
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(
-                            LinearGradient(
-                                colors: [
-                                    Color(red: 0.086, green: 0.396, blue: 0.204),
-                                    Color(red: 0.133, green: 0.773, blue: 0.369),
-                                    Color(red: 0.525, green: 0.937, blue: 0.675)
-                                ],
-                                startPoint: .leading,
-                                endPoint: .trailing
+                    if progressFraction > 0 {
+                        RoundedRectangle(cornerRadius: 4)
+                            .fill(
+                                LinearGradient(
+                                    colors: [
+                                        Color(red: 0.086, green: 0.396, blue: 0.204),
+                                        Color(red: 0.133, green: 0.773, blue: 0.369),
+                                        Color(red: 0.525, green: 0.937, blue: 0.675)
+                                    ],
+                                    startPoint: .leading,
+                                    endPoint: .trailing
+                                )
                             )
-                        )
-                        .frame(width: geometry.size.width * progressFraction)
+                            .frame(width: geometry.size.width * progressFraction)
+                    }
                 }
             }
             .frame(height: 14)
@@ -828,8 +832,10 @@ struct BillManagerWatchView: View {
                             .foregroundStyle(.secondary)
                     }
 
-                    ForEach(0..<calendarCellCount, id: \.self) { index in
-                        calendarCell(at: index)
+                    if calendarCellCount > 0 {
+                        ForEach(0..<calendarCellCount, id: \.self) { index in
+                            calendarCell(at: index)
+                        }
                     }
                 }
 
