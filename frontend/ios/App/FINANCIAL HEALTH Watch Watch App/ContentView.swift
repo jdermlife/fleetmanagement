@@ -267,7 +267,17 @@ struct ContentView: View {
                        WatchConcentricRing(
                            progress: min(max((watchSync.goldRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 10,
-                           color: Color(red: 0.90, green: 0.67, blue: 0.12)
+                           gradient: LinearGradient(
+                               gradient: Gradient(stops: [
+                                   .init(color: Color(red: 0.482, green: 0.314, blue: 0.031), location: 0),
+                                   .init(color: Color(red: 0.957, green: 0.773, blue: 0.310), location: 0.24),
+                                   .init(color: Color(red: 1.000, green: 0.914, blue: 0.604), location: 0.43),
+                                   .init(color: Color(red: 0.839, green: 0.604, blue: 0.118), location: 0.68),
+                                   .init(color: Color(red: 0.518, green: 0.333, blue: 0.031), location: 1)
+                               ]),
+                               startPoint: .topLeading,
+                               endPoint: .bottomTrailing
+                           )
                        )
                        .frame(width: 145, height: 145)
 
@@ -275,7 +285,17 @@ struct ContentView: View {
                        WatchConcentricRing(
                            progress: min(max((watchSync.silverRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 9,
-                           color: Color(red: 0.78, green: 0.80, blue: 0.85)
+                           gradient: LinearGradient(
+                               gradient: Gradient(stops: [
+                                   .init(color: Color(red: 0.396, green: 0.420, blue: 0.451), location: 0),
+                                   .init(color: Color(red: 0.835, green: 0.851, blue: 0.871), location: 0.24),
+                                   .init(color: Color(red: 0.969, green: 0.973, blue: 0.976), location: 0.43),
+                                   .init(color: Color(red: 0.678, green: 0.702, blue: 0.729), location: 0.68),
+                                   .init(color: Color(red: 0.408, green: 0.431, blue: 0.463), location: 1)
+                               ]),
+                               startPoint: .topLeading,
+                               endPoint: .bottomTrailing
+                           )
                        )
                        .frame(width: 116, height: 116)
 
@@ -283,7 +303,17 @@ struct ContentView: View {
                        WatchConcentricRing(
                            progress: min(max((watchSync.bronzeRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 8,
-                           color: Color(red: 0.85, green: 0.43, blue: 0.20)
+                           gradient: LinearGradient(
+                               gradient: Gradient(stops: [
+                                   .init(color: Color(red: 0.400, green: 0.196, blue: 0.075), location: 0),
+                                   .init(color: Color(red: 0.776, green: 0.478, blue: 0.231), location: 0.24),
+                                   .init(color: Color(red: 0.941, green: 0.678, blue: 0.439), location: 0.43),
+                                   .init(color: Color(red: 0.663, green: 0.341, blue: 0.149), location: 0.68),
+                                   .init(color: Color(red: 0.396, green: 0.188, blue: 0.071), location: 1)
+                               ]),
+                               startPoint: .topLeading,
+                               endPoint: .bottomTrailing
+                           )
                        )
                        .frame(width: 87, height: 87)
 
@@ -998,7 +1028,7 @@ struct FinancialHealthDetailView: View {
 struct WatchConcentricRing: View {
     let progress: Double
     let lineWidth: CGFloat
-    let color: Color
+    let gradient: LinearGradient
 
     var body: some View {
         ZStack {
@@ -1013,7 +1043,7 @@ struct WatchConcentricRing: View {
             Circle()
                 .trim(from: 0, to: min(max(progress, 0.0), 1.0))
                 .stroke(
-                    color,
+                    gradient,
                     style: StrokeStyle(
                         lineWidth: lineWidth,
                         lineCap: .round
