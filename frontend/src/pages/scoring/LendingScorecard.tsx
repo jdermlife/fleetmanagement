@@ -4398,6 +4398,11 @@ export default function LendingScorecard() {
           nonStarterScore: displayedQuantSummary.fraud_score,
           socialScore: displayedQuantSummary.social_score,
           psychometricScore: displayedQuantSummary.psychometric_score,
+          creditFilscore: toFilscore(displayedQuantSummary.credit_score),
+          creditBureauFilscore: toFilscore(displayedQuantSummary.credit_bureau_score),
+          nonStarterFilscore: toFilscore(displayedQuantSummary.fraud_score),
+          socialFilscore: toFilscore(displayedQuantSummary.social_score),
+          psychometricFilscore: toFilscore(displayedQuantSummary.psychometric_score),
         },
       },
     }).catch((error) => {

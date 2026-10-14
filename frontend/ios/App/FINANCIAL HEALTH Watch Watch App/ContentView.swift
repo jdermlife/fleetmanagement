@@ -265,7 +265,7 @@ struct ContentView: View {
                    ZStack {
                        // OUTER RING — GOLD
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedGoldRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.goldRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 10,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -283,7 +283,7 @@ struct ContentView: View {
 
                        // MIDDLE RING — SILVER
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedSilverRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.silverRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 9,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -301,7 +301,7 @@ struct ContentView: View {
 
                        // INNER RING — BRONZE
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedBronzeRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.bronzeRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 8,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -641,7 +641,7 @@ struct CreditHealthWatchView: View {
 
                 ZStack {
                     CreditHealthConcentricRing(
-                        score: watchSync.creditScore,
+                        filscore: watchSync.creditFilscore,
                         lineWidth: 9,
                         trackColor: Color(red: 0.231, green: 0.510, blue: 0.965),
                         gradient: creditGradient
@@ -649,7 +649,7 @@ struct CreditHealthWatchView: View {
                     .frame(width: 156, height: 156)
 
                     CreditHealthConcentricRing(
-                        score: watchSync.creditBureauScore,
+                        filscore: watchSync.creditBureauFilscore,
                         lineWidth: 9,
                         trackColor: Color(red: 0.078, green: 0.722, blue: 0.651),
                         gradient: creditBureauGradient
@@ -657,7 +657,7 @@ struct CreditHealthWatchView: View {
                     .frame(width: 130, height: 130)
 
                     CreditHealthConcentricRing(
-                        score: watchSync.nonStarterScore,
+                        filscore: watchSync.nonStarterFilscore,
                         lineWidth: 9,
                         trackColor: Color(red: 0.937, green: 0.267, blue: 0.267),
                         gradient: nonStarterGradient
@@ -665,7 +665,7 @@ struct CreditHealthWatchView: View {
                     .frame(width: 104, height: 104)
 
                     CreditHealthConcentricRing(
-                        score: watchSync.socialScore,
+                        filscore: watchSync.socialFilscore,
                         lineWidth: 9,
                         trackColor: Color(red: 0.980, green: 0.800, blue: 0.082),
                         gradient: socialGradient
@@ -673,7 +673,7 @@ struct CreditHealthWatchView: View {
                     .frame(width: 78, height: 78)
 
                     CreditHealthConcentricRing(
-                        score: watchSync.psychometricScore,
+                        filscore: watchSync.psychometricFilscore,
                         lineWidth: 8,
                         trackColor: .white,
                         gradient: psychometricGradient
@@ -698,38 +698,38 @@ struct CreditHealthWatchView: View {
 
                 WatchMetricRow(
                     title: "Credit Score",
-                    value: filscoreText(
-                        watchSync.creditScore
+                    value: scoreText(
+                        watchSync.creditFilscore
                     )
                 )
 
                 WatchMetricRow(
                     title: "Credit Bureau",
-                    value: filscoreText(
-                        watchSync.creditBureauScore
+                    value: scoreText(
+                        watchSync.creditBureauFilscore
                     )
                 )
 
                 WatchMetricRow(
                     title: "Behaviour",
-                    value: filscoreText(
-                        watchSync.psychometricScore
+                    value: scoreText(
+                        watchSync.psychometricFilscore
                     )
                 )
 
 
                 WatchMetricRow(
                     title: "Social",
-                    value: filscoreText(
-                        watchSync.socialScore
+                    value: scoreText(
+                        watchSync.socialFilscore
                     )
                 )
 
 
                 WatchMetricRow(
                     title: "Non-Starter",
-                    value: filscoreText(
-                        watchSync.nonStarterScore
+                    value: scoreText(
+                        watchSync.nonStarterFilscore
                     )
                 )
 
@@ -742,10 +742,7 @@ struct CreditHealthWatchView: View {
                     .fontWeight(.semibold)
 
                 WatchTrendGraph(
-                    values:
-                        watchSync.creditHealthTrend.map {
-                            filscore($0)
-                        },
+                    values: watchSync.creditHealthTrend,
                     maximum: 1000
                 )
             }
@@ -754,7 +751,7 @@ struct CreditHealthWatchView: View {
         .navigationTitle("Credit")
     }
 
-    private func filscoreText(
+    private func scoreText(
         _ value: Double?
     ) -> String {
 
@@ -764,12 +761,8 @@ struct CreditHealthWatchView: View {
 
         return String(
             format: "%.0f",
-            filscore(value)
+            value
         )
-    }
-
-    private func filscore(_ value: Double) -> Double {
-        200 + (min(max(value, 0), 100) * 7)
     }
 
     private var creditGradient: LinearGradient {
@@ -1143,15 +1136,14 @@ struct WatchConcentricRing: View {
 }
 
 struct CreditHealthConcentricRing: View {
-    let score: Double?
+    let filscore: Double?
     let lineWidth: CGFloat
     let trackColor: Color
     let gradient: LinearGradient
 
     private var progress: Double {
-        guard let score else { return 0 }
-        let filscore = 200 + (min(max(score, 0), 100) * 7)
-        return filscore / 1000
+        guard let filscore else { return 0 }
+        return min(max(filscore / 1000, 0), 1)
     }
 
     var body: some View {

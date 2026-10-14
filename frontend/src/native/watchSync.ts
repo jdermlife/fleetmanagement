@@ -22,6 +22,11 @@ export interface WatchSnapshot {
     psychometricScore?: number | null;
     socialScore?: number | null;
     nonStarterScore?: number | null;
+    creditFilscore?: number | null;
+    creditBureauFilscore?: number | null;
+    psychometricFilscore?: number | null;
+    socialFilscore?: number | null;
+    nonStarterFilscore?: number | null;
     trend?: number[];
   };
 

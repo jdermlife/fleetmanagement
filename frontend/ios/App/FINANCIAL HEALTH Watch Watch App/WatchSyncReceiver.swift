@@ -29,6 +29,16 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var nonStarterScore: Double?
 
+    @Published private(set) var creditFilscore: Double?
+
+    @Published private(set) var creditBureauFilscore: Double?
+
+    @Published private(set) var psychometricFilscore: Double?
+
+    @Published private(set) var socialFilscore: Double?
+
+    @Published private(set) var nonStarterFilscore: Double?
+
     // MARK: - Budget
 
     @Published private(set) var budgetScore: Double?
@@ -64,50 +74,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
     @Published private(set) var goalMomentum: Double?
 
     @Published private(set) var protectionCoverage: Double?
-
-    var resolvedGoldRingScore: Double? {
-        if let goldRingScore {
-            return goldRingScore
-        }
-
-        guard let creditScore, let cashFlowStrength, let leverageControl else {
-            return nil
-        }
-
-        return ((creditScore * 15) + (cashFlowStrength * 14) + (leverageControl * 14)) / 43
-    }
-
-    var resolvedSilverRingScore: Double? {
-        if let silverRingScore {
-            return silverRingScore
-        }
-
-        guard let budgetScore, let wealthBuilding, let protectionCoverage else {
-            return nil
-        }
-
-        return ((budgetScore * 11) + (wealthBuilding * 10) + (protectionCoverage * 10)) / 31
-    }
-
-    var resolvedBronzeRingScore: Double? {
-        if let bronzeRingScore {
-            return bronzeRingScore
-        }
-
-        guard
-            let investmentReadiness,
-            let retirementReadiness,
-            let financialIndependence,
-            let goalMomentum
-        else {
-            return nil
-        }
-
-        let investmentScore =
-            (investmentReadiness + retirementReadiness + financialIndependence) / 3
-
-        return ((investmentScore * 11) + (goalMomentum * 15)) / 26
-    }
 
     // MARK: - Update / Trends
 
@@ -663,6 +629,56 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
                 section: "creditHealth",
 
                 key: "nonStarterScore"
+
+            )
+
+            self.creditFilscore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "creditFilscore"
+
+            )
+
+            self.creditBureauFilscore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "creditBureauFilscore"
+
+            )
+
+            self.psychometricFilscore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "psychometricFilscore"
+
+            )
+
+            self.socialFilscore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "socialFilscore"
+
+            )
+
+            self.nonStarterFilscore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "nonStarterFilscore"
 
             )
 
