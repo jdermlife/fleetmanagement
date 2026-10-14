@@ -4,14 +4,14 @@ import SwiftUI
 
 
 struct HealthRing: View {
-    let value: Double
+    let value: Double?
     let maximum: Double
     let title: String
     let subtitle: String
     var lineWidth: CGFloat = 10
 
-    private var progress: Double {
-        guard maximum > 0 else { return 0 }
+    private var progress: Double? {
+        guard let value, maximum > 0 else { return nil }
         return min(max(value / maximum, 0), 1)
     }
 
@@ -23,7 +23,7 @@ struct HealthRing: View {
                     lineWidth: lineWidth
                 )
 
-            if progress > 0 {
+            if let progress, progress > 0 {
                 Circle()
                     .trim(from: 0, to: progress)
                     .stroke(
@@ -47,9 +47,11 @@ struct HealthRing: View {
 
             VStack(spacing: 2) {
                 Text(
-                    maximum >= 1000
-                    ? String(format: "%.0f", value)
-                    : String(format: "%.1f", value)
+                    value.map {
+                        maximum >= 1000
+                            ? String(format: "%.0f", $0)
+                            : String(format: "%.1f", $0)
+                    } ?? "NA"
                 )
                 .font(.system(
                     size: 22,
@@ -122,10 +124,10 @@ struct WatchTrendGraph: View {
     }
 
     var body: some View {
+        if normalizedValues.count >= 2 {
+            GeometryReader { geometry in
 
-        GeometryReader { geometry in
-
-            ZStack {
+                ZStack {
 
                 RoundedRectangle(
                     cornerRadius: 8
@@ -159,9 +161,7 @@ struct WatchTrendGraph: View {
                     lineWidth: 1
                 )
 
-                // Trend line
-                if normalizedValues.count >= 2 {
-
+                    // Trend line
                     Path { path in
 
                         let width =
@@ -219,21 +219,15 @@ struct WatchTrendGraph: View {
                         )
                     )
                 }
-
-                // No history message
-                if normalizedValues.count < 2 {
-
-                    Text("Awaiting history")
-                        .font(
-                            .system(size: 8)
-                        )
-                        .foregroundStyle(
-                            .secondary
-                        )
-                }
             }
+            .frame(height: 65)
+        } else {
+            Text("NA")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity)
+                .frame(height: 65)
         }
-        .frame(height: 65)
     }
 }
 
@@ -267,7 +261,9 @@ struct ContentView: View {
                    ZStack {
                        // OUTER RING — GOLD
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedGoldRingScore ?? 0) / 100, 0), 1),
+                           progress: watchSync.resolvedGoldRingScore.map {
+                               min(max($0 / 100, 0), 1)
+                           },
                            lineWidth: 10,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -285,7 +281,9 @@ struct ContentView: View {
 
                        // MIDDLE RING — SILVER
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedSilverRingScore ?? 0) / 100, 0), 1),
+                           progress: watchSync.resolvedSilverRingScore.map {
+                               min(max($0 / 100, 0), 1)
+                           },
                            lineWidth: 9,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -303,7 +301,9 @@ struct ContentView: View {
 
                        // INNER RING — BRONZE
                        WatchConcentricRing(
-                           progress: min(max((watchSync.resolvedBronzeRingScore ?? 0) / 100, 0), 1),
+                           progress: watchSync.resolvedBronzeRingScore.map {
+                               min(max($0 / 100, 0), 1)
+                           },
                            lineWidth: 8,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -324,7 +324,7 @@ struct ContentView: View {
                            Text(
                                watchSync.financialHealth.map {
                                    String(format: "%.0f", $0)
-                               } ?? "--"
+                               } ?? "NA"
                            )
                            .font(.system(size: 27, weight: .bold, design: .rounded))
                            .foregroundStyle(.white)
@@ -342,7 +342,7 @@ struct ContentView: View {
                         // Wealth Building
                         HealthRing(
                             value:
-                                watchSync.wealthBuilding ?? 0,
+                                watchSync.wealthBuilding,
                             maximum: 100,
                             title: "WEALTH",
                             subtitle: "CAPACITY",
@@ -395,7 +395,7 @@ struct ContentView: View {
                                         format: "%.0f",
                                         $0
                                     )
-                                } ?? "--",
+                                } ?? "NA",
                             subtitle: "Health Score"
                         )
                     }
@@ -418,7 +418,7 @@ struct ContentView: View {
                                         format: "%.0f",
                                         $0
                                     )
-                                } ?? "--",
+                                } ?? "NA",
                             subtitle: "Budget Health"
                         )
                     }
@@ -435,11 +435,13 @@ struct ContentView: View {
 
                         ScoreCard(
                             title: "Bill Manager",
-                            value: String(
-                                watchSync.billCalendarDays.reduce(0) {
-                                    $0 + $1.billCount
-                                }
-                            ),
+                            value: watchSync.billCalendarMonthLabel == nil
+                                ? "NA"
+                                : String(
+                                    watchSync.billCalendarDays.reduce(0) {
+                                        $0 + $1.billCount
+                                    }
+                                ),
                             subtitle: "Bills This Month"
                         )
                     }
@@ -462,7 +464,7 @@ struct ContentView: View {
                                         format: "%.0f",
                                         $0
                                     )
-                                } ?? "--",
+                                } ?? "NA",
                             subtitle: "Credit Score"
                         )
                     }
@@ -485,7 +487,7 @@ struct ContentView: View {
                                         format: "%.1f",
                                         $0
                                     )
-                                } ?? "--",
+                                } ?? "NA",
                             subtitle: "Building Capacity"
                         )
                     }
@@ -549,7 +551,7 @@ struct BudgetWatchView: View {
 
                 HealthRing(
                     value:
-                        watchSync.budgetScore ?? 0,
+                        watchSync.budgetScore,
                     maximum: 100,
                     title: "BUDGET",
                     subtitle: "HEALTH",
@@ -636,7 +638,7 @@ struct BudgetWatchView: View {
     ) -> String {
 
         guard let value else {
-            return "--"
+            return "NA"
         }
 
         return "₱" + String(
@@ -649,12 +651,14 @@ struct BudgetWatchView: View {
 struct BudgetUtilizationWatchView: View {
     @ObservedObject var watchSync: WatchSyncReceiver
 
-    private var progressFraction: CGFloat {
-        CGFloat(min(max(watchSync.budgetProgressPercent ?? 0, 0), 100) / 100)
+    private var progressFraction: CGFloat? {
+        guard let value = watchSync.budgetProgressPercent else { return nil }
+        return CGFloat(min(max(value, 0), 100) / 100)
     }
 
-    private var overflowFraction: CGFloat {
-        CGFloat(min(max(watchSync.budgetOverflowPercent ?? 0, 0), 100) / 100)
+    private var overflowFraction: CGFloat? {
+        guard let value = watchSync.budgetOverflowPercent else { return nil }
+        return CGFloat(min(max(value, 0), 100) / 100)
     }
 
     var body: some View {
@@ -691,7 +695,7 @@ struct BudgetUtilizationWatchView: View {
                             )
                         )
 
-                    if progressFraction > 0 {
+                    if let progressFraction, progressFraction > 0 {
                         RoundedRectangle(cornerRadius: 4)
                             .fill(
                                 LinearGradient(
@@ -710,7 +714,7 @@ struct BudgetUtilizationWatchView: View {
             }
             .frame(height: 14)
 
-            if overflowFraction > 0 {
+            if let overflowFraction, overflowFraction > 0 {
                 GeometryReader { geometry in
                     ZStack(alignment: .leading) {
                         Capsule()
@@ -773,12 +777,12 @@ struct BudgetUtilizationWatchView: View {
     }
 
     private func percent(_ value: Double?) -> String {
-        guard let value else { return "--" }
+        guard let value else { return "NA" }
         return String(format: "%.1f%%", value)
     }
 
     private func money(_ value: Double?) -> String {
-        guard let value else { return "--" }
+        guard let value else { return "NA" }
         return "₱" + String(format: "%.0f", value)
     }
 
@@ -788,7 +792,7 @@ struct BudgetUtilizationWatchView: View {
             let isOverBudget = watchSync.isOverBudget,
             let sourceLabel = watchSync.budgetSourceLabel
         else {
-            return "Awaiting Budget Performance data"
+            return "NA"
         }
 
         let status = isOverBudget ? "over budget" : "remaining"
@@ -820,29 +824,31 @@ struct BillManagerWatchView: View {
                     .font(.system(size: 8, weight: .bold))
                     .foregroundStyle(Color(red: 0.49, green: 0.83, blue: 1.00))
 
-                Text(watchSync.billCalendarMonthLabel ?? "Awaiting calendar")
+                Text(watchSync.billCalendarMonthLabel ?? "NA")
                     .font(.system(size: 13, weight: .bold))
 
-                urgencyLegend
+                if watchSync.billCalendarMonthLabel != nil {
+                    urgencyLegend
 
-                LazyVGrid(columns: columns, spacing: 2) {
-                    ForEach(Array(weekdays.enumerated()), id: \.offset) { _, weekday in
-                        Text(weekday)
-                            .font(.system(size: 7, weight: .bold))
-                            .foregroundStyle(.secondary)
-                    }
+                    LazyVGrid(columns: columns, spacing: 2) {
+                        ForEach(Array(weekdays.enumerated()), id: \.offset) { _, weekday in
+                            Text(weekday)
+                                .font(.system(size: 7, weight: .bold))
+                                .foregroundStyle(.secondary)
+                        }
 
-                    if calendarCellCount > 0 {
-                        ForEach(0..<calendarCellCount, id: \.self) { index in
-                            calendarCell(at: index)
+                        if calendarCellCount > 0 {
+                            ForEach(0..<calendarCellCount, id: \.self) { index in
+                                calendarCell(at: index)
+                            }
                         }
                     }
-                }
 
-                if watchSync.billCalendarDays.allSatisfy({ $0.billCount == 0 }) {
-                    Text("No bill due dates this month")
-                        .font(.system(size: 8))
-                        .foregroundStyle(.secondary)
+                    if watchSync.billCalendarDays.allSatisfy({ $0.billCount == 0 }) {
+                        Text("No bill due dates this month")
+                            .font(.system(size: 8))
+                            .foregroundStyle(.secondary)
+                    }
                 }
             }
             .padding(.horizontal, 5)
@@ -1075,7 +1081,7 @@ struct CreditHealthWatchView: View {
     ) -> String {
 
         guard let value else {
-            return "--"
+            return "NA"
         }
 
         return String(
@@ -1146,7 +1152,7 @@ struct WealthWatchView: View {
 
                 HealthRing(
                     value:
-                        watchSync.wealthBuilding ?? 0,
+                        watchSync.wealthBuilding,
                     maximum: 100,
                     title: "WEALTH",
                     subtitle: "CAPACITY",
@@ -1284,7 +1290,7 @@ struct WealthWatchView: View {
     ) -> String {
 
         guard let value else {
-            return "--"
+            return "NA"
         }
 
         return String(
@@ -1298,7 +1304,7 @@ struct WealthWatchView: View {
     ) -> String {
 
         guard let value else {
-            return "--"
+            return "NA"
         }
 
         return "₱" + String(
@@ -1358,7 +1364,7 @@ struct FinancialHealthDetailView: View {
 
                 HealthRing(
                     value:
-                        watchSync.financialHealth ?? 0,
+                        watchSync.financialHealth,
                     maximum: 1000,
                     title: "FINANCIAL",
                     subtitle: "HEALTH",
@@ -1376,7 +1382,7 @@ struct FinancialHealthDetailView: View {
                             format: "%.0f",
                             $0
                         )
-                    } ?? "--"
+                    } ?? "NA"
                 )
                 .font(
                     .system(
@@ -1425,7 +1431,7 @@ struct FinancialHealthDetailView: View {
 }
 
 struct WatchConcentricRing: View {
-    let progress: Double
+    let progress: Double?
     let lineWidth: CGFloat
     let gradient: LinearGradient
 
@@ -1438,7 +1444,7 @@ struct WatchConcentricRing: View {
                     lineWidth: lineWidth
                 )
 
-            if progress > 0 {
+            if let progress, progress > 0 {
                 Circle()
                     .trim(from: 0, to: min(max(progress, 0.0), 1.0))
                     .stroke(
