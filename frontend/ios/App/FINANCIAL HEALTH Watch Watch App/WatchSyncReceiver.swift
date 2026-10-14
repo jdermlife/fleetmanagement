@@ -4,15 +4,6 @@ import Combine
 
 import WatchConnectivity
 
-struct WatchBillCalendarDay: Identifiable {
-    let day: Int
-    let isToday: Bool
-    let urgency: String?
-    let billCount: Int
-
-    var id: Int { day }
-}
-
 final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     static let shared = WatchSyncReceiver()
@@ -57,16 +48,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
     @Published private(set) var monthlyExpenses: Double?
 
     @Published private(set) var monthlyCashFlow: Double?
-
-    // MARK: - Bill Manager
-
-    @Published private(set) var billCalendarMonthLabel: String?
-
-    @Published private(set) var billCalendarFirstWeekday: Int = 0
-
-    @Published private(set) var billCalendarDayCount: Int = 0
-
-    @Published private(set) var billCalendarDays: [WatchBillCalendarDay] = []
 
     // MARK: - Net Worth
 
@@ -825,37 +806,6 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
                 cashFlow
 
-        }
-
-        // ---------------------------------------------------------
-
-        // BILL MANAGER
-
-        // ---------------------------------------------------------
-
-        if let billsData = snapshot["bills"] as? [String: Any] {
-            let monthLabel = billsData["monthLabel"] as? String
-            let firstWeekday = (billsData["firstWeekday"] as? NSNumber)?.intValue ?? 0
-            let dayCount = (billsData["dayCount"] as? NSNumber)?.intValue ?? 0
-            let days = (billsData["days"] as? [[String: Any]] ?? []).compactMap { item in
-                guard let day = (item["day"] as? NSNumber)?.intValue else {
-                    return nil
-                }
-
-                return WatchBillCalendarDay(
-                    day: day,
-                    isToday: (item["isToday"] as? NSNumber)?.boolValue ?? false,
-                    urgency: item["urgency"] as? String,
-                    billCount: (item["billCount"] as? NSNumber)?.intValue ?? 0
-                )
-            }
-
-            DispatchQueue.main.async {
-                self.billCalendarMonthLabel = monthLabel
-                self.billCalendarFirstWeekday = firstWeekday
-                self.billCalendarDayCount = dayCount
-                self.billCalendarDays = days
-            }
         }
 
         // ---------------------------------------------------------

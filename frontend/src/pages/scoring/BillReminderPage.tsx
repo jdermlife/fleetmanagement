@@ -9,10 +9,9 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import WorkflowVoiceGuidedEntry from '../../components/profile/WorkflowVoiceGuidedEntry';
 import { useLoanApplicationsMetrics } from '../../hooks/useLoanApplicationsMetrics';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
-import { WatchSync } from '../../native/watchSync';
 import { computeBillPaymentHealthScore } from './billPaymentHealthEngine';
 import { buildBillReminderSnapshot } from './liveTrackerMetrics';
-import BillDueDateHeatMap, { buildBillDueDateHeatMap, type BillDueUrgency } from './BillDueDateHeatMap';
+import BillDueDateHeatMap from './BillDueDateHeatMap';
 
 type WorkflowStep = 1 | 2 | 3;
 type BillerFrequency = 'Monthly' | 'Quarterly' | 'Semi-Annual' | 'Annual' | 'Weekly';
@@ -363,45 +362,6 @@ export default function BillReminderPage() {
     onHydrate: handleAutosaveHydrate,
     enabled: isIdentityReady,
   });
-
-  const billDueDateCalendar = useMemo(() => {
-    const bills = savedSetup.length > 0 ? savedSetup : draftBillers;
-    const calendar = buildBillDueDateHeatMap(bills);
-    const dayCount = new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0).getDate();
-
-    return {
-      monthLabel: calendar.monthLabel,
-      firstWeekday: calendar.cells.length - dayCount,
-      dayCount,
-      days: calendar.cells.flatMap((cell) => {
-        if (!cell) return [];
-
-        const urgency = cell.bills.reduce<BillDueUrgency | null>((mostUrgent, bill) => {
-          if (bill.urgency === 'red' || mostUrgent === 'red') return 'red';
-          if (bill.urgency === 'amber' || mostUrgent === 'amber') return 'amber';
-          return 'green';
-        }, null);
-
-        return [{
-          day: cell.day,
-          isToday: cell.isToday,
-          urgency,
-          billCount: cell.bills.length,
-        }];
-      }),
-    };
-  }, [draftBillers, savedSetup]);
-
-  useEffect(() => {
-    void WatchSync.updateSnapshot({
-      snapshot: {
-        updatedAt: new Date().toISOString(),
-        bills: billDueDateCalendar,
-      },
-    }).catch((watchError: unknown) => {
-      console.error('[WatchSync] Failed to send Bill Due Date Heat Map snapshot', watchError);
-    });
-  }, [billDueDateCalendar]);
 
   const workflowSteps: Array<{ id: WorkflowStep; label: string; description: string }> = [
     {

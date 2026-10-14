@@ -75,15 +75,6 @@ export interface WatchSnapshot {
     total?: number | null;
     paid?: number | null;
     outstanding?: number | null;
-    monthLabel?: string | null;
-    firstWeekday?: number | null;
-    dayCount?: number | null;
-    days?: Array<{
-      day: number;
-      isToday: boolean;
-      urgency: 'green' | 'amber' | 'red' | null;
-      billCount: number;
-    }>;
     trend?: number[];
   };
 }
