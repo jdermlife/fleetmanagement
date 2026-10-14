@@ -62,6 +62,7 @@ import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity
 import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
+import { WatchSync } from '../../native/watchSync';
 import {
   calculateApplicationInformationCompletion,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
@@ -4383,6 +4384,26 @@ export default function LendingScorecard() {
   const borrowerDisplayName =
     getCanonicalBorrowerName(formData.borrower, formData.applicantPersonal) ||
     'Unnamed Applicant / Borrower';
+
+  useEffect(() => {
+    if (!displayedQuantSummary) return;
+
+    void WatchSync.updateSnapshot({
+      snapshot: {
+        updatedAt: new Date().toISOString(),
+        creditHealth: {
+          value: displayedQuantSummary.overall_score,
+          creditScore: displayedQuantSummary.credit_score,
+          creditBureauScore: displayedQuantSummary.credit_bureau_score,
+          nonStarterScore: displayedQuantSummary.fraud_score,
+          socialScore: displayedQuantSummary.social_score,
+          psychometricScore: displayedQuantSummary.psychometric_score,
+        },
+      },
+    }).catch((error) => {
+      console.error('[WatchSync] Failed to send Credit Health snapshot', error);
+    });
+  }, [displayedQuantSummary]);
 
   const handleOpenCertification = async () => {
     if (hasSufficientInformationForRating && !displayedQuantSummary) {

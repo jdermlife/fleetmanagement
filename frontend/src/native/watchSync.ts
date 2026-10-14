@@ -18,6 +18,7 @@ export interface WatchSnapshot {
   creditHealth?: {
     value?: number | null;
     creditScore?: number | null;
+    creditBureauScore?: number | null;
     psychometricScore?: number | null;
     socialScore?: number | null;
     nonStarterScore?: number | null;

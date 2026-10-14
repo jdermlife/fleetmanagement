@@ -21,6 +21,8 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var creditScore: Double?
 
+    @Published private(set) var creditBureauScore: Double?
+
     @Published private(set) var psychometricScore: Double?
 
     @Published private(set) var socialScore: Double?
@@ -623,6 +625,16 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
         DispatchQueue.main.async {
 
             self.creditScore = receivedCreditScore
+
+            self.creditBureauScore = self.number(
+
+                snapshot,
+
+                section: "creditHealth",
+
+                key: "creditBureauScore"
+
+            )
 
             self.psychometricScore = self.number(
 
