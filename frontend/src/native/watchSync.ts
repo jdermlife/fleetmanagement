@@ -3,23 +3,40 @@ import { registerPlugin } from '@capacitor/core';
 export interface WatchSnapshot {
   updatedAt: string;
 
-  filsScore?: {
+  // Gold ring — Financial Health Foundation
+  financialHealth?: {
     value?: number | null;
-    grade?: string | null;
-    rating?: string | null;
     trend?: number[];
   };
 
+  // Silver ring — Controls & Resilience
+  silverRingScore?: number | null;
+
+  // Credit Health data — retain for other Watch displays
+  creditHealth?: {
+    value?: number | null;
+    creditScore?: number | null;
+    psychometricScore?: number | null;
+    socialScore?: number | null;
+    nonStarterScore?: number | null;
+    trend?: number[];
+  };
+
+  // Bronze ring — Wealth Building / Future
   wealthBuilding?: {
     value?: number | null;
     grade?: string | null;
     rating?: string | null;
-    trend?: number[];
-  };
-
-  
-  financialHealth?: {
-    value?: number | null;
+    netWorthStrength?: number | null;
+    liquidityBuffer?: number | null;
+    cashFlowStrength?: number | null;
+    leverageControl?: number | null;
+    emergencyReadiness?: number | null;
+    investmentReadiness?: number | null;
+    retirementReadiness?: number | null;
+    financialIndependence?: number | null;
+    goalMomentum?: number | null;
+    protectionCoverage?: number | null;
     trend?: number[];
   };
 
@@ -34,7 +51,9 @@ export interface WatchSnapshot {
     score?: number | null;
     income?: number | null;
     expenses?: number | null;
-    utilizationPercent?: number | null;
+    net?: number | null;
+    variance?: number | null;
+    performanceBand?: string | null;
     trend?: number[];
   };
 

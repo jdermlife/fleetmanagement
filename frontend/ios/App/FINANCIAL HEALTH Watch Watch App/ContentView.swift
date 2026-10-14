@@ -2,45 +2,40 @@ import SwiftUI
 
 // MARK: - Health Ring
 
-struct HealthRing: View {
 
+struct HealthRing: View {
     let value: Double
     let maximum: Double
     let title: String
     let subtitle: String
-
     var lineWidth: CGFloat = 10
 
     private var progress: Double {
-        guard maximum > 0 else {
-            return 0
-        }
-
-        return min(
-            max(value / maximum, 0),
-            1
-        )
+        guard maximum > 0 else { return 0 }
+        return min(max(value / maximum, 0), 1)
     }
 
     var body: some View {
-
         ZStack {
-
-            // Background ring
             Circle()
                 .stroke(
-                    Color.gray.opacity(0.18),
+                    Color.white.opacity(0.30),
                     lineWidth: lineWidth
                 )
 
-            // Progress ring
             Circle()
-                .trim(
-                    from: 0,
-                    to: progress
-                )
+                .trim(from: 0, to: progress)
                 .stroke(
-                    Color.yellow,
+                    AngularGradient(
+                        colors: [
+                            Color(red: 1.00, green: 0.88, blue: 0.43),
+                            Color(red: 0.68, green: 0.43, blue: 0.03),
+                            Color(red: 1.00, green: 0.89, blue: 0.47)
+                        ],
+                        center: .center,
+                        startAngle: .degrees(-90),
+                        endAngle: .degrees(270)
+                    ),
                     style: StrokeStyle(
                         lineWidth: lineWidth,
                         lineCap: .round
@@ -48,37 +43,35 @@ struct HealthRing: View {
                 )
                 .rotationEffect(.degrees(-90))
 
-            // Center
-            VStack(spacing: 1) {
-
+            VStack(spacing: 2) {
                 Text(
                     maximum >= 1000
                     ? String(format: "%.0f", value)
                     : String(format: "%.1f", value)
                 )
-                .font(
-                    .system(
-                        size: 22,
-                        weight: .bold,
-                        design: .rounded
-                    )
-                )
+                .font(.system(
+                    size: 22,
+                    weight: .bold,
+                    design: .rounded
+                ))
+                .foregroundStyle(.white)
+                .minimumScaleFactor(0.7)
+                .lineLimit(1)
 
                 Text(title)
-                    .font(
-                        .system(
-                            size: 8,
-                            weight: .semibold
-                        )
-                    )
+                    .font(.system(size: 8, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.85, green: 0.68, blue: 0.31))
 
                 Text(subtitle)
                     .font(.system(size: 7))
                     .foregroundStyle(.secondary)
             }
         }
+        .background(Color.black)
     }
 }
+
+
 
 
 // MARK: - Metric Row
@@ -260,28 +253,58 @@ struct ContentView: View {
 
                     // MARK: Header
 
-                    Text("FINANCIAL HEALTH")
+                    Text("FIN HEALTH")
                         .font(.headline)
-                        .fontWeight(.bold)
+                        .fontWeight(.light)
 
+
+                    
 
                     // MARK: Main Concentric Rings
 
-                    ZStack {
+                   ZStack {
+                       // OUTER RING — GOLD
+                       WatchConcentricRing(
+                           progress: min(max((watchSync.financialHealth ?? 0) / 1000, 0), 1),
+                           lineWidth: 10,
+                           color: Color(red: 0.90, green: 0.67, blue: 0.12)
+                       )
+                       .frame(width: 145, height: 145)
 
-                        // Financial Health
-                        HealthRing(
-                            value:
-                                watchSync.financialHealth ?? 0,
-                            maximum: 1000,
-                            title: "FINANCIAL",
-                            subtitle: "HEALTH",
-                            lineWidth: 11
-                        )
-                        .frame(
-                            width: 145,
-                            height: 145
-                        )
+                       // MIDDLE RING — SILVER
+                       WatchConcentricRing(
+                           progress: min(max((watchSync.creditScore ?? 0) / 100, 0), 1),
+                           lineWidth: 9,
+                           color: Color(red: 0.78, green: 0.80, blue: 0.85)
+                       )
+                       .frame(width: 116, height: 116)
+
+                       // INNER RING — BRONZE
+                       WatchConcentricRing(
+                           progress: min(max((watchSync.wealthBuilding ?? 0) / 100, 0), 1),
+                           lineWidth: 8,
+                           color: Color(red: 0.85, green: 0.43, blue: 0.20)
+                       )
+                       .frame(width: 87, height: 87)
+
+                       // CENTER SCORE
+                       VStack(spacing: 2) {
+                           Text(
+                               watchSync.financialHealth.map {
+                                   String(format: "%.0f", $0)
+                               } ?? "--"
+                           )
+                           .font(.system(size: 27, weight: .bold, design: .rounded))
+                           .foregroundStyle(.white)
+
+                           Text("/ 1000")
+                               .font(.system(size: 10, weight: .semibold))
+                               .foregroundStyle(.gray)
+                       }
+                   }
+                   .frame(width: 155, height: 155)
+                   .background(Color.black)
+
 
 
                         // Wealth Building
@@ -448,7 +471,7 @@ struct ContentView: View {
             .navigationTitle("FIN HEALTH")
         }
     }
-}
+
 
 
 // MARK: - Budget & Expenses
@@ -972,9 +995,42 @@ struct FinancialHealthDetailView: View {
     }
 }
 
+struct WatchConcentricRing: View {
+    let progress: Double
+    let lineWidth: CGFloat
+    let color: Color
+
+    var body: some View {
+        ZStack {
+            // Background track
+            Circle()
+                .stroke(
+                    Color.gray.opacity(0.40),
+                    lineWidth: lineWidth
+                )
+
+            // Colored ring
+            Circle()
+                .trim(from: 0, to: min(max(progress, 0.0), 1.0))
+                .stroke(
+                    color,
+                    style: StrokeStyle(
+                        lineWidth: lineWidth,
+                        lineCap: .round
+                    )
+                )
+                .rotationEffect(.degrees(-90))
+        }
+    }
+}
+
+
+
+
 
 // MARK: - Preview
 
 #Preview {
     ContentView()
 }
+

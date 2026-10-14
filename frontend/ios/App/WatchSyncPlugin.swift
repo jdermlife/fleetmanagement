@@ -48,7 +48,16 @@ public class WatchSyncPlugin: CAPPlugin, CAPBridgedPlugin {
             return
         }
 
+        print("[WatchSyncPlugin] Snapshot keys: \(Array(snapshot.keys).sorted())")
 
+        if let creditHealth = snapshot["creditHealth"] as? [String: Any] {
+            print("[WatchSyncPlugin] Credit Health keys: \(Array(creditHealth.keys).sorted())")
+            print("[WatchSyncPlugin] Credit Score: \(String(describing: creditHealth["creditScore"]))")
+        } else {
+            print("[WatchSyncPlugin] ERROR: creditHealth is missing from incoming snapshot")
+        }
+        
+        
         // ---------------------------------------------------------
         // Save the complete snapshot locally.
         // This preserves the full JSON, including optional values.

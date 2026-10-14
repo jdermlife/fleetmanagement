@@ -861,6 +861,9 @@ export default function FinancialHealthSummaryPage() {
     () => buildFinancialHealthGroupRings(financialHealthIndicators),
     [financialHealthIndicators],
   )
+  // Reuse the silver Controls ring result already calculated for the mobile UI.
+// The group ring order is Gold (Foundation), Silver (Controls), Bronze (Future).
+const silverRingScore = Number(groupRings[1]?.value ?? 0)
   const index = publishedSummary.index
 
   useEffect(() => {
@@ -880,6 +883,7 @@ const wealthComponents = netWorthBuildingScore?.componentScores
 
 const snapshot = {
   updatedAt: summaryComputedAt.toISOString(),
+  
 
   financialHealth: {
     value: publishedSummary.score,
@@ -890,7 +894,7 @@ const snapshot = {
       publishedSummary.score,
     ],
   },
-
+  silverRingScore: silverRingScore,
   creditHealth: {
     value: lendingLeafScores?.creditScore ?? null,
 
@@ -919,9 +923,11 @@ const snapshot = {
       ),
   },
 
-  wealthBuilding: {
-    value:
-      netWorthBuildingScore?.normalizedScore ?? null,
+ wealthBuilding: {
+  value:
+    netWorthBuildingScore?.normalizedScore ??
+    groupRings[2]?.value ??
+    null,
 
     grade:
       netWorthBuildingScore?.grade ?? null,
@@ -1033,6 +1039,13 @@ const snapshot = {
   },
 }
 
+console.log('[WatchSync] Scores being sent:', {
+  financialHealth: snapshot.financialHealth.value,
+  creditHealth: snapshot.creditHealth.creditScore,
+  wealthBuilding: snapshot.wealthBuilding.value,
+})
+
+
   void WatchSync.updateSnapshot({ snapshot })
     .then((result) => {
       console.log('[WatchSync] Snapshot sent to Watch', result)
@@ -1054,55 +1067,6 @@ const snapshot = {
 
 
 
-
-
-
-
-
-
-// No new Financial Health calculation is performed here.
-useEffect(() => {
-  if (!summaryInputsLoaded || !summaryComputedAt) return
-
-  void WatchSync.updateSnapshot({
-    snapshot: {
-      updatedAt: summaryComputedAt.toISOString(),
-
-      financialHealth: {
-        value: publishedSummary.score,
-        trend: financialHealthSnapshots.map(
-          (snapshot) => snapshot.payload.score,
-        ),
-      },
-
-      wealthBuilding: {
-        value: netWorthBuildingScore?.normalizedScore ?? null,
-      },
-    },
-  }).catch((error) => {
-    console.warn('Unable to update Apple Watch snapshot:', error)
-  })
-}, [
-  summaryInputsLoaded,
-  summaryComputedAt,
-  publishedSummary,
-  netWorthBuildingScore,
-  budgetHealthScore,
-  lendingLeafScores,
-  monthlySnapshotDrafts,
-  financialHealthSnapshots,
-  step8ProfileMetrics,
-])
-
-
-
-
-
-  const refreshFinancialHealth = () => {
-    setIsRefreshingSummary(true)
-    setSummaryInputsLoaded(false)
-    setRefreshRequestVersion((version) => version + 1)
-  }
 
  const saveFinancialHealthSnapshot = async () => {
   if (!selectedApplicationNo || !summaryComputedAt) return
@@ -1432,6 +1396,12 @@ useEffect(() => {
         .map((segment) => `${segment.label} ${segment.score ?? 'Pending'} out of 100`)
         .join(', ')
     : 'Leaf graph awaiting saved lending scores'
+ 
+  const refreshFinancialHealth = () => {
+    setIsRefreshingSummary(true)
+    setRefreshRequestVersion((version) => version + 1)
+  }
+
   return (
     <div className="psychometric-page financial-health-page">
       {isFinancialStatementOpen ? <FinancialStatementModal
