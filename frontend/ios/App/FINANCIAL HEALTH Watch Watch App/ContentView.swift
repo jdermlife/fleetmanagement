@@ -265,7 +265,7 @@ struct ContentView: View {
                    ZStack {
                        // OUTER RING — GOLD
                        WatchConcentricRing(
-                           progress: min(max((watchSync.goldRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedGoldRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 10,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -283,7 +283,7 @@ struct ContentView: View {
 
                        // MIDDLE RING — SILVER
                        WatchConcentricRing(
-                           progress: min(max((watchSync.silverRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedSilverRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 9,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -301,7 +301,7 @@ struct ContentView: View {
 
                        // INNER RING — BRONZE
                        WatchConcentricRing(
-                           progress: min(max((watchSync.bronzeRingScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.resolvedBronzeRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 8,
                            gradient: LinearGradient(
                                gradient: Gradient(stops: [
@@ -1039,17 +1039,18 @@ struct WatchConcentricRing: View {
                     lineWidth: lineWidth
                 )
 
-            // Colored ring
-            Circle()
-                .trim(from: 0, to: min(max(progress, 0.0), 1.0))
-                .stroke(
-                    gradient,
-                    style: StrokeStyle(
-                        lineWidth: lineWidth,
-                        lineCap: .round
+            if progress > 0 {
+                Circle()
+                    .trim(from: 0, to: min(max(progress, 0.0), 1.0))
+                    .stroke(
+                        gradient,
+                        style: StrokeStyle(
+                            lineWidth: lineWidth,
+                            lineCap: .round
+                        )
                     )
-                )
-                .rotationEffect(.degrees(-90))
+                    .rotationEffect(.degrees(-90))
+            }
         }
     }
 }
