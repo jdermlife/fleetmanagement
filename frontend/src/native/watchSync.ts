@@ -3,14 +3,16 @@ import { registerPlugin } from '@capacitor/core';
 export interface WatchSnapshot {
   updatedAt: string;
 
-  // Gold ring — Financial Health Foundation
+  // Overall Financial Health score (0-1000)
   financialHealth?: {
     value?: number | null;
     trend?: number[];
   };
 
-  // Silver ring — Controls & Resilience
+  // Phone-computed Financial Health group rings (0-100)
+  goldRingScore?: number | null;
   silverRingScore?: number | null;
+  bronzeRingScore?: number | null;
 
   // Credit Health data — retain for other Watch displays
   creditHealth?: {
@@ -22,7 +24,7 @@ export interface WatchSnapshot {
     trend?: number[];
   };
 
-  // Bronze ring — Wealth Building / Future
+  // Wealth Building data — retain for other Watch displays
   wealthBuilding?: {
     value?: number | null;
     grade?: string | null;

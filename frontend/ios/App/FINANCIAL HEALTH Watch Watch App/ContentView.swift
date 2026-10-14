@@ -265,7 +265,7 @@ struct ContentView: View {
                    ZStack {
                        // OUTER RING — GOLD
                        WatchConcentricRing(
-                           progress: min(max((watchSync.financialHealth ?? 0) / 1000, 0), 1),
+                           progress: min(max((watchSync.goldRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 10,
                            color: Color(red: 0.90, green: 0.67, blue: 0.12)
                        )
@@ -273,7 +273,7 @@ struct ContentView: View {
 
                        // MIDDLE RING — SILVER
                        WatchConcentricRing(
-                           progress: min(max((watchSync.creditScore ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.silverRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 9,
                            color: Color(red: 0.78, green: 0.80, blue: 0.85)
                        )
@@ -281,7 +281,7 @@ struct ContentView: View {
 
                        // INNER RING — BRONZE
                        WatchConcentricRing(
-                           progress: min(max((watchSync.wealthBuilding ?? 0) / 100, 0), 1),
+                           progress: min(max((watchSync.bronzeRingScore ?? 0) / 100, 0), 1),
                            lineWidth: 8,
                            color: Color(red: 0.85, green: 0.43, blue: 0.20)
                        )

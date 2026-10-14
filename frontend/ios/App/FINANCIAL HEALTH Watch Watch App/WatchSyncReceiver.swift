@@ -11,7 +11,9 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
     // MARK: - Main Scores
 
     @Published private(set) var financialHealth: Double?
+    @Published private(set) var goldRingScore: Double?
     @Published private(set) var silverRingScore: Double?
+    @Published private(set) var bronzeRingScore: Double?
 
     @Published private(set) var wealthBuilding: Double?
 
@@ -411,15 +413,29 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
         // ---------------------------------------------------------
 
-        // SILVER RING — CONTROLS & RESILIENCE
-        // Uses the score computed by the mobile app; do not recalculate it here.
+        // FINANCIAL HEALTH GROUP RINGS
+        // These values are computed by the phone; do not recalculate them here.
         // ---------------------------------------------------------
+
+        if let value = snapshot["goldRingScore"] as? NSNumber {
+            DispatchQueue.main.async {
+                self.goldRingScore = value.doubleValue
+            }
+            print("[WatchSyncReceiver] Gold Ring Score: \(value.doubleValue)")
+        }
 
         if let value = snapshot["silverRingScore"] as? NSNumber {
             DispatchQueue.main.async {
                 self.silverRingScore = value.doubleValue
             }
             print("[WatchSyncReceiver] Silver Ring Score: \(value.doubleValue)")
+        }
+
+        if let value = snapshot["bronzeRingScore"] as? NSNumber {
+            DispatchQueue.main.async {
+                self.bronzeRingScore = value.doubleValue
+            }
+            print("[WatchSyncReceiver] Bronze Ring Score: \(value.doubleValue)")
         }
 
         // ---------------------------------------------------------

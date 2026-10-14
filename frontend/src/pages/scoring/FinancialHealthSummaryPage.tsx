@@ -861,9 +861,9 @@ export default function FinancialHealthSummaryPage() {
     () => buildFinancialHealthGroupRings(financialHealthIndicators),
     [financialHealthIndicators],
   )
-  // Reuse the silver Controls ring result already calculated for the mobile UI.
-// The group ring order is Gold (Foundation), Silver (Controls), Bronze (Future).
-const silverRingScore = Number(groupRings[1]?.value ?? 0)
+  const goldRingScore = Number(groupRings[0]?.value ?? 0)
+  const silverRingScore = Number(groupRings[1]?.value ?? 0)
+  const bronzeRingScore = Number(groupRings[2]?.value ?? 0)
   const index = publishedSummary.index
 
   useEffect(() => {
@@ -880,6 +880,7 @@ useEffect(() => {
 
   
 const wealthComponents = netWorthBuildingScore?.componentScores
+const watchNetWorthMetrics = netWorthBuildingScore?.metrics
 
 const snapshot = {
   updatedAt: summaryComputedAt.toISOString(),
@@ -894,7 +895,9 @@ const snapshot = {
       publishedSummary.score,
     ],
   },
+  goldRingScore,
   silverRingScore: silverRingScore,
+  bronzeRingScore,
   creditHealth: {
     value: lendingLeafScores?.creditScore ?? null,
 
@@ -980,12 +983,12 @@ const snapshot = {
 
   netWorth: {
     actual:
-      netWorthMetrics?.netWorth ??
+      watchNetWorthMetrics?.netWorth ??
       step8ProfileMetrics.actualNetWorth ??
       null,
 
     projected:
-      netWorthMetrics?.projectedNetWorthAtGoalDate ??
+      watchNetWorthMetrics?.projectedNetWorthAtGoalDate ??
       null,
 
     target: null,
@@ -998,16 +1001,16 @@ const snapshot = {
       budgetHealthScore?.score ?? null,
 
     income:
-      netWorthMetrics?.monthlyIncome ??
+      watchNetWorthMetrics?.monthlyIncome ??
       lendingLeafScores?.monthlyIncome ??
       null,
 
     expenses:
-      netWorthMetrics?.monthlyExpenses ??
+      watchNetWorthMetrics?.monthlyExpenses ??
       null,
 
     net:
-      netWorthMetrics?.monthlyCashFlow ??
+      watchNetWorthMetrics?.monthlyCashFlow ??
       null,
 
     variance: null,
@@ -1041,6 +1044,9 @@ const snapshot = {
 
 console.log('[WatchSync] Scores being sent:', {
   financialHealth: snapshot.financialHealth.value,
+  goldRingScore: snapshot.goldRingScore,
+  silverRingScore: snapshot.silverRingScore,
+  bronzeRingScore: snapshot.bronzeRingScore,
   creditHealth: snapshot.creditHealth.creditScore,
   wealthBuilding: snapshot.wealthBuilding.value,
 })
@@ -1063,6 +1069,10 @@ console.log('[WatchSync] Scores being sent:', {
   monthlySnapshotDrafts,
   financialHealthSnapshots,
   step8ProfileMetrics,
+  groupRings,
+  goldRingScore,
+  silverRingScore,
+  bronzeRingScore,
 ])
 
 
