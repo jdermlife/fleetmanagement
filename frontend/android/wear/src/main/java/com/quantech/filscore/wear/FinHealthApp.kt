@@ -2,6 +2,7 @@ package com.quantech.filscore.wear
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -34,7 +35,6 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.wear.compose.material3.HorizontalDivider
 import androidx.wear.compose.material3.Text
 import java.text.NumberFormat
 import java.time.Instant
@@ -109,13 +109,13 @@ private fun HomeScreen(snapshot: WatchSnapshot, navigate: (Screen) -> Unit) {
         snapshot.updatedAt?.let {
             Text("Updated ${formatUpdatedAt(it)}", color = Color.Gray, fontSize = 9.sp)
         }
-        HorizontalDivider()
+        WearDivider()
         NavigationRow("Financial Health", score(snapshot.financialHealth), "Health Score") { navigate(Screen.HEALTH) }
         NavigationRow("Budget & Expenses", score(snapshot.budgetScore), "Budget Health") { navigate(Screen.BUDGET) }
         NavigationRow("Credit Health", score(snapshot.creditScore), "Credit Score") { navigate(Screen.CREDIT) }
         NavigationRow("Wealth Capacity", decimal(snapshot.wealthBuilding), "Building Capacity") { navigate(Screen.WEALTH) }
         snapshot.netWorth?.let {
-            HorizontalDivider()
+            WearDivider()
             Text("Net Worth", fontSize = 11.sp)
             Text(money(it), fontSize = 20.sp, fontWeight = FontWeight.Bold)
             Text("Current Position", color = Color.Gray, fontSize = 9.sp)
@@ -141,7 +141,7 @@ private fun HealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
         HealthRing(snapshot.financialHealth, 1000.0, "FINANCIAL", "HEALTH", 130)
         Text(score(snapshot.financialHealth), fontSize = 30.sp, fontWeight = FontWeight.Bold)
         Text("Financial Health", fontWeight = FontWeight.Bold)
-        HorizontalDivider()
+        WearDivider()
         Text("Health Trend", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         TrendGraph(snapshot.financialHealthTrend, 1000.0)
         Text("Your overall financial health score.", fontSize = 10.sp, textAlign = TextAlign.Center)
@@ -153,11 +153,11 @@ private fun HealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
 private fun BudgetScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
     ScreenColumn("BUDGET", onBack) {
         HealthRing(snapshot.budgetScore, 100.0, "BUDGET", "HEALTH", 125)
-        HorizontalDivider()
+        WearDivider()
         MetricRow("Income", money(snapshot.monthlyIncome))
         MetricRow("Expenses", money(snapshot.monthlyExpenses))
         MetricRow("Net Cash Flow", money(snapshot.monthlyCashFlow))
-        HorizontalDivider()
+        WearDivider()
         Text("Budget Health Trend", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         TrendGraph(snapshot.budgetTrend, 100.0)
         Text("Expense Monitoring", fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
@@ -169,13 +169,13 @@ private fun BudgetScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
 private fun CreditScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
     ScreenColumn("CREDIT HEALTH", onBack) {
         CreditRings(snapshot)
-        HorizontalDivider()
+        WearDivider()
         MetricRow("Credit Score", score(snapshot.creditFilscore))
         MetricRow("Credit Bureau", score(snapshot.creditBureauFilscore))
         MetricRow("Behaviour", score(snapshot.psychometricFilscore))
         MetricRow("Social", score(snapshot.socialFilscore))
         MetricRow("Non-Starter", score(snapshot.nonStarterFilscore))
-        HorizontalDivider()
+        WearDivider()
         Text("Credit Health Trend", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         TrendGraph(snapshot.creditHealthTrend, 1000.0)
     }
@@ -185,7 +185,7 @@ private fun CreditScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
 private fun WealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
     ScreenColumn("WEALTH CAPACITY", onBack) {
         HealthRing(snapshot.wealthBuilding, 100.0, "WEALTH", "CAPACITY", 135)
-        HorizontalDivider()
+        WearDivider()
         MetricRow("Net Worth", money(snapshot.netWorth))
         MetricRow("Liquidity", score(snapshot.liquidityBuffer))
         MetricRow("Cash Flow", score(snapshot.cashFlowStrength))
@@ -196,7 +196,7 @@ private fun WealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
         MetricRow("Independence", score(snapshot.financialIndependence))
         MetricRow("Goal Momentum", score(snapshot.goalMomentum))
         MetricRow("Protection", score(snapshot.protectionCoverage))
-        HorizontalDivider()
+        WearDivider()
         Text("Wealth Capacity Trend", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         TrendGraph(snapshot.wealthBuildingTrend, 100.0)
     }
@@ -208,6 +208,16 @@ private fun MetricRow(title: String, value: String) {
         Text(title, fontSize = 10.sp)
         Text(value, fontSize = 10.sp, fontWeight = FontWeight.SemiBold)
     }
+}
+
+@Composable
+private fun WearDivider() {
+    Spacer(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(1.dp)
+            .background(Color.White.copy(alpha = 0.16f))
+    )
 }
 
 @Composable
