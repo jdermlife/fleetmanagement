@@ -1,0 +1,1 @@
+# Wear OS module-specific R8 rules.
