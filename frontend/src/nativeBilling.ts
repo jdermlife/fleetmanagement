@@ -38,10 +38,10 @@ export type NativeOneTimeProduct = NativeStoreProduct & {
 
 function currentStorePlatform(): NativeStorePlatform | null {
   const platform = Capacitor.getPlatform()
-  if (!Capacitor.isNativePlatform() || (platform !== 'android' && platform !== 'ios')) {
+  if (!Capacitor.isNativePlatform() || platform !== 'ios') {
     return null
   }
-  return platform === 'android' ? 'ANDROID' : 'IOS'
+  return 'IOS'
 }
 
 function requireStorePlatform(): NativeStorePlatform {

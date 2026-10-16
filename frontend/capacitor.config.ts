@@ -14,7 +14,6 @@ const config: CapacitorConfig = {
       '@capacitor/keyboard',
       '@capacitor/splash-screen',
       '@capgo/capacitor-social-login',
-      '@capgo/native-purchases',
     ],
   },
   plugins: {

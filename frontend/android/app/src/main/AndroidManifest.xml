@@ -10,22 +10,12 @@
     <!-- ===================================================== -->
 
     <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="com.android.vending.BILLING" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.USE_CREDENTIALS" />
     <uses-permission android:name="android.permission.USE_BIOMETRIC" />
     <uses-permission android:name="android.permission.USE_FINGERPRINT" />
 
     <queries>
-
-        <intent>
-            <action android:name="com.android.vending.billing.InAppBillingService.BIND" />
-        </intent>
-
-        <intent>
-            <action android:name="com.google.android.apps.play.billingtestcompanion.BIND" />
-        </intent>
-
         <intent>
             <action android:name="android.intent.action.VIEW" />
 

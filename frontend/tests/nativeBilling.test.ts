@@ -29,9 +29,9 @@ vi.mock('@capgo/native-purchases', () => ({
 vi.mock('../src/api', () => apiMocks)
 
 import {
+  isNativeStoreBilling,
   loadNativeOneTimeProducts,
   purchaseNativeOneTimeProduct,
-  restoreNativeOneTimeProducts,
 } from '../src/nativeBilling'
 
 const mapping = {
@@ -60,7 +60,7 @@ const transaction = {
   purchaseToken: 'android-purchase-token',
 }
 
-describe('Android native one-time billing', () => {
+describe('Native one-time billing', () => {
   beforeEach(() => {
     platform.value = 'android'
     vi.clearAllMocks()
@@ -74,42 +74,10 @@ describe('Android native one-time billing', () => {
     apiMocks.verifyNativeStorePurchase.mockResolvedValue({ status: 'ACTIVE' })
   })
 
-  it('loads and purchases a durable INAPP product before acknowledging it', async () => {
-    const products = await loadNativeOneTimeProducts()
-    expect(nativeMocks.getProducts).toHaveBeenCalledWith({
-      productIdentifiers: ['filscore_reports'],
-      productType: 'inapp',
-    })
-
-    await purchaseNativeOneTimeProduct(products[0], 42)
-
-    expect(nativeMocks.purchaseProduct).toHaveBeenCalledWith(expect.objectContaining({
-      productIdentifier: 'filscore_reports',
-      productType: 'inapp',
-      isConsumable: false,
-      autoAcknowledgePurchases: false,
-    }))
-    expect(apiMocks.verifyNativeStorePurchase).toHaveBeenCalledWith(expect.objectContaining({
-      platform: 'ANDROID',
-      product_id: 'filscore_reports',
-      verification_data: 'android-purchase-token',
-    }))
-    expect(apiMocks.verifyNativeStorePurchase.mock.invocationCallOrder[0])
-      .toBeLessThan(nativeMocks.acknowledgePurchase.mock.invocationCallOrder[0])
-  })
-
-  it('restores only Android INAPP purchases for the signed-in account', async () => {
-    const products = await loadNativeOneTimeProducts()
-    const restored = await restoreNativeOneTimeProducts(products, 42)
-
-    expect(nativeMocks.getPurchases).toHaveBeenCalledWith(expect.objectContaining({
-      productType: 'inapp',
-      appAccountToken: expect.any(String),
-    }))
-    expect(restored).toHaveLength(1)
-    expect(nativeMocks.acknowledgePurchase).toHaveBeenCalledWith({
-      purchaseToken: 'android-purchase-token',
-    })
+  it('disables native store billing on Android', async () => {
+    expect(isNativeStoreBilling()).toBe(false)
+    await expect(loadNativeOneTimeProducts()).rejects.toThrow('Native store billing is only available')
+    expect(nativeMocks.isBillingSupported).not.toHaveBeenCalled()
   })
 
   it('verifies an iOS non-consumable JWS before acknowledging the transaction', async () => {
