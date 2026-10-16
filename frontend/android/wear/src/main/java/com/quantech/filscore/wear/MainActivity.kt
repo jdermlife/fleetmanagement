@@ -15,7 +15,7 @@ class MainActivity : ComponentActivity() {
                 colorScheme = MaterialTheme.colorScheme.copy(
                     primary = Color(0xFFF4C64E),
                     background = Color.Black,
-                    surface = Color.Black,
+                    surfaceContainer = Color.Black,
                     onBackground = Color.White,
                     onSurface = Color.White
                 )
