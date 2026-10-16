@@ -72,8 +72,30 @@ export type MonthlyProfileSnapshotRecord = {
 	budget_tracking_score: number | null
 	loan_monitoring_score: number | null
 	bill_reminder_score: number | null
+	financial_health_summary: JsonObject | null
+	credit_health_summary: JsonObject | null
+	net_worth_summary: JsonObject | null
+	budget_tracking_summary: JsonObject | null
+	loan_monitoring_summary: JsonObject | null
+	bill_reminder_summary: JsonObject | null
+	profile_data: JsonObject
+	source_profile_id: string | null
+	source_loan_application_id: number | null
 	created_at: string
 	updated_at: string
+}
+
+type MonthlyProfileSnapshotListResponse = {
+	items: MonthlyProfileSnapshotRecord[]
+	total: number
+}
+
+export async function fetchLatestMonthlyProfileSnapshot(): Promise<MonthlyProfileSnapshotRecord | null> {
+	const response = await api.get<MonthlyProfileSnapshotListResponse>(
+		'/api/profile-monthly-snapshots',
+		{ params: { limit: 1 } },
+	)
+	return response.data.items[0] ?? null
 }
 
 function normalizeSnapshotMonth(value: string): string {

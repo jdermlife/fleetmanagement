@@ -63,6 +63,7 @@ const BillReminderPage = lazy(() => import('./pages/scoring/BillReminderPage'))
 const LifeProtectPage = lazy(() => import('./pages/scoring/LifeProtectPage'))
 const DashboardSnapshot = lazyWithRetry(() => import('./pages/dashboard/PortfolioAnalyticsDashboard'))
 const Snapshot = lazyWithRetry(() => import('./pages/dashboard/Snapshot'))
+const InAGlancePage = lazyWithRetry(() => import('./pages/dashboard/InAGlancePage'))
 const CollateralMonitoringPage = lazy(() => import('./pages/scoring/CollateralMonitoringPage'))
 const NetWorthPositioningPage = lazy(() => import('./pages/scoring/NetWorthPositioningPage'))
 const AuditTrailPanel = lazy(() => import('./pages/audit/AuditTrailPanel'))
@@ -130,6 +131,7 @@ const MeetingDetails = lazy(() => import('./pages/ai/MeetingDetails'))
 
 
 const menuLinks: MenuLink[] = [
+  { id: 'in-a-glance', label: 'In A Glance' },
   { id: 'build-profile', label: 'Profile' },
   { id: 'financial-health-summary', label: 'Financial Health' },
   { id: 'lending-scorecard', label: 'Credit Health Score' },
@@ -604,6 +606,7 @@ const subscriberHiddenMenus = [
 ]
 
 const subscriberAlwaysVisibleMenus = [
+  'in-a-glance',
   'build-profile',
   'financial-health-summary',
   'reports-statements',
@@ -618,6 +621,7 @@ const subscriberAlwaysVisibleMenus = [
 ]
 
 const borrowerVisibleMenus = [
+  'in-a-glance',
   'build-profile',
   'financial-health-summary',
   'reports-statements',
@@ -1282,6 +1286,15 @@ const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(locat
               element={
                 <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE]}>
                   {isBorrowerSubscriber ? <Navigate to="/lending-scorecard" replace /> : <Snapshot />}
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/in-a-glance"
+              element={
+                <ProtectedRoute roles={['admin', SUBSCRIBER_ROLE, SUBSCRIBER_LENDER_ROLE, SUBSCRIBER_BORROWER_ROLE]}>
+                  <InAGlancePage />
                 </ProtectedRoute>
               }
             />
