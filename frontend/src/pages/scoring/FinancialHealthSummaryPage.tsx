@@ -34,8 +34,8 @@ import {
 } from './financialHealthModel'
 import {
   computeFinancialHealthSummary,
-  type FinancialHealthSummaryInputs,
 } from './financialHealthSummaryEngine'
+import { buildLiveFinancialHealthInputs } from './financialHealthLiveSummary'
 import {
   financialHealthIndicatorSources,
   financialHealthMetricSources,
@@ -860,26 +860,11 @@ export default function FinancialHealthSummaryPage() {
     return () => window.clearTimeout(timeoutId)
   }, [snapshotMessage])
 
-  const latestSummaryInputs = useMemo<FinancialHealthSummaryInputs>(() => {
-    const netWorthComponents = netWorthBuildingScore?.componentScores
-    const investmentScore = netWorthComponents
-      ? averageScore([
-          netWorthComponents.investmentReadiness,
-          netWorthComponents.retirementReadiness,
-          netWorthComponents.financialIndependence,
-        ])
-      : null
-    return {
-      credit: lendingLeafScores?.creditScore ?? null,
-      'cash-flow': netWorthComponents?.cashFlowStrength ?? null,
-      wealth: netWorthBuildingScore?.normalizedScore ?? null,
-      budget: budgetHealthScore?.score ?? null,
-      payment: netWorthComponents?.leverageControl ?? null,
-      protection: netWorthComponents?.protectionCoverage ?? null,
-      investment: investmentScore,
-      goal: netWorthComponents?.goalMomentum ?? null,
-    }
-  }, [budgetHealthScore, lendingLeafScores, netWorthBuildingScore])
+  const latestSummaryInputs = useMemo(() => buildLiveFinancialHealthInputs({
+    netWorthBuildingScore,
+    budgetHealthScore,
+    lendingLeafScores,
+  }), [budgetHealthScore, lendingLeafScores, netWorthBuildingScore])
   const financialHealthIndicators = publishedSummary.indicators
   const recommendedProducts = [...financialHealthIndicators]
     .sort((left, right) => left.score - right.score)

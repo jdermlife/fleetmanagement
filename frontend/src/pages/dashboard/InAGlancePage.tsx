@@ -10,10 +10,15 @@ import {
 } from 'lucide-react'
 
 import { getErrorMessage } from '../../api'
+import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
 import {
   fetchLatestMonthlyProfileSnapshot,
   type MonthlyProfileSnapshotRecord,
 } from '../../services/profilemonthlysnapshotcalculator'
+import {
+  loadLiveFinancialHealthSummary,
+} from '../scoring/financialHealthLiveSummary'
+import type { FinancialHealthSummaryResult } from '../scoring/financialHealthSummaryEngine'
 
 const snapshotItems = [
   { key: 'credit_health_score', summaryKey: 'credit_health_summary', kind: 'credit', label: 'Credit Health', path: '/lending-scorecard', Icon: CreditCard },
@@ -40,17 +45,16 @@ function boundedScore(value: number | null, fallback = 0) {
   return Math.max(0, Math.min(100, value ?? fallback))
 }
 
-function FinancialHealthReflection({ snapshot }: { snapshot: MonthlyProfileSnapshotRecord }) {
-  const summary = asRecord(snapshot.financial_health_summary)
+function FinancialHealthReflection({ score, summary }: { score: number | null; summary: JsonRecord }) {
   const groups = Array.isArray(summary.groups) ? summary.groups : []
-  const fallback = boundedScore(snapshot.financial_health_score === null ? null : snapshot.financial_health_score / 10)
+  const fallback = boundedScore(score === null ? null : score / 10)
   const ringScores = [0, 1, 2].map((index) => {
     const group = asRecord(groups[index])
     return boundedScore(numericValue(group.value, fallback))
   })
 
   return (
-    <div className="in-a-glance-financial-visual" role="img" aria-label={`Financial Health ${displayScore(snapshot.financial_health_score)} out of 1000`}>
+    <div className="in-a-glance-financial-visual" role="img" aria-label={`Financial Health ${displayScore(score)} out of 1000`}>
       <svg viewBox="0 0 220 220" aria-hidden="true">
         {ringScores.map((ringScore, index) => (
           <g key={index} transform="rotate(-90 110 110)">
@@ -67,8 +71,8 @@ function FinancialHealthReflection({ snapshot }: { snapshot: MonthlyProfileSnaps
         ))}
       </svg>
       <div className="in-a-glance-financial-score">
-        <strong>{displayScore(snapshot.financial_health_score)}</strong>
-        {snapshot.financial_health_score === null ? null : <span>/ 1000</span>}
+        <strong>{displayScore(score)}</strong>
+        {score === null ? null : <span>/ 1000</span>}
       </div>
       <div className="in-a-glance-financial-legend" aria-hidden="true">
         <span><i />Foundation</span><span><i />Controls</span><span><i />Future</span>
@@ -214,9 +218,13 @@ function displayScore(value: number | null) {
 }
 
 export default function InAGlancePage() {
+  const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [snapshot, setSnapshot] = useState<MonthlyProfileSnapshotRecord | null>(null)
+  const [liveSummary, setLiveSummary] = useState<FinancialHealthSummaryResult | null>(null)
   const [loading, setLoading] = useState(true)
+  const [liveLoading, setLiveLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [liveMessage, setLiveMessage] = useState('')
 
   useEffect(() => {
     let disposed = false
@@ -238,6 +246,55 @@ export default function InAGlancePage() {
     }
   }, [])
 
+  useEffect(() => {
+    if (!isIdentityReady) return
+
+    let disposed = false
+    let requestInFlight = false
+
+    const loadLiveSummary = async () => {
+      if (requestInFlight) return
+      requestInFlight = true
+      try {
+        const summary = await loadLiveFinancialHealthSummary(
+          entityKey || 'identity-pending',
+          selectedApplicationNo || 'new',
+        )
+        if (!disposed) {
+          setLiveSummary(summary)
+          setLiveMessage('')
+        }
+      } catch (error) {
+        if (!disposed) setLiveMessage(getErrorMessage(error, 'Unable to load the current Financial Health score.'))
+      } finally {
+        requestInFlight = false
+        if (!disposed) setLiveLoading(false)
+      }
+    }
+
+    const refreshWhenVisible = () => {
+      if (document.visibilityState === 'visible') void loadLiveSummary()
+    }
+
+    void loadLiveSummary()
+    const intervalId = window.setInterval(refreshWhenVisible, 15000)
+    window.addEventListener('focus', refreshWhenVisible)
+    document.addEventListener('visibilitychange', refreshWhenVisible)
+
+    return () => {
+      disposed = true
+      window.clearInterval(intervalId)
+      window.removeEventListener('focus', refreshWhenVisible)
+      document.removeEventListener('visibilitychange', refreshWhenVisible)
+    }
+  }, [entityKey, isIdentityReady, selectedApplicationNo])
+
+  const financialHealthScore = liveSummary?.score ?? snapshot?.financial_health_score ?? null
+  const financialHealthSummary = liveSummary
+    ? asRecord(liveSummary)
+    : asRecord(snapshot?.financial_health_summary)
+  const hasFinancialHealth = liveSummary !== null || snapshot !== null
+
   return (
     <main className="in-a-glance-page">
       <header className="in-a-glance-header">
@@ -251,30 +308,33 @@ export default function InAGlancePage() {
         ) : null}
       </header>
 
-      {loading ? <p className="status-message" role="status">Loading saved snapshot...</p> : null}
+      {loading || liveLoading ? <p className="status-message" role="status">Loading current financial data...</p> : null}
       {message ? <p className="status-message error" role="alert">{message}</p> : null}
-      {!loading && !message && !snapshot ? (
+      {liveMessage && !snapshot ? <p className="status-message error" role="alert">{liveMessage}</p> : null}
+      {!loading && !liveLoading && !message && !liveMessage && !hasFinancialHealth ? (
         <section className="in-a-glance-empty">
           <Gauge aria-hidden="true" />
-          <h2>No saved snapshot yet</h2>
-          <p>Save a monthly snapshot from Financial Health to display it here.</p>
+          <h2>No financial data yet</h2>
+          <p>Complete your financial tools to display your current Financial Health score.</p>
           <a href="/financial-health-summary">Open Financial Health</a>
         </section>
       ) : null}
 
-      {snapshot ? (
+      {hasFinancialHealth ? (
         <>
-          <section className="in-a-glance-hero" aria-label="Saved Financial Health score">
-            <FinancialHealthReflection snapshot={snapshot} />
+          <section className="in-a-glance-hero" aria-label="Current Financial Health score">
+            <FinancialHealthReflection score={financialHealthScore} summary={financialHealthSummary} />
             <div>
               <span>Financial Health</span>
-              <h2>Your saved monthly position</h2>
-              <p>This view reflects the latest saved result. Scores are not recalculated on this page.</p>
+              <h2>Your current financial position</h2>
+              <p>{liveSummary
+                ? 'Synchronized with the latest autosaved data used by Financial Health.'
+                : 'Showing the latest saved result until current financial data is available.'}</p>
               <a href="/financial-health-summary">View Financial Health</a>
             </div>
           </section>
 
-          <section className="in-a-glance-grid" aria-label="Saved component scores">
+          {snapshot ? <section className="in-a-glance-grid" aria-label="Saved component scores">
             {snapshotItems.map(({ key, summaryKey, kind, label, path, Icon }) => {
               const value = snapshot[key]
               return (
@@ -285,7 +345,7 @@ export default function InAGlancePage() {
                 </a>
               )
             })}
-          </section>
+          </section> : null}
         </>
       ) : null}
     </main>
