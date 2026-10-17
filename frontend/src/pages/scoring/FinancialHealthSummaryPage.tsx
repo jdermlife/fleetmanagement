@@ -1136,6 +1136,20 @@ console.log('[WatchSync] Scores being sent:', {
     }
   }
 
+
+
+
+
+
+  
+console.log('[Snapshot Save] Started', {
+  snapshotMonth,
+  hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
+  hasLoanMonitoringScore: Boolean(
+    monthlySnapshotDrafts?.loanMonitoring?.publishedScore
+  ),
+  profileId: monthlySnapshotDrafts?.profileId,
+})
 const saveFinancialHealthSnapshot = async () => {
   console.log('[Snapshot Save] Confirm clicked', {
     selectedApplicationNo,
@@ -1187,6 +1201,7 @@ const saveFinancialHealthSnapshot = async () => {
         ? Math.round((completedActualEntries / actualEntries.length) * 100)
         : 0
 
+        console.log('[Snapshot Save] Calling monthly snapshot API')
       const monthlyResult = await calculateAndSaveMonthlyProfile({
         snapshotMonth,
         profileData: monthlySnapshotDrafts.profileData,
@@ -1230,6 +1245,16 @@ const saveFinancialHealthSnapshot = async () => {
         ...current.filter((snapshot) => snapshot.id !== monthlyResult.snapshot.id),
       ])
 
+console.log('[Snapshot Save] Checking prerequisites', {
+  hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
+  hasLoanMonitoringScore: Boolean(
+    monthlySnapshotDrafts?.loanMonitoring?.publishedScore
+  ),
+})
+
+
+
+
       const netWorthMetrics = netWorthBuildingScore?.metrics
       const record = await createProfileHistory(selectedApplicationNo, {
         category: 'financial_health_score',
@@ -1255,10 +1280,12 @@ const saveFinancialHealthSnapshot = async () => {
     } catch (error) {
       setSnapshotMessage(getErrorMessage(error, 'Unable to save this financial health snapshot.'))
     } finally {
+      console.log('[Snapshot Save] Finalizing save process')
       setIsSaveConfirmationOpen(false)
       setIsSavingSnapshot(false)
     }
   }
+  console.log('[Snapshot Save] Monthly API returned', monthlyProfileResult)
 
   const minimizeJourney = () => {
     if (doNotShowJourneyAgain) {
