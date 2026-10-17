@@ -1136,156 +1136,353 @@ console.log('[WatchSync] Scores being sent:', {
     }
   }
 
+        console.log('[Snapshot Save] Started', {
+         snapshotMonth,
+         hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
+         hasLoanMonitoringScore: Boolean(
+         monthlySnapshotDrafts?.loanMonitoring?.publishedScore
+          ),
+         profileId: monthlySnapshotDrafts?.profileId,
+         })
 
+      
+const currentSnapshotProfileId =
+  monthlySnapshotDrafts?.profileId?.trim() || null
 
+const currentSnapshotProfileLabel =
+  currentSnapshotProfileId ||
+  selectedApplicationNo ||
+  'Current profile'
 
+// Retrieve saved monthly profile snapshots.
+const openSavedSnapshots = async (): Promise<void> => {
+  setIsSnapshotLibraryOpen(true)
+  setIsLoadingSavedSnapshots(true)
+  setSavedSnapshotsMessage('')
+  setSelectedSavedSnapshot(null)
 
+  try {
+    const snapshots = await fetchMonthlyProfileSnapshots()
 
-  
-console.log('[Snapshot Save] Started', {
-  snapshotMonth,
-  hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
-  hasLoanMonitoringScore: Boolean(
-    monthlySnapshotDrafts?.loanMonitoring?.publishedScore
-  ),
-  profileId: monthlySnapshotDrafts?.profileId,
-})
-const saveFinancialHealthSnapshot = async () => {
+    const profileSnapshots = snapshots.filter((snapshot) =>
+      currentSnapshotProfileId
+        ? snapshot.source_profile_id === currentSnapshotProfileId
+        : snapshot.source_profile_id == null
+    )
+
+    setSavedProfileSnapshots(profileSnapshots)
+    setSelectedSavedSnapshot(profileSnapshots[0] ?? null)
+  } catch (error) {
+    console.error('[Snapshot Library] Failed to retrieve snapshots', error)
+
+    setSavedSnapshotsMessage(
+      getErrorMessage(
+        error,
+        'Unable to retrieve saved snapshots.'
+      )
+    )
+  } finally {
+    setIsLoadingSavedSnapshots(false)
+  }
+}
+
+// Save the monthly profile snapshot and Financial Health history.
+const saveFinancialHealthSnapshot = async (): Promise<void> => {
   console.log('[Snapshot Save] Confirm clicked', {
     selectedApplicationNo,
     summaryComputedAt,
     snapshotMonth,
+    profileId: monthlySnapshotDrafts?.profileId,
   })
 
+  // 1. Validate profile selection.
   if (!selectedApplicationNo) {
     setSnapshotMessage(
-      'Cannot save snapshot: no application or profile is selected.'
+      'Cannot save: no application or profile is selected.'
     )
     return
   }
 
+  // 2. Validate that the summary has been refreshed.
   if (!summaryComputedAt) {
     setSnapshotMessage(
-      'Cannot save snapshot: refresh Financial Health first.'
+      'Cannot save: refresh Financial Health first.'
     )
     return
   }
-  
-  // Guard against saving future months
+
+  // 3. Prevent saving a future reporting month.
   if (snapshotMonth > maxAllowedMonth) {
-    setSnapshotMessage('Cannot save a snapshot for a future month.')
+    setSnapshotMessage(
+      'Cannot save a snapshot for a future month.'
+    )
     return
   }
 
-  setIsSavingSnapshot(true)
-  setSnapshotMessage('')
-    try {
-      if (!monthlySnapshotDrafts?.netWorth) {
-        throw new Error('Complete and save Net Worth Positioning before saving a monthly profile snapshot.')
-      }
-      if (!monthlySnapshotDrafts.loanMonitoring?.publishedScore) {
-        throw new Error('Open Loan Monitoring once to calculate and save its current score before saving the monthly snapshot.')
-      }
+  // 4. Validate Net Worth Positioning.
+  const netWorth = monthlySnapshotDrafts?.netWorth
 
-      const billReminder = monthlySnapshotDrafts.billReminder
-      const scoreBillers = billReminder?.savedSetup?.length
-        ? billReminder.savedSetup
-        : billReminder?.draftBillers ?? []
-      const suitabilityValues = Object.values(monthlySnapshotDrafts.netWorth.suitabilityAnswers ?? {})
-      const wealthBehaviourScore = suitabilityValues.length > 0
-        ? Math.round((averageScore(suitabilityValues) / 4) * 100)
-        : 0
-      const actualEntries = Object.values(monthlySnapshotDrafts.netWorth.actualEntries ?? {})
-      const completedActualEntries = actualEntries.filter((value) => String(value ?? '').trim() !== '').length
-      const wealthAuthenticityScore = actualEntries.length > 0
-        ? Math.round((completedActualEntries / actualEntries.length) * 100)
-        : 0
+  if (!netWorth) {
+    setSnapshotMessage(
+      'Cannot save: complete and save Net Worth Positioning first.'
+    )
+    return
+  }
 
-        console.log('[Snapshot Save] Calling monthly snapshot API')
-      const monthlyResult = await calculateAndSaveMonthlyProfile({
-        snapshotMonth,
-        profileData: monthlySnapshotDrafts.profileData,
-        sourceProfileId: monthlySnapshotDrafts.profileId,
-        sourceApplicationNo: selectedApplicationNo,
-        financialHealth: latestSummaryInputs,
-        creditHealth: lendingLeafScores
-          ? {
-              score: averageScore([
-                lendingLeafScores.creditScore,
-                lendingLeafScores.psychometricScore,
-                lendingLeafScores.socialScore,
-                lendingLeafScores.nonStarterScore,
-              ]),
-              summary: { ...lendingLeafScores },
-            }
-          : undefined,
-        netWorth: monthlySnapshotDrafts.netWorth,
-        budget: monthlySnapshotDrafts.budget,
-        loanMonitoring: monthlySnapshotDrafts.loanMonitoring.publishedScore,
-        billPayment: {
-          monthlyIncome: lendingLeafScores?.monthlyIncome ?? 0,
-          referenceDate: reportingMonthEnd(snapshotMonth).slice(0, 10),
-          billers: scoreBillers.map((biller) => ({
-            ...biller,
-            payments: billReminder?.paymentEntries?.[biller.id] ?? [],
-          })),
-        },
-        wealthComposite: { wealthBehaviourScore, wealthAuthenticityScore },
-        widBenchmark: {
-          netWorth: benchmarkContext.netWorth,
-          annualIncome: benchmarkContext.monthlyIncome * 12,
-          countryCode: benchmarkContext.countryCode,
-          currency: benchmarkContext.currency,
-        },
-      })
-      setMonthlyProfileResult(monthlyResult)
-      setSavedSnapshotReceipt(monthlyResult.snapshot)
-      setSavedProfileSnapshots((current) => [
-        monthlyResult.snapshot,
-        ...current.filter((snapshot) => snapshot.id !== monthlyResult.snapshot.id),
-      ])
+  const actualEntries = Object.values(
+    netWorth.actualEntries ?? {}
+  )
 
-console.log('[Snapshot Save] Checking prerequisites', {
-  hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
-  hasLoanMonitoringScore: Boolean(
+  const completedActualEntries = actualEntries.filter(
+    (value) => String(value ?? '').trim() !== ''
+  )
+
+  const suitabilityValues = Object.values(
+    netWorth.suitabilityAnswers ?? {}
+  )
+
+  const hasNetWorthData =
+    completedActualEntries.length > 0 &&
+    suitabilityValues.length > 0
+
+  if (!hasNetWorthData) {
+    setSnapshotMessage(
+      'Cannot save: complete the actual Net Worth entries and suitability assessment first.'
+    )
+    return
+  }
+
+  // 5. Validate Loan Monitoring.
+  const loanScore =
     monthlySnapshotDrafts?.loanMonitoring?.publishedScore
-  ),
-})
 
+  const hasLoanMonitoringScore =
+    loanScore !== null &&
+    loanScore !== undefined &&
+    Number.isFinite(Number(loanScore))
 
+  if (!hasLoanMonitoringScore) {
+    setSnapshotMessage(
+      'Cannot save: complete Loan Monitoring and publish its score first.'
+    )
+    return
+  }
 
+  console.log('[Snapshot Save] Prerequisites passed', {
+    hasNetWorthData,
+    completedActualEntries: completedActualEntries.length,
+    suitabilityAnswers: suitabilityValues.length,
+    loanScore,
+    profileId: monthlySnapshotDrafts?.profileId,
+  })
 
-      const netWorthMetrics = netWorthBuildingScore?.metrics
-      const record = await createProfileHistory(selectedApplicationNo, {
+  setIsSavingSnapshot(true)
+  setSnapshotMessage('Saving monthly snapshot...')
+
+  try {
+    // 6. Prepare bill-payment information.
+    const billReminder = monthlySnapshotDrafts?.billReminder
+
+    const scoreBillers = billReminder?.savedSetup?.length
+      ? billReminder.savedSetup
+      : billReminder?.draftBillers ?? []
+
+    const wealthBehaviourScore =
+      suitabilityValues.length > 0
+        ? Math.round(
+            (averageScore(suitabilityValues) / 4) * 100
+          )
+        : 0
+
+    const wealthAuthenticityScore =
+      actualEntries.length > 0
+        ? Math.round(
+            (completedActualEntries.length /
+              actualEntries.length) * 100
+          )
+        : 0
+
+    // 7. Call the monthly snapshot API.
+    console.log('[Snapshot Save] Calling monthly snapshot API', {
+      snapshotMonth,
+      selectedApplicationNo,
+      sourceProfileId: monthlySnapshotDrafts?.profileId,
+    })
+
+    const monthlyResult = await calculateAndSaveMonthlyProfile({
+      snapshotMonth,
+      profileData: monthlySnapshotDrafts.profileData,
+      sourceProfileId: monthlySnapshotDrafts.profileId,
+      sourceApplicationNo: selectedApplicationNo,
+
+      financialHealth: latestSummaryInputs,
+
+      creditHealth: lendingLeafScores
+        ? {
+            score: averageScore([
+              lendingLeafScores.creditScore,
+              lendingLeafScores.psychometricScore,
+              lendingLeafScores.socialScore,
+              lendingLeafScores.nonStarterScore,
+            ]),
+            summary: { ...lendingLeafScores },
+          }
+        : undefined,
+
+      netWorth,
+      budget: monthlySnapshotDrafts.budget,
+      loanMonitoring: loanScore,
+
+      billPayment: {
+        monthlyIncome:
+          lendingLeafScores?.monthlyIncome ?? 0,
+        referenceDate: reportingMonthEnd(
+          snapshotMonth
+        ).slice(0, 10),
+
+        billers: scoreBillers.map((biller) => ({
+          ...biller,
+          payments:
+            billReminder?.paymentEntries?.[biller.id] ?? [],
+        })),
+      },
+
+      wealthComposite: {
+        wealthBehaviourScore,
+        wealthAuthenticityScore,
+      },
+
+      widBenchmark: {
+        netWorth: benchmarkContext.netWorth,
+        annualIncome: benchmarkContext.monthlyIncome * 12,
+        countryCode: benchmarkContext.countryCode,
+        currency: benchmarkContext.currency,
+      },
+    })
+
+    console.log(
+      '[Snapshot Save] Monthly API returned',
+      monthlyResult
+    )
+
+    // 8. Do not report success if the API returned no snapshot.
+    if (!monthlyResult?.snapshot) {
+      throw new Error(
+        'The monthly snapshot API returned no snapshot. Check the backend response and database transaction.'
+      )
+    }
+
+    const savedSnapshot = monthlyResult.snapshot
+
+    if (savedSnapshot.id == null) {
+      throw new Error(
+        'The API response has no snapshot ID. Persistence has not been verified.'
+      )
+    }
+
+    console.log('[Snapshot Save] Snapshot response verified', {
+      id: savedSnapshot.id,
+      snapshotMonth: savedSnapshot.snapshot_month,
+    })
+
+    // 9. Update monthly snapshot UI state after API confirmation.
+    setMonthlyProfileResult(monthlyResult)
+    setSavedSnapshotReceipt(savedSnapshot)
+
+    setSavedProfileSnapshots((current) => [
+      savedSnapshot,
+      ...current.filter(
+        (snapshot) => snapshot.id !== savedSnapshot.id
+      ),
+    ])
+
+    // 10. Save Financial Health comparison history.
+    const netWorthMetrics = netWorthBuildingScore?.metrics
+
+    const record = await createProfileHistory(
+      selectedApplicationNo,
+      {
         category: 'financial_health_score',
         observed_at: reportingMonthEnd(snapshotMonth),
-        payload: buildFinancialHealthSnapshotPayload(snapshotMonth, publishedSummary, {
-          netWorth: netWorthMetrics?.netWorth ?? step8ProfileMetrics.actualNetWorth,
-          netIncome: step8ProfileMetrics.netIncome,
-          monthlyCashFlow: netWorthMetrics?.monthlyCashFlow ?? 0,
-          totalAssets: netWorthMetrics?.totalAssets ?? 0,
-          totalLiabilities: netWorthMetrics?.totalLiabilities ?? 0,
-        }),
-      })
-      const saved = parseFinancialHealthSnapshot(record)
-      if (saved) {
-        const snapshots = [...financialHealthSnapshots, saved]
-          .sort((left, right) => left.payload.reportingMonth.localeCompare(right.payload.reportingMonth))
-          .slice(-12)
-        setFinancialHealthSnapshots(snapshots)
-        setCurrentComparisonMonth(saved.payload.reportingMonth)
-        setBaselineComparisonMonth(snapshots[snapshots.length - 2]?.payload.reportingMonth ?? '')
+
+        payload: buildFinancialHealthSnapshotPayload(
+          snapshotMonth,
+          publishedSummary,
+          {
+            netWorth:
+              netWorthMetrics?.netWorth ??
+              step8ProfileMetrics.actualNetWorth,
+
+            netIncome: step8ProfileMetrics.netIncome,
+
+            monthlyCashFlow:
+              netWorthMetrics?.monthlyCashFlow ?? 0,
+
+            totalAssets:
+              netWorthMetrics?.totalAssets ?? 0,
+
+            totalLiabilities:
+              netWorthMetrics?.totalLiabilities ?? 0,
+          }
+        ),
       }
-      setSnapshotMessage(`Snapshot saved as of ${formatReportingMonth(snapshotMonth)}. Monthly profile and Financial Health history were saved.`)
-    } catch (error) {
-      setSnapshotMessage(getErrorMessage(error, 'Unable to save this financial health snapshot.'))
-    } finally {
-      console.log('[Snapshot Save] Finalizing save process')
-      setIsSaveConfirmationOpen(false)
-      setIsSavingSnapshot(false)
+    )
+
+    const saved = parseFinancialHealthSnapshot(record)
+
+    if (saved) {
+      const snapshots = [
+        ...financialHealthSnapshots,
+        saved,
+      ]
+        .sort((left, right) =>
+          left.payload.reportingMonth.localeCompare(
+            right.payload.reportingMonth
+          )
+        )
+        .slice(-12)
+
+      setFinancialHealthSnapshots(snapshots)
+
+      setCurrentComparisonMonth(
+        saved.payload.reportingMonth
+      )
+
+      setBaselineComparisonMonth(
+        snapshots[snapshots.length - 2]?.payload
+          .reportingMonth ?? ''
+      )
     }
+
+    // 11. Both API operations completed.
+    setSnapshotMessage(
+      `Monthly snapshot saved for ${formatReportingMonth(snapshotMonth)}. Snapshot ID: ${savedSnapshot.id}. Financial Health history was also saved.`
+    )
+
+    console.log('[Snapshot Save] Completed', {
+      snapshotId: savedSnapshot.id,
+      snapshotMonth,
+    })
+  } catch (error) {
+    console.error('[Snapshot Save] Failed', error)
+
+    setSnapshotMessage(
+      getErrorMessage(
+        error,
+        'Unable to save the snapshot. Check the API and backend logs.'
+      )
+    )
+  } finally {
+    setIsSaveConfirmationOpen(false)
+    setIsSavingSnapshot(false)
   }
-  console.log('[Snapshot Save] Monthly API returned', monthlyProfileResult)
+}
+  
+   
+
+
+
+
 
   const minimizeJourney = () => {
     if (doNotShowJourneyAgain) {
