@@ -1865,7 +1865,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
             onClick={() => void openSavedSnapshots()}
           >
             <ArchiveRestore aria-hidden="true" />
-            Retrieve Saved Snapshots
+            Retrieve 
           </button>
           {snapshotMonthExists ? <span>A snapshot already exists for this month.</span> : null}
         </div>

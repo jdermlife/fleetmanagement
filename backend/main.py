@@ -106,6 +106,11 @@ notification_dispatcher_task: asyncio.Task | None = None
 history_retention_enabled = os.getenv("HISTORY_RETENTION_ENABLED", "true").lower() == "true"
 history_retention_interval_seconds = int(os.getenv("HISTORY_RETENTION_INTERVAL_SECONDS", "86400"))
 history_retention_task: asyncio.Task | None = None
+monthly_snapshot_scheduler_enabled = os.getenv("MONTHLY_SNAPSHOT_SCHEDULER_ENABLED", "true").lower() == "true"
+monthly_snapshot_scheduler_interval_seconds = int(
+    os.getenv("MONTHLY_SNAPSHOT_SCHEDULER_INTERVAL_SECONDS", "86400")
+)
+monthly_snapshot_scheduler_task: asyncio.Task | None = None
 
 
 async def _notification_dispatcher_loop() -> None:
@@ -137,6 +142,22 @@ async def _history_retention_loop() -> None:
             db.close()
 
         await asyncio.sleep(history_retention_interval_seconds)
+
+
+async def _monthly_snapshot_scheduler_loop() -> None:
+    from app.jobs.monthly_profile_snapshot import run_monthly_profile_snapshots
+
+    while True:
+        try:
+            generated = await asyncio.to_thread(run_monthly_profile_snapshots)
+            backend_logger.info(
+                "Monthly profile snapshot scheduler completed",
+                generated=generated,
+            )
+        except Exception as exc:
+            backend_logger.error("Monthly profile snapshot scheduler failed", error=str(exc))
+
+        await asyncio.sleep(monthly_snapshot_scheduler_interval_seconds)
 
 
 def _ensure_loan_application_schema() -> None:
@@ -244,7 +265,7 @@ def _ensure_workflow_history_table() -> None:
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    global history_retention_task, notification_dispatcher_task
+    global history_retention_task, monthly_snapshot_scheduler_task, notification_dispatcher_task
 
     ensure_composite_score_columns()
     ensure_wealth_score_columns()
@@ -257,10 +278,19 @@ async def lifespan(_app: FastAPI):
         notification_dispatcher_task = asyncio.create_task(_notification_dispatcher_loop())
     if history_retention_enabled and history_retention_task is None:
         history_retention_task = asyncio.create_task(_history_retention_loop())
+    if monthly_snapshot_scheduler_enabled and monthly_snapshot_scheduler_task is None:
+        monthly_snapshot_scheduler_task = asyncio.create_task(_monthly_snapshot_scheduler_loop())
 
     try:
         yield
     finally:
+        if monthly_snapshot_scheduler_task:
+            monthly_snapshot_scheduler_task.cancel()
+            try:
+                await monthly_snapshot_scheduler_task
+            except asyncio.CancelledError:
+                pass
+            monthly_snapshot_scheduler_task = None
         if history_retention_task:
             history_retention_task.cancel()
             try:

@@ -16,12 +16,188 @@ import {
 } from '../../services/profilemonthlysnapshotcalculator'
 
 const snapshotItems = [
-  { key: 'credit_health_score', label: 'Credit Health', path: '/lending-scorecard', Icon: CreditCard },
-  { key: 'net_worth_positioning_score', label: 'Wealth Building', path: '/net-worth-positioning', Icon: TrendingUp },
-  { key: 'budget_tracking_score', label: 'Budget Tracking', path: '/budget-expense-tracker', Icon: CircleDollarSign },
-  { key: 'loan_monitoring_score', label: 'Resource Optimizer', path: '/loan-monitoring', Icon: Landmark },
-  { key: 'bill_reminder_score', label: 'Bill Manager', path: '/bill-reminder', Icon: ReceiptText },
+  { key: 'credit_health_score', summaryKey: 'credit_health_summary', kind: 'credit', label: 'Credit Health', path: '/lending-scorecard', Icon: CreditCard },
+  { key: 'net_worth_positioning_score', summaryKey: 'net_worth_summary', kind: 'wealth', label: 'Wealth Building', path: '/net-worth-positioning', Icon: TrendingUp },
+  { key: 'budget_tracking_score', summaryKey: 'budget_tracking_summary', kind: 'budget', label: 'Budget Tracking', path: '/budget-expense-tracker', Icon: CircleDollarSign },
+  { key: 'loan_monitoring_score', summaryKey: 'loan_monitoring_summary', kind: 'loan', label: 'Resource Optimizer', path: '/loan-monitoring', Icon: Landmark },
+  { key: 'bill_reminder_score', summaryKey: 'bill_reminder_summary', kind: 'bills', label: 'Bill Manager', path: '/bill-reminder', Icon: ReceiptText },
 ] as const
+
+type JsonRecord = Record<string, unknown>
+
+function asRecord(value: unknown): JsonRecord {
+  return value !== null && typeof value === 'object' && !Array.isArray(value)
+    ? value as JsonRecord
+    : {}
+}
+
+function numericValue(value: unknown, fallback = 0) {
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : fallback
+}
+
+function boundedScore(value: number | null, fallback = 0) {
+  return Math.max(0, Math.min(100, value ?? fallback))
+}
+
+function FinancialHealthReflection({ snapshot }: { snapshot: MonthlyProfileSnapshotRecord }) {
+  const summary = asRecord(snapshot.financial_health_summary)
+  const groups = Array.isArray(summary.groups) ? summary.groups : []
+  const fallback = boundedScore(snapshot.financial_health_score === null ? null : snapshot.financial_health_score / 10)
+  const ringScores = [0, 1, 2].map((index) => {
+    const group = asRecord(groups[index])
+    return boundedScore(numericValue(group.value, fallback))
+  })
+
+  return (
+    <div className="in-a-glance-financial-visual" role="img" aria-label={`Financial Health ${displayScore(snapshot.financial_health_score)} out of 1000`}>
+      <svg viewBox="0 0 220 220" aria-hidden="true">
+        {ringScores.map((ringScore, index) => (
+          <g key={index} transform="rotate(-90 110 110)">
+            <circle className="in-a-glance-ring-track" cx="110" cy="110" r={82 - index * 19} pathLength="100" />
+            <circle
+              className={`in-a-glance-ring-value in-a-glance-ring-value-${index + 1}`}
+              cx="110"
+              cy="110"
+              r={82 - index * 19}
+              pathLength="100"
+              strokeDasharray={`${ringScore} ${100 - ringScore}`}
+            />
+          </g>
+        ))}
+      </svg>
+      <div className="in-a-glance-financial-score">
+        <strong>{displayScore(snapshot.financial_health_score)}</strong>
+        {snapshot.financial_health_score === null ? null : <span>/ 1000</span>}
+      </div>
+      <div className="in-a-glance-financial-legend" aria-hidden="true">
+        <span><i />Foundation</span><span><i />Controls</span><span><i />Future</span>
+      </div>
+    </div>
+  )
+}
+
+function CreditReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
+  const scores = [
+    numericValue(summary.creditScore, value ?? 0),
+    numericValue(summary.psychometricScore, value ?? 0),
+    numericValue(summary.socialScore, value ?? 0),
+    numericValue(summary.nonStarterScore, value ?? 0),
+  ].map((score) => boundedScore(score))
+
+  return (
+    <div className="in-a-glance-credit-visual" role="img" aria-label={`Credit Health ${displayScore(value)} out of 100`}>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        {scores.map((score, index) => (
+          <g key={index} transform="rotate(-90 100 100)">
+            <circle className="in-a-glance-mini-ring-track" cx="100" cy="100" r={76 - index * 13} pathLength="100" />
+            <circle
+              className={`in-a-glance-mini-ring-value in-a-glance-credit-ring-${index + 1}`}
+              cx="100"
+              cy="100"
+              r={76 - index * 13}
+              pathLength="100"
+              strokeDasharray={`${score} ${100 - score}`}
+            />
+          </g>
+        ))}
+      </svg>
+      <span>FILSCORE</span>
+    </div>
+  )
+}
+
+function WealthReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
+  const building = asRecord(summary.netWorthBuilding)
+  const components = asRecord(building.componentScores)
+  const fallback = boundedScore(value)
+  const scores = [
+    numericValue(components.netWorthStrength, fallback),
+    numericValue(components.cashFlowStrength, fallback),
+    numericValue(components.investmentReadiness, fallback),
+    numericValue(components.goalMomentum, fallback),
+  ].map((score) => boundedScore(score))
+  const center = 100
+  const radius = 70
+  const point = (index: number, scale: number) => {
+    const angle = -Math.PI / 2 + index * Math.PI / 2
+    return `${center + Math.cos(angle) * radius * scale},${center + Math.sin(angle) * radius * scale}`
+  }
+
+  return (
+    <div className="in-a-glance-wealth-visual" role="img" aria-label={`Wealth Building ${displayScore(value)} out of 100`}>
+      <svg viewBox="0 0 200 200" aria-hidden="true">
+        {[0.25, 0.5, 0.75, 1].map((level) => (
+          <polygon key={level} className="in-a-glance-radar-grid" points={scores.map((_score, index) => point(index, level)).join(' ')} />
+        ))}
+        {scores.map((_score, index) => <line key={index} className="in-a-glance-radar-axis" x1="100" y1="100" x2={point(index, 1).split(',')[0]} y2={point(index, 1).split(',')[1]} />)}
+        <polygon className="in-a-glance-radar-score" points={scores.map((score, index) => point(index, score / 100)).join(' ')} />
+        {scores.map((score, index) => {
+          const [x, y] = point(index, score / 100).split(',')
+          return <circle key={index} cx={x} cy={y} r="4" />
+        })}
+      </svg>
+    </div>
+  )
+}
+
+function BudgetReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
+  const metrics = asRecord(summary.metrics)
+  const budgetScore = boundedScore(value)
+  const variance = numericValue(metrics.variancePercent)
+  return (
+    <div className="in-a-glance-budget-visual" role="img" aria-label={`Budget Tracking ${displayScore(value)} out of 100`}>
+      <span>Budget performance</span>
+      <div className="in-a-glance-budget-heading"><strong>Saved budget score</strong><b>{displayScore(value)}</b></div>
+      <div className="in-a-glance-budget-bar"><i style={{ width: `${budgetScore}%` }} /></div>
+      <div className="in-a-glance-budget-scale"><span>0</span><span>{variance > 0 ? `${variance.toFixed(1)}% variance` : '100'}</span></div>
+    </div>
+  )
+}
+
+function LoanReflection({ value }: { value: number | null }) {
+  const score = boundedScore(value)
+  return (
+    <div className="in-a-glance-loan-visual" role="img" aria-label={`Resource Optimizer ${displayScore(value)} out of 100`}>
+      <svg viewBox="0 0 220 145" aria-hidden="true">
+        <path className="in-a-glance-gauge-track" pathLength="100" d="M30 120A80 80 0 0 1 190 120" />
+        <path className="in-a-glance-gauge-low" pathLength="100" d="M30 120A80 80 0 0 1 190 120" />
+        <path className="in-a-glance-gauge-value" pathLength="100" strokeDasharray={`${score} ${100 - score}`} d="M30 120A80 80 0 0 1 190 120" />
+        <line x1="110" y1="120" x2="110" y2="48" transform={`rotate(${score * 1.8 - 90} 110 120)`} />
+        <circle cx="110" cy="120" r="8" />
+      </svg>
+      <strong>{displayScore(value)}{value === null ? '' : '%'}</strong>
+    </div>
+  )
+}
+
+function BillsReflection({ value, summary, month }: { value: number | null; summary: JsonRecord; month: string }) {
+  const date = new Date(`${month.slice(0, 7)}-01T00:00:00Z`)
+  const firstDay = date.getUTCDay()
+  const days = new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate()
+  const metrics = asRecord(summary.metrics)
+  const lateCount = numericValue(metrics.latePaymentCount)
+  const calendarCellCount = Math.ceil((firstDay + days) / 7) * 7
+  const cells = Array.from({ length: calendarCellCount }, (_, index) => {
+    const day = index - firstDay + 1
+    return day > 0 && day <= days ? day : null
+  })
+  return (
+    <div className="in-a-glance-bills-visual" role="img" aria-label={`Bill Manager ${displayScore(value)} out of 100; ${lateCount} late payments`}>
+      <div className="in-a-glance-calendar-heading"><strong>{date.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}</strong><span>{lateCount} late</span></div>
+      <div className="in-a-glance-calendar-weekdays">{['S', 'M', 'T', 'W', 'T', 'F', 'S'].map((day, index) => <span key={`${day}-${index}`}>{day}</span>)}</div>
+      <div className="in-a-glance-calendar-grid">{cells.map((day, index) => <span className={day === days ? 'is-cutoff' : ''} key={index}>{day}</span>)}</div>
+    </div>
+  )
+}
+
+function SnapshotReflection({ kind, value, summary, month }: { kind: string; value: number | null; summary: JsonRecord; month: string }) {
+  if (kind === 'credit') return <CreditReflection value={value} summary={summary} />
+  if (kind === 'wealth') return <WealthReflection value={value} summary={summary} />
+  if (kind === 'budget') return <BudgetReflection value={value} summary={summary} />
+  if (kind === 'loan') return <LoanReflection value={value} />
+  return <BillsReflection value={value} summary={summary} month={month} />
+}
 
 const monthFormatter = new Intl.DateTimeFormat('en-US', {
   month: 'long',
@@ -89,11 +265,7 @@ export default function InAGlancePage() {
       {snapshot ? (
         <>
           <section className="in-a-glance-hero" aria-label="Saved Financial Health score">
-            <div className="in-a-glance-score-ring">
-              <Gauge aria-hidden="true" />
-              <strong>{displayScore(snapshot.financial_health_score)}</strong>
-              {snapshot.financial_health_score === null ? null : <span>/ 1000</span>}
-            </div>
+            <FinancialHealthReflection snapshot={snapshot} />
             <div>
               <span>Financial Health</span>
               <h2>Your saved monthly position</h2>
@@ -103,16 +275,13 @@ export default function InAGlancePage() {
           </section>
 
           <section className="in-a-glance-grid" aria-label="Saved component scores">
-            {snapshotItems.map(({ key, label, path, Icon }) => {
+            {snapshotItems.map(({ key, summaryKey, kind, label, path, Icon }) => {
               const value = snapshot[key]
               return (
                 <a key={key} href={path} className="in-a-glance-card">
-                  <span className="in-a-glance-card-icon"><Icon aria-hidden="true" /></span>
-                  <span>{label}</span>
-                  <strong>{displayScore(value)}<small>{value === null ? '' : ' / 100'}</small></strong>
-                  <span className="in-a-glance-track" aria-hidden="true">
-                    <span style={{ width: `${value ?? 0}%` }} />
-                  </span>
+                  <span className="in-a-glance-card-heading"><Icon aria-hidden="true" /><strong>{label}</strong></span>
+                  <SnapshotReflection kind={kind} value={value} summary={asRecord(snapshot[summaryKey])} month={snapshot.snapshot_month} />
+                  <span className="in-a-glance-card-score">{displayScore(value)}<small>{value === null ? '' : ' / 100'}</small></span>
                 </a>
               )
             })}
