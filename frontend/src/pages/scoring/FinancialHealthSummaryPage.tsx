@@ -1136,8 +1136,26 @@ console.log('[WatchSync] Scores being sent:', {
     }
   }
 
- const saveFinancialHealthSnapshot = async () => {
-  if (!selectedApplicationNo || !summaryComputedAt) return
+const saveFinancialHealthSnapshot = async () => {
+  console.log('[Snapshot Save] Confirm clicked', {
+    selectedApplicationNo,
+    summaryComputedAt,
+    snapshotMonth,
+  })
+
+  if (!selectedApplicationNo) {
+    setSnapshotMessage(
+      'Cannot save snapshot: no application or profile is selected.'
+    )
+    return
+  }
+
+  if (!summaryComputedAt) {
+    setSnapshotMessage(
+      'Cannot save snapshot: refresh Financial Health first.'
+    )
+    return
+  }
   
   // Guard against saving future months
   if (snapshotMonth > maxAllowedMonth) {
