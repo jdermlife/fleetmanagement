@@ -42,13 +42,17 @@ export type MonthlyProfileCalculatorInput = {
 	sourceApplicationNo?: string
 	financialHealth: FinancialHealthSummaryInputs
 	creditHealth?: { score: number; summary?: JsonObject }
-	netWorth: NetWorthBuildingDraftInput
-	budget: BudgetHealthDraftInput
-	loanMonitoring: LoanMonitoringScoreInput | LoanMonitoringScoreResult
-	billPayment: BillPaymentHealthInput
+	netWorth?: NetWorthBuildingDraftInput
+	budget?: BudgetHealthDraftInput
+	loanMonitoring?: LoanMonitoringScoreInput | LoanMonitoringScoreResult
+	billPayment?: BillPaymentHealthInput
 	wealthFoundation?: WealthFoundationDraftInput
 	wealthComposite: Pick<WealthCompositeInput, 'wealthBehaviourScore' | 'wealthAuthenticityScore'>
 	widBenchmark: WidBenchmarkInput
+	availability?: Partial<Record<
+		'financialHealth' | 'creditHealth' | 'netWorth' | 'budget' | 'loanMonitoring' | 'billPayment',
+		boolean
+	>>
 }
 
 export type MonthlyProfileCalculation = {
@@ -115,12 +119,45 @@ function normalizeSnapshotMonth(value: string): string {
 }
 
 export function calculateMonthlyProfile(input: MonthlyProfileCalculatorInput): MonthlyProfileCalculation {
-	const netWorth = computeNetWorthBuildingScore(input.netWorth)
-	const budget = computeBudgetHealthScore(input.budget)
-	const loanMonitoring = 'components' in input.loanMonitoring
-		? input.loanMonitoring
-		: computeLoanMonitoringScore(input.loanMonitoring)
-	const wealthFoundation = computeWealthFoundationScore(input.wealthFoundation ?? input.netWorth)
+	const netWorthInput = input.netWorth ?? {}
+	const budget = computeBudgetHealthScore(input.budget ?? {})
+	const netWorthAvailable = input.availability?.netWorth ?? input.netWorth !== undefined
+	const loanMonitoringInput = input.loanMonitoring ?? {
+		daysPastDue: null,
+		beginningBalance: 0,
+		currentBalance: 0,
+		dsrPercent: null,
+		utilizationPercent: null,
+		ltvPercent: null,
+		activeLoanCount: 0,
+		highInterestLoanCount: 0,
+		distinctLoanTypeCount: 0,
+		distinctLenderCount: 0,
+		refinancingImprovesCashFlow: false,
+		consolidationOpportunity: false,
+	}
+	const computedNetWorth = computeNetWorthBuildingScore(netWorthInput)
+	const netWorth = netWorthAvailable ? computedNetWorth : {
+		...computedNetWorth,
+		score: 0,
+		normalizedScore: 0,
+		componentScores: {
+			netWorthStrength: 0,
+			liquidityBuffer: 0,
+			cashFlowStrength: 0,
+			leverageControl: 0,
+			emergencyReadiness: 0,
+			investmentReadiness: 0,
+			retirementReadiness: 0,
+			financialIndependence: 0,
+			goalMomentum: 0,
+			protectionCoverage: 0,
+		},
+	}
+	const loanMonitoring = 'components' in loanMonitoringInput
+		? loanMonitoringInput
+		: computeLoanMonitoringScore(loanMonitoringInput)
+	const wealthFoundation = computeWealthFoundationScore(input.wealthFoundation ?? netWorthInput)
 	const wealthComposite = computeWealthCompositeScore({
 		netWorthPositioningScore: netWorth.score,
 		wealthFoundationScore: wealthFoundation.score,
@@ -132,7 +169,7 @@ export function calculateMonthlyProfile(input: MonthlyProfileCalculatorInput): M
 		+ netWorth.componentScores.financialIndependence
 	) / 3
 	const financialHealth = computeFinancialHealthSummary({
-		...input.financialHealth,
+		credit: input.financialHealth.credit ?? 0,
 		'cash-flow': netWorth.componentScores.cashFlowStrength,
 		wealth: netWorth.normalizedScore,
 		budget: budget.score,
@@ -144,7 +181,7 @@ export function calculateMonthlyProfile(input: MonthlyProfileCalculatorInput): M
 
 	return {
 		financialHealth,
-		billPayment: computeBillPaymentHealthScore(input.billPayment),
+		billPayment: computeBillPaymentHealthScore(input.billPayment ?? {}),
 		loanMonitoring,
 		netWorth,
 		wealthFoundation,
@@ -158,27 +195,35 @@ export async function calculateAndSaveMonthlyProfile(
 	input: MonthlyProfileCalculatorInput,
 ): Promise<{ snapshot: MonthlyProfileSnapshotRecord; calculations: MonthlyProfileCalculation }> {
 	const calculations = calculateMonthlyProfile(input)
+	const availability = {
+		financialHealth: input.availability?.financialHealth ?? true,
+		creditHealth: input.availability?.creditHealth ?? input.creditHealth !== undefined,
+		netWorth: input.availability?.netWorth ?? input.netWorth !== undefined,
+		budget: input.availability?.budget ?? input.budget !== undefined,
+		loanMonitoring: input.availability?.loanMonitoring ?? input.loanMonitoring !== undefined,
+		billPayment: input.availability?.billPayment ?? input.billPayment !== undefined,
+	}
 	const payload = {
 		profile_data: input.profileData,
 		source_profile_id: input.sourceProfileId,
 		source_application_no: input.sourceApplicationNo,
-		financial_health_score: calculations.financialHealth.score,
-		credit_health_score: input.creditHealth?.score,
-		net_worth_positioning_score: calculations.wealthComposite.normalizedScore,
-		budget_tracking_score: calculations.budget.score,
-		loan_monitoring_score: calculations.loanMonitoring.score,
-		bill_reminder_score: calculations.billPayment.score,
-		financial_health_summary: calculations.financialHealth,
-		credit_health_summary: input.creditHealth?.summary,
-		net_worth_summary: {
+		financial_health_score: availability.financialHealth ? calculations.financialHealth.score : null,
+		credit_health_score: availability.creditHealth ? input.creditHealth?.score ?? null : null,
+		net_worth_positioning_score: availability.netWorth ? calculations.wealthComposite.normalizedScore : null,
+		budget_tracking_score: availability.budget ? calculations.budget.score : null,
+		loan_monitoring_score: availability.loanMonitoring ? calculations.loanMonitoring.score : null,
+		bill_reminder_score: availability.billPayment ? calculations.billPayment.score : null,
+		financial_health_summary: availability.financialHealth ? calculations.financialHealth : null,
+		credit_health_summary: availability.creditHealth ? input.creditHealth?.summary ?? null : null,
+		net_worth_summary: availability.netWorth ? {
 			netWorthBuilding: calculations.netWorth,
 			wealthFoundation: calculations.wealthFoundation,
 			wealthComposite: calculations.wealthComposite,
 			widBenchmark: calculations.widBenchmark,
-		},
-		budget_tracking_summary: calculations.budget,
-		loan_monitoring_summary: calculations.loanMonitoring,
-		bill_reminder_summary: calculations.billPayment,
+		} : null,
+		budget_tracking_summary: availability.budget ? calculations.budget : null,
+		loan_monitoring_summary: availability.loanMonitoring ? calculations.loanMonitoring : null,
+		bill_reminder_summary: availability.billPayment ? calculations.billPayment : null,
 	}
 	const response = await api.put<MonthlyProfileSnapshotRecord>(
 		`/api/profile-monthly-snapshots/${normalizeSnapshotMonth(input.snapshotMonth)}`,

@@ -34,7 +34,7 @@ function formatMonth(value: string) {
 }
 
 function displayScore(value: number | null) {
-  return value === null ? 'Pending' : Math.round(value).toString()
+  return value === null ? 'NA' : Math.round(value).toString()
 }
 
 export default function InAGlancePage() {
@@ -92,7 +92,7 @@ export default function InAGlancePage() {
             <div className="in-a-glance-score-ring">
               <Gauge aria-hidden="true" />
               <strong>{displayScore(snapshot.financial_health_score)}</strong>
-              <span>/ 1000</span>
+              {snapshot.financial_health_score === null ? null : <span>/ 1000</span>}
             </div>
             <div>
               <span>Financial Health</span>

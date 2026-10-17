@@ -67,4 +67,46 @@ describe('monthly profile snapshot calculator', () => {
     )
     expect(result.calculations).toEqual(expected)
   })
+
+  it('calculates unavailable modules with zero defaults and persists them as null', async () => {
+    const unavailableInput: MonthlyProfileCalculatorInput = {
+      snapshotMonth: '2026-09',
+      profileData: { profileId: 'P-7' },
+      sourceProfileId: 'P-7',
+      financialHealth: {},
+      wealthComposite: { wealthBehaviourScore: 0, wealthAuthenticityScore: 0 },
+      widBenchmark: { netWorth: 0, annualIncome: 0, countryCode: 'PH', currency: 'PHP' },
+      availability: {
+        financialHealth: false,
+        creditHealth: false,
+        netWorth: false,
+        budget: false,
+        loanMonitoring: false,
+        billPayment: false,
+      },
+    }
+    vi.mocked(api.put).mockResolvedValue({ data: { id: 2 } } as never)
+
+    const result = await calculateAndSaveMonthlyProfile(unavailableInput)
+
+    expect(result.calculations.loanMonitoring.score).toBe(0)
+    expect(result.calculations.netWorth.score).toBe(0)
+    expect(api.put).toHaveBeenCalledWith(
+      '/api/profile-monthly-snapshots/2026-09-01',
+      expect.objectContaining({
+        financial_health_score: null,
+        credit_health_score: null,
+        net_worth_positioning_score: null,
+        budget_tracking_score: null,
+        loan_monitoring_score: null,
+        bill_reminder_score: null,
+        financial_health_summary: null,
+        credit_health_summary: null,
+        net_worth_summary: null,
+        budget_tracking_summary: null,
+        loan_monitoring_summary: null,
+        bill_reminder_summary: null,
+      }),
+    )
+  })
 })

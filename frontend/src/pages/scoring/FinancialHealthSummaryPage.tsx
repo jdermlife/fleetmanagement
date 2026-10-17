@@ -142,7 +142,7 @@ function formatSnapshotTimestamp(value: string) {
 }
 
 function formatStoredScore(value: number | null, scale = 100) {
-  return value === null ? 'Pending' : `${Math.round(value)} / ${scale}`
+  return value === null ? 'NA' : `${Math.round(value)} / ${scale}`
 }
 
 type InvestmentSuitabilityRisk = {
@@ -1152,7 +1152,6 @@ const openSavedSnapshots = async (): Promise<void> => {
 // Save the monthly profile snapshot and Financial Health history
 
 
-// Save the monthly profile snapshot and Financial Health history.
 
  // Save the monthly profile snapshot and Financial Health history.
 const saveFinancialHealthSnapshot = async (): Promise<void> => {
@@ -1193,18 +1192,11 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
     return
   }
 
-  // 4. Validate Net Worth Positioning.
+  // 4. Resolve optional source data. Missing modules are calculated as zero and persisted as NULL.
   const netWorth = monthlySnapshotDrafts?.netWorth
 
-  if (!netWorth) {
-    setSnapshotMessage(
-      'Cannot save: complete and save Net Worth Positioning first.'
-    )
-    return
-  }
-
   const actualEntries = Object.values(
-    netWorth.actualEntries ?? {}
+    netWorth?.actualEntries ?? {}
   )
 
   const completedActualEntries = actualEntries.filter(
@@ -1212,35 +1204,17 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
   )
 
   const suitabilityValues = Object.values(
-    netWorth.suitabilityAnswers ?? {}
+    netWorth?.suitabilityAnswers ?? {}
   )
 
-  const hasNetWorthData =
-    completedActualEntries.length > 0 &&
-    suitabilityValues.length > 0
+  const hasNetWorthData = hasMeaningfulValue(netWorth)
 
-  if (!hasNetWorthData) {
-    setSnapshotMessage(
-      'Cannot save: complete the actual Net Worth entries and suitability assessment first.'
-    )
-    return
-  }
-
-  // 5. Validate Loan Monitoring.
+  // 5. Resolve optional Loan Monitoring data.
   const loanScore =
     monthlySnapshotDrafts?.loanMonitoring?.publishedScore
 
   const hasLoanMonitoringScore =
-    loanScore !== null &&
-    loanScore !== undefined &&
-    Number.isFinite(Number(loanScore))
-
-  if (!hasLoanMonitoringScore) {
-    setSnapshotMessage(
-      'Cannot save: complete Loan Monitoring and publish its score first.'
-    )
-    return
-  }
+    loanScore !== undefined && Number.isFinite(loanScore.score)
 
   console.log('[Snapshot Save] Prerequisites passed', {
     hasNetWorthData,
@@ -1285,8 +1259,8 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
 
     const monthlyResult = await calculateAndSaveMonthlyProfile({
       snapshotMonth,
-      profileData: monthlySnapshotDrafts.profileData,
-      sourceProfileId: monthlySnapshotDrafts.profileId,
+      profileData: monthlySnapshotDrafts?.profileData ?? {},
+      sourceProfileId: monthlySnapshotDrafts?.profileId,
       sourceApplicationNo: selectedApplicationNo,
 
       financialHealth: latestSummaryInputs,
@@ -1303,8 +1277,8 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
           }
         : undefined,
 
-      netWorth,
-      budget: monthlySnapshotDrafts.budget,
+      netWorth: netWorth ?? {},
+      budget: monthlySnapshotDrafts?.budget ?? {},
       loanMonitoring: loanScore,
 
       billPayment: {
@@ -1331,6 +1305,14 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         annualIncome: benchmarkContext.monthlyIncome * 12,
         countryCode: benchmarkContext.countryCode,
         currency: benchmarkContext.currency,
+      },
+      availability: {
+        financialHealth: Object.values(latestSummaryInputs).some((value) => value !== null),
+        creditHealth: lendingLeafScores !== null,
+        netWorth: hasNetWorthData,
+        budget: hasMeaningfulValue(monthlySnapshotDrafts?.budget),
+        loanMonitoring: hasLoanMonitoringScore,
+        billPayment: scoreBillers.length > 0,
       },
     })
 
@@ -2830,12 +2812,12 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
             <div className="financial-health-equation">
               {monthlyProfileResult ? (
                 <ul className="financial-health-score-summary" aria-label="Saved monthly profile scores">
-                  <li><strong>Financial Health:</strong><span>{monthlyProfileResult.snapshot.financial_health_score ?? 'Pending'} / 1000</span></li>
-                  <li><strong>Credit Health:</strong><span>{monthlyProfileResult.snapshot.credit_health_score ?? 'Pending'} / 100</span></li>
-                  <li><strong>Net Worth:</strong><span>{monthlyProfileResult.snapshot.net_worth_positioning_score ?? 'Pending'} / 100</span></li>
-                  <li><strong>Budget Tracking:</strong><span>{monthlyProfileResult.snapshot.budget_tracking_score ?? 'Pending'} / 100</span></li>
-                  <li><strong>Loan Monitoring:</strong><span>{monthlyProfileResult.snapshot.loan_monitoring_score ?? 'Pending'} / 100</span></li>
-                  <li><strong>Bill Reminder:</strong><span>{monthlyProfileResult.snapshot.bill_reminder_score ?? 'Pending'} / 100</span></li>
+                  <li><strong>Financial Health:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.financial_health_score, 1000)}</span></li>
+                  <li><strong>Credit Health:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.credit_health_score)}</span></li>
+                  <li><strong>Net Worth:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.net_worth_positioning_score)}</span></li>
+                  <li><strong>Budget Tracking:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.budget_tracking_score)}</span></li>
+                  <li><strong>Loan Monitoring:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.loan_monitoring_score)}</span></li>
+                  <li><strong>Bill Reminder:</strong><span>{formatStoredScore(monthlyProfileResult.snapshot.bill_reminder_score)}</span></li>
                 </ul>
               ) : (
                 <span>No monthly profile result is available yet.</span>
