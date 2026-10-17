@@ -90,6 +90,14 @@ type MonthlyProfileSnapshotListResponse = {
 	total: number
 }
 
+export async function fetchMonthlyProfileSnapshots(limit = 120): Promise<MonthlyProfileSnapshotRecord[]> {
+	const response = await api.get<MonthlyProfileSnapshotListResponse>(
+		'/api/profile-monthly-snapshots',
+		{ params: { limit } },
+	)
+	return response.data.items
+}
+
 export async function fetchLatestMonthlyProfileSnapshot(): Promise<MonthlyProfileSnapshotRecord | null> {
 	const response = await api.get<MonthlyProfileSnapshotListResponse>(
 		'/api/profile-monthly-snapshots',

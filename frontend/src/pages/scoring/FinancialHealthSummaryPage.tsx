@@ -1,6 +1,6 @@
 import type { CSSProperties, ReactNode } from 'react'
 import { useEffect, useMemo, useState } from 'react'
-import { ChevronDown } from 'lucide-react'
+import { ArchiveRestore, ChevronDown, X } from 'lucide-react'
 
 import {
   createProfileHistory,
@@ -17,7 +17,11 @@ import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCar
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
-import { calculateAndSaveMonthlyProfile } from '../../services/profilemonthlysnapshotcalculator'
+import {
+  calculateAndSaveMonthlyProfile,
+  fetchMonthlyProfileSnapshots,
+  type MonthlyProfileSnapshotRecord,
+} from '../../services/profilemonthlysnapshotcalculator'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
 import { WatchSync } from '../../native/watchSync'
 
@@ -117,6 +121,24 @@ type MonthlySnapshotDrafts = {
     paymentEntries?: Record<string, Array<{ datePaid?: string; amountPaid?: string | number }>>
   } | null
   loanMonitoring: { publishedScore?: LoanMonitoringScoreResult } | null
+}
+
+const snapshotTimestampFormatter = new Intl.DateTimeFormat('en-US', {
+  dateStyle: 'medium',
+  timeStyle: 'short',
+})
+
+function snapshotReference(snapshot: MonthlyProfileSnapshotRecord) {
+  return `FHS-${snapshot.id}`
+}
+
+function formatSnapshotTimestamp(value: string) {
+  const date = new Date(value)
+  return Number.isNaN(date.getTime()) ? value : snapshotTimestampFormatter.format(date)
+}
+
+function formatStoredScore(value: number | null, scale = 100) {
+  return value === null ? 'Pending' : `${Math.round(value)} / ${scale}`
 }
 
 type InvestmentSuitabilityRisk = {
@@ -558,6 +580,13 @@ export default function FinancialHealthSummaryPage() {
   const [isFinancialStatementOpen, setIsFinancialStatementOpen] = useState(false)
   const [monthlySnapshotDrafts, setMonthlySnapshotDrafts] = useState<MonthlySnapshotDrafts | null>(null)
   const [monthlyProfileResult, setMonthlyProfileResult] = useState<Awaited<ReturnType<typeof calculateAndSaveMonthlyProfile>> | null>(null)
+  const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false)
+  const [savedSnapshotReceipt, setSavedSnapshotReceipt] = useState<MonthlyProfileSnapshotRecord | null>(null)
+  const [isSnapshotLibraryOpen, setIsSnapshotLibraryOpen] = useState(false)
+  const [savedProfileSnapshots, setSavedProfileSnapshots] = useState<MonthlyProfileSnapshotRecord[]>([])
+  const [selectedSavedSnapshot, setSelectedSavedSnapshot] = useState<MonthlyProfileSnapshotRecord | null>(null)
+  const [isLoadingSavedSnapshots, setIsLoadingSavedSnapshots] = useState(false)
+  const [savedSnapshotsMessage, setSavedSnapshotsMessage] = useState('')
   const [activeVitalId, setActiveVitalId] = useState<string | null>(null)
   const [activePositionRingId, setActivePositionRingId] = useState<string | null>(null)
   const [activeChartIndicatorId, setActiveChartIndicatorId] = useState<string | null>(null)
@@ -1078,6 +1107,31 @@ console.log('[WatchSync] Scores being sent:', {
 
 
 
+  const currentSnapshotProfileId = monthlySnapshotDrafts?.profileId?.trim() || null
+  const currentSnapshotProfileLabel = currentSnapshotProfileId || selectedApplicationNo || 'Current profile'
+
+  const openSavedSnapshots = async () => {
+    setIsSnapshotLibraryOpen(true)
+    setIsLoadingSavedSnapshots(true)
+    setSavedSnapshotsMessage('')
+    setSelectedSavedSnapshot(null)
+
+    try {
+      const snapshots = await fetchMonthlyProfileSnapshots()
+      const profileSnapshots = snapshots.filter((snapshot) => (
+        currentSnapshotProfileId
+          ? snapshot.source_profile_id === currentSnapshotProfileId
+          : snapshot.source_profile_id === null
+      ))
+      setSavedProfileSnapshots(profileSnapshots)
+      setSelectedSavedSnapshot(profileSnapshots[0] ?? null)
+    } catch (error) {
+      setSavedSnapshotsMessage(getErrorMessage(error, 'Unable to retrieve saved snapshots.'))
+    } finally {
+      setIsLoadingSavedSnapshots(false)
+    }
+  }
+
  const saveFinancialHealthSnapshot = async () => {
   if (!selectedApplicationNo || !summaryComputedAt) return
   
@@ -1148,6 +1202,11 @@ console.log('[WatchSync] Scores being sent:', {
         },
       })
       setMonthlyProfileResult(monthlyResult)
+      setSavedSnapshotReceipt(monthlyResult.snapshot)
+      setSavedProfileSnapshots((current) => [
+        monthlyResult.snapshot,
+        ...current.filter((snapshot) => snapshot.id !== monthlyResult.snapshot.id),
+      ])
 
       const netWorthMetrics = netWorthBuildingScore?.metrics
       const record = await createProfileHistory(selectedApplicationNo, {
@@ -1174,6 +1233,7 @@ console.log('[WatchSync] Scores being sent:', {
     } catch (error) {
       setSnapshotMessage(getErrorMessage(error, 'Unable to save this financial health snapshot.'))
     } finally {
+      setIsSaveConfirmationOpen(false)
       setIsSavingSnapshot(false)
     }
   }
@@ -1583,7 +1643,7 @@ console.log('[WatchSync] Scores being sent:', {
          type="button"
          className="financial-health-journey-main-fab"
          aria-label="Save Snapshot"
-         onClick={() => void saveFinancialHealthSnapshot()}
+         onClick={() => setIsSaveConfirmationOpen(true)}
          disabled={
            !summaryComputedAt || 
            !selectedApplicationNo || 
@@ -1594,6 +1654,14 @@ console.log('[WatchSync] Scores being sent:', {
          }
        >
             {isSavingSnapshot ? 'Saving...' : 'Save Snapshot'}
+          </button>
+          <button
+            type="button"
+            className="financial-health-journey-main-fab financial-health-snapshot-retrieve"
+            onClick={() => void openSavedSnapshots()}
+          >
+            <ArchiveRestore aria-hidden="true" />
+            Retrieve Saved Snapshots
           </button>
           {snapshotMonthExists ? <span>A snapshot already exists for this month.</span> : null}
         </div>
@@ -1629,6 +1697,145 @@ console.log('[WatchSync] Scores being sent:', {
         >
           <strong>{snapshotMessage.startsWith('Snapshot saved') ? 'Snapshot saved' : 'Snapshot notice'}</strong>
           <span>{snapshotMessage}</span>
+        </div>
+      ) : null}
+
+      {isSaveConfirmationOpen ? (
+        <div className="financial-health-snapshot-modal-backdrop" role="presentation">
+          <section
+            className="financial-health-snapshot-modal financial-health-snapshot-confirmation"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="snapshot-confirmation-title"
+          >
+            <button
+              type="button"
+              className="financial-health-snapshot-modal-close"
+              aria-label="Close save confirmation"
+              onClick={() => setIsSaveConfirmationOpen(false)}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <span className="financial-health-snapshot-modal-kicker">Confirm snapshot</span>
+            <h2 id="snapshot-confirmation-title">Save this financial health snapshot?</h2>
+            <dl className="financial-health-snapshot-metadata">
+              <div><dt>Profile</dt><dd>{currentSnapshotProfileLabel}</dd></div>
+              <div><dt>Snapshot month</dt><dd>{formatReportingMonth(snapshotMonth)}</dd></div>
+            </dl>
+            <p>The current page results and supporting summaries will be saved as they appear now.</p>
+            <div className="financial-health-snapshot-modal-actions">
+              <button type="button" onClick={() => setIsSaveConfirmationOpen(false)}>Cancel</button>
+              <button
+                type="button"
+                className="loan-inline-button loan-inline-button-primary"
+                disabled={isSavingSnapshot}
+                onClick={() => void saveFinancialHealthSnapshot()}
+              >
+                {isSavingSnapshot ? 'Saving...' : 'Confirm and Save'}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {savedSnapshotReceipt ? (
+        <div className="financial-health-snapshot-modal-backdrop" role="presentation">
+          <section
+            className="financial-health-snapshot-modal financial-health-snapshot-receipt"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="snapshot-receipt-title"
+          >
+            <button
+              type="button"
+              className="financial-health-snapshot-modal-close"
+              aria-label="Close saved snapshot receipt"
+              onClick={() => setSavedSnapshotReceipt(null)}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <span className="financial-health-snapshot-modal-kicker">Snapshot saved</span>
+            <h2 id="snapshot-receipt-title">Save reference</h2>
+            <dl className="financial-health-snapshot-metadata">
+              <div><dt>Reference</dt><dd>{snapshotReference(savedSnapshotReceipt)}</dd></div>
+              <div><dt>Profile</dt><dd>{savedSnapshotReceipt.source_profile_id || currentSnapshotProfileLabel}</dd></div>
+              <div><dt>Snapshot month</dt><dd>{formatReportingMonth(savedSnapshotReceipt.snapshot_month.slice(0, 7))}</dd></div>
+              <div><dt>Saved at</dt><dd>{formatSnapshotTimestamp(savedSnapshotReceipt.updated_at)}</dd></div>
+            </dl>
+            <div className="financial-health-snapshot-modal-actions">
+              <button type="button" onClick={() => setSavedSnapshotReceipt(null)}>Close</button>
+              <button
+                type="button"
+                className="loan-inline-button loan-inline-button-primary"
+                onClick={() => {
+                  setSavedSnapshotReceipt(null)
+                  void openSavedSnapshots()
+                }}
+              >
+                Retrieve Saved Snapshots
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
+
+      {isSnapshotLibraryOpen ? (
+        <div className="financial-health-snapshot-modal-backdrop" role="presentation">
+          <section
+            className="financial-health-snapshot-modal financial-health-snapshot-library"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="snapshot-library-title"
+          >
+            <button
+              type="button"
+              className="financial-health-snapshot-modal-close"
+              aria-label="Close saved snapshots"
+              onClick={() => setIsSnapshotLibraryOpen(false)}
+            >
+              <X aria-hidden="true" />
+            </button>
+            <span className="financial-health-snapshot-modal-kicker">Saved records</span>
+            <h2 id="snapshot-library-title">Saved snapshots</h2>
+            <p>Profile: <strong>{currentSnapshotProfileLabel}</strong></p>
+            {isLoadingSavedSnapshots ? <p className="status-message" role="status">Retrieving snapshots...</p> : null}
+            {savedSnapshotsMessage ? <p className="status-message error" role="alert">{savedSnapshotsMessage}</p> : null}
+            {!isLoadingSavedSnapshots && !savedSnapshotsMessage && savedProfileSnapshots.length === 0 ? (
+              <p className="status-message">No saved snapshots were found for this profile.</p>
+            ) : null}
+            {savedProfileSnapshots.length > 0 ? (
+              <div className="financial-health-snapshot-library-layout">
+                <div className="financial-health-snapshot-record-list" aria-label="Saved snapshot references">
+                  {savedProfileSnapshots.map((snapshot) => (
+                    <button
+                      key={snapshot.id}
+                      type="button"
+                      className={selectedSavedSnapshot?.id === snapshot.id ? 'is-selected' : undefined}
+                      onClick={() => setSelectedSavedSnapshot(snapshot)}
+                    >
+                      <strong>{snapshotReference(snapshot)}</strong>
+                      <span>{formatReportingMonth(snapshot.snapshot_month.slice(0, 7))}</span>
+                      <small>{formatSnapshotTimestamp(snapshot.updated_at)}</small>
+                    </button>
+                  ))}
+                </div>
+                {selectedSavedSnapshot ? (
+                  <article className="financial-health-snapshot-record-detail">
+                    <h3>{snapshotReference(selectedSavedSnapshot)}</h3>
+                    <dl className="financial-health-snapshot-metadata">
+                      <div><dt>Financial Health</dt><dd>{formatStoredScore(selectedSavedSnapshot.financial_health_score, 1000)}</dd></div>
+                      <div><dt>Credit Health</dt><dd>{formatStoredScore(selectedSavedSnapshot.credit_health_score)}</dd></div>
+                      <div><dt>Wealth Building</dt><dd>{formatStoredScore(selectedSavedSnapshot.net_worth_positioning_score)}</dd></div>
+                      <div><dt>Budget Tracking</dt><dd>{formatStoredScore(selectedSavedSnapshot.budget_tracking_score)}</dd></div>
+                      <div><dt>Resource Optimizer</dt><dd>{formatStoredScore(selectedSavedSnapshot.loan_monitoring_score)}</dd></div>
+                      <div><dt>Bill Manager</dt><dd>{formatStoredScore(selectedSavedSnapshot.bill_reminder_score)}</dd></div>
+                      <div><dt>Saved at</dt><dd>{formatSnapshotTimestamp(selectedSavedSnapshot.updated_at)}</dd></div>
+                    </dl>
+                  </article>
+                ) : null}
+              </div>
+            ) : null}
+          </section>
         </div>
       ) : null}
 
