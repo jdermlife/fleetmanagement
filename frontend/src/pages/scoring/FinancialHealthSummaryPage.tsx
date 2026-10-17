@@ -1111,48 +1111,11 @@ console.log('[WatchSync] Scores being sent:', {
 
 
 
-  const currentSnapshotProfileId = monthlySnapshotDrafts?.profileId?.trim() || null
-  const currentSnapshotProfileLabel = currentSnapshotProfileId || selectedApplicationNo || 'Current profile'
-
-  const openSavedSnapshots = async () => {
-    setIsSnapshotLibraryOpen(true)
-    setIsLoadingSavedSnapshots(true)
-    setSavedSnapshotsMessage('')
-    setSelectedSavedSnapshot(null)
-
-    try {
-      const snapshots = await fetchMonthlyProfileSnapshots()
-      const profileSnapshots = snapshots.filter((snapshot) => (
-        currentSnapshotProfileId
-          ? snapshot.source_profile_id === currentSnapshotProfileId
-          : snapshot.source_profile_id === null
-      ))
-      setSavedProfileSnapshots(profileSnapshots)
-      setSelectedSavedSnapshot(profileSnapshots[0] ?? null)
-    } catch (error) {
-      setSavedSnapshotsMessage(getErrorMessage(error, 'Unable to retrieve saved snapshots.'))
-    } finally {
-      setIsLoadingSavedSnapshots(false)
-    }
-  }
-
-        console.log('[Snapshot Save] Started', {
-         snapshotMonth,
-         hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
-         hasLoanMonitoringScore: Boolean(
-         monthlySnapshotDrafts?.loanMonitoring?.publishedScore
-          ),
-         profileId: monthlySnapshotDrafts?.profileId,
-         })
-
-      
 const currentSnapshotProfileId =
   monthlySnapshotDrafts?.profileId?.trim() || null
 
 const currentSnapshotProfileLabel =
-  currentSnapshotProfileId ||
-  selectedApplicationNo ||
-  'Current profile'
+  currentSnapshotProfileId || selectedApplicationNo || 'Current profile'
 
 // Retrieve saved monthly profile snapshots.
 const openSavedSnapshots = async (): Promise<void> => {
@@ -1173,18 +1136,21 @@ const openSavedSnapshots = async (): Promise<void> => {
     setSavedProfileSnapshots(profileSnapshots)
     setSelectedSavedSnapshot(profileSnapshots[0] ?? null)
   } catch (error) {
-    console.error('[Snapshot Library] Failed to retrieve snapshots', error)
+    console.error(
+      '[Snapshot Library] Failed to retrieve snapshots',
+      error
+    )
 
     setSavedSnapshotsMessage(
-      getErrorMessage(
-        error,
-        'Unable to retrieve saved snapshots.'
-      )
+      getErrorMessage(error, 'Unable to retrieve saved snapshots.')
     )
   } finally {
     setIsLoadingSavedSnapshots(false)
   }
 }
+
+// Save the monthly profile snapshot and Financial Health history
+
 
 // Save the monthly profile snapshot and Financial Health history.
 const saveFinancialHealthSnapshot = async (): Promise<void> => {
