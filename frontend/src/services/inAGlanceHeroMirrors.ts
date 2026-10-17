@@ -25,6 +25,7 @@ export type BudgetUtilizationHeroMirror = {
   progressPercent: number
   overflowPercent: number
   remainingAmount: number
+  overBudgetAmount: number
   sourceLabel: string
 }
 

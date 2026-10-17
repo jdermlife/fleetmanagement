@@ -18806,7 +18806,7 @@ th { color: var(--dark-gold); }
 .in-a-glance-radar-axis { stroke: #8da0b1; stroke-width: 1; }
 .in-a-glance-radar-score { fill: rgb(224 176 45 / 30%); stroke: #e0b02d; stroke-width: 2; }
 .in-a-glance-wealth-visual circle { fill: #eef5fb; stroke: #e0b02d; stroke-width: 1.5; }
-.in-a-glance-budget-visual { display: grid; align-content: center; gap: 14px; padding: 18px 12px; background: linear-gradient(135deg, #242a1b, #454421); }
+.in-a-glance-budget-visual { display: grid; align-content: center; gap: 8px; padding: 12px; background: linear-gradient(135deg, #242a1b, #454421); }
 .in-a-glance-budget-visual > span { color: #f1c840; font-size: 0.56rem; font-weight: 850; text-transform: uppercase; }
 .in-a-glance-budget-heading { display: flex; align-items: end; justify-content: space-between; gap: 6px; }
 .in-a-glance-budget-heading strong { font-size: 0.72rem; }
@@ -18816,6 +18816,7 @@ th { color: var(--dark-gold); }
 .in-a-glance-budget-overflow { overflow: hidden; height: 4px; margin-top: -10px; background: #442725; }
 .in-a-glance-budget-overflow i { display: block; height: 100%; background: #ec714c; }
 .in-a-glance-budget-scale { display: flex; justify-content: space-between; font-size: 0.5rem; }
+.in-a-glance-budget-status { color: #dce7cf; font-size: 0.48rem; line-height: 1.35; }
 .in-a-glance-loan-visual { display: grid; place-items: center; background: #071d32; }
 .in-a-glance-loan-visual svg { width: 100%; height: 145px; }
 .in-a-glance-gauge-track,

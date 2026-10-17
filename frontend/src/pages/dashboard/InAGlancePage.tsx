@@ -180,8 +180,11 @@ function BudgetReflection({ value, summary, mirror }: { value: number | null; su
   const metrics = asRecord(summary.metrics)
   const progress = mirror?.progressPercent ?? boundedScore(value)
   const variance = numericValue(metrics.variancePercent)
+  const ariaLabel = mirror
+    ? `Budget utilization ${mirror.utilizationPercent.toFixed(1)} percent; ${currencyFormatter.format(mirror.utilizedAmount)} of ${currencyFormatter.format(mirror.budgetAmount)} budget`
+    : `Budget Tracking ${displayScore(value)} out of 100`
   return (
-    <div className="in-a-glance-budget-visual" role="img" aria-label={`Budget Tracking ${displayScore(value)} out of 100`}>
+    <div className="in-a-glance-budget-visual" role="img" aria-label={ariaLabel}>
       <span>Budget performance</span>
       <div className="in-a-glance-budget-heading">
         <strong>{mirror ? 'Budget utilization' : 'Saved budget score'}</strong>
@@ -193,6 +196,14 @@ function BudgetReflection({ value, summary, mirror }: { value: number | null; su
         <span>{mirror ? `Used ${currencyFormatter.format(mirror.utilizedAmount)}` : '0'}</span>
         <span>{mirror ? `Budget ${currencyFormatter.format(mirror.budgetAmount)}` : variance > 0 ? `${variance.toFixed(1)}% variance` : '100'}</span>
       </div>
+      {mirror ? (
+        <small className="in-a-glance-budget-status">
+          {mirror.utilizationPercent > 100
+            ? `${currencyFormatter.format(mirror.overBudgetAmount)} over budget`
+            : `${currencyFormatter.format(mirror.remainingAmount)} remaining`}
+          {` ${mirror.sourceLabel}`}
+        </small>
+      ) : null}
     </div>
   )
 }
@@ -384,11 +395,15 @@ export default function InAGlancePage() {
       {snapshot || hasHeroMirrors ? <section className="in-a-glance-grid" aria-label="Current and saved component scores">
         {snapshotItems.map(({ key, summaryKey, kind, label, path, Icon }) => {
           const value = snapshot?.[key] ?? null
+          const isLiveBudget = kind === 'budget' && heroMirrors.budgetUtilization !== null
           return (
             <a key={key} href={path} className="in-a-glance-card">
               <span className="in-a-glance-card-heading"><Icon aria-hidden="true" /><strong>{label}</strong></span>
               <SnapshotReflection kind={kind} value={value} summary={asRecord(snapshot?.[summaryKey])} month={reflectionMonth} mirrors={heroMirrors} />
-              <span className="in-a-glance-card-score">{displayScore(value)}<small>{value === null ? '' : ' / 100'}</small></span>
+              <span className="in-a-glance-card-score">
+                {isLiveBudget ? `${heroMirrors.budgetUtilization!.utilizationPercent.toFixed(1)}%` : displayScore(value)}
+                <small>{isLiveBudget ? ' utilized' : value === null ? '' : ' / 100'}</small>
+              </span>
             </a>
           )
         })}

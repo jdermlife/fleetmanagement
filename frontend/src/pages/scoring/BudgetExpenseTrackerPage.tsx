@@ -814,6 +814,7 @@ export default function BudgetExpenseTrackerPage() {
       progressPercent: Math.min(100, utilizationPercent),
       overflowPercent: Math.min(100, Math.max(0, utilizationPercent - 100)),
       remainingAmount: Math.max(0, budgetAmount - utilizedAmount),
+      overBudgetAmount: Math.max(0, utilizedAmount - budgetAmount),
       sourceLabel: hasActualExpenses
         ? 'from entered actuals'
         : hasSavedExpenseBudget
@@ -1189,7 +1190,7 @@ export default function BudgetExpenseTrackerPage() {
           </div>
           <small>
             {budgetUtilization.utilizationPercent > 100
-              ? `${formatCurrency(budgetUtilization.utilizedAmount - budgetUtilization.budgetAmount)} over budget`
+              ? `${formatCurrency(budgetUtilization.overBudgetAmount)} over budget`
               : `${formatCurrency(budgetUtilization.remainingAmount)} remaining`}
             {` ${budgetUtilization.sourceLabel}`}
           </small>
