@@ -1153,12 +1153,19 @@ const openSavedSnapshots = async (): Promise<void> => {
 
 
 // Save the monthly profile snapshot and Financial Health history.
+
+ // Save the monthly profile snapshot and Financial Health history.
 const saveFinancialHealthSnapshot = async (): Promise<void> => {
-  console.log('[Snapshot Save] Confirm clicked', {
+  console.log('[Snapshot Save] Function started')
+
+  console.log('[Snapshot Save] Input check', {
     selectedApplicationNo,
     summaryComputedAt,
     snapshotMonth,
     profileId: monthlySnapshotDrafts?.profileId,
+    hasNetWorth: Boolean(monthlySnapshotDrafts?.netWorth),
+    hasLoanMonitoringScore:
+      monthlySnapshotDrafts?.loanMonitoring?.publishedScore != null,
   })
 
   // 1. Validate profile selection.
@@ -1166,6 +1173,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
     setSnapshotMessage(
       'Cannot save: no application or profile is selected.'
     )
+    console.error('[Snapshot Save] Stopped: no profile selected')
     return
   }
 
