@@ -129,7 +129,11 @@ const snapshotTimestampFormatter = new Intl.DateTimeFormat('en-US', {
 })
 
 function snapshotReference(snapshot: MonthlyProfileSnapshotRecord) {
-  return `FHS-${snapshot.id}`
+  const savedAt = new Date(snapshot.created_at)
+  if (Number.isNaN(savedAt.getTime())) return `FHS-${snapshot.id}`
+
+  const pad = (value: number) => String(value).padStart(2, '0')
+  return `${pad(savedAt.getDate())}/${pad(savedAt.getMonth() + 1)}/${savedAt.getFullYear()} time: ${pad(savedAt.getHours())}/${pad(savedAt.getMinutes())}`
 }
 
 function formatSnapshotTimestamp(value: string) {
