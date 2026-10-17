@@ -17670,13 +17670,15 @@ th { color: var(--dark-gold); }
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 20px;
+  flex-wrap: wrap;
+  gap: 12px;
   padding: 16px 0;
   border-top: 1px solid rgba(148, 163, 184, 0.22);
   border-bottom: 1px solid rgba(148, 163, 184, 0.22);
 }
 
-.financial-health-compute-bar > div {
+.financial-health-compute-status {
+  flex: 1 1 150px;
   min-width: 0;
   display: grid;
   gap: 4px;
@@ -17692,6 +17694,15 @@ th { color: var(--dark-gold); }
   font-size: 0.8rem;
 }
 
+.financial-health-compute-bar > .financial-health-journey-main-fab,
+.financial-health-snapshot-save .financial-health-journey-main-fab {
+  max-width: 100%;
+  font-size: clamp(0.76rem, 0.9vw, 0.9rem);
+  line-height: 1.15;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .financial-health-compute-button {
   flex: 0 0 auto;
   min-height: 42px;
@@ -17703,9 +17714,12 @@ th { color: var(--dark-gold); }
 }
 
 .financial-health-snapshot-save {
+  flex: 1 1 560px;
   display: flex !important;
-  grid-template-columns: none;
+  flex-wrap: wrap;
   align-items: end;
+  justify-content: center;
+  min-width: 0;
   gap: 8px !important;
 }
 
@@ -17718,6 +17732,16 @@ th { color: var(--dark-gold); }
   font-weight: 700;
 }
 
+.financial-health-snapshot-save label {
+  flex: 0 1 166px;
+  min-width: 142px;
+}
+
+.financial-health-snapshot-save label > span {
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
 .financial-health-snapshot-save input,
 .financial-health-comparison-controls select {
   min-height: 40px;
@@ -17727,6 +17751,14 @@ th { color: var(--dark-gold); }
   background: #ffffff;
   color: var(--financial-health-ink);
   font: inherit;
+}
+
+.financial-health-snapshot-save > span {
+  flex: 1 0 100%;
+  min-width: 0;
+  line-height: 1.3;
+  text-align: center;
+  overflow-wrap: anywhere;
 }
 
 .financial-health-snapshot-retrieve {

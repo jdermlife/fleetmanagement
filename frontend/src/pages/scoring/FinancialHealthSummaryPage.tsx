@@ -1810,7 +1810,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
       </section>
 
       <section className="financial-health-compute-bar" aria-label="Financial Health computation controls">
-        <div>
+        <div className="financial-health-compute-status">
           <strong>{summaryComputedAt ? 'Latest saved inputs published' : 'Default Financial Health displayed. '}</strong>
           <span>
             {summaryComputedAt
@@ -1833,14 +1833,16 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         </button>
 
         <div className="financial-health-snapshot-save">
-       <label htmlFor="financial-health-snapshot-month">Snapshot as of</label>
-       <input
-         id="financial-health-snapshot-month"
-         type="month"
-         value={snapshotMonth}
-         max={maxAllowedMonth} // Use the normalized YYYY-MM variable
-         onChange={(event) => setSnapshotMonth(event.target.value)}
-       />
+       <label htmlFor="financial-health-snapshot-month">
+         <span>Snapshot as of</span>
+         <input
+           id="financial-health-snapshot-month"
+           type="month"
+           value={snapshotMonth}
+           max={maxAllowedMonth} // Use the normalized YYYY-MM variable
+           onChange={(event) => setSnapshotMonth(event.target.value)}
+         />
+       </label>
        <button
          type="button"
          className="financial-health-journey-main-fab"
