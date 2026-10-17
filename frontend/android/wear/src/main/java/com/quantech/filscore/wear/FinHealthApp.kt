@@ -28,6 +28,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.text.font.FontWeight
@@ -38,12 +39,17 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.wear.compose.material3.Text
 import java.text.NumberFormat
 import java.time.Instant
+import java.time.LocalDate
+import java.time.YearMonth
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import java.util.Locale
+import kotlin.math.PI
+import kotlin.math.cos
 import kotlin.math.roundToInt
+import kotlin.math.sin
 
-private enum class Screen { HOME, HEALTH, BUDGET, CREDIT, WEALTH }
+private enum class Screen { HOME, HEALTH, BUDGET, CREDIT, WEALTH, RESOURCE, BILLS }
 
 private val gold = listOf(Color(0xFF7B5008), Color(0xFFF4C64F), Color(0xFFFFE99A), Color(0xFFD69A1E))
 private val silver = listOf(Color(0xFF656B73), Color(0xFFD5D9DE), Color(0xFFF7F8F9), Color(0xFFADB3BA))
@@ -62,6 +68,8 @@ fun FinHealthApp() {
         Screen.BUDGET -> BudgetScreen(snapshot) { screen = Screen.HOME }
         Screen.CREDIT -> CreditScreen(snapshot) { screen = Screen.HOME }
         Screen.WEALTH -> WealthScreen(snapshot) { screen = Screen.HOME }
+        Screen.RESOURCE -> ResourceOptimizerScreen(snapshot) { screen = Screen.HOME }
+        Screen.BILLS -> BillCalendarScreen(snapshot) { screen = Screen.HOME }
     }
 }
 
@@ -114,6 +122,8 @@ private fun HomeScreen(snapshot: WatchSnapshot, navigate: (Screen) -> Unit) {
         NavigationRow("Budget & Expenses", score(snapshot.budgetScore), "Budget Health") { navigate(Screen.BUDGET) }
         NavigationRow("Credit Health", score(snapshot.creditScore), "Credit Score") { navigate(Screen.CREDIT) }
         NavigationRow("Wealth Capacity", decimal(snapshot.wealthBuilding), "Building Capacity") { navigate(Screen.WEALTH) }
+        NavigationRow("Resource Optimizer", snapshot.resourceOptimizerScore?.let { "${decimal(it)}%" } ?: "NA", "Loan Health") { navigate(Screen.RESOURCE) }
+        NavigationRow("Bill Manager", snapshot.latePaymentCount.toString(), "Late Payments") { navigate(Screen.BILLS) }
         snapshot.netWorth?.let {
             WearDivider()
             Text("Net Worth", fontSize = 11.sp)
@@ -152,7 +162,7 @@ private fun HealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
 @Composable
 private fun BudgetScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
     ScreenColumn("BUDGET", onBack) {
-        HealthRing(snapshot.budgetScore, 100.0, "BUDGET", "HEALTH", 125)
+        BudgetUtilizationGraph(snapshot)
         WearDivider()
         MetricRow("Income", money(snapshot.monthlyIncome))
         MetricRow("Expenses", money(snapshot.monthlyExpenses))
@@ -184,7 +194,7 @@ private fun CreditScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
 @Composable
 private fun WealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
     ScreenColumn("WEALTH CAPACITY", onBack) {
-        HealthRing(snapshot.wealthBuilding, 100.0, "WEALTH", "CAPACITY", 135)
+        WealthRadarGraph(snapshot)
         WearDivider()
         MetricRow("Net Worth", money(snapshot.netWorth))
         MetricRow("Liquidity", score(snapshot.liquidityBuffer))
@@ -199,6 +209,142 @@ private fun WealthScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
         WearDivider()
         Text("Wealth Capacity Trend", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
         TrendGraph(snapshot.wealthBuildingTrend, 100.0)
+    }
+}
+
+@Composable
+private fun BudgetUtilizationGraph(snapshot: WatchSnapshot) {
+    Column(
+        modifier = Modifier.fillMaxWidth().background(Color(0xFF1C2E1A), shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)).padding(9.dp),
+        verticalArrangement = Arrangement.spacedBy(7.dp)
+    ) {
+        Row(modifier = Modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("BUDGET PERFORMANCE", color = Color(0xFFF1C840), fontSize = 7.sp, fontWeight = FontWeight.Bold)
+                Text("Budget Utilization", fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+            }
+            Text(snapshot.utilizationPercent?.let { "${decimal(it)}%" } ?: "NA", color = Color(0xFF62E38C), fontSize = 19.sp, fontWeight = FontWeight.Bold)
+        }
+        Box(modifier = Modifier.fillMaxWidth().height(15.dp).background(Color(0xFFB76736), CircleShape)) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth(((snapshot.budgetProgressPercent ?: 0.0) / 100.0).coerceIn(0.0, 1.0).toFloat())
+                    .height(15.dp)
+                    .background(Brush.horizontalGradient(listOf(Color(0xFF20B772), Color(0xFFF0BD2E), Color(0xFFEC714C))), CircleShape)
+            )
+        }
+        if ((snapshot.budgetOverflowPercent ?: 0.0) > 0) {
+            Box(modifier = Modifier.fillMaxWidth().height(3.dp).background(Color(0xFF442725))) {
+                Box(modifier = Modifier.fillMaxWidth(((snapshot.budgetOverflowPercent ?: 0.0) / 100.0).coerceIn(0.0, 1.0).toFloat()).height(3.dp).background(Color(0xFFEC714C)))
+            }
+        }
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text("Used ${money(snapshot.utilizedAmount)}", fontSize = 8.sp)
+            Text("Budget ${money(snapshot.budgetAmount)}", fontSize = 8.sp)
+        }
+        Text(
+            if ((snapshot.utilizationPercent ?: 0.0) > 100) "${money(snapshot.overBudgetAmount)} over budget" else "${money(snapshot.remainingAmount)} remaining",
+            fontSize = 9.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.fillMaxWidth(),
+            textAlign = TextAlign.Center
+        )
+        snapshot.budgetSourceLabel?.let { Text(it, color = Color.Gray, fontSize = 7.sp, modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center) }
+    }
+}
+
+@Composable
+private fun WealthRadarGraph(snapshot: WatchSnapshot) {
+    val values = listOf(
+        (((snapshot.wealthNetWorthPositioning ?: 200.0) - 200.0) / 700.0).coerceIn(0.0, 1.0),
+        ((snapshot.wealthBehaviour ?: 0.0) / 100.0).coerceIn(0.0, 1.0),
+        ((snapshot.wealthFoundation ?: 0.0) / 1000.0).coerceIn(0.0, 1.0),
+        ((snapshot.wealthAuthenticity ?: 0.0) / 100.0).coerceIn(0.0, 1.0)
+    )
+    Canvas(modifier = Modifier.size(155.dp).background(Color(0xFF102432))) {
+        val center = Offset(size.width / 2, size.height / 2)
+        val radius = size.minDimension * 0.40f
+        fun point(index: Int, scale: Double): Offset {
+            val angle = -PI / 2 + index * PI / 2
+            return Offset(
+                center.x + (cos(angle) * radius * scale).toFloat(),
+                center.y + (sin(angle) * radius * scale).toFloat()
+            )
+        }
+        listOf(0.25, 0.5, 0.75, 1.0).forEach { level ->
+            val path = Path()
+            repeat(4) { index ->
+                val position = point(index, level)
+                if (index == 0) path.moveTo(position.x, position.y) else path.lineTo(position.x, position.y)
+            }
+            path.close()
+            drawPath(path, Color(0xFF6E8498), style = Stroke(1.dp.toPx()))
+        }
+        val axisColors = listOf(Color(0xFF166534), Color(0xFFD4A72C), Color(0xFF1E3A8A), Color.White)
+        repeat(4) { index -> drawLine(axisColors[index], center, point(index, 1.0), 1.dp.toPx()) }
+        val scorePath = Path()
+        values.forEachIndexed { index, value ->
+            val position = point(index, value)
+            if (index == 0) scorePath.moveTo(position.x, position.y) else scorePath.lineTo(position.x, position.y)
+        }
+        scorePath.close()
+        drawPath(scorePath, Color(0x55E0B02D))
+        drawPath(scorePath, Color(0xFFE0B02D), style = Stroke(2.dp.toPx()))
+        values.forEachIndexed { index, value -> drawCircle(axisColors[index], 4.dp.toPx(), point(index, value)) }
+    }
+}
+
+@Composable
+private fun ResourceOptimizerScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
+    ScreenColumn("RESOURCE OPTIMIZER", onBack) {
+        ResourceGauge(snapshot.resourceOptimizerScore)
+        Text(snapshot.resourceOptimizerScore?.let { "${decimal(it)}%" } ?: "NA", fontSize = 28.sp, fontWeight = FontWeight.Bold)
+        Text(snapshot.resourceOptimizerStatus ?: "Loan health optimization", color = Color.Gray, fontSize = 9.sp, textAlign = TextAlign.Center)
+    }
+}
+
+@Composable
+private fun ResourceGauge(value: Double?) {
+    Canvas(modifier = Modifier.fillMaxWidth().height(125.dp)) {
+        val stroke = 15.dp.toPx()
+        val diameter = size.minDimension * 1.15f
+        val topLeft = Offset((size.width - diameter) / 2, size.height * 0.12f)
+        val arcSize = Size(diameter, diameter)
+        drawArc(Color(0xFFEF2929), 150f, 80f, false, topLeft, arcSize, style = Stroke(stroke))
+        drawArc(Color(0xFFFFA000), 230f, 80f, false, topLeft, arcSize, style = Stroke(stroke))
+        drawArc(Color(0xFF22C97A), 310f, 80f, false, topLeft, arcSize, style = Stroke(stroke))
+        val center = Offset(size.width / 2, topLeft.y + diameter / 2)
+        val angle = (150.0 + ((value ?: 0.0) / 100.0).coerceIn(0.0, 1.0) * 240.0) * PI / 180.0
+        val needleLength = diameter * 0.34f
+        val needle = Offset(center.x + (cos(angle) * needleLength).toFloat(), center.y + (sin(angle) * needleLength).toFloat())
+        drawLine(Color.White, center, needle, 3.dp.toPx(), StrokeCap.Round)
+        drawCircle(Color.White, 6.dp.toPx(), center)
+    }
+}
+
+@Composable
+private fun BillCalendarScreen(snapshot: WatchSnapshot, onBack: () -> Unit) {
+    val month = runCatching { YearMonth.parse(snapshot.billSnapshotMonth?.take(7)) }.getOrElse { YearMonth.now() }
+    val leading = month.atDay(1).dayOfWeek.value % 7
+    val cells: List<Int?> = List(leading) { null } + (1..month.lengthOfMonth()).map { it }
+    ScreenColumn("BILL MANAGER", onBack) {
+        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(month.format(DateTimeFormatter.ofPattern("MMM yyyy", Locale.US)), fontSize = 12.sp, fontWeight = FontWeight.Bold)
+            Text("${snapshot.latePaymentCount} late", color = if (snapshot.latePaymentCount > 0) Color.Red else Color.Green, fontSize = 9.sp)
+        }
+        Row(modifier = Modifier.fillMaxWidth()) {
+            listOf("S", "M", "T", "W", "T", "F", "S").forEach { Text(it, modifier = Modifier.weight(1f), color = Color.Gray, fontSize = 7.sp, textAlign = TextAlign.Center) }
+        }
+        cells.chunked(7).forEach { week ->
+            Row(modifier = Modifier.fillMaxWidth()) {
+                (week + List(7 - week.size) { null }).forEach { day ->
+                    Box(
+                        modifier = Modifier.weight(1f).height(18.dp).background(if (day == month.lengthOfMonth()) Color(0x55F4C64E) else Color.White.copy(alpha = 0.06f)),
+                        contentAlignment = Alignment.Center
+                    ) { Text(day?.toString() ?: "", fontSize = 8.sp) }
+                }
+            }
+        }
     }
 }
 

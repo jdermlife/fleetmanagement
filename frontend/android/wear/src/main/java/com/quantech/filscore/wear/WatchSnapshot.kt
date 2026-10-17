@@ -29,11 +29,27 @@ data class WatchSnapshot(
     val goalMomentum: Double? = null,
     val protectionCoverage: Double? = null,
     val wealthBuildingTrend: List<Double> = emptyList(),
+    val wealthNetWorthPositioning: Double? = null,
+    val wealthBehaviour: Double? = null,
+    val wealthFoundation: Double? = null,
+    val wealthAuthenticity: Double? = null,
     val budgetScore: Double? = null,
     val monthlyIncome: Double? = null,
     val monthlyExpenses: Double? = null,
     val monthlyCashFlow: Double? = null,
-    val budgetTrend: List<Double> = emptyList()
+    val budgetTrend: List<Double> = emptyList(),
+    val budgetAmount: Double? = null,
+    val utilizedAmount: Double? = null,
+    val utilizationPercent: Double? = null,
+    val budgetProgressPercent: Double? = null,
+    val budgetOverflowPercent: Double? = null,
+    val remainingAmount: Double? = null,
+    val overBudgetAmount: Double? = null,
+    val budgetSourceLabel: String? = null,
+    val resourceOptimizerScore: Double? = null,
+    val resourceOptimizerStatus: String? = null,
+    val billSnapshotMonth: String? = null,
+    val latePaymentCount: Int = 0
 ) {
     val resolvedGoldRingScore: Double?
         get() = goldRingScore ?: weightedScore(
@@ -68,6 +84,10 @@ data class WatchSnapshot(
             val wealth = json.section("wealthBuilding")
             val netWorth = json.section("netWorth")
             val budget = json.section("budget")
+            val wealthBalance = json.section("wealthBalance")
+            val budgetUtilization = json.section("budgetUtilization")
+            val loanMonitoring = json.section("loanMonitoring")
+            val billCalendar = json.section("billCalendar")
 
             return WatchSnapshot(
                 updatedAt = json.stringOrNull("updatedAt"),
@@ -95,11 +115,27 @@ data class WatchSnapshot(
                 goalMomentum = wealth.number("goalMomentum"),
                 protectionCoverage = wealth.number("protectionCoverage"),
                 wealthBuildingTrend = wealth.numbers("trend"),
+                wealthNetWorthPositioning = wealthBalance.number("netWorthPositioning"),
+                wealthBehaviour = wealthBalance.number("wealthBehaviour"),
+                wealthFoundation = wealthBalance.number("wealthFoundation"),
+                wealthAuthenticity = wealthBalance.number("wealthAuthenticity"),
                 budgetScore = budget.number("score"),
                 monthlyIncome = budget.number("income"),
                 monthlyExpenses = budget.number("expenses"),
                 monthlyCashFlow = budget.number("net"),
-                budgetTrend = budget.numbers("trend")
+                budgetTrend = budget.numbers("trend"),
+                budgetAmount = budgetUtilization.number("budgetAmount"),
+                utilizedAmount = budgetUtilization.number("utilizedAmount"),
+                utilizationPercent = budgetUtilization.number("utilizationPercent"),
+                budgetProgressPercent = budgetUtilization.number("progressPercent"),
+                budgetOverflowPercent = budgetUtilization.number("overflowPercent"),
+                remainingAmount = budgetUtilization.number("remainingAmount"),
+                overBudgetAmount = budgetUtilization.number("overBudgetAmount"),
+                budgetSourceLabel = budgetUtilization.stringOrNull("sourceLabel"),
+                resourceOptimizerScore = loanMonitoring.number("score"),
+                resourceOptimizerStatus = loanMonitoring.stringOrNull("status"),
+                billSnapshotMonth = billCalendar.stringOrNull("snapshotMonth"),
+                latePaymentCount = billCalendar.number("lateCount")?.toInt() ?: 0
             )
         }
     }

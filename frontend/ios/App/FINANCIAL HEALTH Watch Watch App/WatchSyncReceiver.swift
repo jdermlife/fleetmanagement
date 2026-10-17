@@ -75,6 +75,25 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
     @Published private(set) var protectionCoverage: Double?
 
+    // MARK: - In A Glance Mirrors
+
+    @Published private(set) var wealthNetWorthPositioning: Double?
+    @Published private(set) var wealthBehaviour: Double?
+    @Published private(set) var wealthFoundation: Double?
+    @Published private(set) var wealthAuthenticity: Double?
+    @Published private(set) var budgetAmount: Double?
+    @Published private(set) var utilizedAmount: Double?
+    @Published private(set) var utilizationPercent: Double?
+    @Published private(set) var budgetProgressPercent: Double?
+    @Published private(set) var budgetOverflowPercent: Double?
+    @Published private(set) var remainingAmount: Double?
+    @Published private(set) var overBudgetAmount: Double?
+    @Published private(set) var budgetSourceLabel: String?
+    @Published private(set) var resourceOptimizerScore: Double?
+    @Published private(set) var resourceOptimizerStatus: String?
+    @Published private(set) var billSnapshotMonth: String?
+    @Published private(set) var latePaymentCount: Int = 0
+
     var resolvedGoldRingScore: Double? {
         if let goldRingScore {
             return goldRingScore
@@ -1001,6 +1020,25 @@ final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
             self.protectionCoverage =
 
                 protection
+
+            self.wealthNetWorthPositioning = self.number(snapshot, section: "wealthBalance", key: "netWorthPositioning")
+            self.wealthBehaviour = self.number(snapshot, section: "wealthBalance", key: "wealthBehaviour")
+            self.wealthFoundation = self.number(snapshot, section: "wealthBalance", key: "wealthFoundation")
+            self.wealthAuthenticity = self.number(snapshot, section: "wealthBalance", key: "wealthAuthenticity")
+
+            self.budgetAmount = self.number(snapshot, section: "budgetUtilization", key: "budgetAmount")
+            self.utilizedAmount = self.number(snapshot, section: "budgetUtilization", key: "utilizedAmount")
+            self.utilizationPercent = self.number(snapshot, section: "budgetUtilization", key: "utilizationPercent")
+            self.budgetProgressPercent = self.number(snapshot, section: "budgetUtilization", key: "progressPercent")
+            self.budgetOverflowPercent = self.number(snapshot, section: "budgetUtilization", key: "overflowPercent")
+            self.remainingAmount = self.number(snapshot, section: "budgetUtilization", key: "remainingAmount")
+            self.overBudgetAmount = self.number(snapshot, section: "budgetUtilization", key: "overBudgetAmount")
+            self.budgetSourceLabel = (snapshot["budgetUtilization"] as? [String: Any])?["sourceLabel"] as? String
+
+            self.resourceOptimizerScore = self.number(snapshot, section: "loanMonitoring", key: "score")
+            self.resourceOptimizerStatus = (snapshot["loanMonitoring"] as? [String: Any])?["status"] as? String
+            self.billSnapshotMonth = (snapshot["billCalendar"] as? [String: Any])?["snapshotMonth"] as? String
+            self.latePaymentCount = Int(self.number(snapshot, section: "billCalendar", key: "lateCount") ?? 0)
 
         }
 

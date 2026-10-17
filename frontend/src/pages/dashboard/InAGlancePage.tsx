@@ -11,6 +11,7 @@ import {
 
 import { getErrorMessage } from '../../api'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
+import { WatchSync, type WatchSnapshot } from '../../native/watchSync'
 import {
   fetchLatestMonthlyProfileSnapshot,
   type MonthlyProfileSnapshotRecord,
@@ -352,6 +353,39 @@ export default function InAGlancePage() {
   const hasHeroMirrors = Object.values(heroMirrors).some((mirror) => mirror !== null)
   const hasAnyFinancialData = hasFinancialHealth || hasHeroMirrors
   const reflectionMonth = snapshot?.snapshot_month ?? `${new Date().toISOString().slice(0, 7)}-01`
+
+  useEffect(() => {
+    if (!snapshot && !Object.values(heroMirrors).some((mirror) => mirror !== null)) return
+
+    const billSummary = asRecord(snapshot?.bill_reminder_summary)
+    const billMetrics = asRecord(billSummary.metrics)
+    const watchSnapshot: WatchSnapshot = {
+      updatedAt: new Date().toISOString(),
+    }
+    if (heroMirrors.creditHealth) {
+      watchSnapshot.creditHealth = {
+        creditFilscore: heroMirrors.creditHealth.credit,
+        creditBureauFilscore: heroMirrors.creditHealth.creditBureau,
+        nonStarterFilscore: heroMirrors.creditHealth.nonStarter,
+        socialFilscore: heroMirrors.creditHealth.social,
+        psychometricFilscore: heroMirrors.creditHealth.psychometric,
+      }
+    }
+    if (heroMirrors.wealthBuilding) watchSnapshot.wealthBalance = heroMirrors.wealthBuilding
+    if (heroMirrors.budgetUtilization) watchSnapshot.budgetUtilization = heroMirrors.budgetUtilization
+    if (snapshot) {
+      watchSnapshot.loanMonitoring = {
+        score: snapshot.loan_monitoring_score,
+      }
+      watchSnapshot.billCalendar = {
+        snapshotMonth: snapshot.snapshot_month,
+        lateCount: numericValue(billMetrics.latePaymentCount),
+      }
+    }
+    void WatchSync.updateSnapshot({
+      snapshot: watchSnapshot,
+    }).catch(() => undefined)
+  }, [heroMirrors, snapshot])
 
   return (
     <main className="in-a-glance-page">

@@ -5,6 +5,7 @@ import {
   isAutosaveConflictError,
   saveAutosaveDraftRemote,
 } from '../autosave/draftApi'
+import { WatchSync, type WatchSnapshot } from '../native/watchSync'
 import type { CreditHealthGraphScores } from '../pages/scoring/CreditHealthScoreGraph'
 
 const CREDIT_HEALTH_SCOPE = 'credit-health-hero-mirror'
@@ -65,6 +66,33 @@ async function publishHeroMirror<T>(scope: HeroMirrorScope, entityKey: string, v
       expectedRevision: error.currentDraft?.revision ?? null,
     })
   }
+
+  const watchSection = watchSectionForMirror(scope, value)
+  void WatchSync.updateSnapshot({
+    snapshot: {
+      updatedAt: payload.computedAt,
+      ...watchSection,
+    },
+  }).catch(() => undefined)
+}
+
+function watchSectionForMirror<T>(scope: HeroMirrorScope, value: T): Partial<WatchSnapshot> {
+  if (scope === CREDIT_HEALTH_SCOPE) {
+    const scores = value as CreditHealthGraphScores
+    return {
+      creditHealth: {
+        creditFilscore: scores.credit,
+        creditBureauFilscore: scores.creditBureau,
+        nonStarterFilscore: scores.nonStarter,
+        socialFilscore: scores.social,
+        psychometricFilscore: scores.psychometric,
+      },
+    }
+  }
+  if (scope === WEALTH_BUILDING_SCOPE) {
+    return { wealthBalance: value as WealthBuildingHeroMirror }
+  }
+  return { budgetUtilization: value as BudgetUtilizationHeroMirror }
 }
 
 async function loadHeroMirror<T>(scope: HeroMirrorScope, entityKey: string): Promise<T | null> {

@@ -470,6 +470,28 @@ struct ContentView: View {
                     }
                     .buttonStyle(.plain)
 
+                    NavigationLink {
+                        ResourceOptimizerWatchView()
+                    } label: {
+                        ScoreCard(
+                            title: "Resource Optimizer",
+                            value: watchSync.resourceOptimizerScore.map { String(format: "%.1f%%", $0) } ?? "NA",
+                            subtitle: "Loan Health"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
+                    NavigationLink {
+                        BillCalendarWatchView()
+                    } label: {
+                        ScoreCard(
+                            title: "Bill Manager",
+                            value: "\(watchSync.latePaymentCount)",
+                            subtitle: "Late Payments"
+                        )
+                    }
+                    .buttonStyle(.plain)
+
 
                     Divider()
 
@@ -524,19 +546,15 @@ struct BudgetWatchView: View {
                     .fontWeight(.bold)
 
 
-                // Budget Ring
-
-                HealthRing(
-                    value:
-                        watchSync.budgetScore,
-                    maximum: 100,
-                    title: "BUDGET",
-                    subtitle: "HEALTH",
-                    lineWidth: 11
-                )
-                .frame(
-                    width: 125,
-                    height: 125
+                BudgetUtilizationWatchGraph(
+                    utilizationPercent: watchSync.utilizationPercent,
+                    progressPercent: watchSync.budgetProgressPercent,
+                    overflowPercent: watchSync.budgetOverflowPercent,
+                    utilizedAmount: watchSync.utilizedAmount,
+                    budgetAmount: watchSync.budgetAmount,
+                    remainingAmount: watchSync.remainingAmount,
+                    overBudgetAmount: watchSync.overBudgetAmount,
+                    sourceLabel: watchSync.budgetSourceLabel
                 )
 
 
@@ -824,20 +842,13 @@ struct WealthWatchView: View {
                     .fontWeight(.bold)
 
 
-                // Main Wealth Ring
-
-                HealthRing(
-                    value:
-                        watchSync.wealthBuilding,
-                    maximum: 100,
-                    title: "WEALTH",
-                    subtitle: "CAPACITY",
-                    lineWidth: 12
+                WealthRadarWatchGraph(
+                    netWorthPositioning: watchSync.wealthNetWorthPositioning,
+                    wealthBehaviour: watchSync.wealthBehaviour,
+                    wealthFoundation: watchSync.wealthFoundation,
+                    wealthAuthenticity: watchSync.wealthAuthenticity
                 )
-                .frame(
-                    width: 135,
-                    height: 135
-                )
+                .frame(width: 150, height: 150)
 
 
                 Divider()
@@ -987,6 +998,240 @@ struct WealthWatchView: View {
             format: "%.0f",
             value
         )
+    }
+}
+
+// MARK: - Mirrored In A Glance Graphs
+
+struct BudgetUtilizationWatchGraph: View {
+    let utilizationPercent: Double?
+    let progressPercent: Double?
+    let overflowPercent: Double?
+    let utilizedAmount: Double?
+    let budgetAmount: Double?
+    let remainingAmount: Double?
+    let overBudgetAmount: Double?
+    let sourceLabel: String?
+
+    private func money(_ value: Double?) -> String {
+        value.map { "₱" + String(format: "%.0f", $0) } ?? "NA"
+    }
+
+    var body: some View {
+        VStack(spacing: 7) {
+            HStack(alignment: .bottom) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text("BUDGET PERFORMANCE").font(.system(size: 7, weight: .bold)).foregroundStyle(.yellow)
+                    Text("Budget Utilization").font(.system(size: 11, weight: .semibold))
+                }
+                Spacer()
+                Text(utilizationPercent.map { String(format: "%.1f%%", $0) } ?? "NA")
+                    .font(.system(size: 19, weight: .bold, design: .rounded))
+                    .foregroundStyle(.green)
+            }
+            GeometryReader { geometry in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 3).fill(Color.orange.opacity(0.55))
+                    RoundedRectangle(cornerRadius: 3)
+                        .fill(LinearGradient(colors: [.green, .yellow, .orange], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: geometry.size.width * min(max((progressPercent ?? 0) / 100, 0), 1))
+                }
+            }
+            .frame(height: 15)
+            if let overflowPercent, overflowPercent > 0 {
+                GeometryReader { geometry in
+                    HStack(spacing: 0) {
+                        Rectangle().fill(.red).frame(width: geometry.size.width * min(overflowPercent / 100, 1))
+                        Spacer(minLength: 0)
+                    }
+                }
+                .frame(height: 3)
+            }
+            HStack {
+                Text("Used \(money(utilizedAmount))")
+                Spacer()
+                Text("Budget \(money(budgetAmount))")
+            }
+            .font(.system(size: 8))
+            Text((utilizationPercent ?? 0) > 100
+                 ? "\(money(overBudgetAmount)) over budget"
+                 : "\(money(remainingAmount)) remaining")
+                .font(.system(size: 9, weight: .semibold))
+            if let sourceLabel {
+                Text(sourceLabel).font(.system(size: 7)).foregroundStyle(.secondary)
+            }
+        }
+        .padding(8)
+        .background(Color(red: 0.11, green: 0.18, blue: 0.10), in: RoundedRectangle(cornerRadius: 8))
+    }
+}
+
+struct WealthRadarWatchGraph: View {
+    let netWorthPositioning: Double?
+    let wealthBehaviour: Double?
+    let wealthFoundation: Double?
+    let wealthAuthenticity: Double?
+
+    private var normalized: [Double] {
+        [
+            min(max(((netWorthPositioning ?? 200) - 200) / 700, 0), 1),
+            min(max((wealthBehaviour ?? 0) / 100, 0), 1),
+            min(max((wealthFoundation ?? 0) / 1000, 0), 1),
+            min(max((wealthAuthenticity ?? 0) / 100, 0), 1)
+        ]
+    }
+
+    var body: some View {
+        ZStack {
+            ForEach([0.25, 0.5, 0.75, 1.0], id: \.self) { level in
+                RadarPolygon(values: Array(repeating: level, count: 4))
+                    .stroke(Color.gray.opacity(0.45), lineWidth: 1)
+            }
+            RadarAxes().stroke(Color.gray.opacity(0.55), lineWidth: 1)
+            RadarPolygon(values: normalized)
+                .fill(LinearGradient(colors: [Color.green.opacity(0.55), Color.yellow.opacity(0.55), Color.blue.opacity(0.55)], startPoint: .top, endPoint: .bottom))
+            RadarPolygon(values: normalized).stroke(Color.yellow, lineWidth: 2)
+        }
+        .padding(12)
+        .background(Color(red: 0.06, green: 0.14, blue: 0.20), in: RoundedRectangle(cornerRadius: 8))
+        .accessibilityLabel("Wealth balance radar")
+    }
+}
+
+struct RadarPolygon: Shape {
+    let values: [Double]
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        for index in values.indices {
+            let angle = -Double.pi / 2 + Double(index) * 2 * Double.pi / Double(values.count)
+            let point = CGPoint(
+                x: center.x + CGFloat(cos(angle) * radius * values[index]),
+                y: center.y + CGFloat(sin(angle) * radius * values[index])
+            )
+            if index == 0 {
+                path.move(to: point)
+            } else {
+                path.addLine(to: point)
+            }
+        }
+        path.closeSubpath()
+        return path
+    }
+}
+
+struct RadarAxes: Shape {
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        let center = CGPoint(x: rect.midX, y: rect.midY)
+        let radius = min(rect.width, rect.height) / 2
+        for index in 0..<4 {
+            let angle = -Double.pi / 2 + Double(index) * Double.pi / 2
+            path.move(to: center)
+            path.addLine(to: CGPoint(x: center.x + CGFloat(cos(angle) * radius), y: center.y + CGFloat(sin(angle) * radius)))
+        }
+        return path
+    }
+}
+
+struct ResourceOptimizerWatchView: View {
+    @ObservedObject private var watchSync = WatchSyncReceiver.shared
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 10) {
+                Text("RESOURCE OPTIMIZER").font(.headline).fontWeight(.bold)
+                ResourceGauge(value: watchSync.resourceOptimizerScore)
+                    .frame(width: 165, height: 120)
+                Text(watchSync.resourceOptimizerScore.map { String(format: "%.1f%%", $0) } ?? "NA")
+                    .font(.system(size: 27, weight: .bold, design: .rounded))
+                Text(watchSync.resourceOptimizerStatus ?? "Loan health optimization")
+                    .font(.system(size: 9)).foregroundStyle(.secondary).multilineTextAlignment(.center)
+            }
+            .padding()
+        }
+        .navigationTitle("Optimizer")
+    }
+}
+
+struct ResourceGauge: View {
+    let value: Double?
+
+    var body: some View {
+        GeometryReader { geometry in
+            let center = CGPoint(x: geometry.size.width / 2, y: geometry.size.height * 0.82)
+            let radius = min(geometry.size.width * 0.42, geometry.size.height * 0.68)
+            let progress = min(max((value ?? 0) / 100, 0), 1)
+            ZStack {
+                GaugeArc(start: 150, end: 230).stroke(.red, style: StrokeStyle(lineWidth: 14, lineCap: .butt))
+                GaugeArc(start: 230, end: 310).stroke(.orange, style: StrokeStyle(lineWidth: 14, lineCap: .butt))
+                GaugeArc(start: 310, end: 390).stroke(.green, style: StrokeStyle(lineWidth: 14, lineCap: .butt))
+                Path { path in
+                    let angle = (150 + progress * 240) * Double.pi / 180
+                    path.move(to: center)
+                    path.addLine(to: CGPoint(x: center.x + CGFloat(cos(angle) * radius * 0.72), y: center.y + CGFloat(sin(angle) * radius * 0.72)))
+                }
+                .stroke(.white, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                Circle().fill(.white).frame(width: 10, height: 10).position(center)
+            }
+        }
+    }
+}
+
+struct GaugeArc: Shape {
+    let start: Double
+    let end: Double
+
+    func path(in rect: CGRect) -> Path {
+        var path = Path()
+        path.addArc(center: CGPoint(x: rect.midX, y: rect.height * 0.82), radius: min(rect.width * 0.42, rect.height * 0.68), startAngle: .degrees(start), endAngle: .degrees(end), clockwise: false)
+        return path
+    }
+}
+
+struct BillCalendarWatchView: View {
+    @ObservedObject private var watchSync = WatchSyncReceiver.shared
+    private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
+
+    private var monthDate: Date {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        return formatter.date(from: watchSync.billSnapshotMonth ?? "") ?? Date()
+    }
+
+    private var days: [Int?] {
+        let calendar = Calendar.current
+        let range = calendar.range(of: .day, in: .month, for: monthDate) ?? 1..<2
+        let leading = calendar.component(.weekday, from: calendar.date(from: calendar.dateComponents([.year, .month], from: monthDate)) ?? monthDate) - 1
+        return Array(repeating: nil, count: leading) + range.map { Optional($0) }
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 8) {
+                HStack {
+                    Text(monthDate.formatted(.dateTime.month(.abbreviated))).font(.headline)
+                    Spacer()
+                    Text("\(watchSync.latePaymentCount) late").font(.caption2).foregroundStyle(watchSync.latePaymentCount > 0 ? Color.red : Color.green)
+                }
+                LazyVGrid(columns: columns, spacing: 3) {
+                    ForEach(Array(["S", "M", "T", "W", "T", "F", "S"].enumerated()), id: \.offset) { _, day in
+                        Text(day).font(.system(size: 7, weight: .bold)).foregroundStyle(.secondary)
+                    }
+                    ForEach(Array(days.enumerated()), id: \.offset) { _, day in
+                        Text(day.map { String($0) } ?? "")
+                            .font(.system(size: 8))
+                            .frame(maxWidth: .infinity, minHeight: 15)
+                            .background(day == days.compactMap { $0 }.last ? Color.yellow.opacity(0.30) : Color.white.opacity(0.06), in: RoundedRectangle(cornerRadius: 2))
+                    }
+                }
+                Text("Bill Manager").font(.caption).fontWeight(.semibold)
+            }
+            .padding()
+        }
+        .navigationTitle("Bills")
     }
 }
 

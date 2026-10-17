@@ -48,6 +48,13 @@ export interface WatchSnapshot {
     trend?: number[];
   };
 
+  wealthBalance?: {
+    netWorthPositioning?: number | null;
+    wealthBehaviour?: number | null;
+    wealthFoundation?: number | null;
+    wealthAuthenticity?: number | null;
+  };
+
   netWorth?: {
     actual?: number | null;
     target?: number | null;
@@ -65,6 +72,17 @@ export interface WatchSnapshot {
     trend?: number[];
   };
 
+  budgetUtilization?: {
+    budgetAmount?: number | null;
+    utilizedAmount?: number | null;
+    utilizationPercent?: number | null;
+    progressPercent?: number | null;
+    overflowPercent?: number | null;
+    remainingAmount?: number | null;
+    overBudgetAmount?: number | null;
+    sourceLabel?: string | null;
+  };
+
   loanMonitoring?: {
     score?: number | null;
     status?: string | null;
@@ -76,6 +94,11 @@ export interface WatchSnapshot {
     paid?: number | null;
     outstanding?: number | null;
     trend?: number[];
+  };
+
+  billCalendar?: {
+    snapshotMonth?: string | null;
+    lateCount?: number | null;
   };
 }
 
