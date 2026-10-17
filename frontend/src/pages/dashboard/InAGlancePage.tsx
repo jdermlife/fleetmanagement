@@ -16,7 +16,7 @@ import {
   type MonthlyProfileSnapshotRecord,
 } from '../../services/profilemonthlysnapshotcalculator'
 import {
-  loadLiveFinancialHealthSummary,
+  loadPublishedFinancialHealthSummary,
 } from '../scoring/financialHealthLiveSummary'
 import type { FinancialHealthSummaryResult } from '../scoring/financialHealthSummaryEngine'
 
@@ -218,7 +218,7 @@ function displayScore(value: number | null) {
 }
 
 export default function InAGlancePage() {
-  const { selectedApplicationNo, entityKey, isIdentityReady } = useSelectedAnalysisEntity()
+  const { entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [snapshot, setSnapshot] = useState<MonthlyProfileSnapshotRecord | null>(null)
   const [liveSummary, setLiveSummary] = useState<FinancialHealthSummaryResult | null>(null)
   const [loading, setLoading] = useState(true)
@@ -256,12 +256,9 @@ export default function InAGlancePage() {
       if (requestInFlight) return
       requestInFlight = true
       try {
-        const summary = await loadLiveFinancialHealthSummary(
-          entityKey || 'identity-pending',
-          selectedApplicationNo || 'new',
-        )
+        const published = await loadPublishedFinancialHealthSummary(entityKey)
         if (!disposed) {
-          setLiveSummary(summary)
+          setLiveSummary(published?.summary ?? null)
           setLiveMessage('')
         }
       } catch (error) {
@@ -287,7 +284,7 @@ export default function InAGlancePage() {
       window.removeEventListener('focus', refreshWhenVisible)
       document.removeEventListener('visibilitychange', refreshWhenVisible)
     }
-  }, [entityKey, isIdentityReady, selectedApplicationNo])
+  }, [entityKey, isIdentityReady])
 
   const financialHealthScore = liveSummary?.score ?? snapshot?.financial_health_score ?? null
   const financialHealthSummary = liveSummary
@@ -328,8 +325,8 @@ export default function InAGlancePage() {
               <span>Financial Health</span>
               <h2>Your current financial position</h2>
               <p>{liveSummary
-                ? 'Synchronized with the latest autosaved data used by Financial Health.'
-                : 'Showing the latest saved result until current financial data is available.'}</p>
+                ? 'Mirrored from the latest result published by Financial Health.'
+                : 'Showing the latest saved result until Financial Health publishes a current result.'}</p>
               <a href="/financial-health-summary">View Financial Health</a>
             </div>
           </section>

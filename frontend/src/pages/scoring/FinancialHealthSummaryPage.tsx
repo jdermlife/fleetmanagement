@@ -35,7 +35,10 @@ import {
 import {
   computeFinancialHealthSummary,
 } from './financialHealthSummaryEngine'
-import { buildLiveFinancialHealthInputs } from './financialHealthLiveSummary'
+import {
+  buildLiveFinancialHealthInputs,
+  publishFinancialHealthSummary,
+} from './financialHealthLiveSummary'
 import {
   financialHealthIndicatorSources,
   financialHealthMetricSources,
@@ -891,6 +894,16 @@ export default function FinancialHealthSummaryPage() {
     setSummaryComputedAt(new Date())
     setIsRefreshingSummary(false)
   }, [isRefreshingSummary, latestSummaryInputs, summaryComputedAt, summaryInputsLoaded])
+
+  useEffect(() => {
+    if (!summaryInputsLoaded || !summaryComputedAt) return
+
+    void publishFinancialHealthSummary(
+      entityKey,
+      publishedSummary,
+      summaryComputedAt.toISOString(),
+    ).catch(() => undefined)
+  }, [entityKey, publishedSummary, summaryComputedAt, summaryInputsLoaded])
 
 
 useEffect(() => {

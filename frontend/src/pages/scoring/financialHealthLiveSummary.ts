@@ -1,20 +1,26 @@
-import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import {
-  computeBudgetHealthScore,
-  type BudgetHealthDraftInput,
+  fetchAutosaveDraft,
+  isAutosaveConflictError,
+  saveAutosaveDraftRemote,
+} from '../../autosave/draftApi'
+import {
   type BudgetHealthScoreResult,
 } from './budgetHealthEngine'
 import {
-  computeFinancialHealthSummary,
   type FinancialHealthSummaryInputs,
   type FinancialHealthSummaryResult,
 } from './financialHealthSummaryEngine'
-import { deriveLendingLeafScores, type LendingLeafScores } from './lendingLeafScores'
+import type { LendingLeafScores } from './lendingLeafScores'
 import {
-  computeNetWorthBuildingScore,
-  type NetWorthBuildingDraftInput,
   type NetWorthBuildingScoreResult,
 } from './netWorthBuildingEngine'
+
+const PUBLISHED_SUMMARY_SCOPE = 'financial-health-live-summary'
+
+export type PublishedFinancialHealthSummary = {
+  summary: FinancialHealthSummaryResult
+  computedAt: string
+}
 
 type FinancialHealthLiveScores = {
   netWorthBuildingScore: NetWorthBuildingScoreResult | null
@@ -54,27 +60,41 @@ export function buildLiveFinancialHealthInputs({
   }
 }
 
-export async function loadLiveFinancialHealthSummary(
-  analysisEntityKey: string,
-  lendingEntityKey: string,
-): Promise<FinancialHealthSummaryResult> {
-  const [netWorthDraft, budgetDraft, lendingDraft] = await Promise.all([
-    fetchAutosaveDraft<NetWorthBuildingDraftInput>('net-worth-positioning', analysisEntityKey),
-    fetchAutosaveDraft<BudgetHealthDraftInput>('budget-expense-tracker', analysisEntityKey),
-    fetchAutosaveDraft<unknown>('loan-application', lendingEntityKey),
-  ])
+export async function publishFinancialHealthSummary(
+  entityKey: string,
+  summary: FinancialHealthSummaryResult,
+  computedAt: string,
+): Promise<void> {
+  const payload: PublishedFinancialHealthSummary = { summary, computedAt }
+  const currentDraft = await fetchAutosaveDraft<PublishedFinancialHealthSummary>(
+    PUBLISHED_SUMMARY_SCOPE,
+    entityKey,
+  )
+  if (currentDraft && currentDraft.payload.computedAt >= computedAt) return
 
-  const inputs = buildLiveFinancialHealthInputs({
-    netWorthBuildingScore: netWorthDraft?.payload
-      ? computeNetWorthBuildingScore(netWorthDraft.payload)
-      : null,
-    budgetHealthScore: budgetDraft?.payload
-      ? computeBudgetHealthScore(budgetDraft.payload)
-      : null,
-    lendingLeafScores: lendingDraft?.payload
-      ? deriveLendingLeafScores(lendingDraft.payload)
-      : null,
-  })
+  try {
+    await saveAutosaveDraftRemote(PUBLISHED_SUMMARY_SCOPE, entityKey, {
+      payload,
+      expectedRevision: currentDraft?.revision ?? null,
+    })
+  } catch (error) {
+    if (!isAutosaveConflictError(error)) throw error
+    const conflictingPayload = error.currentDraft?.payload as PublishedFinancialHealthSummary | undefined
+    if (conflictingPayload?.computedAt && conflictingPayload.computedAt >= computedAt) return
 
-  return computeFinancialHealthSummary(inputs)
+    await saveAutosaveDraftRemote(PUBLISHED_SUMMARY_SCOPE, entityKey, {
+      payload,
+      expectedRevision: error.currentDraft?.revision ?? null,
+    })
+  }
+}
+
+export async function loadPublishedFinancialHealthSummary(
+  entityKey: string,
+): Promise<PublishedFinancialHealthSummary | null> {
+  const draft = await fetchAutosaveDraft<PublishedFinancialHealthSummary>(
+    PUBLISHED_SUMMARY_SCOPE,
+    entityKey,
+  )
+  return draft?.payload ?? null
 }
