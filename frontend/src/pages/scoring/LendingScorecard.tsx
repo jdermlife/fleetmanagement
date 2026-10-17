@@ -63,6 +63,7 @@ import { useAutosaveDraft } from '../../autosave/useAutosaveDraft';
 import { isBorrowerSubscriberRole } from '../../authRoles';
 import { APP_NAME, brandLogoDataUri } from '../../brand';
 import { WatchSync } from '../../native/watchSync';
+import { usePublishCreditHealthHero } from '../../services/inAGlanceHeroMirrors';
 import {
   calculateApplicationInformationCompletion,
   CREDIT_RATING_MINIMUM_INFORMATION_PERCENT,
@@ -4380,10 +4381,23 @@ export default function LendingScorecard() {
     { label: 'Release', value: 'Released' },
   ];
   const displayedQuantSummary = backendQuantSummary;
+  const creditHealthGraphScores = useMemo(() => ({
+    credit: toFilscore(displayedQuantSummary?.credit_score),
+    creditBureau: toFilscore(displayedQuantSummary?.credit_bureau_score),
+    nonStarter: toFilscore(displayedQuantSummary?.fraud_score),
+    social: toFilscore(displayedQuantSummary?.social_score),
+    psychometric: toFilscore(displayedQuantSummary?.psychometric_score),
+  }), [displayedQuantSummary]);
   const compositeInternalScore = displayedQuantSummary?.overall_score ?? null;
   const borrowerDisplayName =
     getCanonicalBorrowerName(formData.borrower, formData.applicantPersonal) ||
     'Unnamed Applicant / Borrower';
+
+  usePublishCreditHealthHero(
+    selectedApplicationNo || formData.id.trim() || 'primary',
+    creditHealthGraphScores,
+    displayedQuantSummary !== null,
+  );
 
   useEffect(() => {
     if (!displayedQuantSummary) return;
@@ -4654,15 +4668,7 @@ export default function LendingScorecard() {
         <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
 
         <div className="credit-health-score-graph-panel">
-          <CreditHealthScoreGraph
-            scores={{
-              credit: toFilscore(displayedQuantSummary?.credit_score),
-              creditBureau: toFilscore(displayedQuantSummary?.credit_bureau_score),
-              nonStarter: toFilscore(displayedQuantSummary?.fraud_score),
-              social: toFilscore(displayedQuantSummary?.social_score),
-              psychometric: toFilscore(displayedQuantSummary?.psychometric_score),
-            }}
-          />
+          <CreditHealthScoreGraph scores={creditHealthGraphScores} />
           <div className="credit-health-score-graph-status">
             <span>{currentStepLabel}</span>
             <strong>{completionPercent}% information provided</strong>

@@ -18796,10 +18796,11 @@ th { color: var(--dark-gold); }
 .in-a-glance-mini-ring-value { fill: none; stroke-width: 8; }
 .in-a-glance-mini-ring-track { stroke: #20384d; }
 .in-a-glance-mini-ring-value { stroke-linecap: round; }
-.in-a-glance-credit-ring-1 { stroke: #1ea7d8; }
-.in-a-glance-credit-ring-2 { stroke: #2cc16f; }
-.in-a-glance-credit-ring-3 { stroke: #f0bd2e; }
-.in-a-glance-credit-ring-4 { stroke: #dc4f5c; }
+.in-a-glance-credit-ring-1 { stroke: #3b82f6; }
+.in-a-glance-credit-ring-2 { stroke: #14b8a6; }
+.in-a-glance-credit-ring-3 { stroke: #ef4444; }
+.in-a-glance-credit-ring-4 { stroke: #facc15; }
+.in-a-glance-credit-ring-5 { stroke: #f8fafc; }
 .in-a-glance-credit-visual > span { position: absolute; inset: 0; display: grid; place-items: center; font-size: 0.58rem; font-weight: 900; }
 .in-a-glance-radar-grid { fill: none; stroke: #6e8498; stroke-width: 1; }
 .in-a-glance-radar-axis { stroke: #8da0b1; stroke-width: 1; }
@@ -18812,6 +18813,8 @@ th { color: var(--dark-gold); }
 .in-a-glance-budget-heading b { color: #62e38c; font-size: 1.2rem; }
 .in-a-glance-budget-bar { overflow: hidden; height: 17px; border-radius: 2px; background: linear-gradient(90deg, #20b772, #efbb31 55%, #ec714c); }
 .in-a-glance-budget-bar i { display: block; height: 100%; border-right: 3px solid #fff; background: rgb(4 28 36 / 25%); }
+.in-a-glance-budget-overflow { overflow: hidden; height: 4px; margin-top: -10px; background: #442725; }
+.in-a-glance-budget-overflow i { display: block; height: 100%; background: #ec714c; }
 .in-a-glance-budget-scale { display: flex; justify-content: space-between; font-size: 0.5rem; }
 .in-a-glance-loan-visual { display: grid; place-items: center; background: #071d32; }
 .in-a-glance-loan-visual svg { width: 100%; height: 145px; }

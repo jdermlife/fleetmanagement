@@ -18,6 +18,7 @@ import {
   usePaidScoreCertificationAccess,
 } from '../../hooks/usePaidScoreCertificationAccess';
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity';
+import { usePublishWealthBuildingHero } from '../../services/inAGlanceHeroMirrors';
 import {
   saveLoanApplicationNetWorth,
   updateLoanApplicationWealthScore,
@@ -735,6 +736,7 @@ export default function NetWorthPositioningPage() {
   const [wealthCertificationGenerated, setWealthCertificationGenerated] = useState(false);
   const [wealthCertificationIssuedAt, setWealthCertificationIssuedAt] = useState('');
   const [isPersistingWealthScore, setIsPersistingWealthScore] = useState(false);
+  const [isMirrorSourceReady, setIsMirrorSourceReady] = useState(false);
   const wealthClientName = useMemo(() => {
     const selectedApplication = applications.find(
       (application) => application.application_no === applicationNo,
@@ -864,6 +866,7 @@ export default function NetWorthPositioningPage() {
 
     const loadDraft = async () => {
       if (!isIdentityReady) return;
+      setIsMirrorSourceReady(false);
       try {
         const remoteDraft = await fetchAutosaveDraft<NetWorthPositioningDraft>('net-worth-positioning', draftEntityKey);
         if (disposed) return;
@@ -883,6 +886,8 @@ export default function NetWorthPositioningPage() {
         if (!disposed) {
           setSetupStatusMessage('Unable to load saved draft right now.');
         }
+      } finally {
+        if (!disposed) setIsMirrorSourceReady(true);
       }
     };
 
@@ -1501,6 +1506,14 @@ export default function NetWorthPositioningPage() {
     wealthAuthenticityScore,
   }), [netWorthBuildingScore.score, wealthAuthenticityScore, wealthBehaviourScore, wealthFoundationScore.score]);
 
+  const wealthBuildingHero = useMemo(() => ({
+    netWorthPositioning: netWorthBuildingScore.score,
+    wealthBehaviour: wealthBehaviourScore,
+    wealthFoundation: wealthFoundationScore.score,
+    wealthAuthenticity: wealthAuthenticityScore,
+  }), [netWorthBuildingScore.score, wealthAuthenticityScore, wealthBehaviourScore, wealthFoundationScore.score]);
+  usePublishWealthBuildingHero(draftEntityKey, wealthBuildingHero, isMirrorSourceReady);
+
   const persistWealthScore = useCallback(async (
     certificationStatus: WealthCertificationStatus,
   ) => {
@@ -1868,12 +1881,7 @@ ${hasPaidScoreAccess ? '' : `<div class="score-card"><strong>${PAID_SCORE_CERTIF
           <p>Period: <strong>{asOfDate || snapshot.dateLabel}</strong></p>
         </div>
         <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />
-        <WealthBalanceRadar
-          netWorthPositioning={netWorthBuildingScore.score}
-          wealthBehaviour={wealthBehaviourScore}
-          wealthFoundation={wealthFoundationScore.score}
-          wealthAuthenticity={wealthAuthenticityScore}
-        />
+        <WealthBalanceRadar {...wealthBuildingHero} />
       </section>
 
       <FinancialJourneyGuideLauncher applicationNo={applicationNo} currentStep="wealthBuilder" />

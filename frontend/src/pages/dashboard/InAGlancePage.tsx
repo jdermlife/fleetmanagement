@@ -16,6 +16,13 @@ import {
   type MonthlyProfileSnapshotRecord,
 } from '../../services/profilemonthlysnapshotcalculator'
 import {
+  loadInAGlanceHeroMirrors,
+  type BudgetUtilizationHeroMirror,
+  type InAGlanceHeroMirrors,
+  type WealthBuildingHeroMirror,
+} from '../../services/inAGlanceHeroMirrors'
+import type { CreditHealthGraphScores } from '../scoring/CreditHealthScoreGraph'
+import {
   loadPublishedFinancialHealthSummary,
 } from '../scoring/financialHealthLiveSummary'
 import type { FinancialHealthSummaryResult } from '../scoring/financialHealthSummaryEngine'
@@ -81,13 +88,16 @@ function FinancialHealthReflection({ score, summary }: { score: number | null; s
   )
 }
 
-function CreditReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
-  const scores = [
-    numericValue(summary.creditScore, value ?? 0),
-    numericValue(summary.psychometricScore, value ?? 0),
-    numericValue(summary.socialScore, value ?? 0),
-    numericValue(summary.nonStarterScore, value ?? 0),
-  ].map((score) => boundedScore(score))
+function CreditReflection({ value, summary, mirror }: { value: number | null; summary: JsonRecord; mirror: CreditHealthGraphScores | null }) {
+  const scores = mirror
+    ? [mirror.credit, mirror.creditBureau, mirror.nonStarter, mirror.social, mirror.psychometric]
+        .map((score) => boundedScore(score === null ? null : score / 10))
+    : [
+        numericValue(summary.creditScore, value ?? 0),
+        numericValue(summary.psychometricScore, value ?? 0),
+        numericValue(summary.socialScore, value ?? 0),
+        numericValue(summary.nonStarterScore, value ?? 0),
+      ].map((score) => boundedScore(score))
 
   return (
     <div className="in-a-glance-credit-visual" role="img" aria-label={`Credit Health ${displayScore(value)} out of 100`}>
@@ -111,16 +121,23 @@ function CreditReflection({ value, summary }: { value: number | null; summary: J
   )
 }
 
-function WealthReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
+function WealthReflection({ value, summary, mirror }: { value: number | null; summary: JsonRecord; mirror: WealthBuildingHeroMirror | null }) {
   const building = asRecord(summary.netWorthBuilding)
   const components = asRecord(building.componentScores)
   const fallback = boundedScore(value)
-  const scores = [
-    numericValue(components.netWorthStrength, fallback),
-    numericValue(components.cashFlowStrength, fallback),
-    numericValue(components.investmentReadiness, fallback),
-    numericValue(components.goalMomentum, fallback),
-  ].map((score) => boundedScore(score))
+  const scores = mirror
+    ? [
+        ((mirror.netWorthPositioning - 200) / 700) * 100,
+        mirror.wealthBehaviour,
+        mirror.wealthFoundation / 10,
+        mirror.wealthAuthenticity,
+      ].map((score) => boundedScore(score))
+    : [
+        numericValue(components.netWorthStrength, fallback),
+        numericValue(components.cashFlowStrength, fallback),
+        numericValue(components.investmentReadiness, fallback),
+        numericValue(components.goalMomentum, fallback),
+      ].map((score) => boundedScore(score))
   const center = 100
   const radius = 70
   const point = (index: number, scale: number) => {
@@ -131,30 +148,51 @@ function WealthReflection({ value, summary }: { value: number | null; summary: J
   return (
     <div className="in-a-glance-wealth-visual" role="img" aria-label={`Wealth Building ${displayScore(value)} out of 100`}>
       <svg viewBox="0 0 200 200" aria-hidden="true">
+        <defs>
+          <linearGradient id="in-a-glance-wealth-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#166534" />
+            <stop offset="48%" stopColor="#d4a72c" />
+            <stop offset="76%" stopColor="#1e3a8a" />
+            <stop offset="100%" stopColor="#f8fafc" />
+          </linearGradient>
+        </defs>
         {[0.25, 0.5, 0.75, 1].map((level) => (
           <polygon key={level} className="in-a-glance-radar-grid" points={scores.map((_score, index) => point(index, level)).join(' ')} />
         ))}
-        {scores.map((_score, index) => <line key={index} className="in-a-glance-radar-axis" x1="100" y1="100" x2={point(index, 1).split(',')[0]} y2={point(index, 1).split(',')[1]} />)}
-        <polygon className="in-a-glance-radar-score" points={scores.map((score, index) => point(index, score / 100)).join(' ')} />
+        {scores.map((_score, index) => <line key={index} className="in-a-glance-radar-axis" style={{ stroke: ['#166534', '#d4a72c', '#1e3a8a', '#f8fafc'][index] }} x1="100" y1="100" x2={point(index, 1).split(',')[0]} y2={point(index, 1).split(',')[1]} />)}
+        <polygon className="in-a-glance-radar-score" style={{ fill: 'url(#in-a-glance-wealth-gradient)' }} points={scores.map((score, index) => point(index, score / 100)).join(' ')} />
         {scores.map((score, index) => {
           const [x, y] = point(index, score / 100).split(',')
-          return <circle key={index} cx={x} cy={y} r="4" />
+          return <circle key={index} cx={x} cy={y} r="4" style={{ fill: ['#166534', '#d4a72c', '#1e3a8a', '#f8fafc'][index] }} />
         })}
       </svg>
     </div>
   )
 }
 
-function BudgetReflection({ value, summary }: { value: number | null; summary: JsonRecord }) {
+const currencyFormatter = new Intl.NumberFormat(undefined, {
+  style: 'currency',
+  currency: 'PHP',
+  maximumFractionDigits: 0,
+})
+
+function BudgetReflection({ value, summary, mirror }: { value: number | null; summary: JsonRecord; mirror: BudgetUtilizationHeroMirror | null }) {
   const metrics = asRecord(summary.metrics)
-  const budgetScore = boundedScore(value)
+  const progress = mirror?.progressPercent ?? boundedScore(value)
   const variance = numericValue(metrics.variancePercent)
   return (
     <div className="in-a-glance-budget-visual" role="img" aria-label={`Budget Tracking ${displayScore(value)} out of 100`}>
       <span>Budget performance</span>
-      <div className="in-a-glance-budget-heading"><strong>Saved budget score</strong><b>{displayScore(value)}</b></div>
-      <div className="in-a-glance-budget-bar"><i style={{ width: `${budgetScore}%` }} /></div>
-      <div className="in-a-glance-budget-scale"><span>0</span><span>{variance > 0 ? `${variance.toFixed(1)}% variance` : '100'}</span></div>
+      <div className="in-a-glance-budget-heading">
+        <strong>{mirror ? 'Budget utilization' : 'Saved budget score'}</strong>
+        <b>{mirror ? `${mirror.utilizationPercent.toFixed(1)}%` : displayScore(value)}</b>
+      </div>
+      <div className="in-a-glance-budget-bar"><i style={{ width: `${progress}%` }} /></div>
+      {mirror?.overflowPercent ? <div className="in-a-glance-budget-overflow"><i style={{ width: `${mirror.overflowPercent}%` }} /></div> : null}
+      <div className="in-a-glance-budget-scale">
+        <span>{mirror ? `Used ${currencyFormatter.format(mirror.utilizedAmount)}` : '0'}</span>
+        <span>{mirror ? `Budget ${currencyFormatter.format(mirror.budgetAmount)}` : variance > 0 ? `${variance.toFixed(1)}% variance` : '100'}</span>
+      </div>
     </div>
   )
 }
@@ -195,10 +233,10 @@ function BillsReflection({ value, summary, month }: { value: number | null; summ
   )
 }
 
-function SnapshotReflection({ kind, value, summary, month }: { kind: string; value: number | null; summary: JsonRecord; month: string }) {
-  if (kind === 'credit') return <CreditReflection value={value} summary={summary} />
-  if (kind === 'wealth') return <WealthReflection value={value} summary={summary} />
-  if (kind === 'budget') return <BudgetReflection value={value} summary={summary} />
+function SnapshotReflection({ kind, value, summary, month, mirrors }: { kind: string; value: number | null; summary: JsonRecord; month: string; mirrors: InAGlanceHeroMirrors }) {
+  if (kind === 'credit') return <CreditReflection value={value} summary={summary} mirror={mirrors.creditHealth} />
+  if (kind === 'wealth') return <WealthReflection value={value} summary={summary} mirror={mirrors.wealthBuilding} />
+  if (kind === 'budget') return <BudgetReflection value={value} summary={summary} mirror={mirrors.budgetUtilization} />
   if (kind === 'loan') return <LoanReflection value={value} />
   return <BillsReflection value={value} summary={summary} month={month} />
 }
@@ -221,6 +259,11 @@ export default function InAGlancePage() {
   const { entityKey, isIdentityReady } = useSelectedAnalysisEntity()
   const [snapshot, setSnapshot] = useState<MonthlyProfileSnapshotRecord | null>(null)
   const [liveSummary, setLiveSummary] = useState<FinancialHealthSummaryResult | null>(null)
+  const [heroMirrors, setHeroMirrors] = useState<InAGlanceHeroMirrors>({
+    creditHealth: null,
+    wealthBuilding: null,
+    budgetUtilization: null,
+  })
   const [loading, setLoading] = useState(true)
   const [liveLoading, setLiveLoading] = useState(true)
   const [message, setMessage] = useState('')
@@ -256,9 +299,13 @@ export default function InAGlancePage() {
       if (requestInFlight) return
       requestInFlight = true
       try {
-        const published = await loadPublishedFinancialHealthSummary(entityKey)
+        const [published, mirrors] = await Promise.all([
+          loadPublishedFinancialHealthSummary(entityKey),
+          loadInAGlanceHeroMirrors(entityKey),
+        ])
         if (!disposed) {
           setLiveSummary(published?.summary ?? null)
+          setHeroMirrors(mirrors)
           setLiveMessage('')
         }
       } catch (error) {
@@ -291,6 +338,9 @@ export default function InAGlancePage() {
     ? asRecord(liveSummary)
     : asRecord(snapshot?.financial_health_summary)
   const hasFinancialHealth = liveSummary !== null || snapshot !== null
+  const hasHeroMirrors = Object.values(heroMirrors).some((mirror) => mirror !== null)
+  const hasAnyFinancialData = hasFinancialHealth || hasHeroMirrors
+  const reflectionMonth = snapshot?.snapshot_month ?? `${new Date().toISOString().slice(0, 7)}-01`
 
   return (
     <main className="in-a-glance-page">
@@ -308,7 +358,7 @@ export default function InAGlancePage() {
       {loading || liveLoading ? <p className="status-message" role="status">Loading current financial data...</p> : null}
       {message ? <p className="status-message error" role="alert">{message}</p> : null}
       {liveMessage && !snapshot ? <p className="status-message error" role="alert">{liveMessage}</p> : null}
-      {!loading && !liveLoading && !message && !liveMessage && !hasFinancialHealth ? (
+      {!loading && !liveLoading && !message && !liveMessage && !hasAnyFinancialData ? (
         <section className="in-a-glance-empty">
           <Gauge aria-hidden="true" />
           <h2>No financial data yet</h2>
@@ -318,33 +368,31 @@ export default function InAGlancePage() {
       ) : null}
 
       {hasFinancialHealth ? (
-        <>
-          <section className="in-a-glance-hero" aria-label="Current Financial Health score">
-            <FinancialHealthReflection score={financialHealthScore} summary={financialHealthSummary} />
-            <div>
-              <span>Financial Health</span>
-              <h2>Your current financial position</h2>
-              <p>{liveSummary
-                ? 'Mirrored from the latest result published by Financial Health.'
-                : 'Showing the latest saved result until Financial Health publishes a current result.'}</p>
-              <a href="/financial-health-summary">View Financial Health</a>
-            </div>
-          </section>
-
-          {snapshot ? <section className="in-a-glance-grid" aria-label="Saved component scores">
-            {snapshotItems.map(({ key, summaryKey, kind, label, path, Icon }) => {
-              const value = snapshot[key]
-              return (
-                <a key={key} href={path} className="in-a-glance-card">
-                  <span className="in-a-glance-card-heading"><Icon aria-hidden="true" /><strong>{label}</strong></span>
-                  <SnapshotReflection kind={kind} value={value} summary={asRecord(snapshot[summaryKey])} month={snapshot.snapshot_month} />
-                  <span className="in-a-glance-card-score">{displayScore(value)}<small>{value === null ? '' : ' / 100'}</small></span>
-                </a>
-              )
-            })}
-          </section> : null}
-        </>
+        <section className="in-a-glance-hero" aria-label="Current Financial Health score">
+          <FinancialHealthReflection score={financialHealthScore} summary={financialHealthSummary} />
+          <div>
+            <span>Financial Health</span>
+            <h2>Your current financial position</h2>
+            <p>{liveSummary
+              ? 'Mirrored from the latest result published by Financial Health.'
+              : 'Showing the latest saved result until Financial Health publishes a current result.'}</p>
+            <a href="/financial-health-summary">View Financial Health</a>
+          </div>
+        </section>
       ) : null}
+
+      {snapshot || hasHeroMirrors ? <section className="in-a-glance-grid" aria-label="Current and saved component scores">
+        {snapshotItems.map(({ key, summaryKey, kind, label, path, Icon }) => {
+          const value = snapshot?.[key] ?? null
+          return (
+            <a key={key} href={path} className="in-a-glance-card">
+              <span className="in-a-glance-card-heading"><Icon aria-hidden="true" /><strong>{label}</strong></span>
+              <SnapshotReflection kind={kind} value={value} summary={asRecord(snapshot?.[summaryKey])} month={reflectionMonth} mirrors={heroMirrors} />
+              <span className="in-a-glance-card-score">{displayScore(value)}<small>{value === null ? '' : ' / 100'}</small></span>
+            </a>
+          )
+        })}
+      </section> : null}
     </main>
   )
 }
