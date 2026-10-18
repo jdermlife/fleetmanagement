@@ -4,10 +4,10 @@
     <selectionStates>
       <SelectionState runConfigName="app">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-15T15:35:27.566643600Z">
+        <DropdownSelection timestamp="2026-10-18T09:29:52.985039500Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CW61V481V" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Jorge\.android\avd\Wear_OS_Large_Round.avd" />
             </handle>
           </Target>
         </DropdownSelection>
@@ -15,10 +15,10 @@
       </SelectionState>
       <SelectionState runConfigName="wear">
         <option name="selectionMode" value="DROPDOWN" />
-        <DropdownSelection timestamp="2026-10-17T15:03:04.776309500Z">
+        <DropdownSelection timestamp="2026-10-18T15:44:47.141636400Z">
           <Target type="DEFAULT_BOOT">
             <handle>
-              <DeviceId pluginId="PhysicalDevice" identifier="serial=R5CW61V481V" />
+              <DeviceId pluginId="LocalEmulator" identifier="path=C:\Users\Jorge\.android\avd\Pixel_10_Pro.avd" />
             </handle>
           </Target>
         </DropdownSelection>
