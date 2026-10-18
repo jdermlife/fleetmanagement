@@ -30,6 +30,7 @@ import {
 type WorkflowStep = 1 | 2 | 3 | 4;
 type IncomeKey = 'salary' | 'business' | 'investment' | 'pension';
 
+const DEFAULT_WORKFLOW_STEP: WorkflowStep = 4;
 const HOUSE_AMORTIZATION_KEY = 'expense-house-amortization';
 const LOAN_AMORTIZATION_KEY = 'expense-loan-amortization';
 
@@ -66,7 +67,7 @@ interface BudgetExpenseTrackerDraft {
 }
 
 const DEFAULT_BUDGET_EXPENSE_TRACKER_DRAFT: BudgetExpenseTrackerDraft = {
-  step: 1,
+  step: DEFAULT_WORKFLOW_STEP,
   periodStart: '',
   periodEnd: '',
   incomeDraft: {
@@ -189,7 +190,7 @@ export default function BudgetExpenseTrackerPage() {
       return defaults;
     }, {});
   }, [expenseSetupItems]);
-  const [step, setStep] = useState<WorkflowStep>(1);
+  const [step, setStep] = useState<WorkflowStep>(DEFAULT_WORKFLOW_STEP);
   const [periodStart, setPeriodStart] = useState('');
   const [periodEnd, setPeriodEnd] = useState('');
   const [incomeDraft, setIncomeDraft] = useState<Record<IncomeKey, string>>({
@@ -259,7 +260,7 @@ export default function BudgetExpenseTrackerPage() {
       }
     });
 
-    setStep(draft.step);
+    setStep(DEFAULT_WORKFLOW_STEP);
     setPeriodStart(draft.periodStart);
     setPeriodEnd(draft.periodEnd);
     setIncomeDraft(draft.incomeDraft);
