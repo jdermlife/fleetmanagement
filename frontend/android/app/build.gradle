@@ -20,8 +20,15 @@ def isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
     taskName?.toLowerCase()?.contains('release')
 }
 
+def admobAppId = (project.findProperty('ADMOB_APP_ID') ?: System.getenv('ADMOB_APP_ID'))?.toString()?.trim()
+def googleTestAdmobAppId = 'ca-app-pub-3940256099942544~3347511713'
+
 if (isReleaseBuildRequested && !hasReleaseKeystore) {
     throw new GradleException("Release builds require a configured keystore.properties file. Refusing to fall back to a debug signing key.")
+}
+
+if (isReleaseBuildRequested && !admobAppId) {
+    throw new GradleException("Release builds require ADMOB_APP_ID as a Gradle property or environment variable.")
 }
 
 android {
@@ -34,6 +41,7 @@ android {
         versionCode 30
         versionName "1.0.29"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+        manifestPlaceholders = [ADMOB_APP_ID: admobAppId ?: googleTestAdmobAppId]
         aaptOptions {
              // Files and dirs to omit from the packaged assets dir, modified to accommodate modern web apps.
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61

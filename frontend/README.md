@@ -86,6 +86,15 @@ Native project locations:
 - Android: `frontend/android`
 - iOS: `frontend/ios`
 
+### Android Banner Ads
+
+Development Android builds use Google's official test banner and test app ID. For a release build:
+
+1. Set `VITE_ADMOB_ANDROID_BANNER_ID` to the Android banner ad unit ID before running `npm run mobile:sync`.
+2. Set `ADMOB_APP_ID` to the Android AdMob app ID before building the app in Android Studio or Gradle.
+
+The banner appears at the bottom of the Android app after consent permits ad requests. It is not enabled on web or iOS.
+
 ## Authentication
 
 Protected endpoints require a JWT token in the Authorization header:

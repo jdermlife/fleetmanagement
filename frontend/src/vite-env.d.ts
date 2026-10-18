@@ -8,6 +8,7 @@ declare interface ImportMetaEnv {
   readonly VITE_APPLE_CLIENT_ID?: string
   readonly VITE_APPLE_IOS_CLIENT_ID?: string
   readonly VITE_APPLE_REDIRECT_URI?: string
+  readonly VITE_ADMOB_ANDROID_BANNER_ID?: string
   readonly VITE_TURNSTILE_SITE_KEY?: string
   readonly VITE_PAYPAL_CLIENT_ID?: string
   readonly VITE_PAYPAL_PLAN_ID_SINGLE_PROFILE?: string

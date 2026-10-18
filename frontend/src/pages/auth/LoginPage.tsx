@@ -201,7 +201,7 @@ export default function LoginPage() {
   const openDefaultPage = (totalLoginCount?: number) => {
     window.localStorage.removeItem(JOURNEY_MINIMIZED_STORAGE_KEY)
     window.localStorage.removeItem(JOURNEY_DO_NOT_SHOW_STORAGE_KEY)
-    navigate(totalLoginCount === 1 ? BUILD_PROFILE_PATH : FINANCIAL_HEALTH_PATH, { replace: true })
+    navigate(totalLoginCount === 1 ? FINANCIAL_HEALTH_PATH : FINANCIAL_HEALTH_PATH, { replace: true })
   }
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
