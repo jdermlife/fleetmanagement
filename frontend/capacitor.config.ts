@@ -13,6 +13,7 @@ const config: CapacitorConfig = {
       '@capacitor/app',
       '@capacitor/keyboard',
       '@capacitor/splash-screen',
+      '@capacitor-community/admob',
       '@capgo/capacitor-social-login',
     ],
   },

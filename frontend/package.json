@@ -20,6 +20,7 @@
     "mobile:ios": "npm run mobile:sync && npx cap open ios"
   },
   "dependencies": {
+    "@capacitor-community/admob": "8.2.1",
     "@capacitor/android": "^8.5.2",
     "@capacitor/app": "^8.1.0",
     "@capacitor/core": "^8.5.2",

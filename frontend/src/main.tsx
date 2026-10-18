@@ -9,6 +9,7 @@ import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App'
 import { APP_CONFIG } from './config'
 import { initializeNativeGoogleSignIn } from './googleAuth'
+import { initializeNativeAds } from './nativeAds'
 import './index.css'
 
 const isNativeMobileApp = Capacitor.isNativePlatform()
@@ -66,3 +67,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
       : appNode}
   </React.StrictMode>,
 )
+
+if (Capacitor.getPlatform() === 'android') {
+  requestAnimationFrame(() => {
+    void initializeNativeAds().catch((error) => {
+      console.error('[AdMob] Native initialization failed:', error)
+    })
+  })
+}
