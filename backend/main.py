@@ -601,6 +601,15 @@ def home():
         "message": "QT Fleet API Running"
     }
 
+
+@app.get("/app-ads.txt", response_class=Response)
+def app_ads():
+    return Response(
+        content="google.com, pub-2001944410031596, DIRECT, f08c47fec0942fa0\n",
+        media_type="text/plain",
+    )
+
+
 @app.get("/health")
 def health():
     return {
