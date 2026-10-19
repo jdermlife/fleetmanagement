@@ -193,7 +193,17 @@ export default function LoanRepository2() {
   const values = profile.values ?? {}
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE))
 
-  if (isAuthorizationLoading) return <AuthProgressOverlay message="Checking administrator access..." />
+  if (isAuthorizationLoading) {
+    return (
+      <AuthProgressOverlay
+        description="Confirming your account role before loading protected loan profile records."
+        footnote="This page is restricted to administrators."
+        idPrefix="loan-repository-2-access"
+        kicker="Secure administration"
+        title="Checking administrator access"
+      />
+    )
+  }
 
   if (!isAdmin) {
     return (
