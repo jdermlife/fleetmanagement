@@ -1942,8 +1942,7 @@ def create_public_trial_paymongo_checkout(payload: PublicTrialPaymentRequest):
 @router.post("/payments/paymongo/webhook")
 async def receive_paymongo_webhook(
     request: Request,
-    paymongo_signature: str | None = Heade
-    r(default=None, alias="Paymongo-Signature"),
+    paymongo_signature: str | None = Header(default=None, alias="Paymongo-Signature"),
 ):
     if not paymongo_signature:
         raise HTTPException(status_code=401, detail="Missing PayMongo signature")
