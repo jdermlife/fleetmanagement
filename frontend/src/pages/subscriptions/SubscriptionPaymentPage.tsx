@@ -232,6 +232,9 @@ export default function SubscriptionPaymentPage() {
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
   const selectedGuestPlanId = searchParams.get('plan')
   const guestAccountQuery = searchParams.get('account')?.trim() || ''
+  const trialExpiredPath = guestAccountQuery
+    ? `/trial-expired?account=${encodeURIComponent(guestAccountQuery)}`
+    : '/trial-expired'
   const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
   const nativePlatform = Capacitor.getPlatform()
@@ -687,7 +690,7 @@ export default function SubscriptionPaymentPage() {
           createOrder: async () => {
             const accountIdentifier = guestAccountIdentifier.trim()
             if (accountIdentifier.length < 3) {
-              throw new Error('Enter your registered username or email before starting PayPal checkout.')
+              throw new Error('Return to login so your registered account can be identified before starting PayPal checkout.')
             }
 
             paypalStageRef.current = 'create'
@@ -928,7 +931,7 @@ export default function SubscriptionPaymentPage() {
     }
 
     if (guestAccountIdentifier.trim().length < 3) {
-      setPaymentMessage('Enter your registered username or email before starting payment.')
+      setPaymentMessage('Return to login so your registered account can be identified before starting payment.')
       return
     }
 
@@ -973,7 +976,7 @@ export default function SubscriptionPaymentPage() {
           <h1 id="payment-cancelled-title">Payment Cancelled</h1>
           <p className="status-message">{paymentMessage || 'No charge was completed and your access was not changed.'}</p>
           <div className="form-actions">
-            <Link className="auth-link-button" to="/trial-expired">Choose a Payment Option</Link>
+            <Link className="auth-link-button" to={trialExpiredPath}>Choose a Payment Option</Link>
             <Link className="auth-link-button" to="/account">View Account</Link>
           </div>
         </section>
@@ -1002,9 +1005,9 @@ export default function SubscriptionPaymentPage() {
             Registered Username or Email
             <input
               value={guestAccountIdentifier}
-              onChange={(event) => setGuestAccountIdentifier(event.target.value)}
-              placeholder="Enter your registered username or email"
+              placeholder="Registered account unavailable"
               autoComplete="username"
+              readOnly
               required
             />
           </label>
@@ -1045,7 +1048,7 @@ export default function SubscriptionPaymentPage() {
                   </button>
                   <p className="trial-expired-payment-error">
                     {PAYPAL_CLIENT_ID
-                      ? 'Enter your registered username or email to enable PayPal.'
+                      ? 'Return to login so your registered account can be identified to enable PayPal.'
                       : 'PayPal Buttons are unavailable because VITE_PAYPAL_CLIENT_ID is not configured.'}
                   </p>
                 </>
@@ -1058,7 +1061,7 @@ export default function SubscriptionPaymentPage() {
           <button
             type="button"
             className="auth-link-button"
-            onClick={() => navigate('/trial-expired')}
+            onClick={() => navigate(trialExpiredPath)}
           >
             Choose Another Plan
           </button>

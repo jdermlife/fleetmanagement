@@ -365,6 +365,42 @@ describe('LoginPage Apple sign-in', () => {
     })
   })
 
+  it('carries an inactive Apple user email to subscription selection', async () => {
+    mockRequestAppleSignInToken.mockResolvedValue({
+      idToken: 'apple-identity-token-123',
+    })
+    mockLoginWithApple.mockResolvedValue({
+      token: 'access-token-xyz',
+      refreshToken: 'refresh-token-xyz',
+      user: {
+        id: 9,
+        username: 'apple-user',
+        email: 'apple-user@example.com',
+        role: 'subscriber_lender',
+        roles: ['subscriber_lender'],
+        permissions: [],
+        isActive: false,
+        createdAt: '2026-07-10T00:00:00Z',
+        updatedAt: '2026-07-10T00:00:00Z',
+        lastLoginAt: null,
+      },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: /continue with apple/i }))
+
+    await waitFor(() => {
+      expect(mockNavigate).toHaveBeenCalledWith(
+        '/trial-expired?source=apple&account=apple-user%40example.com',
+      )
+    })
+  })
+
   it('moves first-time Apple users to registration when account type selection is required', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({
       idToken: 'apple-identity-token-123',

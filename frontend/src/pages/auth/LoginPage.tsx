@@ -113,6 +113,15 @@ function isTrialExpiredMessage(message: string | undefined): boolean {
   return normalized.includes('expired due to non-payment')
 }
 
+function getTrialExpiredPath(source: string, account?: string): string {
+  const searchParams = new URLSearchParams({ source })
+  const normalizedAccount = account?.trim()
+  if (normalizedAccount) {
+    searchParams.set('account', normalizedAccount)
+  }
+  return `/trial-expired?${searchParams.toString()}`
+}
+
 function MailIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
@@ -212,8 +221,7 @@ export default function LoginPage() {
     try {
       const result = await login({ username, password, rememberMe })
       if (!result.user.isActive) {
-        const account = encodeURIComponent(username.trim())
-        navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')
+        navigate(getTrialExpiredPath('login', result.user.email || username))
         return
       }
       openDefaultPage(result.user.totalLoginCount)
@@ -232,8 +240,7 @@ export default function LoginPage() {
 
       const resolvedMessage = resolveSocialAuthErrorMessage(error, 'Unable to sign in right now.', false)
       if (isTrialExpiredMessage(resolvedMessage)) {
-        const account = encodeURIComponent(username.trim())
-        navigate(account ? `/trial-expired?source=login&account=${account}` : '/trial-expired?source=login')
+        navigate(getTrialExpiredPath('login', username))
         return
       }
 
@@ -259,7 +266,7 @@ export default function LoginPage() {
         rememberMe,
       })
       if (!result.user.isActive) {
-        navigate('/trial-expired?source=google')
+        navigate(getTrialExpiredPath('google', result.user.email))
         return
       }
       openDefaultPage(result.user.totalLoginCount)
@@ -325,7 +332,7 @@ export default function LoginPage() {
         rememberMe,
       })
       if (!result.user.isActive) {
-        navigate('/trial-expired?source=apple')
+        navigate(getTrialExpiredPath('apple', result.user.email))
         return
       }
       openDefaultPage(result.user.totalLoginCount)

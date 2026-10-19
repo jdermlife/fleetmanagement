@@ -179,7 +179,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
     expect(screen.queryByRole('heading', { name: 'App Store Subscription' })).toBeNull()
   })
 
-  it('renders the official PayPal button before guest account entry', async () => {
+  it('blocks guest PayPal checkout when registered account context is missing', async () => {
     authToken.value = null
     let buttonOptions: { createOrder: () => Promise<string> } | null = null
     const buttons = vi.fn((options) => {
@@ -206,7 +206,7 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       height: 48,
     })
     await expect(buttonOptions!.createOrder()).rejects.toThrow(
-      'Enter your registered username or email before starting PayPal checkout.',
+      'Return to login so your registered account can be identified before starting PayPal checkout.',
     )
     expect(apiMocks.createPublicTrialPayPalOrder).not.toHaveBeenCalled()
   })
@@ -223,13 +223,14 @@ describe('SubscriptionPaymentPage PayPal Buttons', () => {
       '../src/pages/subscriptions/SubscriptionPaymentPage'
     )
     render(
-      <MemoryRouter initialEntries={['/subscription/payment?plan=single']}>
+      <MemoryRouter initialEntries={['/subscription/payment?plan=single&account=subscriber%40example.com']}>
         <SubscriptionPaymentPage />
       </MemoryRouter>,
     )
 
     const accountInput = screen.getByLabelText('Registered Username or Email')
-    fireEvent.change(accountInput, { target: { value: 'subscriber@example.com' } })
+    expect(accountInput.getAttribute('readonly')).not.toBeNull()
+    expect((accountInput as HTMLInputElement).value).toBe('subscriber@example.com')
 
     const payMongoButton = screen.getByRole('button', { name: 'Pay with PayMongo' })
     await act(async () => payMongoButton.click())
