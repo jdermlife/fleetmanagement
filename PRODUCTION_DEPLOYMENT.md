@@ -78,8 +78,8 @@ export SMTP_PASSWORD="<your-app-password>"
 # PayMongo hosted checkout (backend secrets only)
 export PAYMONGO_SECRET_KEY="<sk_test_or_sk_live_key>"
 export PAYMONGO_WEBHOOK_SECRET="<webhook_signing_secret>"
-export PAYMONGO_SUCCESS_URL="https://app.yourdomain.com/subscription-payment?checkout=success"
-export PAYMONGO_CANCEL_URL="https://app.yourdomain.com/subscription-payment?checkout=cancelled"
+export PAYMONGO_SUCCESS_URL="https://app.yourdomain.com/subscription/payment?checkout=success"
+export PAYMONGO_CANCEL_URL="https://app.yourdomain.com/subscription/payment?checkout=cancelled"
 export PAYMONGO_PAYMENT_METHODS="card,gcash,paymaya,grab_pay"
 export PAYMONGO_WEBHOOK_TOLERANCE_SECONDS="300"
 ```

@@ -21,6 +21,16 @@ chmod 600 backend/.env.contabo
 
 Replace every placeholder in `backend/.env.contabo`. Use the current production `DATABASE_URL` and authentication/provider secrets.
 
+PayMongo checkout requires these values in `backend/.env.contabo`:
+
+```bash
+PAYMONGO_SECRET_KEY=<paymongo-secret-key>
+PAYMONGO_WEBHOOK_SECRET=<paymongo-webhook-signing-secret>
+PAYMONGO_SUCCESS_URL=https://fleetmanagement-flame.vercel.app/subscription/payment?checkout=success
+PAYMONGO_CANCEL_URL=https://fleetmanagement-flame.vercel.app/subscription/payment?checkout=cancelled
+PAYMONGO_PAYMENT_METHODS=card,gcash,paymaya,grab_pay
+```
+
 Install the Nginx configuration and obtain a certificate:
 
 ```bash
