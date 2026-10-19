@@ -2194,8 +2194,8 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
       <section className="financial-health-summary-grid financial-health-primary-summary" aria-label="Financial Health highlights">
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Foundation & reliability</span>
-          <small>{groupRings[0].displayValue}</small>
-          <strong>Credit, cash flow, and payment</strong>
+          <strong>{groupRings[0].displayValue}</strong>
+          <strong style={{ fontSize: '1.25rem', fontWeight: '700', display: 'block', marginTop: '6px' }}>Credit, cash flow, and payment</strong>
         </article>
         <article className="financial-health-summary-tile">
           <span>Control & resilience</span>
