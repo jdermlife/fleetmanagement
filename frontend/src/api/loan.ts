@@ -1,3 +1,5 @@
+import axios from 'axios'
+
 import { api } from '../api'
 
 const LOAN_REPOSITORY_IMPORT_TIMEOUT_MS = 600000
@@ -724,6 +726,7 @@ export interface LoanApplicationPayload extends LoanApplicationProfileColumns {
 export interface LoanApplicationRecord extends LoanApplicationPayload {
   psychometric_risk_level: string
   id?: number
+  created_by: number | null
   created_by_username?: string
   created_by_email?: string | null
   created_at?: string
@@ -852,14 +855,36 @@ export async function fetchAdminLoanProfileRepository(
   limit = 25,
   offset = 0,
 ): Promise<AdminLoanProfilePageResponse> {
-  const response = await api.get<AdminLoanProfilePageResponse>(
-    '/api/admin/loan-profile-repository',
-    {
-      params: { limit, offset },
+  try {
+    const response = await api.get<AdminLoanProfilePageResponse>(
+      '/api/admin/loan-profile-repository',
+      {
+        params: { limit, offset },
+        timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,
+      },
+    )
+    return response.data
+  } catch (error) {
+    if (!axios.isAxiosError(error) || error.response?.status !== 404) throw error
+
+    const response = await api.get<LoanApplicationsPageResponse>(LOAN_APPLICATIONS_PATH, {
+      params: { limit, offset, summary: true },
       timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,
-    },
-  )
-  return response.data
+    })
+
+    return {
+      ...response.data,
+      records: response.data.records.map((record) => ({
+        application_no: record.application_no,
+        borrower_name: record.borrower_name,
+        build_profile: record.requirements?.buildProfile ?? {},
+        created_at: record.created_at,
+        created_by: record.created_by,
+        created_by_email: record.created_by_email,
+        created_by_username: record.created_by_username ?? 'Unknown',
+      })),
+    }
+  }
 }
 
 export async function fetchDashboardStatistics(): Promise<DashboardStatistics> {
