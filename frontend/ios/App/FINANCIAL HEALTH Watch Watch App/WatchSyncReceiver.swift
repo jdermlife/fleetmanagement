@@ -4,9 +4,9 @@ import Combine
 
 import WatchConnectivity
 
-final class WatchSyncReceiver: NSObject, ObservableObject, WCSessionDelegate {
+final class FinancialHealthWatchReceiver: NSObject, ObservableObject, WCSessionDelegate {
 
-    static let shared = WatchSyncReceiver()
+    static let shared = FinancialHealthWatchReceiver()
 
     // MARK: - Main Scores
 

@@ -237,7 +237,7 @@ struct WatchTrendGraph: View {
 struct ContentView: View {
 
     @ObservedObject private var watchSync =
-        WatchSyncReceiver.shared
+        FinancialHealthWatchReceiver.shared
 
     var body: some View {
 
@@ -533,7 +533,7 @@ struct ContentView: View {
 struct BudgetWatchView: View {
 
     @ObservedObject private var watchSync =
-        WatchSyncReceiver.shared
+        FinancialHealthWatchReceiver.shared
 
     var body: some View {
 
@@ -646,7 +646,7 @@ struct BudgetWatchView: View {
 struct CreditHealthWatchView: View {
 
     @ObservedObject private var watchSync =
-        WatchSyncReceiver.shared
+        FinancialHealthWatchReceiver.shared
 
     var body: some View {
 
@@ -829,7 +829,7 @@ struct CreditHealthWatchView: View {
 struct WealthWatchView: View {
 
     @ObservedObject private var watchSync =
-        WatchSyncReceiver.shared
+        FinancialHealthWatchReceiver.shared
 
     var body: some View {
 
@@ -1137,7 +1137,7 @@ struct RadarAxes: Shape {
 }
 
 struct ResourceOptimizerWatchView: View {
-    @ObservedObject private var watchSync = WatchSyncReceiver.shared
+    @ObservedObject private var watchSync = FinancialHealthWatchReceiver.shared
 
     var body: some View {
         ScrollView {
@@ -1192,7 +1192,7 @@ struct GaugeArc: Shape {
 }
 
 struct BillCalendarWatchView: View {
-    @ObservedObject private var watchSync = WatchSyncReceiver.shared
+    @ObservedObject private var watchSync = FinancialHealthWatchReceiver.shared
     private let columns = Array(repeating: GridItem(.flexible(), spacing: 2), count: 7)
 
     private var monthDate: Date {
@@ -1275,7 +1275,7 @@ struct ScoreCard: View {
 struct FinancialHealthDetailView: View {
 
     @ObservedObject private var watchSync =
-        WatchSyncReceiver.shared
+        FinancialHealthWatchReceiver.shared
 
     var body: some View {
 
