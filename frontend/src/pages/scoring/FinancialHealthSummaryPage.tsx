@@ -1713,7 +1713,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
 
           <dl className="financial-health-group-guide">
             <div>
-              <dt>Foundation, stability &amp; reliability</dt>
+              <dt>Credit, Cash Flow, and Payment HealthFoundation, stability &amp; reliability</dt>
               <dd>Credit, Cash Flow, and Payment Health</dd>
             </div>
             <div>
@@ -2196,8 +2196,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
           <span>Credit, Cash flow, and Payment</span>
           <strong>{groupRings[0].displayValue}</strong>
           <strong >Foundation, Stability and Reliability </strong>
-            <strong>{groupRings[0].displayValue}</strong>
-        </article>
+           </article>
         <article className="financial-health-summary-tile">
           <span>Control & resilience</span>
           <strong>{groupRings[1].displayValue}</strong>
