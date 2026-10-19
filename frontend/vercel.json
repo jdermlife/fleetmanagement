@@ -4,6 +4,10 @@
       "source": "/(.*)",
       "headers": [
         {
+          "key": "Cross-Origin-Opener-Policy",
+          "value": "same-origin-allow-popups"
+        },
+        {
           "key": "Content-Security-Policy-Report-Only",
           "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; script-src 'self' https://accounts.google.com https://appleid.cdn-apple.com https://challenges.cloudflare.com https://www.paypal.com https://www.paypalobjects.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: blob: https://appleid.cdn-apple.com https://api.qrserver.com https://*.googleusercontent.com https://www.paypal.com https://www.paypalobjects.com; font-src 'self' data:; connect-src 'self' https://filscore-ai.quantech.international https://www.filscore-ai.quantech.international https://accounts.google.com https://appleid.apple.com https://challenges.cloudflare.com https://www.paypal.com https://api-m.paypal.com https://api-m.sandbox.paypal.com; frame-src https://accounts.google.com https://appleid.apple.com https://challenges.cloudflare.com https://www.paypal.com https://www.paypalobjects.com; media-src 'self' blob:; worker-src 'self' blob:; manifest-src 'self'; form-action 'self' https://appleid.apple.com https://www.paypal.com; report-uri /api/auth/csp-report"
         }
@@ -31,23 +35,23 @@
   "rewrites": [
     {
       "source": "/api/auth/login",
-      "destination": "https://filscore-ai.quantech.international/api/auth/login"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/login"
     },
     {
       "source": "/api/auth/google-token",
-      "destination": "https://filscore-ai.quantech.international/api/auth/google-token"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/google-token"
     },
     {
       "source": "/api/auth/apple-token",
-      "destination": "https://filscore-ai.quantech.international/api/auth/apple-token"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/auth/apple-token"
     },
     {
       "source": "/api/:path*",
-      "destination": "https://filscore-ai.quantech.international/api/:path*"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/api/:path*"
     },
     {
       "source": "/backend/:path*",
-      "destination": "https://filscore-ai.quantech.international/:path*"
+      "destination": "https://fleetmanagement-dq9t.onrender.com/:path*"
     },
     {
       "source": "/((?!assets/).*)",
