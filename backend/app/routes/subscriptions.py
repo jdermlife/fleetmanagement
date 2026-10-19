@@ -1896,7 +1896,7 @@ def cancel_public_trial_payment(payload: PublicPaymentCancellationRequest):
 @router.post("/payments/paymongo/checkout")
 def create_paymongo_checkout(
     payload: PayMongoCheckoutCreate,
-    user: CurrentUser = Depends(require_roles("Admin")),
+    user: CurrentUser = Depends(require_authenticated_user),
 ):
     return _create_paymongo_checkout_for_user(payload=payload, user=user)
 
