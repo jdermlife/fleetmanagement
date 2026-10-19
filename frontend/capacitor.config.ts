@@ -17,6 +17,16 @@ const config: CapacitorConfig = {
       '@capgo/capacitor-social-login',
     ],
   },
+  ios: {
+    includePlugins: [
+      '@capacitor/app',
+      '@capacitor/keyboard',
+      '@capacitor/splash-screen',
+      '@capacitor/status-bar',
+      '@capgo/capacitor-social-login',
+      '@capgo/native-purchases',
+    ],
+  },
   plugins: {
     SplashScreen: {
       launchShowDuration: 1200,
