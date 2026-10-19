@@ -1,4 +1,4 @@
-import { registerPlugin } from '@capacitor/core';
+import { Capacitor, registerPlugin } from '@capacitor/core';
 
 export interface WatchSnapshot {
   updatedAt: string;
@@ -111,5 +111,13 @@ interface WatchSyncPlugin {
   }>;
 }
 
-export const WatchSync =
-  registerPlugin<WatchSyncPlugin>('WatchSync');
+const nativeWatchSync = registerPlugin<WatchSyncPlugin>('WatchSync');
+
+export const WatchSync: WatchSyncPlugin = {
+  updateSnapshot(options) {
+    if (!Capacitor.isNativePlatform()) {
+      return Promise.resolve({ saved: false, sent: false });
+    }
+    return nativeWatchSync.updateSnapshot(options);
+  },
+};

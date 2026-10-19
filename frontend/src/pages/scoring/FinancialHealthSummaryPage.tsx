@@ -644,28 +644,29 @@ export default function FinancialHealthSummaryPage() {
       const analysisEntityKey = entityKey || 'identity-pending'
       const lendingEntityKey = selectedApplicationNo || 'new'
       const creditEntityKey = selectedApplicationNo || 'primary'
+      const isSampleProfile = analysisEntityKey.toUpperCase() === 'APP-SAMPLE'
       try {
-        const netWorthDraftRequest = fetchAutosaveDraft<NetWorthBuildingDraftInput>(
+        const netWorthDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<NetWorthBuildingDraftInput>(
           'net-worth-positioning',
           analysisEntityKey,
         ).catch(() => null)
-        const lendingDraftRequest = fetchAutosaveDraft<unknown>(
+        const lendingDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<unknown>(
           'loan-application',
           lendingEntityKey,
         ).catch(() => null)
-        const budgetDraftRequest = fetchAutosaveDraft<BudgetHealthDraftInput>(
+        const budgetDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<BudgetHealthDraftInput>(
           'budget-expense-tracker',
           analysisEntityKey,
         ).catch(() => null)
-        const billReminderDraftRequest = fetchAutosaveDraft<unknown>(
+        const billReminderDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<unknown>(
           'bill-reminder',
           analysisEntityKey,
         ).catch(() => null)
-        const creditHealthDraftRequest = fetchAutosaveDraft<unknown>(
+        const creditHealthDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<unknown>(
           'credit-scoring',
           creditEntityKey,
         ).catch(() => null)
-        const loanMonitoringDraftRequest = fetchAutosaveDraft<{ publishedScore?: LoanMonitoringScoreResult }>(
+        const loanMonitoringDraftRequest = isSampleProfile ? Promise.resolve(null) : fetchAutosaveDraft<{ publishedScore?: LoanMonitoringScoreResult }>(
           'loan-monitoring',
           analysisEntityKey,
         ).catch(() => null)
