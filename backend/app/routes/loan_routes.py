@@ -1099,6 +1099,53 @@ def get_loan_applications(
         db.close()
 
 
+@router.get("/admin/loan-profile-repository")
+def get_admin_loan_profile_repository(
+    limit: int = Query(default=25, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    user: CurrentUser = Depends(require_roles("Admin")),
+):
+    db = SessionLocal()
+
+    try:
+        query = db.query(LoanApplication)
+        total = query.count()
+        loans = (
+            query.order_by(LoanApplication.created_at.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        )
+
+        return {
+            "total": total,
+            "limit": limit,
+            "offset": offset,
+            "records": [
+                {
+                    "application_no": loan.application_no,
+                    "created_by": loan.created_by,
+                    "created_by_username": (
+                        loan.creator_user.username if loan.creator_user else "Unknown"
+                    ),
+                    "created_by_email": (
+                        loan.creator_user.email if loan.creator_user else None
+                    ),
+                    "created_at": loan.created_at,
+                    "borrower_name": resolve_client_name(loan),
+                    "build_profile": (
+                        (loan.requirements or {}).get("buildProfile")
+                        if isinstance((loan.requirements or {}).get("buildProfile"), dict)
+                        else {}
+                    ),
+                }
+                for loan in loans
+            ],
+        }
+    finally:
+        db.close()
+
+
 @router.post(
     "/loan-applications/import",
 )

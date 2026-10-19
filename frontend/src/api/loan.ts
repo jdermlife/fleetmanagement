@@ -831,6 +831,37 @@ export interface LoanApplicationsPageResponse {
   records: LoanApplicationRecord[]
 }
 
+export interface AdminLoanProfileRecord {
+  application_no: string
+  borrower_name: string
+  build_profile: Record<string, unknown>
+  created_at?: string | null
+  created_by: number | null
+  created_by_email?: string | null
+  created_by_username: string
+}
+
+export interface AdminLoanProfilePageResponse {
+  total: number
+  limit: number
+  offset: number
+  records: AdminLoanProfileRecord[]
+}
+
+export async function fetchAdminLoanProfileRepository(
+  limit = 25,
+  offset = 0,
+): Promise<AdminLoanProfilePageResponse> {
+  const response = await api.get<AdminLoanProfilePageResponse>(
+    '/api/admin/loan-profile-repository',
+    {
+      params: { limit, offset },
+      timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,
+    },
+  )
+  return response.data
+}
+
 export async function fetchDashboardStatistics(): Promise<DashboardStatistics> {
   const response = await api.get<DashboardStatistics>('/dashboard/statistics', {
     timeout: LOAN_REPOSITORY_FETCH_TIMEOUT_MS,

@@ -101,6 +101,7 @@ const SubscriptionFeesPage = lazy(() => import('./pages/legal/SubscriptionFeesPa
 const UserManagementPage = lazy(() => import('./pages/admin/UserManagementPage'))
 const RoleManagementPage = lazy(() => import('./pages/admin/RoleManagementPage'))
 const PermissionManagementPage = lazy(() => import('./pages/admin/PermissionManagementPage'))
+const LoanRepository2 = lazy(() => import('./pages/admin/LoanRepository2'))
 const CreditHealthMultiProductPage = lazy(() => import('./pages/admin/CreditHealthMultiProductPage'))
 const CalculationPage = lazy(() => import('./pages/admin/CalculationPage'))
 const AmlKycScoringPage = lazy(() => import('./pages/admin/AmlKycScoringPage'))
@@ -171,6 +172,7 @@ const menuLinks: MenuLink[] = [
   { id: 'admin-users', label: 'User Management' },
   { id: 'admin-roles', label: 'Admin Role Management' },
   { id: 'admin-permissions', label: 'Permission Management' },
+  { id: 'loan-repository-2', label: 'Loan Repository 2' },
   { id: 'sme', label: 'SME' },
   { id: 'about-filscore-mobile', label: 'About FILSCORE for Apps' },
   { id: 'subscription-payment', label: 'Subscription Payment' },
@@ -579,6 +581,7 @@ const adminMenus = [
   'admin-users',
   'admin-roles',
   'admin-permissions',
+  'loan-repository-2',
   'sme',
   'about-filscore-mobile',
   'subscription-payment',
@@ -1977,6 +1980,15 @@ const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(locat
               element={
                 <ProtectedRoute roles={['admin']} permissions={['manage:system']}>
                   <PermissionManagementPage />
+                </ProtectedRoute>
+              }
+            />
+
+            <Route
+              path="/loan-repository-2"
+              element={
+                <ProtectedRoute roles={['admin']}>
+                  <LoanRepository2 />
                 </ProtectedRoute>
               }
             />
