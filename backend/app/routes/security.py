@@ -412,6 +412,7 @@ def _serialize_user(
         "has_apple_sign_in": bool(user.apple_subject),
         "has_google_sign_in": auth_provider == "google",
         "admin_user_notification_sent_at": user.admin_user_notification_sent_at,
+        "build_profile_90_notification_sent_at": user.build_profile_90_notification_sent_at,
         "account_access_expires_at": user.account_access_expires_at,
         **access_state,
         "lender_data_sharing_consent": user.lender_data_sharing_consent,

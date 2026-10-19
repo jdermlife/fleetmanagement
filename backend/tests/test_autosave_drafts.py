@@ -170,6 +170,49 @@ def test_build_profile_autosave_is_mirrored_to_loan_applications(
     assert [mirrored_record for _db, mirrored_record in scored] == [record, record]
 
 
+def test_build_profile_autosave_passes_completion_to_notifier(
+    autosave_client,
+    monkeypatch,
+):
+    client, _active_user, _testing_session = autosave_client
+    notifications = []
+    record = SimpleNamespace(application_no="PRO-TEST-090")
+    monkeypatch.setattr(
+        autosave_drafts,
+        "upsert_build_profile_record",
+        lambda _db, _user, _profile, _profile_id: (record, True),
+    )
+    monkeypatch.setattr(
+        autosave_drafts,
+        "compute_and_persist_build_profile_scores",
+        lambda _db, _record: None,
+    )
+    monkeypatch.setattr(
+        autosave_drafts,
+        "notify_build_profile_completion",
+        lambda user_id, db, **details: notifications.append((user_id, db, details)),
+    )
+
+    response = client.put(
+        "/api/drafts/build-profile/current",
+        json={
+            "payload": {
+                "profileId": "PRO-TEST-090",
+                "completionPercent": 90,
+                "values": {"fullName": "Ana"},
+            },
+            "expected_revision": 0,
+        },
+    )
+
+    assert response.status_code == 200, response.text
+    assert notifications[0][0] == 1
+    assert notifications[0][2] == {
+        "completion_percent": 90,
+        "profile_id": "PRO-TEST-090",
+    }
+
+
 def test_rejects_oversized_draft_payloads(autosave_client):
     client, _active_user, _testing_session = autosave_client
 

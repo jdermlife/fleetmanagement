@@ -35,6 +35,7 @@ ALTER_STATEMENTS = [
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified BOOLEAN DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS email_verified_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS admin_user_notification_sent_at TIMESTAMPTZ",
+    "ALTER TABLE users ADD COLUMN IF NOT EXISTS build_profile_90_notification_sent_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS account_access_expires_at TIMESTAMPTZ",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent BOOLEAN DEFAULT FALSE",
     "ALTER TABLE users ADD COLUMN IF NOT EXISTS lender_data_sharing_consent_recorded_at TIMESTAMPTZ",

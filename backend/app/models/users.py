@@ -44,6 +44,7 @@ class User(Base):
 	email_verified = Column(Boolean, nullable=False, default=False)
 	email_verified_at = Column(DateTime(timezone=True))
 	admin_user_notification_sent_at = Column(DateTime(timezone=True))
+	build_profile_90_notification_sent_at = Column(DateTime(timezone=True))
 	password_changed_at = Column(DateTime(timezone=True))
 	password_reset_expires = Column(DateTime(timezone=True))
 	password_expires_at = Column(DateTime(timezone=True))

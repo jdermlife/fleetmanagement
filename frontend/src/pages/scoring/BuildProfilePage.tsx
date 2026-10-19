@@ -88,6 +88,7 @@ type ProfileData = {
   profileId: string
   selectedApplicationNo?: string
   ownerKey?: string
+  completionPercent?: number
   psychometricAssessment?: Record<string, string>
   step: ProfileStep
   values: Record<string, string>
@@ -977,6 +978,7 @@ export default function BuildProfilePage() {
   currentScorePreparationKeyRef.current = scorePreparationKey
   const profileAutosaveValue = useMemo<ProfileData>(() => ({
     ...profile,
+    completionPercent: calculateBuildProfileCompletion(profile).completionPercent,
     psychometricAssessment: buildPsychometricAssessment(profile.values),
   }), [profile])
 

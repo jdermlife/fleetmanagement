@@ -16,6 +16,9 @@ from app.services.build_profile_repository import (
     compute_and_persist_build_profile_scores,
     upsert_build_profile_record,
 )
+from app.services.build_profile_completion_notification_service import (
+    notify_build_profile_completion,
+)
 
 
 DRAFT_TTL = timedelta(days=30)
@@ -70,6 +73,24 @@ def _mirror_build_profile_draft(
         compute_and_persist_build_profile_scores(db, record)
         return record.application_no, "created" if created else "matched"
     return None
+
+
+def _notify_if_build_profile_complete(
+    db: Session,
+    user: CurrentUser,
+    scope: str,
+    entity_key: str,
+    payload: object,
+) -> None:
+    if scope != "build-profile" or entity_key != "current" or not isinstance(payload, dict):
+        return
+
+    notify_build_profile_completion(
+        user.id,
+        db,
+        completion_percent=payload.get("completionPercent"),
+        profile_id=str(payload.get("profileId") or "").strip(),
+    )
 
 
 def _draft_response(
@@ -169,6 +190,7 @@ def put_autosave_draft(
                 current_revision,
             ) from exc
         db.refresh(draft)
+        _notify_if_build_profile_complete(db, user, scope, entity_key, payload.payload)
         return _draft_response(draft, mirror_result)
 
     if payload.expected_revision != draft.revision:
@@ -206,6 +228,7 @@ def put_autosave_draft(
             status_code=status.HTTP_409_CONFLICT,
             detail="Draft changed while it was being saved",
         )
+    _notify_if_build_profile_complete(db, user, scope, entity_key, payload.payload)
     return _draft_response(updated_draft, mirror_result)
 
 
