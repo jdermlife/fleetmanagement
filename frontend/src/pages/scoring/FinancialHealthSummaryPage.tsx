@@ -2195,7 +2195,8 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         <article className="financial-health-summary-tile financial-health-summary-tile-primary">
           <span>Credit, Cash flow, and Payment</span>
           <strong>{groupRings[0].displayValue}</strong>
-          <strong style={{ fontSize: '1.25rem', fontWeight: '700', display: 'block', marginTop: '6px' }}>Foundation, Stability and Reliability </strong>
+          <strong >Foundation, Stability and Reliability </strong>
+            <strong>{groupRings[0].displayValue}</strong>
         </article>
         <article className="financial-health-summary-tile">
           <span>Control & resilience</span>
