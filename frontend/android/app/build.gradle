@@ -38,8 +38,8 @@ android {
         applicationId "com.quantech.filscore"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 30
-        versionName "1.0.29"
+        versionCode 31
+        versionName "1.0.30"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders = [ADMOB_APP_ID: admobAppId ?: googleTestAdmobAppId]
         aaptOptions {
@@ -81,6 +81,7 @@ dependencies {
     implementation "androidx.appcompat:appcompat:$androidxAppCompatVersion"
     implementation "androidx.coordinatorlayout:coordinatorlayout:$androidxCoordinatorLayoutVersion"
     implementation "androidx.core:core-splashscreen:$coreSplashScreenVersion"
+    implementation "androidx.work:work-runtime:$androidxWorkVersion"
     implementation "com.google.android.gms:play-services-wearable:20.0.1"
     implementation project(':capacitor-android')
     testImplementation "junit:junit:$junitVersion"
