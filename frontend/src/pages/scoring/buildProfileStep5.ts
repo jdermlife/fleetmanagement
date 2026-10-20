@@ -144,3 +144,18 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
 ]
 
 export const BANKING_RELATIONSHIP_FIELDS = BANKING_RELATIONSHIP_SECTIONS.flatMap((section) => section.fields)
+export const HISTORICAL_ASSESSMENT_FIELDS = BANKING_RELATIONSHIP_SECTIONS
+  .find((section) => section.title === 'Historical Assessment Information')
+  ?.fields ?? []
+
+export function withHistoricalAssessmentDefaults(values: Record<string, string>): Record<string, string> {
+  const initializedValues = { ...values }
+
+  for (const field of HISTORICAL_ASSESSMENT_FIELDS) {
+    if (field.options?.length && !initializedValues[field.key]?.trim()) {
+      initializedValues[field.key] = field.options[0]
+    }
+  }
+
+  return initializedValues
+}

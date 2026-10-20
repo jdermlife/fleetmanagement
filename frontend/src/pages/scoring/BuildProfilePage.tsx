@@ -62,6 +62,7 @@ import {
   BANKING_RELATIONSHIP_FIELDS,
   BANKING_RELATIONSHIP_SECTIONS,
   type BankingField,
+  withHistoricalAssessmentDefaults,
 } from './buildProfileStep5'
 import {
   GOAL_SETTING_FIELDS,
@@ -253,7 +254,9 @@ function createEmptyProfile(): ProfileData {
 }
 
 function synchronizeFinancialGoalPurpose(values: Record<string, string>): Record<string, string> {
-  const synchronizedValues = withCreditValuesDefaults(withFinancialStatementDefaults(values))
+  const synchronizedValues = withHistoricalAssessmentDefaults(
+    withCreditValuesDefaults(withFinancialStatementDefaults(values)),
+  )
   if (!synchronizedValues.financialGoal?.trim() || synchronizedValues.loanPurpose?.trim()) return synchronizedValues
   return { ...synchronizedValues, loanPurpose: synchronizedValues.financialGoal }
 }
