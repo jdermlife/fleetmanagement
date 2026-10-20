@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react'
-import { Navigate, useLocation } from 'react-router-dom'
+import { Link, Navigate, useLocation } from 'react-router-dom'
 
 import { useAuthorization } from '../../hooks/useAuthorization'
 
@@ -30,6 +30,9 @@ export default function ProtectedRoute({
       <div className="card">
         <h2>Please Upgrade Your Subscription</h2>
         <p>This page is for Multiple Applications</p>
+        <Link className="auth-link-button" to="/subscription-payment?planId=1">
+          Upgrade Subscription
+        </Link>
       </div>
     )
   }

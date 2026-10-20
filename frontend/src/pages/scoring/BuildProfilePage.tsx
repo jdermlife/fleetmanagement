@@ -43,6 +43,7 @@ import {
   STEP_3_FIELDS,
   STEP_3_SECTIONS,
   type Step3Field,
+  withCreditValuesDefaults,
 } from './buildProfileStep3'
 import { calculateFinancialStatementCompletion, withFinancialStatementDefaults } from './buildProfileFinancialStatement'
 import { initializeStep9DesiredTargets, STEP_9_EDITED_PREFIX } from './buildProfileStep9'
@@ -248,11 +249,11 @@ function createProfileId(): string {
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: withFinancialStatementDefaults({}), documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: synchronizeFinancialGoalPurpose({}), documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
 }
 
 function synchronizeFinancialGoalPurpose(values: Record<string, string>): Record<string, string> {
-  const synchronizedValues = withFinancialStatementDefaults(values)
+  const synchronizedValues = withCreditValuesDefaults(withFinancialStatementDefaults(values))
   if (!synchronizedValues.financialGoal?.trim() || synchronizedValues.loanPurpose?.trim()) return synchronizedValues
   return { ...synchronizedValues, loanPurpose: synchronizedValues.financialGoal }
 }

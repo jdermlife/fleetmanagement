@@ -246,3 +246,16 @@ export const CREDIT_VALUES_SECTIONS: CreditValuesSection[] = [
 
 export const STEP_3_FIELDS = STEP_3_SECTIONS.flatMap((section) => section.fields)
 export const CREDIT_VALUES_QUESTIONS = CREDIT_VALUES_SECTIONS.flatMap((section) => section.questions)
+
+export function withCreditValuesDefaults(values: Record<string, string>): Record<string, string> {
+  const initializedValues = { ...values }
+
+  for (const question of CREDIT_VALUES_QUESTIONS) {
+    const key = `creditValues.${question.field}`
+    if (!initializedValues[key]?.trim()) {
+      initializedValues[key] = question.options[question.options.length - 1] ?? ''
+    }
+  }
+
+  return initializedValues
+}
