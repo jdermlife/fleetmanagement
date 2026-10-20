@@ -1,18 +1,22 @@
 apply plugin: 'com.android.application'
 
 def keystorePropertiesFile = rootProject.file('keystore.properties')
-def keystoreProperties = new Properties()
+def keystoreProperties = [:]
 def hasReleaseKeystore = false
 
 if (keystorePropertiesFile.exists()) {
-    keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
+    def keystorePropertyPrefix = 'releaseSigning'
+    ant.property(file: keystorePropertiesFile, prefix: keystorePropertyPrefix)
+    ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].each { key ->
+        keystoreProperties[key] = ant.properties["${keystorePropertyPrefix}.${key}"]
+    }
     hasReleaseKeystore = [
         'storeFile',
         'storePassword',
         'keyAlias',
         'keyPassword',
     ].every { key ->
-        keystoreProperties.getProperty(key) != null && !keystoreProperties.getProperty(key).trim().isEmpty()
+        keystoreProperties[key] != null && !keystoreProperties[key].trim().isEmpty()
     }
 }
 
