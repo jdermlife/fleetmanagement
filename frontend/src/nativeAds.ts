@@ -3,11 +3,38 @@ import {
   AdmobConsentStatus,
   BannerAdPosition,
   BannerAdSize,
+  type AdmobConsentInfo,
   type BannerAdOptions,
 } from '@capacitor-community/admob'
 import { Capacitor } from '@capacitor/core'
 
 const ANDROID_TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'
+const PRIVACY_OPTIONS_REQUIRED = 'REQUIRED'
+
+let latestConsentInfo: AdmobConsentInfo | null = null
+let consentInfoRequest: Promise<AdmobConsentInfo> | null = null
+
+const isNativeAndroid = () =>
+  Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'android'
+
+const requestConsentInfo = async () => {
+  if (latestConsentInfo) {
+    return latestConsentInfo
+  }
+
+  if (!consentInfoRequest) {
+    consentInfoRequest = AdMob.requestConsentInfo()
+      .then((consentInfo) => {
+        latestConsentInfo = consentInfo
+        return consentInfo
+      })
+      .finally(() => {
+        consentInfoRequest = null
+      })
+  }
+
+  return consentInfoRequest
+}
 
 const getAndroidBannerConfig = () => {
   if (import.meta.env.DEV) {
@@ -19,7 +46,7 @@ const getAndroidBannerConfig = () => {
 }
 
 export const initializeNativeAds = async () => {
-  if (!Capacitor.isNativePlatform() || Capacitor.getPlatform() !== 'android') {
+  if (!isNativeAndroid()) {
     return
   }
 
@@ -29,9 +56,10 @@ export const initializeNativeAds = async () => {
     return
   }
 
-  let consentInfo = await AdMob.requestConsentInfo()
+  let consentInfo = await requestConsentInfo()
   if (consentInfo.isConsentFormAvailable && consentInfo.status === AdmobConsentStatus.REQUIRED) {
     consentInfo = await AdMob.showConsentForm()
+    latestConsentInfo = consentInfo
   }
 
   if (!consentInfo.canRequestAds) {
@@ -49,4 +77,26 @@ export const initializeNativeAds = async () => {
   }
 
   await AdMob.showBanner(bannerOptions)
+}
+
+export const isPrivacyOptionsFormRequired = async () => {
+  if (!isNativeAndroid()) {
+    return false
+  }
+
+  const consentInfo = await requestConsentInfo()
+  return consentInfo.privacyOptionsRequirementStatus === PRIVACY_OPTIONS_REQUIRED
+}
+
+export const showPrivacyOptionsForm = async () => {
+  if (!isNativeAndroid()) {
+    throw new Error('Privacy choices are only available in the Android app.')
+  }
+
+  const consentInfo = await requestConsentInfo()
+  if (consentInfo.privacyOptionsRequirementStatus !== PRIVACY_OPTIONS_REQUIRED) {
+    throw new Error('A privacy options form is not required for this user.')
+  }
+
+  await AdMob.showPrivacyOptionsForm()
 }

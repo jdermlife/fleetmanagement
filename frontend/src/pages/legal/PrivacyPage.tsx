@@ -1,5 +1,7 @@
 import { Link } from 'react-router-dom'
 
+import PrivacyChoicesCard from '../../components/privacy/PrivacyChoicesCard'
+
 const privacySections = [
   {
     title: '1. Overview',
@@ -51,6 +53,7 @@ const privacySections = [
     ],
     bullets: [
       'Google Sign-In and Apple Sign-In flows when the user chooses those login options.',
+      'Google AdMob and its User Messaging Platform when advertising is enabled in the Android app. Eligible U.S. users can reopen the Google privacy options form from the Privacy Choices section of this page or Account Settings.',
       'Account Settings identifies the current Apple or Google sign-in connection and allows users to disconnect it without authenticating with the provider again. FILSCORE revokes all account sessions and does not retain Google or Apple access tokens for ongoing access to provider data. Signing in with that provider again reconnects it.',
       'Participating lenders when a user separately consents to sharing their financial profile, loan application information, supporting documents, and credit scores for financing eligibility assessment. This consent is optional and can be withdrawn in Account Settings.',
       'OpenAI processing is optional and requires an unchecked, contextual consent choice before each recording or document is submitted. When consent is given, FILSCORE sends the selected audio recording and its contents for transcription and meeting summarization, or the selected document image and its contents for structured data extraction. The backend rejects these requests without current consent and records the consent version, time, provider, and purpose in existing AI governance metadata.',
@@ -115,6 +118,7 @@ export default function PrivacyPage() {
       </p>
 
       <div className="stack-panel">
+        <PrivacyChoicesCard />
         {privacySections.map((section) => (
           <section key={section.title} className="card auth-helper-card">
             <h3>{section.title}</h3>

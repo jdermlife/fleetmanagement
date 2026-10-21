@@ -22,6 +22,7 @@ import {
   prepareAutosavesForLogout,
 } from '../../autosave/useAutosaveDraft'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
+import PrivacyChoicesCard from '../../components/privacy/PrivacyChoicesCard'
 
 type ThemeId = 'classic' | 'civic' | 'philippine-flag'
 
@@ -507,6 +508,8 @@ export default function AccountSettingsPage() {
 
         {preferencesMessage ? <p className="status-message">{preferencesMessage}</p> : null}
       </div>
+
+      <PrivacyChoicesCard />
 
       <div className="card auth-helper-card">
         <h3>Theme Settings</h3>
