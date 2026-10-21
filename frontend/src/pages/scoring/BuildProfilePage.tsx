@@ -310,6 +310,52 @@ function normalizeProfileCollections(profile: ProfileData): ProfileData {
 
   return {
     ...profile,
+    coBorrowers: records(profile.coBorrowers).map((item) => ({
+      id: stringValue(item.id) || createCoBorrower().id,
+      name: stringValue(item.name),
+      relationship: stringValue(item.relationship),
+      employerBusinessName: stringValue(item.employerBusinessName),
+      officeAddress: stringValue(item.officeAddress),
+      occupation: stringValue(item.occupation),
+      position: stringValue(item.position),
+      natureOfWork: stringValue(item.natureOfWork),
+      previousEmployer: stringValue(item.previousEmployer),
+      yearsWithEmployer: stringValue(item.yearsWithEmployer),
+      totalYearsWorking: stringValue(item.totalYearsWorking),
+      monthlyIncome: stringValue(item.monthlyIncome),
+      monthlyExpenses: stringValue(item.monthlyExpenses),
+      otherIncomeSources: stringValue(item.otherIncomeSources),
+      debtObligations: stringValue(item.debtObligations),
+      creditStanding: stringValue(item.creditStanding),
+    })),
+    guarantors: records(profile.guarantors).map((item) => ({
+      id: stringValue(item.id) || createGuarantor().id,
+      name: stringValue(item.name),
+      relationship: stringValue(item.relationship),
+      mobileNumber: stringValue(item.mobileNumber),
+      presentAddress: stringValue(item.presentAddress),
+      employerBusinessName: stringValue(item.employerBusinessName),
+      occupation: stringValue(item.occupation),
+      monthlyIncome: stringValue(item.monthlyIncome),
+      debtObligations: stringValue(item.debtObligations),
+      creditStanding: stringValue(item.creditStanding),
+    })),
+    additionalCollaterals: records(profile.additionalCollaterals).map((item) => ({
+      id: stringValue(item.id) || createAdditionalCollateral().id,
+      collateralType: stringValue(item.collateralType),
+      propertyType: stringValue(item.propertyType),
+      maker: stringValue(item.maker),
+      brand: stringValue(item.brand),
+      model: stringValue(item.model),
+      year: stringValue(item.year),
+      appraisedValue: stringValue(item.appraisedValue),
+      insuranceProviderCompany: stringValue(item.insuranceProviderCompany),
+      policyNumber: stringValue(item.policyNumber),
+      orNumber: stringValue(item.orNumber),
+      crNumber: stringValue(item.crNumber),
+      tctCctNumber: stringValue(item.tctCctNumber),
+      notes: stringValue(item.notes),
+    })),
     realEstateCollaterals: records(profile.realEstateCollaterals).map((item) => ({
       id: stringValue(item.id) || createRealEstateCollateral().id,
       tctCtcNumber: stringValue(item.tctCtcNumber),
@@ -1504,22 +1550,23 @@ export default function BuildProfilePage() {
 
   const renderRelatedPartyField = (
     field: RelatedPartyField,
-    value: string,
+    value: string | undefined,
     onChange: (value: string) => void,
     labelPrefix: string,
   ) => {
     const optional = isOptionalField(field)
+    const normalizedValue = value ?? ''
     return <label key={field.key}>
     {labelPrefix}{field.label}
     {field.type === 'select' ? (
-      <select aria-invalid={optional ? false : !value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
+      <select aria-invalid={optional ? false : !normalizedValue.trim()} value={normalizedValue} onChange={(event) => onChange(event.target.value)}>
         <option value="">Select...</option>
         {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
       </select>
     ) : field.type === 'number' ? (
-      <NumericFormat aria-invalid={optional ? false : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
+      <NumericFormat aria-invalid={optional ? false : !normalizedValue.trim()} value={normalizedValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
     ) : (
-      <input aria-invalid={optional ? false : !value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />
+      <input aria-invalid={optional ? false : !normalizedValue.trim()} type={field.type ?? 'text'} value={normalizedValue} onChange={(event) => onChange(event.target.value)} />
     )}
   </label>
   }
@@ -1718,14 +1765,17 @@ export default function BuildProfilePage() {
     </label>
   }
 
-  const renderCollateralField = (field: CollateralField, value: string, onChange: (value: string) => void, prefix = '') => <label key={field.key} className={field.type === 'textarea' ? 'build-profile-field-wide' : undefined}>
+  const renderCollateralField = (field: CollateralField, value: string | undefined, onChange: (value: string) => void, prefix = '') => {
+    const normalizedValue = value ?? ''
+    return <label key={field.key} className={field.type === 'textarea' ? 'build-profile-field-wide' : undefined}>
     {prefix}{field.label}
-    {field.type === 'select' ? <select aria-invalid={!value.trim()} value={value} onChange={(event) => onChange(event.target.value)}>
+    {field.type === 'select' ? <select aria-invalid={!normalizedValue.trim()} value={normalizedValue} onChange={(event) => onChange(event.target.value)}>
       <option value="">Select...</option>{field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
-    </select> : field.type === 'textarea' ? <textarea aria-invalid={!value.trim()} rows={3} value={value} onChange={(event) => onChange(event.target.value)} />
-      : field.type === 'number' ? <NumericFormat aria-invalid={Number(value) <= 0} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
-        : <input aria-invalid={!value.trim()} type={field.type ?? 'text'} value={value} onChange={(event) => onChange(event.target.value)} />}
+    </select> : field.type === 'textarea' ? <textarea aria-invalid={!normalizedValue.trim()} rows={3} value={normalizedValue} onChange={(event) => onChange(event.target.value)} />
+      : field.type === 'number' ? <NumericFormat aria-invalid={Number(normalizedValue) <= 0} value={normalizedValue} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => onChange(numericValue)} />
+        : <input aria-invalid={!normalizedValue.trim()} type={field.type ?? 'text'} value={normalizedValue} onChange={(event) => onChange(event.target.value)} />}
   </label>
+  }
 
   const renderCurrentStep = () => {
     if (profile.step === 2) {
