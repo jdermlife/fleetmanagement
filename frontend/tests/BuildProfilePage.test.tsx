@@ -1,4 +1,5 @@
 import BuildProfilePage from '../src/pages/scoring/BuildProfilePage'
+import { selectAutomaticCertificate } from '../src/pages/scoring/buildProfileAutomaticCertificates'
 import { calculateFinancialStatementCompletion, withFinancialStatementDefaults } from '../src/pages/scoring/buildProfileFinancialStatement'
 import { NET_WORTH_STATEMENT_ENTRIES } from '../src/pages/scoring/NetWorthPositioningPage'
 import { buildPsychometricAssessment } from '../src/pages/scoring/buildProfilePsychometric'
@@ -67,6 +68,19 @@ it('defaults missing Step 8 and Step 9 amounts to valid zeros without replacing 
   expect(values[`wealthActual.${firstEntry!.id}`]).toBe('2500')
   expect(calculateFinancialStatementCompletion(values)).toBe(100)
   expect(calculateFinancialStatementCompletion(values, 'wealthActual.')).toBe(100)
+})
+
+it('selects each one-time certificate at its completed workflow threshold', () => {
+  const creditCompletion = Object.fromEntries(Array.from({ length: 12 }, (_, index) => [index + 1, index < 7 ? 100 : 0]))
+  expect(selectAutomaticCertificate(creditCompletion, {})).toBe('credit')
+  expect(selectAutomaticCertificate(creditCompletion, { creditReadinessAssessmentShown: 'true' })).toBeNull()
+
+  const wealthCompletion = Object.fromEntries(Array.from({ length: 12 }, (_, index) => [index + 1, 100]))
+  expect(selectAutomaticCertificate(wealthCompletion, {})).toBe('wealth')
+  expect(selectAutomaticCertificate(wealthCompletion, {
+    creditReadinessAssessmentShown: 'true',
+    wealthAssessmentCertificateShown: 'true',
+  })).toBeNull()
 })
 
 const persistedReferenceFraudAndBankingValues: Record<string, string> = {

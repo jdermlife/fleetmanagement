@@ -25,9 +25,11 @@ import FinancialHealthJourneyMenu from '../../components/financial-health/Financ
 import BuildProfileVoiceAssistant from '../../components/profile/BuildProfileVoiceAssistant'
 import SelectedProfileIdCard from '../../components/profile/SelectedProfileIdCard'
 import { useAuthorization } from '../../hooks/useAuthorization'
+import ReportCertificateModal from '../reports/ReportCertificateModal'
 
 import { computeNetWorthBuildingScore } from './netWorthBuildingEngine'
 import { computeAiAdvisories } from './aiAdvisoryEngine'
+import LoanCertificationPage from './LoanCertificationPage'
 import {
   CURRENCY_OPTIONS,
   FINANCIAL_GOAL_OPTIONS as NET_WORTH_FINANCIAL_GOAL_OPTIONS,
@@ -36,6 +38,7 @@ import {
   STEP1_SECTION_SHORT_LABELS,
   type StatementSection,
 } from './NetWorthPositioningPage'
+import NetWorthPositioningPage from './NetWorthPositioningPage'
 
 import {
   CREDIT_VALUES_QUESTIONS,
@@ -45,6 +48,12 @@ import {
   type Step3Field,
   withCreditValuesDefaults,
 } from './buildProfileStep3'
+import {
+  CREDIT_ASSESSMENT_SHOWN_KEY,
+  selectAutomaticCertificate,
+  WEALTH_CERTIFICATE_SHOWN_KEY,
+  type AutomaticCertificate,
+} from './buildProfileAutomaticCertificates'
 import { calculateFinancialStatementCompletion, withFinancialStatementDefaults } from './buildProfileFinancialStatement'
 import { initializeStep9DesiredTargets, STEP_9_EDITED_PREFIX } from './buildProfileStep9'
 import {
@@ -433,6 +442,8 @@ function scorePreparationFingerprint(profile: ProfileData): string {
   const scoreValues = { ...profile.values }
   delete scoreValues.creditHealthScoreOpened
   delete scoreValues.wealthBuildingScoreOpened
+  delete scoreValues[CREDIT_ASSESSMENT_SHOWN_KEY]
+  delete scoreValues[WEALTH_CERTIFICATE_SHOWN_KEY]
 
   return JSON.stringify({
     profileId: profile.profileId,
@@ -1028,6 +1039,7 @@ export default function BuildProfilePage() {
   const [saveMessage, setSaveMessage] = useState('')
   const [isSavingProfile, setIsSavingProfile] = useState(false)
   const [isLoadingProfile, setIsLoadingProfile] = useState(false)
+  const [automaticCertificate, setAutomaticCertificate] = useState<AutomaticCertificate | null>(null)
   const [pendingScorePage, setPendingScorePage] = useState<'creditHealthScoreOpened' | 'wealthBuildingScoreOpened' | null>(null)
   const [scorePreparationStatus, setScorePreparationStatus] = useState<'idle' | 'preparing' | 'ready' | 'error'>('idle')
   const [missingScoreApplicationNo, setMissingScoreApplicationNo] = useState('')
@@ -1419,7 +1431,22 @@ export default function BuildProfilePage() {
     setIsSavingProfile(true)
     setSaveMessage('Saving profile...')
     try {
-      persistProfileSnapshot(profile)
+      const certificate = selectAutomaticCertificate(stepCompletion, profile.values)
+      const profileToSave = certificate
+        ? {
+            ...profile,
+            values: {
+              ...profile.values,
+              ...(certificate === 'wealth' ? { [CREDIT_ASSESSMENT_SHOWN_KEY]: 'true' } : {}),
+              [certificate === 'wealth' ? WEALTH_CERTIFICATE_SHOWN_KEY : CREDIT_ASSESSMENT_SHOWN_KEY]: 'true',
+            },
+          }
+        : profile
+      if (certificate) {
+        setProfile(profileToSave)
+        setAutomaticCertificate(certificate)
+      }
+      persistProfileSnapshot(profileToSave)
       const synchronized = await profileAutosave.saveNow()
       if (!synchronized) {
         setSaveMessage(isAuthenticated
@@ -3019,7 +3046,25 @@ export default function BuildProfilePage() {
     </div>
   }
 
-  return <div className="psychometric-page lending-psychometric-page build-profile-page">
+  return   <div className="psychometric-page lending-psychometric-page build-profile-page">
+  {automaticCertificate === 'credit' ? (
+    <ReportCertificateModal
+      mode="credit"
+      onClose={() => setAutomaticCertificate(null)}
+      title="FILSCORE Credit Readiness Assessment"
+    >
+      <LoanCertificationPage />
+    </ReportCertificateModal>
+  ) : null}
+  {automaticCertificate === 'wealth' ? (
+    <ReportCertificateModal
+      mode="wealth"
+      onClose={() => setAutomaticCertificate(null)}
+      title="FILSCORE Wealth Assessment Certificate"
+    >
+      <NetWorthPositioningPage />
+    </ReportCertificateModal>
+  ) : null}
     <section className="psychometric-hero lending-psychometric-hero psychometric-hero-with-journey-menu">
       <div className="psychometric-hero-copy"><span className="psychometric-eyebrow">Base Setting</span><h1> Profile</h1><p>Build a complete profile across personal, credit, wealth, and suitability information.</p></div>
       <FinancialHealthJourneyMenu className="financial-health-journey-menu-in-hero" />

@@ -170,6 +170,8 @@ export default function LandingPage() {
               people and organizations use financial intelligence with greater clarity and confidence.
               Company  mission is to empower users with actionable insights, transforming complex financial data into clear, strategic decisions.
               Quantech.International Solutions OPC is committed to delivering innovative financial solutions that drive informed decision-making.
+              Quantech.International Solutions head office is located at Level 6, Ayala Triangle Gardens Tower 2, Paseo de Roxas corner Makati Avenue, 
+              Bel Air 1209 City of Makati NCR, Fourth District Philippines.
             </p>
           </div>
         </div>
