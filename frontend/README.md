@@ -90,8 +90,8 @@ Native project locations:
 
 Development Android builds use Google's official test banner and test app ID. For a release build:
 
-1. Set `VITE_ADMOB_ANDROID_BANNER_ID` to the Android banner ad unit ID before running `npm run mobile:sync`.
-2. Set `ADMOB_APP_ID` to the Android AdMob app ID before building the app in Android Studio or Gradle.
+1. The production banner ad unit is configured as `ca-app-pub-2001944410031596/5270129152`. Set `VITE_ADMOB_ANDROID_BANNER_ID` before running `npm run mobile:sync` only when a deployment needs to override it.
+2. The Android AdMob app ID is configured as `ca-app-pub-2001944410031596~5389380784` in `android/gradle.properties` and is injected into the app manifest at build time.
 
 The banner appears at the bottom of the Android app after consent permits ad requests. It is not enabled on web or iOS.
 

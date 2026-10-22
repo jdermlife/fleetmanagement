@@ -9,6 +9,7 @@ import {
 import { Capacitor } from '@capacitor/core'
 
 const ANDROID_TEST_BANNER_ID = 'ca-app-pub-3940256099942544/6300978111'
+const ANDROID_PRODUCTION_BANNER_ID = 'ca-app-pub-2001944410031596/5270129152'
 const PRIVACY_OPTIONS_REQUIRED = 'REQUIRED'
 
 let latestConsentInfo: AdmobConsentInfo | null = null
@@ -42,7 +43,10 @@ const getAndroidBannerConfig = () => {
   }
 
   const adId = import.meta.env.VITE_ADMOB_ANDROID_BANNER_ID?.trim()
-  return adId ? { adId, isTesting: false } : null
+  return {
+    adId: adId || ANDROID_PRODUCTION_BANNER_ID,
+    isTesting: false,
+  }
 }
 
 export const initializeNativeAds = async () => {
@@ -51,10 +55,6 @@ export const initializeNativeAds = async () => {
   }
 
   const bannerConfig = getAndroidBannerConfig()
-  if (!bannerConfig) {
-    console.warn('[AdMob] VITE_ADMOB_ANDROID_BANNER_ID is not configured; banner disabled.')
-    return
-  }
 
   let consentInfo = await requestConsentInfo()
   if (consentInfo.isConsentFormAvailable && consentInfo.status === AdmobConsentStatus.REQUIRED) {
