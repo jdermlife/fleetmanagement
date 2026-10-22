@@ -15,7 +15,7 @@ export type FinancialHealthGroupRing = {
   radius: number
 }
 
-export const DEFAULT_WEALTH_HEALTH_SCORE = 79
+export const DEFAULT_WEALTH_HEALTH_SCORE = 93
 
 export function buildFinancialHealthIndicators(
   wealthScore = DEFAULT_WEALTH_HEALTH_SCORE,
@@ -64,7 +64,7 @@ export function buildFinancialHealthIndicators(
     {
       id: 'protection',
       label: 'Protection Health',
-      score: 76,
+      score: 91,
       weight: 10,
       accent: '#e85d5d',
       softAccent: '#fdecec',
@@ -72,7 +72,7 @@ export function buildFinancialHealthIndicators(
     {
       id: 'investment',
       label: 'Investment Health',
-      score: 71,
+      score: 81,
       weight: 11,
       accent: '#0a84ff',
       softAccent: '#e8f3ff',
@@ -80,7 +80,7 @@ export function buildFinancialHealthIndicators(
     {
       id: 'goal',
       label: 'Goal Health',
-      score: 82,
+      score: 86,
       weight: 15,
       accent: '#d94b7d',
       softAccent: '#fcebf1',
