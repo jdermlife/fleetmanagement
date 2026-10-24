@@ -11408,6 +11408,14 @@ th { color: var(--dark-gold); }
   accent-color: #1d4ed8;
 }
 
+.build-profile-suitability-table td.build-profile-suitability-default-answer {
+  background: #f1f5f9;
+}
+
+.build-profile-suitability-default-answer input {
+  accent-color: #94a3b8;
+}
+
 .build-profile-suitability-summary {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }

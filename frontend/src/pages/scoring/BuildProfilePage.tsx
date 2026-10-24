@@ -254,12 +254,16 @@ const SUITABILITY_RESULT_BANDS = [
   { min: 28, max: Number.POSITIVE_INFINITY, profile: 'Aggressive', description: 'Client accepts higher volatility and capital risk for stronger long-term growth.', recommendedProduct: 'Fixed Income, Equities, and High Yield Securities' },
 ]
 
+function withSuitabilityAnswerDefaults(answers: Record<string, string> = {}): Record<string, string> {
+  return Object.fromEntries(SUITABILITY_QUESTIONS.map((question) => [question.key, answers[question.key] || '1']))
+}
+
 function createProfileId(): string {
   return `PRO-${Math.random().toString(36).slice(2, 8).toUpperCase()}`
 }
 
 function createEmptyProfile(): ProfileData {
-  return { profileId: createProfileId(), step: 1, values: synchronizeFinancialGoalPurpose({}), documents: [], suitabilityAnswers: {}, coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
+  return { profileId: createProfileId(), step: 1, values: synchronizeFinancialGoalPurpose({}), documents: [], suitabilityAnswers: withSuitabilityAnswerDefaults(), coBorrowers: [], guarantors: [], additionalCollaterals: [], realEstateCollaterals: [], financialInstrumentCollaterals: [], additionalLoans: [], propertyDeclarations: [], step3FinancialInvestments: [], financialInvestments: [], dependents: [] }
 }
 
 function synchronizeFinancialGoalPurpose(values: Record<string, string>): Record<string, string> {
@@ -319,6 +323,7 @@ function normalizeProfileCollections(profile: ProfileData): ProfileData {
 
   return {
     ...profile,
+    suitabilityAnswers: withSuitabilityAnswerDefaults(profile.suitabilityAnswers),
     coBorrowers: records(profile.coBorrowers).map((item) => ({
       id: stringValue(item.id) || createCoBorrower().id,
       name: stringValue(item.name),
@@ -2977,7 +2982,8 @@ export default function BuildProfilePage() {
                 <td data-label="Question"><strong>{question.prompt}</strong></td>
                 {question.options.map((option, index) => {
                   const scoreValue = String(index + 1)
-                  return <td key={option} data-label={`Option ${scoreValue}`}><label><input aria-invalid={!profile.suitabilityAnswers[question.key]} type="radio" name={question.key} checked={profile.suitabilityAnswers[question.key] === scoreValue} aria-label={`${question.prompt} option ${scoreValue}`} onChange={() => setProfile((current) => ({ ...current, suitabilityAnswers: { ...current.suitabilityAnswers, [question.key]: scoreValue } }))} /><small>{option}</small></label></td>
+                  const isDefaultAnswer = scoreValue === '1' && profile.suitabilityAnswers[question.key] === scoreValue
+                  return <td key={option} data-label={`Option ${scoreValue}`} className={isDefaultAnswer ? 'build-profile-suitability-default-answer' : undefined}><label><input aria-invalid={!profile.suitabilityAnswers[question.key]} type="radio" name={question.key} checked={profile.suitabilityAnswers[question.key] === scoreValue} aria-label={`${question.prompt} option ${scoreValue}`} onChange={() => setProfile((current) => ({ ...current, suitabilityAnswers: { ...current.suitabilityAnswers, [question.key]: scoreValue } }))} /><small>{option}</small></label></td>
                 })}
               </tr>)}
             </tbody>
