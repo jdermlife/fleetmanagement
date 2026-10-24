@@ -1631,6 +1631,18 @@ describe('BuildProfilePage', () => {
     const user = userEvent.setup()
     render(<BuildProfilePage />)
 
+    await user.click(screen.getByRole('button', { name: /Actual vs Desired \/ Target/ }))
+    expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Desired / Target' })).toBeTruthy()
+    expect(screen.getByText('100% complete')).toBeTruthy()
+    const defaultFinancialComparison = screen.getByText('Actual / Current vs Desired / Target Personal Income and Expenses', { selector: 'summary' }).closest('details')!
+    await user.click(within(defaultFinancialComparison).getByText('Actual / Current vs Desired / Target Personal Income and Expenses', { selector: 'summary' }))
+    const defaultActualIncome = defaultFinancialComparison.querySelector('.build-profile-comparison-actual')!
+    const defaultTargetIncome = defaultFinancialComparison.querySelector('.build-profile-comparison-target')!
+    const defaultIncomeVariance = defaultFinancialComparison.querySelector('.build-profile-comparison-variance')!
+    expect(within(within(defaultActualIncome).getByText('Salary').parentElement!).getByText('₱0.00')).toBeTruthy()
+    expect(within(within(defaultTargetIncome).getByText('Salary').parentElement!).getByText('₱0.00')).toBeTruthy()
+    expect(within(within(defaultIncomeVariance).getByText('Salary').parentElement!).getByText('₱0.00')).toBeTruthy()
+
     await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
     await user.clear(screen.getByLabelText('Cash on Hand setup amount'))
