@@ -2797,17 +2797,13 @@ export default function BuildProfilePage() {
           <h6>{title}</h6>
           {rows.length > 0 ? rows.map((entry) => <label key={entry.id} className="build-profile-net-worth-line build-profile-comparison-input-line">
             <span>{entry.label}</span>
-            {mode === 'variance' ? <strong>{entry.hasActual && entry.hasTarget ? formatSignedVariance(entry.variance) : 'Pending'}</strong> : <NumericFormat
-              aria-label={`${entry.label} ${mode} input`}
-              aria-invalid={mode === 'target' ? !entry.hasTarget : !entry.hasActual}
-              value={mode === 'target' ? entry.rawTarget : entry.rawActual}
-              valueIsNumericString
-              thousandSeparator="," decimalScale={2} fixedDecimalScale
-              inputMode="decimal"
-              allowNegative={false}
-              placeholder="0.00"
-              onValueChange={({ value }) => mode === 'target' ? updateDesiredWealthValue(entry.id, value) : updateValue(entry.id, value)}
-            />}
+            {mode === 'variance'
+              ? <strong>{entry.hasActual && entry.hasTarget ? formatSignedVariance(entry.variance) : 'Pending'}</strong>
+              : <output aria-label={`${entry.label} ${mode} auto-computed value`}>
+                  {(mode === 'target' ? entry.hasTarget : entry.hasActual)
+                    ? formatVarianceCurrency(mode === 'target' ? entry.targetAmount : entry.actualAmount)
+                    : 'Pending'}
+                </output>}
           </label>) : <div className="build-profile-net-worth-line build-profile-net-worth-empty"><span>No saved amounts</span><strong>{formatVarianceCurrency(0)}</strong></div>}
           <div className="build-profile-net-worth-line build-profile-net-worth-subtotal"><span>Total {title}</span><strong>{mode === 'variance' ? formatSignedVariance(statementTotal(rows, valueFor)) : formatVarianceCurrency(statementTotal(rows, valueFor))}</strong></div>
         </section>
@@ -2838,7 +2834,7 @@ export default function BuildProfilePage() {
 
       return <div className="build-profile-step-content build-profile-step-ten">
         <h3>Step 10: Actual vs Desired / Target</h3>
-        <p className="psychometric-section-note">The first column is Step 8 Actual / Current. The second column is Step 9 Desired / Target. Variance is Desired / Target less Actual / Current.</p>
+        <p className="psychometric-section-note">The first column is auto-computed from Step 8 Actual / Current. The second column is auto-computed from Step 9 Desired / Target. Variance is automatically calculated as Desired / Target less Actual / Current.</p>
 
         {targetRows.length > 0 ? <p className="psychometric-section-note">
           {completedActuals === targetRows.length
@@ -2873,7 +2869,7 @@ export default function BuildProfilePage() {
                   const noteKey = `wealthVarianceNote.${entry.id}`
                   return <tr key={entry.id}>
                     <td data-label="Actual / Current (Step 8)"><strong>{entry.label}</strong><div>{STEP1_SECTION_SHORT_LABELS[entry.section]}</div><div>{entry.category}</div><div>{entry.hasActual ? formatVarianceCurrency(entry.actualAmount) : 'Pending actual'}</div></td>
-                    <td data-label="Desired / Target (Step 9)"><NumericFormat aria-invalid={!entry.hasTarget} value={entry.rawTarget} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} placeholder="Enter desired target" aria-label={`${entry.label} target value`} onValueChange={({ value }) => updateDesiredWealthValue(entry.id, value)} /></td>
+                    <td data-label="Desired / Target (Step 9)"><output aria-label={`${entry.label} target auto-computed value`}>{entry.hasTarget ? formatVarianceCurrency(entry.targetAmount) : 'Pending target'}</output></td>
                     <td data-label="Variance (Target less Actual)">{entry.hasActual && entry.hasTarget ? formatSignedVariance(entry.variance) : 'Pending input'}</td>
                     <td data-label="Variance Explanation"><small className="build-profile-variance-copy">{entry.hasActual && entry.hasTarget ? (profile.values[noteKey]?.trim() || varianceExplanation(entry.section, entry.variance)) : 'Awaiting actual and target values.'}</small>{entry.hasActual && entry.hasTarget ? <input type="text" value={profile.values[noteKey] ?? ''} placeholder="Optional explanation" aria-label={`${entry.label} variance explanation`} onChange={(event) => updateValue(noteKey, event.target.value)} /> : null}</td>
                   </tr>

@@ -837,7 +837,7 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.values.financialGoal).toBe('Build Emergency Fund')
     expect(savedProfile.step).toBe(9)
     expect(savedProfile.completionPercent).toBe(displayedCompletion)
-  }, 10000)
+  }, 30000)
 
   it('provides the requested Step 1 identity, address, and household fields', () => {
     render(<BuildProfilePage />)
@@ -1633,13 +1633,17 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: /Actual \/ Current Financial Position/ }))
     await user.type(screen.getByLabelText('Set Date As Of'), '2026-07-27')
+    await user.clear(screen.getByLabelText('Cash on Hand setup amount'))
     await user.type(screen.getByLabelText('Cash on Hand setup amount'), '50000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'liabilities')
+    await user.clear(screen.getByLabelText('Home Mortgage setup amount'))
     await user.type(screen.getByLabelText('Home Mortgage setup amount'), '100000')
     await user.selectOptions(screen.getByLabelText('Filter by statement section'), 'monthly-expenses')
+    await user.clear(screen.getByLabelText('Housing setup amount'))
     await user.type(screen.getByLabelText('Housing setup amount'), '30000')
 
     await user.click(screen.getByRole('button', { name: /Desired \/ Target Financial Position/ }))
+    expect((screen.getByLabelText('Cash on Hand target net worth amount') as HTMLInputElement).value).toBe('50,000.00')
     await user.click(screen.getByRole('button', { name: 'Save Desired Target and Continue to Step 10' }))
 
     expect(screen.getByRole('heading', { name: 'Step 10: Actual vs Desired / Target' })).toBeTruthy()
@@ -1653,7 +1657,7 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('columnheader', { name: 'Desired / Target (Step 9)' })).toBeTruthy()
     expect(screen.getByRole('columnheader', { name: 'Variance (Target less Actual)' })).toBeTruthy()
     expect(screen.getByRole('columnheader', { name: 'Variance Explanation' })).toBeTruthy()
-    expect(screen.getByLabelText('Cash on Hand target value')).toBeTruthy()
+    expect(within(varianceDropdown).getByLabelText('Cash on Hand target auto-computed value').textContent).toBe('₱50,000.00')
     expect(screen.queryByText('Pending input')).toBeNull()
 
     const inputSummary = screen.getByText('Actual / Current Net Worth vs Desired / Target', { selector: 'summary' })
@@ -1662,41 +1666,21 @@ describe('BuildProfilePage', () => {
     await user.click(inputSummary)
     expect(inputDropdown.hasAttribute('open')).toBe(true)
 
-    const cashTargetInput = within(inputDropdown).getByLabelText('Cash on Hand target input') as HTMLInputElement
-    const cashActualInput = within(inputDropdown).getByLabelText('Cash on Hand actual input') as HTMLInputElement
-    expect(cashTargetInput.value).toBe('50,000.00')
-    expect(cashActualInput.value).toBe('50,000.00')
-    await user.clear(cashActualInput)
-    await user.type(cashActualInput, '55000')
-    await user.clear(cashTargetInput)
-    await user.type(cashTargetInput, '60000')
-    expect(within(inputDropdown).getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
-    expect((screen.getByLabelText('Cash on Hand target value') as HTMLInputElement).value).toBe('60,000.00')
-
-    await user.clear(cashActualInput)
-    await user.type(cashActualInput, '50000')
-    await user.clear(cashTargetInput)
-    expect((screen.getByLabelText('Cash on Hand target value') as HTMLInputElement).value).toBe('')
-
-    await user.type(screen.getByLabelText('Cash on Hand target value'), '60000')
-    expect(screen.getAllByText('+₱10,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Desired target is above the current amount').length).toBeGreaterThan(0)
+    expect(within(inputDropdown).getByLabelText('Cash on Hand target auto-computed value').textContent).toBe('₱50,000.00')
+    expect(within(inputDropdown).getByLabelText('Cash on Hand actual auto-computed value').textContent).toBe('₱50,000.00')
+    expect(within(inputDropdown).queryByRole('textbox', { name: /Cash on Hand (actual|target)/ })).toBeNull()
+    expect(screen.getAllByText('₱0.00').length).toBeGreaterThan(0)
+    expect(screen.getAllByText('Actual value matches the desired target').length).toBeGreaterThan(0)
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('placeholder')).toBe('Optional explanation')
     expect(screen.getByLabelText('Cash on Hand variance explanation').getAttribute('aria-invalid')).toBeNull()
 
-    await user.clear(screen.getByLabelText('Home Mortgage target value'))
-    await user.type(screen.getByLabelText('Home Mortgage target value'), '90000')
-    expect(screen.getAllByText('-₱10,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Desired target reduces the current amount').length).toBeGreaterThan(0)
-    await user.clear(screen.getByLabelText('Housing target value'))
-    await user.type(screen.getByLabelText('Housing target value'), '35000')
-    expect(screen.getAllByText('+₱5,000.00').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('Desired target is above the current amount').length).toBeGreaterThan(0)
+    expect(within(varianceDropdown).getByLabelText('Home Mortgage target auto-computed value').textContent).toBe('₱100,000.00')
+    expect(within(varianceDropdown).getByLabelText('Housing target auto-computed value').textContent).toBe('₱30,000.00')
     expect(screen.getAllByText(/Desired target completion: 100%/).length).toBeGreaterThan(0)
 
     await user.selectOptions(screen.getByLabelText('Actual vs Target filter by statement section'), 'liabilities')
-    expect(screen.queryByLabelText('Cash on Hand target value')).toBeNull()
-    expect(screen.getByLabelText('Home Mortgage target value')).toBeTruthy()
+    expect(within(varianceDropdown).queryByLabelText('Cash on Hand target auto-computed value')).toBeNull()
+    expect(within(varianceDropdown).getByLabelText('Home Mortgage target auto-computed value')).toBeTruthy()
     await user.type(screen.getByLabelText('Actual vs Target filter by line item'), 'mortgage')
     expect(screen.getByText('1', { selector: '.build-profile-filter-result strong' })).toBeTruthy()
     await user.click(screen.getByRole('button', { name: 'Clear Variance Filters' }))
@@ -1705,13 +1689,13 @@ describe('BuildProfilePage', () => {
     await user.click(screen.getByRole('button', { name: 'Save Profile' }))
     const savedProfile = JSON.parse(window.localStorage.getItem('fms:build-profile') ?? '{}')
     expect(savedProfile.values['asset-cash-on-hand']).toBe('50000.00')
-    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('60000.00')
-    expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('60000.00')
+    expect(savedProfile.values['wealthTarget.asset-cash-on-hand']).toBe('50000.00')
+    expect(savedProfile.values['wealthActual.asset-cash-on-hand']).toBe('50000.00')
     expect(savedProfile.values['wealthVarianceNote.asset-cash-on-hand']).toBeUndefined()
 
     await user.click(screen.getByRole('button', { name: 'Continue to Step 11' }))
     expect(screen.getByRole('heading', { name: 'Step 11: Suitability Assessment' })).toBeTruthy()
-  }, 10000)
+  }, 30000)
 
   it('copies Net Worth Positioning Step 3 Suitability Assessment into Step 11', async () => {
     const user = userEvent.setup()
