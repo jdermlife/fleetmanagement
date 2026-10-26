@@ -247,8 +247,50 @@ export const CREDIT_VALUES_SECTIONS: CreditValuesSection[] = [
 export const STEP_3_FIELDS = STEP_3_SECTIONS.flatMap((section) => section.fields)
 export const CREDIT_VALUES_QUESTIONS = CREDIT_VALUES_SECTIONS.flatMap((section) => section.questions)
 
+export const STEP_3_DEFAULT_VALUES: Readonly<Record<string, string>> = {
+  lifestyleIndicator: 'Respectable lifestyle (no gambling, drinking, etc.)',
+  secondaryIncomeProfile: 'No secondary income',
+  communityReputation: 'Good references',
+  professionalOrganizationMemberships: 'NA',
+  professionalLicenses: '00001',
+  communityInvolvementInformation: 'NA',
+  facebookProfile: 'Input here',
+  instagramProfile: 'NA',
+  xProfile: 'NA',
+  tikTokProfile: 'NA',
+  linkedInProfile: 'NA',
+  otherSocialMediaLinks: 'NA',
+  consentOpenBankingDataAccess: 'true',
+  consentIdentityVerification: 'true',
+  consentEmploymentVerification: 'true',
+  faceMatchScore: '100',
+  livenessDetection: 'Passed',
+  incomeDocumentsStatus: 'Verified',
+  employmentVerificationStatus: 'Verified',
+  bankStatementVerificationStatus: 'Matches application',
+  ocrAnalysisStatus: 'No signs of tampering',
+  payrollVerificationStatus: 'Verified',
+  bankAccountOwnershipStatus: 'Verified',
+  deviceReputation: 'Trusted',
+  deviceConsistency: 'Same device',
+  ipAddressRisk: 'Normal',
+  watchlistStatus: 'Clear',
+  previousFraudRecords: 'None',
+  applicationVelocity: 'Normal',
+  fakeNationalId: 'false',
+  forgedPayslip: 'false',
+  forgedBankStatement: 'false',
+  identityTheftIndicator: 'false',
+  sanctionsPepMatch: 'false',
+  fraudAndDocumentAuthenticityAttestation: 'true',
+}
+
+export function isStep3DefaultValue(key: string, value: string): boolean {
+  return STEP_3_DEFAULT_VALUES[key] === value
+}
+
 export function withCreditValuesDefaults(values: Record<string, string>): Record<string, string> {
-  const initializedValues = { ...values }
+  const initializedValues = { ...STEP_3_DEFAULT_VALUES, ...values }
 
   for (const question of CREDIT_VALUES_QUESTIONS) {
     const key = `creditValues.${question.field}`

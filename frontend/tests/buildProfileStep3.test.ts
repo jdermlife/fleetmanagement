@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest'
 
 import {
   CREDIT_VALUES_QUESTIONS,
+  STEP_3_DEFAULT_VALUES,
+  isStep3DefaultValue,
   withCreditValuesDefaults,
 } from '../src/pages/scoring/buildProfileStep3'
 
@@ -29,5 +31,35 @@ describe('withCreditValuesDefaults', () => {
       CREDIT_VALUES_QUESTIONS[1].options[CREDIT_VALUES_QUESTIONS[1].options.length - 1],
     )
     expect(values.unrelatedField).toBe('preserved')
+  })
+
+  it('adds the requested Step 3 defaults without replacing saved values', () => {
+    const values = withCreditValuesDefaults({
+      communityReputation: 'Excellent references',
+      facebookProfile: 'saved.example/profile',
+    })
+
+    expect(values).toMatchObject({
+      lifestyleIndicator: 'Respectable lifestyle (no gambling, drinking, etc.)',
+      secondaryIncomeProfile: 'No secondary income',
+      communityReputation: 'Excellent references',
+      professionalOrganizationMemberships: 'NA',
+      professionalLicenses: '00001',
+      facebookProfile: 'saved.example/profile',
+      instagramProfile: 'NA',
+      consentOpenBankingDataAccess: 'true',
+      consentEmploymentVerification: 'true',
+      consentIdentityVerification: 'true',
+      faceMatchScore: '100',
+      livenessDetection: 'Passed',
+      bankStatementVerificationStatus: 'Matches application',
+      deviceReputation: 'Trusted',
+      fakeNationalId: 'false',
+      sanctionsPepMatch: 'false',
+      fraudAndDocumentAuthenticityAttestation: 'true',
+    })
+    expect(Object.keys(STEP_3_DEFAULT_VALUES)).toHaveLength(35)
+    expect(isStep3DefaultValue('professionalLicenses', '00001')).toBe(true)
+    expect(isStep3DefaultValue('professionalLicenses', 'PRC-123')).toBe(false)
   })
 })

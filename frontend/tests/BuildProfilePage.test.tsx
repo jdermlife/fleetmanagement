@@ -914,9 +914,26 @@ describe('BuildProfilePage', () => {
     expect(screen.getByLabelText('Consent for Open Banking Data Access')).toBeTruthy()
     expect(screen.getByLabelText('Face Match Score (%)')).toBeTruthy()
     expect(screen.getByLabelText('Watchlist Screening')).toBeTruthy()
-    expect(screen.getByText('Completion: 0/50 questions answered.')).toBeTruthy()
+    expect(screen.getByRole('combobox', { name: 'Lifestyle' })).toHaveProperty('value', 'Respectable lifestyle (no gambling, drinking, etc.)')
+    expect(screen.getByRole('combobox', { name: 'Secondary Source of Income' })).toHaveProperty('value', 'No secondary income')
+    expect(screen.getByRole('combobox', { name: 'Community Reputation' })).toHaveProperty('value', 'Good references')
+    expect(screen.getByLabelText('Professional Organization Memberships')).toHaveProperty('value', 'NA')
+    expect(screen.getByLabelText('Professional Licenses')).toHaveProperty('value', '00001')
+    expect(screen.getByLabelText('Facebook Profile Links')).toHaveProperty('value', 'Input here')
+    expect(screen.getByLabelText('Instagram Profile Links')).toHaveProperty('value', 'NA')
+    expect(screen.getByLabelText('Face Match Score (%)')).toHaveProperty('value', '100')
+    expect(screen.getByRole('combobox', { name: 'Liveness Detection' })).toHaveProperty('value', 'Passed')
+    expect(screen.getByRole('combobox', { name: 'Device Reputation' })).toHaveProperty('value', 'Trusted')
+    expect(screen.getByLabelText('Consent for Open Banking Data Access')).toHaveProperty('checked', true)
+    expect(screen.getByLabelText('Consent for Employment Verification')).toHaveProperty('checked', true)
+    expect(screen.getByLabelText('Consent for Identity Verification')).toHaveProperty('checked', true)
+    expect(screen.getByRole('combobox', { name: 'Lifestyle' }).classList.contains('build-profile-step3-default-value')).toBe(true)
+    expect(screen.getByLabelText('Professional Licenses').classList.contains('build-profile-step3-default-value')).toBe(true)
+    expect(within(screen.getByRole('group', { name: 'Fake National ID' })).getByRole('checkbox', { name: 'No' })).toHaveProperty('checked', true)
+    expect(within(screen.getByRole('group', { name: /I confirm that my profile has no record/ })).getByRole('checkbox', { name: 'Yes' })).toHaveProperty('checked', true)
+    expect(screen.getByText('Completion: 50/50 questions answered.')).toBeTruthy()
     expect(screen.getAllByLabelText(/^\d+\. /)).toHaveLength(50)
-  })
+  }, 30000)
 
   it('excludes optional Step 3 fraud and social dates while requiring an attestation response', async () => {
     const user = userEvent.setup()
@@ -924,25 +941,28 @@ describe('BuildProfilePage', () => {
 
     await user.click(screen.getByRole('button', { name: /Source of Income & Wealth and Credit Values/ }))
 
-    expect(screen.getByLabelText('Employer / Business Name (Optional)').getAttribute('aria-invalid')).toBe('false')
+    expect(screen.getByLabelText(/^Employer \/ Business Name \(Optional/).getAttribute('aria-invalid')).toBe('false')
     expect(screen.getByLabelText('Employment Location(Optional)').getAttribute('aria-invalid')).toBe('false')
 
     const optionalSocialDateFields = [
-      'Facebook Profile Date Opened',
-      'Instagram Profile Date Opened',
-      'X / Twitter Profile Date Opened',
-      'TikTok Profile Date Opened',
-      'LinkedIn Profile Date Opened',
+      'Facebook Profile Date Opened (Date today if None)',
+      'Instagram Profile Date Opened (Date today if None)',
+      'X / Twitter Profile Date Opened (Date today if None)',
+      'TikTok Profile Date Opened (Date today if None)',
+      'LinkedIn Profile Date Opened (Date today if None)',
     ]
     optionalSocialDateFields.forEach((label) => expect(screen.getByLabelText(label).getAttribute('aria-invalid')).toBe('false'))
     for (const label of optionalSocialDateFields) await user.type(screen.getByLabelText(label), '2020-01-01')
     const identityTheftGroup = screen.getByRole('group', { name: 'Identity Theft Indicator' })
     expect(identityTheftGroup.getAttribute('aria-invalid')).toBe('false')
+    const stepButton = screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ })
+    const completionBeforeIdentityTheftChange = stepButton.getAttribute('aria-label')
     await user.click(within(identityTheftGroup).getByRole('checkbox', { name: 'Yes' }))
-    expect(screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values, 0% information provided/ })).toBeTruthy()
+    expect(stepButton.getAttribute('aria-label')).toBe(completionBeforeIdentityTheftChange)
 
     const attestationGroup = screen.getByRole('group', { name: /I confirm that my profile has no record of fraudulent events or acts/ })
-    expect(attestationGroup.getAttribute('aria-invalid')).toBe('true')
+    expect(attestationGroup.getAttribute('aria-invalid')).toBe('false')
+    expect(within(attestationGroup).getByRole('checkbox', { name: 'Yes' })).toHaveProperty('checked', true)
     await user.click(within(attestationGroup).getByRole('checkbox', { name: 'No' }))
     expect(attestationGroup.getAttribute('aria-invalid')).toBe('false')
   })
@@ -958,12 +978,13 @@ describe('BuildProfilePage', () => {
     const no = within(fakeNationalIdGroup).getByRole('checkbox', { name: 'No' })
     const stepButton = screen.getByRole('button', { name: /Step 3: Source of Income & Wealth and Credit Values/ })
 
-    expect(stepButton.getAttribute('aria-label')).toContain('0% information provided')
+    const defaultCompletion = stepButton.getAttribute('aria-label')
+    expect(no).toHaveProperty('checked', true)
     await user.click(yes)
     const yesCompletion = stepButton.getAttribute('aria-label')
     expect(yes).toHaveProperty('checked', true)
     expect(no).toHaveProperty('checked', false)
-    expect(yesCompletion).not.toContain('0% information provided')
+    expect(yesCompletion).toBe(defaultCompletion)
 
     await user.click(no)
     expect(yes).toHaveProperty('checked', false)

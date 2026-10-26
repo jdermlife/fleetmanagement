@@ -45,6 +45,7 @@ import {
   CREDIT_VALUES_SECTIONS,
   STEP_3_FIELDS,
   STEP_3_SECTIONS,
+  isStep3DefaultValue,
   type Step3Field,
   withCreditValuesDefaults,
 } from './buildProfileStep3'
@@ -1633,6 +1634,7 @@ export default function BuildProfilePage() {
       ? String(Number(profile.values.monthlyIncome || 0) + Number(profile.values.otherIncome || 0))
       : profile.values[field.key] ?? ''
     const optional = isOptionalField(field) || field.countsTowardCompletion === false
+    const defaultClassName = isStep3DefaultValue(field.key, value) ? 'build-profile-step3-default-value' : undefined
 
     if (field.key === 'additionalPropertyDeclarations') {
       return <div key={field.key} className="build-profile-declaration-box build-profile-field-wide">
@@ -1681,7 +1683,7 @@ export default function BuildProfilePage() {
 
     if (field.type === 'checkbox') {
       if (field.yesNoChoice) {
-        return <fieldset key={field.key} className="build-profile-yes-no-field" aria-invalid={optional ? false : value !== 'true' && value !== 'false'}>
+        return <fieldset key={field.key} className={`build-profile-yes-no-field${defaultClassName ? ` ${defaultClassName}` : ''}`} aria-invalid={optional ? false : value !== 'true' && value !== 'false'}>
           <legend>{field.label}</legend>
           <div>
             {(['true', 'false'] as const).map((option) => {
@@ -1695,7 +1697,7 @@ export default function BuildProfilePage() {
         </fieldset>
       }
       const className = `build-profile-checkbox-field${field.mustBeChecked ? ' build-profile-checkbox-field-required' : ''}`
-      return <label key={field.key} className={className}>
+      return <label key={field.key} className={`${className}${defaultClassName ? ` ${defaultClassName}` : ''}`}>
         <input aria-invalid={optional ? false : field.mustBeChecked ? value !== 'true' : profile.values[field.key] === undefined} type="checkbox" checked={value === 'true'} onChange={(event) => updateValue(field.key, String(event.target.checked))} />
         <span>{field.label}</span>
       </label>
@@ -1704,16 +1706,16 @@ export default function BuildProfilePage() {
     return <label key={field.key}>
       {field.label}
       {field.type === 'select' ? (
-        <select aria-invalid={optional ? false : !value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
+        <select className={defaultClassName} aria-invalid={optional ? false : !value.trim()} value={value} onChange={(event) => updateValue(field.key, event.target.value)}>
           <option value="">Select...</option>
           {field.options?.map((option) => <option key={option} value={option}>{option}</option>)}
         </select>
       ) : field.type === 'textarea' ? (
-        <textarea aria-invalid={optional ? false : !value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <textarea className={defaultClassName} aria-invalid={optional ? false : !value.trim()} rows={3} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       ) : field.type === 'number' && BUILD_PROFILE_AMOUNT_KEYS.has(field.key) ? (
         <NumericFormat aria-invalid={optional ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} readOnly={field.readOnly} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
       ) : (
-        <input aria-invalid={optional ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input className={defaultClassName} aria-invalid={optional ? false : field.key === 'grossMonthlyIncome' ? Number(value) <= 0 : !value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} readOnly={field.readOnly} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }

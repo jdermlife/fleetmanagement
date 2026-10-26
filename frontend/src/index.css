@@ -10116,6 +10116,16 @@ th { color: var(--dark-gold); }
   background: #ffffff;
 }
 
+.build-profile-form-grid .build-profile-step3-default-value,
+.build-profile-step3-default-value,
+.build-profile-step3-default-value legend {
+  color: #94a3b8;
+}
+
+.build-profile-step3-default-value input {
+  accent-color: #94a3b8;
+}
+
 .build-profile-declaration-box {
   min-width: 0;
   padding: 16px;
