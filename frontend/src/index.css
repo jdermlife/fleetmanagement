@@ -10122,6 +10122,10 @@ th { color: var(--dark-gold); }
   color: #94a3b8;
 }
 
+.build-profile-form-grid .build-profile-step5-default-value {
+  color: #94a3b8;
+}
+
 .build-profile-step3-default-value input {
   accent-color: #94a3b8;
 }

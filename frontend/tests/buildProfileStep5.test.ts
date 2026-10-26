@@ -17,6 +17,7 @@ describe('withHistoricalAssessmentDefaults', () => {
       expect(values[field.key]).toBe(field.options?.[0])
     }
     expect(values.creditBureauCreditLimitUtilization).toBeUndefined()
+    expect(values.step89DetailedFinancialPosition).toBe('0')
   })
 
   it('preserves existing selections and defaults blank selections', () => {
@@ -31,5 +32,13 @@ describe('withHistoricalAssessmentDefaults', () => {
       selectableFields.find((field) => field.key === 'creditBureauDelinquencyDefaultHistory')?.options?.[0],
     )
     expect(values.unrelatedField).toBe('preserved')
+  })
+
+  it('preserves a saved Step 8 and 9 detailed financial position value', () => {
+    const values = withHistoricalAssessmentDefaults({
+      step89DetailedFinancialPosition: '125000',
+    })
+
+    expect(values.step89DetailedFinancialPosition).toBe('125000')
   })
 })

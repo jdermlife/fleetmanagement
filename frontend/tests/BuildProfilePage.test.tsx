@@ -1011,6 +1011,8 @@ describe('BuildProfilePage', () => {
 
       expect(yes.getAttribute('type')).toBe('checkbox')
       expect(no.getAttribute('type')).toBe('checkbox')
+      expect(yes).toHaveProperty('checked', false)
+      expect(no).toHaveProperty('checked', true)
     }
   })
 
@@ -1180,7 +1182,6 @@ describe('BuildProfilePage', () => {
     expect(screen.getByRole('group', { name: 'Self-Declared Portfolio' })).toBeTruthy()
     expect(screen.getByLabelText('Asset Type')).toBeTruthy()
     expect(screen.getByLabelText('Total Amount')).toBeTruthy()
-
     await user.type(screen.getByLabelText('Bank / Branch'), 'Makati Main Branch')
     await user.type(screen.getByLabelText('Account Number'), '1234567890')
     await user.type(screen.getByLabelText('Credit Limit'), '100000')
@@ -1211,6 +1212,17 @@ describe('BuildProfilePage', () => {
     expect(savedProfile.values.portfolioTotalAmount).toBe('200000.00')
     expect(savedProfile.values.selfDeclaredAssetsAndLiabilities).toBe('Assets: 500000.00 | Liabilities: 125000.00')
     expect(savedProfile.values.selfDeclaredInvestmentPortfolio).toBe('Asset Type: Government Bonds | Total Amount: 200000.00')
+  })
+
+  it('defaults the Step 8 and 9 detailed financial position field to a gray zero', async () => {
+    const user = userEvent.setup()
+    render(<BuildProfilePage />)
+
+    await user.click(screen.getByRole('button', { name: /Banking Relationships/ }))
+
+    const detailedFinancialPosition = screen.getByLabelText('Fill Out Step 8 and 9 Detailed Assets and Liabilities and Income (must be Equal to Declared Assets and Liabilities)')
+    expect(detailedFinancialPosition).toHaveProperty('value', '0')
+    expect(detailedFinancialPosition.classList.contains('build-profile-step5-default-value')).toBe(true)
   })
 
   it('copies all Lending Scorecard Step 1 requirements into Build Profile Step 6', async () => {

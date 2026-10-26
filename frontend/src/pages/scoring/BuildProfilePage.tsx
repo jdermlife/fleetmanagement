@@ -1723,6 +1723,9 @@ export default function BuildProfilePage() {
   const renderBankingField = (field: BankingField) => {
     const value = profile.values[field.key] ?? ''
     const datalistId = `build-profile-${field.key}-options`
+    const defaultClassName = field.key === 'step89DetailedFinancialPosition' && value === '0'
+      ? 'build-profile-step5-default-value'
+      : undefined
 
     if (field.key === 'selfDeclaredAssetsAndLiabilities') {
       return <fieldset key={field.key} className="build-profile-declaration-box build-profile-field-wide">
@@ -1802,7 +1805,7 @@ export default function BuildProfilePage() {
       ) : field.type === 'number' && BUILD_PROFILE_AMOUNT_KEYS.has(field.key) ? (
         <NumericFormat aria-invalid={!value.trim()} value={value} valueIsNumericString thousandSeparator="," decimalScale={2} fixedDecimalScale inputMode="decimal" allowNegative={false} onValueChange={({ value: numericValue }) => updateValue(field.key, numericValue)} />
       ) : (
-        <input aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
+        <input className={defaultClassName} aria-invalid={!value.trim()} type={field.type ?? 'text'} min={field.type === 'number' ? '0' : undefined} value={value} onChange={(event) => updateValue(field.key, event.target.value)} />
       )}
     </label>
   }

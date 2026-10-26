@@ -138,7 +138,7 @@ export const BANKING_RELATIONSHIP_SECTIONS: BankingSection[] = [
       { key: 'existingInsurancePolicies', label: 'Existing Insurance Policies', type: 'textarea', rows: 3 },
       { key: 'selfDeclaredAssetsAndLiabilities', label: 'Assets and Liabilities' },
       { key: 'selfDeclaredInvestmentPortfolio', label: 'Investment Portfolio' },
-      { key: "", label: 'Fill Out  Step 8 and 9  Detailed Assets and Liabilites and Income (must be Equal to Declared Assets and Liabilities)' },
+      { key: 'step89DetailedFinancialPosition', label: 'Fill Out Step 8 and 9 Detailed Assets and Liabilities and Income (must be Equal to Declared Assets and Liabilities)', type: 'number' },
     ],
   },
 ]
@@ -150,6 +150,10 @@ export const HISTORICAL_ASSESSMENT_FIELDS = BANKING_RELATIONSHIP_SECTIONS
 
 export function withHistoricalAssessmentDefaults(values: Record<string, string>): Record<string, string> {
   const initializedValues = { ...values }
+
+  if (!initializedValues.step89DetailedFinancialPosition?.trim()) {
+    initializedValues.step89DetailedFinancialPosition = '0'
+  }
 
   for (const field of HISTORICAL_ASSESSMENT_FIELDS) {
     if (field.options?.length && !initializedValues[field.key]?.trim()) {
