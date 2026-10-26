@@ -1,0 +1,133 @@
+.loan-details-page {
+  padding-inline: clamp(28px, 4vw, 64px) clamp(18px, 3vw, 48px);
+}
+
+.loan-details-report {
+  width: min(100%, 1180px);
+  margin-inline: auto;
+}
+
+.loan-details-header {
+  border-bottom: 4px solid #38bdf8;
+}
+
+.loan-details-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.loan-details-actions button {
+  min-width: 120px;
+  border: 1px solid rgba(255, 255, 255, 0.7);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.loan-details-print-button {
+  color: #0f172a;
+  background: #e0f2fe;
+}
+
+.loan-details-section {
+  border: 1px solid #e2e8f0;
+}
+
+.loan-details-section h2 {
+  padding-left: 12px;
+  border-left: 4px solid #0ea5e9;
+  color: #0f172a;
+}
+
+.loan-details-section > .grid {
+  padding-inline: 10px;
+}
+
+@media (max-width: 720px) {
+  .loan-details-page {
+    padding-inline: 18px 12px;
+  }
+
+  .loan-details-actions,
+  .loan-details-actions button {
+    width: 100%;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 12mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .loan-details-page,
+  .loan-details-page * {
+    visibility: visible !important;
+  }
+
+  .loan-details-page {
+    position: absolute;
+    inset: 0;
+    min-height: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    color: #000000;
+  }
+
+  .loan-details-report {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+  }
+
+  .loan-details-header {
+    padding: 12px 14px !important;
+    border: 1px solid #334155;
+    border-bottom-width: 3px;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+    color: #000000 !important;
+  }
+
+  .loan-details-actions {
+    display: none !important;
+  }
+
+  .loan-details-section {
+    margin-top: 8px !important;
+    padding: 12px 14px !important;
+    border: 1px solid #cbd5e1;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .loan-details-section h2 {
+    margin-bottom: 8px !important;
+    padding-left: 8px;
+    border-left-width: 3px;
+  }
+
+  .loan-details-section > .grid {
+    padding-inline: 4px;
+    gap: 8px !important;
+  }
+
+  .loan-details-section [class*="bg-"] {
+    background: #ffffff !important;
+  }
+
+  .loan-details-section [class*="text-2xl"] {
+    font-size: 1rem !important;
+  }
+
+  .loan-details-section [class*="p-4"] {
+    padding: 8px !important;
+  }
+}

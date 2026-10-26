@@ -6,6 +6,7 @@ import {
   fetchLoanApplication,
   type LoanApplicationRecord,
 } from "../../api/loan";
+import "./LoanDetails.css";
 
 export default function LoanDetails() {
   const navigate = useNavigate();
@@ -54,25 +55,35 @@ export default function LoanDetails() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="mx-auto max-w-7xl">
-        <div className="rounded-t-xl bg-slate-800 p-6 text-white">
+    <main className="loan-details-page min-h-screen bg-gray-50 p-6">
+      <article className="loan-details-report mx-auto max-w-7xl">
+        <header className="loan-details-header rounded-t-xl bg-slate-800 p-6 text-white">
           <div className="flex flex-col justify-between gap-4 md:flex-row">
             <div>
               <h1 className="text-2xl font-bold">Loan Details</h1>
               <p>Application No: {loan.application_no}</p>
             </div>
 
-            <button
-              onClick={() => navigate("/loan-repository")}
-              className="rounded bg-white px-4 py-2 text-slate-800"
-            >
-              Back
-            </button>
+            <div className="loan-details-actions">
+              <button
+                type="button"
+                onClick={() => window.print()}
+                className="loan-details-print-button rounded bg-white px-4 py-2 text-slate-800"
+              >
+                Print / Save PDF
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate("/loan-repository")}
+                className="loan-details-back-button rounded bg-white px-4 py-2 text-slate-800"
+              >
+                Back
+              </button>
+            </div>
           </div>
-        </div>
+        </header>
 
-        <div className="bg-white p-6 shadow">
+        <section className="loan-details-section loan-details-summary bg-white p-6 shadow" aria-label="Loan summary">
           <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
             <div className="rounded bg-blue-50 p-4">
               <div className="text-sm">Loan Amount</div>
@@ -101,9 +112,9 @@ export default function LoanDetails() {
               <div className="text-2xl font-bold">{loan.status}</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Applicant / Borrower Information</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -127,9 +138,9 @@ export default function LoanDetails() {
               <div className="font-semibold">{loan.address}</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Employment and Income</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div>
@@ -151,9 +162,9 @@ export default function LoanDetails() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Loan Information</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -175,9 +186,9 @@ export default function LoanDetails() {
               <div className="font-bold">{loan.interest_rate}%</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Collateral Information</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div>
@@ -191,9 +202,9 @@ export default function LoanDetails() {
               </div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Credit Metrics</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <div className="rounded bg-red-50 p-4">
@@ -209,16 +220,16 @@ export default function LoanDetails() {
               <div className="text-2xl font-bold">{formatPercent(loan.ltv)}</div>
             </div>
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">Committee Remarks</h2>
           <div className="rounded border bg-gray-50 p-4">
             {loan.committee_remarks || "No remarks available"}
           </div>
-        </div>
+        </section>
 
-        <div className="mt-6 rounded bg-white p-6 shadow">
+        <section className="loan-details-section mt-6 rounded bg-white p-6 shadow">
           <h2 className="mb-4 text-lg font-bold">QuantScore Breakdown</h2>
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
             <div className="rounded border bg-slate-50 p-4">
@@ -296,8 +307,8 @@ export default function LoanDetails() {
             <div className="font-semibold">AI Explanation</div>
             <div className="mt-1">{loan.ai_recommendations?.explanation || "No AI explanation available."}</div>
           </div>
-        </div>
-      </div>
-    </div>
+        </section>
+      </article>
+    </main>
   );
 }
