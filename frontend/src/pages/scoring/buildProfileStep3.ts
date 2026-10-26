@@ -292,6 +292,12 @@ export function isStep3DefaultValue(key: string, value: string): boolean {
 export function withCreditValuesDefaults(values: Record<string, string>): Record<string, string> {
   const initializedValues = { ...STEP_3_DEFAULT_VALUES, ...values }
 
+  for (const [key, defaultValue] of Object.entries(STEP_3_DEFAULT_VALUES)) {
+    if (!initializedValues[key]?.trim()) {
+      initializedValues[key] = defaultValue
+    }
+  }
+
   for (const question of CREDIT_VALUES_QUESTIONS) {
     const key = `creditValues.${question.field}`
     if (!initializedValues[key]?.trim()) {

@@ -37,6 +37,11 @@ describe('withCreditValuesDefaults', () => {
     const values = withCreditValuesDefaults({
       communityReputation: 'Excellent references',
       facebookProfile: 'saved.example/profile',
+      fakeNationalId: '',
+      forgedPayslip: '   ',
+      forgedBankStatement: '',
+      identityTheftIndicator: '   ',
+      sanctionsPepMatch: '',
     })
 
     expect(values).toMatchObject({
@@ -55,6 +60,9 @@ describe('withCreditValuesDefaults', () => {
       bankStatementVerificationStatus: 'Matches application',
       deviceReputation: 'Trusted',
       fakeNationalId: 'false',
+      forgedPayslip: 'false',
+      forgedBankStatement: 'false',
+      identityTheftIndicator: 'false',
       sanctionsPepMatch: 'false',
       fraudAndDocumentAuthenticityAttestation: 'true',
     })
