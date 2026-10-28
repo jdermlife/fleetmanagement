@@ -179,12 +179,15 @@ export const FINANCIAL_GOAL_OPTIONS = [
 ] as const;
 
 export const CURRENCY_OPTIONS = [
+  { code: 'CUR', label: 'CUR (C)' },
   { code: 'USD', label: 'USD ($)' },
+  { code: 'EUR', label: 'EUR (€)' },
   { code: 'PHP', label: 'PHP (₱)' },
   { code: 'GBP', label: 'GBP (£)' },
-  { code: 'EUR', label: 'EUR (€)' },
-  { code: 'JPY', label: 'JPY (¥)' },
   { code: 'SGD', label: 'SGD (S$)' },
+  { code: 'JPY', label: 'JPY (¥)' },
+  { code: 'AUD', label: 'AUD (A$)' },
+  { code: 'OTH', label: 'Other' },
 ] as const;
 
 const SUITABILITY_ASSESSMENT_QUESTIONS: Array<{
