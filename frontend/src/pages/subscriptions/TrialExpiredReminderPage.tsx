@@ -46,7 +46,7 @@ export default function TrialExpiredReminderPage() {
   const accountQuery = searchParams.get('account')?.trim() || ''
   const isLocked = state === 'locked'
   const isReminder = state === 'reminder'
-  const subscriptionPaymentPath = `/subscription/payment${accountQuery ? `?account=${encodeURIComponent(accountQuery)}` : ''}`
+  const subscriptionPaymentPath = `/subscription/payment?plan=single${accountQuery ? `&account=${encodeURIComponent(accountQuery)}` : ''}`
 
   return (
     <div className="standalone-card auth-screen trial-expired-page">

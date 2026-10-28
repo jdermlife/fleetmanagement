@@ -318,8 +318,23 @@ export default function SubscriptionPaymentPage() {
   }, [guestTrialPlan, isAuthenticated, usesAndroidStore, usesNativeStore])
 
   const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === selectedPlanId) ?? null,
-    [plans, selectedPlanId],
+    () => {
+      const planById = plans.find((plan) => plan.id === selectedPlanId)
+      if (planById) {
+        return planById
+      }
+
+      if (usesNativeStore && selectedGuestPlanId === 'single') {
+        return plans.find((plan) => plan.plan_code === 'SINGLE_PROFILE') ?? null
+      }
+
+      if (usesNativeStore && selectedGuestPlanId === 'multiple') {
+        return plans.find((plan) => plan.plan_code === 'MULTIPLE_PROFILE') ?? null
+      }
+
+      return null
+    },
+    [plans, selectedGuestPlanId, selectedPlanId, usesNativeStore],
   )
 
   const selectedSubscription = useMemo(() => {
@@ -331,19 +346,19 @@ export default function SubscriptionPaymentPage() {
   }, [selectedSubscriptionId, subscriptions])
 
   const matchedPlanSubscription = useMemo(() => {
-    if (selectedPlanId <= 0) {
+    if (!selectedPlan) {
       return null
     }
 
     return (
       subscriptions.find(
         (subscription) =>
-          subscription.plan_id === selectedPlanId &&
+          subscription.plan_id === selectedPlan.id &&
           subscription.status !== 'CANCELLED' &&
           subscription.status !== 'EXPIRED',
       ) ?? null
     )
-  }, [selectedPlanId, subscriptions])
+  }, [selectedPlan, subscriptions])
 
   const paymentSubscription = selectedPlan ? matchedPlanSubscription : selectedSubscription
 
