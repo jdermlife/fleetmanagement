@@ -1375,6 +1375,12 @@ export default function SubscriptionPaymentPage() {
             <button type="button" className="auth-link-button" onClick={() => navigate('/account')}>
               Go to Account
             </button>
+            <Link
+              className="auth-link-button auth-apple-button"
+              to={`/subscription/payment?plan=single${guestAccountQuery ? `&account=${encodeURIComponent(guestAccountQuery)}` : ''}`}
+            >
+              Subscription Payment Plan
+            </Link>
           </div>
         </section>
       ) : null}
