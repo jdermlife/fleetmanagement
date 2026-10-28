@@ -338,9 +338,9 @@ const TREND_CHART_RIGHT = 694
 const TREND_CHART_TOP = 24
 const TREND_CHART_BOTTOM = 238
 const FINANCIAL_HEALTH_RING_LEGEND = [
-  'Stability',
-  'Protection',
-  'Goals',
+  'Liquidity & Credit',
+  'Protection & Budget',
+  'Goals & Investments',
 ] as const
 const FINANCIAL_HEALTH_RING_STROKES = [
   'url(#financial-health-ring-gold)',
