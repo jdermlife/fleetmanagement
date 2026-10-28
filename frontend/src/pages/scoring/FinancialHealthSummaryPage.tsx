@@ -338,9 +338,9 @@ const TREND_CHART_RIGHT = 694
 const TREND_CHART_TOP = 24
 const TREND_CHART_BOTTOM = 238
 const FINANCIAL_HEALTH_RING_LEGEND = [
-  'Gold · Foundation',
-  'Silver · Controls',
-  'Bronze · Future',
+  'Stability',
+  'Protection',
+  'Goals',
 ] as const
 const FINANCIAL_HEALTH_RING_STROKES = [
   'url(#financial-health-ring-gold)',
