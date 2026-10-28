@@ -76,7 +76,7 @@ export function toNetWorthDraft(
 
   return {
     asOfDate: profile.values.asOfDate ?? '',
-    currency: profile.values.wealthCurrency || 'PHP',
+    currency: profile.values.wealthCurrency || 'CUR',
     selectedFinancialGoal: profile.values.financialGoal ?? '',
     targetAmount: Number(profile.values.targetAmount) || 0,
     targetMonths: Number(profile.values.targetMonths) || 12,

@@ -99,7 +99,7 @@ export default function FinancialStatementModal({
   const [paperSize, setPaperSize] = useState<PaperSize>('a4')
   const [fontSize, setFontSize] = useState(10)
 
-  const currency = profile?.values.wealthCurrency || 'PHP'
+  const currency = profile?.values.wealthCurrency || 'CUR'
   const money = useMemo(() => new Intl.NumberFormat('en', {
     style: 'currency',
     currency,

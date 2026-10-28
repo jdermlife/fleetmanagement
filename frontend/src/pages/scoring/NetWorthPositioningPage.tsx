@@ -93,7 +93,7 @@ const DEFAULT_CERTIFICATION_DATE = new Date().toISOString().slice(0, 10);
 const DEFAULT_NET_WORTH_POSITIONING_DRAFT: NetWorthPositioningDraft = {
   step: 1,
   asOfDate: '',
-  currency: 'PHP',
+  currency: 'CUR',
   selectedFinancialGoal: '',
   targetAmount: 0,
   targetMonths: 12,
@@ -706,7 +706,7 @@ export default function NetWorthPositioningPage() {
 
   const [step, setStep] = useState<WorkflowStep>(1);
   const [asOfDate, setAsOfDate] = useState('');
-  const [currency, setCurrency] = useState('PHP');
+  const [currency, setCurrency] = useState('CUR');
   const [selectedFinancialGoal, setSelectedFinancialGoal] = useState('');
   const [targetAmount, setTargetAmount] = useState(0);
   const [targetMonths, setTargetMonths] = useState(12);
@@ -827,7 +827,7 @@ export default function NetWorthPositioningPage() {
   const handleAutosaveHydrate = useCallback((draft: NetWorthPositioningDraft) => {
     setStep(draft.step ?? 1);
     setAsOfDate(draft.asOfDate);
-    setCurrency(draft.currency ?? draft.currencyCode ?? 'PHP');
+    setCurrency(draft.currency ?? draft.currencyCode ?? 'CUR');
     setSelectedFinancialGoal(draft.selectedFinancialGoal ?? '');
     setTargetAmount(draft.targetAmount ?? 0);
     setTargetMonths(draft.targetMonths ?? 12);
