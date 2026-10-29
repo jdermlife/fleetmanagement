@@ -1473,9 +1473,11 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
   const snapshotMonthExists = financialHealthSnapshots.some(
     (snapshot) => snapshot.payload.reportingMonth === snapshotMonth,
   )
-  const financialHealthChange = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
-    ? currentComparisonSnapshot.payload.score - baselineComparisonSnapshot.payload.score
-    : null
+  const currentFinancialHealthScore = currentComparisonSnapshot?.payload.score ?? score
+  const baselineFinancialHealthScore = baselineComparisonSnapshot && hasDistinctComparisonPeriods
+    ? baselineComparisonSnapshot.payload.score
+    : 0
+  const financialHealthChange = currentFinancialHealthScore - baselineFinancialHealthScore
   const philippineIncomeBenchmark = computePhilippineIncomeBenchmark(benchmarkContext.monthlyIncome * 12)
   const stableMonths = budgetHealthScore?.metrics.stableMonths ?? 0
   const momentumLabel = !budgetHealthScore
@@ -1487,7 +1489,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         : 'Declining'
   const resilienceMonths = wealthFoundationScore?.metrics.emergencyFundMonths
     ?? netWorthBuildingScore?.metrics.emergencyFundMonths
-    ?? null
+    ?? 0
   const riskIndicators = financialHealthIndicators.filter((indicator) => indicator.score < 80)
   const baselineIndicatorById = new Map(
     baselineComparisonSnapshot?.payload.indicators.map((indicator) => [indicator.id, indicator]) ?? [],
@@ -1496,18 +1498,16 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
   const changeContributors = currentComparisonIndicators
     .map((indicator) => ({
       label: indicator.label,
-      change: indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? indicator.score),
-      weightedImpact: (indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? indicator.score)) * indicator.weight,
+      change: indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? 0),
+      weightedImpact: (indicator.score - (baselineIndicatorById.get(indicator.id)?.score ?? 0)) * indicator.weight,
     }))
     .filter((indicator) => (financialHealthChange ?? 0) > 0 ? indicator.change > 0 : indicator.change < 0)
     .sort((left, right) => Math.abs(right.weightedImpact) - Math.abs(left.weightedImpact))
     .slice(0, 3)
   const comparisonLabel = currentComparisonSnapshot && baselineComparisonSnapshot && hasDistinctComparisonPeriods
     ? `${formatReportingMonth(currentComparisonSnapshot.payload.reportingMonth)} vs ${formatReportingMonth(baselineComparisonSnapshot.payload.reportingMonth)}`
-    : ''
-  const changeNarration = financialHealthChange === null
-    ? 'Save at least two monthly snapshots to compare financial health.'
-    : financialHealthChange === 0
+    : `Zero baseline to ${new Intl.DateTimeFormat('en-US', { dateStyle: 'medium' }).format(new Date())}`
+  const changeNarration = financialHealthChange === 0
     ? 'No change in your financial health yet.'
     : financialHealthChange > 0
       ? `Your financial health improved. The biggest gains came from ${changeContributors.map((indicator) => indicator.label).join(', ') || 'your latest financial inputs'}.`
@@ -2065,7 +2065,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
       <section className="financial-health-insight-grid" aria-label="Financial Health change, benchmarking, momentum, resilience, risks, and opportunities">
         <article className="financial-health-insight-card">
           <span>1. Financial Health Change</span>
-          <strong>{financialHealthChange === null ? 'Pending' : `${financialHealthChange >= 0 ? '+' : ''}${financialHealthChange}`}</strong>
+          <strong>{`${financialHealthChange >= 0 ? '+' : ''}${financialHealthChange}`}</strong>
           {comparisonLabel ? <small>{comparisonLabel}</small> : null}
           <small>{changeNarration}</small>
         </article>
@@ -2082,7 +2082,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         </article>
         <article className="financial-health-insight-card">
           <span>4. Financial Resilience</span>
-          <strong>{resilienceMonths === null ? 'Pending' : `${resilienceMonths.toFixed(1)} months`}</strong>
+          <strong>{`${resilienceMonths.toFixed(1)} months`}</strong>
           <small>{resilienceNarration}</small>
         </article>
         <article className="financial-health-insight-card financial-health-insight-card-alert">
