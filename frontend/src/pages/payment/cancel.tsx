@@ -68,7 +68,7 @@ export default function PaymentCancelPage() {
         <div className="payment-success-confirmation" role="status">
           <div>
             <strong>No payment received</strong>
-            <span>PayMongo did not report a completed charge.</span>
+            <span>No payment provider reported a completed charge.</span>
           </div>
           <div>
             <strong>Access unchanged</strong>

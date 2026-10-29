@@ -1,3 +1,4 @@
+import { Capacitor } from '@capacitor/core'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
 type PlanOptionId = 'single' | 'multiple'
@@ -46,6 +47,7 @@ export default function TrialExpiredReminderPage() {
   const accountQuery = searchParams.get('account')?.trim() || ''
   const isLocked = state === 'locked'
   const isReminder = state === 'reminder'
+  const usesIosStore = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
   const subscriptionPaymentPath = `/subscription/payment?plan=single${accountQuery ? `&account=${encodeURIComponent(accountQuery)}` : ''}`
 
   return (
@@ -82,8 +84,8 @@ export default function TrialExpiredReminderPage() {
         {PLAN_OPTIONS.map((plan) => (
           <article key={plan.id} className="trial-expired-plan-card" role="listitem">
             <h2>{plan.title}</h2>
-            <p className="trial-expired-price">{plan.priceLabel}</p>
-            <p>{plan.note}</p>
+            <p className="trial-expired-price">{usesIosStore ? 'View price in the App Store' : plan.priceLabel}</p>
+            <p>{usesIosStore ? 'Purchase securely with your Apple Account.' : plan.note}</p>
             <button
               type="button"
               className="auth-link-button"
@@ -93,7 +95,7 @@ export default function TrialExpiredReminderPage() {
                 )
               }
             >
-              Select Plan
+              {usesIosStore ? 'Continue to App Store Purchase' : 'Select Plan'}
             </button>
           </article>
         ))}

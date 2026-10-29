@@ -37,6 +37,7 @@ import {
 } from '../../nativeBilling'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 import payMongoLogo from '../../assets/paymongo-official.png'
+import { billingAmount, selectPaymentPlan } from './paymentPlanSelection'
 
 function PayMongoButtonContent({ label }: { label: string }) {
   return (
@@ -45,22 +46,6 @@ function PayMongoButtonContent({ label }: { label: string }) {
       <span>{label}</span>
     </>
   )
-}
-
-function billingAmount(plan: SubscriptionPlan): number {
-  const monthlyPrice = plan.monthly_price && plan.monthly_price > 0 ? plan.monthly_price : 0
-  const yearlyPrice = plan.yearly_price && plan.yearly_price > 0 ? plan.yearly_price : 0
-  const minimumFee = plan.minimum_monthly_fee && plan.minimum_monthly_fee > 0
-    ? plan.minimum_monthly_fee
-    : 0
-
-  if (plan.billing_cycle === 'YEARLY') {
-    return yearlyPrice || monthlyPrice * 12 || minimumFee
-  }
-  if (plan.billing_cycle === 'QUARTERLY') {
-    return monthlyPrice * 3 || minimumFee
-  }
-  return monthlyPrice || minimumFee
 }
 
 function nativeSubscriptionPeriod(billingCycle: string | undefined): { duration: string; priceUnit: string } {
@@ -238,14 +223,19 @@ export default function SubscriptionPaymentPage() {
   const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
   const nativePlatform = Capacitor.getPlatform()
-  const usesAndroidStore = nativePlatform === 'android'
-  const usesNativeStore = usesAndroidStore || nativePlatform === 'ios'
+  const usesAndroidStore = Capacitor.isNativePlatform() && nativePlatform === 'android'
+  const usesIosStore = Capacitor.isNativePlatform() && nativePlatform === 'ios'
+  const usesNativeStore = usesAndroidStore || usesIosStore
   const guestTrialPlan =
     !usesNativeStore && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]
       : null
 
   useEffect(() => {
+    if (usesNativeStore) {
+      return
+    }
+
     if (checkoutStatus === 'success') {
       takePaymentCancellationContext()
       navigate('/payment-success?provider=paymongo', { replace: true })
@@ -270,7 +260,7 @@ export default function SubscriptionPaymentPage() {
         setPaymentMessage(`Payment Cancelled. ${getErrorMessage(error, 'The payment record could not be updated.')}`)
       })
     }
-  }, [checkoutStatus, navigate])
+  }, [checkoutStatus, navigate, usesNativeStore])
 
   useEffect(() => {
     if (!guestTrialPlan) {
@@ -318,22 +308,7 @@ export default function SubscriptionPaymentPage() {
   }, [guestTrialPlan, isAuthenticated, usesAndroidStore, usesNativeStore])
 
   const selectedPlan = useMemo(
-    () => {
-      const planById = plans.find((plan) => plan.id === selectedPlanId)
-      if (planById) {
-        return planById
-      }
-
-      if (usesNativeStore && selectedGuestPlanId === 'single') {
-        return plans.find((plan) => plan.plan_code === 'SINGLE_PROFILE') ?? null
-      }
-
-      if (usesNativeStore && selectedGuestPlanId === 'multiple') {
-        return plans.find((plan) => plan.plan_code === 'MULTIPLE_PROFILE') ?? null
-      }
-
-      return null
-    },
+    () => selectPaymentPlan(plans, selectedPlanId, selectedGuestPlanId, usesNativeStore),
     [plans, selectedGuestPlanId, selectedPlanId, usesNativeStore],
   )
 
@@ -891,7 +866,11 @@ export default function SubscriptionPaymentPage() {
     setIsNativePurchasePending(true)
     setPaymentMessage('Restoring app store purchases...')
     try {
-      const restored = await restoreNativeSubscriptions(nativeProducts)
+      const products = nativeProducts.length > 0 ? nativeProducts : await loadNativeStoreProducts()
+      if (nativeProducts.length === 0) {
+        setNativeProducts(products)
+      }
+      const restored = await restoreNativeSubscriptions(products)
       setPaymentMessage(
         restored.length > 0
           ? 'Your app store subscriptions have been restored.'
@@ -1125,7 +1104,7 @@ export default function SubscriptionPaymentPage() {
           {isFreeTrialPlan ? (
             <section className="stack-panel auth-panel" aria-label="Free trial activation">
               <h2>Start Free Trial</h2>
-              <p>Activate two days of trial access immediately. PayPal and PayMongo are not required for PHP 0.00.</p>
+              <p>Activate two days of trial access immediately. No payment method is required for a free trial.</p>
               <button
                 type="button"
                 className="auth-link-button auth-apple-button"
@@ -1204,17 +1183,21 @@ export default function SubscriptionPaymentPage() {
             <div className="trial-expired-payment-buttons">
               <button
                 type="button"
-                className="auth-link-button auth-apple-button"
+                className="auth-link-button"
                 onClick={() => void handleNativePurchase()}
                 disabled={isNativePurchasePending || !selectedNativeProduct}
               >
-                {isNativePurchasePending ? 'Processing...' : 'Subscribe'}
+                {isNativePurchasePending
+                  ? 'Processing...'
+                  : usesIosStore
+                    ? 'Subscribe with Apple'
+                    : 'Subscribe with Google Play'}
               </button>
               <button
                 type="button"
                 className="auth-link-button"
                 onClick={() => void handleRestoreNativePurchases()}
-                disabled={isNativePurchasePending || nativeProducts.length === 0}
+                disabled={isNativePurchasePending}
               >
                 Restore Purchases
               </button>

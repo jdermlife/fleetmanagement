@@ -30,7 +30,7 @@ export default function ProtectedRoute({
       <div className="card">
         <h2>Please Upgrade Your Subscription</h2>
         <p>This page is for Multiple Applications</p>
-        <Link className="auth-link-button" to="/subscription-payment?planId=1">
+        <Link className="auth-link-button" to="/subscription/payment?plan=multiple">
           Upgrade Subscription
         </Link>
       </div>
