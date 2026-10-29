@@ -10,4 +10,4 @@ COPY . .
 
 EXPOSE 5000
 
-CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "--workers", "3", "--threads", "2", "--timeout", "120", "--bind", "0.0.0.0:5000"]
+CMD ["sh", "-c", "python migrate_store_billing.py && exec gunicorn main:app -k uvicorn.workers.UvicornWorker --workers 3 --threads 2 --timeout 120 --bind 0.0.0.0:5000"]

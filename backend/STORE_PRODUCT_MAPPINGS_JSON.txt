@@ -1,0 +1,14 @@
+[
+  {
+    "platform": "IOS",
+    "plan_code": "SINGLE_PROFILE",
+    "product_id": "FHFS001",
+    "product_type": "SUBS"
+  },
+  {
+    "platform": "IOS",
+    "plan_code": "MULTIPLE_PROFILE",
+    "product_id": "FHFS002",
+    "product_type": "SUBS"
+  }
+]

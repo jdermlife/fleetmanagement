@@ -16,6 +16,7 @@ STORE_PROVIDERS = (
 
 POSTGRES_UPGRADE_STATEMENTS = (
     "ALTER TABLE store_products ALTER COLUMN plan_id DROP NOT NULL",
+    "ALTER TABLE store_products ADD COLUMN IF NOT EXISTS base_plan_id VARCHAR(255)",
     "ALTER TABLE store_products ADD COLUMN IF NOT EXISTS product_type VARCHAR(20) NOT NULL DEFAULT 'SUBS'",
     "ALTER TABLE store_products ADD COLUMN IF NOT EXISTS entitlement_category VARCHAR(30)",
     "ALTER TABLE store_purchases ALTER COLUMN subscription_id DROP NOT NULL",

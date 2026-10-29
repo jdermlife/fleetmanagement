@@ -53,7 +53,7 @@ The backend runs on `http://localhost:5000`.
 
 Note: Python 3.13+ is not currently supported for the FastAPI smoke-test stack in this project.
 
-For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first.
+For production deployments, keep startup migrations disabled and run schema changes through the dedicated setup or migration scripts first. Native store deployments must run `python migrate_store_billing.py` before starting the API and configure `STORE_PRODUCT_MAPPINGS_JSON` with the exact active App Store Connect and Google Play product IDs.
 Before deploying the hardened PayPal flow, run `python migrate_paypal_payment_integrity.py` from `backend`.
 Before enabling recurring PayPal or PayMongo billing, run `python migrate_recurring_billing.py` from `backend`.
 The Render deployment performs idempotent startup migrations for FILSCORE composite/rating and Wealth columns. For manual deployments, run `python migrate_overall_scores_composite_fields.py` and `python migrate_overall_scores_wealth_fields.py` from `backend` before starting the API.

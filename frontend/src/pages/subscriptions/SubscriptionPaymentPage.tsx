@@ -196,6 +196,7 @@ export default function SubscriptionPaymentPage() {
   const [plans, setPlans] = useState<SubscriptionPlan[]>([])
   const [subscriptions, setSubscriptions] = useState<SubscriptionRecord[]>([])
   const [loadMessage, setLoadMessage] = useState('')
+  const [nativeCatalogMessage, setNativeCatalogMessage] = useState('')
   const [isLoading, setIsLoading] = useState(true)
   const [paymentMessage, setPaymentMessage] = useState('')
   const [isStartingCheckout, setIsStartingCheckout] = useState(false)
@@ -293,19 +294,27 @@ export default function SubscriptionPaymentPage() {
     void loadData()
   }, [guestTrialPlan])
 
-  useEffect(() => {
+  const loadNativeCatalog = useCallback(async () => {
     if (!usesNativeStore || !isAuthenticated || guestTrialPlan) {
       return
     }
-    const catalogRequests = [
-      loadNativeStoreProducts().then(setNativeProducts),
-      loadNativeOneTimeProducts().then(setNativeOneTimeProducts),
-    ]
-    void Promise.all(catalogRequests)
-      .catch((error) => {
-        setLoadMessage(getErrorMessage(error, 'Unable to load subscriptions from the app store.'))
-      })
-  }, [guestTrialPlan, isAuthenticated, usesAndroidStore, usesNativeStore])
+
+    setNativeCatalogMessage('')
+    try {
+      const [subscriptionProducts, oneTimeProducts] = await Promise.all([
+        loadNativeStoreProducts(),
+        loadNativeOneTimeProducts(),
+      ])
+      setNativeProducts(subscriptionProducts)
+      setNativeOneTimeProducts(oneTimeProducts)
+    } catch (error) {
+      setNativeCatalogMessage(getErrorMessage(error, 'Unable to load subscriptions from the app store.'))
+    }
+  }, [guestTrialPlan, isAuthenticated, usesNativeStore])
+
+  useEffect(() => {
+    void loadNativeCatalog()
+  }, [loadNativeCatalog])
 
   const selectedPlan = useMemo(
     () => selectPaymentPlan(plans, selectedPlanId, selectedGuestPlanId, usesNativeStore),
@@ -1075,6 +1084,19 @@ export default function SubscriptionPaymentPage() {
       </p>
 
       {loadMessage ? <p className="status-message status-error">{loadMessage}</p> : null}
+      {nativeCatalogMessage ? (
+        <div className="stack-panel auth-panel" role="alert">
+          <p className="status-message status-error">{nativeCatalogMessage}</p>
+          <button
+            type="button"
+            className="auth-link-button"
+            onClick={() => void loadNativeCatalog()}
+            disabled={isNativePurchasePending}
+          >
+            Retry App Store
+          </button>
+        </div>
+      ) : null}
       {paymentMessage ? <p className="status-message">{paymentMessage}</p> : null}
 
       {isLoading ? <p className="status-message">Loading payment details...</p> : null}
@@ -1134,6 +1156,16 @@ export default function SubscriptionPaymentPage() {
           <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="App store subscription">
             <h2>{selectedNativeProduct?.title ?? (usesAndroidStore ? 'Google Play Subscription' : 'App Store Subscription')}</h2>
             <p>{selectedNativeProduct?.description ?? 'This plan is not yet available from the app store.'}</p>
+            {!selectedNativeProduct && !nativeCatalogMessage ? (
+              <button
+                type="button"
+                className="auth-link-button"
+                onClick={() => void loadNativeCatalog()}
+                disabled={isNativePurchasePending}
+              >
+                Retry App Store
+              </button>
+            ) : null}
             {selectedNativeProduct ? (
               <p className="trial-expired-price">{selectedNativeProduct.priceString}</p>
             ) : null}

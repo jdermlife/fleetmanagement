@@ -4,4 +4,7 @@ services:
     env: python
     rootDir: backend
     buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port 10000
+    startCommand: python migrate_store_billing.py && uvicorn main:app --host 0.0.0.0 --port 10000
+    envVars:
+      - key: STORE_PRODUCT_MAPPINGS_JSON
+        sync: false

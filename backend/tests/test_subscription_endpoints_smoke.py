@@ -5,6 +5,7 @@ from datetime import date, datetime, timezone, timedelta
 import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+from sqlalchemy.exc import SQLAlchemyError
 
 from app.database import get_db
 from app.models.subscription import (
@@ -168,6 +169,70 @@ def test_plans_create_and_list_smoke(client: TestClient, admin_headers):
     rows = list_response.json()
     assert len(rows) == 1
     assert rows[0]["plan_code"] == "BASIC"
+
+
+def test_list_ios_store_products(client: TestClient, fake_db: FakeSession, subscriber_headers):
+    fake_db.rows_by_model[StoreProduct] = [
+        StoreProduct(
+            id=7,
+            plan_id=2,
+            platform="IOS",
+            product_id="com.quantech.filscore.single.monthly",
+            product_type="SUBS",
+            entitlement_category=None,
+            is_active=True,
+        ),
+        StoreProduct(
+            id=8,
+            plan_id=2,
+            platform="ANDROID",
+            product_id="filscore_single_monthly",
+            product_type="SUBS",
+            entitlement_category=None,
+            is_active=True,
+        ),
+    ]
+
+    response = client.get(
+        "/api/subscriptions/store-products?platform=IOS",
+        headers=subscriber_headers,
+    )
+
+    assert response.status_code == 200
+    assert response.json() == [
+        {
+            "id": 7,
+            "plan_id": 2,
+            "platform": "IOS",
+            "product_id": "com.quantech.filscore.single.monthly",
+            "base_plan_id": None,
+            "product_type": "SUBS",
+            "entitlement_category": None,
+            "is_active": True,
+        }
+    ]
+
+
+def test_list_ios_store_products_reports_catalog_outage(
+    client: TestClient,
+    fake_db: FakeSession,
+    subscriber_headers,
+    monkeypatch,
+):
+    def raise_catalog_error(_model):
+        raise SQLAlchemyError("store_products schema is unavailable")
+
+    monkeypatch.setattr(fake_db, "query", raise_catalog_error)
+
+    response = client.get(
+        "/api/subscriptions/store-products?platform=IOS",
+        headers=subscriber_headers,
+    )
+
+    assert response.status_code == 503
+    assert response.json() == {
+        "detail": "The App Store product catalog is temporarily unavailable. Please try again."
+    }
 
 
 @pytest.mark.parametrize("platform", ["ANDROID", "IOS"])

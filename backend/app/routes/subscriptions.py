@@ -10,7 +10,7 @@ import os
 import uuid
 
 from fastapi import APIRouter, Depends, Header, HTTPException, Query, Request
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 
 from app.database import SessionLocal, set_rls_context
 from app.fastapi_auth import CurrentUser, require_authenticated_user, require_roles
@@ -62,6 +62,7 @@ from app.schemas.subscription_schema import (
     StorePurchaseVerificationRequest,
 )
 from app.services.email_service import send_email
+from logging_config import backend_logger
 from app.services.account_access_service import configure_new_account_access, renew_account_access_after_payment
 from app.services.paymongo import (
     PayMongoAPIError,
@@ -958,13 +959,25 @@ def list_store_products(
 ):
     db = _session_with_rls(user)
     try:
-        rows = (
-            db.query(StoreProduct)
-            .filter(StoreProduct.platform == platform)
-            .filter(StoreProduct.is_active.is_(True))
-            .order_by(StoreProduct.id.asc())
-            .all()
-        )
+        try:
+            rows = (
+                db.query(StoreProduct)
+                .filter(StoreProduct.platform == platform)
+                .filter(StoreProduct.is_active.is_(True))
+                .order_by(StoreProduct.id.asc())
+                .all()
+            )
+        except SQLAlchemyError as exc:
+            backend_logger.error(
+                "Store product catalog query failed",
+                platform=platform,
+                user_id=user.id,
+                error=str(exc),
+            )
+            raise HTTPException(
+                status_code=503,
+                detail="The App Store product catalog is temporarily unavailable. Please try again.",
+            ) from exc
         return [_serialize_store_product(row) for row in rows]
     finally:
         db.close()
