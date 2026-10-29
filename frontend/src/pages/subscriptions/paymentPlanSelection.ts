@@ -37,3 +37,22 @@ export function selectPaymentPlan(
 
   return null
 }
+
+type NativeSubscriptionChoice = {
+  mapping: { product_id: string }
+  subscriptionPeriod: { unitString?: string }
+}
+
+export function resolveNativeSubscriptionProductId(
+  products: NativeSubscriptionChoice[],
+  selectedProductId: string,
+): string {
+  if (products.some((product) => product.mapping.product_id === selectedProductId)) {
+    return selectedProductId
+  }
+
+  return (
+    products.find((product) => product.subscriptionPeriod.unitString === 'month')
+    ?? products[0]
+  )?.mapping.product_id ?? ''
+}

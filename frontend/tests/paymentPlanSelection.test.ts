@@ -1,7 +1,10 @@
 import { describe, expect, it } from 'vitest'
 
 import type { SubscriptionPlan } from '../src/api'
-import { selectPaymentPlan } from '../src/pages/subscriptions/paymentPlanSelection'
+import {
+  resolveNativeSubscriptionProductId,
+  selectPaymentPlan,
+} from '../src/pages/subscriptions/paymentPlanSelection'
 
 function plan(overrides: Partial<SubscriptionPlan>): SubscriptionPlan {
   return {
@@ -79,5 +82,26 @@ describe('selectPaymentPlan', () => {
 
   it('does not rewrite a web free-plan selection', () => {
     expect(selectPaymentPlan(plans, 1, null, false)?.plan_code).toBe('FREE')
+  })
+})
+
+describe('resolveNativeSubscriptionProductId', () => {
+  const products = [
+    {
+      mapping: { product_id: 'FHFS003' },
+      subscriptionPeriod: { unitString: 'year' },
+    },
+    {
+      mapping: { product_id: 'FHFS001' },
+      subscriptionPeriod: { unitString: 'month' },
+    },
+  ]
+
+  it('defaults to the monthly Apple product', () => {
+    expect(resolveNativeSubscriptionProductId(products, '')).toBe('FHFS001')
+  })
+
+  it('preserves an annual Apple product selected by the user', () => {
+    expect(resolveNativeSubscriptionProductId(products, 'FHFS003')).toBe('FHFS003')
   })
 })

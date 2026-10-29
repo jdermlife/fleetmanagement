@@ -37,7 +37,11 @@ import {
 } from '../../nativeBilling'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 import payMongoLogo from '../../assets/paymongo-official.png'
-import { billingAmount, selectPaymentPlan } from './paymentPlanSelection'
+import {
+  billingAmount,
+  resolveNativeSubscriptionProductId,
+  selectPaymentPlan,
+} from './paymentPlanSelection'
 
 function PayMongoButtonContent({ label }: { label: string }) {
   return (
@@ -204,6 +208,7 @@ export default function SubscriptionPaymentPage() {
   const [payMongoPaymentMethodId, setPayMongoPaymentMethodId] = useState('')
   const [isStartingFreeTrial, setIsStartingFreeTrial] = useState(false)
   const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
+  const [selectedNativeProductId, setSelectedNativeProductId] = useState('')
   const [nativeOneTimeProducts, setNativeOneTimeProducts] = useState<NativeOneTimeProduct[]>([])
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
@@ -355,10 +360,26 @@ export default function SubscriptionPaymentPage() {
     ? PAYPAL_SUBSCRIPTION_OPTIONS[selectedSubscriptionPlan.plan_code]
     : undefined
 
-  const selectedNativeProduct = useMemo(
-    () => nativeProducts.find((product) => product.mapping.plan_id === selectedSubscriptionPlan?.id) ?? null,
+  const selectedNativeProducts = useMemo(
+    () => nativeProducts.filter((product) => product.mapping.plan_id === selectedSubscriptionPlan?.id),
     [nativeProducts, selectedSubscriptionPlan?.id],
   )
+  const selectedNativeProduct = useMemo(
+    () => selectedNativeProducts.find((product) => product.mapping.product_id === selectedNativeProductId)
+      ?? selectedNativeProducts[0]
+      ?? null,
+    [selectedNativeProductId, selectedNativeProducts],
+  )
+
+  useEffect(() => {
+    const resolvedProductId = resolveNativeSubscriptionProductId(
+      selectedNativeProducts,
+      selectedNativeProductId,
+    )
+    if (resolvedProductId !== selectedNativeProductId) {
+      setSelectedNativeProductId(resolvedProductId)
+    }
+  }, [selectedNativeProductId, selectedNativeProducts])
   const nativePeriod = selectedNativeProduct
     ? storePeriod(
         selectedNativeProduct.subscriptionPeriod.numberOfUnits,
@@ -1111,7 +1132,9 @@ export default function SubscriptionPaymentPage() {
                 : `${selectedSubscriptionPlan?.currency ?? selectedPlan?.currency ?? 'PHP'} ${dueAmount.toFixed(2)}`}
             </p>
             <p>
-              Billing cycle: {(selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
+              Billing cycle: {usesNativeStore && selectedNativeProduct
+                ? nativePeriod.duration
+                : (selectedSubscriptionPlan?.billing_cycle ?? selectedPlan?.billing_cycle ?? 'MONTHLY').toLowerCase()}
             </p>
             <p>
               Subscription reference: {paymentSubscription ? paymentSubscription.subscription_no : selectedPlan?.plan_code ?? 'Pending'}
@@ -1156,6 +1179,29 @@ export default function SubscriptionPaymentPage() {
           <section className="stack-panel auth-panel trial-expired-payment-methods" aria-label="App store subscription">
             <h2>{selectedNativeProduct?.title ?? (usesAndroidStore ? 'Google Play Subscription' : 'App Store Subscription')}</h2>
             <p>{selectedNativeProduct?.description ?? 'This plan is not yet available from the app store.'}</p>
+            {usesIosStore && selectedNativeProducts.length > 1 ? (
+              <label>
+                Billing period
+                <select
+                  aria-label="Apple subscription billing period"
+                  value={selectedNativeProduct?.mapping.product_id ?? ''}
+                  onChange={(event) => setSelectedNativeProductId(event.target.value)}
+                  disabled={isNativePurchasePending}
+                >
+                  {selectedNativeProducts.map((product) => {
+                    const period = storePeriod(
+                      product.subscriptionPeriod.numberOfUnits,
+                      product.subscriptionPeriod.unitString,
+                    ) ?? nativeSubscriptionPeriod(selectedSubscriptionPlan?.billing_cycle)
+                    return (
+                      <option key={product.mapping.product_id} value={product.mapping.product_id}>
+                        {period.duration} — {product.priceString}
+                      </option>
+                    )
+                  })}
+                </select>
+              </label>
+            ) : null}
             {!selectedNativeProduct && !nativeCatalogMessage ? (
               <button
                 type="button"
