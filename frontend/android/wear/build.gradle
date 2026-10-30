@@ -1,6 +1,34 @@
 apply plugin: 'com.android.application'
 apply plugin: 'org.jetbrains.kotlin.plugin.compose'
 
+def keystorePropertiesFile = rootProject.file('keystore.properties')
+def keystoreProperties = [:]
+def hasReleaseKeystore = false
+
+if (keystorePropertiesFile.exists()) {
+    def keystorePropertyPrefix = 'releaseSigning'
+    ant.property(file: keystorePropertiesFile, prefix: keystorePropertyPrefix)
+    ['storeFile', 'storePassword', 'keyAlias', 'keyPassword'].each { key ->
+        keystoreProperties[key] = ant.properties["${keystorePropertyPrefix}.${key}"]
+    }
+    hasReleaseKeystore = [
+        'storeFile',
+        'storePassword',
+        'keyAlias',
+        'keyPassword',
+    ].every { key ->
+        keystoreProperties[key] != null && !keystoreProperties[key].trim().isEmpty()
+    }
+}
+
+def isReleaseBuildRequested = gradle.startParameter.taskNames.any { taskName ->
+    taskName?.toLowerCase()?.contains('release')
+}
+
+if (isReleaseBuildRequested && !hasReleaseKeystore) {
+    throw new GradleException("Wear OS release builds require a configured keystore.properties file. Refusing to fall back to a debug signing key.")
+}
+
 android {
     namespace = "com.quantech.filscore.wear"
     compileSdk = rootProject.ext.compileSdkVersion
@@ -22,9 +50,25 @@ android {
         targetCompatibility JavaVersion.VERSION_17
     }
 
+    signingConfigs {
+        release {
+            if (hasReleaseKeystore) {
+                def releaseStoreFile = new File(keystoreProperties['storeFile'])
+                if (!releaseStoreFile.isAbsolute()) {
+                    releaseStoreFile = rootProject.file("app/${keystoreProperties['storeFile']}")
+                }
+                storeFile releaseStoreFile
+                storePassword keystoreProperties['storePassword']
+                keyAlias keystoreProperties['keyAlias']
+                keyPassword keystoreProperties['keyPassword']
+            }
+        }
+    }
+
     buildTypes {
         release {
             minifyEnabled false
+            signingConfig signingConfigs.release
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
