@@ -37,8 +37,8 @@ android {
         applicationId "com.quantech.filscore"
         minSdkVersion 30
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 360010001
-        versionName "1.0.0-wear"
+        versionCode 36
+        versionName "1.0.1-wear"
     }
 
     buildFeatures {
