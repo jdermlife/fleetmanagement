@@ -35,9 +35,9 @@ android {
 
     defaultConfig {
         applicationId "com.quantech.filscore"
-        minSdkVersion 30
+        minSdkVersion 40
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 40
+        versionCode 41
         versionName "1.0.41-wear"
     }
 
