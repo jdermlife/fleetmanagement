@@ -42,8 +42,8 @@ android {
         applicationId "com.quantech.filscore"
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
-        versionCode 40
-        versionName "1.0.41"
+        versionCode 10043
+        versionName "1.0.43"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         manifestPlaceholders = [ADMOB_APP_ID: admobAppId ?: googleTestAdmobAppId]
         aaptOptions {
