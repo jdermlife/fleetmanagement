@@ -45,6 +45,7 @@ import {
 } from './financialHealthComputationSources'
 import { FINANCIAL_HEALTH_TOOL_RECOMMENDATIONS } from './financialHealthToolRecommendations'
 import FinancialPositionComposite from './FinancialPositionComposite'
+import HealthActivityRings from './HealthActivityRings'
 import { toFilscore } from './filscoreScale'
 import {
   computeNetWorthBuildingScore,
@@ -2707,6 +2708,10 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
                 </div>
               ))}
             </div>
+
+            <HealthActivityRings
+              scores={Object.fromEntries(financialHealthIndicators.map((indicator) => [indicator.id, indicator.score]))}
+            />
           </article>
         </div>
 
