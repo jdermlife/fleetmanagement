@@ -27,6 +27,7 @@ import {
   loadPublishedFinancialHealthSummary,
 } from '../scoring/financialHealthLiveSummary'
 import type { FinancialHealthSummaryResult } from '../scoring/financialHealthSummaryEngine'
+import HealthActivityRings from '../scoring/HealthActivityRings'
 
 const snapshotItems = [
   { key: 'credit_health_score', summaryKey: 'credit_health_summary', kind: 'credit', label: 'Credit Health', path: '/lending-scorecard', Icon: CreditCard },
@@ -349,6 +350,13 @@ export default function InAGlancePage() {
   const financialHealthSummary = liveSummary
     ? asRecord(liveSummary)
     : asRecord(snapshot?.financial_health_summary)
+  const healthRingScores: Record<string, number> = {}
+  if (Array.isArray(financialHealthSummary.indicators)) {
+    for (const item of financialHealthSummary.indicators) {
+      const indicator = asRecord(item)
+      if (typeof indicator.id === 'string') healthRingScores[indicator.id] = numericValue(indicator.score)
+    }
+  }
   const hasFinancialHealth = liveSummary !== null || snapshot !== null
   const hasHeroMirrors = Object.values(heroMirrors).some((mirror) => mirror !== null)
   const hasAnyFinancialData = hasFinancialHealth || hasHeroMirrors
@@ -423,6 +431,12 @@ export default function InAGlancePage() {
               : 'Showing the latest saved result until Financial Health publishes a current result.'}</p>
             <a href="/financial-health-summary">View Financial Health</a>
           </div>
+        </section>
+      ) : null}
+
+      {hasFinancialHealth && Object.keys(healthRingScores).length > 0 ? (
+        <section aria-label="Health rings">
+          <HealthActivityRings scores={healthRingScores} />
         </section>
       ) : null}
 
