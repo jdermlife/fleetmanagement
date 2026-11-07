@@ -140,6 +140,46 @@
   object-position: 44% center;
 }
 
+.landing-health-labels {
+  position: absolute;
+  z-index: 2;
+  top: 31%;
+  left: clamp(10px, 1.5vw, 22px);
+  display: grid;
+  width: min(27%, 210px);
+  gap: clamp(6px, 0.8vw, 10px);
+}
+
+.landing-health-label {
+  display: flex;
+  min-height: clamp(28px, 3vw, 36px);
+  align-items: center;
+  justify-content: center;
+  padding: 5px clamp(7px, 1vw, 12px);
+  border: 1px solid rgba(255, 255, 255, 0.78);
+  border-radius: 999px;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.34);
+  color: #141414;
+  font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+  font-size: clamp(0.62rem, 0.86vw, 0.78rem);
+  font-weight: 800;
+  line-height: 1.12;
+  text-align: center;
+  text-wrap: balance;
+}
+
+.landing-health-label-cash {
+  background: linear-gradient(180deg, #f3cf68, #c79322);
+}
+
+.landing-health-label-protection {
+  background: linear-gradient(180deg, #f4f6f8, #aeb5bf);
+}
+
+.landing-health-label-investment {
+  background: linear-gradient(180deg, #d9a276, #a96437);
+}
+
 .landing-hero-content {
   z-index: 1;
   display: flex;
@@ -448,6 +488,17 @@
   }
   .landing-hero-visual { min-height: 390px; }
   .landing-hero-visual img { object-position: 43% center; }
+  .landing-health-labels {
+    top: 33%;
+    left: 6px;
+    width: 34%;
+    gap: 5px;
+  }
+  .landing-health-label {
+    min-height: 26px;
+    padding: 4px 6px;
+    font-size: clamp(0.56rem, 2.45vw, 0.68rem);
+  }
   .landing-hero-content { padding: 38px 20px 52px; }
   .landing-hero-mark {
     top: 42%;

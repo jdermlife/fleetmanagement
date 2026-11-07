@@ -90,6 +90,15 @@ export default function LandingPage() {
               src={phoneFinancialHealth}
               alt="FILSCORE financial health dashboard displayed on a phone"
             />
+            <div className="landing-health-labels" aria-label="Financial health categories">
+              <span className="landing-health-label landing-health-label-cash">Cash and Credit</span>
+              <span className="landing-health-label landing-health-label-protection">
+                Protection &amp; Budget
+              </span>
+              <span className="landing-health-label landing-health-label-investment">
+                Investment &amp; Retirement Goals
+              </span>
+            </div>
           </div>
           <img className="landing-hero-mark" src={brandLogoDataUri} alt="" aria-hidden="true" />
           <div className="landing-hero-content">
