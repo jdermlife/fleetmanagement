@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 
+import phoneFinancialHealth from '../../assets/phone-financial-health.jpg'
 import { APP_NAME, brandLogoDataUri } from '../../brand'
 import './LandingPage.css'
 
@@ -84,33 +85,41 @@ export default function LandingPage() {
 
       <main>
         <section className="landing-hero" aria-labelledby="landing-title">
-          <img className="landing-hero-mark" src={brandLogoDataUri} alt="" aria-hidden="true" />
-          <div className="landing-hero-copy">
-            <p className="landing-eyebrow">One dashboard. Your full financial picture.</p>
-            <h1 id="landing-title">FILSCORE ai - Your Financial Health Dashboard</h1>
-            <p className="landing-hero-lead">
-              Understand your money, strengthen your credit readiness, and turn financial data into
-              decisions you can act on.
-            </p>
-            <div className="landing-hero-actions">
-              <Link className="landing-primary-action" to="/register">
-                Start Free Trial <ArrowRight size={18} aria-hidden="true" />
-              </Link>
-              <a className="landing-secondary-action" href="#tools">Explore the tools</a>
-            </div>
-            <p className="landing-trust-line">
-              <ShieldCheck size={17} aria-hidden="true" /> Secure, guided, and built around your goals.
-            </p>
+          <div className="landing-hero-visual">
+            <img
+              src={phoneFinancialHealth}
+              alt="FILSCORE financial health dashboard displayed on a phone"
+            />
           </div>
-          <div className="landing-hero-score" aria-label="FILSCORE dashboard preview">
-            <span>Financial health</span>
-            <strong>One clear view</strong>
-            <div className="landing-score-track"><i /></div>
-            <dl>
-              <div><dt>Cash flow</dt><dd>Visible</dd></div>
-              <div><dt>Credit readiness</dt><dd>Measured</dd></div>
-              <div><dt>Next actions</dt><dd>Prioritized</dd></div>
-            </dl>
+          <img className="landing-hero-mark" src={brandLogoDataUri} alt="" aria-hidden="true" />
+          <div className="landing-hero-content">
+            <div className="landing-hero-copy">
+              <p className="landing-eyebrow">One dashboard. Your full financial picture.</p>
+              <h1 id="landing-title">FILSCORE ai - Your Financial Health Dashboard</h1>
+              <p className="landing-hero-lead">
+                Understand your money, strengthen your credit readiness, and turn financial data into
+                decisions you can act on.
+              </p>
+              <div className="landing-hero-actions">
+                <Link className="landing-primary-action" to="/register">
+                  Start Free Trial <ArrowRight size={18} aria-hidden="true" />
+                </Link>
+                <a className="landing-secondary-action" href="#tools">Explore the tools</a>
+              </div>
+              <p className="landing-trust-line">
+                <ShieldCheck size={17} aria-hidden="true" /> Secure, guided, and built around your goals.
+              </p>
+            </div>
+            <div className="landing-hero-score" aria-label="FILSCORE dashboard preview">
+              <span>Financial health</span>
+              <strong>One clear view</strong>
+              <div className="landing-score-track"><i /></div>
+              <dl>
+                <div><dt>Cash flow</dt><dd>Visible</dd></div>
+                <div><dt>Credit readiness</dt><dd>Measured</dd></div>
+                <div><dt>Next actions</dt><dd>Prioritized</dd></div>
+              </dl>
+            </div>
           </div>
         </section>
 

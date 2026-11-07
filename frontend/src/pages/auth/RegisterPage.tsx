@@ -1,5 +1,6 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { Turnstile } from '@marsidev/react-turnstile'
+import { Capacitor } from '@capacitor/core'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -122,6 +123,7 @@ export default function RegisterPage() {
   const googleClientId = APP_CONFIG.googleClientId
   const googleIosClientId = APP_CONFIG.googleIosClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
+  const isIosNativeApp = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
   const appleClientId = APP_CONFIG.appleClientId
   const appleIosClientId = APP_CONFIG.appleIosClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
@@ -142,7 +144,7 @@ export default function RegisterPage() {
   const [message, setMessage] = useState('')
   const [appleMessage, setAppleMessage] = useState('')
   const [showEmailRegistration, setShowEmailRegistration] = useState(
-    registrationState?.registrationMethod === 'email',
+    !isIosNativeApp && registrationState?.registrationMethod === 'email',
   )
   const [isSaving, setIsSaving] = useState(false)
   const [isAppleSaving, setIsAppleSaving] = useState(false)
@@ -466,7 +468,18 @@ export default function RegisterPage() {
 
         <div className="register-social-option">
           <p className="auth-role-copy register-social-label">Google Account</p>
-          {isGoogleEnabled && useNativeGoogleSignIn ? (
+          {isIosNativeApp ? (
+            <button
+              type="button"
+              className="auth-link-button auth-provider-choice register-provider-button ios-auth-provider-disabled"
+              disabled
+              aria-label="Sign up with Google unavailable on iOS"
+            >
+              <span className="register-provider-icon"><GoogleMark /></span>
+              Sign up with Google
+            </button>
+          ) : null}
+          {!isIosNativeApp && isGoogleEnabled && useNativeGoogleSignIn ? (
             <button
               type="button"
               className="auth-link-button auth-provider-choice register-provider-button"
@@ -477,7 +490,7 @@ export default function RegisterPage() {
               {isSaving ? 'Continuing with Google...' : 'Sign up with Google'}
             </button>
           ) : null}
-          {isGoogleEnabled && !useNativeGoogleSignIn ? (
+          {!isIosNativeApp && isGoogleEnabled && !useNativeGoogleSignIn ? (
             <div className="register-google-button-wrap">
               <div className="register-google-button-preview" aria-hidden="true">
                 <span className="register-provider-icon"><GoogleMark /></span>
@@ -496,7 +509,7 @@ export default function RegisterPage() {
               </div>
             </div>
           ) : null}
-          {!isGoogleEnabled ? (
+          {!isIosNativeApp && !isGoogleEnabled ? (
             <p className="status-message">Google Sign-Up is available when configured.</p>
           ) : null}
         </div>
@@ -506,13 +519,17 @@ export default function RegisterPage() {
         {!showEmailRegistration ? (
           <button
             type="button"
-            className="auth-link-button auth-provider-choice register-other-email-button register-provider-button"
+            className={`auth-link-button auth-provider-choice register-other-email-button register-provider-button${isIosNativeApp ? ' ios-auth-provider-disabled' : ''}`}
             onClick={() => setShowEmailRegistration(true)}
             aria-controls="register-email-form"
             aria-expanded="false"
+            disabled={isIosNativeApp}
           >
             Other Email
           </button>
+        ) : null}
+        {isIosNativeApp ? (
+          <p className="status-message">Use Sign in with Apple in the iOS app.</p>
         ) : null}
       </div>
 
@@ -613,5 +630,4 @@ export default function RegisterPage() {
     </div>
   )
 }
-
 

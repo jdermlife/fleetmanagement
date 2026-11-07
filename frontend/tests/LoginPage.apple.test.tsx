@@ -10,6 +10,14 @@ const { mockNavigate, mockRequestAppleSignInToken, mockLogin, mockLoginWithApple
   mockLoginWithApple: vi.fn(),
   mockLoginWithGoogle: vi.fn(),
 }))
+const nativePlatform = vi.hoisted(() => ({ value: 'web' }))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    getPlatform: () => nativePlatform.value,
+    isNativePlatform: () => nativePlatform.value !== 'web',
+  },
+}))
 
 vi.mock('@react-oauth/google', () => ({
   GoogleLogin: ({ onSuccess }: { onSuccess: (response: { credential?: string }) => void }) => (
@@ -81,6 +89,7 @@ describe('LoginPage Apple sign-in', () => {
   })
 
   beforeEach(() => {
+    nativePlatform.value = 'web'
     vi.stubEnv('VITE_GOOGLE_CLIENT_ID', 'google-client-id')
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     const storageMock = createStorageMock()
@@ -122,6 +131,26 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.getByRole('button', { name: 'Log In' })).toBeTruthy()
     expect((screen.getByRole('button', { name: 'Log In' }) as HTMLButtonElement).disabled).toBe(false)
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+  })
+
+  it('blurs and disables Google and other email sign-in on iOS', () => {
+    nativePlatform.value = 'ios'
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    const googleButton = screen.getByRole('button', { name: 'Continue with Google unavailable on iOS' })
+    const otherEmailButton = screen.getByRole('button', { name: 'Other Email' })
+
+    expect((googleButton as HTMLButtonElement).disabled).toBe(true)
+    expect(googleButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect((otherEmailButton as HTMLButtonElement).disabled).toBe(true)
+    expect(otherEmailButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect(screen.queryByPlaceholderText('Email or username')).toBeNull()
+    expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
   })
 
   it('links to the public service and dispute policies from the login page', () => {

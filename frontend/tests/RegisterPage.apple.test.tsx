@@ -18,6 +18,14 @@ const {
   mockRequestAppleSignInToken: vi.fn(),
   mockLoginWithApple: vi.fn(),
 }))
+const nativePlatform = vi.hoisted(() => ({ value: 'web' }))
+
+vi.mock('@capacitor/core', () => ({
+  Capacitor: {
+    getPlatform: () => nativePlatform.value,
+    isNativePlatform: () => nativePlatform.value !== 'web',
+  },
+}))
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual<typeof import('react-router-dom')>('react-router-dom')
@@ -74,6 +82,7 @@ describe('RegisterPage Apple sign-up', () => {
   })
 
   beforeEach(() => {
+    nativePlatform.value = 'web'
     vi.stubEnv('VITE_APPLE_CLIENT_ID', 'com.quantech.filscore.web')
     vi.stubEnv('VITE_TURNSTILE_SITE_KEY', 'turnstile-site-key')
     mockNavigate.mockReset()
@@ -156,6 +165,35 @@ describe('RegisterPage Apple sign-up', () => {
     expect(screen.getByRole('textbox', { name: /username/i })).toBeTruthy()
     expect((screen.getByRole('textbox', { name: /^email/i }) as HTMLInputElement).value).toBe('new-user@example.com')
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+  })
+
+  it('blurs and disables Google and other email registration on iOS', () => {
+    nativePlatform.value = 'ios'
+
+    render(
+      <MemoryRouter
+        initialEntries={[{
+          pathname: '/register',
+          state: {
+            registrationMethod: 'email',
+            email: 'new-user@example.com',
+          },
+        }]}
+      >
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const googleButton = screen.getByRole('button', { name: 'Sign up with Google unavailable on iOS' })
+    const otherEmailButton = screen.getByRole('button', { name: 'Other Email' })
+
+    expect((googleButton as HTMLButtonElement).disabled).toBe(true)
+    expect(googleButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect((otherEmailButton as HTMLButtonElement).disabled).toBe(true)
+    expect(otherEmailButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect(screen.queryByLabelText('Username')).toBeNull()
+    expect(screen.queryByLabelText('Email')).toBeNull()
+    expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
   })
 
   it('allows the Starter subscription plan to be selected', async () => {

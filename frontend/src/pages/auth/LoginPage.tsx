@@ -1,4 +1,5 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
+import { Capacitor } from '@capacitor/core'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
@@ -194,6 +195,7 @@ export default function LoginPage() {
   const googleClientId = APP_CONFIG.googleClientId
   const googleIosClientId = APP_CONFIG.googleIosClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
+  const isIosNativeApp = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
   const appleClientId = APP_CONFIG.appleClientId
   const appleIosClientId = APP_CONFIG.appleIosClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
@@ -420,7 +422,18 @@ export default function LoginPage() {
             </button>
 
             <div className="login-art-google-wrap">
-              {isGoogleEnabled && useNativeGoogleSignIn ? (
+              {isIosNativeApp ? (
+                <button
+                  type="button"
+                  className="login-art-social-button login-art-provider-button login-art-google-button ios-auth-provider-disabled"
+                  disabled
+                  aria-label="Continue with Google unavailable on iOS"
+                >
+                  <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
+                  <span>Continue with Google</span>
+                </button>
+              ) : null}
+              {!isIosNativeApp && isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
                   className="login-art-social-button login-art-provider-button login-art-google-button"
@@ -431,7 +444,7 @@ export default function LoginPage() {
                   <span>Continue with Google</span>
                 </button>
               ) : null}
-              {isGoogleEnabled && !useNativeGoogleSignIn ? (
+              {!isIosNativeApp && isGoogleEnabled && !useNativeGoogleSignIn ? (
                 <div className="login-art-google-live">
                   <div className="login-art-google-preview" aria-hidden="true">
                     <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
@@ -450,7 +463,7 @@ export default function LoginPage() {
               ) : null}
             </div>
 
-            {!isGoogleEnabled ? (
+            {!isIosNativeApp && !isGoogleEnabled ? (
               <p className="login-art-service-note">Google Sign-In is available when configured.</p>
             ) : null}
             {!isAppleConfigured ? (
@@ -460,16 +473,20 @@ export default function LoginPage() {
             {!showEmailLogin ? (
               <button
                 type="button"
-                className="login-art-social-button login-art-social-button-email login-art-provider-button"
+                className={`login-art-social-button login-art-social-button-email login-art-provider-button${isIosNativeApp ? ' ios-auth-provider-disabled' : ''}`}
                 onClick={() => setShowEmailLogin(true)}
                 aria-controls="login-email-form"
                 aria-expanded="false"
+                disabled={isIosNativeApp}
               >
                 <span className="login-art-social-icon">
                   <MailIcon />
                 </span>
                 <span>Other Email</span>
               </button>
+            ) : null}
+            {isIosNativeApp ? (
+              <p className="login-art-service-note">Use Sign in with Apple in the iOS app.</p>
             ) : null}
           </div>
 
@@ -571,5 +588,4 @@ export default function LoginPage() {
     </div>
   )
 }
-
 

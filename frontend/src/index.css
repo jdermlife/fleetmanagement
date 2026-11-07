@@ -12117,6 +12117,14 @@ th { color: var(--dark-gold); }
   cursor: not-allowed;
 }
 
+.ios-auth-provider-disabled,
+.ios-auth-provider-disabled:hover {
+  filter: blur(2px);
+  opacity: 0.42;
+  pointer-events: none;
+  user-select: none;
+}
+
 .login-art-social-icon {
   width: 24px;
   height: 24px;

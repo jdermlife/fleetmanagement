@@ -11,6 +11,9 @@ describe('LandingPage', () => {
     expect(screen.getByRole('heading', {
       name: 'FILSCORE ai - Your Financial Health Dashboard',
     })).toBeTruthy()
+    expect(screen.getByRole('img', {
+      name: 'FILSCORE financial health dashboard displayed on a phone',
+    })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Financial Health Dashboard' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'AI Financial Assistant' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Explore FILSCORE with a 2-day free trial.' })).toBeTruthy()

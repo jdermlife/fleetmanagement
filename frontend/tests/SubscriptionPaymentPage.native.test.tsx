@@ -128,8 +128,11 @@ describe('SubscriptionPaymentPage native billing', () => {
     expect(within(terms).getByRole('link', { name: 'Terms of Use' }).getAttribute('href')).toBe('/terms')
     expect(within(terms).getByRole('link', { name: 'Privacy Policy' }).getAttribute('href')).toBe('/privacy')
 
-    const subscribe = screen.getByRole('button', { name: 'Subscribe' })
+    const subscribe = screen.getByRole('button', { name: 'Subscribe with Apple' })
     expect(terms.compareDocumentPosition(subscribe) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Restore Purchases' })).toBeTruthy()
+    expect(screen.queryByRole('heading', { name: 'Choose Payment Channel' })).toBeNull()
+    expect(screen.queryByText(/PayMongo|PayPal|GCash|Maya/i)).toBeNull()
     await waitFor(() => expect(nativeBillingMocks.loadNativeStoreProducts).toHaveBeenCalledTimes(1))
   })
 
