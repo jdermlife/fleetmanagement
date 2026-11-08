@@ -104,7 +104,6 @@ export default function LandingPage() {
                 <Link className="landing-primary-action" to="/register">
                   Start Free Trial <ArrowRight size={18} aria-hidden="true" />
                 </Link>
-                <a className="landing-secondary-action" href="#tools">Explore the tools</a>
               </div>
               <p className="landing-trust-line">
                 <ShieldCheck size={17} aria-hidden="true" /> Secure, guided, and built around your goals.
@@ -120,6 +119,9 @@ export default function LandingPage() {
                 <div><dt>Next actions</dt><dd>Prioritized</dd></div>
               </dl>
             </div>
+            <a className="landing-secondary-action landing-hero-bottom-action" href="#tools">
+              Explore the tools
+            </a>
           </div>
         </section>
 
