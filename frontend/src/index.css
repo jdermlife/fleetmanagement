@@ -3230,6 +3230,38 @@ button.loan-repository-action-release { background: #4f46e5; }
   .loan-certification-qr span {
     font-size: 0.32rem;
   }
+
+ 
+/* PDF Blank Page & Margin Reset Fixes */
+  #root, .app-shell {
+    min-height: auto !important;
+    height: auto !important;
+    padding-top: 0 !important;
+    display: block !important;
+  }
+
+  html, body {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .content > *:first-child, .loan-certification-page {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+  }
+
+  .content, .loan-certification-shell, .loan-certification-frame {
+    page-break-before: avoid !important;
+    break-before: avoid !important;
+  }
+
+  .app-topbar-row, .app-mobile-back-inline {
+    display: none !important;
+  }
+
+
+
+
 }
 
 /* ========================
