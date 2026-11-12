@@ -250,6 +250,113 @@
 .admin-current-financial-results { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; margin-top: 7px; }
 .admin-current-financial-results > div { display: flex; justify-content: space-between; gap: 8px; padding: 6px 8px; background: #e8f0ec; color: #102b22; font-weight: 800; }
 
+.admin-model-sheet,
+.admin-vital-signs-sheet { display: flex; flex-direction: column; }
+.admin-model-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(230px, .75fr);
+  gap: 8px;
+  min-height: 0;
+  margin-top: 8px;
+}
+.admin-model-grid .loan-optimization-tachometer {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: minmax(180px, .7fr) minmax(220px, .85fr) minmax(360px, 1.45fr);
+  gap: 8px 14px;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.admin-model-grid .loan-optimization-heading h2 { font-size: 1.15em; }
+.admin-model-grid .loan-optimization-heading p { font-size: .72em; }
+.admin-model-grid .loan-optimization-dial { min-width: 0; }
+.admin-model-grid .loan-optimization-dial svg { display: block; width: 100%; max-height: 108px; }
+.admin-model-grid .loan-optimization-inputs { gap: 5px; }
+.admin-model-grid .loan-optimization-inputs article { min-width: 0; padding: 7px; }
+.admin-model-grid .loan-optimization-inputs span,
+.admin-model-grid .loan-optimization-inputs small { font-size: .63em; }
+.admin-model-grid .loan-optimization-inputs strong { font-size: 1em; }
+.admin-model-grid .cash-coverage-gauge,
+.admin-model-grid .collateral-coverage-gauge {
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  padding: 10px 12px;
+  border-radius: 6px;
+  box-shadow: none;
+}
+.admin-model-grid .cash-coverage-gauge-visual { max-height: 112px; margin-top: 3px; }
+.admin-model-grid .collateral-coverage-dial { max-width: 150px; margin: 0 auto; }
+.admin-model-grid .cash-coverage-gauge-reading strong,
+.admin-model-grid .collateral-coverage-reading strong { font-size: 1.35em; }
+.admin-model-grid .cash-coverage-gauge-details,
+.admin-model-grid .collateral-coverage-details { gap: 5px; margin-top: 5px; padding-top: 6px; }
+.admin-model-grid .cash-coverage-gauge-details span,
+.admin-model-grid .collateral-coverage-details span { font-size: .62em; }
+.admin-model-recommendations {
+  min-width: 0;
+  padding: 12px;
+  border: 1px solid #b8c2bd;
+  border-top: 5px solid #8a3c20;
+  border-radius: 6px;
+  background: #fffaf0;
+}
+.admin-model-recommendations > span {
+  color: #8a3c20;
+  font-size: .66em;
+  font-weight: 900;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+.admin-model-recommendations h2 { margin: 3px 0 8px; font-size: 1.1em; }
+.admin-model-recommendations ol { display: grid; gap: 7px; margin: 0; padding-left: 18px; }
+.admin-model-recommendations li { color: #394640; font-size: .72em; line-height: 1.35; }
+
+.admin-vital-signs-intro {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 8px;
+  padding: 7px 9px;
+  background: #173f32;
+  color: #fff;
+}
+.admin-vital-signs-intro strong { font-size: .86em; text-transform: uppercase; }
+.admin-vital-signs-intro span { color: #dce8e2; font-size: .7em; text-align: right; }
+.admin-vital-signs-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  margin-top: 8px;
+}
+.admin-vital-sign-card {
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--vital-accent) 48%, #aab5b0);
+  border-top: 5px solid var(--vital-accent);
+  border-radius: 6px;
+  background: linear-gradient(160deg, #fff 58%, var(--vital-soft-accent));
+  break-inside: avoid;
+}
+.admin-vital-sign-card-protection { box-shadow: inset 0 0 0 2px rgb(232 93 93 / 20%); }
+.admin-vital-sign-card > header { display: flex; align-items: start; justify-content: space-between; gap: 8px; }
+.admin-vital-sign-card > header span { color: #263b33; font-size: .82em; font-weight: 900; }
+.admin-vital-sign-card > header strong { color: var(--vital-accent); font-size: 1.3em; line-height: 1; white-space: nowrap; }
+.admin-vital-sign-card > header small { color: #6b7772; font-size: .5em; }
+.admin-vital-sign-meter { height: 7px; margin-top: 7px; overflow: hidden; border-radius: 999px; background: #e3e8e5; }
+.admin-vital-sign-meter i { display: block; max-width: 100%; height: 100%; border-radius: inherit; background: var(--vital-accent); }
+.admin-vital-sign-card dl { display: grid; grid-template-columns: repeat(2, 1fr); gap: 5px; margin: 7px 0; }
+.admin-vital-sign-card dl div { padding: 5px; background: rgb(255 255 255 / 72%); }
+.admin-vital-sign-card dt { color: #6b7772; font-size: .58em; font-weight: 800; text-transform: uppercase; }
+.admin-vital-sign-card dd { margin: 1px 0 0; font-size: .72em; font-weight: 900; }
+.admin-vital-sign-card p { margin: 0; color: #394640; font-size: .68em; line-height: 1.34; }
+.admin-vital-sign-card p strong { display: block; margin-bottom: 2px; color: var(--vital-accent); text-transform: uppercase; }
+
 @media (max-width: 1000px) {
   .admin-financial-statement-overlay { padding: 0; }
   .admin-financial-statement-page { overflow-x: auto; }
@@ -258,16 +365,37 @@
 
 @media print {
   @page { size: landscape; margin: 0; }
-  body * { visibility: hidden !important; }
-  .admin-financial-statement-overlay,
-  .admin-financial-statement-page,
-  .admin-statement-pages,
-  .admin-statement-sheet,
-  .admin-statement-sheet * { visibility: visible !important; }
-  .admin-financial-statement-overlay { position: static; overflow: visible; padding: 0; background: #fff; }
-  .admin-financial-statement-page { padding: 0; background: #fff; }
+  html,
+  body { width: auto !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; background: #fff !important; }
+  body > * { display: none !important; }
+  body > .admin-financial-statement-overlay { display: block !important; }
+  .admin-financial-statement-overlay { position: static !important; inset: auto !important; width: auto; min-height: 0; overflow: visible !important; padding: 0; background: #fff; }
+  .admin-financial-statement-page { width: auto; min-width: 0; min-height: 0; padding: 0; overflow: visible; background: #fff; }
   .admin-statement-toolbar { display: none !important; }
-  .admin-statement-pages { display: block; }
-  .admin-statement-sheet { position: relative; width: 100%; height: 100vh; min-height: 0; box-shadow: none; break-after: page; page-break-after: always; print-color-adjust: exact; }
+  .admin-statement-pages { display: block; width: auto; min-height: 0; }
+  .admin-statement-sheet {
+    --statement-font-size: 9pt !important;
+    position: relative;
+    min-height: 0;
+    margin: 0;
+    box-shadow: none;
+    overflow: hidden;
+    break-before: auto;
+    page-break-before: auto;
+    break-after: page;
+    page-break-after: always;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .admin-statement-sheet-a4 { width: 297mm; height: 210mm; }
+  .admin-statement-sheet-letter { width: 279.4mm; height: 215.9mm; }
   .admin-statement-sheet:last-child { break-after: auto; page-break-after: auto; }
+  .admin-cover-health-rings,
+  .admin-cover-credit .credit-health-score-ring-visual,
+  .admin-model-grid svg { filter: none !important; }
+  .admin-cover-health-rings,
+  .admin-cover-credit .credit-health-score-ring-visual { contain: layout paint; }
+  .admin-cover-ring,
+  .admin-cover-ring::after,
+  .admin-cover-credit .credit-health-score-ring-center { box-sizing: border-box; }
 }
