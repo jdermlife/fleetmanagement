@@ -303,6 +303,29 @@ export default function AdminFinancialHealthProposalPage({
                 {' '}{money.format(Math.abs(monthlySurplus))}. These figures form the basis of the recommendations in this proposal.
               </p>
             </section>
+
+   <div className="admin-proposal-graph-grid">
+              <section className="admin-proposal-graph-panel admin-proposal-activity-panel">
+                <header><span>Financial Health Activity</span><h2>Health Activity Rings</h2></header>
+                <HealthActivityRings scores={healthActivityScores} />
+              </section>
+              <section className="admin-proposal-graph-panel admin-proposal-wealth-panel">
+                <header><span>Wealth Building Score</span><h2>Wealth Balance Radar</h2></header>
+                <WealthBalanceRadar
+                  netWorthPositioning={netWorthBuilding.score}
+                  wealthBehaviour={wealthBehaviour}
+                  wealthFoundation={wealthFoundation}
+                  wealthAuthenticity={wealthAuthenticity}
+                />
+              </section>
+            </div>
+
+
+
+
+
+
+
             <footer>Profile information should be reviewed and updated before implementing recommendations.</footer>
           </main>
 
