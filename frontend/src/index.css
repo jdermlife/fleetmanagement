@@ -3086,34 +3086,60 @@ button.loan-repository-action-release { background: #4f46e5; }
 
 @media print {
   @page {
-    size: A5 portrait;
-    margin: 7mm;
+    size: A4 portrait;
+    margin: 10mm;
   }
 
+  html,
   body {
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
     background: #ffffff !important;
+    overflow: visible !important;
   }
 
   .sidebar,
-  .loan-certification-toolbar {
+  .loan-certification-toolbar,
+  .app-topbar-row,
+  .app-mobile-back-inline {
     display: none !important;
   }
 
+  #root,
+  .app-shell,
   .content {
+    display: block !important;
+    width: 100% !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
     padding: 0 !important;
+    position: static !important;
+    overflow: visible !important;
   }
 
   .loan-certification-page {
+    display: block;
+    width: 100%;
+    margin: 0;
     padding: 0;
   }
 
   .loan-certification-shell {
+    width: 100%;
     max-width: none;
+    margin: 0;
   }
 
   .loan-certification-frame {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
     box-shadow: none;
-    padding: 12px;
+    padding: 10px;
     break-inside: avoid;
     page-break-inside: avoid;
     print-color-adjust: exact;
@@ -3126,9 +3152,19 @@ button.loan-repository-action-release { background: #4f46e5; }
 
   .loan-certification-frame::after { inset: 8px; }
 
-  .loan-certification-ornament { width: 22px; height: 22px; border-width: 1px; }
+  .loan-certification-ornament {
+    width: 16px;
+    height: 16px;
+    border-width: 1px;
+    box-shadow: 0 0 0 1px #0a2a61, 0 0 0 2px #8eabd4, inset 0 0 0 3px rgba(7, 30, 73, 0.68);
+  }
 
-  .loan-certification-ornament::after { inset: 4px; }
+  .loan-certification-ornament-top-left { top: 5px; left: 5px; }
+  .loan-certification-ornament-top-right { top: 5px; right: 5px; }
+  .loan-certification-ornament-bottom-left { bottom: 5px; left: 5px; }
+  .loan-certification-ornament-bottom-right { right: 5px; bottom: 5px; }
+
+  .loan-certification-ornament::after { inset: 3px; }
 
   .loan-certification-inner {
     padding: 12px 12px 14px;
@@ -3175,8 +3211,12 @@ button.loan-repository-action-release { background: #4f46e5; }
 
   .loan-certification-summary-card,
   .loan-certification-metric-card {
+    min-width: 0;
+    min-height: 0;
     padding: 8px;
     border-radius: 10px;
+    break-inside: avoid;
+    page-break-inside: avoid;
   }
 
   .loan-certification-summary-label,
@@ -3232,36 +3272,121 @@ button.loan-repository-action-release { background: #4f46e5; }
   }
 
  
-/* PDF Blank Page & Margin Reset Fixes */
-  #root, .app-shell {
-    min-height: auto !important;
-    height: auto !important;
-    padding-top: 0 !important;
-    display: block !important;
-  }
-
-  html, body {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-  }
-
-  .content > *:first-child, .loan-certification-page {
-    margin-top: 0 !important;
-    padding-top: 0 !important;
-  }
-
-  .content, .loan-certification-shell, .loan-certification-frame {
-    page-break-before: avoid !important;
-    break-before: avoid !important;
-  }
-
-  .app-topbar-row, .app-mobile-back-inline {
+  body:has(.lending-report-page) .page-assistant,
+  body:has(.lending-report-page) .floating-chatbot,
+  .lending-report-page > :not(.lending-psychometric-layout),
+  .lending-report-page .lending-psychometric-panel-header,
+  .lending-report-page .lending-legacy-filscore {
     display: none !important;
   }
 
+  .lending-report-page,
+  .lending-report-page .lending-psychometric-layout,
+  .lending-report-page .psychometric-main,
+  .lending-report-page .lending-psychometric-form-panel,
+  .lending-report-page .lending-psychometric-body {
+    display: block !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
 
+  .lending-report-page .lending-inline-certification {
+    width: 100%;
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    break-after: page;
+    page-break-after: always;
+  }
 
+  .lending-report-page .lending-inline-certification .loan-certification-frame {
+    padding: 10px;
+  }
 
+  .lending-report-page .lending-inline-certification .loan-certification-inner {
+    padding: 10px 12px;
+  }
+
+  .lending-report-page .lending-inline-certification .loan-certification-summary-grid,
+  .lending-report-page .lending-inline-certification .loan-certification-metrics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 5px;
+  }
+
+  .lending-report-page .lending-inline-certification .loan-certification-summary-card,
+  .lending-report-page .lending-inline-certification .loan-certification-metric-card {
+    grid-template-columns: 28px minmax(0, 1fr) minmax(60px, auto);
+    gap: 6px;
+    min-height: 52px;
+    padding: 5px 6px;
+  }
+
+  .lending-report-page .lending-inline-certification .loan-certification-card-icon {
+    width: 26px;
+    height: 26px;
+    border-width: 1px;
+    box-shadow: none;
+  }
+
+  .lending-report-page .lending-inline-certification .loan-certification-card-icon svg {
+    width: 15px;
+    height: 15px;
+  }
+
+  .lending-report-page .lending-inline-certification .loan-certification-summary-value,
+  .lending-report-page .lending-inline-certification .loan-certification-metric-value {
+    min-width: 60px;
+    min-height: 38px;
+    padding: 4px 5px;
+    font-size: 0.86rem;
+    white-space: normal;
+  }
+
+  .lending-report-page .lending-decision-insights {
+    display: grid;
+    width: 100%;
+    margin: 0;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 7mm;
+  }
+
+  .lending-report-page .lending-decision-card {
+    min-height: 0;
+    padding: 10px;
+    gap: 6px;
+    border-radius: 5px;
+    box-shadow: none;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .lending-report-page .lending-decision-card-wide {
+    grid-column: 1 / -1;
+  }
+
+  .lending-report-page .lending-score-timeline-wrap {
+    overflow: visible;
+  }
+
+  .lending-report-page .lending-score-timeline {
+    width: 100%;
+    table-layout: fixed;
+    font-size: 0.62rem;
+  }
+
+  .lending-report-page .lending-score-timeline th,
+  .lending-report-page .lending-score-timeline td {
+    padding: 4px;
+    overflow-wrap: anywhere;
+  }
 }
 
 /* ========================
