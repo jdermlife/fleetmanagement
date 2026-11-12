@@ -260,6 +260,100 @@
 .admin-proposal-health-overview strong { font-size: 2.3em; line-height: 1; }
 .admin-proposal-health-overview small { color: #c9d6d1; }
 .admin-proposal-health-overview p { max-width: 320px; margin: 0; color: #dfe9e5; font-size: .76em; text-align: right; }
+.admin-proposal-financial-risk {
+  display: grid;
+  grid-template-columns: 150px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  margin-top: 12px;
+  padding: 12px;
+  border-left: 6px solid #22c55e;
+  background: #edf8f1;
+}
+.admin-proposal-financial-risk.has-alerts { border-left-color: #dc2626; background: #fff1f0; }
+.admin-proposal-financial-risk > div { display: grid; grid-template-columns: auto 1fr; align-items: end; gap: 0 7px; }
+.admin-proposal-financial-risk span { grid-column: 1 / -1; color: #6b7772; font-size: .65em; font-weight: 900; text-transform: uppercase; }
+.admin-proposal-financial-risk strong { color: #173f32; font-size: 2.2em; line-height: 1; }
+.admin-proposal-financial-risk.has-alerts strong { color: #b91c1c; }
+.admin-proposal-financial-risk small { color: #6b7772; font-size: .62em; }
+.admin-proposal-financial-risk p { margin: 0; color: #394640; font-size: .78em; line-height: 1.4; }
+.admin-proposal-risk-indicators {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 8px;
+}
+.admin-proposal-risk-indicators article {
+  min-width: 0;
+  padding: 8px;
+  border-top: 4px solid var(--proposal-risk-accent, #22c55e);
+  background: #f5f7f6;
+}
+.admin-proposal-risk-indicators span,
+.admin-proposal-risk-indicators strong,
+.admin-proposal-risk-indicators small { display: block; }
+.admin-proposal-risk-indicators span { font-size: .66em; font-weight: 900; text-transform: uppercase; }
+.admin-proposal-risk-indicators strong { margin-top: 3px; color: var(--proposal-risk-accent, #173f32); font-size: .85em; }
+.admin-proposal-risk-indicators small { margin-top: 4px; color: #55645e; font-size: .56em; line-height: 1.28; }
+.admin-proposal-risk-indicators .admin-proposal-no-risk { grid-column: 1 / -1; }
+.admin-proposal-graph-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 0;
+  margin-top: 8px;
+}
+.admin-proposal-graph-panel {
+  min-width: 0;
+  overflow: hidden;
+  border: 1px solid #b8c5bf;
+  border-radius: 6px;
+  background: #102f27;
+  color: #fff;
+}
+.admin-proposal-graph-panel > header { padding: 9px 10px 0; }
+.admin-proposal-graph-panel > header span { color: #f1cf68; font-size: .63em; font-weight: 900; letter-spacing: .08em; text-transform: uppercase; }
+.admin-proposal-graph-panel > header h2 { margin: 2px 0 0; font-size: .95em; }
+.admin-proposal-activity-panel .health-activity-rings {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1.05fr) minmax(108px, .95fr);
+  gap: 7px !important;
+  padding: 8px !important;
+  border-radius: 0 !important;
+}
+.admin-proposal-activity-panel .health-activity-rings svg {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 190px;
+}
+.admin-proposal-activity-panel .health-activity-rings ul { gap: 5px !important; font-size: .62em; }
+.admin-proposal-activity-panel .health-activity-rings li { gap: 5px !important; }
+.admin-proposal-activity-panel .health-activity-rings li span:first-child { width: 8px !important; height: 8px !important; }
+.admin-proposal-activity-panel .health-activity-rings li strong { padding-left: 5px !important; }
+.admin-proposal-wealth-panel { background: #1d3144; }
+.admin-proposal-wealth-panel .wealth-balance-radar {
+  display: grid;
+  grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr);
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  margin: 0;
+  padding: 8px 10px 10px;
+}
+.admin-proposal-wealth-panel .wealth-balance-radar-indicators { min-width: 0; }
+.admin-proposal-wealth-panel .wealth-balance-radar-kicker { color: #f1cf68; font-size: .55em; }
+.admin-proposal-wealth-panel .wealth-balance-radar h2 { margin: 3px 0 8px; color: #fff; font-size: .9em; }
+.admin-proposal-wealth-panel .wealth-balance-radar-indicator-list { gap: 5px; }
+.admin-proposal-wealth-panel .wealth-balance-radar-indicator { grid-template-columns: 7px minmax(0, 1fr) auto; gap: 4px; color: #e5e7eb; font-size: .56em; }
+.admin-proposal-wealth-panel .wealth-balance-radar-indicator i { width: 5px; height: 9px; }
+.admin-proposal-wealth-panel .wealth-balance-radar-visual { display: block; width: 100%; max-height: 190px; }
+.admin-proposal-wealth-panel .wealth-balance-radar-grid { fill: none; stroke: #6d8090; stroke-width: 1; }
+.admin-proposal-wealth-panel .wealth-balance-radar-axis { stroke-width: 1; }
+.admin-proposal-wealth-panel .wealth-balance-radar-score { opacity: .7; }
+.admin-proposal-wealth-panel .wealth-balance-radar-point { stroke: #fff; stroke-width: 1.5; }
 .admin-proposal-vitals-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-top: 10px; }
 .admin-proposal-vitals-grid article {
   min-width: 0;
@@ -393,4 +487,5 @@
   .admin-proposal-sheet-a4 { width: 210mm; height: 297mm; }
   .admin-proposal-sheet-letter { width: 215.9mm; height: 279.4mm; }
   .admin-proposal-sheet:last-child { break-after: auto; page-break-after: auto; }
+  .admin-proposal-graph-panel svg { filter: none !important; }
 }
