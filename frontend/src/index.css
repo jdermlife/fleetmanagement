@@ -19640,6 +19640,25 @@ th { color: var(--dark-gold); }
   justify-content: center;
 }
 
+.financial-health-statement-action .financial-health-proposal-link {
+  min-height: 0;
+  margin-top: 8px;
+  padding: 3px 4px;
+  border: 0;
+  color: #075985;
+  background: transparent;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+
+.financial-health-statement-action .financial-health-proposal-link:hover,
+.financial-health-statement-action .financial-health-proposal-link:focus-visible {
+  color: #0f766e;
+}
+
 .financial-health-statement-action.is-locked button {
   cursor: not-allowed;
   filter: grayscale(0.55);

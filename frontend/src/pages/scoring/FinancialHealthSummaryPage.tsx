@@ -22,6 +22,7 @@ import {
   fetchMonthlyProfileSnapshots,
   type MonthlyProfileSnapshotRecord,
 } from '../../services/profilemonthlysnapshotcalculator'
+import FinancialHealthProposalModal from '../admin/AdminFinancialHealthProposalPage'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
 import { WatchSync } from '../../native/watchSync'
 
@@ -586,6 +587,7 @@ export default function FinancialHealthSummaryPage() {
   const [snapshotMessage, setSnapshotMessage] = useState('')
   const [isSavingSnapshot, setIsSavingSnapshot] = useState(false)
   const [isFinancialStatementOpen, setIsFinancialStatementOpen] = useState(false)
+  const [isFinancialHealthProposalOpen, setIsFinancialHealthProposalOpen] = useState(false)
   const [monthlySnapshotDrafts, setMonthlySnapshotDrafts] = useState<MonthlySnapshotDrafts | null>(null)
   const [monthlyProfileResult, setMonthlyProfileResult] = useState<Awaited<ReturnType<typeof calculateAndSaveMonthlyProfile>> | null>(null)
   const [isSaveConfirmationOpen, setIsSaveConfirmationOpen] = useState(false)
@@ -1687,6 +1689,10 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
           psychometric: toFilscore(lendingLeafScores?.psychometricScore ?? null),
         }}
       /> : null}
+      {isFinancialHealthProposalOpen ? <FinancialHealthProposalModal
+        onClose={() => setIsFinancialHealthProposalOpen(false)}
+        financialHealthSummary={publishedSummary}
+      /> : null}
       <FinancialJourneyGuide
         completion={journeyStepCompletion}
         doNotShowAgain={doNotShowJourneyAgain}
@@ -2747,6 +2753,15 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
               aria-describedby={!isScoreAccessLoading && !hasPaidScoreAccess ? 'financial-health-statement-access-note' : undefined}
             >
               Open Statement of Assets and Liabilities
+            </button>
+            <button
+              type="button"
+              className="financial-health-proposal-link"
+              onClick={() => setIsFinancialHealthProposalOpen(true)}
+              disabled={isScoreAccessLoading || !hasPaidScoreAccess}
+              aria-describedby={!isScoreAccessLoading && !hasPaidScoreAccess ? 'financial-health-statement-access-note' : undefined}
+            >
+              Open Financial Health Proposal
             </button>
             {!isScoreAccessLoading && !hasPaidScoreAccess ? (
               <span id="financial-health-statement-access-note">Available for paid accounts only.</span>
