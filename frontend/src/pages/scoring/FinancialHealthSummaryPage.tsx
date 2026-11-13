@@ -161,6 +161,11 @@ type VitalGuidance = {
   recommendation: string
 }
 
+type VitalProfileExplanation = {
+  actual: string
+  target: string
+}
+
 type RecommendedProduct = {
   name: string
   outcome: string
@@ -1561,6 +1566,111 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
     indicator.score < priority.score ? indicator : priority,
   )
   const netWorthMetrics = netWorthBuildingScore?.metrics
+  const goalTargetAmount = Math.max(0, Number(monthlySnapshotDrafts?.netWorth?.targetAmount) || 0)
+  const goalTargetMonths = Math.max(0, Math.floor(Number(monthlySnapshotDrafts?.netWorth?.targetMonths) || 0))
+  const goalFundingTarget = goalTargetAmount * 1.1
+  const goalFundingGap = Math.max(
+    0,
+    goalFundingTarget - (netWorthMetrics?.projectedNetWorthAtGoalDate ?? 0),
+  )
+  const creditDebtRatio = lendingLeafScores && lendingLeafScores.monthlyIncome > 0
+    ? (lendingLeafScores.monthlyDebtCommitments / lendingLeafScores.monthlyIncome) * 100
+    : null
+  const creditMaximumDebt = (lendingLeafScores?.monthlyIncome ?? 0) * 0.3
+  const creditDebtReduction = Math.max(
+    0,
+    (lendingLeafScores?.monthlyDebtCommitments ?? 0) - creditMaximumDebt,
+  )
+  const cashFlowSavingsTarget = (netWorthMetrics?.monthlyIncome ?? 0) * 0.35
+  const cashFlowSavingsGap = Math.max(
+    0,
+    cashFlowSavingsTarget - Math.max(netWorthMetrics?.monthlyCashFlow ?? 0, 0),
+  )
+  const paymentLiabilityTarget = (netWorthMetrics?.totalAssets ?? 0) * 0.1
+  const paymentReductionGap = Math.max(
+    0,
+    (netWorthMetrics?.totalLiabilities ?? 0) - paymentLiabilityTarget,
+  )
+  const coveredProtectionCategories = Math.min(
+    9,
+    Math.round(((netWorthMetrics?.protectionCoveragePercent ?? 0) / 100) * 9),
+  )
+  const vitalProfileExplanations: Record<string, VitalProfileExplanation> = {
+    credit: lendingLeafScores
+      ? {
+          actual: `Monthly income is ${formatCurrency(lendingLeafScores.monthlyIncome, benchmarkContext.currency)} and monthly debt commitments are ${formatCurrency(lendingLeafScores.monthlyDebtCommitments, benchmarkContext.currency)}${creditDebtRatio === null ? '' : `, producing a ${creditDebtRatio.toFixed(1)}% debt-service ratio`}. The score also checks government ID, other income, collateral coverage, and loan purpose.`,
+          target: `Keep monthly debt commitments below 30% of income, currently ${formatCurrency(creditMaximumDebt, benchmarkContext.currency)}, requiring a reduction of ${formatCurrency(creditDebtReduction, benchmarkContext.currency)} if all else is unchanged. Complete all five credit factors. The current five-factor formula has a maximum of 88/100, so reaching a displayed 100 also requires a future scoring-model expansion.`,
+        }
+      : {
+          actual: 'No saved lending profile is available to calculate the Credit Health figures.',
+          target: 'Complete the lending profile, including income, debts, government ID, other income, collateral, and loan purpose.',
+        },
+    'cash-flow': netWorthMetrics
+      ? {
+          actual: `Monthly income is ${formatCurrency(netWorthMetrics.monthlyIncome, benchmarkContext.currency)}, expenses are ${formatCurrency(netWorthMetrics.monthlyExpenses, benchmarkContext.currency)}, and retained cash flow is ${formatCurrency(netWorthMetrics.monthlyCashFlow, benchmarkContext.currency)} or ${netWorthMetrics.savingsRatePercent.toFixed(1)}% of income.`,
+          target: `A 100/100 Cash Flow score requires retaining at least 35% of monthly income: ${formatCurrency(cashFlowSavingsTarget, benchmarkContext.currency)} per month. The current monthly savings gap is ${formatCurrency(cashFlowSavingsGap, benchmarkContext.currency)}.`,
+        }
+      : {
+          actual: 'No saved income and expense profile is available to calculate Cash Flow Health.',
+          target: 'Record recurring income and expenses. The 100/100 target is a monthly savings rate of at least 35%.',
+        },
+    wealth: netWorthMetrics
+      ? {
+          actual: `Net worth is ${formatCurrency(netWorthMetrics.netWorth, benchmarkContext.currency)} from ${formatCurrency(netWorthMetrics.totalAssets, benchmarkContext.currency)} in assets less ${formatCurrency(netWorthMetrics.totalLiabilities, benchmarkContext.currency)} in liabilities. Liquid assets are ${formatCurrency(netWorthMetrics.liquidAssets, benchmarkContext.currency)}.`,
+          target: `Wealth Health reaches 100/100 only when all ten components reach 100: net worth at least 85% of assets, liquid assets 45% of assets, savings 35%, liabilities no more than 10% of assets, 12 months of emergency reserves, investments 35%, retirement coverage 15 years, passive income 100% of expenses, goal funding 110%, and all 9 protection categories.`,
+        }
+      : {
+          actual: 'No saved asset, liability, income, and expense profile is available to calculate Wealth Health.',
+          target: 'Complete Net Worth Positioning so every Wealth Health component can be measured against its 100/100 threshold.',
+        },
+    budget: budgetHealthScore
+      ? {
+          actual: `Budget variance is ${budgetHealthScore.metrics.variancePercent === null ? 'not yet measurable' : `${budgetHealthScore.metrics.variancePercent.toFixed(1)}%`}, savings rate is ${budgetHealthScore.metrics.savingsRatePercent === null ? 'not yet measurable' : `${budgetHealthScore.metrics.savingsRatePercent.toFixed(1)}%`}, allocations total ${budgetHealthScore.metrics.allocationTotalPercent.toFixed(1)}%, and ${budgetHealthScore.metrics.stableMonths} stable month${budgetHealthScore.metrics.stableMonths === 1 ? '' : 's'} are recorded.`,
+          target: 'A 100/100 Budget score requires a complete plan totaling 100%, spending variance of 5% or less, savings above 30%, all six allocation limits satisfied, and 12 consecutive stable months without negative adjustments.',
+        }
+      : {
+          actual: 'No saved budget profile is available to explain the Budget Health score.',
+          target: 'Create a complete budget, record actual activity, and build 12 stable months to calculate progress toward 100/100.',
+        },
+    payment: netWorthMetrics
+      ? {
+          actual: `Liabilities are ${formatCurrency(netWorthMetrics.totalLiabilities, benchmarkContext.currency)} against ${formatCurrency(netWorthMetrics.totalAssets, benchmarkContext.currency)} in assets, producing a ${netWorthMetrics.debtToAssetRatioPercent.toFixed(1)}% debt-to-asset ratio.`,
+          target: `A 100/100 Payment Health score requires liabilities at or below 10% of assets: ${formatCurrency(paymentLiabilityTarget, benchmarkContext.currency)} with current assets unchanged. The current liability reduction needed is ${formatCurrency(paymentReductionGap, benchmarkContext.currency)}.`,
+        }
+      : {
+          actual: 'No saved asset and liability profile is available to calculate Payment Health.',
+          target: 'Record assets and liabilities. The 100/100 target is a debt-to-asset ratio of 10% or less.',
+        },
+    protection: netWorthMetrics
+      ? {
+          actual: `${coveredProtectionCategories} of 9 protection categories are recorded, equal to ${netWorthMetrics.protectionCoveragePercent.toFixed(1)}% category coverage.`,
+          target: `A 100/100 Protection Health score requires at least 90% coverage. Because there are 9 categories, all 9 must have a recorded amount; ${9 - coveredProtectionCategories} categor${9 - coveredProtectionCategories === 1 ? 'y' : 'ies'} remain${9 - coveredProtectionCategories === 1 ? 's' : ''}.`,
+        }
+      : {
+          actual: 'No saved protection profile is available to calculate category coverage.',
+          target: 'Record an amount in all 9 protection categories to meet the 100/100 category-coverage threshold.',
+        },
+    investment: netWorthMetrics
+      ? {
+          actual: `Investment and retirement assets are ${netWorthMetrics.investmentReadinessPercent.toFixed(1)}% of total assets, retirement assets cover ${netWorthMetrics.retirementCoverageYears.toFixed(1)} years of expenses, and passive income covers ${netWorthMetrics.financialIndependencePercent.toFixed(1)}% of monthly expenses.`,
+          target: 'A 100/100 Investment Health score requires all three components at 100: investment and retirement assets at least 35% of total assets, retirement coverage of at least 15 years of expenses, and passive income equal to 100% of monthly expenses.',
+        }
+      : {
+          actual: 'No saved investment, retirement, income, and expense profile is available to calculate Investment Health.',
+          target: 'Record investments, retirement assets, passive income, and expenses so the three 100/100 thresholds can be calculated.',
+        },
+    goal: netWorthMetrics
+      ? {
+          actual: `Projected net worth at the goal date is ${formatCurrency(netWorthMetrics.projectedNetWorthAtGoalDate, benchmarkContext.currency)}, equal to ${netWorthMetrics.goalProgressPercent.toFixed(1)}% of the saved goal${goalTargetMonths > 0 ? ` over ${goalTargetMonths} month${goalTargetMonths === 1 ? '' : 's'}` : ''}.`,
+          target: goalTargetAmount > 0 && goalTargetMonths > 0
+            ? `A 100/100 Goal Health score requires projected net worth of 110% of the ${formatCurrency(goalTargetAmount, benchmarkContext.currency)} goal: ${formatCurrency(goalFundingTarget, benchmarkContext.currency)}. The additional projected funding needed is ${formatCurrency(goalFundingGap, benchmarkContext.currency)}.`
+            : 'Set both a goal amount and target timeline. The 100/100 threshold is projected net worth equal to at least 110% of that goal.',
+        }
+      : {
+          actual: 'No saved net-worth goal profile is available to calculate Goal Health.',
+          target: 'Record a goal amount and target timeline. The 100/100 threshold is projected net worth equal to at least 110% of the goal.',
+        },
+  }
   const positionRecommendations: Record<string, PositionRingRecommendation> = {
     'cash-flow': netWorthMetrics
       ? {
@@ -2312,6 +2422,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
         <div className="financial-health-vitals-grid">
           {financialHealthIndicators.map((indicator) => {
             const guidance = VITAL_GUIDANCE[indicator.id]
+            const profileExplanation = vitalProfileExplanations[indicator.id]
             const isPositive = indicator.score >= 80
             const popoverId = `financial-health-vital-${indicator.id}-guidance`
 
@@ -2357,6 +2468,12 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
                   >
                     <strong>{isPositive ? 'Positive' : 'Needs improvement'}: {indicator.score}/100</strong>
                     <p>{isPositive ? guidance.positive : guidance.negative}</p>
+                    <span className="financial-health-vital-numbers">
+                      <b>Why this score:</b> {profileExplanation.actual}
+                    </span>
+                    <span className="financial-health-vital-target">
+                      <b>What is needed for 100/100:</b> {profileExplanation.target}
+                    </span>
                     <span><b>Recommendation:</b> {guidance.recommendation}</span>
                   </div>
                 ) : null}
@@ -2761,7 +2878,7 @@ const saveFinancialHealthSnapshot = async (): Promise<void> => {
               disabled={isScoreAccessLoading || !hasPaidScoreAccess}
               aria-describedby={!isScoreAccessLoading && !hasPaidScoreAccess ? 'financial-health-statement-access-note' : undefined}
             >
-              Open Financial Health Proposal
+              Open Financial Health Analysis
             </button>
             {!isScoreAccessLoading && !hasPaidScoreAccess ? (
               <span id="financial-health-statement-access-note">Available for paid accounts only.</span>
