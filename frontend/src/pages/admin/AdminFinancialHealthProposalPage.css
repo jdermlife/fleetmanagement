@@ -488,6 +488,7 @@
   .admin-proposal-sheet-letter { width: 215.9mm; height: 279.4mm; }
   .admin-proposal-sheet:last-child { break-after: auto; page-break-after: auto; }
   .admin-proposal-graph-panel svg { filter: none !important; }
+}
 
 .admin-proposal-financial-health-ring {
   display: grid;
@@ -562,13 +563,4 @@
   height: 9px;
   flex: 0 0 9px;
   border-radius: 50%;
-}
-
-
-
-
-
-
-
-
 }

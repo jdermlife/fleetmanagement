@@ -37,6 +37,7 @@ const profileValue = (profile: ReplicatedBuildProfile | null, ...keys: string[])
     if (value) return value
   }
   return ''
+}
 
 const PROPOSAL_FINANCIAL_HEALTH_RING_STROKES = [
   'url(#proposal-financial-health-ring-gold)',
@@ -51,24 +52,6 @@ const PROPOSAL_FINANCIAL_HEALTH_RING_LEGEND = [
 ] as const
 
 const PROPOSAL_FINANCIAL_HEALTH_RING_RADII = [76, 58, 40] as const
-
-
-
-
-
-
-
-  
-}
-
-
-
-
-
-
-
-
-
 
 function indicatorRecommendation(id: string, score: number) {
   const actionById: Record<string, string> = {
@@ -194,9 +177,6 @@ export default function AdminFinancialHealthProposalPage({
   const riskNarration = riskIndicators.length === 0
     ? 'Well positioned. No Financial Vital Sign is currently below the 80-point target.'
     : `${riskIndicators.map((indicator) => indicator.label).join(', ')} ${riskIndicators.length === 1 ? 'is' : 'are'} below the 80-point target and may hold back overall Financial Health.`
-  const healthActivityScores = Object.fromEntries(
-    financialHealthSummary.indicators.map((indicator) => [indicator.id, indicator.score]),
-  )
   const strongestIndicators = [...financialHealthSummary.indicators]
     .sort((left, right) => right.score - left.score)
     .slice(0, 3)
@@ -222,6 +202,76 @@ export default function AdminFinancialHealthProposalPage({
         <small>{proposalDate} · Profile {profile?.profileId || 'Not selected'}</small>
       </div>
     </header>
+  )
+
+  const financialHealthRing = (
+    <figure
+      className="financial-health-ring-figure admin-proposal-financial-health-ring"
+      aria-label={`Financial Health score ${financialHealthSummary.score} out of 1000, rated ${financialHealthBand}`}
+    >
+      <div className="financial-health-ring-visual">
+        <svg viewBox="0 0 184 184" aria-hidden="true">
+          <defs>
+            <linearGradient id="proposal-financial-health-ring-gold" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#7b5008" />
+              <stop offset="0.24" stopColor="#f4c54f" />
+              <stop offset="0.43" stopColor="#ffe99a" />
+              <stop offset="0.68" stopColor="#d69a1e" />
+              <stop offset="1" stopColor="#845508" />
+            </linearGradient>
+            <linearGradient id="proposal-financial-health-ring-silver" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#656b73" />
+              <stop offset="0.24" stopColor="#d5d9de" />
+              <stop offset="0.43" stopColor="#f7f8f9" />
+              <stop offset="0.68" stopColor="#adb3ba" />
+              <stop offset="1" stopColor="#686e76" />
+            </linearGradient>
+            <linearGradient id="proposal-financial-health-ring-bronze" x1="22" y1="20" x2="162" y2="164" gradientUnits="userSpaceOnUse">
+              <stop offset="0" stopColor="#663213" />
+              <stop offset="0.24" stopColor="#c67a3b" />
+              <stop offset="0.43" stopColor="#f0ad70" />
+              <stop offset="0.68" stopColor="#a95726" />
+              <stop offset="1" stopColor="#653012" />
+            </linearGradient>
+          </defs>
+          {financialHealthSummary.groups.map((group, index) => (
+            <g key={group.id} transform="rotate(-90 92 92)">
+              <circle
+                className="financial-health-ring-track"
+                cx="92"
+                cy="92"
+                r={PROPOSAL_FINANCIAL_HEALTH_RING_RADII[index]}
+                pathLength="100"
+              />
+              <circle
+                className="financial-health-ring-progress"
+                cx="92"
+                cy="92"
+                r={PROPOSAL_FINANCIAL_HEALTH_RING_RADII[index]}
+                pathLength="100"
+                stroke={PROPOSAL_FINANCIAL_HEALTH_RING_STROKES[index]}
+                strokeDasharray={`${group.value} ${100 - group.value}`}
+              />
+            </g>
+          ))}
+        </svg>
+        <div className="financial-health-ring-score">
+          <strong>{financialHealthSummary.score}</strong>
+          <span>/ 1000</span>
+        </div>
+      </div>
+      <figcaption className="financial-health-ring-legend">
+        {financialHealthSummary.groups.map((group, index) => (
+          <span key={group.id}>
+            <i
+              style={{ background: index === 0 ? '#e0ad2f' : index === 1 ? '#d2d6db' : '#c57b3c' }}
+              aria-hidden="true"
+            />
+            {PROPOSAL_FINANCIAL_HEALTH_RING_LEGEND[index]}
+          </span>
+        ))}
+      </figcaption>
+    </figure>
   )
 
   const metricRows = (rows: ProposalMetric[], emptyLabel: string) => rows.length > 0
@@ -335,133 +385,6 @@ export default function AdminFinancialHealthProposalPage({
               </p>
             </section>
 
-   <div className="admin-proposal-graph-grid">
-            <section className="admin-proposal-graph-panel admin-proposal-financial-health-panel">
-  <header>
-    <span>Financial Health Position</span>
-    <h2>Financial Health Ring</h2>
-  </header>
-
-  <figure
-    className="financial-health-ring-figure admin-proposal-financial-health-ring"
-    aria-label={`Financial Health score ${financialHealthSummary.score} out of 1000, rated ${financialHealthBand}`}
-  >
-    <div className="financial-health-ring-visual">
-      <svg viewBox="0 0 184 184" aria-hidden="true">
-        <defs>
-          <linearGradient
-            id="proposal-financial-health-ring-gold"
-            x1="22"
-            y1="20"
-            x2="162"
-            y2="164"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#7b5008" />
-            <stop offset="0.24" stopColor="#f4c54f" />
-            <stop offset="0.43" stopColor="#ffe99a" />
-            <stop offset="0.68" stopColor="#d69a1e" />
-            <stop offset="1" stopColor="#845508" />
-          </linearGradient>
-
-          <linearGradient
-            id="proposal-financial-health-ring-silver"
-            x1="22"
-            y1="20"
-            x2="162"
-            y2="164"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#656b73" />
-            <stop offset="0.24" stopColor="#d5d9de" />
-            <stop offset="0.43" stopColor="#f7f8f9" />
-            <stop offset="0.68" stopColor="#adb3ba" />
-            <stop offset="1" stopColor="#686e76" />
-          </linearGradient>
-
-          <linearGradient
-            id="proposal-financial-health-ring-bronze"
-            x1="22"
-            y1="20"
-            x2="162"
-            y2="164"
-            gradientUnits="userSpaceOnUse"
-          >
-            <stop offset="0" stopColor="#663213" />
-            <stop offset="0.24" stopColor="#c67a3b" />
-            <stop offset="0.43" stopColor="#f0ad70" />
-            <stop offset="0.68" stopColor="#a95726" />
-            <stop offset="1" stopColor="#653012" />
-          </linearGradient>
-        </defs>
-
-        {financialHealthSummary.groups.map((group, index) => (
-          <g key={group.id} transform="rotate(-90 92 92)">
-            <circle
-              className="financial-health-ring-track"
-              cx="92"
-              cy="92"
-              r={PROPOSAL_FINANCIAL_HEALTH_RING_RADII[index]}
-              pathLength="100"
-            />
-
-            <circle
-              className="financial-health-ring-progress"
-              cx="92"
-              cy="92"
-              r={PROPOSAL_FINANCIAL_HEALTH_RING_RADII[index]}
-              pathLength="100"
-              stroke={PROPOSAL_FINANCIAL_HEALTH_RING_STROKES[index]}
-              strokeDasharray={`${group.value} ${100 - group.value}`}
-            />
-          </g>
-        ))}
-      </svg>
-
-      <div className="financial-health-ring-score">
-        <strong>{financialHealthSummary.score}</strong>
-        <span>/ 1000</span>
-      </div>
-    </div>
-
-    <figcaption className="financial-health-ring-legend">
-      {financialHealthSummary.groups.map((group, index) => (
-        <span key={group.id}>
-          <i
-            style={{
-              background:
-                index === 0
-                  ? '#e0ad2f'
-                  : index === 1
-                    ? '#d2d6db'
-                    : '#c57b3c',
-            }}
-            aria-hidden="true"
-          />
-
-          {PROPOSAL_FINANCIAL_HEALTH_RING_LEGEND[index]}
-        </span>
-      ))}
-    </figcaption>
-  </figure>
-</section>
-             
-             
-             
-             
-              <section className="admin-proposal-graph-panel admin-proposal-activity-panel">
-                <header><span>Financial Health Activity</span><h2>Health Activity Rings</h2></header>
-                <HealthActivityRings scores={healthActivityScores} />
-              </section>
-
-            </div>
-
-
-
-
-
-
-
             <footer>Profile information should be reviewed and updated before implementing recommendations.</footer>
           </main>
 
@@ -491,9 +414,9 @@ export default function AdminFinancialHealthProposalPage({
               )}
             </div>
             <div className="admin-proposal-graph-grid">
-              <section className="admin-proposal-graph-panel admin-proposal-activity-panel">
-                <header><span>Financial Health Activity</span><h2>Health Activity Rings</h2></header>
-                <HealthActivityRings scores={healthActivityScores} />
+              <section className="admin-proposal-graph-panel admin-proposal-financial-health-panel">
+                <header><span>Financial Health Position</span><h2>Financial Health Ring</h2></header>
+                {financialHealthRing}
               </section>
               <section className="admin-proposal-graph-panel admin-proposal-wealth-panel">
                 <header><span>Wealth Building Score</span><h2>Wealth Balance Radar</h2></header>
