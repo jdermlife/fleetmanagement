@@ -114,6 +114,9 @@ export default function AdminFinancialHealthProposalPage({
     currency,
     maximumFractionDigits: 0,
   }), [currency])
+  const plainNumber = useMemo(() => new Intl.NumberFormat('en-PH', {
+    maximumFractionDigits: 0,
+  }), [])
   const proposalDate = new Intl.DateTimeFormat('en-PH', { dateStyle: 'long' }).format(new Date())
   const clientName = profileValue(profile, 'fullName', 'borrowerName', 'clientName') || 'Profile Customer'
   const riskProfile = resolveRiskProfile(profile)
@@ -190,6 +193,16 @@ export default function AdminFinancialHealthProposalPage({
   const debtToAssetRatio = totalAssets > 0 ? (totalLiabilities / totalAssets) * 100 : 0
   const savingsRate = monthlyIncome > 0 ? Math.max(0, (monthlySurplus / monthlyIncome) * 100) : 0
   const monthsOfExpenses = monthlyExpenses > 0 ? liquidAssets / monthlyExpenses : 0
+  const incomeReplacementRequirement = monthlyIncome * 60
+  const unfundedGoalAmount = Math.max(0, targetAmount - investmentAssets)
+  const requiredProtectionCoverage = Math.max(
+    0,
+    totalLiabilities + incomeReplacementRequirement + unfundedGoalAmount - liquidAssets,
+  )
+  const additionalProtectionNeeded = Math.max(0, requiredProtectionCoverage - protectionValue)
+  const protectionTargetRecommendation = additionalProtectionNeeded > 0
+    ? `The additional Protection Health amount needed to achieve the calculated 100/100 coverage target is ${plainNumber.format(additionalProtectionNeeded)}. Complete all required protection categories as well as the monetary target.`
+    : 'The declared protection amount meets the calculated monetary target. Complete all required protection categories to achieve and maintain a Protection Health score of 100/100.'
 
   const sheetClass = `admin-proposal-sheet admin-proposal-sheet-${paperSize}`
   const pageHeader = (page: number, title: string) => (
@@ -613,12 +626,29 @@ export default function AdminFinancialHealthProposalPage({
 
           <main className={sheetClass}>
             {pageHeader(9, 'Priority Action Plan & Review')}
+            <section className="admin-proposal-protection-target">
+              <div>
+                <span>Protection Health Target</span>
+                <strong>{plainNumber.format(additionalProtectionNeeded)}</strong>
+                <small>Additional amount needed · no currency denomination</small>
+              </div>
+              <p>{protectionTargetRecommendation}</p>
+              <dl>
+                <div><dt>Liabilities</dt><dd>{plainNumber.format(totalLiabilities)}</dd></div>
+                <div><dt>5-year income replacement</dt><dd>{plainNumber.format(incomeReplacementRequirement)}</dd></div>
+                <div><dt>Unfunded goal</dt><dd>{plainNumber.format(unfundedGoalAmount)}</dd></div>
+                <div><dt>Less liquid assets</dt><dd>{plainNumber.format(liquidAssets)}</dd></div>
+                <div><dt>Less existing protection</dt><dd>{plainNumber.format(protectionValue)}</dd></div>
+              </dl>
+            </section>
             <section className="admin-proposal-action-plan">
               {weakestIndicators.map((indicator, index) => (
                 <article key={indicator.id}>
                   <span>{index + 1}</span>
                   <div><strong>{indicator.label}</strong><small>Current score {indicator.score.toFixed(1)} / 100</small></div>
-                  <p>{indicatorRecommendation(indicator.id, indicator.score)}</p>
+                  <p>{indicator.id === 'protection'
+                    ? protectionTargetRecommendation
+                    : indicatorRecommendation(indicator.id, indicator.score)}</p>
                   <b>{index === 0 ? '0–30 days' : index === 1 ? '30–60 days' : index === 2 ? '60–90 days' : 'Quarterly review'}</b>
                 </article>
               ))}
