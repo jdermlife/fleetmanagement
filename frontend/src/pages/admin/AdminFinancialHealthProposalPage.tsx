@@ -13,6 +13,7 @@ import WealthBalanceRadar from '../scoring/WealthBalanceRadar'
 import { computeWealthFoundationScore } from '../scoring/wealthFoundationEngine'
 
 import './AdminFinancialHealthProposalPage.css'
+import HealthActivityRings from '../scoring/HealthActivityRings'
 
 type PaperSize = 'a4' | 'letter'
 
@@ -558,6 +559,15 @@ export default function AdminFinancialHealthProposalPage({
                 <p><strong>Health and property risk</strong>Confirm current policy limits, exclusions, deductibles, beneficiaries, and renewal dates.</p>
               </div>
             </section>
+                <section className="admin-proposal-graph-panel admin-proposal-activity-panel"> <header><span>Financial Health Position</span><h2>Health Activity Rings</h2></header> <HealthActivityRings scores={Object.fromEntries(financialHealthSummary.indicators.map((indicator) => [indicator.id, indicator.score]))} /> </section>
+
+
+
+
+
+
+
+
             <footer>Coverage adequacy requires policy-level review; declared amounts alone do not confirm effective protection.</footer>
           </main>
 
