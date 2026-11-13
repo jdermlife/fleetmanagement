@@ -488,4 +488,87 @@
   .admin-proposal-sheet-letter { width: 215.9mm; height: 279.4mm; }
   .admin-proposal-sheet:last-child { break-after: auto; page-break-after: auto; }
   .admin-proposal-graph-panel svg { filter: none !important; }
+
+.admin-proposal-financial-health-ring {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(110px, 0.8fr);
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  padding: 12px;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-visual {
+  position: relative;
+  width: min(100%, 210px);
+  aspect-ratio: 1;
+  margin: 0 auto;
+}
+
+.admin-proposal-financial-health-ring svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-track,
+.admin-proposal-financial-health-ring .financial-health-ring-progress {
+  fill: none;
+  stroke-width: 10;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-track {
+  stroke: rgba(255, 255, 255, 0.12);
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-progress {
+  stroke-linecap: round;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-score {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-score strong {
+  color: #fff;
+  font-size: 1.65rem;
+  line-height: 1;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-score span {
+  color: #cbd5e1;
+  font-size: 0.65rem;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-legend {
+  display: grid;
+  gap: 8px;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-legend span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: #e5e7eb;
+  font-size: 0.68em;
+}
+
+.admin-proposal-financial-health-ring .financial-health-ring-legend i {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+}
+
+
+
+
+
+
+
+
 }
