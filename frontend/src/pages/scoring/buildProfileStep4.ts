@@ -24,7 +24,7 @@ export const SPOUSE_EMPLOYMENT_FIELDS: RelatedPartyField[] = [
   { key: 'spouseYearsWithEmployer', label: 'Spouse Years - Current Employer (Optional)' },
   { key: 'spouseTotalYearsWorking', label: 'Spouse Total Years Working' },
   { key: 'spouseGrossMonthlyIncome', label: 'Spouse Gross Monthly Income', type: 'number' },
-  { key: 'spouseMonthlyExpenses', label: 'Spouse Monthly Expenses(', type: 'number' },
+  { key: 'spouseMonthlyExpenses', label: 'Spouse Monthly Expenses', type: 'number' },
   { key: 'spouseOtherIncomeSources', label: 'Spouse Other Income Sources' },
 ]
 
