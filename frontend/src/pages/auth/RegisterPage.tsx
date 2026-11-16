@@ -386,68 +386,72 @@ export default function RegisterPage() {
           </span>
         </label>
 
-        <fieldset className="auth-role-fieldset">
-          <legend>Subscriber type</legend>
-          <p className="auth-role-copy">
-            Select the access this new account should receive.
-          </p>
-          <div className="auth-role-options subscriber-type-options">
-            {REGISTER_SUBSCRIBER_OPTIONS.map((option) => {
-              return (
-              <label key={option.value} className="auth-role-option">
-                <input
-                  type="radio"
-                  name="subscriber-type"
-                  value={option.value}
-                  checked={subscriberType === option.value}
-                  onChange={(event) =>
-                    setSubscriberType(event.target.value as RegisterSubscriberType)
-                  }
-                />
-                <span>
-                  <strong>{option.label}</strong>
-                  <small>{option.description}</small>
-                </span>
-              </label>
-              )
-            })}
-          </div>
-        </fieldset>
+        {!isIosNativeApp ? (
+          <>
+            <fieldset className="auth-role-fieldset">
+              <legend>Subscriber type</legend>
+              <p className="auth-role-copy">
+                Select the access this new account should receive.
+              </p>
+              <div className="auth-role-options subscriber-type-options">
+                {REGISTER_SUBSCRIBER_OPTIONS.map((option) => {
+                  return (
+                  <label key={option.value} className="auth-role-option">
+                    <input
+                      type="radio"
+                      name="subscriber-type"
+                      value={option.value}
+                      checked={subscriberType === option.value}
+                      onChange={(event) =>
+                        setSubscriberType(event.target.value as RegisterSubscriberType)
+                      }
+                    />
+                    <span>
+                      <strong>{option.label}</strong>
+                      <small>{option.description}</small>
+                    </span>
+                  </label>
+                  )
+                })}
+              </div>
+            </fieldset>
 
-        <fieldset className="auth-role-fieldset">
-          <legend>Subscription Plan</legend>
-          <p className="auth-role-copy">
-            Default subscription plan for new accounts.
-          </p>
-          <div className="auth-role-options subscription-plan-options">
-            <label className="auth-role-option">
-              <input
-                type="radio"
-                name="subscription-plan"
-                value="FREE_TRIAL"
-                checked={subscriptionPlan === 'FREE_TRIAL'}
-                onChange={() => setSubscriptionPlan('FREE_TRIAL')}
-              />
-              <span>
-                <strong>Free</strong>
-                <small>Trial for 2 days</small>
-              </span>
-            </label>
-            <label className="auth-role-option">
-              <input
-                type="radio"
-                name="subscription-plan"
-                value="STARTER"
-                checked={subscriptionPlan === 'STARTER'}
-                onChange={() => setSubscriptionPlan('STARTER')}
-              />
-              <span>
-                <strong>Starter</strong>
-                <small>Php 160.00 per month</small>
-              </span>
-            </label>
-          </div>
-        </fieldset>
+            <fieldset className="auth-role-fieldset">
+              <legend>Subscription Plan</legend>
+              <p className="auth-role-copy">
+                Default subscription plan for new accounts.
+              </p>
+              <div className="auth-role-options subscription-plan-options">
+                <label className="auth-role-option">
+                  <input
+                    type="radio"
+                    name="subscription-plan"
+                    value="FREE_TRIAL"
+                    checked={subscriptionPlan === 'FREE_TRIAL'}
+                    onChange={() => setSubscriptionPlan('FREE_TRIAL')}
+                  />
+                  <span>
+                    <strong>Free</strong>
+                    <small>Trial for 2 days</small>
+                  </span>
+                </label>
+                <label className="auth-role-option">
+                  <input
+                    type="radio"
+                    name="subscription-plan"
+                    value="STARTER"
+                    checked={subscriptionPlan === 'STARTER'}
+                    onChange={() => setSubscriptionPlan('STARTER')}
+                  />
+                  <span>
+                    <strong>Starter</strong>
+                    <small>Php 160.00 per month</small>
+                  </span>
+                </label>
+              </div>
+            </fieldset>
+          </>
+        ) : null}
       </div>
 
       <div className="stack-panel auth-panel" aria-live="polite">

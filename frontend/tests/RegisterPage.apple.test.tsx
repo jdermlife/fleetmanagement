@@ -69,7 +69,10 @@ async function completeAppleRegistrationChoices() {
 
   await user.click(consentBoxes[0])
   await user.click(consentBoxes[1])
-  await user.click(screen.getByRole('radio', { name: /subscriber single profile/i }))
+  const singleProfile = screen.queryByRole('radio', { name: /subscriber single profile/i })
+  if (singleProfile) {
+    await user.click(singleProfile)
+  }
   await user.click(screen.getByRole('checkbox', { name: /i consent to filscore sharing my financial profile/i }))
 
   return user
@@ -187,6 +190,10 @@ describe('RegisterPage Apple sign-up', () => {
     expect(screen.queryByText('Google Account')).toBeNull()
     expect(screen.queryByRole('button', { name: /sign up with google/i })).toBeNull()
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /subscriber single profile/i })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /subscriber multiple profile/i })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /free\s*trial for 2 days/i })).toBeNull()
+    expect(screen.queryByRole('radio', { name: /starter\s*php 160\.00 per month/i })).toBeNull()
     expect(screen.queryByLabelText('Username')).toBeNull()
     expect(screen.queryByLabelText('Email')).toBeNull()
     expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
@@ -342,6 +349,32 @@ describe('RegisterPage Apple sign-up', () => {
     expect(alert.textContent?.replace(/\s+/g, ' ')).toBe(
       'Apple sign-up is taking longer than expected. Please check your connection and try again. Your account may have been created.',
     )
+  })
+
+  it('uses Borrower and Free Trial defaults when iOS options are hidden', async () => {
+    nativePlatform.value = 'ios'
+    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
+    mockLoginWithApple.mockResolvedValue({
+      user: { id: 9, role: 'subscriber_borrower' },
+    })
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
+
+    await waitFor(() => {
+      expect(mockLoginWithApple).toHaveBeenCalledWith({
+        idToken: 'apple-identity-token-123',
+        subscriberType: 'borrower',
+        lenderDataSharingConsent: true,
+      })
+      expect(mockCreateFreeSubscription).toHaveBeenCalledWith({ user_id: 9 })
+    })
   })
 
   it('keeps the original timeout detail outside iOS', async () => {
