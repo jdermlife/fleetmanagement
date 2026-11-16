@@ -478,6 +478,11 @@ export default function RegisterPage() {
               aria-hidden="true"
             />
           </button>
+          {isIosNativeApp && isAppleSaving ? (
+            <p className="status-message" role="status" aria-live="polite">
+              Connecting...
+            </p>
+          ) : null}
           {appleMessage ? (
             <p id="apple-sign-up-message" className="status-message status-error" role="alert">
               {appleMessage}

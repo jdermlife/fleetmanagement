@@ -148,6 +148,22 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
   })
 
+  it('shows Connecting while native iOS Apple authentication is pending', async () => {
+    nativePlatform.value = 'ios'
+    mockRequestAppleSignInToken.mockImplementation(() => new Promise(() => undefined))
+
+    render(
+      <MemoryRouter initialEntries={['/login']}>
+        <LoginPage />
+      </MemoryRouter>
+    )
+
+    await userEvent.click(screen.getByRole('button', { name: 'Continue with Apple' }))
+
+    expect((await screen.findByRole('status')).textContent).toBe('Connecting...')
+    expect(screen.getByRole('heading', { name: 'Connecting...' })).toBeTruthy()
+  })
+
   it('links to the public service and dispute policies from the login page', () => {
     render(
       <MemoryRouter initialEntries={['/login']}>

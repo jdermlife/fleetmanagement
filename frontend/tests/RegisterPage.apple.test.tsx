@@ -377,6 +377,23 @@ describe('RegisterPage Apple sign-up', () => {
     })
   })
 
+  it('shows Connecting throughout pending native iOS Apple registration', async () => {
+    nativePlatform.value = 'ios'
+    mockRequestAppleSignInToken.mockImplementation(() => new Promise(() => undefined))
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
+
+    expect((await screen.findByRole('status')).textContent).toBe('Connecting...')
+    expect((screen.getByRole('button', { name: 'Sign up with Apple' }) as HTMLButtonElement).disabled).toBe(true)
+  })
+
   it('keeps the original timeout detail outside iOS', async () => {
     mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
     mockLoginWithApple.mockRejectedValue(new Error('timeout of 30000ms exceeded'))

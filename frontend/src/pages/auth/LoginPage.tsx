@@ -420,6 +420,11 @@ export default function LoginPage() {
                 aria-hidden="true"
               />
             </button>
+            {isIosNativeApp && isSaving ? (
+              <p className="login-art-service-note" role="status" aria-live="polite">
+                Connecting...
+              </p>
+            ) : null}
 
             {!isIosNativeApp ? (
               <div className="login-art-google-wrap">
@@ -568,9 +573,11 @@ export default function LoginPage() {
         <AuthProgressOverlay
           idPrefix="login-signing"
           kicker="Secure access"
-          title="Signing you in"
+          title={isIosNativeApp ? 'Connecting...' : 'Signing you in'}
           orbitLabels={['Financial Health', 'Credit Worthy', 'Networth Growth']}
-          description="Verifying your account and preparing your financial health dashboard."
+          description={isIosNativeApp
+            ? 'Authenticating with Apple, connecting to FILSCORE, and preparing your financial health account.'
+            : 'Verifying your account and preparing your financial health dashboard.'}
           footnote="Please keep this window open."
         />
       ) : null}
