@@ -107,6 +107,21 @@ function resolveSocialAuthErrorMessage(error: unknown, fallback: string): string
   return getErrorMessage(error, fallback)
 }
 
+function isRequestTimeoutError(error: unknown): boolean {
+  if (typeof error !== 'object' || error === null) {
+    return false
+  }
+
+  const candidate = error as { code?: unknown; message?: unknown }
+  const code = typeof candidate.code === 'string' ? candidate.code.toUpperCase() : ''
+  const message = typeof candidate.message === 'string' ? candidate.message.toLowerCase() : ''
+
+  return code === 'ECONNABORTED'
+    || code === 'ETIMEDOUT'
+    || message.includes('timeout')
+    || message.includes('timed out')
+}
+
 function isTrialExpiredMessage(message: string | null | undefined): boolean {
   const normalized = (message || '').trim().toLowerCase()
   if (!normalized) {
@@ -308,7 +323,9 @@ export default function RegisterPage() {
         return
       }
 
-      setAppleMessage(resolveSocialAuthErrorMessage(error, 'Unable to continue with Apple right now.'))
+      setAppleMessage(isIosNativeApp && isRequestTimeoutError(error)
+        ? 'Apple sign-up is taking longer than expected.  Please check your connection and try again.  Your account may have been created.'
+        : resolveSocialAuthErrorMessage(error, 'Unable to continue with Apple right now.'))
     } finally {
       setIsSaving(false)
       setIsAppleSaving(false)
@@ -464,73 +481,64 @@ export default function RegisterPage() {
           ) : null}
         </div>
 
-        <div className="register-social-divider" aria-hidden="true" />
+        {!isIosNativeApp ? (
+          <>
+            <div className="register-social-divider" aria-hidden="true" />
 
-        <div className="register-social-option">
-          <p className="auth-role-copy register-social-label">Google Account</p>
-          {isIosNativeApp ? (
-            <button
-              type="button"
-              className="auth-link-button auth-provider-choice register-provider-button ios-auth-provider-disabled"
-              disabled
-              aria-label="Sign up with Google unavailable on iOS"
-            >
-              <span className="register-provider-icon"><GoogleMark /></span>
-              Sign up with Google
-            </button>
-          ) : null}
-          {!isIosNativeApp && isGoogleEnabled && useNativeGoogleSignIn ? (
-            <button
-              type="button"
-              className="auth-link-button auth-provider-choice register-provider-button"
-              onClick={() => void handleNativeGoogleSignUp()}
-              disabled={isSaving}
-            >
-              <span className="register-provider-icon"><GoogleMark /></span>
-              {isSaving ? 'Continuing with Google...' : 'Sign up with Google'}
-            </button>
-          ) : null}
-          {!isIosNativeApp && isGoogleEnabled && !useNativeGoogleSignIn ? (
-            <div className="register-google-button-wrap">
-              <div className="register-google-button-preview" aria-hidden="true">
-                <span className="register-provider-icon"><GoogleMark /></span>
-                <span>Sign up with Google</span>
-              </div>
-              <div className="register-google-button-live">
-                <GoogleLogin
-                  onSuccess={(response) => handleGoogleSuccess(response, 'web')}
-                  onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
-                  text="signup_with"
-                  size="large"
-                  theme="outline"
-                  shape="rectangular"
-                  width={375}
-                />
-              </div>
+            <div className="register-social-option">
+              <p className="auth-role-copy register-social-label">Google Account</p>
+              {isGoogleEnabled && useNativeGoogleSignIn ? (
+                <button
+                  type="button"
+                  className="auth-link-button auth-provider-choice register-provider-button"
+                  onClick={() => void handleNativeGoogleSignUp()}
+                  disabled={isSaving}
+                >
+                  <span className="register-provider-icon"><GoogleMark /></span>
+                  {isSaving ? 'Continuing with Google...' : 'Sign up with Google'}
+                </button>
+              ) : null}
+              {isGoogleEnabled && !useNativeGoogleSignIn ? (
+                <div className="register-google-button-wrap">
+                  <div className="register-google-button-preview" aria-hidden="true">
+                    <span className="register-provider-icon"><GoogleMark /></span>
+                    <span>Sign up with Google</span>
+                  </div>
+                  <div className="register-google-button-live">
+                    <GoogleLogin
+                      onSuccess={(response) => handleGoogleSuccess(response, 'web')}
+                      onError={() => setMessage('Unable to load Google Sign-Up right now. Please try again.')}
+                      text="signup_with"
+                      size="large"
+                      theme="outline"
+                      shape="rectangular"
+                      width={375}
+                    />
+                  </div>
+                </div>
+              ) : null}
+              {!isGoogleEnabled ? (
+                <p className="status-message">Google Sign-Up is available when configured.</p>
+              ) : null}
             </div>
-          ) : null}
-          {!isIosNativeApp && !isGoogleEnabled ? (
-            <p className="status-message">Google Sign-Up is available when configured.</p>
-          ) : null}
-        </div>
 
-        <div className="register-social-divider" aria-hidden="true" />
+            <div className="register-social-divider" aria-hidden="true" />
 
-        {!showEmailRegistration ? (
-          <button
-            type="button"
-            className={`auth-link-button auth-provider-choice register-other-email-button register-provider-button${isIosNativeApp ? ' ios-auth-provider-disabled' : ''}`}
-            onClick={() => setShowEmailRegistration(true)}
-            aria-controls="register-email-form"
-            aria-expanded="false"
-            disabled={isIosNativeApp}
-          >
-            Other Email
-          </button>
-        ) : null}
-        {isIosNativeApp ? (
+            {!showEmailRegistration ? (
+              <button
+                type="button"
+                className="auth-link-button auth-provider-choice register-other-email-button register-provider-button"
+                onClick={() => setShowEmailRegistration(true)}
+                aria-controls="register-email-form"
+                aria-expanded="false"
+              >
+                Other Email
+              </button>
+            ) : null}
+          </>
+        ) : (
           <p className="status-message">Use Sign in with Apple in the iOS app.</p>
-        ) : null}
+        )}
       </div>
 
       {showEmailRegistration ? (
@@ -630,4 +638,3 @@ export default function RegisterPage() {
     </div>
   )
 }
-

@@ -167,7 +167,7 @@ describe('RegisterPage Apple sign-up', () => {
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
   })
 
-  it('blurs and disables Google and other email registration on iOS', () => {
+  it('hides Google and other email registration on iOS', () => {
     nativePlatform.value = 'ios'
 
     render(
@@ -184,13 +184,9 @@ describe('RegisterPage Apple sign-up', () => {
       </MemoryRouter>
     )
 
-    const googleButton = screen.getByRole('button', { name: 'Sign up with Google unavailable on iOS' })
-    const otherEmailButton = screen.getByRole('button', { name: 'Other Email' })
-
-    expect((googleButton as HTMLButtonElement).disabled).toBe(true)
-    expect(googleButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
-    expect((otherEmailButton as HTMLButtonElement).disabled).toBe(true)
-    expect(otherEmailButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect(screen.queryByText('Google Account')).toBeNull()
+    expect(screen.queryByRole('button', { name: /sign up with google/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
     expect(screen.queryByLabelText('Username')).toBeNull()
     expect(screen.queryByLabelText('Email')).toBeNull()
     expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
@@ -323,6 +319,45 @@ describe('RegisterPage Apple sign-up', () => {
     await waitFor(() => {
       expect(mockNavigate).toHaveBeenCalledWith('/trial-expired?source=register-apple')
     })
+  })
+
+  it('shows the iOS-specific Apple timeout message', async () => {
+    nativePlatform.value = 'ios'
+    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
+    mockLoginWithApple.mockRejectedValue(Object.assign(
+      new Error('timeout of 30000ms exceeded'),
+      { code: 'ECONNABORTED' },
+    ))
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
+
+    const alert = await screen.findByRole('alert')
+    expect(alert.textContent?.replace(/\s+/g, ' ')).toBe(
+      'Apple sign-up is taking longer than expected. Please check your connection and try again. Your account may have been created.',
+    )
+  })
+
+  it('keeps the original timeout detail outside iOS', async () => {
+    mockRequestAppleSignInToken.mockResolvedValue({ idToken: 'apple-identity-token-123' })
+    mockLoginWithApple.mockRejectedValue(new Error('timeout of 30000ms exceeded'))
+
+    render(
+      <MemoryRouter initialEntries={['/register']}>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+
+    const user = await completeAppleRegistrationChoices()
+    await user.click(screen.getByRole('button', { name: 'Sign up with Apple' }))
+
+    expect((await screen.findByRole('alert')).textContent).toBe('timeout of 30000ms exceeded')
   })
 
   it('exchanges the Apple token after all registration choices are completed', async () => {

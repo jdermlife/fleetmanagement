@@ -9,6 +9,7 @@ from sqlalchemy import and_, func, or_, text
 from sqlalchemy.orm import Session
 
 from app.models.notification import (
+    NEW_USER_ADMIN_NOTIFICATION_EVENT,
     Notification,
     NotificationChannel,
     NotificationDeliveryAttempt,
@@ -240,7 +241,17 @@ def dispatch_queued_notifications(db: Session, limit: int = 100) -> dict[str, in
             elif notification.channel == NotificationChannel.EMAIL:
                 if not notification.destination:
                     raise RuntimeError("Missing email destination")
-                send_email(notification.destination, notification.title, notification.message)
+                if notification.event_type == NEW_USER_ADMIN_NOTIFICATION_EVENT:
+                    payload = json.loads(notification.payload) if notification.payload else {}
+                    recipients = payload.get("recipients") if isinstance(payload, dict) else None
+                    if not isinstance(recipients, list) or not all(
+                        isinstance(recipient, str) and recipient.strip()
+                        for recipient in recipients
+                    ):
+                        raise RuntimeError("Missing new-user administrator email recipients")
+                    send_email(tuple(recipients), notification.title, notification.message)
+                else:
+                    send_email(notification.destination, notification.title, notification.message)
                 response_text = "email_sent"
             elif notification.channel == NotificationChannel.SMS:
                 if not notification.destination:
@@ -263,6 +274,22 @@ def dispatch_queued_notifications(db: Session, limit: int = 100) -> dict[str, in
             notification.status = NotificationStatus.SENT
             notification.sent_at = datetime.now(timezone.utc)
             notification.error_message = None
+            if (
+                notification.event_type == NEW_USER_ADMIN_NOTIFICATION_EVENT
+                and notification.source_table == "users"
+                and notification.source_record_id
+            ):
+                db.execute(
+                    text(
+                        "UPDATE users "
+                        "SET admin_user_notification_sent_at = :sent_at "
+                        "WHERE id = :user_id"
+                    ),
+                    {
+                        "sent_at": notification.sent_at,
+                        "user_id": int(notification.source_record_id),
+                    },
+                )
             if (
                 notification.source_table == "loan_application_bill_reminders"
                 and notification.source_record_id

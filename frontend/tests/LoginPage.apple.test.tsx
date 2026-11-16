@@ -133,7 +133,7 @@ describe('LoginPage Apple sign-in', () => {
     expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
   })
 
-  it('blurs and disables Google and other email sign-in on iOS', () => {
+  it('hides Google and other email sign-in on iOS', () => {
     nativePlatform.value = 'ios'
 
     render(
@@ -142,13 +142,8 @@ describe('LoginPage Apple sign-in', () => {
       </MemoryRouter>
     )
 
-    const googleButton = screen.getByRole('button', { name: 'Continue with Google unavailable on iOS' })
-    const otherEmailButton = screen.getByRole('button', { name: 'Other Email' })
-
-    expect((googleButton as HTMLButtonElement).disabled).toBe(true)
-    expect(googleButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
-    expect((otherEmailButton as HTMLButtonElement).disabled).toBe(true)
-    expect(otherEmailButton.classList.contains('ios-auth-provider-disabled')).toBe(true)
+    expect(screen.queryByRole('button', { name: /continue with google/i })).toBeNull()
+    expect(screen.queryByRole('button', { name: 'Other Email' })).toBeNull()
     expect(screen.queryByPlaceholderText('Email or username')).toBeNull()
     expect(screen.getByText('Use Sign in with Apple in the iOS app.')).toBeTruthy()
   })

@@ -8,7 +8,7 @@ const AUTH_TOKEN_STORAGE_KEY = 'auth_token'
 const REFRESH_TOKEN_STORAGE_KEY = 'refresh_token'
 const CURRENT_USER_SESSION_STORAGE_KEY = 'fms:auth:current-user'
 const AUTH_REQUEST_TIMEOUT_MS = 12000
-const LOGIN_PROVIDER_TIMEOUT_MS = 4000
+const LOGIN_PROVIDER_TIMEOUT_MS = 30000
 const LOGOUT_REVOCATION_TIMEOUT_MS = 3000
 const LOGIN_PROVIDER_CACHE_KEY = 'fms:auth:login-provider'
 
@@ -2003,4 +2003,3 @@ export async function assignPlanFeatures(planId: number, feature_ids: number[]):
   })
   return response.data
 }
-

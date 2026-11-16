@@ -46,7 +46,10 @@ from app.services.mfa_service import (
     verify_totp,
 )
 from app.services.email_service import send_email
-from app.services.new_user_notification_service import notify_admins_of_new_user
+from app.services.new_user_notification_service import (
+    notify_admins_of_new_user,
+    queue_admin_notification_for_new_user,
+)
 from app.services.security_bootstrap import seed_roles_and_permissions
 from logging_config import security_logger
 from security.rbac import ROLE_PERMISSIONS, Role as RBACRole
@@ -977,9 +980,9 @@ def _login_with_apple_claims(
         db.add(user)
         db.flush()
         _ensure_default_role(user, db, role_name)
+        queue_admin_notification_for_new_user(user, db)
         db.commit()
         db.refresh(user)
-        notify_admins_of_new_user(user, db)
 
     if email and user.email.lower() != email:
         raise HTTPException(status_code=409, detail="Apple identity does not match this user")

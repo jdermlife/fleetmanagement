@@ -139,7 +139,7 @@ describe('loginWithApple', () => {
       password: 'not-a-real-password',
     }, {
       baseURL: 'https://filscore-ai.quantech.international',
-      timeout: 4000,
+      timeout: 30000,
       _loginProviderAttempt: true,
     })
   })
@@ -380,7 +380,7 @@ describe('loginWithApple', () => {
       lender_data_sharing_consent: undefined,
     }, {
       baseURL: 'https://filscore-ai.quantech.international',
-      timeout: 4000,
+      timeout: 30000,
       _loginProviderAttempt: true,
     })
     expect(response.token).toBe('access-token-123')

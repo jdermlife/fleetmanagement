@@ -421,19 +421,9 @@ export default function LoginPage() {
               />
             </button>
 
-            <div className="login-art-google-wrap">
-              {isIosNativeApp ? (
-                <button
-                  type="button"
-                  className="login-art-social-button login-art-provider-button login-art-google-button ios-auth-provider-disabled"
-                  disabled
-                  aria-label="Continue with Google unavailable on iOS"
-                >
-                  <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
-                  <span>Continue with Google</span>
-                </button>
-              ) : null}
-              {!isIosNativeApp && isGoogleEnabled && useNativeGoogleSignIn ? (
+            {!isIosNativeApp ? (
+              <div className="login-art-google-wrap">
+              {isGoogleEnabled && useNativeGoogleSignIn ? (
                 <button
                   type="button"
                   className="login-art-social-button login-art-provider-button login-art-google-button"
@@ -444,7 +434,7 @@ export default function LoginPage() {
                   <span>Continue with Google</span>
                 </button>
               ) : null}
-              {!isIosNativeApp && isGoogleEnabled && !useNativeGoogleSignIn ? (
+              {isGoogleEnabled && !useNativeGoogleSignIn ? (
                 <div className="login-art-google-live">
                   <div className="login-art-google-preview" aria-hidden="true">
                     <span className="login-art-social-icon login-art-google-icon"><GoogleMark /></span>
@@ -461,7 +451,8 @@ export default function LoginPage() {
                   />
                 </div>
               ) : null}
-            </div>
+              </div>
+            ) : null}
 
             {!isIosNativeApp && !isGoogleEnabled ? (
               <p className="login-art-service-note">Google Sign-In is available when configured.</p>
@@ -470,14 +461,13 @@ export default function LoginPage() {
               <p className="login-art-service-note">Apple Sign-In is available when configured.</p>
             ) : null}
 
-            {!showEmailLogin ? (
+            {!isIosNativeApp && !showEmailLogin ? (
               <button
                 type="button"
-                className={`login-art-social-button login-art-social-button-email login-art-provider-button${isIosNativeApp ? ' ios-auth-provider-disabled' : ''}`}
+                className="login-art-social-button login-art-social-button-email login-art-provider-button"
                 onClick={() => setShowEmailLogin(true)}
                 aria-controls="login-email-form"
                 aria-expanded="false"
-                disabled={isIosNativeApp}
               >
                 <span className="login-art-social-icon">
                   <MailIcon />
@@ -588,4 +578,3 @@ export default function LoginPage() {
     </div>
   )
 }
-

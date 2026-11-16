@@ -1020,6 +1020,7 @@ def test_delete_account_endpoint_removes_data_but_retains_account(app_client):
 
 def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, monkeypatch):
     client, _auth_module, fake_db, apple_auth_module = apple_auth_client
+    queued_user_ids: list[int] = []
 
     monkeypatch.setattr(
         apple_auth_module,
@@ -1039,6 +1040,11 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
             "token_type": "bearer",
             "user": {"id": user.id, "email": user.email, "role": user.role},
         },
+    )
+    monkeypatch.setattr(
+        security_routes,
+        "queue_admin_notification_for_new_user",
+        lambda user, _db: queued_user_ids.append(user.id),
     )
 
     response = client.post(
@@ -1060,6 +1066,7 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
     assert users[0].email == "new-apple-user@example.com"
     assert users[0].apple_subject == "apple-sub-123"
     assert users[0].role == "subscriber_borrower"
+    assert queued_user_ids == [users[0].id]
 
     monkeypatch.setattr(
         apple_auth_module,
@@ -1074,6 +1081,7 @@ def test_apple_token_endpoint_creates_user_on_first_sign_in(apple_auth_client, m
     assert repeat_response.status_code == 200
     assert repeat_response.json()["user"]["email"] == "new-apple-user@example.com"
     assert len(fake_db.rows_by_model.get(User, [])) == 1
+    assert queued_user_ids == [users[0].id]
 
 
 def test_apple_token_endpoint_requires_identity_token(apple_auth_client):

@@ -9,6 +9,10 @@ class FakeDatabase:
     def __init__(self) -> None:
         self.commits = 0
         self.rollbacks = 0
+        self.added: list[object] = []
+
+    def add(self, value: object) -> None:
+        self.added.append(value)
 
     def commit(self) -> None:
         self.commits += 1
@@ -71,6 +75,33 @@ def test_does_not_record_sent_time_when_delivery_fails(monkeypatch) -> None:
     assert user.admin_user_notification_sent_at is None
     assert db.commits == 0
     assert db.rollbacks == 1
+
+
+def test_queues_admin_notification_three_hours_after_account_creation(monkeypatch) -> None:
+    created_at = datetime(2026, 8, 6, 4, 30, tzinfo=timezone.utc)
+    user = SimpleNamespace(
+        id=9,
+        username="apple-user",
+        email="apple@example.com",
+        role="subscriber_borrower",
+        created_at=created_at,
+    )
+    db = FakeDatabase()
+    deliveries: list[object] = []
+    monkeypatch.setattr(
+        new_user_notification_service,
+        "send_email",
+        lambda *_args: deliveries.append(object()),
+    )
+
+    notification = new_user_notification_service.queue_admin_notification_for_new_user(user, db)
+
+    assert db.added == [notification]
+    assert db.commits == 0
+    assert deliveries == []
+    assert notification.next_attempt_at == created_at + new_user_notification_service.NEW_USER_ADMIN_NOTIFICATION_DELAY
+    assert notification.source_record_id == "9"
+    assert notification.created_by == "apple-registration"
 
 
 def test_email_transport_uses_both_envelope_recipients(monkeypatch) -> None:

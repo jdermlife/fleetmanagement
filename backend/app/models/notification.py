@@ -16,6 +16,9 @@ from sqlalchemy import (
 from app.database import Base
 
 
+NEW_USER_ADMIN_NOTIFICATION_EVENT = "new_user_admin_notification"
+
+
 class NotificationChannel(str, Enum):
     IN_APP = "in_app"
     EMAIL = "email"
