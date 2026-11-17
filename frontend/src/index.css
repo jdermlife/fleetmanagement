@@ -19859,6 +19859,73 @@ th { color: var(--dark-gold); }
   color: #4b5563;
 }
 
+.reports-statements-proposal-link {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 20px 22px;
+  border: 1px solid #b9d5cc;
+  border-left: 5px solid #0f766e;
+  background: linear-gradient(135deg, #f2fbf8, #ffffff);
+}
+
+.reports-statements-proposal-link > svg {
+  width: 46px;
+  height: 46px;
+  padding: 10px;
+  border-radius: 50%;
+  background: #dff4ed;
+  color: #0f766e;
+}
+
+.reports-statements-proposal-link span {
+  color: #0f766e;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.reports-statements-proposal-link h2 {
+  margin: 2px 0 4px;
+  color: #173f32;
+  font-size: 1.12rem;
+}
+
+.reports-statements-proposal-link p {
+  margin: 0;
+  color: #52647a;
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.reports-statements-proposal-link button {
+  max-width: 280px;
+  padding: 10px 14px;
+  border: 1px solid #0f766e;
+  border-radius: 8px;
+  background: #0f766e;
+  color: #ffffff;
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  line-height: 1.35;
+  cursor: pointer;
+}
+
+.reports-statements-proposal-link button:hover,
+.reports-statements-proposal-link button:focus-visible {
+  background: #115e59;
+}
+
+.reports-statements-proposal-link button:disabled {
+  border-color: #9caeaa;
+  background: #9caeaa;
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
 .reports-certificate-overlay {
   position: fixed;
   inset: 0;
@@ -20186,6 +20253,22 @@ th { color: var(--dark-gold); }
 
   .reports-statements-card {
     min-height: 158px;
+  }
+
+  .reports-statements-proposal-link {
+    grid-template-columns: 42px minmax(0, 1fr);
+    padding: 17px;
+  }
+
+  .reports-statements-proposal-link > svg {
+    width: 42px;
+    height: 42px;
+  }
+
+  .reports-statements-proposal-link button {
+    grid-column: 1 / -1;
+    width: 100%;
+    max-width: none;
   }
 
   .reports-certificate-overlay {

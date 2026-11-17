@@ -64,6 +64,21 @@ vi.mock('../src/pages/scoring/LoanCertificationPage', () => ({
   ),
 }))
 
+vi.mock('../src/pages/admin/AdminFinancialHealthProposalPage', () => ({
+  default: ({
+    financialHealthSummary,
+    onClose,
+  }: {
+    financialHealthSummary: { score: number }
+    onClose: () => void
+  }) => (
+    <div role="dialog" aria-label="Financial Health Proposal">
+      <span>Financial Health Score {financialHealthSummary.score}</span>
+      <button type="button" onClick={onClose}>Close Financial Health Proposal</button>
+    </div>
+  ),
+}))
+
 vi.mock('../src/pages/scoring/NetWorthPositioningPage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('../src/pages/scoring/NetWorthPositioningPage')>()
   return {
@@ -209,7 +224,7 @@ describe('ReportsStatementsPage', () => {
     fireEvent.click(await screen.findByRole('button', { name: /Statement of Net Worth/ }))
 
     const statement = screen.getByRole('dialog', { name: 'Statement of Assets and Liabilities' })
-    expect(statement.querySelectorAll('.admin-statement-sheet')).toHaveLength(4)
+    expect(statement.querySelectorAll('.admin-statement-sheet')).toHaveLength(6)
     expect(within(statement).getByRole('heading', { name: 'Current Net Worth' })).toBeTruthy()
     expect(statement.querySelector('.admin-cover-ring-score strong')?.textContent).not.toBe('842')
     await waitFor(() => expect(statement.querySelector('.admin-cover-credit')?.textContent).toContain('774'))
@@ -219,6 +234,23 @@ describe('ReportsStatementsPage', () => {
 
     fireEvent.click(within(statement).getByRole('button', { name: 'Close financial statement' }))
     expect(screen.queryByRole('dialog', { name: 'Statement of Assets and Liabilities' })).toBeNull()
+  }, 15000)
+
+  it('opens Financial Health Analysis and Proposal after Score Certificates', async () => {
+    render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
+
+    const scoreCertificates = screen.getByRole('heading', { name: 'Score Certificates' }).closest('section')
+    const proposalHeading = screen.getByRole('heading', { name: 'Financial Health Proposal' })
+    expect(scoreCertificates?.compareDocumentPosition(proposalHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
+
+    fireEvent.click(await screen.findByRole('button', {
+      name: 'Open Financial Health Analysis / Financial Health Proposal',
+    }))
+
+    const dialog = screen.getByRole('dialog', { name: 'Financial Health Proposal' })
+    expect(within(dialog).getByText(/Financial Health Score/)).toBeTruthy()
+    fireEvent.click(within(dialog).getByRole('button', { name: 'Close Financial Health Proposal' }))
+    expect(screen.queryByRole('dialog', { name: 'Financial Health Proposal' })).toBeNull()
   })
 
   it('keeps reports visible but dimmed and non-navigable for non-paid accounts', () => {
@@ -227,7 +259,7 @@ describe('ReportsStatementsPage', () => {
     render(<MemoryRouter><ReportsStatementsPage /></MemoryRouter>)
 
     expect(screen.queryAllByRole('link')).toHaveLength(0)
-    expect(screen.getAllByText('Paid account required')).toHaveLength(7)
+    expect(screen.getAllByText('Paid account required')).toHaveLength(8)
     expect(document.querySelectorAll('.reports-statements-card.is-locked')).toHaveLength(7)
     expect(document.querySelectorAll('[aria-disabled="true"]')).toHaveLength(7)
   })

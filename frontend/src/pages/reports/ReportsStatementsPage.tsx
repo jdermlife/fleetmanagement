@@ -2,6 +2,7 @@ import {
   BadgeCheck,
   BarChart3,
   FileBadge,
+  HeartPulse,
   Landmark,
   LineChart,
   LockKeyhole,
@@ -16,6 +17,7 @@ import { fetchAutosaveDraft } from '../../autosave/draftApi'
 import { useAuthorization } from '../../hooks/useAuthorization'
 import { usePaidScoreCertificationAccess } from '../../hooks/usePaidScoreCertificationAccess'
 import { useSelectedAnalysisEntity } from '../../hooks/useSelectedAnalysisEntity'
+import FinancialHealthProposalModal from '../admin/AdminFinancialHealthProposalPage'
 import FinancialStatementModal from '../admin/AdminFinancialStatementPage'
 import LoanCertificationPage from '../scoring/LoanCertificationPage'
 import NetWorthPositioningPage from '../scoring/NetWorthPositioningPage'
@@ -204,6 +206,7 @@ export default function ReportsStatementsPage() {
   const certificateAccess = usePaidScoreCertificationAccess(isAdmin, 'CERTIFICATIONS')
   const { entityKey, isIdentityReady, selectedApplicationNo } = useSelectedAnalysisEntity()
   const [isNetWorthStatementOpen, setIsNetWorthStatementOpen] = useState(false)
+  const [isFinancialHealthProposalOpen, setIsFinancialHealthProposalOpen] = useState(false)
   const [openCertificate, setOpenCertificate] = useState<'credit' | 'protection' | 'wealth' | null>(null)
   const [financialHealthSummary, setFinancialHealthSummary] = useState<FinancialHealthSummaryResult | null>(null)
   const [wealthProtectionScore, setWealthProtectionScore] = useState<WealthProtectionScoreResult | null>(null)
@@ -254,6 +257,12 @@ export default function ReportsStatementsPage() {
           onClose={() => setIsNetWorthStatementOpen(false)}
           financialHealthSummary={financialHealthSummary ?? computeFinancialHealthSummary()}
           creditScores={creditScores}
+        />
+      ) : null}
+      {isFinancialHealthProposalOpen ? (
+        <FinancialHealthProposalModal
+          onClose={() => setIsFinancialHealthProposalOpen(false)}
+          financialHealthSummary={financialHealthSummary ?? computeFinancialHealthSummary()}
         />
       ) : null}
       {openCertificate === 'credit' ? (
@@ -334,6 +343,26 @@ export default function ReportsStatementsPage() {
             />
           ))}
         </div>
+      </section>
+
+      <section className="reports-statements-proposal-link" aria-labelledby="financial-health-analysis-heading">
+        <HeartPulse aria-hidden="true" />
+        <div>
+          <span>Financial Health Analysis</span>
+          <h2 id="financial-health-analysis-heading">Financial Health Proposal</h2>
+          <p>Open the profile-based Financial Health Analysis and wealth management proposal.</p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setIsFinancialHealthProposalOpen(true)}
+          disabled={statementsLocked || !financialHealthSummary}
+        >
+          {statementsLocked
+            ? 'Paid account required'
+            : financialHealthSummary
+              ? 'Open Financial Health Analysis / Financial Health Proposal'
+              : 'Loading proposal data'}
+        </button>
       </section>
     </div>
   )
