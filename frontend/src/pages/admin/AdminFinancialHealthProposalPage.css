@@ -512,7 +512,8 @@
 }
 
 @media print {
-  @page { size: portrait; margin: 0; }
+  @page admin-proposal-a4 { size: A4 portrait; margin: 0; }
+  @page admin-proposal-letter { size: Letter portrait; margin: 0; }
   html,
   body { width: auto !important; min-height: 0 !important; height: auto !important; margin: 0 !important; padding: 0 !important; overflow: visible !important; background: #fff !important; }
   body > * { display: none !important; }
@@ -527,14 +528,13 @@
     min-height: 0;
     margin: 0;
     box-shadow: none;
-    break-after: page;
-    page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
     print-color-adjust: exact;
     -webkit-print-color-adjust: exact;
   }
-  .admin-proposal-sheet-a4 { width: 210mm; height: 297mm; }
-  .admin-proposal-sheet-letter { width: 215.9mm; height: 279.4mm; }
-  .admin-proposal-sheet:last-child { break-after: auto; page-break-after: auto; }
+  .admin-proposal-sheet-a4 { page: admin-proposal-a4; width: 210mm; height: 297mm; }
+  .admin-proposal-sheet-letter { page: admin-proposal-letter; width: 215.9mm; height: 279.4mm; }
   .admin-proposal-graph-panel svg { filter: none !important; }
 }
 
