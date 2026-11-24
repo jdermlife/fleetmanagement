@@ -11,6 +11,7 @@ Production-grade fleet management platform with enterprise security features.
 - **Password Reset** with time-expiring tokens
 - **Role-Based Access Control (RBAC)** with 8 enterprise roles:
    - Admin, Loan Officer, Credit Analyst, Credit Manager, Approver, Operations, Auditor, Read-Only User
+- **Admin Public Profile Search** — Generate focused Google, Facebook, LinkedIn, Instagram, YouTube, and public-detail verification links without scraping private or gated data
 - **Audit Logging** for compliance and state change tracking
 - **Rate Limiting** protection
 - **PostgreSQL** database with connection pooling

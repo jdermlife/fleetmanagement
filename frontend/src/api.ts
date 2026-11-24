@@ -938,6 +938,32 @@ export interface AdminUser {
   created_at?: string
 }
 
+export interface ProfileSearchLink {
+  id: string
+  platform: string
+  category: string
+  description: string
+  url: string
+}
+
+export interface ProfileSearchResponse {
+  accountName: string
+  links: ProfileSearchLink[]
+}
+
+export async function createAdminProfileSearch(accountName: string): Promise<ProfileSearchResponse> {
+  const response = await api.post<{
+    account_name: string
+    links: ProfileSearchLink[]
+  }>('/api/admin/profile-search', {
+    account_name: accountName,
+  })
+  return {
+    accountName: response.data.account_name,
+    links: response.data.links,
+  }
+}
+
 export async function listAdminUsers(): Promise<AdminUser[]> {
   const response = await api.get<{ users: AdminUser[] }>('/api/admin/users')
   return response.data.users
