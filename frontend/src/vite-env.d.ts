@@ -3,6 +3,7 @@
 declare interface ImportMetaEnv {
   readonly VITE_API_URL?: string
   readonly VITE_API_FALLBACK_URL?: string
+  readonly VITE_DISTRIBUTION_CHANNEL?: 'web' | 'app-store' | 'play-store'
   readonly VITE_GOOGLE_CLIENT_ID?: string
   readonly VITE_GOOGLE_ALLOWED_HOSTS?: string
   readonly VITE_APPLE_CLIENT_ID?: string

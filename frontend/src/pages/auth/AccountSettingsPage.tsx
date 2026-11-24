@@ -21,6 +21,7 @@ import {
   prepareAutosavesForFastLogout,
   prepareAutosavesForLogout,
 } from '../../autosave/useAutosaveDraft'
+import { getStoreBillingPolicy } from '../../billingDistribution'
 import AuthProgressOverlay from '../../components/auth/AuthProgressOverlay'
 import PrivacyChoicesCard from '../../components/privacy/PrivacyChoicesCard'
 
@@ -58,6 +59,7 @@ export default function AccountSettingsPage() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [deletePassword, setDeletePassword] = useState('')
   const [deleteConfirmation, setDeleteConfirmation] = useState('')
+  const usesAppleStore = getStoreBillingPolicy().usesAppleStore
   const [deletionMode, setDeletionMode] = useState<'account_and_data' | 'data_only'>('account_and_data')
   const [isLoading, setIsLoading] = useState(true)
   const [isSigningOut, setIsSigningOut] = useState(false)
@@ -428,10 +430,16 @@ export default function AccountSettingsPage() {
         </p>
         {currentPlan ? (
           <p className="status-message">
-            Support level: <strong>{currentPlan.support_level}</strong> | Monthly equivalent:{' '}
-            <strong>
-              {currentPlan.currency} {getMonthlyEquivalent(currentPlan).toFixed(2)}
-            </strong>
+            Support level: <strong>{currentPlan.support_level}</strong>
+            {usesAppleStore ? (
+              <> | Current localized price is displayed by Apple before purchase.</>
+            ) : (
+              <> | Monthly equivalent:{' '}
+                <strong>
+                  {currentPlan.currency} {getMonthlyEquivalent(currentPlan).toFixed(2)}
+                </strong>
+              </>
+            )}
           </p>
         ) : null}
         <p className="status-message">

@@ -1,5 +1,6 @@
-import { Capacitor } from '@capacitor/core'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
+
+import { getStoreBillingPolicy } from '../../billingDistribution'
 
 type PlanOptionId = 'single' | 'multiple'
 
@@ -47,7 +48,7 @@ export default function TrialExpiredReminderPage() {
   const accountQuery = searchParams.get('account')?.trim() || ''
   const isLocked = state === 'locked'
   const isReminder = state === 'reminder'
-  const usesIosStore = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+  const usesIosStore = getStoreBillingPolicy().usesAppleStore
   const subscriptionPaymentPath = `/subscription/payment?plan=single${accountQuery ? `&account=${encodeURIComponent(accountQuery)}` : ''}`
 
   return (

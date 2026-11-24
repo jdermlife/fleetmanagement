@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import { Suspense, lazy, useEffect, useState, type ComponentType, type ReactNode } from 'react'
 import { Routes, Route, Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 
@@ -11,6 +10,7 @@ import {
   isLenderSubscriberRole,
 } from './authRoles'
 import { brandLogoDataUri } from './brand'
+import { getStoreBillingPolicy } from './billingDistribution'
 import AuthProgressOverlay from './components/auth/AuthProgressOverlay'
 import ProtectedRoute from './components/auth/ProtectedRoute'
 import AutosaveStatus from './components/AutosaveStatus'
@@ -319,8 +319,7 @@ function LendingScorecardAccessGate({
 
     let cancelled = false
     setAccessState('loading')
-    const nativePlatform = Capacitor.getPlatform()
-    const accessRequest = nativePlatform === 'android' || nativePlatform === 'ios'
+    const accessRequest = getStoreBillingPolicy().usesNativeStore
       ? getMyStoreEntitlements().then((entitlements) => entitlements.reports || entitlements.scores)
       : getMySubscription().then((subscription) => (
           subscription?.status === 'ACTIVE'

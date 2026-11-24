@@ -15,9 +15,11 @@
     "preview": "vite preview",
     "mobile:verify-env": "node scripts/validate-mobile-release.mjs",
     "mobile:verify-assets": "node scripts/verify-mobile-assets.mjs",
-    "mobile:sync": "npm run mobile:verify-env && npm run build && npx cap sync && npm run mobile:verify-assets",
-    "mobile:android": "npm run mobile:sync && npx cap open android",
-    "mobile:ios": "npm run mobile:sync && npx cap open ios"
+    "mobile:sync": "node scripts/sync-mobile.mjs",
+    "mobile:sync:android": "node scripts/sync-mobile.mjs android",
+    "mobile:sync:ios": "node scripts/sync-mobile.mjs ios",
+    "mobile:android": "npm run mobile:sync:android && npx cap open android",
+    "mobile:ios": "npm run mobile:sync:ios && npx cap open ios"
   },
   "dependencies": {
     "@capacitor-community/admob": "8.2.1",

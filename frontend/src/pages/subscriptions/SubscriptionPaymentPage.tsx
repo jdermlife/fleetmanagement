@@ -1,4 +1,3 @@
-import { Capacitor } from '@capacitor/core'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router-dom'
 
@@ -35,6 +34,7 @@ import {
   type NativeOneTimeProduct,
   type NativeStoreProduct,
 } from '../../nativeBilling'
+import { getStoreBillingPolicy } from '../../billingDistribution'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 import payMongoLogo from '../../assets/paymongo-official.png'
 import {
@@ -228,10 +228,11 @@ export default function SubscriptionPaymentPage() {
     : '/trial-expired'
   const checkoutStatus = searchParams.get('checkout')
   const isAuthenticated = Boolean(getAuthToken())
-  const nativePlatform = Capacitor.getPlatform()
-  const usesAndroidStore = Capacitor.isNativePlatform() && nativePlatform === 'android'
-  const usesIosStore = Capacitor.isNativePlatform() && nativePlatform === 'ios'
-  const usesNativeStore = usesAndroidStore || usesIosStore
+  const {
+    usesAppleStore: usesIosStore,
+    usesGooglePlay: usesAndroidStore,
+    usesNativeStore,
+  } = getStoreBillingPolicy()
   const guestTrialPlan =
     !usesNativeStore && (selectedGuestPlanId === 'single' || selectedGuestPlanId === 'multiple')
       ? GUEST_TRIAL_PLANS[selectedGuestPlanId]

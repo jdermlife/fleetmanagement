@@ -4,6 +4,8 @@ const expectedApiUrl = process.env.MOBILE_API_URL || 'https://fleetmanagement-dq
 const environment = loadEnv('production', process.cwd(), '')
 const configuredApiUrl = environment.VITE_API_URL?.trim().replace(/\/$/, '')
 const configuredAppleIosClientId = environment.VITE_APPLE_IOS_CLIENT_ID?.trim()
+const distributionChannel = process.env.VITE_DISTRIBUTION_CHANNEL?.trim()
+const mobilePlatform = process.env.MOBILE_PLATFORM?.trim()
 
 if (!configuredApiUrl) {
   throw new Error('VITE_API_URL is required for native production builds. Configure it in frontend/.env.production or the build environment.')
@@ -31,6 +33,13 @@ if (configuredApiUrl !== expectedApiUrl) {
 if (configuredAppleIosClientId !== 'com.quantech.filscore') {
   throw new Error('VITE_APPLE_IOS_CLIENT_ID must match the iOS bundle ID com.quantech.filscore.')
 }
+if (mobilePlatform === 'ios' && distributionChannel !== 'app-store') {
+  throw new Error('iOS release builds must use VITE_DISTRIBUTION_CHANNEL=app-store.')
+}
+if (mobilePlatform === 'android' && distributionChannel !== 'play-store') {
+  throw new Error('Android release builds must use VITE_DISTRIBUTION_CHANNEL=play-store.')
+}
 
 console.log(`Native API configuration verified: ${configuredApiUrl}`)
 console.log(`Native Apple client verified: ${configuredAppleIosClientId}`)
+console.log(`Native billing distribution verified: ${distributionChannel}`)

@@ -4,10 +4,16 @@ import { loadEnv } from 'vite'
 
 const environment = loadEnv('production', process.cwd(), '')
 const expectedApiUrl = environment.VITE_API_URL?.trim().replace(/\/$/, '')
-const assetRoots = [
-  join(process.cwd(), 'android', 'app', 'src', 'main', 'assets', 'public'),
-  join(process.cwd(), 'ios', 'App', 'App', 'public'),
-].filter(existsSync)
+const platform = process.argv[2]
+const expectedDistributionChannel = process.env.VITE_DISTRIBUTION_CHANNEL?.trim()
+const assetRootCandidates = {
+  android: join(process.cwd(), 'android', 'app', 'src', 'main', 'assets', 'public'),
+  ios: join(process.cwd(), 'ios', 'App', 'App', 'public'),
+}
+if (platform !== 'android' && platform !== 'ios') {
+  throw new Error('Mobile asset verification platform must be android or ios.')
+}
+const assetRoots = [assetRootCandidates[platform]].filter(existsSync)
 const iosProjectRoot = join(process.cwd(), 'ios', 'App')
 
 if (!expectedApiUrl) {
@@ -36,10 +42,16 @@ for (const assetRoot of assetRoots) {
   if (bundleText.includes('fleetmanagement=dq9t')) {
     throw new Error(`Synchronized assets at ${assetRoot} contain the malformed Render hostname.`)
   }
+  if (!expectedDistributionChannel || !bundleText.includes(expectedDistributionChannel)) {
+    throw new Error(
+      `Synchronized assets at ${assetRoot} do not contain the ${expectedDistributionChannel || 'configured'} distribution marker.`,
+    )
+  }
   console.log(`Native bundle API verified: ${assetRoot}`)
+  console.log(`Native billing distribution verified: ${expectedDistributionChannel}`)
 }
 
-if (existsSync(iosProjectRoot)) {
+if (platform === 'ios' && existsSync(iosProjectRoot)) {
   const capacitorConfig = readFileSync(join(iosProjectRoot, 'App', 'capacitor.config.json'), 'utf8')
   const entitlements = readFileSync(join(iosProjectRoot, 'App', 'App.entitlements'), 'utf8')
   const xcodeProject = readFileSync(join(iosProjectRoot, 'App.xcodeproj', 'project.pbxproj'), 'utf8')

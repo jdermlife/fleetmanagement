@@ -1,6 +1,6 @@
-import { Capacitor } from '@capacitor/core'
 import { useEffect, useState } from 'react'
 
+import { getStoreBillingPolicy } from '../billingDistribution'
 import {
   getMyStoreEntitlements,
   getMySubscription,
@@ -32,7 +32,7 @@ export function usePaidScoreCertificationAccess(
 
     const loadSubscription = async () => {
       try {
-        if (Capacitor.getPlatform() === 'android' || Capacitor.getPlatform() === 'ios') {
+        if (getStoreBillingPolicy().usesNativeStore) {
           const entitlements = await getMyStoreEntitlements()
           const categoryKey = category.toLowerCase() as Lowercase<StoreEntitlementCategory>
           if (!disposed) setHasPaidScoreAccess(entitlements[categoryKey])

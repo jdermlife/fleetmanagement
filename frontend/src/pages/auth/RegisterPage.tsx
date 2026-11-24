@@ -1,6 +1,5 @@
 import { GoogleLogin, type CredentialResponse } from '@react-oauth/google'
 import { Turnstile } from '@marsidev/react-turnstile'
-import { Capacitor } from '@capacitor/core'
 import type { FormEvent } from 'react'
 import { useState } from 'react'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
@@ -19,6 +18,7 @@ import {
   type RegisterSubscriberType,
 } from '../../authRoles'
 import { APP_CONFIG } from '../../config'
+import { getStoreBillingPolicy } from '../../billingDistribution'
 import { getNativeGooglePlatform, isNativeGoogleSignIn, requestGoogleSignInToken } from '../../googleAuth'
 
 type RegisterSubscriptionPlan = 'FREE_TRIAL' | 'STARTER'
@@ -138,7 +138,7 @@ export default function RegisterPage() {
   const googleClientId = APP_CONFIG.googleClientId
   const googleIosClientId = APP_CONFIG.googleIosClientId
   const useNativeGoogleSignIn = isNativeGoogleSignIn()
-  const isIosNativeApp = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+  const isIosNativeApp = getStoreBillingPolicy().usesAppleStore
   const appleClientId = APP_CONFIG.appleClientId
   const appleIosClientId = APP_CONFIG.appleIosClientId
   const appleRedirectUri = APP_CONFIG.appleRedirect
@@ -445,7 +445,7 @@ export default function RegisterPage() {
                   />
                   <span>
                     <strong>Starter</strong>
-                    <small>Php 160.00 per month</small>
+                    <small>{isIosNativeApp ? 'Price shown by Apple before purchase' : 'Php 160.00 per month'}</small>
                   </span>
                 </label>
               </div>

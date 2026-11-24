@@ -8,6 +8,7 @@ import { Keyboard, KeyboardResize } from '@capacitor/keyboard'
 import { SplashScreen } from '@capacitor/splash-screen'
 import App from './App'
 import { APP_CONFIG } from './config'
+import { DISTRIBUTION_CHANNEL } from './billingDistribution'
 import { initializeNativeGoogleSignIn } from './googleAuth'
 import { initializeNativeAds } from './nativeAds'
 import './index.css'
@@ -16,6 +17,7 @@ const isNativeMobileApp = Capacitor.isNativePlatform()
 
 document.documentElement.classList.toggle('native-mobile-app', isNativeMobileApp)
 document.documentElement.dataset.platform = Capacitor.getPlatform()
+document.documentElement.dataset.distributionChannel = DISTRIBUTION_CHANNEL
 
 const setupNativeMobileRuntime = async () => {
   if (!isNativeMobileApp) {

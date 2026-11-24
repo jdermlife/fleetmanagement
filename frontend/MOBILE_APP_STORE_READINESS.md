@@ -80,11 +80,13 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 
 ## Notes
 - iOS App Store uploads require macOS + Xcode.
-- Run `npm run mobile:sync` before every Android or iOS release. The command now:
+- Run `npm run mobile:sync:android` or `npm run mobile:sync:ios` before the corresponding release. The commands now:
   - requires production `VITE_API_URL=https://fleetmanagement-dq9t.onrender.com`;
   - rejects malformed or non-HTTPS API hostnames;
+  - sets and verifies `play-store` for Android or `app-store` for iOS;
+  - prevents the App Store build from falling back to PayMongo or PayPal when native detection is unavailable;
   - builds and synchronizes Capacitor assets;
-  - verifies the API URL in both Android and iOS bundles.
+  - verifies the API URL and billing distribution marker in the synchronized bundle.
 - Capacitor 8 Android builds require Java 21. On Windows with Android Studio installed:
   `$env:JAVA_HOME="$env:ProgramFiles\Android\Android Studio\jbr"; Set-Location android; .\gradlew.bat :app:bundleRelease`
 - Upload `android/app/build/outputs/bundle/release/app-release.aab` to the Play internal testing track before production rollout.

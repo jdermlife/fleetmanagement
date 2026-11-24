@@ -1,10 +1,10 @@
-import { Capacitor } from '@capacitor/core'
 import { Link } from 'react-router-dom'
 
+import { getStoreBillingPolicy } from '../../billingDistribution'
 import SubscriptionPlansDisclosure from './SubscriptionPlansDisclosure'
 
 export default function SubscriptionFeesPage() {
-  const usesIosStore = Capacitor.isNativePlatform() && Capacitor.getPlatform() === 'ios'
+  const usesIosStore = getStoreBillingPolicy().usesAppleStore
 
   return (
     <div className="standalone-card auth-screen">

@@ -71,7 +71,9 @@ The frontend runs on `http://localhost:5173`.
 
 1. Build and sync web assets into native projects:
    ```bash
-   npm run mobile:sync
+   npm run mobile:sync:android
+   # or
+   npm run mobile:sync:ios
    ```
 2. Open Android project in Android Studio:
    ```bash
