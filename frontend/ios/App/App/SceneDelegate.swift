@@ -61,5 +61,8 @@ class FinancialHealthViewController: CAPBridgeViewController {
         bridge?.registerPluginInstance(
             WatchSyncPlugin()
         )
+        bridge?.registerPluginInstance(
+            PromotedPurchasesPlugin()
+        )
     }
 }

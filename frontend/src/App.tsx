@@ -18,6 +18,12 @@ import FloatingChatbot from './components/ai/FloatingChatbot'
 import { synchronizeBuildProfileDraft } from './autosave/buildProfileSync'
 import { prepareAutosavesForFastLogout } from './autosave/useAutosaveDraft'
 import { isAdminUser } from './hooks/useAuthorization'
+import {
+  clearPendingPromotedProduct,
+  listenForPromotedPurchases,
+  promotedPurchasePath,
+  readPendingPromotedProduct,
+} from './promotedPurchases'
 
 type MenuLink = {
   id: string
@@ -531,6 +537,9 @@ function App() {
   const [govOpen, setGovOpen] = useState(true)
   const [adminOpen, setAdminOpen] = useState(true)
   const [profileOpen, setProfileOpen] = useState(true)
+  const [promotedProductId, setPromotedProductId] = useState(
+    readPendingPromotedProduct,
+  )
 
   const closeMenu = () => {
     setMenuOpen(false)
@@ -728,6 +737,46 @@ const shouldMuteGracePeriodPage = isGracePeriod && !isGracePeriodClearPath(locat
 
     void loadCurrentUser()
   }, [currentUser, location.pathname, location.search])
+
+  useEffect(() => {
+    let disposed = false
+    let listenerHandle: Awaited<ReturnType<typeof listenForPromotedPurchases>> = null
+
+    void listenForPromotedPurchases((productId) => {
+      if (!disposed) {
+        setPromotedProductId(productId)
+      }
+    }).then((handle) => {
+      if (disposed) {
+        void handle?.remove()
+        return
+      }
+      listenerHandle = handle
+    }).catch((error) => {
+      console.error('[StoreKit] Unable to listen for promoted purchases:', error)
+    })
+
+    return () => {
+      disposed = true
+      void listenerHandle?.remove()
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!promotedProductId || !authReady) {
+      return
+    }
+    if (!currentUser) {
+      if (location.pathname !== '/login') {
+        navigate('/login')
+      }
+      return
+    }
+
+    clearPendingPromotedProduct()
+    setPromotedProductId(null)
+    navigate(promotedPurchasePath(promotedProductId), { replace: true })
+  }, [authReady, currentUser, location.pathname, navigate, promotedProductId])
 
   useEffect(() => {
     if (isAuthPath(location.pathname)) {

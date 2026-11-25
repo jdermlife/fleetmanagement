@@ -35,6 +35,7 @@ import {
   type NativeStoreProduct,
 } from '../../nativeBilling'
 import { getStoreBillingPolicy } from '../../billingDistribution'
+import { normalizePromotedProductId } from '../../promotedPurchases'
 import { loadPayPalSdk, type PayPalButtonsInstance } from '../../paypalSdk'
 import payMongoLogo from '../../assets/paymongo-official.png'
 import {
@@ -210,7 +211,9 @@ export default function SubscriptionPaymentPage() {
   const [nativeProducts, setNativeProducts] = useState<NativeStoreProduct[]>([])
   const [selectedNativeProductId, setSelectedNativeProductId] = useState('')
   const [nativeOneTimeProducts, setNativeOneTimeProducts] = useState<NativeOneTimeProduct[]>([])
+  const [isNativeCatalogLoaded, setIsNativeCatalogLoaded] = useState(false)
   const [isNativePurchasePending, setIsNativePurchasePending] = useState(false)
+  const promotedPurchaseStartedRef = useRef(false)
   const paypalButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalSubscriptionButtonContainerRef = useRef<HTMLDivElement | null>(null)
   const paypalCheckoutContextRef = useRef<{ orderId: string; subscriptionId: number } | null>(null)
@@ -222,6 +225,7 @@ export default function SubscriptionPaymentPage() {
   const selectedPlanId = Number(searchParams.get('planId') ?? 0)
   const selectedSubscriptionId = Number(searchParams.get('subscriptionId') ?? 0)
   const selectedGuestPlanId = searchParams.get('plan')
+  const promotedProductId = normalizePromotedProductId(searchParams.get('promotedProductId'))
   const guestAccountQuery = searchParams.get('account')?.trim() || ''
   const trialExpiredPath = guestAccountQuery
     ? `/trial-expired?account=${encodeURIComponent(guestAccountQuery)}`
@@ -306,6 +310,7 @@ export default function SubscriptionPaymentPage() {
     }
 
     setNativeCatalogMessage('')
+    setIsNativeCatalogLoaded(false)
     try {
       const [subscriptionProducts, oneTimeProducts] = await Promise.all([
         loadNativeStoreProducts(),
@@ -315,6 +320,8 @@ export default function SubscriptionPaymentPage() {
       setNativeOneTimeProducts(oneTimeProducts)
     } catch (error) {
       setNativeCatalogMessage(getErrorMessage(error, 'Unable to load subscriptions from the app store.'))
+    } finally {
+      setIsNativeCatalogLoaded(true)
     }
   }, [guestTrialPlan, isAuthenticated, usesNativeStore])
 
@@ -335,27 +342,33 @@ export default function SubscriptionPaymentPage() {
     return subscriptions.find((subscription) => subscription.status === 'ACTIVE') ?? subscriptions[0] ?? null
   }, [selectedSubscriptionId, subscriptions])
 
+  const promotedSubscriptionProduct = useMemo(
+    () => nativeProducts.find((product) => product.mapping.product_id === promotedProductId) ?? null,
+    [nativeProducts, promotedProductId],
+  )
+  const selectedSubscriptionPlan = useMemo(
+    () => plans.find((plan) => plan.id === promotedSubscriptionProduct?.mapping.plan_id)
+      ?? selectedPlan
+      ?? plans.find((plan) => plan.id === selectedSubscription?.plan_id)
+      ?? null,
+    [plans, promotedSubscriptionProduct?.mapping.plan_id, selectedPlan, selectedSubscription?.plan_id],
+  )
   const matchedPlanSubscription = useMemo(() => {
-    if (!selectedPlan) {
+    if (!selectedSubscriptionPlan) {
       return null
     }
 
     return (
       subscriptions.find(
         (subscription) =>
-          subscription.plan_id === selectedPlan.id &&
+          subscription.plan_id === selectedSubscriptionPlan.id &&
           subscription.status !== 'CANCELLED' &&
           subscription.status !== 'EXPIRED',
       ) ?? null
     )
-  }, [selectedPlan, subscriptions])
+  }, [selectedSubscriptionPlan, subscriptions])
 
-  const paymentSubscription = selectedPlan ? matchedPlanSubscription : selectedSubscription
-
-  const selectedSubscriptionPlan = useMemo(
-    () => plans.find((plan) => plan.id === paymentSubscription?.plan_id) ?? selectedPlan,
-    [plans, paymentSubscription?.plan_id, selectedPlan],
-  )
+  const paymentSubscription = selectedSubscriptionPlan ? matchedPlanSubscription : selectedSubscription
 
   const paypalSubscriptionOption = selectedSubscriptionPlan
     ? PAYPAL_SUBSCRIPTION_OPTIONS[selectedSubscriptionPlan.plan_code]
@@ -373,14 +386,18 @@ export default function SubscriptionPaymentPage() {
   )
 
   useEffect(() => {
+    const requestedProductId = promotedProductId
+      && selectedNativeProducts.some((product) => product.mapping.product_id === promotedProductId)
+      ? promotedProductId
+      : selectedNativeProductId
     const resolvedProductId = resolveNativeSubscriptionProductId(
       selectedNativeProducts,
-      selectedNativeProductId,
+      requestedProductId,
     )
     if (resolvedProductId !== selectedNativeProductId) {
       setSelectedNativeProductId(resolvedProductId)
     }
-  }, [selectedNativeProductId, selectedNativeProducts])
+  }, [promotedProductId, selectedNativeProductId, selectedNativeProducts])
   const nativePeriod = selectedNativeProduct
     ? storePeriod(
         selectedNativeProduct.subscriptionPeriod.numberOfUnits,
@@ -867,8 +884,8 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
-  const handleNativePurchase = async () => {
-    if (!selectedNativeProduct) {
+  const handleNativePurchase = useCallback(async (product = selectedNativeProduct) => {
+    if (!product) {
       setPaymentMessage('This subscription is not configured in the app store.')
       return
     }
@@ -877,9 +894,11 @@ export default function SubscriptionPaymentPage() {
     try {
       const currentUser = await fetchCurrentUser()
       const purchase = await purchaseNativeSubscription(
-        selectedNativeProduct,
+        product,
         currentUser.id,
-        paymentSubscription?.id,
+        paymentSubscription?.plan_id === product.mapping.plan_id
+          ? paymentSubscription.id
+          : undefined,
       )
       if (purchase.status === 'ACTIVE' || purchase.status === 'GRACE_PERIOD') {
         navigate(`/payment-success?provider=${purchase.platform === 'IOS' ? 'apple' : 'google-play'}`, { replace: true })
@@ -891,7 +910,7 @@ export default function SubscriptionPaymentPage() {
     } finally {
       setIsNativePurchasePending(false)
     }
-  }
+  }, [navigate, paymentSubscription?.id, paymentSubscription?.plan_id, selectedNativeProduct])
 
   const handleRestoreNativePurchases = async () => {
     setIsNativePurchasePending(true)
@@ -914,7 +933,7 @@ export default function SubscriptionPaymentPage() {
     }
   }
 
-  const handleNativeOneTimePurchase = async (product: NativeOneTimeProduct) => {
+  const handleNativeOneTimePurchase = useCallback(async (product: NativeOneTimeProduct) => {
     setIsNativePurchasePending(true)
     setPaymentMessage(`Waiting for app store confirmation for ${product.title}...`)
     try {
@@ -930,7 +949,50 @@ export default function SubscriptionPaymentPage() {
     } finally {
       setIsNativePurchasePending(false)
     }
-  }
+  }, [])
+
+  useEffect(() => {
+    if (
+      !promotedProductId
+      || !usesIosStore
+      || !isNativeCatalogLoaded
+      || isNativePurchasePending
+      || promotedPurchaseStartedRef.current
+    ) {
+      return
+    }
+
+    const subscriptionProduct = nativeProducts.find(
+      (product) => product.mapping.product_id === promotedProductId,
+    )
+    if (subscriptionProduct) {
+      promotedPurchaseStartedRef.current = true
+      setSelectedNativeProductId(promotedProductId)
+      void handleNativePurchase(subscriptionProduct)
+      return
+    }
+
+    const oneTimeProduct = nativeOneTimeProducts.find(
+      (product) => product.mapping.product_id === promotedProductId,
+    )
+    if (oneTimeProduct) {
+      promotedPurchaseStartedRef.current = true
+      void handleNativeOneTimePurchase(oneTimeProduct)
+      return
+    }
+
+    promotedPurchaseStartedRef.current = true
+    setPaymentMessage('The App Store selected a product that is not configured in this app version.')
+  }, [
+    handleNativeOneTimePurchase,
+    handleNativePurchase,
+    isNativeCatalogLoaded,
+    isNativePurchasePending,
+    nativeOneTimeProducts,
+    nativeProducts,
+    promotedProductId,
+    usesIosStore,
+  ])
 
   const handleRestoreNativeOneTimePurchases = async () => {
     setIsNativePurchasePending(true)
@@ -1118,6 +1180,11 @@ export default function SubscriptionPaymentPage() {
             Retry App Store
           </button>
         </div>
+      ) : null}
+      {promotedProductId ? (
+        <p className="status-message">
+          Completing the purchase selected on the App Store for {promotedProductId}.
+        </p>
       ) : null}
       {paymentMessage ? <p className="status-message">{paymentMessage}</p> : null}
 

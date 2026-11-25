@@ -54,6 +54,11 @@ for (const assetRoot of assetRoots) {
 if (platform === 'ios' && existsSync(iosProjectRoot)) {
   const capacitorConfig = readFileSync(join(iosProjectRoot, 'App', 'capacitor.config.json'), 'utf8')
   const entitlements = readFileSync(join(iosProjectRoot, 'App', 'App.entitlements'), 'utf8')
+  const promotedPurchasesPlugin = readFileSync(
+    join(process.cwd(), 'ios', 'App', 'PromotedPurchasesPlugin.swift'),
+    'utf8',
+  )
+  const sceneDelegate = readFileSync(join(iosProjectRoot, 'App', 'SceneDelegate.swift'), 'utf8')
   const xcodeProject = readFileSync(join(iosProjectRoot, 'App.xcodeproj', 'project.pbxproj'), 'utf8')
 
   if (!capacitorConfig.includes('"apple": true')) {
@@ -65,5 +70,18 @@ if (platform === 'ios' && existsSync(iosProjectRoot)) {
   if (!xcodeProject.includes('CODE_SIGN_ENTITLEMENTS = App/App.entitlements;')) {
     throw new Error('The Xcode target is not configured to sign with App.entitlements.')
   }
+  if (
+    !promotedPurchasesPlugin.includes('PurchaseIntent.intents')
+    || !promotedPurchasesPlugin.includes('shouldAddStorePayment')
+  ) {
+    throw new Error('The iOS target is missing StoreKit promoted-purchase handling.')
+  }
+  if (!sceneDelegate.includes('PromotedPurchasesPlugin()')) {
+    throw new Error('The promoted-purchases plugin is not registered with the Capacitor bridge.')
+  }
+  if (!xcodeProject.includes('PromotedPurchasesPlugin.swift in Sources')) {
+    throw new Error('The promoted-purchases plugin is not included in the Xcode Sources build phase.')
+  }
   console.log('Native Apple capability verified: ios/App')
+  console.log('StoreKit promoted-purchase handling verified: ios/App')
 }

@@ -76,6 +76,7 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
 - [ ] Provision Apple Root CA G3 as a backend secret file and configure `APPLE_ROOT_CA_PATH`.
 - [ ] Configure `APPLE_BUNDLE_ID=com.quantech.filscore` and `APPLE_STORE_ENVIRONMENT=Production`.
 - [ ] Configure App Store Server Notifications V2 to `/api/subscriptions/store-notifications/apple`.
+- [ ] Test a promoted subscription from its App Store product-page URL. The iOS bridge must receive `PurchaseIntent.intents`, preserve the product through sign-in, and open Apple purchase confirmation.
 - [ ] Run `migrate_store_billing.py`, then verify product titles and localized prices on physical test devices.
 
 ## Notes
@@ -85,6 +86,7 @@ This checklist covers the remaining non-code submission steps after Capacitor mo
   - rejects malformed or non-HTTPS API hostnames;
   - sets and verifies `play-store` for Android or `app-store` for iOS;
   - prevents the App Store build from falling back to PayMongo or PayPal when native detection is unavailable;
+  - verifies StoreKit 2 promoted-purchase handling and the legacy iOS 15–16.3 fallback are compiled into the Xcode target;
   - builds and synchronizes Capacitor assets;
   - verifies the API URL and billing distribution marker in the synchronized bundle.
 - Capacitor 8 Android builds require Java 21. On Windows with Android Studio installed:

@@ -18,6 +18,7 @@
 		CFC74E58306FC0A9009C8B40 /* SceneDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC74E57306FC0A9009C8B40 /* SceneDelegate.swift */; };
 		CFC74E6730714FFF009C8B40 /* FINANCIAL HEALTH Watch Watch App.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = CFC74E5D30714FFD009C8B40 /* FINANCIAL HEALTH Watch Watch App.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		CFC74E7430728F24009C8B40 /* WatchSyncPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC74E7230728F24009C8B40 /* WatchSyncPlugin.swift */; };
+		CFC74E7630830000009C8B40 /* PromotedPurchasesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CFC74E7530830000009C8B40 /* PromotedPurchasesPlugin.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -60,6 +61,7 @@
 		CFC74E5D30714FFD009C8B40 /* FINANCIAL HEALTH Watch Watch App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FINANCIAL HEALTH Watch Watch App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFC74E7130728B21009C8B40 /* AppRelease.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = AppRelease.entitlements; sourceTree = "<group>"; };
 		CFC74E7230728F24009C8B40 /* WatchSyncPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WatchSyncPlugin.swift; sourceTree = "<group>"; };
+		CFC74E7530830000009C8B40 /* PromotedPurchasesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PromotedPurchasesPlugin.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -88,6 +90,7 @@
 		504EC2FB1FED79650016851F = {
 			isa = PBXGroup;
 			children = (
+				CFC74E7530830000009C8B40 /* PromotedPurchasesPlugin.swift */,
 				CFC74E7230728F24009C8B40 /* WatchSyncPlugin.swift */,
 				958DCC722DB07C7200EA8C5F /* debug.xcconfig */,
 				504EC3061FED79650016851F /* App */,
@@ -257,6 +260,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				504EC3081FED79650016851F /* AppDelegate.swift in Sources */,
+				CFC74E7630830000009C8B40 /* PromotedPurchasesPlugin.swift in Sources */,
 				CFC74E7430728F24009C8B40 /* WatchSyncPlugin.swift in Sources */,
 				CFC74E58306FC0A9009C8B40 /* SceneDelegate.swift in Sources */,
 			);
